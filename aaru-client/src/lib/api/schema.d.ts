@@ -2198,6 +2198,57 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/connections/mal/connect': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Start connecting MyAnimeList (PKCE, `plain`, the only method MAL accepts). Open the returned address in a browser. MAL then redirects to GET /v1/connections/mal/callback (a plain redirect route outside this spec), which sends the browser on to `returnTo` with `mal=connected|denied|failed`. Once connected, anime progress written from then on is pushed to the MAL list (SCR-005). */
+    post: operations['connectMAL']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/connections/mal': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['getMALConnection']
+    put?: never
+    post?: never
+    /** Forget the MyAnimeList tokens. Nothing more is pushed; the MAL list and the library stay as they are. */
+    delete: operations['disconnectMAL']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/connections/mal/pull': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** A client opened Aaru: read the MyAnimeList list back on the next pass (SCR-010). Ignored when MAL is not connected or was read in the last 10 minutes, so clients call it on every open. */
+    post: operations['requestMALPull']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/imports/{id}': {
     parameters: {
       query?: never
@@ -2574,6 +2625,34 @@ export interface components {
       username?: string
       /** Format: date-time */
       connectedAt?: string
+    }
+    MALConnectRequest: {
+      /** @description Where the browser goes after MyAnimeList (the app's `aaru://` scheme or the web app). Must be allowed by the server. */
+      returnTo: string
+    }
+    MALConnectStart: {
+      authorizeUrl: string
+    }
+    MALConnection: {
+      connected: boolean
+      username?: string
+      /** Format: date-time */
+      connectedAt?: string
+      /** @description MyAnimeList refused the tokens. Nothing is pushed until the user connects again. */
+      needsReconnect: boolean
+      /**
+       * Format: date-time
+       * @description When Aaru last read the MyAnimeList list back (SCR-010).
+       */
+      pulledAt?: string
+      /** @description Entries removed on MyAnimeList, newest first, at most 100. Aaru keeps its items for them; the list is what a weekly full read found missing. */
+      removed: components['schemas']['MALRemovedEntry'][]
+    }
+    MALRemovedEntry: {
+      malId: string
+      title?: string
+      /** Format: date-time */
+      removedAt: string
     }
     StremioLink: {
       code: string
@@ -4000,6 +4079,8 @@ export interface components {
     }
     Calendar: {
       items: components['schemas']['CalendarEntry'][]
+      /** @description Tracked shows whose episodes have not been loaded yet (CAL-004), as after an import. Their episodes are missing from `items` until they load; ask again while this is above 0. */
+      pendingShows?: number
     }
     ContinueEntry: {
       /** Format: uuid */
@@ -8079,6 +8160,90 @@ export interface operations {
     requestBody?: never
     responses: {
       /** @description Disconnected. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  connectMAL: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MALConnectRequest']
+      }
+    }
+    responses: {
+      /** @description Where to send the browser. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['MALConnectStart']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getMALConnection: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Whether MyAnimeList is connected, and whether it must be connected again. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['MALConnection']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  disconnectMAL: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Disconnected. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  requestMALPull: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Asked, or not needed. */
       204: {
         headers: {
           [name: string]: unknown

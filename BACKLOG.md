@@ -581,6 +581,7 @@ account or a stranger that has not happened yet.
 | CAL-001 | Done | #2, #24; ScheduleTests premiere/finale | |
 | CAL-002 | Built (web) | app_.week.tsx, components/calendar/* | Posters, sheets, Missed, filters; `stillUrl` on `CalendarEntry` |
 | CAL-003 | Built (Apple) | Calendar/CalendarEpisodeSheet, CatchUpView, CalendarFilter | Same as CAL-002 on iPhone, iPad, Mac; not seen on a device |
+| CAL-004 | Built, unverified | ScheduleTests CAL-004; CatalogRefresher | Calendar and Up Next never call a provider (a 320-show import made reads take 4–19 s); `pendingShows` on `/v1/calendar`, web and Apple show "Loading episodes for N shows…" and ask again every 10 s for up to 5 min; refresher runs every minute, back to back while a pass is full, 3 shows at once |
 | UPN-001 | Done | #2; `/v1/up-next` | |
 | APP-001 | Done | #7 432e35f; SessionMiddleware (12 concurrent 401s) | |
 | APP-002 | Done | #8; SessionKeychain.swift | Mac relaunch persistence not recorded |
@@ -601,12 +602,12 @@ account or a stranger that has not happened yet.
 | MUS-007 | Built, unverified | MusicSection (web, Apple); ListenBrainzRouteTests `musicSetup`; music model tests | Not deployed; steps checked against client source, not tried with a real scrobbler |
 | MUS-008 | Built, unverified | ListenStatsTests; listening-model and recap deck tests; `/app/music`, MusicView, MusicInsights, OnRepeatCard | Not deployed; not run on a device with real listens |
 | MUS-009 | Not started | — | Waits for a Bandsintown app id |
-| MNG-001 | Built, unverified | `feat/mng-001-manga`; MangaTests, AniListMangaAdapterTests | Not deployed; not run on a device |
-| MNG-002 | Built, unverified | `feat/mng-001-manga`; MangaImportTests, AnimeListImportTests | Not deployed; no real MAL manga export or AniList manga list run yet |
-| FAV-001 | Built, unverified | `feat/fav-001-favorites`; FavoritesTests, favorites model tests | Not deployed; not run on a device |
+| MNG-001 | Built, unverified | #175; MangaTests, AniListMangaAdapterTests; deployed f6cc317 (infra #456), TestFlight from d9c6341 | Not run on a device |
+| MNG-002 | Built, unverified | #175; MangaImportTests, AnimeListImportTests; deployed f6cc317 (infra #456) | No real MAL manga export or AniList manga list run yet |
+| FAV-001 | Built, unverified | #176; FavoritesTests, favorites model tests; deployed f6cc317 (infra #456), TestFlight from f6cc317 | Not run on a device or in a browser |
 | BOARD-003 | Built, unverified | AaruCoreTests BoardRulesTests; Friends → Board, post screen, title From friends | Apple only, this PR (feat/board-003-ios); not on TestFlight |
-| BOARD-002 | Built, unverified | web tests; `/app/friends`, `/app/friends/posts/$postId`, title page | Web only, this PR (feat/board-002-web); not run on a device or deployed |
-| BOARD-001 | Built, unverified | BoardTests, BoardTitleTests, BoardStoreTests; `/v1/board*`, `/v1/titles/{id}/posts` | Server only, not deployed; undo of a new-title review is two journal rows |
+| BOARD-002 | Built, unverified | #169 b3799f8; web tests; `/app/friends`, `/app/friends/posts/$postId`, title page | Web only, on the beta Worker; not looked at in a browser |
+| BOARD-001 | Built, unverified | #149; BoardTests, BoardTitleTests, BoardStoreTests; `/v1/board*`, `/v1/titles/{id}/posts`; deployed b3799f8 (infra #455) | Undo of a new-title review is two journal rows |
 | APP-010 | Done | #23 13227ae; WeekGridView.swift, WeekGrid.tsx | Sample data only |
 | WID-001 | Built, unverified | #26 b2285d4; WidgetSnapshot.swift | Not seen on a device |
 | WID-002 | Partial | #26; MarkEpisodeWatchedIntent.swift | No undo ribbon in any client |
@@ -633,7 +634,7 @@ account or a stranger that has not happened yet.
 | IMP-017 | Built | ImportSpeedTests, imports model tests; local run of a 2,001-entry MAL export | Live 2026-10-21 (API c8b19e7, LuminaVaultInfra#405; web prod); Apple ledger not run on a device |
 | IMP-018 | Built, unverified | `feat/netflix-import`; NetflixCSVParser, EpisodeNameMatcher, NetflixImportTests | No real export run yet |
 | IMP-019 | Open | BACKLOG IMP-019 | Bingers has an API only for paid plans; owner decides |
-| IMP-020 | Built, unverified | #172; CSVImportParser, TitleResolver, GoodreadsImportTests, BookYearToleranceTests | Stub catalog only; no real Goodreads export run yet |
+| IMP-020 | Built, unverified | #172; CSVImportParser, TitleResolver, GoodreadsImportTests, BookYearToleranceTests; deployed f6cc317 (infra #456) | Stub catalog only; no real Goodreads export run yet |
 | PRV-001 | Done | #27 8d5ddc3; docs/providers.md, AboutView.swift | privacy@ routing not set up |
 | CAT-011 | Done | #24 7edc80c; TVmazeAirTimes.swift | |
 | CAT-012 | Open | no Google Books code | |
@@ -663,12 +664,12 @@ account or a stranger that has not happened yet.
 | SCR-002 | Open | no Plex/Jellyfin code | |
 | SCR-003 | Done | #36 e8bdebb; Sources/App/Stremio; deployed | Verified in Stremio Web on local server; playback events not tried |
 | SCR-004 | Open | none | |
-| SCR-005 | Open | none | |
+| SCR-005 | Built, unverified (MAL half) | MALConnectService, MALPusher, `mal_connections`, `mal_entry_states`, `/v1/connections/mal*`; MALTests | Settings → Connections → MyAnimeList on web and Apple; needs `MAL_CLIENT_ID` + `MAL_TOKEN_KEY` sealed in infra. AniList push not started |
 | SCR-006 | Open | none | |
 | SCR-007 | Built, unverified | `aaru-extension/`; session + site fixture tests; ScrobbleRouteTests; `/connect/extension` | Site selectors not yet checked on the live players; not in any store |
 | SCR-008 | Built, unverified | NowPlaying.swift, LiveActivityPush.swift, NowPlayingTests; `NowPlayingCard` (web, iOS); `/v1/me/now-playing` | Live Activity pushes not yet seen on a device; the activity became SCR-009's |
 | SCR-009 | Built, unverified | LivePlays.swift, LiveSetNotifier.swift, LiveActivitySweepService.swift, `live_plays`, `live_activity_states`; NowPlayingTests(+Plays); `NowPlayingActivityAttributes`, NowPlayingLiveActivity; `aaru-extension/src/sites/youtube.ts` | Not seen on a device; YouTube selectors not checked on the live site |
-| SCR-010 | Open | none | Needs SCR-005, and MAL's written OK before anyone but the owner connects |
+| SCR-010 | Built, unverified | MALPuller, `MALSyncService`, `AddMALPull`, `POST /v1/connections/mal/pull`, `removed` on `GET /v1/connections/mal`; MALPullTests | Clients ask on open and list removals; MAL's written OK before anyone but the owner connects |
 | SOC-001 | Built, unverified | `profiles`, `PUT /v1/me/profile`, `social_settings` (`share_library_with_friends`), `/v1/me/social-settings`, `/v1/social/friends/{userId}/profile`; SocialTests, FriendTests | Points, streaks and leaderboard settings wait for P5 |
 | SOC-002 | Built, unverified | requests, friends, blocks, reports; invite links (`social_invites`, `/v1/social/invites`, `/v1/invites/{code}`, web `/i/{code}`, AASA); SocialTests, InviteTests | Seed signing ran on the branch 2026-10-21; universal links not tried on a device; contact email hash not built |
 | SOC-003 | Partial | `GET /v1/activity` (dated ticks and finishes, 14 days); FriendTests; web `/app/friends`, iOS Friends tab | No `FriendStories` on Home, no scrobbles, no save-to-wishlist yet |

@@ -217,7 +217,7 @@ struct UntouchedStore: UserStore, SessionStore, MagicLinkStore, TitleStore, Anim
         throw Touched()
     }
 
-    func unhydratedTrackedShows(userID _: UserID, limit _: Int) async throws -> [TitleID] {
+    func pendingShowCount(userID _: UserID) async throws -> Int {
         throw Touched()
     }
 
@@ -334,6 +334,7 @@ func fakeStores(databaseReachable: Bool = true) -> Stores {
         stats: untouched,
         importJobs: untouched,
         trakt: untouched,
+        mal: UntouchedMALStore(),
         push: untouched,
         agentTokens: untouched,
         watchEvents: untouched,

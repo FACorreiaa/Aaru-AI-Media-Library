@@ -7,7 +7,8 @@ typealias AgentTokenCreated = Components.Schemas.AgentTokenCreated
 
 /// Settings → Connections (UX-023): everything that reaches Aaru with a token of its own:
 /// agents over MCP and the browser extension, the Stremio addon, and music scrobblers
-/// (GET/POST/DELETE /v1/agent/tokens). One verb ends any of them: Disconnect (UX-024).
+/// (GET/POST/DELETE /v1/agent/tokens), and MyAnimeList (SCR-005, /v1/connections/mal). One verb
+/// ends any of them: Disconnect (UX-024).
 @MainActor
 @Observable
 final class ConnectionsModel {
@@ -20,8 +21,14 @@ final class ConnectionsModel {
     private(set) var scrobblers: [AgentToken] = []
     /// The newest listen, shown under Music as the way to Listens once there is one.
     private(set) var latestListen: Components.Schemas.Listen?
+    /// MyAnimeList: nil until the connection is read, or when the server has it off.
+    private(set) var mal: Components.Schemas.MALConnection?
+    private(set) var malBusy = false
     private(set) var hasLoaded = false
     var problem: String?
+
+    /// Where MyAnimeList's sign-in sheet returns.
+    static let malReturn = "aaru://settings/myanimelist"
 
     @ObservationIgnored private let api: Client?
 
@@ -54,6 +61,7 @@ final class ConnectionsModel {
         }
         // The last listen is a nicety; nothing is reported when it fails.
         latestListen = await latestListenNow()
+        await loadMAL()
     }
 
     /// Mints a token. The answer holds the secret, shown once by the caller.
@@ -113,8 +121,65 @@ final class ConnectionsModel {
         stremio = []
         scrobblers = []
         latestListen = nil
+        mal = nil
         hasLoaded = false
         problem = nil
+    }
+
+    // MARK: MyAnimeList (SCR-005)
+
+    func loadMAL() async {
+        guard let api else { return }
+        if case let .ok(response) = try? await api.getMALConnection() {
+            mal = try? response.body.json
+        }
+    }
+
+    /// MyAnimeList's sign-in page for this user. The server holds the PKCE verifier.
+    func malAuthorizeURL() async -> URL? {
+        guard let api else { return nil }
+        malBusy = true
+        problem = nil
+        defer { malBusy = false }
+        do {
+            if case let .ok(response) = try await api.connectMAL(body: .json(.init(returnTo: Self.malReturn))),
+               let page = try URL(string: response.body.json.authorizeUrl)
+            {
+                return page
+            }
+            problem = "MyAnimeList is not available right now. Try again later."
+        } catch {
+            problem = "MyAnimeList could not be reached. Aaru could not reach the server."
+        }
+        return nil
+    }
+
+    /// MyAnimeList's sign-in sheet came back to `aaru://…?mal=`.
+    func finishMAL(_ callback: URL) async {
+        let result = URLComponents(url: callback, resolvingAgainstBaseURL: false)?
+            .queryItems?.first { $0.name == "mal" }?.value
+        switch result {
+        case "connected": await loadMAL()
+        case "denied": break
+        default: problem = "MyAnimeList could not finish connecting. Try again."
+        }
+    }
+
+    func disconnectMAL() async {
+        guard let api else { return }
+        malBusy = true
+        problem = nil
+        defer { malBusy = false }
+        do {
+            switch try await api.disconnectMAL() {
+            case .noContent:
+                mal = .init(connected: false, needsReconnect: false, removed: [])
+            case let .default(_, error):
+                problem = (try? error.body.json.message) ?? "MyAnimeList was not disconnected. Try again."
+            }
+        } catch {
+            problem = "MyAnimeList was not disconnected. Aaru could not reach the server."
+        }
     }
 
     private func insert(_ token: AgentToken) {

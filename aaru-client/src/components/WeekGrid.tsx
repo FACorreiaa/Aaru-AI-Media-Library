@@ -11,6 +11,7 @@ import {
   TabsList,
   TabsTrigger,
   Button,
+  Skeleton,
 } from '~/components/ui'
 
 // APP-010, CAL-002 · `WeekGrid` (DESIGN.md §14, VIEWS.md): Pogdesign CAT's dense week, in Aaru's
@@ -24,6 +25,8 @@ export interface WeekGridProps {
   /** The phone pager's day. */
   selected: string
   byDay: Map<string, CalendarEntry[]>
+  /** These days are still loading: placeholders, not "nothing airs". */
+  waiting: boolean
   pending: Set<string>
   keyOf: (entry: CalendarEntry) => string
   onSelect: (day: string) => void
@@ -84,13 +87,26 @@ export function WeekGrid(props: WeekGridProps) {
             <For
               each={props.byDay.get(props.selected) ?? []}
               fallback={
-                <li class="rounded-panel bg-surface px-4 py-8 text-center text-sm text-muted">
-                  Nothing airs on{' '}
-                  {props.selected
-                    ? dayParts(props.selected).weekday
-                    : 'this day'}
-                  .
-                </li>
+                <Show
+                  when={!props.waiting}
+                  fallback={
+                    <For each={[0, 1]}>
+                      {() => (
+                        <li class="py-2">
+                          <Skeleton class="h-20 rounded-field" />
+                        </li>
+                      )}
+                    </For>
+                  }
+                >
+                  <li class="rounded-panel bg-surface px-4 py-8 text-center text-sm text-muted">
+                    Nothing airs on{' '}
+                    {props.selected
+                      ? dayParts(props.selected).weekday
+                      : 'this day'}
+                    .
+                  </li>
+                </Show>
               }
             >
               {(entry) => (
@@ -114,6 +130,7 @@ export function WeekGrid(props: WeekGridProps) {
               day={day}
               today={day === props.today}
               entries={props.byDay.get(day) ?? []}
+              waiting={props.waiting}
               pending={props.pending}
               keyOf={props.keyOf}
               onOpen={props.onOpen}
@@ -130,6 +147,7 @@ function DayColumn(props: {
   day: string
   today: boolean
   entries: CalendarEntry[]
+  waiting: boolean
   pending: Set<string>
   keyOf: (entry: CalendarEntry) => string
   onOpen: (entry: CalendarEntry) => void
@@ -156,7 +174,14 @@ function DayColumn(props: {
       <div class="flex flex-col gap-2 p-2">
         <For
           each={props.entries}
-          fallback={<p class="px-1 py-3 text-xs text-muted/80">—</p>}
+          fallback={
+            <Show
+              when={!props.waiting}
+              fallback={<Skeleton class="h-16 rounded-field" />}
+            >
+              <p class="px-1 py-3 text-xs text-muted/80">—</p>
+            </Show>
+          }
         >
           {(entry) => (
             <EpisodeCell

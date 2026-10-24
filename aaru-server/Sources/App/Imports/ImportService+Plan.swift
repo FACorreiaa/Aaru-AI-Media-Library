@@ -179,23 +179,7 @@ extension ImportService {
             )
         }
         var rows = try await stores.importJobs.rows(jobID: id)
-        var ops: [LibraryOp] = []
-        var listMembers: [String: [TitleID]] = [:]
-        for row in rows where row.outcome != .unmatched {
-            guard let titleID = row.titleID else { continue }
-            for list in row.row.lists {
-                listMembers[list, default: []].append(titleID)
-            }
-        }
-        // The library as it is now, read once (the plan may be stale).
-        let context = try await mergeContext(rows, userID: userID)
-        for (titleID, indices) in Self.groups(rows) {
-            let merged = Self.merged(Self.seasonRows(indices.map { rows[$0] }, context: context))
-            // A list-only title joins its list without joining the library.
-            guard merged.listOnly != true else { continue }
-            ops += writes(for: &rows[indices[0]], merged: merged, titleID: titleID, item: context.states[titleID])
-        }
-        ops += try await listOps(listMembers, userID: userID)
+        let ops = try await writes(for: &rows, userID: userID)
         job.stats = Self.stats(rows)
         var action: ActionRecord?
         if !ops.isEmpty {
@@ -217,6 +201,27 @@ extension ImportService {
             firstImport: true
         )
         return job
+    }
+
+    /// Every write a matched plan makes, decided again against the library as it is now (the plan
+    /// may be stale). Each row's outcome is updated to what it does.
+    func writes(for rows: inout [PlannedRow], userID: UserID) async throws -> [LibraryOp] {
+        var ops: [LibraryOp] = []
+        var listMembers: [String: [TitleID]] = [:]
+        for row in rows where row.outcome != .unmatched {
+            guard let titleID = row.titleID else { continue }
+            for list in row.row.lists {
+                listMembers[list, default: []].append(titleID)
+            }
+        }
+        let context = try await mergeContext(rows, userID: userID)
+        for (titleID, indices) in Self.groups(rows) {
+            let merged = Self.merged(Self.seasonRows(indices.map { rows[$0] }, context: context))
+            // A list-only title joins its list without joining the library.
+            guard merged.listOnly != true else { continue }
+            ops += writes(for: &rows[indices[0]], merged: merged, titleID: titleID, item: context.states[titleID])
+        }
+        return try await ops + listOps(listMembers, userID: userID)
     }
 
     /// Decides one title again (the library may have changed since the plan) and returns its writes.

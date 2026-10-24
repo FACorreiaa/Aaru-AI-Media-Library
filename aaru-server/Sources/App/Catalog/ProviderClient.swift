@@ -24,6 +24,7 @@ struct ProviderError: Error, Equatable {
         case "tmdb": "TMDB"
         case "openlibrary": "Open Library"
         case "trakt": "Trakt"
+        case "mal": "MyAnimeList"
         case "tvmaze": "TVmaze"
         case "pogdesign": "Pogdesign CAT"
         default: provider

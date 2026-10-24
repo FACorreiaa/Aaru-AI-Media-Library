@@ -258,6 +258,8 @@ private struct MainTabs: View {
             .task(id: scenePhase) {
                 if scenePhase == .active {
                     await progress?.refresh()
+                    // MyAnimeList changes come back on each open; the server spaces the reads (SCR-010).
+                    _ = try? await api?.requestMALPull()
                 }
             }
             .modifier(OptionalUnlockToast(model: progress))
@@ -372,19 +374,6 @@ private struct OptionalUnlockToast: ViewModifier {
             content.unlockToast(model)
         } else {
             content
-        }
-    }
-}
-
-extension Optional {
-    /// For `.alert(isPresented:)` over an optional message: true while there is one; setting
-    /// false clears it.
-    var isPresent: Bool {
-        get { self != nil }
-        set {
-            if !newValue {
-                self = nil
-            }
         }
     }
 }

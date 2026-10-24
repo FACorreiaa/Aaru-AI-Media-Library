@@ -381,6 +381,9 @@ Both are derived reads over the user's library. Neither has its own table.
   anime episodes.
   Returns episodes with watched state, so the `WeekGrid` checkbox and the week widget read one
   DTO. Times are UTC on the wire; clients localize.
+  CAL-004: neither read calls a provider. `CatalogRefresher` loads episodes in the background
+  (every minute, back to back while a pass is full). `pendingShows` counts tracked shows never
+  attempted, so a client waiting on an import asks again until it reaches 0.
 - **UPN-001 `GET /v1/up-next`** returns, per `in_progress` show, the next unwatched aired
   episode, runtime, episodes left and time left ("10 left · 8h 40m"), and a finale flag
   (last episode of the season). Ordered by last activity. It feeds `ContinueRow`, the Up Next
@@ -1082,17 +1085,35 @@ Trakt history push (SCR-004) and MAL / AniList progress push (SCR-005) are **one
 - Aaru writes to them after its own write commits.
 - What it pushed is never read back as a conflict source, and a remote change never overwrites
   Aaru. Imports stay one-way in.
-- Tokens live in `outbound_connections`, encrypted at rest.
-- MAL uses OAuth with PKCE. AniList uses `SaveMediaListEntry`.
+- Tokens live in `outbound_connections`, encrypted at rest. MAL's, as built, live in
+  `mal_connections` beside `trakt_connections` (sealed with `MAL_TOKEN_KEY`).
+- MAL uses OAuth with PKCE (`plain`, the only method it takes). AniList uses `SaveMediaListEntry`.
 
-**MyAnimeList read-back (SCR-010, owner 2026-10-23)** is the one exception to "never read back".
-MAL has no webhooks, so Aaru polls the user's own list sorted by `list_updated_at` and stops at
-its cursor: when a client opens Aaru (at most every 10 minutes) and every 6 hours in the
-background, in-process like `CatalogRefresher`. Changed entries are applied as an import (IMP-013's
-mapping, the forward-only merge, `status_by_hand` wins), journaled with the caller "MyAnimeList".
-`mal_entry_state` keeps what Aaru last pushed per MAL entry, so an echo of Aaru's own push is
-dropped and SCR-010's writes are never pushed again. Entries removed on MAL are listed in settings,
-never deleted. There is no conflict engine: fixed precedence, Aaru wins ties.
+**MyAnimeList push (SCR-005, as built).** `MALSyncService` runs every 30 s in the API process.
+`mal_connections.push_cursor` starts at connect time, so the library as it was is never pushed;
+each pass reads `LibraryStore.changes` since the cursor for users with newer writes, so a tap, an
+import, a scrobble or an undo all go out the same way, and nothing on the write path calls it. A
+TMDB show splits into one MAL entry per season through `anime_mappings` (a season two MAL entries
+share is skipped); any other anime uses its own MAL id. `mal_entry_states` keeps what Aaru and MAL
+last agreed on per entry: a push sends only what differs, an `on_hold` entry stays on hold until
+the ticks move, and SCR-010 will use the same row to drop echoes. A 401/403 marks the connection
+`revoked_at` and pushing stops until the user connects again. Deletes are not pushed.
+
+**MyAnimeList read-back (SCR-010, owner 2026-10-23, as built)** is the one exception to "never
+read back". MAL has no webhooks, so `MALPuller` reads the user's own list sorted by
+`list_updated_at`, page by page, and stops at the first entry not newer than
+`mal_connections.pull_cursor` (MAL's own timestamp; it starts at `connected_at`, so only changes
+made after connecting come across). Each `MALSyncService` pass claims up to 10 due connections
+(`FOR UPDATE SKIP LOCKED`, stamping `pulled_at`): those a client asked for with
+`POST /v1/connections/mal/pull` (ignored when the last read is under 10 minutes old, so clients call
+it on every open) and those not read for 6 hours. Changed entries become import rows by IMP-013's
+mapping and go through the import plan and forward-only merge (`ImportService.applyFromMAL`), one
+journaled action named "MyAnimeList" that Undo takes back; no plan waits for approval. An entry equal
+to its `mal_entry_states` row is Aaru's own push coming back and is dropped; every other entry read
+is saved there, so the push never sends it back. Once a week the whole list is read and
+`mal_entry_states.removed_at` marks known entries MAL no longer lists; `GET /v1/connections/mal`
+returns them under `removed`, and Aaru deletes nothing. A 401/403 marks the connection revoked.
+There is no conflict engine: fixed precedence, Aaru wins ties.
 
 ## Social (Phase 4)
 

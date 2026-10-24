@@ -161,15 +161,13 @@ struct PostgresScheduleStore: ScheduleStore {
             }
     }
 
-    func unhydratedTrackedShows(userID: UserID, limit: Int) async throws -> [TitleID] {
-        struct Row: Decodable { let id: UUID }
+    func pendingShowCount(userID: UserID) async throws -> Int {
+        struct Row: Decodable { let count: Int }
         return try await sql.raw("""
-        SELECT t.id FROM library_items li JOIN titles t ON t.id = li.title_id
+        SELECT count(*)::int AS count FROM library_items li JOIN titles t ON t.id = li.title_id
         WHERE li.user_id = \(bind: userID.rawValue) AND li.status IN ('wishlist', 'in_progress')
-          AND t.type = 'show' AND t.episodes_hydrated_at IS NULL
-          AND (t.episodes_attempted_at IS NULL OR t.episodes_attempted_at < now() - interval '1 hour')
-        LIMIT \(literal: limit)
-        """).all(decoding: Row.self).map { TitleID($0.id) }
+          AND t.type = 'show' AND t.episodes_hydrated_at IS NULL AND t.episodes_attempted_at IS NULL
+        """).first(decoding: Row.self)?.count ?? 0
     }
 }
 

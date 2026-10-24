@@ -2551,6 +2551,57 @@ paths:
           description: Disconnected.
         default:
           $ref: '#/components/responses/Error'
+  /v1/connections/mal/connect:
+    post:
+      operationId: connectMAL
+      summary: >-
+        Start connecting MyAnimeList (PKCE, `plain`, the only method MAL accepts). Open the returned address in a
+        browser. MAL then redirects to GET /v1/connections/mal/callback (a plain redirect route outside this spec),
+        which sends the browser on to `returnTo` with `mal=connected|denied|failed`. Once connected, anime progress
+        written from then on is pushed to the MAL list (SCR-005).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/MALConnectRequest'}
+      responses:
+        '200':
+          description: Where to send the browser.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/MALConnectStart'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/connections/mal:
+    get:
+      operationId: getMALConnection
+      responses:
+        '200':
+          description: Whether MyAnimeList is connected, and whether it must be connected again.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/MALConnection'}
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: disconnectMAL
+      summary: Forget the MyAnimeList tokens. Nothing more is pushed; the MAL list and the library stay as they are.
+      responses:
+        '204':
+          description: Disconnected.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/connections/mal/pull:
+    post:
+      operationId: requestMALPull
+      summary: >-
+        A client opened Aaru: read the MyAnimeList list back on the next pass (SCR-010). Ignored when
+        MAL is not connected or was read in the last 10 minutes, so clients call it on every open.
+      responses:
+        '204':
+          description: Asked, or not needed.
+        default:
+          $ref: '#/components/responses/Error'
   /v1/imports/{id}:
     parameters:
       - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
@@ -3052,6 +3103,45 @@ components:
         connected: {type: boolean}
         username: {type: string}
         connectedAt: {type: string, format: date-time}
+    MALConnectRequest:
+      type: object
+      required: [returnTo]
+      properties:
+        returnTo:
+          type: string
+          description: Where the browser goes after MyAnimeList (the app's `aaru://` scheme or the web app). Must be allowed by the server.
+    MALConnectStart:
+      type: object
+      required: [authorizeUrl]
+      properties:
+        authorizeUrl: {type: string}
+    MALConnection:
+      type: object
+      required: [connected, needsReconnect, removed]
+      properties:
+        connected: {type: boolean}
+        username: {type: string}
+        connectedAt: {type: string, format: date-time}
+        needsReconnect:
+          type: boolean
+          description: MyAnimeList refused the tokens. Nothing is pushed until the user connects again.
+        pulledAt:
+          type: string
+          format: date-time
+          description: When Aaru last read the MyAnimeList list back (SCR-010).
+        removed:
+          type: array
+          description: >-
+            Entries removed on MyAnimeList, newest first, at most 100. Aaru keeps its items for them;
+            the list is what a weekly full read found missing.
+          items: {$ref: '#/components/schemas/MALRemovedEntry'}
+    MALRemovedEntry:
+      type: object
+      required: [malId, removedAt]
+      properties:
+        malId: {type: string}
+        title: {type: string}
+        removedAt: {type: string, format: date-time}
     StremioLink:
       type: object
       required: [code, link, qrcode, expiresAt]
@@ -4795,6 +4885,11 @@ components:
         items:
           type: array
           items: {$ref: '#/components/schemas/CalendarEntry'}
+        pendingShows:
+          type: integer
+          description: >-
+            Tracked shows whose episodes have not been loaded yet (CAL-004), as after an import.
+            Their episodes are missing from `items` until they load; ask again while this is above 0.
     ContinueEntry:
       type: object
       required: [libraryItemId, title, next, remainingCount, remainingMinutes, isFinale]
