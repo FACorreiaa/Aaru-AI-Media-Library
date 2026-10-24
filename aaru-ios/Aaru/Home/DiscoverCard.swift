@@ -28,21 +28,10 @@ struct DiscoverCard: View {
                 NavigationLink(value: libraryItemID) { card }
                     .accessibilityLabel("\(hit.title), in your library")
             } else {
-                Menu {
-                    ForEach([LibraryStatus.wishlist, .inProgress, .finished]) { status in
-                        Button(status.label(for: kind)) { onAdd(status) }
-                    }
-                    Divider()
-                    Button("Add to list…", systemImage: "text.badge.plus", action: onAddToList)
-                } label: {
-                    card
-                } primaryAction: {
-                    onAdd(.wishlist)
-                }
-                .menuStyle(.button)
-                .disabled(isAdding)
-                .accessibilityLabel(hit.title)
-                .accessibilityHint("Adds as \(LibraryStatus.wishlist.label(for: kind)). Hold for other statuses.")
+                // LIB-006: the card opens the title's page; its + adds in place.
+                NavigationLink(value: CatalogRoute(hit: hit)) { card }
+                    .accessibilityLabel(hit.title)
+                    .overlay(alignment: .topTrailing) { addMenu.padding(6) }
             }
         }
         .buttonStyle(.plain)
@@ -52,7 +41,11 @@ struct DiscoverCard: View {
     private var card: some View {
         VStack(alignment: .leading, spacing: 6) {
             HomeArt(url: hit.posterUrl.flatMap(URL.init(string:)), aspect: kind.posterAspect)
-                .overlay(alignment: .topTrailing) { shelfMark.padding(6) }
+                .overlay(alignment: .topTrailing) {
+                    if libraryItemID != nil {
+                        shelfMark.padding(6)
+                    }
+                }
                 .overlay(alignment: .topLeading) {
                     if let badge {
                         HomeChip(text: badge, tint: Color(.accent).opacity(0.9)).padding(6)
@@ -80,6 +73,27 @@ struct DiscoverCard: View {
         .frame(width: width)
         .frame(maxWidth: width == nil ? .infinity : nil, alignment: .leading)
         .contentShape(Rectangle())
+    }
+
+    /// + on a card not in the library: a tap plans it, touch and hold picks another status.
+    private var addMenu: some View {
+        Menu {
+            ForEach([LibraryStatus.wishlist, .inProgress, .finished]) { status in
+                Button(status.label(for: kind)) { onAdd(status) }
+            }
+            Divider()
+            Button("Add to list…", systemImage: "text.badge.plus", action: onAddToList)
+        } label: {
+            shelfMark.frame(width: 44, height: 44, alignment: .topTrailing).contentShape(.rect)
+        } primaryAction: {
+            onAdd(.wishlist)
+        }
+        .menuStyle(.button)
+        .menuIndicator(.hidden)
+        .buttonStyle(.plain)
+        .disabled(isAdding)
+        .accessibilityLabel("Add \(hit.title)")
+        .accessibilityHint("Adds as \(LibraryStatus.wishlist.label(for: kind)). Hold for other statuses.")
     }
 
     @ViewBuilder

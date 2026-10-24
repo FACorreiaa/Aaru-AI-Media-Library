@@ -1,5 +1,5 @@
 import { OwlEmpty } from '../components/Brand'
-import { Link, createFileRoute } from '@tanstack/solid-router'
+import { createFileRoute } from '@tanstack/solid-router'
 import { BackLink } from '../components/shell/BackLink'
 import {
   For,
@@ -11,9 +11,9 @@ import {
   onCleanup,
   onMount,
 } from 'solid-js'
-import type { JSX } from 'solid-js'
 import { AddControl } from '../components/AddControl'
 import { Poster } from '../components/Poster'
+import { TitleLink } from '../components/TitleLink'
 import { Button, Dialog, DialogContent, DialogPortal } from '~/components/ui'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { KINDS, statusLabel } from '../lib/library/model'
@@ -281,7 +281,11 @@ function ListPage() {
                     ref={(el) => rowEls.set(id, el)}
                     class="flex items-center gap-4 py-3"
                   >
-                    <RowLink libraryItemId={row().libraryItemId}>
+                    <TitleLink
+                      hit={row().hit}
+                      libraryItemId={row().libraryItemId}
+                      class="flex min-w-0 flex-1 items-center gap-4"
+                    >
                       <Poster
                         url={row().posterUrl}
                         kind={row().kind}
@@ -334,7 +338,7 @@ function ListPage() {
                           </p>
                         </Show>
                       </div>
-                    </RowLink>
+                    </TitleLink>
                     <div class="flex items-center gap-1 text-sm">
                       <Show when={row().hit}>
                         {(hit) => (
@@ -434,29 +438,5 @@ function ListPage() {
         </DialogPortal>
       </Dialog>
     </div>
-  )
-}
-
-/** A member in the library opens its title page; one only on the list has none to open. */
-function RowLink(props: { libraryItemId?: string; children: JSX.Element }) {
-  return (
-    <Show
-      when={props.libraryItemId}
-      fallback={
-        <div class="flex min-w-0 flex-1 items-center gap-4">
-          {props.children}
-        </div>
-      }
-    >
-      {(id) => (
-        <Link
-          to="/app/title/$id"
-          params={{ id: id() }}
-          class="flex min-w-0 flex-1 items-center gap-4"
-        >
-          {props.children}
-        </Link>
-      )}
-    </Show>
   )
 }

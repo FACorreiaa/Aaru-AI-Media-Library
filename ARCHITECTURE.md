@@ -251,6 +251,7 @@ DELETE /v1/auth/session
 
 GET    /v1/search?q=&type=all|movie|show|anime|book   # all: CAT-019
 GET    /v1/titles/{id}
+POST   /v1/titles/resolve                 # LIB-006: a MediaRef's page; catalog only, never the library
 
 GET    /v1/calendar?from=&to=             # CAL-001
 GET    /v1/up-next                        # UPN-001; counts + unfinished UPN-002

@@ -26,6 +26,7 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 | Composer | none — produces intent | agent tool layer | 7 · M13 |
 | Intent preview | `PlanCard` | `POST .../plan` (dry run) | 7 · M13 |
 | Work ledger | `JobLedger` | `GET /v1/imports/{id}` | 2 · M8 |
+| Title page (not in the library) | none — poster, facts, synopsis, season count or tracklist, Add and Add to list (LIB-006). Opened from search, Discover cards and list members; a title in the library opens its Title room instead | `POST /v1/titles/resolve`, `POST /v1/library/items`, `POST /v1/lists/{id}/items` | 2 · LIB-006 (owner, 2026-10-24) |
 | Title room | `TitleCard`, `SeasonMap`, episode sheet (+ friends watching in 4); for an album, a square cover and the tracklist instead of the season map (MUS-001); for a manga, chapter and volume in place of the season map (MNG-001); More menu: Discuss in a group…, Remove from library… (confirmed, undoable in History, UX-061) | `GET /v1/titles/{id}`, `PATCH /v1/library/items/{id}`, `DELETE /v1/library/items/{id}` | 2 · M7 |
 | Tonight | `TonightStrip` | `GET /v1/tonight`, `POST /v1/tonight/{id}/feedback`, `PUT .../episodes/{s}/{e}`, `POST .../seasons/{s}/watched` | 7 · M13 (on the Field since 2026-10-21; server-ranked with a client fallback since 2026-10-23; season tick PROG-006, DESIGN.md §5) |
 | Shelf | `Shelf`; Remove from library in the item's context menu on Apple | `GET /v1/library/items` + saved query, `DELETE /v1/library/items/{id}` | 1–2 · M6 / M7 |

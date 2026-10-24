@@ -616,6 +616,11 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `DELETE /v1/me/concert-place`.
     /// - Remark: Generated from `#/paths//v1/me/concert-place/delete(deleteConcertPlace)`.
     func deleteConcertPlace(_ input: Operations.DeleteConcertPlace.Input) async throws -> Operations.DeleteConcertPlace.Output
+    /// The page for a catalog ref, in the library or not (LIB-006). Resolving may add the title to the catalog; it never adds it to the library.
+    ///
+    /// - Remark: HTTP `POST /v1/titles/resolve`.
+    /// - Remark: Generated from `#/paths//v1/titles/resolve/post(resolveTitle)`.
+    func resolveTitle(_ input: Operations.ResolveTitle.Input) async throws -> Operations.ResolveTitle.Output
     /// A title from the catalog. Shows include their seasons and episodes.
     ///
     /// - Remark: HTTP `GET /v1/titles/{id}`.
@@ -2327,6 +2332,19 @@ extension APIProtocol {
     /// - Remark: Generated from `#/paths//v1/me/concert-place/delete(deleteConcertPlace)`.
     public func deleteConcertPlace(headers: Operations.DeleteConcertPlace.Input.Headers = .init()) async throws -> Operations.DeleteConcertPlace.Output {
         try await deleteConcertPlace(Operations.DeleteConcertPlace.Input(headers: headers))
+    }
+    /// The page for a catalog ref, in the library or not (LIB-006). Resolving may add the title to the catalog; it never adds it to the library.
+    ///
+    /// - Remark: HTTP `POST /v1/titles/resolve`.
+    /// - Remark: Generated from `#/paths//v1/titles/resolve/post(resolveTitle)`.
+    public func resolveTitle(
+        headers: Operations.ResolveTitle.Input.Headers = .init(),
+        body: Operations.ResolveTitle.Input.Body
+    ) async throws -> Operations.ResolveTitle.Output {
+        try await resolveTitle(Operations.ResolveTitle.Input(
+            headers: headers,
+            body: body
+        ))
     }
     /// A title from the catalog. Shows include their seasons and episodes.
     ///
@@ -9035,6 +9053,31 @@ public enum Components {
                 case byline
                 case genres
                 case tracks
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/TitlePreview`.
+        public struct TitlePreview: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/TitlePreview/title`.
+            public var title: Components.Schemas.TitleDetail
+            /// Set when the title is in the caller's library; its title page is then the one to open.
+            ///
+            /// - Remark: Generated from `#/components/schemas/TitlePreview/libraryItemId`.
+            public var libraryItemId: Swift.String?
+            /// Creates a new `TitlePreview`.
+            ///
+            /// - Parameters:
+            ///   - title:
+            ///   - libraryItemId: Set when the title is in the caller's library; its title page is then the one to open.
+            public init(
+                title: Components.Schemas.TitleDetail,
+                libraryItemId: Swift.String? = nil
+            ) {
+                self.title = title
+                self.libraryItemId = libraryItemId
+            }
+            public enum CodingKeys: String, CodingKey {
+                case title
+                case libraryItemId
             }
         }
         /// - Remark: Generated from `#/components/schemas/AlbumTrack`.
@@ -29424,6 +29467,146 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/me/concert-place/delete(deleteConcertPlace)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// The page for a catalog ref, in the library or not (LIB-006). Resolving may add the title to the catalog; it never adds it to the library.
+    ///
+    /// - Remark: HTTP `POST /v1/titles/resolve`.
+    /// - Remark: Generated from `#/paths//v1/titles/resolve/post(resolveTitle)`.
+    public enum ResolveTitle {
+        public static let id: Swift.String = "resolveTitle"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/titles/resolve/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ResolveTitle.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ResolveTitle.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ResolveTitle.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/titles/resolve/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/titles/resolve/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.MediaRef)
+            }
+            public var body: Operations.ResolveTitle.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.ResolveTitle.Input.Headers = .init(),
+                body: Operations.ResolveTitle.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/titles/resolve/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/titles/resolve/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.TitlePreview)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.TitlePreview {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ResolveTitle.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ResolveTitle.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The title, and the caller's library item when they have it.
+            ///
+            /// - Remark: Generated from `#/paths//v1/titles/resolve/post(resolveTitle)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ResolveTitle.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ResolveTitle.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/titles/resolve/post(resolveTitle)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

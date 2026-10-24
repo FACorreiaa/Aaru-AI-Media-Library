@@ -79,6 +79,7 @@ struct ListDetailView: View {
         .navigationDestination(for: ListMemberRoute.self) { route in
             LibraryEntryDestination(id: route.libraryItemID, api: api, library: library, lists: lists)
         }
+        .catalogDestination(api: api, library: library, lists: lists)
         .sheet(isPresented: $showsSearch) {
             if let list = Binding($detail) {
                 SearchView(api: api, library: library, lists: lists, intoList: list)
@@ -115,10 +116,13 @@ struct ListDetailView: View {
         if let entry = library.entry(forTitle: item.title.id) ?? item.entry {
             NavigationLink(value: ListMemberRoute(libraryItemID: entry.id)) { ListItemRow(item: item) }
         } else {
-            HStack(spacing: 8) {
-                ListItemRow(item: item)
-                Spacer(minLength: 0)
-                AddMemberButton(item: item, library: library, api: api) { problem = $0 }
+            // LIB-006: the row opens the title's page; Add still adds from here.
+            NavigationLink(value: CatalogRoute(hit: CatalogHit(item.title))) {
+                HStack(spacing: 8) {
+                    ListItemRow(item: item)
+                    Spacer(minLength: 0)
+                    AddMemberButton(item: item, library: library, api: api) { problem = $0 }
+                }
             }
         }
     }

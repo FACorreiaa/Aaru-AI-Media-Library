@@ -81,6 +81,12 @@ extension APIImplementation {
         guard let id = TitleID(uuidString: input.path.id) else { throw AppError.notFound() }
         return try await .ok(.init(body: .json(.init(catalog.detail(id)))))
     }
+
+    func resolveTitle(_ input: Operations.ResolveTitle.Input) async throws -> Operations.ResolveTitle.Output {
+        guard case let .json(body) = input.body else { throw AppError.badRequest() }
+        let (detail, itemID) = try await library.preview(MediaRef(body), userID: currentUser())
+        return .ok(.init(body: .json(.init(title: .init(detail), libraryItemId: itemID?.description))))
+    }
 }
 
 extension Components.Schemas.ExternalIds {
