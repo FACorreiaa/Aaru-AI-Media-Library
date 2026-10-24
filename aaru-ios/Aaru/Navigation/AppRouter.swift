@@ -197,6 +197,7 @@ final class AppRouter {
         showsListsInLibrary = false
         showsFriendsInGroups = false
         pendingNewList = false
+        pendingBoardTitle = nil
         settingsPath = []
         showsSettingsSheet = false
         settingsPane = .account

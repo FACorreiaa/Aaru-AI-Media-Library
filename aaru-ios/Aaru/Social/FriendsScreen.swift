@@ -27,6 +27,11 @@ struct FriendsContent: View {
     @SceneStorage("friends.view") private var section = FriendsSection.board
     @Environment(AppRouter.self) private var router: AppRouter?
 
+    /// Friends didn't load, or there is no handle yet: no composer to take a title.
+    private var composerUnreachable: Bool {
+        model.hasLoaded ? model.handle == nil : model.loadProblem != nil
+    }
+
     var body: some View {
         Group {
             if let problem = model.loadProblem, !model.hasLoaded {
@@ -78,9 +83,18 @@ struct FriendsContent: View {
             }
             .task { await model.load() }
             // "Write about this" from a title page opens the Board, where the composer takes it.
+            // With no composer to take it, it is dropped, so it can't land in one much later.
             .onChange(of: router?.pendingBoardTitle, initial: true) { _, pick in
-                if pick != nil {
+                guard pick != nil else { return }
+                if composerUnreachable {
+                    router?.pendingBoardTitle = nil
+                } else {
                     section = .board
+                }
+            }
+            .onChange(of: composerUnreachable) { _, unreachable in
+                if unreachable {
+                    router?.pendingBoardTitle = nil
                 }
             }
     }
