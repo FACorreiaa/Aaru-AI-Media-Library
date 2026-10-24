@@ -30,6 +30,15 @@ final class BoardModel {
     /// When page one last came back: a Board shown again after a while reloads it.
     @ObservationIgnored private(set) var loadedAt: Date?
 
+    /// The composer's half-written post. It lives here, not in the composer, so switching to
+    /// Lately, popping Friends or opening a post keeps it. Cleared once posted and on sign-out.
+    var draftText = ""
+    var draftTitle: BoardTitlePick?
+    var draftRating: Double?
+    var draftSpoiler = SpoilerChoice.auto
+    /// A post on its way; the composer shows the spinner and takes no second send.
+    private(set) var isPosting = false
+
     @ObservationIgnored let api: Client?
 
     init(api: Client?) {
@@ -70,6 +79,8 @@ final class BoardModel {
         await run("Older posts could not be loaded.") {
             switch try await api.listBoard(query: .init(sort: .recent, before: before)) {
             case let .ok(response):
+                // The sort changed while the page was coming: these are Recent posts, not Top's.
+                guard sort == .recent else { return }
                 let page = try response.body.json.items
                 let known = Set(posts.map(\.id))
                 posts.append(contentsOf: page.filter { !known.contains($0.id) })
@@ -79,18 +90,29 @@ final class BoardModel {
         }
     }
 
-    /// Posts to the Board and shows the new post first. A rating needs a title. The spoiler choice
-    /// only means something with a title. True when posted.
-    func post(body: String, title: BoardTitlePick?, rating: Double?, spoiler: SpoilerChoice) async -> Bool {
+    /// Marks a post as on its way. The composer calls it before it spawns the request, so a second
+    /// tap or ⌘↩ finds it set. False when a post is already on its way.
+    func beginPosting() -> Bool {
+        guard !isPosting else { return false }
+        isPosting = true
+        return true
+    }
+
+    /// Posts the draft to the Board and shows the new post first. Called after `beginPosting()`.
+    /// A rating needs a title. The spoiler choice only means something with a title. The draft
+    /// clears once posted. True when posted.
+    func postDraft() async -> Bool {
+        defer { isPosting = false }
         guard let api else { return false }
+        let title = draftTitle
         let request = Components.Schemas.BoardPostCreate(
-            body: body.trimmingCharacters(in: .whitespacesAndNewlines),
+            body: draftText.trimmingCharacters(in: .whitespacesAndNewlines),
             title: title?.mediaRef,
-            rating: title == nil ? nil : rating,
-            spoiler: title == nil ? nil : spoiler.stamp,
-            spoilerFree: title != nil && spoiler == .free ? true : nil
+            rating: title == nil ? nil : draftRating,
+            spoiler: title == nil ? nil : draftSpoiler.stamp,
+            spoilerFree: title != nil && draftSpoiler == .free ? true : nil
         )
-        return await run("That post was not saved.") {
+        let posted = await run("That post was not saved.") {
             switch try await api.createBoardPost(body: .json(request)) {
             case let .created(response):
                 let created = try response.body.json
@@ -99,6 +121,23 @@ final class BoardModel {
             case let .default(_, error): throw Failure(try? error.body.json.message)
             }
         }
+        if posted {
+            clearDraft()
+        }
+        return posted
+    }
+
+    /// Back to an empty composer.
+    func clearDraft() {
+        draftText = ""
+        clearDraftTitle()
+    }
+
+    /// Takes the title off the draft, and the stars and spoiler choice with it.
+    func clearDraftTitle() {
+        draftTitle = nil
+        draftRating = nil
+        draftSpoiler = .auto
     }
 
     /// Upvotes or takes the upvote back, at once, and puts the post back if the server says no.
@@ -153,6 +192,7 @@ final class BoardModel {
         problem = nil
         canShowOlder = false
         loadedAt = nil
+        clearDraft()
     }
 
     /// The post screen reports an edit back.

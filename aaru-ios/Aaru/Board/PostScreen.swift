@@ -300,8 +300,9 @@ private struct PostEditor: View {
 
     private func save() {
         guard canSave else { return }
+        // Set before the task starts, so a second tap or ⌘↩ can't save twice.
+        saving = true
         Task {
-            saving = true
             let saved = await model.edit(body: text)
             saving = false
             if saved {

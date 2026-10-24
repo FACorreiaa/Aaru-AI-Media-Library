@@ -104,9 +104,10 @@ struct ReportPostSheet: View {
 
     private func send() {
         guard let reason, !sending else { return }
+        // Set before the task starts, so a second tap can't file the report twice.
+        sending = true
+        failed = false
         Task {
-            sending = true
-            failed = false
             let trimmed = note.trimmingCharacters(in: .whitespacesAndNewlines)
             let reported = await model.report(reason: reason, note: trimmed.isEmpty ? nil : trimmed)
             sending = false

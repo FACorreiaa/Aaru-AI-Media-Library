@@ -5,7 +5,8 @@ import SwiftUI
 /// PostComposer (BOARD-003): the inline box on top of the Board. One quiet line until it is
 /// focused, then it grows and offers a title. With a title come the stars, the spoiler mark, and
 /// one line saying what posting does to your library. No sheet for writing and no floating button
-/// (owner, 2026-10-23); only the title picker is a sheet, as everywhere else.
+/// (owner, 2026-10-23); only the title picker is a sheet, as everywhere else. The draft lives in
+/// `BoardModel`, so it outlives this view: switching to Lately and back keeps it.
 struct PostComposer: View {
     let board: BoardModel
     /// Who `@` suggests: your friends. Never `@aaru` until BOARD-004.
@@ -14,16 +15,19 @@ struct PostComposer: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(AppRouter.self) private var router: AppRouter?
     @FocusState private var focused: Bool
-    @State private var text = ""
-    @State private var picked: BoardTitlePick?
-    @State private var rating: Double?
-    @State private var spoiler = SpoilerChoice.auto
     @State private var picking = false
-    @State private var posting = false
+
+    private var text: String {
+        board.draftText
+    }
+
+    private var posting: Bool {
+        board.isPosting
+    }
 
     /// Open while focused, and while anything is in it.
     private var expanded: Bool {
-        focused || !text.isEmpty || picked != nil || picking
+        focused || !text.isEmpty || board.draftTitle != nil || picking
     }
 
     private var remaining: Int? {
@@ -39,22 +43,23 @@ struct PostComposer: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AaruSpace.medium) {
-            TextField("Write something…", text: $text, axis: .vertical)
+        @Bindable var board = board
+        return VStack(alignment: .leading, spacing: AaruSpace.medium) {
+            TextField("Write something…", text: $board.draftText, axis: .vertical)
                 .textFieldStyle(.plain)
                 .lineLimit(expanded ? 3 ... 8 : 1 ... 1)
                 .focused($focused)
                 .accessibilityLabel("Write a post")
             MentionSuggestionStrip(suggestions: MentionSuggestions.suggestions(for: text, handles: mentionHandles)) {
-                text = MentionSuggestions.complete(text, with: $0)
+                board.draftText = MentionSuggestions.complete(text, with: $0)
             }
             if expanded {
-                if let picked {
+                if let picked = board.draftTitle {
                     PickedTitle(
                         title: picked,
-                        rating: $rating,
-                        spoiler: $spoiler,
-                        onRemove: removeTitle
+                        rating: $board.draftRating,
+                        spoiler: $board.draftSpoiler,
+                        onRemove: board.clearDraftTitle
                     )
                 } else {
                     Button("Add a title", systemImage: "plus") { picking = true }
@@ -77,13 +82,13 @@ struct PostComposer: View {
         // "Write about this" from a title page: take the title once, open, and clear it.
         .onChange(of: router?.pendingBoardTitle, initial: true) { _, pick in
             guard let pick else { return }
-            picked = pick
+            board.draftTitle = pick
             focused = true
             router?.pendingBoardTitle = nil
         }
         .sheet(isPresented: $picking) {
             TitlePickerSheet(api: board.api, navigationTitle: "Add a title") { hit in
-                picked = BoardTitlePick(hit)
+                board.draftTitle = BoardTitlePick(hit)
                 return true
             }
         }
@@ -98,9 +103,11 @@ struct PostComposer: View {
                     .accessibilityLabel(tooLong ? "\(-remaining) characters over" : "\(remaining) characters left")
             }
             Spacer(minLength: 0)
+            // Cancelling mid-post would clear a post that still goes out, or lose one that fails.
             Button("Cancel", action: reset)
                 .buttonStyle(.borderless)
                 .foregroundStyle(Color(.muted))
+                .disabled(posting)
             Button(action: post) {
                 Text("Post")
                     .fontWeight(.semibold)
@@ -119,27 +126,18 @@ struct PostComposer: View {
         }
     }
 
-    private func removeTitle() {
-        picked = nil
-        rating = nil
-        spoiler = .auto
-    }
-
     /// Back to one empty line.
     private func reset() {
-        text = ""
-        removeTitle()
+        board.clearDraft()
         focused = false
     }
 
+    /// The posting flag is set before the task starts, so a second tap or ⌘↩ can't send twice.
     private func post() {
-        guard canPost else { return }
+        guard canPost, board.beginPosting() else { return }
         Task {
-            posting = true
-            let posted = await board.post(body: text, title: picked, rating: rating, spoiler: spoiler)
-            posting = false
-            if posted {
-                reset()
+            if await board.postDraft() {
+                focused = false
             }
         }
     }

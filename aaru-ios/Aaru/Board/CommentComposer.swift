@@ -137,8 +137,9 @@ struct CommentComposer: View {
 
     private func send() {
         guard canSend else { return }
+        // Set before the task starts, so a second tap or ⌘↩ can't send the comment twice.
+        sending = true
         Task {
-            sending = true
             let posted = await model.comment(text, replyTo: reply?.id)
             sending = false
             guard posted else { return }
