@@ -8,6 +8,8 @@ import SwiftUI
 /// (owner, 2026-10-23); only the title picker is a sheet, as everywhere else.
 struct PostComposer: View {
     let board: BoardModel
+    /// Who `@` suggests: your friends. Never `@aaru` until BOARD-004.
+    let mentionHandles: [String]
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @FocusState private var focused: Bool
@@ -42,6 +44,9 @@ struct PostComposer: View {
                 .lineLimit(expanded ? 3 ... 8 : 1 ... 1)
                 .focused($focused)
                 .accessibilityLabel("Write a post")
+            MentionSuggestionStrip(suggestions: MentionSuggestions.suggestions(for: text, handles: mentionHandles)) {
+                text = MentionSuggestions.complete(text, with: $0)
+            }
             if expanded {
                 if let picked {
                     PickedTitle(

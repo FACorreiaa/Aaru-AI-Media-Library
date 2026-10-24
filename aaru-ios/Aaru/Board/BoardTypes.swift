@@ -21,6 +21,14 @@ extension BoardComment: @retroactive BoardThreadComment {
     }
 }
 
+/// The post screen, pushed from a post's comment count. It carries the row's post, when there is
+/// one, so the screen draws at once while the rest loads. Its destination is registered once, in
+/// `FriendsContent`.
+struct PostRoute: Hashable {
+    let postId: String
+    var initial: BoardPost?
+}
+
 /// A title the Board composer starts with: enough to show it, send it and word what posting does.
 /// It comes from a search hit or from a title page.
 struct BoardTitlePick: Hashable {

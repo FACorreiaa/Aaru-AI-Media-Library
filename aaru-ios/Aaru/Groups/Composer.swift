@@ -20,18 +20,9 @@ struct Composer: View {
         !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && text.count <= ChannelModel.maxLength
     }
 
-    /// The `@` word being typed, without the `@`.
-    private var mentionPrefix: String? {
-        let word = text.split(whereSeparator: \.isWhitespace).last.map(String.init) ?? ""
-        guard text.last?.isWhitespace != true, word.hasPrefix("@") else { return nil }
-        return String(word.dropFirst()).lowercased()
-    }
-
     /// Handles to suggest: Aaru first when it answers here, then members.
     private var suggestions: [String] {
-        guard let prefix = mentionPrefix else { return [] }
-        let agentHandle = agent && "aaru".hasPrefix(prefix) ? ["aaru"] : []
-        return agentHandle + members.map(\.user.handle).filter { $0.hasPrefix(prefix) }.prefix(5)
+        MentionSuggestions.suggestions(for: text, handles: members.map(\.user.handle), agent: agent)
     }
 
     var body: some View {
@@ -47,21 +38,7 @@ struct Composer: View {
             if let spoiler, editing == nil {
                 SpoilerMenu(choice: spoiler)
             }
-            if !suggestions.isEmpty {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(suggestions, id: \.self) { handle in
-                            Button {
-                                complete(handle)
-                            } label: {
-                                Label("@\(handle)", systemImage: handle == "aaru" ? "bird" : "at")
-                                    .font(.callout)
-                            }
-                            .buttonStyle(.bordered)
-                        }
-                    }
-                }
-            }
+            MentionSuggestionStrip(suggestions: suggestions) { text = MentionSuggestions.complete(text, with: $0) }
             HStack(alignment: .bottom, spacing: 4) {
                 field
                 Button(editing == nil ? "Send" : "Save", systemImage: "arrow.up.circle.fill", action: onSend)
@@ -97,10 +74,5 @@ struct Composer: View {
         #if os(macOS)
             .onSubmit(onSend)
         #endif
-    }
-
-    private func complete(_ handle: String) {
-        guard let range = text.range(of: "@", options: .backwards) else { return }
-        text.replaceSubrange(range.lowerBound..., with: "@\(handle) ")
     }
 }

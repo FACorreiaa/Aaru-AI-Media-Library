@@ -70,6 +70,16 @@ final class PostModel {
         }
     }
 
+    /// "Show more comments": the next page, then on through pages the server emptied (hidden
+    /// rows), five at most, so a tap shows more whenever there is more. As the web does.
+    func showMoreComments() async {
+        for _ in 0 ..< 5 {
+            let before = comments.count
+            await loadMoreComments()
+            guard comments.count == before, problem == nil, BoardRules.shouldLoadMore(next: next) else { return }
+        }
+    }
+
     /// Adds a comment, or a reply under a top-level comment. True when posted.
     func comment(_ body: String, replyTo: String?) async -> Bool {
         guard let api else { return false }

@@ -7,12 +7,19 @@ import SwiftUI
 /// poster is not a link either: a friend's title is usually not in your library, so their posts
 /// carry "Add to my library" instead. A post that may spoil what you haven't watched hides its
 /// words and stars behind the veil until tapped; the author never sees a veil, and only the
-/// author sees how it is marked.
-struct PostRow: View {
+/// author sees how it is marked. On the Board the comment count opens the post screen; on the
+/// post screen (`standalone`) it is only a count, and the words can give way to an editor.
+struct PostRow<Editor: View>: View {
     let post: BoardPost
     /// Your handle: mentions of you read in the accent.
     let myHandle: String?
     let board: BoardModel
+    /// The post screen's row: the comment count is not a link to where you already are.
+    var standalone = false
+    /// The post screen upvotes through its own model, so its upvoters refresh. Nil: the Board's.
+    var onUpvote: (() async -> Void)?
+    /// Shown in place of the words while you edit them (the post screen).
+    var editor: Editor?
 
     @State private var revealed = false
     @State private var adding = false
@@ -30,7 +37,9 @@ struct PostRow: View {
                 if let title = post.title {
                     titleBlock(title)
                 }
-                if veiled {
+                if let editor {
+                    editor
+                } else if veiled {
                     SpoilerVeil { revealed = true }
                 } else {
                     Text(MentionText.attributed(post.body, myHandle: myHandle))
@@ -114,14 +123,40 @@ struct PostRow: View {
     private var footer: some View {
         HStack(spacing: AaruSpace.large) {
             UpvoteButton(upvotes: post.upvotes, upvoted: post.upvotedByMe) {
-                await board.toggleUpvote(post.id)
+                if let onUpvote {
+                    await onUpvote()
+                } else {
+                    await board.toggleUpvote(post.id)
+                }
             }
-            // A count, not a link, until the post screen exists to open.
-            Label("\(post.commentCount)", systemImage: "bubble.right")
-                .font(.footnote.weight(.semibold).monospacedDigit())
-                .foregroundStyle(Color(.muted))
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel(post.commentCount == 1 ? "1 comment" : "\(post.commentCount) comments")
+            if standalone {
+                commentCount
+            } else {
+                NavigationLink(value: PostRoute(postId: post.id, initial: post)) {
+                    commentCount
+                        .frame(minHeight: 44)
+                        .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .accessibilityHint("Opens the post")
+            }
         }
+    }
+
+    private var commentCount: some View {
+        Label("\(post.commentCount)", systemImage: "bubble.right")
+            .font(.footnote.weight(.semibold).monospacedDigit())
+            .foregroundStyle(Color(.muted))
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(post.commentCount == 1 ? "1 comment" : "\(post.commentCount) comments")
+    }
+}
+
+/// The Board's row: no editor, and the comment count opens the post screen.
+extension PostRow where Editor == EmptyView {
+    init(post: BoardPost, myHandle: String?, board: BoardModel) {
+        self.post = post
+        self.myHandle = myHandle
+        self.board = board
     }
 }

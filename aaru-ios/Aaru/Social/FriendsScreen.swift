@@ -19,7 +19,8 @@ struct FriendsScreen: View {
 
 /// Friends without a stack of its own, for a sidebar's stack or Groups' on iPhone. Without a
 /// handle there is nothing social yet, so it asks for one first. With one, it opens on the Board,
-/// and `Board | Lately` sits in the bar (DESIGN.md "Board (BOARD-002)").
+/// and `Board | Lately` sits in the bar (DESIGN.md "Board (BOARD-002)"). A post's comment count
+/// pushes its post screen, registered here once for both stacks.
 struct FriendsContent: View {
     let model: SocialModel
     let board: BoardModel
@@ -65,6 +66,15 @@ struct FriendsContent: View {
                 }
             }
             .background(Color(.paper))
+            .navigationDestination(for: PostRoute.self) { route in
+                PostScreen(
+                    postId: route.postId,
+                    initial: route.initial,
+                    board: board,
+                    friendHandles: model.friends.map(\.handle).filter { $0 != model.handle },
+                    myHandle: model.handle
+                )
+            }
             .task { await model.load() }
     }
 }

@@ -71,7 +71,7 @@ struct BoardView: View {
     /// The composer sits outside the lazy stack, so a half-written post survives scrolling far down.
     private var column: some View {
         VStack(alignment: .leading, spacing: 0) {
-            PostComposer(board: board)
+            PostComposer(board: board, mentionHandles: social.friends.map(\.handle).filter { $0 != social.handle })
                 .padding(.bottom, AaruSpace.xlarge)
             sortPicker
                 .padding(.bottom, AaruSpace.small)
