@@ -1,6 +1,9 @@
 import { For, Index, Show, createSignal } from 'solid-js'
 import { badge, dayParts, episodeCode, metaLine } from '../lib/calendar/model'
 import type { CalendarEntry } from '../lib/calendar/model'
+import { groupByChannel } from '../lib/calendar/channels'
+import type { AiringChannel } from '../lib/calendar/channels'
+import { AiringChannels } from './calendar/AiringChannels'
 import { EpisodeRow } from './calendar/EpisodeRow'
 import { WatchButton } from './calendar/WatchButton'
 import { cn } from '~/lib/utils'
@@ -17,7 +20,8 @@ import {
 // APP-010, CAL-002 · `WeekGrid` (DESIGN.md §14, VIEWS.md): Pogdesign CAT's dense week, in Aaru's
 // palette. Seven columns from 1280px, scroll-snapping columns below that, and on phones a day
 // strip over that day's episodes as poster rows. A cell or row opens the episode sheet; the
-// tick works on its own.
+// tick works on its own. Grouped by channel (CAL-005), the columns become one section per
+// channel over the week, and the phone's day lists its episodes by channel.
 
 export interface WeekGridProps {
   days: string[]
@@ -25,6 +29,8 @@ export interface WeekGridProps {
   /** The phone pager's day. */
   selected: string
   byDay: Map<string, CalendarEntry[]>
+  /** CAL-005: the week's episodes by channel; set only when grouped by channel. */
+  channels?: AiringChannel[]
   /** These days are still loading: placeholders, not "nothing airs". */
   waiting: boolean
   pending: Set<string>
@@ -35,6 +41,8 @@ export interface WeekGridProps {
 }
 
 export function WeekGrid(props: WeekGridProps) {
+  const nothingOn = () =>
+    `Nothing airs on ${props.selected ? dayParts(props.selected).weekday : 'this day'}.`
   return (
     <>
       {/* Phones: a 7-day strip and the chosen day's rows. Tabs are keyed by position, not date,
@@ -83,62 +91,99 @@ export function WeekGrid(props: WeekGridProps) {
           </Index>
         </TabsList>
         <TabsContent value={String(props.days.indexOf(props.selected))}>
-          <ul class="mt-3 divide-y divide-line">
-            <For
-              each={props.byDay.get(props.selected) ?? []}
-              fallback={
-                <Show
-                  when={!props.waiting}
+          <Show
+            when={!props.channels}
+            fallback={
+              <div class="mt-3">
+                <AiringChannels
+                  groups={groupByChannel(props.byDay.get(props.selected) ?? [])}
+                  waiting={props.waiting}
                   fallback={
-                    <For each={[0, 1]}>
-                      {() => (
-                        <li class="py-2">
-                          <Skeleton class="h-20 rounded-field" />
-                        </li>
-                      )}
-                    </For>
+                    <p class="rounded-panel bg-surface px-4 py-8 text-center text-sm text-muted">
+                      {nothingOn()}
+                    </p>
                   }
-                >
-                  <li class="rounded-panel bg-surface px-4 py-8 text-center text-sm text-muted">
-                    Nothing airs on{' '}
-                    {props.selected
-                      ? dayParts(props.selected).weekday
-                      : 'this day'}
-                    .
-                  </li>
-                </Show>
-              }
-            >
-              {(entry) => (
-                <EpisodeRow
-                  entry={entry}
-                  pending={props.pending.has(props.keyOf(entry))}
+                  pending={props.pending}
+                  keyOf={props.keyOf}
                   onOpen={props.onOpen}
                   onToggle={props.onToggle}
                 />
-              )}
-            </For>
-          </ul>
+              </div>
+            }
+          >
+            <ul class="mt-3 divide-y divide-line">
+              <For
+                each={props.byDay.get(props.selected) ?? []}
+                fallback={
+                  <Show
+                    when={!props.waiting}
+                    fallback={
+                      <For each={[0, 1]}>
+                        {() => (
+                          <li class="py-2">
+                            <Skeleton class="h-20 rounded-field" />
+                          </li>
+                        )}
+                      </For>
+                    }
+                  >
+                    <li class="rounded-panel bg-surface px-4 py-8 text-center text-sm text-muted">
+                      {nothingOn()}
+                    </li>
+                  </Show>
+                }
+              >
+                {(entry) => (
+                  <EpisodeRow
+                    entry={entry}
+                    pending={props.pending.has(props.keyOf(entry))}
+                    onOpen={props.onOpen}
+                    onToggle={props.onToggle}
+                  />
+                )}
+              </For>
+            </ul>
+          </Show>
         </TabsContent>
       </Tabs>
 
-      {/* Tablets scroll the columns; desktops see the whole week. */}
-      <div class="hidden gap-3 sm:flex sm:snap-x sm:snap-mandatory sm:overflow-x-auto sm:pb-2 xl:grid xl:grid-cols-7 xl:overflow-visible">
-        <For each={props.days}>
-          {(day) => (
-            <DayColumn
-              day={day}
-              today={day === props.today}
-              entries={props.byDay.get(day) ?? []}
+      {/* Tablets scroll the columns; desktops see the whole week. By channel, panels instead. */}
+      <Show
+        when={!props.channels}
+        fallback={
+          <div class="hidden sm:block">
+            <AiringChannels
+              cards
+              groups={props.channels ?? []}
               waiting={props.waiting}
+              fallback={
+                <p class="text-sm text-muted">Nothing airs this week.</p>
+              }
               pending={props.pending}
               keyOf={props.keyOf}
               onOpen={props.onOpen}
               onToggle={props.onToggle}
             />
-          )}
-        </For>
-      </div>
+          </div>
+        }
+      >
+        <div class="hidden gap-3 sm:flex sm:snap-x sm:snap-mandatory sm:overflow-x-auto sm:pb-2 xl:grid xl:grid-cols-7 xl:overflow-visible">
+          <For each={props.days}>
+            {(day) => (
+              <DayColumn
+                day={day}
+                today={day === props.today}
+                entries={props.byDay.get(day) ?? []}
+                waiting={props.waiting}
+                pending={props.pending}
+                keyOf={props.keyOf}
+                onOpen={props.onOpen}
+                onToggle={props.onToggle}
+              />
+            )}
+          </For>
+        </div>
+      </Show>
     </>
   )
 }

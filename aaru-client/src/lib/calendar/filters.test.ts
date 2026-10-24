@@ -49,6 +49,12 @@ describe('calendar filters', () => {
     ])
     expect(activeCount({ hideWatched: true, only: 'premieres' })).toBe(2)
   })
+
+  it('does not count grouping by channel as a filter (CAL-005)', () => {
+    const grouped = { hideWatched: false, group: 'channel' } as const
+    expect(activeCount(grouped)).toBe(0)
+    expect(applyFilter([premiere, finale, anime], grouped)).toHaveLength(3)
+  })
 })
 
 describe('catch-up', () => {

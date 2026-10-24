@@ -36,10 +36,29 @@ struct CalendarFilter: Equatable {
         }
     }
 
+    /// CAL-005: how Week and Month lay out their episodes. A layout, not a filter: it hides
+    /// nothing, so `isActive` leaves it out.
+    enum Grouping: String, CaseIterable, Identifiable {
+        case day, channel
+
+        var id: Self {
+            self
+        }
+
+        var label: String {
+            switch self {
+            case .day: "Day"
+            case .channel: "Channel"
+            }
+        }
+    }
+
     var hideWatched = false
     var only: Only = .all
     var kind: Kind = .all
+    var grouping: Grouping = .day
 
+    /// A filter hides something. Grouping by channel is not one.
     var isActive: Bool {
         hideWatched || only != .all || kind != .all
     }
@@ -98,5 +117,55 @@ struct MissedShow: Identifiable {
             guard let episodes = groups[id], let first = episodes.first else { return nil }
             return MissedShow(id: id, title: first.title, episodes: episodes)
         }
+    }
+}
+
+/// CAL-005, "Group by: Channel": one channel's or streamer's episodes.
+struct AiringChannel: Identifiable {
+    /// Where episodes air when the title names no network. Always the last group.
+    static let other = "Other"
+
+    let channel: String
+    let entries: [CalendarEntry]
+
+    var id: String {
+        channel
+    }
+
+    /// The busiest channel first, then by name; "Other" (no network) last. Each channel's
+    /// episodes in air order, then by season and episode.
+    static func group(_ entries: [CalendarEntry]) -> [AiringChannel] {
+        var byChannel: [String: [CalendarEntry]] = [:]
+        for entry in entries {
+            let network = entry.title.network?.trimmingCharacters(in: .whitespaces) ?? ""
+            byChannel[network.isEmpty ? other : network, default: []].append(entry)
+        }
+        return byChannel.map { channel, list in
+            AiringChannel(
+                channel: channel,
+                entries: list.sorted { ($0.airsAt, $0.season, $0.number) < ($1.airsAt, $1.season, $1.number) }
+            )
+        }
+        .sorted { lhs, rhs in
+            if (lhs.channel == other) != (rhs.channel == other) {
+                return rhs.channel == other
+            }
+            if lhs.entries.count != rhs.entries.count {
+                return lhs.entries.count > rhs.entries.count
+            }
+            return lhs.channel.localizedStandardCompare(rhs.channel) == .orderedAscending
+        }
+    }
+}
+
+extension CalendarEntry {
+    /// "Thu 15 Oct · 9:00 PM", or "Thu 15 Oct" for a date-only air date (read in UTC so it never
+    /// shifts a day): a row's detail when grouped by channel, where the channel is the heading.
+    var dayAndTime: String {
+        let day = airsAt.formatted(
+            Date.FormatStyle(timeZone: airTimeKnown ? .current : .gmt)
+                .weekday(.abbreviated).day().month(.abbreviated)
+        )
+        return [day, timeText].compactMap(\.self).joined(separator: " · ")
     }
 }

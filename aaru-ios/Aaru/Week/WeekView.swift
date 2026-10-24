@@ -1,7 +1,8 @@
 import SwiftUI
 
 /// Week mode (APP-010, DESIGN.md §14): the full seven-day grid on Mac and iPad; a day pager with
-/// the same cells on iPhone. `CalendarScreen` owns navigation and loading.
+/// the same cells on iPhone. Grouped by channel (CAL-005), Mac and iPad list the week by channel
+/// and the pager groups each day. `CalendarScreen` owns navigation and loading.
 struct WeekView: View {
     let model: WeekModel
     var onSearch: () -> Void
@@ -55,7 +56,11 @@ struct WeekView: View {
                 onSearch: onSearch, onClearFilters: onClearFilters
             )
         } else if isWide {
-            WeekGridView(model: model)
+            if model.feed.filter.grouping == .channel {
+                WeekAiringChannels(model: model)
+            } else {
+                WeekGridView(model: model)
+            }
         } else {
             WeekDayPager(model: model, selection: $selection, filtersActive: onClearFilters != nil)
         }

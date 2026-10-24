@@ -1,26 +1,33 @@
 import SwiftUI
 
 /// Stremio's sidebar: from the selected day on, a heading per date and a poster row per episode.
-/// A row opens the episode sheet (CAL-003); its tick works on its own.
+/// Grouped by channel (CAL-005), the whole grid instead, a heading per channel. A row opens the
+/// episode sheet (CAL-003); its tick works on its own.
 struct AgendaList: View {
     let model: MonthModel
     var onSearch: () -> Void
     var onClearFilters: (() -> Void)?
 
     var body: some View {
-        let sections = model.agenda
+        let byChannel = model.isGroupedByChannel
+        let sections = byChannel ? [] : model.agenda
+        let channels = byChannel ? model.channels : []
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
-                ForEach(sections, id: \.day) { section in
-                    Section {
-                        ForEach(section.entries, id: \.cellID) { entry in
-                            CalendarEpisodeRow(entry: entry, feed: model.feed)
+                if byChannel {
+                    AiringChannelSections(groups: channels, feed: model.feed)
+                } else {
+                    ForEach(sections, id: \.day) { section in
+                        Section {
+                            ForEach(section.entries, id: \.cellID) { entry in
+                                CalendarEpisodeRow(entry: entry, feed: model.feed)
+                            }
+                        } header: {
+                            AgendaHeader(day: section.day, isToday: model.isToday(section.day))
                         }
-                    } header: {
-                        AgendaHeader(day: section.day, isToday: model.isToday(section.day))
                     }
                 }
-                if sections.isEmpty, model.isLoaded {
+                if sections.isEmpty, channels.isEmpty, model.isLoaded {
                     empty
                 } else if !model.isLoaded {
                     ProgressView()
