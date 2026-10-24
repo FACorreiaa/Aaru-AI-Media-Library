@@ -27,6 +27,8 @@ final class BoardModel {
     var problem: String?
     /// A full Recent page may have more behind it; Top never pages.
     private(set) var canShowOlder = false
+    /// When page one last came back: a Board shown again after a while reloads it.
+    @ObservationIgnored private(set) var loadedAt: Date?
 
     @ObservationIgnored let api: Client?
 
@@ -47,12 +49,19 @@ final class BoardModel {
                 canShowOlder = BoardRules.hasOlder(sortIsRecent: requested == .recent, pageCount: page.count)
                 hasLoaded = true
                 loadProblem = nil
+                loadedAt = .now
             case let .default(_, error):
                 failLoad((try? error.body.json.message) ?? "The Board could not be loaded.")
             }
         } catch {
             failLoad("The Board could not be loaded. Aaru could not reach the server.")
         }
+    }
+
+    /// Whether page one is older than `maxAge` (a minute): the Board reloads it when shown again.
+    func isStale(now: Date = .now, maxAge: TimeInterval = 60) -> Bool {
+        guard let loadedAt else { return true }
+        return now.timeIntervalSince(loadedAt) > maxAge
     }
 
     /// The next, older page of Recent.
@@ -137,6 +146,7 @@ final class BoardModel {
         loadProblem = nil
         problem = nil
         canShowOlder = false
+        loadedAt = nil
     }
 
     /// The post screen reports an edit back.

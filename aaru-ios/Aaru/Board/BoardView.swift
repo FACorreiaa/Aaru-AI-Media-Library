@@ -48,13 +48,16 @@ struct BoardView: View {
             }
         }
         .background(Color(.paper))
-        // The Board outlives switching to Lately and back; pull to refresh reloads it.
+        // The Board outlives switching to Lately and back. Shown again after a minute, it reloads
+        // page one quietly: what is on screen stays until the new page replaces it (older pages
+        // go). Pull to refresh and ⌘R reload it too.
         .task {
-            if !board.hasLoaded {
+            if !board.hasLoaded || board.isStale() {
                 await board.load()
             }
         }
         .refreshable { await board.load() }
+        .refreshesOnCommand(.friends) { await board.load() }
         .onChange(of: board.sort) {
             Task {
                 switchingSort = true
