@@ -102,6 +102,8 @@ struct AppConfig: Sendable {
     var anthropic: AnthropicSettings?
     /// Nil when `TICKETMASTER_API_KEY` is unset: concerts answer `unavailable` (MUS-003).
     var concertsAPIKey: String?
+    /// Nil when `THESPORTSDB_API_KEY` is unset: Sports answer `unavailable` (SPT-001).
+    var sportsAPIKey: String?
     /// `METRICS_SECRET`: the bearer facorreia.com/apps sends to `/internal/metrics`. Empty turns
     /// the route off.
     var metricsSecret: String
@@ -146,6 +148,7 @@ struct AppConfig: Sendable {
             ),
             anthropic: anthropicSettings(from: reader),
             concertsAPIKey: reader.string(forKey: "ticketmaster.api.key").flatMap(\.nilIfBlank),
+            sportsAPIKey: reader.string(forKey: "thesportsdb.api.key").flatMap(\.nilIfBlank),
             metricsSecret: reader.string(forKey: "metrics.secret", default: ""),
             metricsPort: reader.int(forKey: "metrics.port", default: 9090),
             sentry: reader.string(forKey: "sentry.dsn").flatMap(\.nilIfBlank).map {

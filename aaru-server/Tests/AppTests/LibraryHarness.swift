@@ -39,6 +39,7 @@ struct LibraryHarness {
         push: (any PushSending)? = nil,
         model: (any ModelProviding)? = nil,
         concerts: (any ConcertListing)? = nil,
+        sports: (any SportsListing)? = nil,
         apple: (any AppleSignedDataVerifying)? = nil,
         _ body: @escaping @Sendable (LibraryHarness) async throws -> Void
     ) async throws {
@@ -53,6 +54,7 @@ struct LibraryHarness {
             )
             services.webPush = webPush
             services.concerts = ConcertService(stores: stores, listing: concerts, places: nil)
+            services.sports = SportsService(stores: stores, listing: sports)
             services.billing = BillingService(stores: stores, apple: apple)
             if push != nil || webPush != nil {
                 services.groups.push = UserPush(stores: stores, sender: push, webPush: webPush)

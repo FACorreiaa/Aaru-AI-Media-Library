@@ -378,7 +378,8 @@ func makeCatalogProviders(config: AppConfig, transport: any HTTPTransport) -> Ca
         ),
         recordings: musicBrainz,
         concerts: config.concertsAPIKey.map { makeConcertListing(apiKey: $0, transport) },
-        places: makePlaceSearch(transport)
+        places: makePlaceSearch(transport),
+        sports: config.sportsAPIKey.map { makeSportsListing(apiKey: $0, transport) }
     )
 }
 

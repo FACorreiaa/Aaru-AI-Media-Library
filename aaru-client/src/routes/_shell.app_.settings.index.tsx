@@ -11,6 +11,7 @@ const ANCHORS: Partial<Record<string, string>> = {
   '#handle': '/app/settings/account',
   '#notifications': '/app/settings/notifications',
   '#concerts': '/app/settings/friends',
+  '#sports': '/app/settings/friends',
   '#imports': '/app/settings/import',
 }
 
