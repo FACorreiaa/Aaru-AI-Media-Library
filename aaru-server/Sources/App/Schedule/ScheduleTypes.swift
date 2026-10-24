@@ -37,6 +37,14 @@ struct ContinueEntry: Sendable, Equatable {
     var isFinale: Bool
 }
 
+/// One title on Library's Watching page (APP-018): the library entry, a show's status and next
+/// episode to air, and what is left to watch when an aired episode is.
+struct WatchingRow: Sendable, Equatable {
+    var entry: LibraryEntry
+    var airing: TitleAiring?
+    var next: ContinueEntry?
+}
+
 /// A wishlist title to start.
 struct StartEntry: Sendable, Equatable {
     var libraryItemID: LibraryItemID

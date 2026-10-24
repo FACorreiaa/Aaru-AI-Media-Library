@@ -240,7 +240,7 @@ extension PostgresLibraryStore {
         """
         let query: SQLQueryString = """
         SELECT li.id, li.title_id, li.status, li.rating, li.notes, li.is_owned, li.added_at, li.updated_at,
-            li.finished_at, li.book_page, li.book_percent, li.manga_chapter, li.manga_volume,
+            li.finished_at, li.book_page, li.book_percent, li.manga_chapter, li.manga_volume, li.status_by_hand,
             (extract(epoch FROM li.updated_at) * 1000000)::bigint AS updated_micros,
             t.type, t.title, t.original_title, t.year, t.synopsis, t.poster_url, t.backdrop_url, t.network, t.is_anime,
             t.byline, t.page_count, t.chapter_count, t.volume_count, t.tmdb, t.imdb, t.trakt, t.tvdb, t.isbn,
@@ -249,7 +249,9 @@ extension PostgresLibraryStore {
                 AS watched_count,
             (SELECT count(*)::int FROM show_episodes se WHERE se.title_id = li.title_id AND se.season > 0
                 AND \(aired)) AS aired_count,
-            next.season AS next_season, next.episode AS next_episode
+            next.season AS next_season, next.episode AS next_episode,
+            (SELECT max(ep.watched_at) FROM episode_progress ep WHERE ep.library_item_id = li.id
+                AND ep.watched_at_known) AS last_watched_at
         FROM library_items li
         JOIN titles t ON t.id = li.title_id
         LEFT JOIN LATERAL (
@@ -280,6 +282,7 @@ private struct EntryRow: Decodable {
     let bookPercent: Double?
     let mangaChapter: Int?
     let mangaVolume: Int?
+    let statusByHand: Bool
     let updatedMicros: Int64
     let type: String
     let title: String
@@ -299,6 +302,7 @@ private struct EntryRow: Decodable {
     let airedCount: Int
     let nextSeason: Int?
     let nextEpisode: Int?
+    let lastWatchedAt: Date?
 
     func entry(_ userID: UserID) -> LibraryEntry? {
         guard let status = LibraryStatus(rawValue: status), let type = MediaType(rawValue: type) else { return nil }
@@ -338,7 +342,9 @@ private struct EntryRow: Decodable {
                 nextEpisode: next
             )
                 : nil,
-            mangaProgress: type == .manga ? (mangaChapter, mangaVolume) : nil
+            mangaProgress: type == .manga ? (mangaChapter, mangaVolume) : nil,
+            lastWatchedAt: lastWatchedAt,
+            statusByHand: statusByHand
         )
     }
 }
