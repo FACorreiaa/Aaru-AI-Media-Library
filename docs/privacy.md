@@ -43,8 +43,12 @@ Trakt and deletes them here. Aaru uses Trakt but is not endorsed or certified by
 **MyAnimeList.** If you connect MyAnimeList, Aaru stores its access tokens encrypted. From then
 on, when an anime changes in your Aaru library, Aaru sends its status, watched episodes and score
 to your MyAnimeList list, one entry per season. Removing an anime from Aaru does not remove it
-there. Disconnecting deletes the tokens and what Aaru remembers about your MyAnimeList entries;
-you can also remove Aaru in MyAnimeList's account settings.
+there. Aaru also reads your MyAnimeList anime list back: when you open Aaru (at most every 10
+minutes) and every 6 hours. What you changed there since connecting comes into your Aaru library
+the way an import does: it fills in what is missing and moves a status forward, never back. Once
+a week Aaru reads the whole list to show, in Settings, anime you removed on MyAnimeList; Aaru keeps
+them. For each entry Aaru remembers its title and what the two lists last agreed on. Disconnecting
+deletes the tokens and that memory; you can also remove Aaru in MyAnimeList's account settings.
 
 **Stremio.** If you connect Stremio, Aaru stores the link only as a one-way hash, with its name,
 what it may do, and when it was last used. While it is connected, Stremio tells Aaru when you

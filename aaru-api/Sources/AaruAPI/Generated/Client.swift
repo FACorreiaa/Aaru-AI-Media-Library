@@ -12525,6 +12525,63 @@ public struct Client: APIProtocol {
             }
         )
     }
+    /// A client opened Aaru: read the MyAnimeList list back on the next pass (SCR-010). Ignored when MAL is not connected or was read in the last 10 minutes, so clients call it on every open.
+    ///
+    /// - Remark: HTTP `POST /v1/connections/mal/pull`.
+    /// - Remark: Generated from `#/paths//v1/connections/mal/pull/post(requestMALPull)`.
+    public func requestMALPull(_ input: Operations.RequestMALPull.Input) async throws -> Operations.RequestMALPull.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.RequestMALPull.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/connections/mal/pull",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .post
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 204:
+                    return .noContent(.init())
+                default:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(body: body)
+                    )
+                }
+            }
+        )
+    }
     /// One import with every row and what its plan does with it.
     ///
     /// - Remark: HTTP `GET /v1/imports/{id}`.

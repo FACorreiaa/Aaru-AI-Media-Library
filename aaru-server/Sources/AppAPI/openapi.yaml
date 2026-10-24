@@ -2591,6 +2591,17 @@ paths:
           description: Disconnected.
         default:
           $ref: '#/components/responses/Error'
+  /v1/connections/mal/pull:
+    post:
+      operationId: requestMALPull
+      summary: >-
+        A client opened Aaru: read the MyAnimeList list back on the next pass (SCR-010). Ignored when
+        MAL is not connected or was read in the last 10 minutes, so clients call it on every open.
+      responses:
+        '204':
+          description: Asked, or not needed.
+        default:
+          $ref: '#/components/responses/Error'
   /v1/imports/{id}:
     parameters:
       - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
@@ -3106,7 +3117,7 @@ components:
         authorizeUrl: {type: string}
     MALConnection:
       type: object
-      required: [connected, needsReconnect]
+      required: [connected, needsReconnect, removed]
       properties:
         connected: {type: boolean}
         username: {type: string}
@@ -3114,6 +3125,23 @@ components:
         needsReconnect:
           type: boolean
           description: MyAnimeList refused the tokens. Nothing is pushed until the user connects again.
+        pulledAt:
+          type: string
+          format: date-time
+          description: When Aaru last read the MyAnimeList list back (SCR-010).
+        removed:
+          type: array
+          description: >-
+            Entries removed on MyAnimeList, newest first, at most 100. Aaru keeps its items for them;
+            the list is what a weekly full read found missing.
+          items: {$ref: '#/components/schemas/MALRemovedEntry'}
+    MALRemovedEntry:
+      type: object
+      required: [malId, removedAt]
+      properties:
+        malId: {type: string}
+        title: {type: string}
+        removedAt: {type: string, format: date-time}
     StremioLink:
       type: object
       required: [code, link, qrcode, expiresAt]

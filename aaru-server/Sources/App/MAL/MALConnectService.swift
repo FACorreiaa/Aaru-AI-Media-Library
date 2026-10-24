@@ -18,6 +18,10 @@ struct MALConnectService: Sendable {
         var connectedAt: Date?
         /// MAL refused the tokens: the user must connect again before anything is pushed.
         var needsReconnect = false
+        /// When the list was last read back (SCR-010).
+        var pulledAt: Date?
+        /// Entries removed on MAL that Aaru keeps.
+        var removed: [MALRemovedEntry] = []
     }
 
     private func enabled() throws -> (MALSettings, MALAPI) {
@@ -91,10 +95,19 @@ struct MALConnectService: Sendable {
 
     func status(userID: UserID) async throws -> Status {
         guard let connection = try await stores.mal.connection(userID: userID) else { return Status(connected: false) }
-        return Status(
+        return try await Status(
             connected: true, username: connection.username, connectedAt: connection.connectedAt,
-            needsReconnect: connection.revokedAt != nil
+            needsReconnect: connection.revokedAt != nil, pulledAt: connection.pulledAt,
+            removed: stores.mal.removedEntries(userID: userID)
         )
+    }
+
+    /// A client opened Aaru (SCR-010): read this user's list on the next sync pass, unless it was
+    /// read in the last 10 minutes. False when nothing was asked.
+    @discardableResult
+    func requestPull(userID: UserID) async throws -> Bool {
+        let now = now()
+        return try await stores.mal.requestPull(userID: userID, now: now, notBefore: now.addingTimeInterval(-600))
     }
 
     /// MAL has no revoke endpoint: forgetting the tokens here is what disconnects. The user can

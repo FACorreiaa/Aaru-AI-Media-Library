@@ -173,7 +173,7 @@ final class ConnectionsModel {
         do {
             switch try await api.disconnectMAL() {
             case .noContent:
-                mal = .init(connected: false, needsReconnect: false)
+                mal = .init(connected: false, needsReconnect: false, removed: [])
             case let .default(_, error):
                 problem = (try? error.body.json.message) ?? "MyAnimeList was not disconnected. Try again."
             }

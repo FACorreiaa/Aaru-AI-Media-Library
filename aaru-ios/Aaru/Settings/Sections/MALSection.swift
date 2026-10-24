@@ -1,8 +1,9 @@
 import AuthenticationServices
 import SwiftUI
 
-/// Connections → MyAnimeList (SCR-005): each user connects their own MAL account; from then on
-/// the server pushes anime progress. The server holds the PKCE verifier and the sealed tokens;
+/// Connections → MyAnimeList (SCR-005, SCR-010): each user connects their own MAL account; from
+/// then on the server pushes anime progress and reads the MAL list back, and this section lists
+/// what was removed on MAL. The server holds the PKCE verifier and the sealed tokens;
 /// the sign-in sheet only carries MAL's page and, at the end, Aaru's `aaru://…?mal=` return.
 struct MALSection: View {
     let model: ConnectionsModel
@@ -26,6 +27,19 @@ struct MALSection: View {
                     if let since = connection.connectedAt {
                         LabeledContent("Since") { Text(since, format: .dateTime.day().month()) }
                     }
+                    if let read = connection.pulledAt {
+                        LabeledContent("Last read") { Text(read, format: .relative(presentation: .named)) }
+                    }
+                }
+                if !connection.removed.isEmpty {
+                    DisclosureGroup("Removed on MyAnimeList (\(connection.removed.count))") {
+                        ForEach(connection.removed, id: \.malId) { entry in
+                            Text(entry.title ?? "MyAnimeList entry \(entry.malId)")
+                        }
+                        Text("Still in your Aaru library. Remove them here if you want them gone.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 Button("Disconnect", role: .destructive) { confirmingDisconnect = true }
                     .disabled(model.malBusy)
@@ -37,15 +51,16 @@ struct MALSection: View {
             Text("MyAnimeList")
         } footer: {
             Text(
-                "Anime you update in Aaru update your MyAnimeList list too: status, watched episodes and score, "
-                    + "one entry per season. Only changes from now on go; your list is not overwritten. "
-                    + "Removing an anime here leaves it on MyAnimeList."
+                "Aaru and your MyAnimeList list keep each other up to date: status, watched episodes and score, "
+                    + "one entry per season. Only changes from now on, and neither list is overwritten: changes on "
+                    + "MyAnimeList come in when you open Aaru and only move forward. "
+                    + "Removing an anime on one side leaves it on the other."
             )
         }
         .confirmationDialog("Disconnect MyAnimeList?", isPresented: $confirmingDisconnect, titleVisibility: .visible) {
             Button("Disconnect", role: .destructive) { Task { await model.disconnectMAL() } }
         } message: {
-            Text("Aaru stops updating your MyAnimeList list. Both lists stay as they are.")
+            Text("Aaru stops updating and reading your MyAnimeList list. Both lists stay as they are.")
         }
     }
 

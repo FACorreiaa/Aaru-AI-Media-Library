@@ -9,7 +9,7 @@ export function malResult(
       return {
         ok: true,
         message:
-          'MyAnimeList is connected. Anime you update from now on go to your list.',
+          'MyAnimeList is connected. From now on the two lists keep each other up to date.',
       }
     case 'denied':
       return {
@@ -37,4 +37,21 @@ export function malConnectedLabel(connection: MALConnection): string {
     month: 'short',
   })
   return `${who} · since ${since}`
+}
+
+/** "Last read 5 min ago": when Aaru last read the MyAnimeList list back; null before any read. */
+export function malLastRead(
+  connection: MALConnection,
+  now = new Date(),
+): string | null {
+  if (!connection.pulledAt) return null
+  const minutes = Math.floor(
+    (now.getTime() - new Date(connection.pulledAt).getTime()) / 60_000,
+  )
+  if (minutes < 1) return 'Last read just now'
+  if (minutes < 60) return `Last read ${minutes} min ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `Last read ${hours} h ago`
+  const days = Math.floor(hours / 24)
+  return days === 1 ? 'Last read yesterday' : `Last read ${days} days ago`
 }

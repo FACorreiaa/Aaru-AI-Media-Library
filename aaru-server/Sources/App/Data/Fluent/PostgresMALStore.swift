@@ -74,15 +74,17 @@ struct PostgresMALStore: MALStore {
             let username: String?
             let connectedAt: Date
             let revokedAt: Date?
+            let pulledAt: Date?
         }
         return try await sql.raw("""
-        SELECT access_token, refresh_token, expires_at, username, connected_at, revoked_at FROM mal_connections
+        SELECT access_token, refresh_token, expires_at, username, connected_at, revoked_at, pulled_at
+        FROM mal_connections
         WHERE user_id = \(bind: userID.rawValue) \(unsafeRaw: lock ? "FOR UPDATE" : "")
         """).first(decoding: Row.self, keyDecodingStrategy: .convertFromSnakeCase).map {
             MALConnectionRecord(
                 sealedAccessToken: $0.accessToken, sealedRefreshToken: $0.refreshToken,
                 expiresAt: $0.expiresAt, username: $0.username, connectedAt: $0.connectedAt,
-                revokedAt: $0.revokedAt
+                revokedAt: $0.revokedAt, pulledAt: $0.pulledAt
             )
         }
     }
@@ -141,13 +143,82 @@ struct PostgresMALStore: MALStore {
         }, uniquingKeysWith: { first, _ in first })
     }
 
-    func saveEntryState(_ state: MALEntryState, userID: UserID) async throws {
+    func saveEntryState(_ state: MALEntryState, title: String?, userID: UserID) async throws {
         try await sql.raw("""
-        INSERT INTO mal_entry_states (user_id, mal_id, status, episodes, score, updated_at)
+        INSERT INTO mal_entry_states (user_id, mal_id, status, episodes, score, title, updated_at)
         VALUES (\(bind: userID.rawValue), \(bind: state.malID), \(bind: state.status.rawValue),
-            \(bind: state.episodes), \(bind: state.score), now())
+            \(bind: state.episodes), \(bind: state.score), \(bind: title), now())
         ON CONFLICT (user_id, mal_id) DO UPDATE SET status = EXCLUDED.status, episodes = EXCLUDED.episodes,
-            score = EXCLUDED.score, updated_at = now()
+            score = EXCLUDED.score, title = COALESCE(EXCLUDED.title, mal_entry_states.title),
+            removed_at = NULL, updated_at = now()
         """).run()
+    }
+
+    // MARK: Reading back (SCR-010)
+
+    func requestPull(userID: UserID, now: Date, notBefore: Date) async throws -> Bool {
+        struct Row: Decodable { let userId: UUID }
+        return try await sql.raw("""
+        UPDATE mal_connections SET pull_requested_at = \(bind: now)
+        WHERE user_id = \(bind: userID.rawValue) AND revoked_at IS NULL
+            AND (pulled_at IS NULL OR pulled_at < \(bind: notBefore))
+        RETURNING user_id
+        """).first(decoding: Row.self, keyDecodingStrategy: .convertFromSnakeCase) != nil
+    }
+
+    func claimPulls(now: Date, staleBefore: Date, fullBefore: Date, limit: Int) async throws -> [MALPullDue] {
+        struct Row: Decodable {
+            let userId: UUID
+            let cursor: Date
+            let fullRead: Bool
+        }
+        // Asked-for reads first; SKIP LOCKED keeps two replicas off the same connection.
+        return try await sql.raw("""
+        UPDATE mal_connections c SET pulled_at = \(bind: now), pull_requested_at = NULL
+        WHERE c.user_id IN (
+            SELECT user_id FROM mal_connections
+            WHERE revoked_at IS NULL
+                AND (pull_requested_at IS NOT NULL OR pulled_at IS NULL OR pulled_at < \(bind: staleBefore))
+            ORDER BY pull_requested_at NULLS LAST, pulled_at NULLS FIRST
+            LIMIT \(bind: limit)
+            FOR UPDATE SKIP LOCKED
+        )
+        RETURNING c.user_id, COALESCE(c.pull_cursor, c.connected_at) AS cursor,
+            (c.full_read_at IS NULL OR c.full_read_at < \(bind: fullBefore)) AS full_read
+        """).all(decoding: Row.self, keyDecodingStrategy: .convertFromSnakeCase).map {
+            MALPullDue(userID: UserID($0.userId), cursor: $0.cursor, fullRead: $0.fullRead)
+        }
+    }
+
+    func finishPull(userID: UserID, cursor: Date, fullReadAt: Date?) async throws {
+        try await sql.raw("""
+        UPDATE mal_connections
+        SET pull_cursor = GREATEST(COALESCE(pull_cursor, connected_at), \(bind: cursor)),
+            full_read_at = COALESCE(\(bind: fullReadAt), full_read_at)
+        WHERE user_id = \(bind: userID.rawValue)
+        """).run()
+    }
+
+    func markRemoved(userID: UserID, listed: [String], now: Date) async throws {
+        try await sql.raw("""
+        UPDATE mal_entry_states SET removed_at = CASE
+            WHEN mal_id = ANY(\(bind: Array(Set(listed)))) THEN NULL ELSE COALESCE(removed_at, \(bind: now)) END
+        WHERE user_id = \(bind: userID.rawValue)
+        """).run()
+    }
+
+    func removedEntries(userID: UserID) async throws -> [MALRemovedEntry] {
+        struct Row: Decodable {
+            let malId: String
+            let title: String?
+            let removedAt: Date
+        }
+        return try await sql.raw("""
+        SELECT mal_id, title, removed_at FROM mal_entry_states
+        WHERE user_id = \(bind: userID.rawValue) AND removed_at IS NOT NULL
+        ORDER BY removed_at DESC, title LIMIT 100
+        """).all(decoding: Row.self, keyDecodingStrategy: .convertFromSnakeCase).map {
+            MALRemovedEntry(malID: $0.malId, title: $0.title, removedAt: $0.removedAt)
+        }
     }
 }
