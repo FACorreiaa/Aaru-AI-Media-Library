@@ -52,17 +52,18 @@ struct DiscoverCard: View {
         }
         .buttonStyle(.plain)
         .modifier(HoverLift())
-        .sheet(isPresented: $previewing, onDismiss: {
-            if listAfterPreview {
-                listAfterPreview = false
-                onAddToList()
-            }
-        }) {
+        .sheet(isPresented: $previewing, onDismiss: previewDismissed) {
             CatalogPreviewSheet(
                 hit: hit, libraryItemID: libraryItemID, isAdding: isAdding, onAdd: onAdd,
                 onAddToList: { listAfterPreview = true }
             )
         }
+    }
+
+    private func previewDismissed() {
+        guard listAfterPreview else { return }
+        listAfterPreview = false
+        onAddToList()
     }
 
     private var card: some View {
