@@ -126,6 +126,14 @@ only when the count does. The page says you can leave, and a job still in line c
 
 One title is a room, not a settings form.
 
+**Before it is yours (LIB-006, 2026-10-24).** A search hit or a list member that is not in the
+library opens the title's page anyway (a Discover card opens its quick look first, with "All
+details" on the web): poster, kind, year, synopsis, the season and
+episode count or the tracklist, with Add (a tap plans it, hold for another status) and Add to
+list. Nothing is written until one is tapped; once added, the Title room takes the page's place.
+The web addresses it by one provider id (`/app/catalog/show/tmdb/1399`); a title already in the
+library redirects to its room.
+
 - Left or top: poster, status chips, `isOwned`, rating.
 - Center: **season map** — a heat grid of episodes (Serializd energy, calmer). The agent can
   paint a season in one move, then you tap to correct two episodes.
@@ -450,6 +458,15 @@ Map switch shows the searched area as a circle on a map; the web is list only. "
 asks for an approximate position once (reduced accuracy on Apple) and says it is not saved; the
 saved city lives in Settings → Friends & privacy → Location ("Concerts near"), with Remove. Placeholders at the real row size
 while loading, no shimmer; a silent provider says so in one line.
+
+**Concerts by artist (MUS-010, 2026-10-24).** The "Near" section carries a search field, "Search
+an artist", that runs on submit (Return), never while typing. A submitted name turns the section
+into that artist's dates: the heading reads "<name> near <city>" or "<name> anywhere", a
+Near <city> | Anywhere switch sits beside the radius chips, and the chips hide in Anywhere, where
+each row's distance is from the city or position when there is one. Clear (the field's ✕, or
+cancelling search on Apple) returns to everything near. Empty reads "No <name> concerts within
+50 km." with "Try Anywhere." in Near, "No upcoming <name> concerts listed." in Anywhere. On iPhone
+and Mac it is the screen's own search field with search scopes; Anywhere is list only (no Map).
 
 ## 13b. Insights (pulled forward 2026-10-20)
 

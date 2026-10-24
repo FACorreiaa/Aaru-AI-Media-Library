@@ -143,7 +143,10 @@ it.
 a position rounded to about a kilometre, until you remove it in Settings. "Use my location"
 asks your device for an approximate position once; it is rounded the same way, used for that
 one search, and never stored or logged. To find concerts by your artists, Aaru looks up the
-artists of the albums in your library; that list is catalog data, not about you.
+artists of the albums in your library; that list is catalog data, not about you. When you search
+concerts by an artist's name, the name is used for that search and cached with its results for
+a few hours, shared by everyone who searches the same name; it is not logged or tied to you.
+"Anywhere" sends no area at all: the distance to your city is worked out on Aaru's server.
 
 **Sports.** The leagues, teams and players you follow in Sports, and the country you choose for
 "Where to watch", are stored until you unfollow, clear the country, or delete your account. They
@@ -196,8 +199,8 @@ Aaru only uses these services, and only for the purpose listed:
   request only. Aaru never stores it, and TMDB and JustWatch never receive it: the server
   fetches every country's list once and picks yours.
 - **Ticketmaster** lists concerts. Aaru's server sends it an area of about 5 km around your
-  city or approximate position, a distance, and artist names from albums people have added,
-  never who you are. Tickets are bought on Ticketmaster's site, under its own terms.
+  city or approximate position, a distance, artist names from albums people have added, and an
+  artist name you search for, never who you are. Tickets are bought on Ticketmaster's site, under its own terms.
 - **TheSportsDB** provides sports leagues, teams, players, fixtures, scores and TV listings. Aaru's
   server sends it what you search for in Sports and the ids of what people follow, never who you
   are or your country.

@@ -10,6 +10,8 @@ struct ScheduleService: Sendable {
     /// An in-progress item untouched this long is unfinished business (UPN-002).
     static let stalledAfter: TimeInterval = 30 * 24 * 60 * 60
     static let unfinishedLimit = 20
+    /// Watching reads every title in progress; this only bounds a pathological library.
+    static let watchingLimit = 5000
 
     let stores: Stores
     var now: @Sendable () -> Date = { Date() }
@@ -42,5 +44,26 @@ struct ScheduleService: Sendable {
         return try await UpNext(
             continueWatching: continuing, startWatching: starting, counts: counts, unfinished: unfinished
         )
+    }
+
+    /// Films, shows and anime in progress, newest change first (APP-018). Backlog anime are kept;
+    /// clients split them out by `LibraryEntry.inBacklog`.
+    func watching(userID: UserID) async throws -> [WatchingRow] {
+        let now = now()
+        let entries = try await stores.library.entries(
+            userID: userID, filter: LibraryFilter(status: .inProgress), after: nil, limit: Self.watchingLimit, now: now
+        ).entries.filter { $0.title.type == .movie || $0.title.type == .show }
+        let shows = entries.filter { $0.title.type == .show }
+        async let airing = stores.titles.airing(ids: shows.map(\.title.id), now: now)
+        async let continuing = stores.schedule.continueWatching(
+            userID: userID, now: now, limit: max(shows.count, 1)
+        )
+        let schedule = try await airing
+        let next = try await Dictionary(
+            continuing.map { ($0.libraryItemID, $0) }, uniquingKeysWith: { first, _ in first }
+        )
+        return entries.map {
+            WatchingRow(entry: $0, airing: schedule[$0.title.id], next: next[$0.item.id])
+        }
     }
 }

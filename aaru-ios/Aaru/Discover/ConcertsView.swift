@@ -30,7 +30,7 @@ struct ConcertsView: View {
         }
         #if os(macOS)
         .toolbar {
-            if model.nearState != .noPlace {
+            if model.nearState != .noPlace, !model.searchesAnywhere {
                 ToolbarItemGroup {
                     RadiusPicker(radius: $model.radius).fixedSize()
                     LayoutPicker(layout: $model.layout).fixedSize()
@@ -115,7 +115,7 @@ private struct NearSection: View {
         VStack(alignment: .leading, spacing: 12) {
             NearHeader(model: model, onChooseCity: onChooseCity)
             #if os(iOS)
-                if model.nearState != .noPlace {
+                if model.nearState != .noPlace, !model.searchesAnywhere {
                     HStack(spacing: 12) {
                         RadiusPicker(radius: $model.radius)
                         LayoutPicker(layout: $model.layout).fixedSize()
@@ -214,18 +214,15 @@ private struct NearResults: View {
                     .buttonStyle(.bordered)
             }
         } else {
-            if model.layout == .map, let centre = model.centre {
+            // Anywhere is list only: its concerts are not around one centre.
+            if model.layout == .map, !model.searchesAnywhere, let centre = model.centre {
                 ConcertsMap(name: centre.name, point: centre.point, radiusKm: model.radius.rawValue)
             }
             if items.isEmpty {
-                ContentUnavailableView(
-                    "No concerts within \(model.radius.label)",
-                    systemImage: "music.mic",
-                    description: Text(model.radius == ._100 ? "Nothing is listed yet." : "Try a wider radius.")
-                )
+                EmptyNear(model: model)
             } else {
                 ForEach(items, id: \.id) { concert in
-                    ConcertRow(concert: concert, compact: model.layout == .map)
+                    ConcertRow(concert: concert, compact: model.layout == .map && !model.searchesAnywhere)
                 }
                 if model.hasMore {
                     Button(model.isLoadingMore ? "Loading…" : "Show more", action: loadMore)
@@ -243,6 +240,35 @@ private struct NearResults: View {
 
     private func loadMore() {
         Task { await model.loadMore() }
+    }
+}
+
+/// Nothing listed: in range, or for the searched artist (MUS-010), with the next thing to try.
+private struct EmptyNear: View {
+    @Bindable var model: ConcertsModel
+
+    var body: some View {
+        if let artist = model.searchedArtist {
+            if model.scope == .anywhere {
+                ContentUnavailableView(
+                    "No upcoming \(artist) concerts listed", systemImage: "music.mic",
+                    description: Text("Check the spelling, or try the name as the tickets show it.")
+                )
+            } else {
+                ContentUnavailableView {
+                    Label("No \(artist) concerts within \(model.radius.label)", systemImage: "music.mic")
+                } actions: {
+                    Button("Try Anywhere") { model.scope = .anywhere }
+                        .buttonStyle(.bordered)
+                }
+            }
+        } else {
+            ContentUnavailableView(
+                "No concerts within \(model.radius.label)",
+                systemImage: "music.mic",
+                description: Text(model.radius == ._100 ? "Nothing is listed yet." : "Try a wider radius.")
+            )
+        }
     }
 }
 

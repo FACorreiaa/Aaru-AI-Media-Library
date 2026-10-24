@@ -156,6 +156,7 @@ struct SearchView: View {
                 .navigationDestination(for: String.self) { id in
                     LibraryEntryDestination(id: id, api: api, library: library, lists: lists)
                 }
+                .catalogDestination(api: api, library: library, lists: lists)
                 .sheet(item: $listTarget) { hit in
                     ListPickerSheet(
                         ref: .init(_type: hit._type, ids: hit.ids, title: hit.title, year: hit.year),
@@ -222,15 +223,18 @@ struct SearchView: View {
                 SearchHitRow(hit: hit, kind: kind, isInLibrary: true, isAdding: false) { _ in } onAddToList: {}
             }
         } else {
-            SearchHitRow(
-                hit: hit,
-                kind: kind,
-                isInLibrary: false,
-                isAdding: model.adding.contains(hit.id)
-            ) { status in
-                Task { await model.add(hit, status: status) }
-            } onAddToList: {
-                listTarget = hit
+            // LIB-006: the row opens the title's page; Add still adds from here.
+            NavigationLink(value: CatalogRoute(hit: hit)) {
+                SearchHitRow(
+                    hit: hit,
+                    kind: kind,
+                    isInLibrary: false,
+                    isAdding: model.adding.contains(hit.id)
+                ) { status in
+                    Task { await model.add(hit, status: status) }
+                } onAddToList: {
+                    listTarget = hit
+                }
             }
         }
     }

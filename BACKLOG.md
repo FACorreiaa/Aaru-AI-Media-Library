@@ -66,6 +66,10 @@ library layer stay separate, external IDs stored whenever known, no second backe
   Discover card or a list member opens its title page; one not in the library shows the same page
   with Add buttons and adds nothing until tapped. Needs a server route that resolves a catalog
   ref to a title. Follows LIB-005.
+- **Concerts by artist, near the place or anywhere (owner, 2026-10-24, MUS-010).** The Concerts
+  view's "Near" section gets an artist search: free text sent as Ticketmaster's keyword (owner's
+  choice over picking a performer first), with a Near <city> | Anywhere switch. Any artist, not
+  only the library's, so it is a search like the catalog's, not a recommendation.
 
 ## Decisions recorded 2026-10-23
 
@@ -599,7 +603,7 @@ account or a stranger that has not happened yet.
 | LIB-003 | Done | #2; LibraryTests | |
 | LIB-004 | Done | LibraryTests "LIB-004: a delete on one device…" | |
 | LIB-005 | Built, unverified | `lib/paging.test.ts`; `components/Paged.tsx`, `Design/Paging.swift` | Client-only (owner, 2026-10-24); not yet run on TestFlight |
-| LIB-006 | Planned | | Title page without a library item (owner, 2026-10-24) |
+| LIB-006 | Built, unverified | TitlePreviewTests; `lib/title/preview.test.ts`; `TitlePreviewView.swift` | Needs the API promoted before clients can open it; not yet run on TestFlight |
 | AUD-001 | Done | #2; `actions` journal, LibraryService.swift | |
 | AUD-002 | Done | #2; `/v1/actions/{id}/undo`, 409 tests | Clients undo through PROG-005's toast only; no undo ribbon |
 | PROG-001 | Done | #2; episodes PUT route | |
@@ -639,6 +643,7 @@ account or a stranger that has not happened yet.
 | MUS-007 | Built, unverified | MusicSection (web, Apple); ListenBrainzRouteTests `musicSetup`; music model tests | Not deployed; steps checked against client source, not tried with a real scrobbler |
 | MUS-008 | Built, unverified | ListenStatsTests; listening-model and recap deck tests; `/app/music`, MusicView, MusicInsights, OnRepeatCard | Not deployed; not run on a device with real listens |
 | MUS-009 | Not started | — | Waits for a Bandsintown app id |
+| MUS-010 | Built, unverified | ConcertTests; concerts model tests; ConcertList, ConcertsView | This PR; not deployed |
 | MNG-001 | Built, unverified | #175; MangaTests, AniListMangaAdapterTests; deployed f6cc317 (infra #456), TestFlight from d9c6341 | Not run on a device |
 | MNG-002 | Built, unverified | #175; MangaImportTests, AnimeListImportTests; deployed f6cc317 (infra #456) | No real MAL manga export or AniList manga list run yet |
 | FAV-001 | Built, unverified | #176; FavoritesTests, favorites model tests; deployed f6cc317 (infra #456), TestFlight from f6cc317 | Not run on a device or in a browser |
@@ -1814,6 +1819,21 @@ query is dropped from request logs. Not in the account export, like the other se
 
 **Done when:** concerts near a saved city and near "Use my location" list on three clients, and
 an artist in the library with a tour shows under "Your artists on tour".
+
+### MUS-010 · Concerts by artist, near or anywhere · M · owner 2026-10-24
+**Needs:** MUS-003.
+In the "Near" section of the Concerts view, a search field takes an artist's name and a
+Near <city> | Anywhere switch. `POST /v1/concerts/search` sends Ticketmaster the typed name as
+`keyword` on music events, on submit only (never per keystroke: the daily budget). Near adds the
+saved city's or the one-off position's cell and the 25 · 50 · 100 km radius, like
+`/v1/concerts/near`; Anywhere sends the name alone and the server works out each venue's distance
+from the city or position itself. Same 6 h cache, keyed by the lowercased name; the name is not
+logged. Matching is the provider's free text, so a search can list other acts whose events carry
+the word; Aaru does not filter by name.
+
+**Done when:** on iPhone, Mac and web, searching an artist Near Madrid lists their Madrid-area
+dates inside the radius, Anywhere lists every upcoming date with its distance from the city, and
+Clear returns to everything near.
 
 ### MUS-009 · Concerts from Bandsintown · M
 **Needs:** MUS-003, the owner's Bandsintown app id (partner application), sealed as

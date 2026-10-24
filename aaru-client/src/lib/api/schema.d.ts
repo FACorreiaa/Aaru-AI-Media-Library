@@ -1701,6 +1701,26 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/concerts/search': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Music events matching an artist's name, near a place or anywhere (MUS-010), soonest first.
+     * @description POST so neither the name nor a position sits in a URL. The name goes to Ticketmaster as free text, so other acts whose events carry the word can match. `near` searches around a one-off point or the saved city like `/v1/concerts/near` (with neither, 409 `no_place`); `anywhere` sends the name alone, and each concert's `distanceKm` is worked out by the server from the point or saved city when there is one. Neither name nor position is logged; the same list for everyone, cached by the server.
+     */
+    post: operations['searchConcerts']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/concerts/artists': {
     parameters: {
       query?: never
@@ -1907,6 +1927,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/titles/resolve': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** The page for a catalog ref, in the library or not (LIB-006). Resolving may add the title to the catalog; it never adds it to the library. */
+    post: operations['resolveTitle']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/titles/{id}': {
     parameters: {
       query?: never
@@ -1933,6 +1970,23 @@ export interface paths {
     }
     /** Posts about this title by you and your friends, newest first. */
     get: operations['listTitlePosts']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/library/watching': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Films, shows and anime in progress with what Library's Watching page shows (APP-018): the next episode to watch with its name and what is left, and a show's status and next airing. Anime in the backlog are included with `entry.inBacklog`. Newest change first. */
+    get: operations['listWatching']
     put?: never
     post?: never
     delete?: never
@@ -3918,7 +3972,7 @@ export interface components {
       venue?: string
       city?: string
       country?: string
-      /** @description From the searched point. Absent for an artist's concerts. */
+      /** @description From the searched point, or from the point or saved city for an `anywhere` search. Absent for "Your artists on tour", and when the venue's position is unknown. */
       distanceKm?: number
       /** @description Ticketmaster's event page. */
       url: string
@@ -4083,6 +4137,42 @@ export interface components {
       /** @description Concerts are off, or Ticketmaster did not answer and nothing was cached. */
       unavailable: boolean
     }
+    /**
+     * @description `near` the point or saved city, inside `radiusKm`; `anywhere` for every upcoming date.
+     * @enum {string}
+     */
+    ConcertSearchScope: 'near' | 'anywhere'
+    ConcertSearchRequest: {
+      /** @description The artist's name, 2 to 100 characters. Not logged. */
+      q: string
+      scope: components['schemas']['ConcertSearchScope']
+      /** @description Sent with `longitude` for a one-off position; absent uses the saved city. */
+      latitude?: number
+      longitude?: number
+      /**
+       * @description Used by `near` only.
+       * @enum {integer}
+       */
+      radiusKm: 25 | 50 | 100
+      /**
+       * @description 1-based, at most 10.
+       * @default 1
+       */
+      page: number
+    }
+    ConcertSearchPage: {
+      /** @description The name as searched, trimmed. */
+      query: string
+      scope: components['schemas']['ConcertSearchScope']
+      place?: components['schemas']['ConcertPlace']
+      /** @description Present for `near`. */
+      radiusKm?: number
+      items: components['schemas']['Concert'][]
+      page: number
+      hasMore: boolean
+      /** @description Concerts are off, or Ticketmaster did not answer and nothing was cached. */
+      unavailable: boolean
+    }
     ArtistConcerts: {
       items: components['schemas']['Concert'][]
       /** @description Library artists Ticketmaster knows. */
@@ -4131,6 +4221,14 @@ export interface components {
       genres?: string[]
       /** @description Albums only: the tracklist of the album's earliest official release, by disc then position. Absent when MusicBrainz could not be reached and none is stored yet. */
       tracks?: components['schemas']['AlbumTrack'][]
+    }
+    TitlePreview: {
+      title: components['schemas']['TitleDetail']
+      /**
+       * Format: uuid
+       * @description Set when the title is in the caller's library; its title page is then the one to open.
+       */
+      libraryItemId?: string
     }
     AlbumTrack: {
       disc: number
@@ -4232,6 +4330,13 @@ export interface components {
       bookProgress?: components['schemas']['BookProgress']
       mangaProgress?: components['schemas']['MangaProgress']
       /**
+       * Format: date-time
+       * @description The newest episode tick the user made in Aaru. Imported, pulled and restored ticks do not count. Absent when there is none.
+       */
+      lastWatchedAt?: string
+      /** @description APP-018 · an anime in progress the user never touched in Aaru: its status came from an import and it has no tick made in Aaru. Derived on every read; the status stays `in_progress`. Library's Now leaves these out of Watching. */
+      inBacklog: boolean
+      /**
        * @description Every watched episode of a show, in order. Only on single-item responses (the item,
        *     and episode and season writes); lists and sync leave it out.
        */
@@ -4331,6 +4436,20 @@ export interface components {
       /** @enum {string} */
       showStatus?: 'upcoming' | 'returning' | 'ended' | 'canceled'
       nextAiring?: components['schemas']['UpcomingEpisode']
+    }
+    Watching: {
+      items: components['schemas']['WatchingItem'][]
+    }
+    /** @description One title in progress. Shows whose episodes are loaded carry `showStatus` and `nextAiring` (the first episode not aired yet); a show with an aired episode left to watch carries `nextName`, `nextRuntimeMinutes`, `remainingCount` and `remainingMinutes` (aired, unwatched, specials left out), as Up Next's ContinueEntry does. */
+    WatchingItem: {
+      entry: components['schemas']['LibraryEntry']
+      /** @enum {string} */
+      showStatus?: 'upcoming' | 'returning' | 'ended' | 'canceled'
+      nextAiring?: components['schemas']['UpcomingEpisode']
+      nextName?: string
+      nextRuntimeMinutes?: number
+      remainingCount?: number
+      remainingMinutes?: number
     }
     UpcomingEpisode: {
       season: number
@@ -7557,6 +7676,31 @@ export interface operations {
       default: components['responses']['Error']
     }
   }
+  searchConcerts: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ConcertSearchRequest']
+      }
+    }
+    responses: {
+      /** @description The page. `unavailable` when concerts are off or the provider is down. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ConcertSearchPage']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
   getArtistConcerts: {
     parameters: {
       query?: never
@@ -7897,6 +8041,31 @@ export interface operations {
       default: components['responses']['Error']
     }
   }
+  resolveTitle: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MediaRef']
+      }
+    }
+    responses: {
+      /** @description The title, and the caller's library item when they have it. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['TitlePreview']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
   getTitle: {
     parameters: {
       query?: never
@@ -7941,6 +8110,27 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['BoardPostPage']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  listWatching: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The titles in progress. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Watching']
         }
       }
       default: components['responses']['Error']

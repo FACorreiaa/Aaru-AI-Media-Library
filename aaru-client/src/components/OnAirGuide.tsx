@@ -119,6 +119,7 @@ export function OnAirGuide(props: {
                         adding={adder.isAdding(show().item)}
                         onAdd={(status) => void adder.add(show().item, status)}
                         onList={() => adder.openList(show().item)}
+                        onPreview={() => adder.openPreview(show().item)}
                         details={
                           <>
                             <p class="truncate text-xs text-muted tabular-nums">
@@ -159,6 +160,7 @@ export function OnAirGuide(props: {
         )}
       </Show>
       <adder.ListDialog />
+      <adder.PreviewDialog />
     </section>
   )
 }

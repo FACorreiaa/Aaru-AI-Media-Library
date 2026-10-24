@@ -589,6 +589,13 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/concerts/near`.
     /// - Remark: Generated from `#/paths//v1/concerts/near/post(getConcertsNear)`.
     func getConcertsNear(_ input: Operations.GetConcertsNear.Input) async throws -> Operations.GetConcertsNear.Output
+    /// Music events matching an artist's name, near a place or anywhere (MUS-010), soonest first.
+    ///
+    /// POST so neither the name nor a position sits in a URL. The name goes to Ticketmaster as free text, so other acts whose events carry the word can match. `near` searches around a one-off point or the saved city like `/v1/concerts/near` (with neither, 409 `no_place`); `anywhere` sends the name alone, and each concert's `distanceKm` is worked out by the server from the point or saved city when there is one. Neither name nor position is logged; the same list for everyone, cached by the server.
+    ///
+    /// - Remark: HTTP `POST /v1/concerts/search`.
+    /// - Remark: Generated from `#/paths//v1/concerts/search/post(searchConcerts)`.
+    func searchConcerts(_ input: Operations.SearchConcerts.Input) async throws -> Operations.SearchConcerts.Output
     /// Upcoming concerts by the artists of the user's albums (MUS-003).
     ///
     /// Derived from the user's own library, like the calendar; dropped albums aside. An artist counts only when Ticketmaster lists them with the same MusicBrainz id. Artists added in the last hour may still be `pending`.
@@ -672,6 +679,11 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `PUT /v1/me/sport-settings`.
     /// - Remark: Generated from `#/paths//v1/me/sport-settings/put(saveSportSettings)`.
     func saveSportSettings(_ input: Operations.SaveSportSettings.Input) async throws -> Operations.SaveSportSettings.Output
+    /// The page for a catalog ref, in the library or not (LIB-006). Resolving may add the title to the catalog; it never adds it to the library.
+    ///
+    /// - Remark: HTTP `POST /v1/titles/resolve`.
+    /// - Remark: Generated from `#/paths//v1/titles/resolve/post(resolveTitle)`.
+    func resolveTitle(_ input: Operations.ResolveTitle.Input) async throws -> Operations.ResolveTitle.Output
     /// A title from the catalog. Shows include their seasons and episodes.
     ///
     /// - Remark: HTTP `GET /v1/titles/{id}`.
@@ -682,6 +694,11 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /v1/titles/{id}/posts`.
     /// - Remark: Generated from `#/paths//v1/titles/{id}/posts/get(listTitlePosts)`.
     func listTitlePosts(_ input: Operations.ListTitlePosts.Input) async throws -> Operations.ListTitlePosts.Output
+    /// Films, shows and anime in progress with what Library's Watching page shows (APP-018): the next episode to watch with its name and what is left, and a show's status and next airing. Anime in the backlog are included with `entry.inBacklog`. Newest change first.
+    ///
+    /// - Remark: HTTP `GET /v1/library/watching`.
+    /// - Remark: Generated from `#/paths//v1/library/watching/get(listWatching)`.
+    func listWatching(_ input: Operations.ListWatching.Input) async throws -> Operations.ListWatching.Output
     /// The user's library, most recently updated first. Shelves use the same filters.
     ///
     /// - Remark: HTTP `GET /v1/library/items`.
@@ -2335,6 +2352,21 @@ extension APIProtocol {
             body: body
         ))
     }
+    /// Music events matching an artist's name, near a place or anywhere (MUS-010), soonest first.
+    ///
+    /// POST so neither the name nor a position sits in a URL. The name goes to Ticketmaster as free text, so other acts whose events carry the word can match. `near` searches around a one-off point or the saved city like `/v1/concerts/near` (with neither, 409 `no_place`); `anywhere` sends the name alone, and each concert's `distanceKm` is worked out by the server from the point or saved city when there is one. Neither name nor position is logged; the same list for everyone, cached by the server.
+    ///
+    /// - Remark: HTTP `POST /v1/concerts/search`.
+    /// - Remark: Generated from `#/paths//v1/concerts/search/post(searchConcerts)`.
+    public func searchConcerts(
+        headers: Operations.SearchConcerts.Input.Headers = .init(),
+        body: Operations.SearchConcerts.Input.Body
+    ) async throws -> Operations.SearchConcerts.Output {
+        try await searchConcerts(Operations.SearchConcerts.Input(
+            headers: headers,
+            body: body
+        ))
+    }
     /// Upcoming concerts by the artists of the user's albums (MUS-003).
     ///
     /// Derived from the user's own library, like the calendar; dropped albums aside. An artist counts only when Ticketmaster lists them with the same MusicBrainz id. Artists added in the last hour may still be `pending`.
@@ -2496,6 +2528,19 @@ extension APIProtocol {
             body: body
         ))
     }
+    /// The page for a catalog ref, in the library or not (LIB-006). Resolving may add the title to the catalog; it never adds it to the library.
+    ///
+    /// - Remark: HTTP `POST /v1/titles/resolve`.
+    /// - Remark: Generated from `#/paths//v1/titles/resolve/post(resolveTitle)`.
+    public func resolveTitle(
+        headers: Operations.ResolveTitle.Input.Headers = .init(),
+        body: Operations.ResolveTitle.Input.Body
+    ) async throws -> Operations.ResolveTitle.Output {
+        try await resolveTitle(Operations.ResolveTitle.Input(
+            headers: headers,
+            body: body
+        ))
+    }
     /// A title from the catalog. Shows include their seasons and episodes.
     ///
     /// - Remark: HTTP `GET /v1/titles/{id}`.
@@ -2523,6 +2568,13 @@ extension APIProtocol {
             query: query,
             headers: headers
         ))
+    }
+    /// Films, shows and anime in progress with what Library's Watching page shows (APP-018): the next episode to watch with its name and what is left, and a show's status and next airing. Anime in the backlog are included with `entry.inBacklog`. Newest change first.
+    ///
+    /// - Remark: HTTP `GET /v1/library/watching`.
+    /// - Remark: Generated from `#/paths//v1/library/watching/get(listWatching)`.
+    public func listWatching(headers: Operations.ListWatching.Input.Headers = .init()) async throws -> Operations.ListWatching.Output {
+        try await listWatching(Operations.ListWatching.Input(headers: headers))
     }
     /// The user's library, most recently updated first. Shelves use the same filters.
     ///
@@ -8704,7 +8756,7 @@ public enum Components {
             public var city: Swift.String?
             /// - Remark: Generated from `#/components/schemas/Concert/country`.
             public var country: Swift.String?
-            /// From the searched point. Absent for an artist's concerts.
+            /// From the searched point, or from the point or saved city for an `anywhere` search. Absent for "Your artists on tour", and when the venue's position is unknown.
             ///
             /// - Remark: Generated from `#/components/schemas/Concert/distanceKm`.
             public var distanceKm: Swift.Double?
@@ -8728,7 +8780,7 @@ public enum Components {
             ///   - venue:
             ///   - city:
             ///   - country:
-            ///   - distanceKm: From the searched point. Absent for an artist's concerts.
+            ///   - distanceKm: From the searched point, or from the point or saved city for an `anywhere` search. Absent for "Your artists on tour", and when the venue's position is unknown.
             ///   - url: Ticketmaster's event page.
             ///   - imageUrl: Ticketmaster's image for the event, referenced, never hosted.
             public init(
@@ -9532,6 +9584,141 @@ public enum Components {
                 case unavailable
             }
         }
+        /// `near` the point or saved city, inside `radiusKm`; `anywhere` for every upcoming date.
+        ///
+        /// - Remark: Generated from `#/components/schemas/ConcertSearchScope`.
+        @frozen public enum ConcertSearchScope: String, Codable, Hashable, Sendable, CaseIterable {
+            case near = "near"
+            case anywhere = "anywhere"
+        }
+        /// - Remark: Generated from `#/components/schemas/ConcertSearchRequest`.
+        public struct ConcertSearchRequest: Codable, Hashable, Sendable {
+            /// The artist's name, 2 to 100 characters. Not logged.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchRequest/q`.
+            public var q: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchRequest/scope`.
+            public var scope: Components.Schemas.ConcertSearchScope
+            /// Sent with `longitude` for a one-off position; absent uses the saved city.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchRequest/latitude`.
+            public var latitude: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchRequest/longitude`.
+            public var longitude: Swift.Double?
+            /// Used by `near` only.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchRequest/radiusKm`.
+            @frozen public enum RadiusKmPayload: Int, Codable, Hashable, Sendable, CaseIterable {
+                case _25 = 25
+                case _50 = 50
+                case _100 = 100
+            }
+            /// Used by `near` only.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchRequest/radiusKm`.
+            public var radiusKm: Components.Schemas.ConcertSearchRequest.RadiusKmPayload
+            /// 1-based, at most 10.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchRequest/page`.
+            public var page: Swift.Int?
+            /// Creates a new `ConcertSearchRequest`.
+            ///
+            /// - Parameters:
+            ///   - q: The artist's name, 2 to 100 characters. Not logged.
+            ///   - scope:
+            ///   - latitude: Sent with `longitude` for a one-off position; absent uses the saved city.
+            ///   - longitude:
+            ///   - radiusKm: Used by `near` only.
+            ///   - page: 1-based, at most 10.
+            public init(
+                q: Swift.String,
+                scope: Components.Schemas.ConcertSearchScope,
+                latitude: Swift.Double? = nil,
+                longitude: Swift.Double? = nil,
+                radiusKm: Components.Schemas.ConcertSearchRequest.RadiusKmPayload,
+                page: Swift.Int? = nil
+            ) {
+                self.q = q
+                self.scope = scope
+                self.latitude = latitude
+                self.longitude = longitude
+                self.radiusKm = radiusKm
+                self.page = page
+            }
+            public enum CodingKeys: String, CodingKey {
+                case q
+                case scope
+                case latitude
+                case longitude
+                case radiusKm
+                case page
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ConcertSearchPage`.
+        public struct ConcertSearchPage: Codable, Hashable, Sendable {
+            /// The name as searched, trimmed.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchPage/query`.
+            public var query: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchPage/scope`.
+            public var scope: Components.Schemas.ConcertSearchScope
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchPage/place`.
+            public var place: Components.Schemas.ConcertPlace?
+            /// Present for `near`.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchPage/radiusKm`.
+            public var radiusKm: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchPage/items`.
+            public var items: [Components.Schemas.Concert]
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchPage/page`.
+            public var page: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchPage/hasMore`.
+            public var hasMore: Swift.Bool
+            /// Concerts are off, or Ticketmaster did not answer and nothing was cached.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchPage/unavailable`.
+            public var unavailable: Swift.Bool
+            /// Creates a new `ConcertSearchPage`.
+            ///
+            /// - Parameters:
+            ///   - query: The name as searched, trimmed.
+            ///   - scope:
+            ///   - place:
+            ///   - radiusKm: Present for `near`.
+            ///   - items:
+            ///   - page:
+            ///   - hasMore:
+            ///   - unavailable: Concerts are off, or Ticketmaster did not answer and nothing was cached.
+            public init(
+                query: Swift.String,
+                scope: Components.Schemas.ConcertSearchScope,
+                place: Components.Schemas.ConcertPlace? = nil,
+                radiusKm: Swift.Int? = nil,
+                items: [Components.Schemas.Concert],
+                page: Swift.Int,
+                hasMore: Swift.Bool,
+                unavailable: Swift.Bool
+            ) {
+                self.query = query
+                self.scope = scope
+                self.place = place
+                self.radiusKm = radiusKm
+                self.items = items
+                self.page = page
+                self.hasMore = hasMore
+                self.unavailable = unavailable
+            }
+            public enum CodingKeys: String, CodingKey {
+                case query
+                case scope
+                case place
+                case radiusKm
+                case items
+                case page
+                case hasMore
+                case unavailable
+            }
+        }
         /// - Remark: Generated from `#/components/schemas/ArtistConcerts`.
         public struct ArtistConcerts: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/ArtistConcerts/items`.
@@ -9773,6 +9960,31 @@ public enum Components {
                 case byline
                 case genres
                 case tracks
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/TitlePreview`.
+        public struct TitlePreview: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/TitlePreview/title`.
+            public var title: Components.Schemas.TitleDetail
+            /// Set when the title is in the caller's library; its title page is then the one to open.
+            ///
+            /// - Remark: Generated from `#/components/schemas/TitlePreview/libraryItemId`.
+            public var libraryItemId: Swift.String?
+            /// Creates a new `TitlePreview`.
+            ///
+            /// - Parameters:
+            ///   - title:
+            ///   - libraryItemId: Set when the title is in the caller's library; its title page is then the one to open.
+            public init(
+                title: Components.Schemas.TitleDetail,
+                libraryItemId: Swift.String? = nil
+            ) {
+                self.title = title
+                self.libraryItemId = libraryItemId
+            }
+            public enum CodingKeys: String, CodingKey {
+                case title
+                case libraryItemId
             }
         }
         /// - Remark: Generated from `#/components/schemas/AlbumTrack`.
@@ -10219,6 +10431,14 @@ public enum Components {
             public var bookProgress: Components.Schemas.BookProgress?
             /// - Remark: Generated from `#/components/schemas/LibraryEntry/mangaProgress`.
             public var mangaProgress: Components.Schemas.MangaProgress?
+            /// The newest episode tick the user made in Aaru. Imported, pulled and restored ticks do not count. Absent when there is none.
+            ///
+            /// - Remark: Generated from `#/components/schemas/LibraryEntry/lastWatchedAt`.
+            public var lastWatchedAt: Foundation.Date?
+            /// APP-018 · an anime in progress the user never touched in Aaru: its status came from an import and it has no tick made in Aaru. Derived on every read; the status stays `in_progress`. Library's Now leaves these out of Watching.
+            ///
+            /// - Remark: Generated from `#/components/schemas/LibraryEntry/inBacklog`.
+            public var inBacklog: Swift.Bool
             /// Every watched episode of a show, in order. Only on single-item responses (the item,
             /// and episode and season writes); lists and sync leave it out.
             ///
@@ -10240,6 +10460,8 @@ public enum Components {
             ///   - progress:
             ///   - bookProgress:
             ///   - mangaProgress:
+            ///   - lastWatchedAt: The newest episode tick the user made in Aaru. Imported, pulled and restored ticks do not count. Absent when there is none.
+            ///   - inBacklog: APP-018 · an anime in progress the user never touched in Aaru: its status came from an import and it has no tick made in Aaru. Derived on every read; the status stays `in_progress`. Library's Now leaves these out of Watching.
             ///   - watchedEpisodes: Every watched episode of a show, in order. Only on single-item responses (the item,
             public init(
                 id: Swift.String,
@@ -10254,6 +10476,8 @@ public enum Components {
                 progress: Components.Schemas.ShowProgress? = nil,
                 bookProgress: Components.Schemas.BookProgress? = nil,
                 mangaProgress: Components.Schemas.MangaProgress? = nil,
+                lastWatchedAt: Foundation.Date? = nil,
+                inBacklog: Swift.Bool,
                 watchedEpisodes: [Components.Schemas.EpisodeRef]? = nil
             ) {
                 self.id = id
@@ -10268,6 +10492,8 @@ public enum Components {
                 self.progress = progress
                 self.bookProgress = bookProgress
                 self.mangaProgress = mangaProgress
+                self.lastWatchedAt = lastWatchedAt
+                self.inBacklog = inBacklog
                 self.watchedEpisodes = watchedEpisodes
             }
             public enum CodingKeys: String, CodingKey {
@@ -10283,6 +10509,8 @@ public enum Components {
                 case progress
                 case bookProgress
                 case mangaProgress
+                case lastWatchedAt
+                case inBacklog
                 case watchedEpisodes
             }
         }
@@ -10759,6 +10987,83 @@ public enum Components {
                 case entry
                 case showStatus
                 case nextAiring
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/Watching`.
+        public struct Watching: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/Watching/items`.
+            public var items: [Components.Schemas.WatchingItem]
+            /// Creates a new `Watching`.
+            ///
+            /// - Parameters:
+            ///   - items:
+            public init(items: [Components.Schemas.WatchingItem]) {
+                self.items = items
+            }
+            public enum CodingKeys: String, CodingKey {
+                case items
+            }
+        }
+        /// One title in progress. Shows whose episodes are loaded carry `showStatus` and `nextAiring` (the first episode not aired yet); a show with an aired episode left to watch carries `nextName`, `nextRuntimeMinutes`, `remainingCount` and `remainingMinutes` (aired, unwatched, specials left out), as Up Next's ContinueEntry does.
+        ///
+        /// - Remark: Generated from `#/components/schemas/WatchingItem`.
+        public struct WatchingItem: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/WatchingItem/entry`.
+            public var entry: Components.Schemas.LibraryEntry
+            /// - Remark: Generated from `#/components/schemas/WatchingItem/showStatus`.
+            @frozen public enum ShowStatusPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case upcoming = "upcoming"
+                case returning = "returning"
+                case ended = "ended"
+                case canceled = "canceled"
+            }
+            /// - Remark: Generated from `#/components/schemas/WatchingItem/showStatus`.
+            public var showStatus: Components.Schemas.WatchingItem.ShowStatusPayload?
+            /// - Remark: Generated from `#/components/schemas/WatchingItem/nextAiring`.
+            public var nextAiring: Components.Schemas.UpcomingEpisode?
+            /// - Remark: Generated from `#/components/schemas/WatchingItem/nextName`.
+            public var nextName: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/WatchingItem/nextRuntimeMinutes`.
+            public var nextRuntimeMinutes: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/WatchingItem/remainingCount`.
+            public var remainingCount: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/WatchingItem/remainingMinutes`.
+            public var remainingMinutes: Swift.Int?
+            /// Creates a new `WatchingItem`.
+            ///
+            /// - Parameters:
+            ///   - entry:
+            ///   - showStatus:
+            ///   - nextAiring:
+            ///   - nextName:
+            ///   - nextRuntimeMinutes:
+            ///   - remainingCount:
+            ///   - remainingMinutes:
+            public init(
+                entry: Components.Schemas.LibraryEntry,
+                showStatus: Components.Schemas.WatchingItem.ShowStatusPayload? = nil,
+                nextAiring: Components.Schemas.UpcomingEpisode? = nil,
+                nextName: Swift.String? = nil,
+                nextRuntimeMinutes: Swift.Int? = nil,
+                remainingCount: Swift.Int? = nil,
+                remainingMinutes: Swift.Int? = nil
+            ) {
+                self.entry = entry
+                self.showStatus = showStatus
+                self.nextAiring = nextAiring
+                self.nextName = nextName
+                self.nextRuntimeMinutes = nextRuntimeMinutes
+                self.remainingCount = remainingCount
+                self.remainingMinutes = remainingMinutes
+            }
+            public enum CodingKeys: String, CodingKey {
+                case entry
+                case showStatus
+                case nextAiring
+                case nextName
+                case nextRuntimeMinutes
+                case remainingCount
+                case remainingMinutes
             }
         }
         /// - Remark: Generated from `#/components/schemas/UpcomingEpisode`.
@@ -29553,6 +29858,148 @@ public enum Operations {
             }
         }
     }
+    /// Music events matching an artist's name, near a place or anywhere (MUS-010), soonest first.
+    ///
+    /// POST so neither the name nor a position sits in a URL. The name goes to Ticketmaster as free text, so other acts whose events carry the word can match. `near` searches around a one-off point or the saved city like `/v1/concerts/near` (with neither, 409 `no_place`); `anywhere` sends the name alone, and each concert's `distanceKm` is worked out by the server from the point or saved city when there is one. Neither name nor position is logged; the same list for everyone, cached by the server.
+    ///
+    /// - Remark: HTTP `POST /v1/concerts/search`.
+    /// - Remark: Generated from `#/paths//v1/concerts/search/post(searchConcerts)`.
+    public enum SearchConcerts {
+        public static let id: Swift.String = "searchConcerts"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/concerts/search/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SearchConcerts.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SearchConcerts.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.SearchConcerts.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/concerts/search/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/concerts/search/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.ConcertSearchRequest)
+            }
+            public var body: Operations.SearchConcerts.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.SearchConcerts.Input.Headers = .init(),
+                body: Operations.SearchConcerts.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/concerts/search/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/concerts/search/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.ConcertSearchPage)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ConcertSearchPage {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.SearchConcerts.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.SearchConcerts.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The page. `unavailable` when concerts are off or the provider is down.
+            ///
+            /// - Remark: Generated from `#/paths//v1/concerts/search/post(searchConcerts)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.SearchConcerts.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.SearchConcerts.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/concerts/search/post(searchConcerts)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
     /// Upcoming concerts by the artists of the user's albums (MUS-003).
     ///
     /// Derived from the user's own library, like the calendar; dropped albums aside. An artist counts only when Ticketmaster lists them with the same MusicBrainz id. Artists added in the last hour may still be `pending`.
@@ -31632,6 +32079,146 @@ public enum Operations {
             }
         }
     }
+    /// The page for a catalog ref, in the library or not (LIB-006). Resolving may add the title to the catalog; it never adds it to the library.
+    ///
+    /// - Remark: HTTP `POST /v1/titles/resolve`.
+    /// - Remark: Generated from `#/paths//v1/titles/resolve/post(resolveTitle)`.
+    public enum ResolveTitle {
+        public static let id: Swift.String = "resolveTitle"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/titles/resolve/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ResolveTitle.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ResolveTitle.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ResolveTitle.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/titles/resolve/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/titles/resolve/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.MediaRef)
+            }
+            public var body: Operations.ResolveTitle.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.ResolveTitle.Input.Headers = .init(),
+                body: Operations.ResolveTitle.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/titles/resolve/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/titles/resolve/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.TitlePreview)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.TitlePreview {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ResolveTitle.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ResolveTitle.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The title, and the caller's library item when they have it.
+            ///
+            /// - Remark: Generated from `#/paths//v1/titles/resolve/post(resolveTitle)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ResolveTitle.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ResolveTitle.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/titles/resolve/post(resolveTitle)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
     /// A title from the catalog. Shows include their seasons and episodes.
     ///
     /// - Remark: HTTP `GET /v1/titles/{id}`.
@@ -31897,6 +32484,135 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/titles/{id}/posts/get(listTitlePosts)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Films, shows and anime in progress with what Library's Watching page shows (APP-018): the next episode to watch with its name and what is left, and a show's status and next airing. Anime in the backlog are included with `entry.inBacklog`. Newest change first.
+    ///
+    /// - Remark: HTTP `GET /v1/library/watching`.
+    /// - Remark: Generated from `#/paths//v1/library/watching/get(listWatching)`.
+    public enum ListWatching {
+        public static let id: Swift.String = "listWatching"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/library/watching/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListWatching.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListWatching.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ListWatching.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.ListWatching.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/library/watching/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/library/watching/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.Watching)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.Watching {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ListWatching.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ListWatching.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The titles in progress.
+            ///
+            /// - Remark: Generated from `#/paths//v1/library/watching/get(listWatching)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ListWatching.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ListWatching.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/library/watching/get(listWatching)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)
