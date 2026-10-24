@@ -25,6 +25,7 @@ struct FriendsContent: View {
     let model: SocialModel
     let board: BoardModel
     @SceneStorage("friends.view") private var section = FriendsSection.board
+    @Environment(AppRouter.self) private var router: AppRouter?
 
     var body: some View {
         Group {
@@ -76,6 +77,12 @@ struct FriendsContent: View {
                 )
             }
             .task { await model.load() }
+            // "Write about this" from a title page opens the Board, where the composer takes it.
+            .onChange(of: router?.pendingBoardTitle, initial: true) { _, pick in
+                if pick != nil {
+                    section = .board
+                }
+            }
     }
 }
 

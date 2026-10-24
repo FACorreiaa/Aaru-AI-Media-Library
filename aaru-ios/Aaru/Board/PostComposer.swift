@@ -12,6 +12,7 @@ struct PostComposer: View {
     let mentionHandles: [String]
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(AppRouter.self) private var router: AppRouter?
     @FocusState private var focused: Bool
     @State private var text = ""
     @State private var picked: BoardTitlePick?
@@ -73,6 +74,13 @@ struct PostComposer: View {
             }
         }
         .animation(reduceMotion ? nil : AaruMotion.ease(), value: expanded)
+        // "Write about this" from a title page: take the title once, open, and clear it.
+        .onChange(of: router?.pendingBoardTitle, initial: true) { _, pick in
+            guard let pick else { return }
+            picked = pick
+            focused = true
+            router?.pendingBoardTitle = nil
+        }
         .sheet(isPresented: $picking) {
             TitlePickerSheet(api: board.api, navigationTitle: "Add a title") { hit in
                 picked = BoardTitlePick(hit)

@@ -604,6 +604,7 @@ account or a stranger that has not happened yet.
 | MNG-001 | Built, unverified | `feat/mng-001-manga`; MangaTests, AniListMangaAdapterTests | Not deployed; not run on a device |
 | MNG-002 | Built, unverified | `feat/mng-001-manga`; MangaImportTests, AnimeListImportTests | Not deployed; no real MAL manga export or AniList manga list run yet |
 | FAV-001 | Built, unverified | `feat/fav-001-favorites`; FavoritesTests, favorites model tests | Not deployed; not run on a device |
+| BOARD-003 | Built, unverified | AaruCoreTests BoardRulesTests; Friends → Board, post screen, title From friends | Apple only, this PR (feat/board-003-ios); not on TestFlight |
 | BOARD-002 | Built, unverified | web tests; `/app/friends`, `/app/friends/posts/$postId`, title page | Web only, this PR (feat/board-002-web); not run on a device or deployed |
 | BOARD-001 | Built, unverified | BoardTests, BoardTitleTests, BoardStoreTests; `/v1/board*`, `/v1/titles/{id}/posts` | Server only, not deployed; undo of a new-title review is two journal rows |
 | APP-010 | Done | #23 13227ae; WeekGridView.swift, WeekGrid.tsx | Sample data only |
@@ -3063,6 +3064,8 @@ upvoter names, upvote, and "From friends" on the title page. Surfaces in `DESIGN
 ### BOARD-003 · Board on iOS and Mac · L
 **Needs:** BOARD-001.
 The same surfaces as BOARD-002 in SwiftUI: Board inside Friends, reached on iPhone from Groups' Friends button.
+
+**Built 2026-10-24:** iPhone, iPad and Mac, unverified (not on TestFlight). On iPhone Groups' stack now uses a NavigationPath so posts can push from Friends.
 
 ### BOARD-004 · `@aaru` on the Board, and push · M
 **Needs:** BOARD-001, GRP-011, GRP-012.

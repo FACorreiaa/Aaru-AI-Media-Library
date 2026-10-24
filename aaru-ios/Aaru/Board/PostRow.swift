@@ -155,7 +155,8 @@ struct PostRow<Editor: View>: View {
 
 /// The Board's row: no editor, and the comment count opens the post screen.
 extension PostRow where Editor == EmptyView {
-    init(post: BoardPost, myHandle: String?, board: BoardModel) {
+    init(post: BoardPost, myHandle: String?, board: BoardModel, standalone: Bool = false) {
+        self.standalone = standalone
         self.post = post
         self.myHandle = myHandle
         self.board = board

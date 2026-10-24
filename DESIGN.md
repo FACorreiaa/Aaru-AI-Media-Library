@@ -686,6 +686,15 @@ friends, activity, leaderboard, Invite, requests, friends). No nav rename, Group
   title and "Write about this" (to Friends with the title in the composer). Hidden when there
   are no posts and no friends.
 
+**On Apple (BOARD-003, 2026-10-24).** Board sits inside Friends, as on the web: on iPhone it is
+reached from Groups' Friends button, on iPad and Mac from the Friends sidebar item. `Board | Lately`
+is a segmented control in the navigation bar. A post's comment count pushes the post screen in the
+Friends stack. Upvote gives a light haptic. On iPad and Mac the column is capped at about 640pt
+and centred. ⌘R reloads the Board and ⌘↩ posts from the composer on Mac. The Apple composer rates
+in whole stars with the existing `RatingStars`; half stars from web posts display as halves.
+"From friends" on a title page shows up to five compact rows, and "Write about this" opens the
+Board with the title in the composer.
+
 ### Achievements (GAM-001…005, WID-007, pulled forward 2026-10-22)
 
 Achievements are a shelf of medallions you fill by living with your library, not a game layered

@@ -138,6 +138,12 @@ final class BoardModel {
         }
     }
 
+    /// Shows posts loaded elsewhere (a title page's "From friends") so their upvotes work here.
+    func adopt(_ items: [BoardPost]) {
+        posts = items
+        hasLoaded = true
+    }
+
     /// Signing out forgets the Board.
     func reset() {
         sort = .recent

@@ -80,6 +80,9 @@ final class AppRouter {
     var showsFriendsInGroups = false
     /// A new list was asked for (⌘N, Home's "New list"); Lists starts one and clears it.
     var pendingNewList = false
+    /// "Write about this" on a title page (BOARD-003): Friends opens on the Board and the composer
+    /// takes this title once, then clears it.
+    var pendingBoardTitle: BoardTitlePick?
 
     /// iPhone and iPad: the Settings stack (a page, an import job, History).
     var settingsPath: [SettingsRoute] = []
