@@ -27,6 +27,7 @@ struct ProviderError: Error, Equatable {
         case "mal": "MyAnimeList"
         case "tvmaze": "TVmaze"
         case "pogdesign": "Pogdesign CAT"
+        case "thesportsdb": "TheSportsDB"
         default: provider
         }
     }

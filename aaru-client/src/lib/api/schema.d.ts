@@ -1737,6 +1737,156 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/sports/suggested': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * The first-run picks for Sports (SPT-002).
+     * @description A fixed list of leagues and promotions (Premier League, La Liga, NBA, NFL, UFC, WWE…) with their badges once known. The same for everyone; never a recommendation.
+     */
+    get: operations['getSportSuggestions']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/sports/search': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Leagues, teams and players by name, from the sports provider (SPT-002). */
+    get: operations['searchSports']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/sports/favorites': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Each followed league, team and player with what is live, next and last (SPT-002).
+     * @description Near-live: scores refresh about every two minutes for football, NFL, NBA, MLB and NHL. UFC and WWE cards have results, not live scores. Entries still being fetched come back `pending`; ask again in a few seconds.
+     */
+    get: operations['getSportFavorites']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/sports/schedule': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** One day of events for the leagues the user follows, favorites highlighted (SPT-002). */
+    get: operations['getSportSchedule']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/sports/events/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** One event with its live line and where to watch it (SPT-002, SPT-005). */
+    get: operations['getSportEvent']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/sport-follows': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** The leagues, teams and players the user follows in Sports, oldest first. */
+    get: operations['listSportFollows']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/sport-follows/{kind}/{providerId}': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        kind: components['schemas']['SportEntityKind']
+        providerId: string
+      }
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Follows a league, team or player by the sports provider's id. Idempotent.
+     * @description Sports only: never a library write, never journaled, never shown to friends. 404 when the provider does not know the id, 409 `too_many_follows` past 100, 503 when Sports are off.
+     */
+    put: operations['followSport']
+    post?: never
+    /** Stops following. Idempotent. */
+    delete: operations['unfollowSport']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/sport-settings': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** The country "Where to watch" looks at, and whether Sports are on at all. */
+    get: operations['getSportSettings']
+    /** Saves the "Where to watch" country; absent or null clears it. */
+    put: operations['saveSportSettings']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/titles/{id}': {
     parameters: {
       query?: never
@@ -3718,6 +3868,123 @@ export interface components {
       /** @description Ticketmaster's image for the event, referenced, never hosted. */
       imageUrl?: string
     }
+    /** @enum {string} */
+    SportEntityKind: 'league' | 'team' | 'player'
+    /** @description A league (or promotion: UFC, WWE), team or player from the sports provider, by its id. Catalog data for Sports only; never a Title. */
+    SportEntity: {
+      kind: components['schemas']['SportEntityKind']
+      /** @description The provider's id. */
+      id: string
+      name: string
+      /** @description The provider's sport: Soccer, Basketball, American Football, Fighting… */
+      sport: string
+      /** @description Badge */
+      badgeUrl?: string
+      country?: string
+      leagueId?: string
+      /** @description A player's team (a fighter's division). */
+      teamId?: string
+      teamName?: string
+      /** @description Whether the user follows it. */
+      following: boolean
+    }
+    SportEntityList: {
+      items: components['schemas']['SportEntity'][]
+      /** @description True when Sports are off on this server. */
+      unavailable: boolean
+    }
+    SportFollowList: {
+      items: components['schemas']['SportEntity'][]
+    }
+    SportSide: {
+      id?: string
+      name: string
+      badgeUrl?: string
+      score?: number
+    }
+    /** @enum {string} */
+    SportEventStatus:
+      'scheduled' | 'live' | 'finished' | 'postponed' | 'cancelled'
+    /** @description One match, game or card (a UFC or WWE event has no home and away). Catalog data, kept no longer than the cache. */
+    SportEvent: {
+      id: string
+      sport: string
+      name: string
+      leagueId?: string
+      league?: string
+      leagueBadgeUrl?: string
+      home?: components['schemas']['SportSide']
+      away?: components['schemas']['SportSide']
+      /**
+       * Format: date-time
+       * @description The exact start
+       */
+      startsAt?: string
+      /** @description The UTC day, YYYY-MM-DD. */
+      day: string
+      status: components['schemas']['SportEventStatus']
+      /** @description The live clock or period: "67", "HT", "Q3". Live only. */
+      progress?: string
+      venue?: string
+      round?: string
+      imageUrl?: string
+      /** @description A followed team or player's team plays in it. */
+      isFavorite: boolean
+    }
+    SportFavorite: {
+      entity: components['schemas']['SportEntity']
+      live: components['schemas']['SportEvent'][]
+      next?: components['schemas']['SportEvent']
+      last?: components['schemas']['SportEvent']
+      /** @description Still being fetched; ask again in a few seconds. */
+      pending: boolean
+    }
+    SportFavorites: {
+      items: components['schemas']['SportFavorite'][]
+      unavailable: boolean
+    }
+    SportScheduleGroup: {
+      leagueId?: string
+      league: string
+      sport: string
+      badgeUrl?: string
+      events: components['schemas']['SportEvent'][]
+    }
+    SportSchedule: {
+      date: string
+      /** @description Leagues with a favorite first, then by name. */
+      groups: components['schemas']['SportScheduleGroup'][]
+      /** @description Some leagues are still being fetched. */
+      pending: boolean
+      unavailable: boolean
+    }
+    SportBroadcast: {
+      channel: string
+      country?: string
+      logoUrl?: string
+    }
+    SportEventDetail: {
+      event: components['schemas']['SportEvent']
+      /** @description Channels in the "Where to watch" country. Empty when none is chosen. */
+      inYourCountry: components['schemas']['SportBroadcast'][]
+      /** @description Every other channel the provider lists, by country. */
+      elsewhere: components['schemas']['SportBroadcast'][]
+      watchCountryCode?: string
+    }
+    SportSettings: {
+      /** @description ISO 3166-1 alpha-2. */
+      watchCountryCode?: string
+      /** @description False when Sports are off on this server; clients hide the Sports tab. */
+      available: boolean
+    }
+    SportSettingsInput: {
+      /** @description ISO 3166-1 alpha-2; null or absent clears it. */
+      watchCountryCode?: string | null
+    }
+    SportsExport: {
+      follows: components['schemas']['SportEntity'][]
+      watchCountryCode?: string
+    }
     ConcertPlace: {
       /** @description 1 to 200 characters. */
       name: string
@@ -3943,6 +4210,7 @@ export interface components {
       /** @description Every listen in your listening log, newest first (MUS-005). */
       listens?: components['schemas']['Listen'][]
       favorites?: components['schemas']['Favorites']
+      sports?: components['schemas']['SportsExport']
     }
     LibraryPage: {
       items: components['schemas']['LibraryEntry'][]
@@ -7314,6 +7582,236 @@ export interface operations {
           [name: string]: unknown
         }
         content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getSportSuggestions: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The picks. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SportEntityList']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  searchSports: {
+    parameters: {
+      query: {
+        /** @description 2 to 100 characters. */
+        q: string
+        /** @description Absent searches all three. */
+        kind?: components['schemas']['SportEntityKind']
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Up to ten of each kind, leagues first. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SportEntityList']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getSportFavorites: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The favorites, in follow order. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SportFavorites']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getSportSchedule: {
+    parameters: {
+      query: {
+        /** @description The local day, YYYY-MM-DD. */
+        date: string
+        /** @description The IANA time zone the day is in. Default UTC. */
+        tz?: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The day, grouped by league. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SportSchedule']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getSportEvent: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The event. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SportEventDetail']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  listSportFollows: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The follows. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SportFollowList']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  followSport: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        kind: components['schemas']['SportEntityKind']
+        providerId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Followed. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SportEntity']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  unfollowSport: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        kind: components['schemas']['SportEntityKind']
+        providerId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Not followed any more, or never was. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getSportSettings: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The settings. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SportSettings']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  saveSportSettings: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SportSettingsInput']
+      }
+    }
+    responses: {
+      /** @description Saved. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SportSettings']
+        }
       }
       default: components['responses']['Error']
     }
