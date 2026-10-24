@@ -86,59 +86,80 @@ struct TonightCard: View {
         .padding(wide ? 24 : 16)
     }
 
-    /// The full phrasing where it fits; on a narrow iPhone the ticks drop to the bare code so
-    /// nothing truncates.
+    /// The full phrasing on one row where it fits, then the ticks drop to the bare code. On a
+    /// narrow iPhone with the season tick too, Open and More move to a second row, and at the
+    /// largest text sizes each tick takes its own row. A label never wraps inside its button.
     private var actions: some View {
         ViewThatFits(in: .horizontal) {
-            actionRow(short: false)
-            actionRow(short: true)
+            HStack(spacing: 12) {
+                ticks(short: false)
+                navigation
+            }
+            HStack(spacing: 12) {
+                ticks(short: true)
+                navigation
+            }
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 12) { ticks(short: true) }
+                HStack(spacing: 12) { navigation }
+            }
+            VStack(alignment: .leading, spacing: 12) {
+                ticks(short: true)
+                HStack(spacing: 12) { navigation }
+            }
         }
+        .lineLimit(1)
         .controlSize(.large)
     }
 
-    private func actionRow(short: Bool) -> some View {
-        HStack(spacing: 12) {
-            if let entry = tonight.primary.markable {
-                let code = EpisodeCode.short(season: entry.next.season, number: entry.next.number)
-                Button {
-                    onMarkWatched(entry)
-                } label: {
-                    // One phrasing for the tick wherever the episode is named (UX-044).
-                    Label(short ? code : "Mark \(code) watched", systemImage: "checkmark")
-                        .frame(minHeight: 32)
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(isPending)
-                .accessibilityLabel("Mark \(entry.title.title) \(code) watched")
-            }
-            if let entry = tonight.primary.seasonMarkable {
-                Button {
-                    onMarkSeasonWatched(entry)
-                } label: {
-                    Label(
-                        short ? "Season \(entry.next.season)" : "Season \(entry.next.season) watched",
-                        systemImage: "checkmark.circle"
-                    )
-                    .frame(minHeight: 32)
-                }
-                .buttonStyle(.bordered)
-                .disabled(isPending)
-                .accessibilityLabel("Mark \(entry.title.title) season \(entry.next.season) watched")
-            }
-            NavigationLink(value: tonight.primary.libraryItemId) {
-                Text("Open").frame(minHeight: 32)
-            }
-            .buttonStyle(.bordered)
-            Menu {
-                setAsideButtons(tonight.primary)
+    @ViewBuilder private func ticks(short: Bool) -> some View {
+        if let entry = tonight.primary.markable {
+            let code = EpisodeCode.short(season: entry.next.season, number: entry.next.number)
+            Button {
+                onMarkWatched(entry)
             } label: {
-                Label("More", systemImage: "ellipsis")
-                    .labelStyle(.iconOnly)
-                    .frame(minWidth: 32, minHeight: 32)
+                // One phrasing for the tick wherever the episode is named (UX-044).
+                Label(short ? code : "Mark \(code) watched", systemImage: "checkmark")
+                    .frame(minHeight: 32)
+            }
+            .buttonStyle(.borderedProminent)
+            .fixedSize()
+            .disabled(isPending)
+            .accessibilityLabel("Mark \(entry.title.title) \(code) watched")
+        }
+        if let entry = tonight.primary.seasonMarkable {
+            Button {
+                onMarkSeasonWatched(entry)
+            } label: {
+                Label(
+                    short ? "Season \(entry.next.season)" : "Season \(entry.next.season) watched",
+                    systemImage: "checkmark.circle"
+                )
+                .frame(minHeight: 32)
             }
             .buttonStyle(.bordered)
-            .accessibilityLabel("Set \(tonight.primary.title.title) aside")
+            .fixedSize()
+            .disabled(isPending)
+            .accessibilityLabel("Mark \(entry.title.title) season \(entry.next.season) watched")
         }
+    }
+
+    @ViewBuilder private var navigation: some View {
+        NavigationLink(value: tonight.primary.libraryItemId) {
+            Text("Open").frame(minHeight: 32)
+        }
+        .buttonStyle(.bordered)
+        .fixedSize()
+        Menu {
+            setAsideButtons(tonight.primary)
+        } label: {
+            Label("More", systemImage: "ellipsis")
+                .labelStyle(.iconOnly)
+                .frame(minWidth: 32, minHeight: 32)
+        }
+        .buttonStyle(.bordered)
+        .fixedSize()
+        .accessibilityLabel("Set \(tonight.primary.title.title) aside")
     }
 
     @ViewBuilder private func setAsideButtons(_ pick: TonightPick) -> some View {
@@ -167,6 +188,16 @@ struct TonightCard: View {
             TonightCard(tonight: tonight, isPending: false) { _ in }
                 .padding(20)
         }
+    }
+}
+
+#Preview("Tonight, narrow iPhone · dark", traits: .fixedLayout(width: 375, height: 640)) {
+    if let tonight = HomeModel.sample.tonight {
+        NavigationStack {
+            TonightCard(tonight: tonight, isPending: false) { _ in }
+                .padding(16)
+        }
+        .preferredColorScheme(.dark)
     }
 }
 

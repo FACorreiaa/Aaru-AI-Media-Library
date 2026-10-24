@@ -66,6 +66,15 @@ struct CodableRoundTripTests {
     }
 
     @Test
+    func mangaProgressSurvivesRoundTrip() throws {
+        let progress = try Progress.manga(MangaProgress(chapter: 112, volume: 12))
+        let decoded = try roundTrip(progress)
+        #expect(decoded.manga?.chapter == 112)
+        #expect(decoded.manga?.volume == 12)
+        #expect(decoded.book == nil)
+    }
+
+    @Test
     func listAndImportJobSurviveRoundTrip() throws {
         let list = AaruList(userID: UserID(), name: "Comfort rewatches", titleIDs: [TitleID(), TitleID()])
         #expect(try roundTrip(list) == list)

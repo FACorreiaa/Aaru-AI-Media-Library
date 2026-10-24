@@ -213,7 +213,10 @@ struct LibraryWriteFacts: Equatable, Sendable {
         } else if previous.status == .finished, new.status != .finished {
             unfinished.insert(id)
         }
-        if (new.bookPage ?? 0) > (previous.bookPage ?? 0) || (new.bookPercent ?? 0) > (previous.bookPercent ?? 0) {
+        if (new.bookPage ?? 0) > (previous.bookPage ?? 0) || (new.bookPercent ?? 0) > (previous.bookPercent ?? 0)
+            || (new.mangaChapter ?? 0) > (previous.mangaChapter ?? 0)
+            || (new.mangaVolume ?? 0) > (previous.mangaVolume ?? 0)
+        {
             bookForward.insert(id)
         }
     }

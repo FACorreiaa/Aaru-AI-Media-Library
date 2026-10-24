@@ -60,6 +60,22 @@ library layer stay separate, external IDs stored whenever known, no second backe
   password (no OAuth) and bans by IP, and every Aaru user shares the cluster's, so Aaru neither
   reads nor writes AniDB mylists. It loads AniDB's daily title dump for alternate titles
   (CAT-022). Scraping AniDB stays out.
+- **Manga pulled forward (owner, 2026-10-23, MNG-001…002).** Manga becomes a sixth kind,
+  `MediaType.manga`: one AniList work of type MANGA (manga, manhwa, manhua, one-shots, light
+  novels), with chapter and volume progress and book words (Plan to read / Reading / Read /
+  Dropped). AniList is its only catalog, so while AniList is down manga search says so and offers
+  nothing else. MyAnimeList numbers anime and manga separately, so a MAL id is unique per list,
+  not per catalog; AniList ids stay global. MyAnimeList's manga export and AniList's manga list
+  import like the anime ones, and an imported reading position moves forward only. Comics and
+  games stay after the P2 gate.
+- **Goodreads stays a CSV (owner, 2026-10-23, IMP-020).** "Connect" is not possible: Goodreads
+  closed its API to new developers in December 2020. The owner chose a better CSV flow over an
+  RSS read or any scraping: better matching and an export guide on the tile.
+- **Favorites on the profile (owner, 2026-10-23, FAV-001).** In Settings, a user picks an
+  ordered top 10 per kind (films, shows, anime, manga, books, albums; fewer than 10 is fine), from
+  any catalog title, not only the library. Favorites show on the user's profile and, behind
+  `share_library_with_friends`, on a friend's view of it. They are profile data: not a library
+  write, not journaled, not a list.
 
 ## Decisions recorded 2026-10-22
 
@@ -585,6 +601,9 @@ account or a stranger that has not happened yet.
 | MUS-007 | Built, unverified | MusicSection (web, Apple); ListenBrainzRouteTests `musicSetup`; music model tests | Not deployed; steps checked against client source, not tried with a real scrobbler |
 | MUS-008 | Built, unverified | ListenStatsTests; listening-model and recap deck tests; `/app/music`, MusicView, MusicInsights, OnRepeatCard | Not deployed; not run on a device with real listens |
 | MUS-009 | Not started | — | Waits for a Bandsintown app id |
+| MNG-001 | Built, unverified | `feat/mng-001-manga`; MangaTests, AniListMangaAdapterTests | Not deployed; not run on a device |
+| MNG-002 | Built, unverified | `feat/mng-001-manga`; MangaImportTests, AnimeListImportTests | Not deployed; no real MAL manga export or AniList manga list run yet |
+| FAV-001 | Built, unverified | `feat/fav-001-favorites`; FavoritesTests, favorites model tests | Not deployed; not run on a device |
 | BOARD-002 | Built, unverified | web tests; `/app/friends`, `/app/friends/posts/$postId`, title page | Web only, this PR (feat/board-002-web); not run on a device or deployed |
 | BOARD-001 | Built, unverified | BoardTests, BoardTitleTests, BoardStoreTests; `/v1/board*`, `/v1/titles/{id}/posts` | Server only, not deployed; undo of a new-title review is two journal rows |
 | APP-010 | Done | #23 13227ae; WeekGridView.swift, WeekGrid.tsx | Sample data only |
@@ -613,6 +632,7 @@ account or a stranger that has not happened yet.
 | IMP-017 | Built | ImportSpeedTests, imports model tests; local run of a 2,001-entry MAL export | Live 2026-10-21 (API c8b19e7, LuminaVaultInfra#405; web prod); Apple ledger not run on a device |
 | IMP-018 | Built, unverified | `feat/netflix-import`; NetflixCSVParser, EpisodeNameMatcher, NetflixImportTests | No real export run yet |
 | IMP-019 | Open | BACKLOG IMP-019 | Bingers has an API only for paid plans; owner decides |
+| IMP-020 | Built, unverified | #172; CSVImportParser, TitleResolver, GoodreadsImportTests, BookYearToleranceTests | Stub catalog only; no real Goodreads export run yet |
 | PRV-001 | Done | #27 8d5ddc3; docs/providers.md, AboutView.swift | privacy@ routing not set up |
 | CAT-011 | Done | #24 7edc80c; TVmazeAirTimes.swift | |
 | CAT-012 | Open | no Google Books code | |
@@ -1757,6 +1777,58 @@ Insights gains a Music block (listens, minutes, top artists, tracks and albums);
 lists recent listens with the top lists by period; the Recap gains a top-artist card when the
 period has listens.
 
+### MNG-001 · Manga as a sixth kind · L · pulled forward 2026-10-23
+**Needs:** LIB-001, CAT-005.
+`MediaType.manga`: one AniList work of type MANGA, any format (manga, manhwa, manhua, one-shot,
+light novel), stored with its `anilist` and `mal` ids, the story and art credits as `byline`,
+and `chapter_count` / `volume_count` when AniList knows them. Search `type=manga` goes to AniList
+alone with `isAdult: false`; `all` never includes manga, as with books. AniList down means an
+empty, incomplete result that says so; there is no fallback. MAL numbers anime and manga
+separately, so `titles.mal` is unique per list (two partial indexes) and a manga never resolves
+through `anime_mappings`. Progress is `mangaChapter` and `mangaVolume` on the item patch
+(`clear: mangaProgress`), journaled and undoable like a book page; a non-manga refuses them
+(422). Points and stats count a manga finish like a book (`mangaFinished`; `byKind` lists
+`manga` only when the period has one, and `KindCounts.manga` is optional, so older clients keep
+decoding). Clients: Manga in search and the Library kind filter, a portrait cover, the Reading
+row with "Read ch. N", chapter and volume on the title page, Insights, the Recap and a friend's
+counts. Older Apple builds fail on the new enum value, so the API is promoted only after the
+TestFlight build that knows it.
+
+**Done when:** on iPhone, Mac and web, searching "Berserk" finds the manga with its authors, it
+adds in one tap as Plan to read, "Read ch. N" moves the chapter and undo takes it back, and
+Read moves it into the year's Insights.
+
+### MNG-002 · MyAnimeList and AniList manga lists · M · pulled forward 2026-10-23
+**Needs:** MNG-001, IMP-013, IMP-014.
+MyAnimeList's manga export (`<manga>` blocks, alone or in one file with the anime list) reads
+`manga_mangadb_id`, title, status (Reading, Completed, On-Hold, Dropped, Plan to Read), score,
+finish date, and chapters and volumes read; a completed entry with nothing read counts as all of
+it. Rows resolve by MAL id through AniList's MANGA batch. AniList by username reads the ANIME
+and MANGA lists in one job (`progress` → chapter, `progressVolumes` → volume) and fails only
+when both are empty. An imported chapter or volume fills an empty item and moves forward only,
+like episode ticks.
+
+**Done when:** a real MAL manga export and an AniList user with both lists import on web and
+Apple, the plan shows "adds the chapter N" for a manga already in the library, and a lower
+chapter than the library's leaves it alone.
+
+### FAV-001 · Favorites: a top 10 per kind on the profile · M · owner, 2026-10-23
+**Needs:** MNG-001, SOC-001.
+`favorites (user_id, kind, position 0…9, title_id)`, kind one of film, show, anime, manga, book,
+album (anime is a flag on movie and show, so the kind is stored). `GET /v1/me/favorites` returns
+every kind's titles in order; `PUT /v1/me/favorites/{kind}` replaces one kind with up to 10
+`MediaRef`s, no duplicates, each resolved like a list add and checked against the kind (else
+422). One call covers add, remove and reorder. Not journaled: profile data like `PUT
+/v1/me/profile`. `FriendProfile.favorites` carries them only when the friend shares their
+library; the account export includes them. Web: a Favorites section on Settings → Account with
+kind tabs, the title picker and move up/down; a row per kind on the profile and on a friend's
+profile. iPhone and Mac: Favorites under the profile editor (reorder by drag, delete, add from
+the title picker), rows on the profile and a friend's profile.
+
+**Done when:** on iPhone, Mac and web a user sets five favorite films and three manga, reorders
+them, cannot add an eleventh, sees them on their profile, and a friend sees them only while
+library sharing is on.
+
 ### APP-010 · Week grid · L
 **Needs:** APP-001, CAL-001.
 Pogdesign CAT-style `WeekGrid`: seven day columns, previous/next day stepping, today
@@ -2011,6 +2083,33 @@ by title + author, and a custom shelf produces one Aaru list, not one per row.
 **Progress 2026-10-15:** built and tested end to end (Open Library needs no key, so it also works
 locally): `=""` ISBNs, title + author fallback, custom shelves become one list each (an existing
 list of that name is reused).
+
+### IMP-020 · Goodreads CSV matching and export guide · S
+**Needs:** IMP-008.
+Owner, 2026-10-23: "connect or import books from Goodreads". Goodreads closed its API to new
+developers in December 2020, so there is no connect option. The owner chose the CSV only, with a
+better flow: no link, no RSS feed, no scraping exception.
+
+- An ISBN Open Library does not know falls back to title + year + author, as a row without one.
+- The series suffix Goodreads adds ("Leviathan Wakes (The Expanse, #1)") leaves the title before
+  matching. Only a bracket that numbers the book in a series goes.
+- A book may match one year off only when the row's author is one of the hit's authors
+  (normalized) and exactly one hit qualifies; two such hits stay unmatched. No other kind is
+  loosened, and a similar name alone still never merges.
+- Exclusive shelf `dnf`, `did-not-finish`, `abandoned` or `dropped` (any case, spaces or
+  hyphens) → `dropped`; the shelf still becomes a list.
+- `My Review` (Goodreads HTML made plain), else `Private Notes`, fills empty notes only.
+  `Owned Copies` above 0 sets owned; an import never clears it.
+- The Goodreads tile on web and Apple says how to export (My Books → Import and export → Export
+  Library) and that Goodreads has no connect option.
+
+**Done when:** a Goodreads export whose ISBNs Open Library lacks, whose titles carry series
+suffixes, and whose years are one off still matches those books by title and author; a DNF
+shelf lands as dropped; reviews and owned copies arrive without overwriting what the library
+has; and the tile tells the person how to get the file.
+
+**Progress 2026-10-23:** built and tested with a stub catalog (parser, flow and core matching
+tests). Not run on a real export yet.
 
 ### IMP-009 · CAT show list · M
 **Needs:** IMP-005, CAT-002.
@@ -3660,7 +3759,8 @@ public API with third-party clients (M14's agent access and P3's scrobble tokens
 and token-scoped, which is a different thing).
 
 Moved out of this list on 2026-10-15 and scheduled after the P2 gate: music, manga, comics and
-games (see the 2026-10-15 decisions).
+games (see the 2026-10-15 decisions). Music was pulled forward on 2026-10-21 (MUS-001…003) and
+manga on 2026-10-23 (MNG-001…002).
 
 Moved out of this list on 2026-10-09 and scheduled after the P2 gate: scrobbling (P3), MAL /
 AniList (P1 catalog, P3 push), friend graph and activity (P4), shared lists (P4), gamification

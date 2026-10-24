@@ -169,6 +169,7 @@ extension MediaKind {
         case .anime: self = .anime
         case .book: self = .book
         case .album: self = .music
+        case .manga: self = .manga
         }
     }
 }

@@ -1,6 +1,6 @@
 import Foundation
 
-/// A canonical work Aaru knows about: one movie, show, book, or album.
+/// A canonical work Aaru knows about: one movie, show, book, album, or manga.
 ///
 /// Titles are shared across users. Ratings, status, notes, and progress belong on
 /// `LibraryItem` and must never appear here.
@@ -24,6 +24,9 @@ public struct Title: Codable, Hashable, Sendable, Identifiable {
     public var byline: String?
     /// A book's length in pages (Open Library's median across editions), for a reading bar.
     public var pageCount: Int?
+    /// A manga's length as AniList knows it: `nil` while it is still running.
+    public var chapterCount: Int?
+    public var volumeCount: Int?
     public var ids: ExternalIDs
     /// Anime is a facet on `movie`/`show`, not a fourth `MediaType`: an anime series
     /// shares show progress, calendar, Up Next, and widgets with every other show.
@@ -43,6 +46,8 @@ public struct Title: Codable, Hashable, Sendable, Identifiable {
         network: String? = nil,
         byline: String? = nil,
         pageCount: Int? = nil,
+        chapterCount: Int? = nil,
+        volumeCount: Int? = nil,
         ids: ExternalIDs = ExternalIDs(),
         isAnime: Bool = false,
         seasons: [Season]? = nil
@@ -58,6 +63,8 @@ public struct Title: Codable, Hashable, Sendable, Identifiable {
         self.network = network
         self.byline = byline
         self.pageCount = pageCount
+        self.chapterCount = chapterCount
+        self.volumeCount = volumeCount
         self.ids = ids
         self.isAnime = isAnime
         self.seasons = seasons

@@ -66,6 +66,7 @@ extension Components.Schemas.MediaType {
         case .show: self = .show
         case .book: self = .book
         case .album: self = .album
+        case .manga: self = .manga
         }
     }
 }

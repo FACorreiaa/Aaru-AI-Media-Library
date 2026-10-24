@@ -23,6 +23,8 @@ struct FriendItem: Sendable, Equatable {
     var lastSeason: Int?
     var lastEpisode: Int?
     var bookPage: Int?
+    /// The last chapter they read, for manga.
+    var mangaChapter: Int?
     var finishedAt: Date?
     var updatedAt: Date
 }

@@ -20,6 +20,9 @@ struct CatalogHit: Sendable, Equatable {
     var releaseDate: String?
     /// Books: pages, the median across editions (Open Library).
     var pageCount: Int?
+    /// Manga: chapters and volumes once AniList knows them (MNG-001).
+    var chapterCount: Int?
+    var volumeCount: Int?
 
     var mediaRef: MediaRef {
         MediaRef(type: type, ids: ids, title: title, year: year)
@@ -74,10 +77,11 @@ protocol CatalogSearching: Sendable {
     func hydrate(ids: ExternalIDs, type: MediaType) async throws -> CatalogTitle?
 }
 
-/// Many anime by MyAnimeList id in few requests (IMP-017). AniList's `idMal_in`.
+/// Many anime or manga by MyAnimeList id in few requests (IMP-017). AniList's `idMal_in`.
 protocol MALBatchHydrating: Sendable {
-    /// Keyed by MAL id; an id the provider does not know is missing.
-    func hydrate(malIDs: [String]) async throws -> [String: CatalogTitle]
+    /// Keyed by MAL id; an id the provider does not know is missing. `type` is `.manga` for
+    /// MAL's manga list and anything else for its anime list: MAL numbers the two apart.
+    func hydrate(malIDs: [String], type: MediaType) async throws -> [String: CatalogTitle]
 }
 
 /// One query across films and shows at once (CAT-019's All scope). TMDB's `search/multi`.
@@ -91,7 +95,7 @@ protocol EpisodeListing: Sendable {
     func episodes(ids: ExternalIDs) async throws -> CatalogEpisodes?
 }
 
-/// The adapters, by role. Search scope `anime` goes to AniList; movie/show to TMDB;
+/// The adapters, by role. Search scopes `anime` and `manga` go to AniList; movie/show to TMDB;
 /// book to Open Library; album to MusicBrainz; `all` to TMDB's multi search and AniList together.
 struct CatalogProviders: Sendable {
     var tmdb: any CatalogSearching & EpisodeListing & MultiSearching

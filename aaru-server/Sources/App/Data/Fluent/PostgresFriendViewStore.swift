@@ -15,6 +15,7 @@ struct PostgresFriendViewStore: FriendViewStore {
         let lastSeason: Int?
         let lastEpisode: Int?
         let bookPage: Int?
+        let mangaChapter: Int?
         let finishedAt: Date?
         let updatedAt: Date
 
@@ -22,7 +23,8 @@ struct PostgresFriendViewStore: FriendViewStore {
             guard let status = LibraryStatus(rawValue: status) else { return nil }
             return FriendItem(
                 titleID: TitleID(titleId), status: status, rating: rating, lastSeason: lastSeason,
-                lastEpisode: lastEpisode, bookPage: bookPage, finishedAt: finishedAt, updatedAt: updatedAt
+                lastEpisode: lastEpisode, bookPage: bookPage, mangaChapter: mangaChapter, finishedAt: finishedAt,
+                updatedAt: updatedAt
             )
         }
     }
@@ -156,7 +158,7 @@ struct PostgresFriendViewStore: FriendViewStore {
     private func items(_ owner: UserID, status: String, order: String, limit: Int) async throws -> [FriendItem] {
         try await sql.raw("""
         SELECT li.title_id, li.status, li.rating, last.season AS last_season, last.episode AS last_episode,
-            li.book_page, li.finished_at, li.updated_at
+            li.book_page, li.manga_chapter, li.finished_at, li.updated_at
         FROM library_items li
         LEFT JOIN LATERAL (
             SELECT season, episode FROM episode_progress

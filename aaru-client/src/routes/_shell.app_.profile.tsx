@@ -1,6 +1,8 @@
 import { createFileRoute } from '@tanstack/solid-router'
 import { ProfilePanel } from '../components/ProfilePanel'
 import { BackLink } from '../components/shell/BackLink'
+import { loadFavorites } from '../lib/favorites/server'
+import type { Favorites } from '../lib/favorites/model'
 import { libraryQuery, profileStatsQuery } from '../lib/queries'
 
 // The profile on the web (GAM-006b, owner 2026-10-22): reached from the medallion on Home's
@@ -9,13 +11,16 @@ import { libraryQuery, profileStatsQuery } from '../lib/queries'
 export const Route = createFileRoute('/_shell/app_/profile')({
   head: () => ({ meta: [{ title: 'Profile · Aaru' }] }),
   loader: async ({ context: { queryClient, session } }) => {
-    const [stats, library] = await Promise.all([
+    const [stats, library, favorites] = await Promise.all([
       queryClient.query(profileStatsQuery),
       queryClient.query(libraryQuery).catch(() => []),
+      // An extra: without an answer, the Favorites section stays out.
+      loadFavorites().catch((): Favorites | undefined => undefined),
     ])
     const items = new Map(library.map((entry) => [entry.title.id, entry.id]))
     return {
       stats,
+      favorites,
       person: { displayName: session.displayName, handle: session.handle },
       items: Object.fromEntries(
         stats.mostWatched.flatMap((top) => {
@@ -38,6 +43,7 @@ function Profile() {
           stats={loaded().stats}
           person={loaded().person}
           itemFor={(titleId) => loaded().items[titleId]}
+          favorites={loaded().favorites}
         />
       </div>
     </div>

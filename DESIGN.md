@@ -148,6 +148,10 @@ genre chips, the same status / rating / notes as any title, then the tracklist (
 length in tabular figures; "Disc 1"… only when there is more than one). No playback and no
 ticks: the tracklist is catalog data. Without one yet, a quiet "Tracklist not available yet".
 
+**A manga's room (MNG-001, 2026-10-23)** is a book's room with chapter and volume in place of the
+page: two number fields, each with its total when AniList knows it, saved together. The byline
+is the story and art credits.
+
 **Built 2026-10-21 (web, iPhone, iPad, Mac):** the room opens on a hero: the title's backdrop
 under a veil that fades into Paper (or, without art, the room's own reed code, seeded by the
 title id so each room has its rhythm), the poster standing over the hero's lower edge, the name
@@ -213,7 +217,10 @@ since the shelf is then that list. Each group shows its newest six, with "Show a
 the rest in place. Below Now the shelf has its own heading, naming the filter ("Shows ·
 Watching", "All titles") with a count; arriving with `?status=` or `?kind=` scrolls to it.
 Cards scroll sideways on phones and sit in a grid wider. **Listening** (albums, cover and artist, **Listened** to close) joined on 2026-10-21. Books
-carry Open Library's page count, so a page reads "Page 120 of 412" with its bar.
+carry Open Library's page count, so a page reads "Page 120 of 412" with its bar. Manga joined
+Reading on 2026-10-23 (MNG-001): a portrait cover like a book, "Ch. 112 of 364 · Vol. 12" (the
+totals only when AniList knows them), **Read ch. 113** as the next step and **Mark read** to
+close it.
 
 A **list** is the hand-made counterpart: membership in an order the user chose, titles in the
 library or not. It fills from inside: "Add titles" opens search aimed at the list, and a hit
@@ -594,9 +601,15 @@ ship before the Phase 2 gate.
   Aaru since"; the time in days and hours in the display face, with hours and episodes under;
   four tiles (shows watched · watching, anime, films, books read); where the time went (TV,
   anime, films, one stacked bar); the top eight genres; the three titles with the most time;
-  networks; mean score and the ratings histogram; then Insights and Recap. It counts the library
-  as it is, undated ticks included, and says so ("Includes episodes without a watch date").
-  Static, like §13b. Badges (`BadgeShelf`) live on Achievements (below).
+  networks; mean score and the ratings histogram; Favorites; then Insights and Recap. It counts
+  the library as it is, undated ticks included, and says so ("Includes episodes without a watch
+  date"). Static, like §13b. Badges (`BadgeShelf`) live on Achievements (below).
+- **Favorites** (`FavoritesRow`, FAV-001, owner 2026-10-23) — a top 10 per kind (Films, Shows,
+  Anime, Manga, Books, Music), any title from the catalog, first is the favorite. Picked in
+  Settings → Account; on the profile, one numbered row of covers per kind with something in it,
+  and "Edit" back to Settings (with no favorites, one line saying where to pick them). The only
+  part of the profile a friend also sees: on their view of you, after Recently finished, while
+  you share your library.
 - **Badges** (`BadgeShelf`, pulled forward 2026-10-22) — discovery badges and milestone badges,
   tiered. See "Achievements" below.
 - **Leaderboard** (pulled forward 2026-10-22) — friends only, weekly, opt-in. Never global.
@@ -860,7 +873,7 @@ new import source or connected app joins its page; it never gets a page of its o
 
 | # | Page | Web slug | Sections, in order |
 | --- | --- | --- | --- |
-| 1 | Account | `account` | Name and handle (one editor) · Signed in with, Link Google · Aaru Plus (state; buy and manage on Apple only) · On this device: Appearance (System / Light / Dark) · Sign out |
+| 1 | Account | `account` | Name and handle (one editor) · Favorites (a top 10 per kind, FAV-001) · Signed in with, Link Google · Aaru Plus (state; buy and manage on Apple only) · On this device: Appearance (System / Light / Dark) · Sign out |
 | 2 | Friends & privacy | `friends` | Add a friend · Asking you · Waiting on · Friends · Blocked · Show my badges and level to friends · Join the weekly friends board (2026-10-22) · Location: Concerts near, Remove (only while concerts are on). Footer: "Friends find you by your exact handle. Nobody can search or browse for you, and your library stays private." |
 | 3 | Notifications | `notifications` | New episodes · Mentions in groups · Group invites · this browser's alerts (web). Footer: "Requests from your connected agents always alert you." The switches are per account, so the Mac shows them too: "Alerts go to your iPhone and your browsers." |
 | 4 | Import | `import` | Trakt · Bring your history, in `CLAUDE.md`'s import order: Stremio history, IMDb, Letterboxd, Goodreads, Pogdesign CAT, Netflix, MyAnimeList, AniList, Any other CSV · Imports (the jobs; "No imports yet." when none) |
@@ -873,7 +886,7 @@ Where each existing piece goes:
 
 | Page | Web (`aaru-client/src`) | Apple (`aaru-ios/Aaru`) |
 | --- | --- | --- |
-| Account | `AccountPage`: `ProfileEditor` (handle and name), Signed in with + Link Google, Aaru Plus (`plusLine`), `AppearanceSection`, Sign out | `AccountSettings` first section; `PlusSection` + `PlusPaywall` (`Aaru/Plus`); `ProfileEditor` from `Social/FriendsView.swift`; `AppearancePicker` (off the Settings root and the Mac "General" pane) |
+| Account | `AccountPage`: `ProfileEditor` (handle and name), `FavoritesEditor` (kind chips, move up/down, remove, Add through `TitlePicker`), Signed in with + Link Google, Aaru Plus (`plusLine`), `AppearanceSection`, Sign out | `AccountSettings` first section; `PlusSection` + `PlusPaywall` (`Aaru/Plus`); `ProfileEditor` from `Social/FriendsView.swift`; Favorites under Handle on Friends & privacy opens `FavoritesEditor` (`Aaru/Profile`, drag to reorder, swipe to remove, Add through `TitlePickerSheet` fixed to the kind); `AppearancePicker` (off the Settings root and the Mac "General" pane) |
 | Friends & privacy | `FriendsCard` (handle, the way to `/app/friends`, Show my library to friends); `ConcertPlaceSection`. The friend lists (`FriendsSection`, with `InviteFriends`) live on `/app/friends` | `FriendsPage` (`Social/FriendsView.swift`): handle, a Friends row that opens Friends (`router.showFriends()`), Show my library to friends; `ConcertPlaceSection`. The friend lists, invites and requests live on Friends (`FriendsScreen`), as on the web |
 | Notifications | `NotificationsSection` | `NotificationsSection`, out of `AccountSettings`, on iOS and Mac |
 | Import | `ImportsPage`: `TraktImport`, `StremioHistoryImport`, `FILE_SOURCES` tiles, `CatImport`, the AniList form, the jobs list → `/app/imports/$id`. Trakt returns to `/app/settings/import?trakt=` | `ImportsSettings` without `ExportDataSection`: `TraktSection`, the history section, `CATImportSheet`, `StremioHistoryImport`, the jobs → `ImportDetailView` |

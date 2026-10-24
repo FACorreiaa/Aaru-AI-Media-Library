@@ -12,6 +12,8 @@ struct FriendProfile: Sendable {
     var titles: [TitleID: Title]
     /// Level and badges; nil when the friend hides them (independent of `sharing`).
     var achievements: (level: Int, badges: [EarnedBadge])?
+    /// Their top 10s (FAV-001); nil when they hide their library.
+    var favorites: Favorites?
 }
 
 /// One activity row with the people and titles it names.
@@ -54,11 +56,13 @@ struct FriendService: Sendable {
                 user: user, friendsSince: since, sharing: false, shelf: nil, titles: [:], achievements: achievements
             )
         }
-        let shelf = try await stores.friendViews.shelf(of: friend, viewer: viewer, limit: Self.shelfLimit)
-        let ids = shelf.watching.map(\.titleID) + shelf.finished.map(\.titleID) + shelf.bothWant + shelf.theyLoved
+        async let shelf = stores.friendViews.shelf(of: friend, viewer: viewer, limit: Self.shelfLimit)
+        async let favorites = FavoriteService.favorites(of: friend, stores: stores)
+        let shown = try await shelf
+        let ids = shown.watching.map(\.titleID) + shown.finished.map(\.titleID) + shown.bothWant + shown.theyLoved
         return try await FriendProfile(
-            user: user, friendsSince: since, sharing: true, shelf: shelf, titles: titles(ids),
-            achievements: achievements
+            user: user, friendsSince: since, sharing: true, shelf: shown, titles: titles(ids),
+            achievements: achievements, favorites: favorites
         )
     }
 

@@ -8,6 +8,7 @@ import { forgetTonight } from '../../lib/home/tonight-cache'
 import { forgetAccount, forgetSession } from '../../lib/session/query'
 import type { AccountPageData } from '../../lib/settings/account'
 import { plusLine } from '../../lib/plus/model'
+import { FavoritesEditor } from './FavoritesEditor'
 import { ProfileEditor } from './ProfileEditor'
 import { SettingsPageTitle } from './SettingsNav'
 import { SettingsSection } from './SettingsSection'
@@ -18,8 +19,8 @@ const providerNames = {
   google: 'Google',
 } as const
 
-/** Settings → Account (DESIGN.md §18): name and handle, how you sign in, this device's
- * appearance, and Sign out, which lives here only (UX-009). */
+/** Settings → Account (DESIGN.md §18): name and handle, favorites (FAV-001), how you sign in,
+ * this device's appearance, and Sign out, which lives here only (UX-009). */
 export function AccountPage(props: { data: AccountPageData }) {
   const router = useRouter()
   const navigate = useNavigate()
@@ -68,6 +69,10 @@ export function AccountPage(props: { data: AccountPageData }) {
           void router.invalidate()
         }}
       />
+
+      <Show when={props.data.favorites}>
+        {(favorites) => <FavoritesEditor favorites={favorites()} />}
+      </Show>
 
       <SettingsSection title="Signed in with" description={providers()}>
         <Show when={canLinkGoogle()}>

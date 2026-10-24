@@ -123,6 +123,8 @@ extension ItemPatch {
             isOwned: dto.isOwned,
             bookPage: dto.bookPage,
             bookPercent: dto.bookPercent,
+            mangaChapter: dto.mangaChapter,
+            mangaVolume: dto.mangaVolume,
             clear: Set((dto.clear ?? []).compactMap { ItemPatch.Clearable(rawValue: $0.rawValue) })
         )
     }
@@ -135,6 +137,7 @@ extension MediaType {
         case .show: self = .show
         case .book: self = .book
         case .album: self = .album
+        case .manga: self = .manga
         }
     }
 }
@@ -202,7 +205,8 @@ extension Components.Schemas.TitleSummary {
             id: title.id.description, _type: .init(title.type), title: title.title,
             originalTitle: title.originalTitle, year: title.year, posterUrl: title.posterURL?.absoluteString,
             backdropUrl: title.backdropURL?.absoluteString, network: title.network, byline: title.byline,
-            pageCount: title.pageCount, isAnime: title.isAnime, ids: .init(title.ids)
+            pageCount: title.pageCount, chapterCount: title.chapterCount, volumeCount: title.volumeCount,
+            isAnime: title.isAnime, ids: .init(title.ids)
         )
     }
 }
@@ -231,6 +235,12 @@ extension Components.Schemas.LibraryEntry {
                 progress.page == nil && progress.percent == nil ? nil : .init(
                     page: progress.page,
                     percent: progress.percent
+                )
+            },
+            mangaProgress: entry.mangaProgress.flatMap { progress in
+                progress.chapter == nil && progress.volume == nil ? nil : .init(
+                    chapter: progress.chapter,
+                    volume: progress.volume
                 )
             }
         )

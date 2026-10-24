@@ -34,6 +34,8 @@ struct PostgresTitleStore: TitleStore {
         let network: String?
         let byline: String?
         let pageCount: Int?
+        let chapterCount: Int?
+        let volumeCount: Int?
         let tmdb, imdb, trakt, tvdb, isbn, openLibrary, anilist, mal, anidb, musicbrainz: String?
         let isAnime: Bool
         let status: String?
@@ -56,6 +58,8 @@ struct PostgresTitleStore: TitleStore {
                 network: network,
                 byline: byline,
                 pageCount: pageCount,
+                chapterCount: chapterCount,
+                volumeCount: volumeCount,
                 ids: ExternalIDs(
                     tmdb: tmdb, imdb: imdb, trakt: trakt, tvdb: tvdb, isbn: isbn,
                     openLibrary: openLibrary, anilist: anilist, mal: mal, anidb: anidb, musicbrainz: musicbrainz
@@ -73,7 +77,9 @@ struct PostgresTitleStore: TitleStore {
             originalTitle: title.originalTitle, year: title.year, synopsis: title.synopsis,
             posterUrl: title.posterURL?.absoluteString,
             backdropUrl: title.backdropURL?.absoluteString, network: title.network, byline: title.byline,
-            pageCount: title.pageCount, tmdb: ids.tmdb, imdb: ids.imdb, trakt: ids.trakt, tvdb: ids.tvdb,
+            pageCount: title.pageCount, chapterCount: title.chapterCount, volumeCount: title.volumeCount,
+            tmdb: ids.tmdb,
+            imdb: ids.imdb, trakt: ids.trakt, tvdb: ids.tvdb,
             isbn: ids.isbn,
             openLibrary: ids.openLibrary, anilist: ids.anilist, mal: ids.mal, anidb: ids.anidb,
             musicbrainz: ids.musicbrainz,
@@ -292,6 +298,10 @@ struct PostgresAnimeMappingStore: AnimeMappingStore {
         let anilist: String
         let mal, anidb, tvdb, tmdb: String?
         let tmdbSeason: Int?
+
+        var mapping: AnimeMapping {
+            AnimeMapping(anilist: anilist, mal: mal, anidb: anidb, tvdb: tvdb, tmdb: tmdb, tmdbSeason: tmdbSeason)
+        }
     }
 
     func mapping(anilist: String) async throws -> AnimeMapping? {
@@ -307,12 +317,7 @@ struct PostgresAnimeMappingStore: AnimeMappingStore {
             .where(SQLIdentifier(column), .equal, SQLBind(value))
             .orderBy("anilist")
             .first(decoding: Row.self, keyDecodingStrategy: snake)
-            .map {
-                AnimeMapping(
-                    anilist: $0.anilist, mal: $0.mal, anidb: $0.anidb, tvdb: $0.tvdb,
-                    tmdb: $0.tmdb, tmdbSeason: $0.tmdbSeason
-                )
-            }
+            .map(\.mapping)
     }
 
     func mappings(anilist ids: [String]) async throws -> [AnimeMapping] {
@@ -320,12 +325,7 @@ struct PostgresAnimeMappingStore: AnimeMappingStore {
         return try await sql.select().columns(SQLLiteral.all).from("anime_mappings")
             .where("anilist", .in, ids)
             .all(decoding: Row.self, keyDecodingStrategy: snake)
-            .map {
-                AnimeMapping(
-                    anilist: $0.anilist, mal: $0.mal, anidb: $0.anidb, tvdb: $0.tvdb,
-                    tmdb: $0.tmdb, tmdbSeason: $0.tmdbSeason
-                )
-            }
+            .map(\.mapping)
     }
 
     func mappings(mal ids: [String]) async throws -> [String: AnimeMapping] {
@@ -336,12 +336,7 @@ struct PostgresAnimeMappingStore: AnimeMappingStore {
         ORDER BY mal, anilist
         """).all(decoding: Row.self, keyDecodingStrategy: snake)
         return Dictionary(rows.compactMap { row in
-            row.mal.map {
-                ($0, AnimeMapping(
-                    anilist: row.anilist, mal: row.mal, anidb: row.anidb, tvdb: row.tvdb,
-                    tmdb: row.tmdb, tmdbSeason: row.tmdbSeason
-                ))
-            }
+            row.mal.map { ($0, row.mapping) }
         }, uniquingKeysWith: { first, _ in first })
     }
 
@@ -350,12 +345,7 @@ struct PostgresAnimeMappingStore: AnimeMappingStore {
         return try await sql.select().columns(SQLLiteral.all).from("anime_mappings")
             .where("tmdb", .in, Array(Set(ids)))
             .all(decoding: Row.self, keyDecodingStrategy: snake)
-            .map {
-                AnimeMapping(
-                    anilist: $0.anilist, mal: $0.mal, anidb: $0.anidb, tvdb: $0.tvdb,
-                    tmdb: $0.tmdb, tmdbSeason: $0.tmdbSeason
-                )
-            }
+            .map(\.mapping)
     }
 
     func upsertMany(_ mappings: [AnimeMapping]) async throws {

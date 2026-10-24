@@ -4,7 +4,7 @@ import Foundation
 /// The search scopes a client can ask for. `anime` is AniList; `all` is films, shows and anime
 /// together (books stay out); the others map to their `MediaType`.
 enum SearchScope: String, Sendable {
-    case all, movie, show, anime, book, album
+    case all, movie, show, anime, book, album, manga
 }
 
 /// Search hits, and whether a provider failed so the hits are only part of the answer.
@@ -15,6 +15,7 @@ struct CatalogSearchResult: Sendable, Equatable {
     var notice: String?
 
     static let aniListDown = "AniList is down right now, so anime results come from TMDB and may be missing some."
+    static let mangaDown = "AniList is down right now, so manga can't be searched. Try again in a little while."
 }
 
 /// A title as the detail route returns it: the catalog row plus show state.
@@ -65,6 +66,7 @@ struct CatalogService: Sendable {
         case .album:
             guard let music = catalogs.music else { return CatalogSearchResult(hits: [], incomplete: true) }
             return try await CatalogSearchResult(hits: music.search(query: trimmed, type: .album))
+        case .manga: return try await searchManga(trimmed)
         }
     }
 
@@ -119,6 +121,16 @@ struct CatalogService: Sendable {
         } catch let error as ProviderError where error.isAniListOutage {
             let hits = try await catalogs.tmdb.searchMulti(query: query).filter(\.isAnime)
             return CatalogSearchResult(hits: hits, incomplete: true, notice: CatalogSearchResult.aniListDown)
+        }
+    }
+
+    /// AniList alone: no other catalog Aaru reads has manga, so an outage is an empty answer
+    /// that says why (MNG-001).
+    private func searchManga(_ query: String) async throws -> CatalogSearchResult {
+        do {
+            return try await CatalogSearchResult(hits: catalogs.anilist.search(query: query, type: .manga))
+        } catch let error as ProviderError where error.isAniListOutage {
+            return CatalogSearchResult(hits: [], incomplete: true, notice: CatalogSearchResult.mangaDown)
         }
     }
 

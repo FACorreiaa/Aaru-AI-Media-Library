@@ -303,6 +303,7 @@ const KIND_LABELS: Record<
   anime: ['anime', 'Anime'],
   book: ['book', 'Books'],
   album: ['album', 'Albums'],
+  manga: ['manga', 'Manga'],
 }
 
 export interface KindShare {
@@ -337,6 +338,8 @@ export function kindShares(stats: Stats): KindShare[] {
 export function kindDetail(kind: KindShare): string {
   if (kind.kind === 'album')
     return kind.finished > 0 ? `${kind.finished} listened` : 'Nothing yet'
+  if (kind.kind === 'manga')
+    return kind.finished > 0 ? `${kind.finished} read` : 'Nothing yet'
   return (
     [
       kind.minutes > 0 ? timeLabel(kind.minutes) : null,

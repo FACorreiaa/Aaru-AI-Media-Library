@@ -65,7 +65,7 @@ struct CaptureExtractor: Sendable {
                             "year": .object(["type": .string("integer")]),
                             "type": .object([
                                 "type": .string("string"),
-                                "enum": .array(["movie", "show", "anime", "book"].map(ModelJSON.string)),
+                                "enum": .array(["movie", "show", "anime", "book", "manga"].map(ModelJSON.string)),
                             ]),
                         ]),
                         "required": .array([.string("title"), .string("type")]),
@@ -87,6 +87,7 @@ struct CaptureExtractor: Sendable {
             else { continue }
             let type: MediaType = switch item["type"]?.string {
             case "book": .book
+            case "manga": .manga
             case "show", "anime": .show
             default: .movie
             }

@@ -44,7 +44,7 @@ import type { MarkTarget } from '../lib/title/model'
 // Search loads only when it is first opened: it is not part of the page's first paint.
 
 const STATUSES = ['wishlist', 'in_progress', 'finished', 'dropped'] as const
-const KIND_VALUES = ['film', 'show', 'anime', 'book', 'album'] as const
+const KIND_VALUES = ['film', 'show', 'anime', 'manga', 'book', 'album'] as const
 
 export const Route = createFileRoute('/_shell/app_/library')({
   head: () => ({ meta: [{ title: 'Library · Aaru' }] }),

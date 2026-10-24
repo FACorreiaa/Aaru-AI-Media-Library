@@ -141,6 +141,12 @@ function TitleRoom() {
   const [pageNumber, setPageNumber] = createSignal(
     page().entry.bookProgress?.page?.toString() ?? '',
   )
+  const [chapterNumber, setChapterNumber] = createSignal(
+    page().entry.mangaProgress?.chapter?.toString() ?? '',
+  )
+  const [volumeNumber, setVolumeNumber] = createSignal(
+    page().entry.mangaProgress?.volume?.toString() ?? '',
+  )
 
   // A server-rendered <textarea> carries `value` only as an attribute, which the browser
   // ignores, and hydration does not set the property: a saved note looked empty after a load.
@@ -701,6 +707,80 @@ function TitleRoom() {
                       class="min-h-9 w-24 rounded-full border-0 bg-paper px-4 py-1.5 text-right text-sm"
                     />
                   </TextField>
+                </form>
+              </Show>
+              <Show when={entry().title.type === 'manga'}>
+                <form
+                  class="flex flex-col gap-3 text-sm font-medium"
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    const chapter = Number.parseInt(chapterNumber(), 10)
+                    const volume = Number.parseInt(volumeNumber(), 10)
+                    const patch = {
+                      ...(Number.isFinite(chapter) && {
+                        mangaChapter: chapter,
+                      }),
+                      ...(Number.isFinite(volume) && { mangaVolume: volume }),
+                    }
+                    if (Object.keys(patch).length > 0) {
+                      void update(patch, {
+                        mangaProgress: {
+                          ...entry().mangaProgress,
+                          ...(Number.isFinite(chapter) && { chapter }),
+                          ...(Number.isFinite(volume) && { volume }),
+                        },
+                      })
+                    }
+                  }}
+                >
+                  <TextField
+                    class="flex w-auto flex-row items-center justify-between gap-4"
+                    value={chapterNumber()}
+                    onChange={setChapterNumber}
+                  >
+                    <TextFieldLabel>
+                      Chapter
+                      <Show when={entry().title.chapterCount}>
+                        {(total) => (
+                          <span class="ml-1 font-normal text-muted">
+                            of {total()}
+                          </span>
+                        )}
+                      </Show>
+                    </TextFieldLabel>
+                    <TextFieldInput
+                      inputmode="numeric"
+                      class="min-h-9 w-24 rounded-full border-0 bg-paper px-4 py-1.5 text-right text-sm"
+                    />
+                  </TextField>
+                  <TextField
+                    class="flex w-auto flex-row items-center justify-between gap-4"
+                    value={volumeNumber()}
+                    onChange={setVolumeNumber}
+                  >
+                    <TextFieldLabel>
+                      Volume
+                      <Show when={entry().title.volumeCount}>
+                        {(total) => (
+                          <span class="ml-1 font-normal text-muted">
+                            of {total()}
+                          </span>
+                        )}
+                      </Show>
+                    </TextFieldLabel>
+                    <TextFieldInput
+                      inputmode="numeric"
+                      class="min-h-9 w-24 rounded-full border-0 bg-paper px-4 py-1.5 text-right text-sm"
+                    />
+                  </TextField>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    type="submit"
+                    class="self-end"
+                  >
+                    Save progress
+                  </Button>
                 </form>
               </Show>
             </Card>

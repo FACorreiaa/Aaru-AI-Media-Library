@@ -274,6 +274,7 @@ struct StatsDigest {
         case (.show, false): .show
         case (.book, false): .book
         case (.album, false): .album
+        case (.manga, false): .manga
         }
         return PeriodStats.Kind.allCases.firstIndex(of: kind) ?? 0
     }
@@ -291,6 +292,7 @@ struct StatsDigest {
         case (.show, false): totals.showsFinished += 1
         case (.book, false): totals.booksFinished += 1
         case (.album, false): totals.albumsFinished += 1
+        case (.manga, false): totals.mangaFinished += 1
         }
     }
 
@@ -332,8 +334,8 @@ struct StatsDigest {
             period: period,
             isPartial: isPartial,
             totals: totals,
-            // Old clients know four kinds; an album row appears only once there is one to show.
-            byKind: byKind.filter { $0.kind != .album || $0.finished > 0 },
+            // Old clients know four kinds; an album or manga row appears only once there is one to show.
+            byKind: byKind.filter { ($0.kind != .album && $0.kind != .manga) || $0.finished > 0 },
             buckets: buckets,
             busiest: buckets.filter { !$0.isEmpty }.max {
                 ($0.minutes, $0.episodes, $0.finished) < ($1.minutes, $1.episodes, $1.finished)

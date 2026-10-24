@@ -193,6 +193,7 @@ enum RecapDeck {
         case .film: ("film", "films")
         case .show: ("show", "shows")
         case .anime: ("anime", "anime")
+        case .manga: ("manga", "manga")
         case .book: ("book", "books")
         case .music: ("album", "albums")
         }
@@ -205,6 +206,7 @@ enum RecapDeck {
         [
             (.film, totals.moviesFinished), (.show, totals.showsFinished),
             (.anime, totals.animeFinished), (.book, totals.booksFinished), (.music, totals.albumsFinished),
+            (.manga, totals.mangaFinished ?? 0),
         ].filter { $0.count >= 1 }
     }
 

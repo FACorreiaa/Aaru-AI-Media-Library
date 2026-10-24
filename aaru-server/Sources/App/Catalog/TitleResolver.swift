@@ -36,7 +36,7 @@ enum ResolutionError: Error, Equatable {
 struct TitleResolver: Sendable {
     let stores: Stores
     let catalogs: CatalogProviders
-    /// AniList entries fetched ahead for one import run, by MAL id (IMP-017), and the MAL ids
+    /// AniList entries fetched ahead for one import run, by `malKey` (IMP-017), and the MAL ids
     /// AniList was asked about and does not know.
     private var prefetchedMAL: [String: CatalogTitle] = [:]
     private var unknownMAL: Set<String> = []
@@ -54,25 +54,43 @@ struct TitleResolver: Sendable {
     /// each. Refs that resolve another way are left alone.
     func prefetchingMAL(_ refs: [MediaRef]) async throws -> TitleResolver {
         guard let batch = catalogs.anilist as? any MALBatchHydrating else { return self }
-        var wanted: Set<String> = []
-        for ref in refs where ref.type != .book && ref.titleID == nil {
+        var anime: Set<String> = []
+        var manga: Set<String> = []
+        for ref in refs where [.movie, .show, .manga].contains(ref.type) && ref.titleID == nil {
             let ids = ref.ids
+            let isManga = ref.type == .manga
             guard let mal = ids.mal, ids.anilist == nil, ids.tmdb == nil, ids.imdb == nil, ids.tvdb == nil,
-                  !wanted.contains(mal)
+                  !(isManga ? manga : anime).contains(mal)
             else { continue }
             if try await stores.titles.find(ids: ids, type: ref.type) != nil {
                 continue
             }
-            if try await animeMapping(ids)?.tmdb != nil {
+            if !isManga, try await animeMapping(ids)?.tmdb != nil {
                 continue
             }
-            wanted.insert(mal)
+            if isManga {
+                manga.insert(mal)
+            } else {
+                anime.insert(mal)
+            }
         }
-        guard !wanted.isEmpty, aniListDown == nil else { return self }
+        guard !(anime.isEmpty && manga.isEmpty), aniListDown == nil else { return self }
         var resolver = self
-        resolver.prefetchedMAL = try await batch.hydrate(malIDs: Array(wanted))
-        resolver.unknownMAL = wanted.subtracting(resolver.prefetchedMAL.keys)
+        for (wanted, type) in [(anime, MediaType.show), (manga, .manga)] where !wanted.isEmpty {
+            let found = try await batch.hydrate(malIDs: Array(wanted), type: type)
+            for (mal, title) in found {
+                resolver.prefetchedMAL[Self.malKey(mal, type)] = title
+            }
+            for mal in wanted.subtracting(found.keys) {
+                resolver.unknownMAL.insert(Self.malKey(mal, type))
+            }
+        }
         return resolver
+    }
+
+    /// A MAL id as the prefetch keeps it: MAL numbers anime and manga apart (MNG-001).
+    private static func malKey(_ mal: String, _ type: MediaType) -> String {
+        type == .manga ? "manga:\(mal)" : mal
     }
 
     /// A resolver that no longer asks AniList, after it failed with `error`. Anime with a TMDB
@@ -83,7 +101,8 @@ struct TitleResolver: Sendable {
         return resolver
     }
 
-    /// `searchHint` (an author, for books) narrows a title search; it never loosens the match.
+    /// `searchHint` (an author, for books) narrows a title search. The only match it loosens is a
+    /// book's year, by one, when the hint is also the hit's author (IMP-020).
     func resolve(_ ref: MediaRef, searchHint: String? = nil) async throws -> Title {
         try ref.validate()
         if let titleID = ref.titleID {
@@ -121,6 +140,8 @@ struct TitleResolver: Sendable {
             network: catalog.hit.network,
             byline: catalog.hit.byline,
             pageCount: catalog.hit.pageCount,
+            chapterCount: catalog.hit.chapterCount,
+            volumeCount: catalog.hit.volumeCount,
             ids: mergedIDs,
             isAnime: catalog.hit.isAnime
         )
@@ -143,13 +164,16 @@ struct TitleResolver: Sendable {
     }
 
     /// Which provider knows these ids. Anime with a community TMDB mapping resolves to the
-    /// TMDB show (CAT-009); otherwise AniList owns it.
+    /// TMDB show (CAT-009); otherwise AniList owns it. Manga is AniList's alone (MNG-001).
     private func hydrate(ids: ExternalIDs, type: MediaType) async throws -> CatalogTitle? {
         if type == .book {
             return try await catalogs.openLibrary.hydrate(ids: ids, type: type)
         }
         if type == .album {
             return try await catalogs.music?.hydrate(ids: ids, type: type)
+        }
+        if type == .manga {
+            return try await hydrateFromAniList(ids: ids, type: type)
         }
         if let mapping = try await animeMapping(ids), let tmdb = mapping.tmdb {
             let mapped = ids.filling(from: ExternalIDs(
@@ -167,12 +191,18 @@ struct TitleResolver: Sendable {
         if ids.tmdb != nil || ids.imdb != nil || ids.tvdb != nil {
             return try await catalogs.tmdb.hydrate(ids: ids, type: type)
         }
+        return try await hydrateFromAniList(ids: ids, type: type)
+    }
+
+    /// AniList by its own id or a MAL id, through this run's prefetch when it has the answer.
+    private func hydrateFromAniList(ids: ExternalIDs, type: MediaType) async throws -> CatalogTitle? {
         if ids.anilist == nil, let mal = ids.mal {
-            if var title = prefetchedMAL[mal] {
+            let key = Self.malKey(mal, type)
+            if var title = prefetchedMAL[key] {
                 title.hit.ids = title.hit.ids.filling(from: ids)
                 return title
             }
-            if unknownMAL.contains(mal) {
+            if unknownMAL.contains(key) {
                 return nil
             }
         }
@@ -208,14 +238,19 @@ struct TitleResolver: Sendable {
             guard let music = catalogs.music else { throw ResolutionError.notFound }
             provider = music
         case .movie, .show: provider = catalogs.tmdb
+        case .manga: provider = catalogs.anilist
         }
         let query = [title, hint].compactMap(\.self).joined(separator: " ")
         let hits = try await provider.search(query: query, type: ref.type)
-        let matches = hits.filter { hit in
-            hit.year != nil && MatchKey.canMerge(
-                MediaRef(type: ref.type, title: ref.title, year: ref.year),
-                hit.mediaRef
-            )
+        let wanted = MediaRef(type: ref.type, title: ref.title, year: ref.year)
+        var matches = hits.filter { hit in
+            hit.year != nil && MatchKey.canMerge(wanted, hit.mediaRef)
+        }
+        // IMP-020: a book one year off, only when the author is the hit's too.
+        if matches.isEmpty, ref.type == .book {
+            matches = hits.filter { hit in
+                MatchKey.canMergeBook(wanted, author: hint, hit.mediaRef, byline: hit.byline)
+            }
         }
         guard !matches.isEmpty else { throw ResolutionError.notFound }
         guard matches.count == 1 else { throw ResolutionError.ambiguous }
@@ -232,7 +267,7 @@ struct TitleResolver: Sendable {
         named name: String, type: MediaType, airing: ImportAiring? = nil, notAfter: Int? = nil
     ) async throws -> Title {
         let wanted = MatchKey.normalize(name)
-        guard type != .book, !wanted.isEmpty else { throw ResolutionError.notFound }
+        guard type == .movie || type == .show, !wanted.isEmpty else { throw ResolutionError.notFound }
         let hits = try await catalogs.tmdb.search(query: name, type: type)
         let matches = hits.filter { hit in
             guard hit.type == type, let year = hit.year, MatchKey.normalize(hit.title) == wanted else { return false }
