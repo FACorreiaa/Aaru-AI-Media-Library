@@ -2,8 +2,9 @@ import AaruAPI
 import SwiftUI
 
 /// `DiscoverCard` (DISC-001): a poster from a public row, on Home and on Discover. Not yet on
-/// the shelf, the poster is an add menu (tap for the wishlist, hold for a status or a list); on
-/// the shelf, it opens the item and wears a check. A release date shows as a badge.
+/// the shelf, a tap opens its preview (`CatalogPreviewSheet`) and a hold is the add menu (a
+/// status or a list); on the shelf, it opens the item and wears a check. A release date shows as
+/// a badge.
 struct DiscoverCard: View {
     let hit: CatalogHit
     /// The caller's item for this title, when they have it.
@@ -17,6 +18,10 @@ struct DiscoverCard: View {
     let isAdding: Bool
     let onAdd: (LibraryStatus) -> Void
     let onAddToList: () -> Void
+
+    @State private var previewing = false
+    /// "Add to list…" in the preview: the picker opens once the preview is gone.
+    @State private var listAfterPreview = false
 
     private var kind: MediaKind {
         MediaKind(type: hit._type, isAnime: hit.isAnime)
@@ -37,16 +42,28 @@ struct DiscoverCard: View {
                 } label: {
                     card
                 } primaryAction: {
-                    onAdd(.wishlist)
+                    previewing = true
                 }
                 .menuStyle(.button)
                 .disabled(isAdding)
                 .accessibilityLabel(hit.title)
-                .accessibilityHint("Adds as \(LibraryStatus.wishlist.label(for: kind)). Hold for other statuses.")
+                .accessibilityHint("Shows details. Hold to add.")
             }
         }
         .buttonStyle(.plain)
         .modifier(HoverLift())
+        .sheet(isPresented: $previewing, onDismiss: previewDismissed) {
+            CatalogPreviewSheet(
+                hit: hit, libraryItemID: libraryItemID, isAdding: isAdding, onAdd: onAdd,
+                onAddToList: { listAfterPreview = true }
+            )
+        }
+    }
+
+    private func previewDismissed() {
+        guard listAfterPreview else { return }
+        listAfterPreview = false
+        onAddToList()
     }
 
     private var card: some View {
