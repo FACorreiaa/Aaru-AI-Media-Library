@@ -256,6 +256,7 @@ export function SeasonBrowser(props: {
                 adding={adder.isAdding(hit())}
                 onAdd={(status) => void adder.add(hit(), status)}
                 onList={() => adder.openList(hit())}
+                onPreview={() => adder.openPreview(hit())}
               />
             )}
           </Index>
@@ -283,6 +284,7 @@ export function SeasonBrowser(props: {
         </div>
       </Show>
       <adder.ListDialog />
+      <adder.PreviewDialog />
     </section>
   )
 }

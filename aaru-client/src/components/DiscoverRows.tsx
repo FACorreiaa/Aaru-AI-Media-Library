@@ -10,6 +10,7 @@ import type {
 } from '../lib/library/model'
 import { addToLibrary } from '../lib/library/server'
 import { AddToListDialog } from './AddToListDialog'
+import { CatalogPreviewDialog } from './CatalogPreviewDialog'
 import { DiscoverCard, Row } from './HomeRows'
 
 /**
@@ -19,7 +20,8 @@ import { DiscoverCard, Row } from './HomeRows'
  */
 /**
  * Adding a public card to the library, shared by the Discover rows and the Seasons view: one
- * add per title at a time, the list dialog, and the problem line.
+ * add per title at a time, the list dialog, the preview of a title not yet added, and the
+ * problem line.
  */
 export function createDiscoverAdder(options: {
   onAdded: (key: string, entry: LibraryEntry) => void
@@ -28,6 +30,14 @@ export function createDiscoverAdder(options: {
   // Titles being added right now: a second click waits instead of adding twice.
   const [adding, setAdding] = createSignal<ReadonlySet<string>>(new Set())
   const [listTarget, setListTarget] = createSignal<CatalogHit | null>(null)
+  const [previewTarget, setPreviewTarget] = createSignal<CatalogHit | null>(
+    null,
+  )
+  // Library items made by an add here, by hit key: the preview keeps the hit it opened with,
+  // while an add replaces the hits in the rows.
+  const [addedIds, setAddedIds] = createSignal<ReadonlyMap<string, string>>(
+    new Map(),
+  )
 
   function setBusy(key: string, on: boolean) {
     setAdding((current) => {
@@ -53,6 +63,7 @@ export function createDiscoverAdder(options: {
           status,
         },
       })
+      setAddedIds((ids) => new Map(ids).set(key, entry.id))
       options.onAdded(key, entry)
     } catch (error) {
       options.onProblem(
@@ -82,11 +93,31 @@ export function createDiscoverAdder(options: {
     </Show>
   )
 
+  const PreviewDialog = () => (
+    <Show when={previewTarget()}>
+      {(hit) => (
+        <CatalogPreviewDialog
+          hit={hit()}
+          libraryItemId={hit().libraryItemId ?? addedIds().get(hitKey(hit()))}
+          adding={adding().has(hitKey(hit()))}
+          onAdd={(status) => void add(hit(), status)}
+          onList={() => {
+            setPreviewTarget(null)
+            setListTarget(hit())
+          }}
+          onClose={() => setPreviewTarget(null)}
+        />
+      )}
+    </Show>
+  )
+
   return {
     isAdding: (hit: CatalogHit) => adding().has(hitKey(hit)),
     add,
     openList: (hit: CatalogHit) => setListTarget(hit),
+    openPreview: (hit: CatalogHit) => setPreviewTarget(hit),
     ListDialog,
+    PreviewDialog,
   }
 }
 
@@ -144,6 +175,7 @@ export function DiscoverRows(props: {
                   adding={adder.isAdding(hit())}
                   onAdd={(status) => void adder.add(hit(), status)}
                   onList={() => adder.openList(hit())}
+                  onPreview={() => adder.openPreview(hit())}
                 />
               )}
             </Index>
@@ -151,6 +183,7 @@ export function DiscoverRows(props: {
         )}
       </Index>
       <adder.ListDialog />
+      <adder.PreviewDialog />
     </>
   )
 }
