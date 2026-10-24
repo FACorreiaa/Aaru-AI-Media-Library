@@ -8,6 +8,8 @@ import type { Entitlement } from '../plus/server'
 import { getSignInConfig } from '../session/session'
 import { getPushSetup } from '../push/server'
 import { loadSocialSettings } from '../social/server'
+import { getSportSettings } from '../sports/settings'
+import type { SportSettings } from '../sports/model'
 
 /** What Settings → Account reads: who you are, your favorites, how you sign in, and Aaru Plus. */
 export async function loadAccountPage() {
@@ -24,15 +26,18 @@ export async function loadAccountPage() {
 
 export type AccountPageData = Awaited<ReturnType<typeof loadAccountPage>>
 
-/** What Settings → Friends & privacy reads: your handle, who sees your library, the city. */
+/** What Settings → Friends & privacy reads: your handle, who sees your library, the city,
+ * and the Sports country. */
 export async function loadPrivacyPage() {
-  const [account, sharing, concerts] = await Promise.all([
+  const [account, sharing, concerts, sports] = await Promise.all([
     getAccount(),
     loadSocialSettings(),
     // An extra: without an answer, the Location section stays hidden.
     getConcertPlace().catch((): ConcertPlaceSetting | null => null),
+    // An extra too: without an answer, or with Sports off, the Sports section stays hidden.
+    getSportSettings().catch((): SportSettings | null => null),
   ])
-  return { handle: account.handle, sharing, concerts }
+  return { handle: account.handle, sharing, concerts, sports }
 }
 
 /** What Settings → Notifications reads. */

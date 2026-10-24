@@ -34,7 +34,7 @@ notice and the AniList and Open Library credits in its footer, besides About.
 
 | Provider | Used for | Key | Secret | Rate limit (ours) | Terms | Credit Aaru shows |
 | --- | --- | --- | --- | --- | --- | --- |
-| TheSportsDB | Leagues, teams and players by name or id; next and previous events per team or league; a league's day; livescores (every 2 min: football, NFL, NBA, MLB, NHL); TV listings per event | premium key, Single Developer tier ($9/month) | `THESPORTSDB_API_KEY` in `aaru-env` | 1.5/s, burst 10 (limit 100/min) | Paid tier; images referenced from TheSportsDB's CDN, never hosted | "Data: TheSportsDB" under the Sports tab |
+| TheSportsDB | Leagues, teams and players by name or id; next and previous events per team or league; a league's day; livescores (every 2 min: football, NFL, NBA, MLB, NHL); TV listings per event | premium key, Single Developer tier ($9/month) | `THESPORTSDB_API_KEY` in `aaru-env` | 1.5/s, burst 10 (limit 100/min) | Paid tier; images referenced from TheSportsDB's CDN, never hosted | "Data: TheSportsDB" under the Sports tab; "Sports data from TheSportsDB" in About |
 
 v2 calls send the key in the `X-API-KEY` header. The two calls v2 lacks (a league's events on one
 day, an event's TV listings) use v1, which carries the key in the URL path; `ProviderClient`

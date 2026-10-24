@@ -31,6 +31,7 @@ import { Route as ShellAppMusicRouteImport } from './routes/_shell.app_.music'
 import { Route as ShellAppProfileRouteImport } from './routes/_shell.app_.profile'
 import { Route as ShellAppRecapRouteImport } from './routes/_shell.app_.recap'
 import { Route as ShellAppSettingsRouteImport } from './routes/_shell.app_.settings'
+import { Route as ShellAppSportsRouteImport } from './routes/_shell.app_.sports'
 import { Route as ShellAppWeekRouteImport } from './routes/_shell.app_.week'
 import { Route as ShellAppFriendsIndexRouteImport } from './routes/_shell.app_.friends.index'
 import { Route as ShellAppFriendsHandleRouteImport } from './routes/_shell.app_.friends.$handle'
@@ -165,6 +166,11 @@ const ShellAppRecapRoute = ShellAppRecapRouteImport.update({
 const ShellAppSettingsRoute = ShellAppSettingsRouteImport.update({
   id: '/app_/settings',
   path: '/app/settings',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellAppSportsRoute = ShellAppSportsRouteImport.update({
+  id: '/app_/sports',
+  path: '/app/sports',
   getParentRoute: () => ShellRoute,
 } as any)
 const ShellAppWeekRoute = ShellAppWeekRouteImport.update({
@@ -321,6 +327,7 @@ export interface FileRoutesByFullPath {
   '/app/profile': typeof ShellAppProfileRoute
   '/app/recap': typeof ShellAppRecapRoute
   '/app/settings': typeof ShellAppSettingsRouteWithChildren
+  '/app/sports': typeof ShellAppSportsRoute
   '/app/week': typeof ShellAppWeekRoute
   '/app/friends/$handle': typeof ShellAppFriendsHandleRoute
   '/app/groups/$groupId': typeof ShellAppGroupsGroupIdRouteWithChildren
@@ -367,6 +374,7 @@ export interface FileRoutesByTo {
   '/app/music': typeof ShellAppMusicRoute
   '/app/profile': typeof ShellAppProfileRoute
   '/app/recap': typeof ShellAppRecapRoute
+  '/app/sports': typeof ShellAppSportsRoute
   '/app/week': typeof ShellAppWeekRoute
   '/app/friends/$handle': typeof ShellAppFriendsHandleRoute
   '/app/imports/$id': typeof ShellAppImportsIdRoute
@@ -416,6 +424,7 @@ export interface FileRoutesById {
   '/_shell/app_/profile': typeof ShellAppProfileRoute
   '/_shell/app_/recap': typeof ShellAppRecapRoute
   '/_shell/app_/settings': typeof ShellAppSettingsRouteWithChildren
+  '/_shell/app_/sports': typeof ShellAppSportsRoute
   '/_shell/app_/week': typeof ShellAppWeekRoute
   '/_shell/app_/friends/$handle': typeof ShellAppFriendsHandleRoute
   '/_shell/app_/groups/$groupId': typeof ShellAppGroupsGroupIdRouteWithChildren
@@ -466,6 +475,7 @@ export interface FileRouteTypes {
     | '/app/profile'
     | '/app/recap'
     | '/app/settings'
+    | '/app/sports'
     | '/app/week'
     | '/app/friends/$handle'
     | '/app/groups/$groupId'
@@ -512,6 +522,7 @@ export interface FileRouteTypes {
     | '/app/music'
     | '/app/profile'
     | '/app/recap'
+    | '/app/sports'
     | '/app/week'
     | '/app/friends/$handle'
     | '/app/imports/$id'
@@ -560,6 +571,7 @@ export interface FileRouteTypes {
     | '/_shell/app_/profile'
     | '/_shell/app_/recap'
     | '/_shell/app_/settings'
+    | '/_shell/app_/sports'
     | '/_shell/app_/week'
     | '/_shell/app_/friends/$handle'
     | '/_shell/app_/groups/$groupId'
@@ -755,6 +767,13 @@ declare module '@tanstack/solid-router' {
       path: '/app/settings'
       fullPath: '/app/settings'
       preLoaderRoute: typeof ShellAppSettingsRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/app_/sports': {
+      id: '/_shell/app_/sports'
+      path: '/app/sports'
+      fullPath: '/app/sports'
+      preLoaderRoute: typeof ShellAppSportsRouteImport
       parentRoute: typeof ShellRoute
     }
     '/_shell/app_/week': {
@@ -1009,6 +1028,7 @@ interface ShellRouteChildren {
   ShellAppProfileRoute: typeof ShellAppProfileRoute
   ShellAppRecapRoute: typeof ShellAppRecapRoute
   ShellAppSettingsRoute: typeof ShellAppSettingsRouteWithChildren
+  ShellAppSportsRoute: typeof ShellAppSportsRoute
   ShellAppWeekRoute: typeof ShellAppWeekRoute
   ShellAppFriendsHandleRoute: typeof ShellAppFriendsHandleRoute
   ShellAppImportsIdRoute: typeof ShellAppImportsIdRoute
@@ -1032,6 +1052,7 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellAppProfileRoute: ShellAppProfileRoute,
   ShellAppRecapRoute: ShellAppRecapRoute,
   ShellAppSettingsRoute: ShellAppSettingsRouteWithChildren,
+  ShellAppSportsRoute: ShellAppSportsRoute,
   ShellAppWeekRoute: ShellAppWeekRoute,
   ShellAppFriendsHandleRoute: ShellAppFriendsHandleRoute,
   ShellAppImportsIdRoute: ShellAppImportsIdRoute,
