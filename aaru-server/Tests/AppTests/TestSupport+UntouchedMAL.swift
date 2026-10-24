@@ -47,7 +47,29 @@ struct UntouchedMALStore: MALStore {
         throw UntouchedStore.Touched()
     }
 
-    func saveEntryState(_: MALEntryState, userID _: UserID) async throws {
+    func saveEntryState(_: MALEntryState, title _: String?, userID _: UserID) async throws {
+        throw UntouchedStore.Touched()
+    }
+
+    func requestPull(userID _: UserID, now _: Date, notBefore _: Date) async throws -> Bool {
+        throw UntouchedStore.Touched()
+    }
+
+    func claimPulls(now _: Date, staleBefore _: Date, fullBefore _: Date, limit _: Int) async throws
+        -> [MALPullDue]
+    {
+        throw UntouchedStore.Touched()
+    }
+
+    func finishPull(userID _: UserID, cursor _: Date, fullReadAt _: Date?) async throws {
+        throw UntouchedStore.Touched()
+    }
+
+    func markRemoved(userID _: UserID, listed _: [String], now _: Date) async throws {
+        throw UntouchedStore.Touched()
+    }
+
+    func removedEntries(userID _: UserID) async throws -> [MALRemovedEntry] {
         throw UntouchedStore.Touched()
     }
 }

@@ -5,8 +5,9 @@ import { errorMessage } from '../api/errors'
 import { sessionRejected, sessionToken } from '../session/guard'
 import type { components } from '../api/schema'
 
-// SCR-005 on the web: connect MyAnimeList, over the same `/v1/connections/mal` routes as the
-// Apple apps. The server pushes anime progress; the web only connects and disconnects.
+// SCR-005 and SCR-010 on the web: connect MyAnimeList, over the same `/v1/connections/mal` routes
+// as the Apple apps. The server pushes anime progress and reads the list back; the web connects,
+// disconnects, and asks for a read when it opens.
 
 export type MALConnection = components['schemas']['MALConnection']
 
@@ -59,5 +60,15 @@ export const disconnectMAL = createServerFn({ method: 'POST' }).handler(
         ),
       )
     }
+  },
+)
+
+/**
+ * The app was opened: read the MyAnimeList list back soon. The server ignores it without a
+ * connection or within 10 minutes of the last read, so the shell sends it on every open.
+ */
+export const requestMALPull = createServerFn({ method: 'POST' }).handler(
+  async () => {
+    await api(sessionToken()).POST('/v1/connections/mal/pull')
   },
 )

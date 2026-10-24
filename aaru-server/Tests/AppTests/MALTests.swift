@@ -10,47 +10,6 @@ import Testing
 /// SCR-005 against a stubbed MyAnimeList. No network, no real client id.
 @Suite("MyAnimeList", .serialized)
 struct MALTests {
-    /// Canned MAL: token, user and list-status routes. Records every request.
-    final class FakeMAL: @unchecked Sendable {
-        // @unchecked: test-only; `lock` guards `patchStatus`.
-        private let lock = NSLock()
-        private var patchStatus = 200
-        let transport: StubTransport
-
-        init() {
-            let box = FakeMALBox()
-            transport = StubTransport { box.mal?.answer($0) ?? OutboundResponse(status: 500, body: Data()) }
-            box.mal = self
-        }
-
-        func failPatches(_ status: Int) {
-            lock.withLock { patchStatus = status }
-        }
-
-        func answer(_ request: OutboundRequest) -> OutboundResponse {
-            switch request.url.path {
-            case "/v1/oauth2/token":
-                let body = #"{"token_type":"Bearer","expires_in":2678400,"access_token":"at-1","refresh_token":"rt-1"}"#
-                return OutboundResponse(status: 200, body: Data(body.utf8))
-            case "/v2/users/@me":
-                return OutboundResponse(status: 200, body: Data(#"{"id":1,"name":"ana"}"#.utf8))
-            default:
-                guard request.method == "PATCH", request.url.path.hasSuffix("/my_list_status") else {
-                    return OutboundResponse(status: 404, body: Data())
-                }
-                return OutboundResponse(status: lock.withLock { patchStatus }, body: Data("{}".utf8))
-            }
-        }
-
-        /// Every list write, oldest first: the MAL id and its form fields.
-        var patches: [(malID: String, fields: [String: String])] {
-            transport.requests.filter { $0.method == "PATCH" }.map { request in
-                let parts = request.url.pathComponents
-                return (parts[parts.count - 2], MALTests.form(request.body))
-            }
-        }
-    }
-
     static func form(_ body: Data?) -> [String: String] {
         let text = body.flatMap { String(bytes: $0, encoding: .utf8) } ?? ""
         return Dictionary(text.split(separator: "&").map { pair in
@@ -227,7 +186,7 @@ struct MALTests {
             try await connect(env)
             let (_, item) = try await anime(env, seasons: [1: [mal1]])
             try await env.stores.mal.saveEntryState(
-                MALEntryState(malID: mal1, status: .onHold, episodes: 0, score: 0), userID: env.userID
+                MALEntryState(malID: mal1, status: .onHold, episodes: 0, score: 0), title: nil, userID: env.userID
             )
             _ = try await env.send(.patch, "/v1/library/items/\(item)", json: ["rating": 6])
             try await pusher(env, fake).runOnce()
@@ -286,10 +245,4 @@ struct MALTests {
         #expect(state(.inProgress, ticks: 12)?.status == .completed)
         #expect(state(.dropped, ticks: 3)?.status == .dropped)
     }
-}
-
-/// Breaks the cycle between the fake and its transport's handler.
-private final class FakeMALBox: @unchecked Sendable {
-    // @unchecked: test-only; set once before any request.
-    weak var mal: MALTests.FakeMAL?
 }

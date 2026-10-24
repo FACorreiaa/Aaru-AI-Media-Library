@@ -770,6 +770,11 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `DELETE /v1/connections/mal`.
     /// - Remark: Generated from `#/paths//v1/connections/mal/delete(disconnectMAL)`.
     func disconnectMAL(_ input: Operations.DisconnectMAL.Input) async throws -> Operations.DisconnectMAL.Output
+    /// A client opened Aaru: read the MyAnimeList list back on the next pass (SCR-010). Ignored when MAL is not connected or was read in the last 10 minutes, so clients call it on every open.
+    ///
+    /// - Remark: HTTP `POST /v1/connections/mal/pull`.
+    /// - Remark: Generated from `#/paths//v1/connections/mal/pull/post(requestMALPull)`.
+    func requestMALPull(_ input: Operations.RequestMALPull.Input) async throws -> Operations.RequestMALPull.Output
     /// One import with every row and what its plan does with it.
     ///
     /// - Remark: HTTP `GET /v1/imports/{id}`.
@@ -2724,6 +2729,13 @@ extension APIProtocol {
     public func disconnectMAL(headers: Operations.DisconnectMAL.Input.Headers = .init()) async throws -> Operations.DisconnectMAL.Output {
         try await disconnectMAL(Operations.DisconnectMAL.Input(headers: headers))
     }
+    /// A client opened Aaru: read the MyAnimeList list back on the next pass (SCR-010). Ignored when MAL is not connected or was read in the last 10 minutes, so clients call it on every open.
+    ///
+    /// - Remark: HTTP `POST /v1/connections/mal/pull`.
+    /// - Remark: Generated from `#/paths//v1/connections/mal/pull/post(requestMALPull)`.
+    public func requestMALPull(headers: Operations.RequestMALPull.Input.Headers = .init()) async throws -> Operations.RequestMALPull.Output {
+        try await requestMALPull(Operations.RequestMALPull.Input(headers: headers))
+    }
     /// One import with every row and what its plan does with it.
     ///
     /// - Remark: HTTP `GET /v1/imports/{id}`.
@@ -3863,6 +3875,14 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/MALConnection/needsReconnect`.
             public var needsReconnect: Swift.Bool
+            /// When Aaru last read the MyAnimeList list back (SCR-010).
+            ///
+            /// - Remark: Generated from `#/components/schemas/MALConnection/pulledAt`.
+            public var pulledAt: Foundation.Date?
+            /// Entries removed on MyAnimeList, newest first, at most 100. Aaru keeps its items for them; the list is what a weekly full read found missing.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MALConnection/removed`.
+            public var removed: [Components.Schemas.MALRemovedEntry]
             /// Creates a new `MALConnection`.
             ///
             /// - Parameters:
@@ -3870,22 +3890,59 @@ public enum Components {
             ///   - username:
             ///   - connectedAt:
             ///   - needsReconnect: MyAnimeList refused the tokens. Nothing is pushed until the user connects again.
+            ///   - pulledAt: When Aaru last read the MyAnimeList list back (SCR-010).
+            ///   - removed: Entries removed on MyAnimeList, newest first, at most 100. Aaru keeps its items for them; the list is what a weekly full read found missing.
             public init(
                 connected: Swift.Bool,
                 username: Swift.String? = nil,
                 connectedAt: Foundation.Date? = nil,
-                needsReconnect: Swift.Bool
+                needsReconnect: Swift.Bool,
+                pulledAt: Foundation.Date? = nil,
+                removed: [Components.Schemas.MALRemovedEntry]
             ) {
                 self.connected = connected
                 self.username = username
                 self.connectedAt = connectedAt
                 self.needsReconnect = needsReconnect
+                self.pulledAt = pulledAt
+                self.removed = removed
             }
             public enum CodingKeys: String, CodingKey {
                 case connected
                 case username
                 case connectedAt
                 case needsReconnect
+                case pulledAt
+                case removed
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/MALRemovedEntry`.
+        public struct MALRemovedEntry: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/MALRemovedEntry/malId`.
+            public var malId: Swift.String
+            /// - Remark: Generated from `#/components/schemas/MALRemovedEntry/title`.
+            public var title: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/MALRemovedEntry/removedAt`.
+            public var removedAt: Foundation.Date
+            /// Creates a new `MALRemovedEntry`.
+            ///
+            /// - Parameters:
+            ///   - malId:
+            ///   - title:
+            ///   - removedAt:
+            public init(
+                malId: Swift.String,
+                title: Swift.String? = nil,
+                removedAt: Foundation.Date
+            ) {
+                self.malId = malId
+                self.title = title
+                self.removedAt = removedAt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case malId
+                case title
+                case removedAt
             }
         }
         /// - Remark: Generated from `#/components/schemas/StremioLink`.
@@ -34494,6 +34551,119 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/connections/mal/delete(disconnectMAL)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// A client opened Aaru: read the MyAnimeList list back on the next pass (SCR-010). Ignored when MAL is not connected or was read in the last 10 minutes, so clients call it on every open.
+    ///
+    /// - Remark: HTTP `POST /v1/connections/mal/pull`.
+    /// - Remark: Generated from `#/paths//v1/connections/mal/pull/post(requestMALPull)`.
+    public enum RequestMALPull {
+        public static let id: Swift.String = "requestMALPull"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/connections/mal/pull/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RequestMALPull.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RequestMALPull.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.RequestMALPull.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.RequestMALPull.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Asked, or not needed.
+            ///
+            /// - Remark: Generated from `#/paths//v1/connections/mal/pull/post(requestMALPull)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.RequestMALPull.Output.NoContent)
+            /// Asked, or not needed.
+            ///
+            /// - Remark: Generated from `#/paths//v1/connections/mal/pull/post(requestMALPull)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.RequestMALPull.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/connections/mal/pull/post(requestMALPull)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

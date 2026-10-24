@@ -106,7 +106,9 @@ func backgroundServices(
         ),
     ] + (services.agentReplies.map {
         [AgentReplyWorker(replies: $0, logger: logger, workers: workers.agentReplies)]
-    } ?? []) + MALPushService.services(stores: stores, connect: services.malConnect, logger: logger)
+    } ?? []) + MALSyncService.services(
+        stores: stores, connect: services.malConnect, imports: services.imports, logger: logger
+    )
         + (services.catalog.catalogs.recordings.map {
             [ListenResolverService(resolver: ListenResolver(stores: stores, recordings: $0), logger: logger)]
         } ?? [])

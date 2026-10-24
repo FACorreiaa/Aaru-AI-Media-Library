@@ -49,3 +49,26 @@ struct CreateMALConnections: SQLMigration {
         "DROP TABLE mal_connections",
     ]
 }
+
+/// SCR-010 · reading MyAnimeList back: how far each connection has read (MAL's own
+/// `list_updated_at`), when it last read and when a client last asked, when it last read the
+/// whole list; per entry, the title to show and when it went missing on MAL.
+struct AddMALPull: SQLMigration {
+    let forward = [
+        """
+        ALTER TABLE mal_connections
+            ADD COLUMN pull_cursor timestamptz,
+            ADD COLUMN pulled_at timestamptz,
+            ADD COLUMN pull_requested_at timestamptz,
+            ADD COLUMN full_read_at timestamptz
+        """,
+        "ALTER TABLE mal_entry_states ADD COLUMN title text, ADD COLUMN removed_at timestamptz",
+    ]
+    let backward = [
+        "ALTER TABLE mal_entry_states DROP COLUMN removed_at, DROP COLUMN title",
+        """
+        ALTER TABLE mal_connections DROP COLUMN full_read_at, DROP COLUMN pull_requested_at,
+            DROP COLUMN pulled_at, DROP COLUMN pull_cursor
+        """,
+    ]
+}

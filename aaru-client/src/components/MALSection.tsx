@@ -1,5 +1,5 @@
-import { Show, createSignal } from 'solid-js'
-import { malConnectedLabel } from '../lib/mal/model'
+import { For, Show, createSignal } from 'solid-js'
+import { malConnectedLabel, malLastRead } from '../lib/mal/model'
 import { connectMAL, disconnectMAL } from '../lib/mal/server'
 import type { MALConnection } from '../lib/mal/server'
 import { Alert, AlertDescription, Button } from '~/components/ui'
@@ -8,13 +8,14 @@ import { SettingsSection } from './settings/SettingsSection'
 
 const FACTS = [
   'Status, watched episodes and score, one MyAnimeList entry per season.',
-  'Only changes from now on. Your MyAnimeList list is not overwritten.',
-  'Removing an anime here leaves it on MyAnimeList.',
+  'Only changes from now on, both ways. Changes on MyAnimeList come in when you open Aaru and only move forward.',
+  'Removing an anime on one side leaves it on the other.',
 ]
 
-// SCR-005: each user connects their own MyAnimeList account (PKCE, tokens kept sealed by the
-// server). From then on the server pushes anime progress; this section only connects and
-// disconnects, and says so when MAL stopped accepting Aaru.
+// SCR-005 and SCR-010: each user connects their own MyAnimeList account (PKCE, tokens kept sealed
+// by the server). From then on the server pushes anime progress and reads the list back; this
+// section connects and disconnects, says when MAL stopped accepting Aaru, and lists what was
+// removed on MAL but kept here.
 export function MALSection(props: {
   connection: MALConnection
   /** Where MAL sends the browser back: this page. */
@@ -49,7 +50,7 @@ export function MALSection(props: {
     setProblem(null)
     try {
       await disconnectMAL()
-      setConnection({ connected: false, needsReconnect: false })
+      setConnection({ connected: false, needsReconnect: false, removed: [] })
     } catch (error) {
       setProblem(
         error instanceof Error
@@ -65,7 +66,7 @@ export function MALSection(props: {
     <SettingsSection
       id="myanimelist"
       title="MyAnimeList"
-      description="Anime you update in Aaru update your MyAnimeList list too."
+      description="Aaru and your MyAnimeList list keep each other up to date."
     >
       <ul class="flex list-disc flex-col gap-1 pl-5 text-sm text-muted">
         {FACTS.map((fact) => (
@@ -92,7 +93,12 @@ export function MALSection(props: {
           when={connection().needsReconnect}
           fallback={
             <div class="flex flex-wrap items-center justify-between gap-3">
-              <span class="text-sm">{malConnectedLabel(connection())}</span>
+              <span class="flex flex-col text-sm">
+                {malConnectedLabel(connection())}
+                <Show when={malLastRead(connection())}>
+                  {(read) => <span class="text-muted">{read()}</span>}
+                </Show>
+              </span>
               <Button
                 variant="link"
                 size="bare"
@@ -122,6 +128,22 @@ export function MALSection(props: {
         </Show>
       </Show>
 
+      <Show when={connection().connected && connection().removed.length > 0}>
+        <div class="flex flex-col gap-1">
+          <h3 class="text-sm font-semibold">Removed on MyAnimeList</h3>
+          <ul class="flex list-disc flex-col gap-1 pl-5 text-sm">
+            <For each={connection().removed}>
+              {(entry) => (
+                <li>{entry.title ?? `MyAnimeList entry ${entry.malId}`}</li>
+              )}
+            </For>
+          </ul>
+          <p class="text-sm text-muted">
+            Still in your Aaru library. Remove them here if you want them gone.
+          </p>
+        </div>
+      </Show>
+
       <Show when={problem()}>
         {(message) => (
           <p role="alert" class="text-sm text-danger">
@@ -133,7 +155,7 @@ export function MALSection(props: {
       <ConfirmDialog
         open={confirming()}
         title="Disconnect MyAnimeList?"
-        description="Aaru stops updating your MyAnimeList list. Both lists stay as they are."
+        description="Aaru stops updating and reading your MyAnimeList list. Both lists stay as they are."
         confirmLabel="Disconnect"
         busy={busy() === 'disconnect'}
         onConfirm={() => void disconnect()}

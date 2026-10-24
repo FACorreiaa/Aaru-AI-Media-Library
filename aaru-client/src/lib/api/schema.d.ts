@@ -2232,6 +2232,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/connections/mal/pull': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** A client opened Aaru: read the MyAnimeList list back on the next pass (SCR-010). Ignored when MAL is not connected or was read in the last 10 minutes, so clients call it on every open. */
+    post: operations['requestMALPull']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/imports/{id}': {
     parameters: {
       query?: never
@@ -2623,6 +2640,19 @@ export interface components {
       connectedAt?: string
       /** @description MyAnimeList refused the tokens. Nothing is pushed until the user connects again. */
       needsReconnect: boolean
+      /**
+       * Format: date-time
+       * @description When Aaru last read the MyAnimeList list back (SCR-010).
+       */
+      pulledAt?: string
+      /** @description Entries removed on MyAnimeList, newest first, at most 100. Aaru keeps its items for them; the list is what a weekly full read found missing. */
+      removed: components['schemas']['MALRemovedEntry'][]
+    }
+    MALRemovedEntry: {
+      malId: string
+      title?: string
+      /** Format: date-time */
+      removedAt: string
     }
     StremioLink: {
       code: string
@@ -8195,6 +8225,25 @@ export interface operations {
     requestBody?: never
     responses: {
       /** @description Disconnected. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  requestMALPull: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Asked, or not needed. */
       204: {
         headers: {
           [name: string]: unknown

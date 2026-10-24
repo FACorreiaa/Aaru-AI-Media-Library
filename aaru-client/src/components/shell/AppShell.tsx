@@ -11,6 +11,7 @@ import {
   onMount,
 } from 'solid-js'
 import type { JSX } from 'solid-js'
+import { requestMALPull } from '../../lib/mal/server'
 import { Wordmark } from '../Brand'
 import type { Scope } from '../SearchPanel'
 import {
@@ -201,12 +202,18 @@ export function AppShell(props: {
         openSearch()
       }
     }
+    // MyAnimeList changes come back on each open (SCR-010); the server ignores asks too close
+    // together and accounts without MAL.
+    const askMAL = () => void requestMALPull().catch(() => undefined)
     const visible = () => {
-      if (document.visibilityState === 'visible') void refreshMentions()
+      if (document.visibilityState !== 'visible') return
+      void refreshMentions()
+      askMAL()
     }
     window.addEventListener('keydown', keydown)
     document.addEventListener('visibilitychange', visible)
     void refreshMentions()
+    askMAL()
     // The page you leave is the one a detail page's back link names.
     const unsubscribe = router.subscribe('onBeforeNavigate', (event) => {
       if (!event.pathChanged || !event.fromLocation) return

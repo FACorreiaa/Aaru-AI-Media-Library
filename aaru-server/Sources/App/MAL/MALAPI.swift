@@ -56,6 +56,23 @@ struct MALAPI: Sendable {
         ))
     }
 
+    func animeList(token: String, offset: Int, limit: Int) async throws -> MALListPage {
+        var url = URLComponents(
+            url: MALSettings.apiURL.appendingPathComponent("users/@me/animelist"), resolvingAgainstBaseURL: false
+        )
+        url?.queryItems = [
+            URLQueryItem(name: "fields", value: "list_status,num_episodes,media_type"),
+            URLQueryItem(name: "sort", value: "list_updated_at"),
+            URLQueryItem(name: "limit", value: String(limit)),
+            URLQueryItem(name: "offset", value: String(offset)),
+            URLQueryItem(name: "nsfw", value: "true"),
+        ]
+        guard let url = url?.url else { throw ProviderError(provider: "mal", kind: .malformed) }
+        return try await client.decode(
+            MALListPage.self, OutboundRequest(url: url, headers: auth(token)), decoder: Self.decoder
+        )
+    }
+
     private func auth(_ token: String) -> [(String, String)] {
         [("Authorization", "Bearer \(token)")]
     }
@@ -71,6 +88,16 @@ struct MALAPI: Sendable {
     static let decoder: JSONDecoder = {
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
+        // MAL writes `2017-11-11T19:51:22+00:00`; fractional seconds are allowed too.
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let text = try decoder.singleValueContainer().decode(String.self)
+            if let date = (try? Date.ISO8601FormatStyle(includingFractionalSeconds: true).parse(text))
+                ?? (try? Date.ISO8601FormatStyle().parse(text))
+            {
+                return date
+            }
+            throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: text))
+        }
         return decoder
     }()
 }
@@ -81,4 +108,35 @@ func makeMALAPI(_ settings: MALSettings, _ transport: any HTTPTransport) -> MALA
         client: ProviderClient(name: "mal", transport: transport, pacer: RequestPacer(requestsPerSecond: 1, burst: 3)),
         settings: settings
     )
+}
+
+/// One page of the user's anime list, newest change first (SCR-010).
+struct MALListPage: Decodable, Sendable {
+    struct Paging: Decodable, Sendable {
+        let next: String?
+    }
+
+    let data: [MALListEntry]
+    let paging: Paging?
+}
+
+/// One anime on the user's list: the catalog entry and the user's status for it.
+struct MALListEntry: Decodable, Sendable, Equatable {
+    struct Node: Decodable, Sendable, Equatable {
+        let id: Int
+        let title: String
+        let mediaType: String?
+        let numEpisodes: Int?
+    }
+
+    struct ListStatus: Decodable, Sendable, Equatable {
+        let status: String?
+        let score: Int?
+        let numEpisodesWatched: Int?
+        let updatedAt: Date
+        let finishDate: String?
+    }
+
+    let node: Node
+    let listStatus: ListStatus
 }

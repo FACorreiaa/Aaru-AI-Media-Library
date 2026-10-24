@@ -103,7 +103,10 @@ struct MALPusher: Sendable {
                     logger.notice("MyAnimeList refused an entry", metadata: ["mal": "\(target.malID)"])
                     continue
                 }
-                try await stores.mal.saveEntryState(state, userID: due.userID)
+                let name = target.season.map { $0 > 1 ? "\(entry.title.title) · Season \($0)" : nil }
+                try await stores.mal.saveEntryState(
+                    state, title: name ?? entry.title.title, userID: due.userID
+                )
                 sent += 1
             }
         }
@@ -168,18 +171,23 @@ extension ProviderError.Kind {
     }
 }
 
-/// Runs the MyAnimeList push every 30 seconds in the API process, so a tick reaches MAL within
-/// a minute.
-struct MALPushService: Service {
+/// Runs the MyAnimeList push and read-back every 30 seconds in the API process, so a tick
+/// reaches MAL within a minute and a read a client asked for starts within one. Reads that are
+/// not due cost one query.
+struct MALSyncService: Service {
     let pusher: MALPusher
+    let puller: MALPuller
     let logger: Logger
     var interval: Duration = .seconds(30)
 
-    /// The push worker, when MyAnimeList is configured; none otherwise.
-    static func services(stores: Stores, connect: MALConnectService, logger: Logger) -> [any Service] {
+    /// The sync worker, when MyAnimeList is configured; none otherwise.
+    static func services(
+        stores: Stores, connect: MALConnectService, imports: ImportService, logger: Logger
+    ) -> [any Service] {
         connect.api.map {
-            [MALPushService(
+            [MALSyncService(
                 pusher: MALPusher(stores: stores, connect: connect, api: $0, logger: logger),
+                puller: MALPuller(stores: stores, connect: connect, imports: imports, api: $0, logger: logger),
                 logger: logger
             )]
         } ?? []
@@ -189,6 +197,10 @@ struct MALPushService: Service {
         try await cancelWhenGracefulShutdown {
             while !Task.isCancelled {
                 do {
+                    let read = try await puller.runOnce()
+                    if read > 0 {
+                        logger.info("MyAnimeList entries read back", metadata: ["titles": "\(read)"])
+                    }
                     let sent = try await pusher.runOnce()
                     if sent > 0 {
                         logger.info("MyAnimeList entries pushed", metadata: ["entries": "\(sent)"])
@@ -196,7 +208,7 @@ struct MALPushService: Service {
                 } catch is CancellationError {
                     return
                 } catch {
-                    logger.error("MyAnimeList push pass failed", metadata: ["error": "\(error)"])
+                    logger.error("MyAnimeList sync pass failed", metadata: ["error": "\(error)"])
                 }
                 try? await Task.sleep(for: interval)
             }
