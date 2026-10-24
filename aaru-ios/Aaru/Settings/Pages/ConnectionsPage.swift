@@ -2,8 +2,8 @@ import AaruAPI
 import SwiftUI
 
 /// Settings → Connections (§18, UX-023): what reaches Aaru with a token of its own. Agents over
-/// MCP and the browser extension, the Stremio addon, and music scrobblers. One verb ends any of
-/// them: Disconnect (UX-024).
+/// MCP and the browser extension, the Stremio addon, MyAnimeList, and music scrobblers. One verb
+/// ends any of them: Disconnect (UX-024).
 struct ConnectionsPage: View {
     let model: ConnectionsModel
     /// Music's "last listen" opens Listens.
@@ -14,6 +14,7 @@ struct ConnectionsPage: View {
         Form {
             AgentsSection(model: model)
             StremioSection(model: model)
+            MALSection(model: model)
             MusicSection(model: model, api: api)
         }
         .settingsPage("Connections", problem: $model.problem)
