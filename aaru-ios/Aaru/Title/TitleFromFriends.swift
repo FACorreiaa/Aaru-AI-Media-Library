@@ -28,7 +28,7 @@ struct TitleFromFriends: View {
                         .eyebrow()
                         .accessibilityAddTraits(.isHeader)
                     ForEach(board.posts.prefix(Self.limit), id: \.id) { post in
-                        PostRow(post: post, myHandle: nil, board: board, standalone: true)
+                        PostRow(post: post, myHandle: nil, board: board, standalone: true, hidesTitle: true)
                         if post.id != board.posts.prefix(Self.limit).last?.id {
                             Divider()
                         }

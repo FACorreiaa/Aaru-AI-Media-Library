@@ -16,6 +16,8 @@ struct PostRow<Editor: View>: View {
     let board: BoardModel
     /// The post screen's row: the comment count is not a link to where you already are.
     var standalone = false
+    /// On the title's own page: no poster, name or "Add to my library"; the stars and the mark stay.
+    var hidesTitle = false
     /// The post screen upvotes through its own model, so its upvoters refresh. Nil: the Board's.
     var onUpvote: (() async -> Void)?
     /// Shown in place of the words while you edit them (the post screen).
@@ -67,12 +69,16 @@ struct PostRow<Editor: View>: View {
     private func titleBlock(_ title: TitleSummary) -> some View {
         let kind = MediaKind(type: title._type, isAnime: title.isAnime)
         return HStack(spacing: AaruSpace.medium) {
-            PosterView(url: title.posterUrl.flatMap(URL.init(string:)), kind: kind)
-                .frame(width: 48)
+            if !hidesTitle {
+                PosterView(url: title.posterUrl.flatMap(URL.init(string:)), kind: kind)
+                    .frame(width: 48)
+            }
             VStack(alignment: .leading, spacing: AaruSpace.xsmall) {
-                Text(title.year.map { "\(title.title) · \(String($0))" } ?? title.title)
-                    .font(.aaruDisplay(.body))
-                    .lineLimit(2)
+                if !hidesTitle {
+                    Text(title.year.map { "\(title.title) · \(String($0))" } ?? title.title)
+                        .font(.aaruDisplay(.body))
+                        .lineLimit(2)
+                }
                 if let rating = post.rating, !veiled {
                     Text(BoardRules.stars(rating))
                         .foregroundStyle(Color(.gold))
@@ -84,7 +90,7 @@ struct PostRow<Editor: View>: View {
                         .foregroundStyle(Color(.muted))
                         .accessibilityHint("Friends who haven't watched this far see it veiled. Only you see the mark.")
                 }
-                if !post.mine {
+                if !post.mine, !hidesTitle {
                     addToLibrary(title, kind: kind)
                 }
             }
@@ -155,8 +161,9 @@ struct PostRow<Editor: View>: View {
 
 /// The Board's row: no editor, and the comment count opens the post screen.
 extension PostRow where Editor == EmptyView {
-    init(post: BoardPost, myHandle: String?, board: BoardModel, standalone: Bool = false) {
+    init(post: BoardPost, myHandle: String?, board: BoardModel, standalone: Bool = false, hidesTitle: Bool = false) {
         self.standalone = standalone
+        self.hidesTitle = hidesTitle
         self.post = post
         self.myHandle = myHandle
         self.board = board
