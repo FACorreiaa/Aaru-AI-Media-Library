@@ -7,6 +7,7 @@ const entry = (overrides: Partial<LibraryEntry> = {}): LibraryEntry => ({
   title: { id: 't1', type: 'show', title: 'Andor', isAnime: false, ids: {} },
   status: 'in_progress',
   isOwned: false,
+  inBacklog: false,
   addedAt: '2026-10-01T00:00:00Z',
   updatedAt: '2026-10-10T00:00:00Z',
   ...overrides,

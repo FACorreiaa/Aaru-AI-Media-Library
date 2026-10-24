@@ -37,7 +37,8 @@ enum AlbumSample {
             rating: 10,
             isOwned: true,
             addedAt: .now,
-            updatedAt: .now
+            updatedAt: .now,
+            inBacklog: false
         )
     }
 

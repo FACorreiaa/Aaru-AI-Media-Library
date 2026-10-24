@@ -381,6 +381,7 @@ describe('listening row', () => {
     id,
     status,
     isOwned: false,
+    inBacklog: false,
     addedAt: '2026-10-01T00:00:00Z',
     updatedAt,
     title: { id: `t-${id}`, type, title: id, isAnime: false, ids: {} },
