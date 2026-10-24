@@ -1,8 +1,7 @@
 import AaruAPI
 import SwiftUI
 
-/// A title pushed from a search hit, a Discover card or a list member that is not in the library
-/// (LIB-006).
+/// A title pushed from a search hit or a list member that is not in the library (LIB-006).
 struct CatalogRoute: Hashable {
     let hit: CatalogHit
 }

@@ -2,8 +2,9 @@ import AaruAPI
 import SwiftUI
 
 /// `DiscoverCard` (DISC-001): a poster from a public row, on Home and on Discover. Not yet on
-/// the shelf, the poster is an add menu (tap for the wishlist, hold for a status or a list); on
-/// the shelf, it opens the item and wears a check. A release date shows as a badge.
+/// the shelf, a tap opens its preview (`CatalogPreviewSheet`) and a hold is the add menu (a
+/// status or a list); on the shelf, it opens the item and wears a check. A release date shows as
+/// a badge.
 struct DiscoverCard: View {
     let hit: CatalogHit
     /// The caller's item for this title, when they have it.
@@ -18,6 +19,10 @@ struct DiscoverCard: View {
     let onAdd: (LibraryStatus) -> Void
     let onAddToList: () -> Void
 
+    @State private var previewing = false
+    /// "Add to list…" in the preview: the picker opens once the preview is gone.
+    @State private var listAfterPreview = false
+
     private var kind: MediaKind {
         MediaKind(type: hit._type, isAnime: hit.isAnime)
     }
@@ -28,24 +33,43 @@ struct DiscoverCard: View {
                 NavigationLink(value: libraryItemID) { card }
                     .accessibilityLabel("\(hit.title), in your library")
             } else {
-                // LIB-006: the card opens the title's page; its + adds in place.
-                NavigationLink(value: CatalogRoute(hit: hit)) { card }
-                    .accessibilityLabel(hit.title)
-                    .overlay(alignment: .topTrailing) { addMenu.padding(6) }
+                Menu {
+                    ForEach([LibraryStatus.wishlist, .inProgress, .finished]) { status in
+                        Button(status.label(for: kind)) { onAdd(status) }
+                    }
+                    Divider()
+                    Button("Add to list…", systemImage: "text.badge.plus", action: onAddToList)
+                } label: {
+                    card
+                } primaryAction: {
+                    previewing = true
+                }
+                .menuStyle(.button)
+                .disabled(isAdding)
+                .accessibilityLabel(hit.title)
+                .accessibilityHint("Shows details. Hold to add.")
             }
         }
         .buttonStyle(.plain)
         .modifier(HoverLift())
+        .sheet(isPresented: $previewing, onDismiss: previewDismissed) {
+            CatalogPreviewSheet(
+                hit: hit, libraryItemID: libraryItemID, isAdding: isAdding, onAdd: onAdd,
+                onAddToList: { listAfterPreview = true }
+            )
+        }
+    }
+
+    private func previewDismissed() {
+        guard listAfterPreview else { return }
+        listAfterPreview = false
+        onAddToList()
     }
 
     private var card: some View {
         VStack(alignment: .leading, spacing: 6) {
             HomeArt(url: hit.posterUrl.flatMap(URL.init(string:)), aspect: kind.posterAspect)
-                .overlay(alignment: .topTrailing) {
-                    if libraryItemID != nil {
-                        shelfMark.padding(6)
-                    }
-                }
+                .overlay(alignment: .topTrailing) { shelfMark.padding(6) }
                 .overlay(alignment: .topLeading) {
                     if let badge {
                         HomeChip(text: badge, tint: Color(.accent).opacity(0.9)).padding(6)
@@ -73,27 +97,6 @@ struct DiscoverCard: View {
         .frame(width: width)
         .frame(maxWidth: width == nil ? .infinity : nil, alignment: .leading)
         .contentShape(Rectangle())
-    }
-
-    /// + on a card not in the library: a tap plans it, touch and hold picks another status.
-    private var addMenu: some View {
-        Menu {
-            ForEach([LibraryStatus.wishlist, .inProgress, .finished]) { status in
-                Button(status.label(for: kind)) { onAdd(status) }
-            }
-            Divider()
-            Button("Add to list…", systemImage: "text.badge.plus", action: onAddToList)
-        } label: {
-            shelfMark.frame(width: 44, height: 44, alignment: .topTrailing).contentShape(.rect)
-        } primaryAction: {
-            onAdd(.wishlist)
-        }
-        .menuStyle(.button)
-        .menuIndicator(.hidden)
-        .buttonStyle(.plain)
-        .disabled(isAdding)
-        .accessibilityLabel("Add \(hit.title)")
-        .accessibilityHint("Adds as \(LibraryStatus.wishlist.label(for: kind)). Hold for other statuses.")
     }
 
     @ViewBuilder

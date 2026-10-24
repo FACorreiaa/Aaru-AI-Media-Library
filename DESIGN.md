@@ -126,12 +126,13 @@ only when the count does. The page says you can leave, and a job still in line c
 
 One title is a room, not a settings form.
 
-**Before it is yours (LIB-006, 2026-10-24).** A search hit, a Discover card or a list member that
-is not in the library opens the title's page anyway: poster, kind, year, synopsis, the season and
+**Before it is yours (LIB-006, 2026-10-24).** A search hit or a list member that is not in the
+library opens the title's page anyway (a Discover card opens its quick look first, with "All
+details" on the web): poster, kind, year, synopsis, the season and
 episode count or the tracklist, with Add (a tap plans it, hold for another status) and Add to
 list. Nothing is written until one is tapped; once added, the Title room takes the page's place.
 The web addresses it by one provider id (`/app/catalog/show/tmdb/1399`); a title already in the
-library redirects to its room. On Apple a Discover card opens the page and its + adds in place.
+library redirects to its room.
 
 - Left or top: poster, status chips, `isOwned`, rating.
 - Center: **season map** — a heat grid of episodes (Serializd energy, calmer). The agent can
