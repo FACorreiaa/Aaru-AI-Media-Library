@@ -54,7 +54,7 @@ These types are the contract. Persistence tables map to them; they do not have t
 
 ```swift
 enum MediaType: String, Codable, Sendable {
-    case movie, show, book, album   // album: MUS-001
+    case movie, show, book, album, manga   // album: MUS-001, manga: MNG-001
 }
 
 struct ExternalIDs: Codable, Hashable, Sendable {
@@ -71,7 +71,12 @@ struct ExternalIDs: Codable, Hashable, Sendable {
 }
 ```
 
-Anime is not a fourth `MediaType`. See "Anime catalog" under provider adapters.
+Anime is not a fourth `MediaType`. See "Anime catalog" under provider adapters. Manga is its
+own kind (MNG-001, 2026-10-23): AniList serves it, but it reads like a book, not like anime.
+
+MyAnimeList numbers anime and manga separately, so `titles.mal` is unique per list: one partial
+index over manga and one over everything else. AniList ids share one space and stay globally
+unique.
 
 ### Title (catalog)
 
@@ -83,7 +88,8 @@ A canonical work Aaru knows about. Created on first add or during import hydrati
 - `synopsis` (optional, from catalog)
 - `posterURL` (catalog URL, not hosted)
 - `ids` — `ExternalIDs`
-- `byline` — authors for books, the artist credit for albums
+- `byline` — authors for books, the story and art credits for manga, the artist credit for albums
+- `chapterCount`, `volumeCount` — manga only, when AniList knows them
 - `seasons` — only for shows; episode lists may be lazy-loaded
 - tracklist (server-only, MUS-001) — `album_tracks`, an album's earliest official release,
   stored the first time its page opens (`tracks_hydrated_at`, refreshed after 30 days) and
@@ -113,6 +119,7 @@ Recommended: `status` is consumption only; ownership is `isOwned: Bool`.
 - Show: map of watched episode ids or `(season, episode)` pairs; plus optional `currentSeason` / `currentEpisode`
 - Movie: watched boolean is implied by `finished`; optional rewatch count later
 - Book: optional `page` / `percent`
+- Manga: optional `chapter` / `volume` (MNG-001), the last ones read. An import moves them forward only
 
 Phases 0–2 do not need continuous scrobble positions. Scrobbles arrive in Phase 3 as
 `watch_events` that write into this same progress; they do not replace it.
@@ -540,6 +547,11 @@ Anime is first-class from Phase 1 (CAT-007…009).
 - **Decided 2026-10-09:** anime is an `isAnime` facet on `show`/`movie`, not a fourth
   `MediaType`. Progress, calendar, Up Next, and widgets share one code path, and an anime film
   is still a movie. TMDB hits are flagged when they are Japanese animation.
+- **Manga (MNG-001).** Search, hydrate and MAL batches pass `type: MANGA` (search adds
+  `isAdult: false`), and manga asks for `chapters volumes` and the first staff credits whose role
+  is Story or Art. A MAL id on a manga row is looked up among manga only and never goes through
+  `anime_mappings`. There is no TMDB stand-in: while AniList is down, manga search is empty and
+  says so.
 - **When AniList is down (CAT-021).** AniList's 403 "API temporarily disabled", or a non-JSON
   page from its CDN, is an outage (`unavailable`), never `unauthorized`
   (`AniListCatalog.classify`, a hook on `ProviderClient`). While it lasts, TMDB's Japanese
@@ -678,8 +690,8 @@ Merge when the same user imports several sources, in order:
 6. CAT  
 7. Netflix viewing activity  
 8. TV Time export  
-9. MyAnimeList XML  
-10. AniList list  
+9. MyAnimeList XML (anime and manga)  
+10. AniList list (anime and manga)  
 11. Any other CSV (fills gaps only)  
 
 Later sources fill empty fields; they do not overwrite a non-empty rating, status, or progress from an earlier source unless the incoming event is newer *and* the source is explicitly marked authoritative. v1 can skip “newer” and use fill-empty-only. That is enough.
@@ -1073,8 +1085,19 @@ Trakt history push (SCR-004) and MAL / AniList progress push (SCR-005) are **one
 - Aaru writes to them after its own write commits.
 - What it pushed is never read back as a conflict source, and a remote change never overwrites
   Aaru. Imports stay one-way in.
-- Tokens live in `outbound_connections`, encrypted at rest.
-- MAL uses OAuth with PKCE. AniList uses `SaveMediaListEntry`.
+- Tokens live in `outbound_connections`, encrypted at rest. MAL's, as built, live in
+  `mal_connections` beside `trakt_connections` (sealed with `MAL_TOKEN_KEY`).
+- MAL uses OAuth with PKCE (`plain`, the only method it takes). AniList uses `SaveMediaListEntry`.
+
+**MyAnimeList push (SCR-005, as built).** `MALPushService` runs every 30 s in the API process.
+`mal_connections.push_cursor` starts at connect time, so the library as it was is never pushed;
+each pass reads `LibraryStore.changes` since the cursor for users with newer writes, so a tap, an
+import, a scrobble or an undo all go out the same way, and nothing on the write path calls it. A
+TMDB show splits into one MAL entry per season through `anime_mappings` (a season two MAL entries
+share is skipped); any other anime uses its own MAL id. `mal_entry_states` keeps what Aaru and MAL
+last agreed on per entry: a push sends only what differs, an `on_hold` entry stays on hold until
+the ticks move, and SCR-010 will use the same row to drop echoes. A 401/403 marks the connection
+`revoked_at` and pushing stops until the user connects again. Deletes are not pushed.
 
 **MyAnimeList read-back (SCR-010, owner 2026-10-23)** is the one exception to "never read back".
 MAL has no webhooks, so Aaru polls the user's own list sorted by `list_updated_at` and stops at
@@ -1099,6 +1122,7 @@ Modelled on Norviq's `social_*` design (`norviq-backend/.../Social`, `CreateSoci
 | `social_reactions` | user, owner, title, UTC day, one of six emoji; one per user and row (SOC-007) |
 | `social_recommendations` | from, to, title, note (140), created, added_at, dismissed_at; one waiting per pair and title (SOC-006) |
 | `social_settings` | `share_library_with_friends` (default on, 2026-10-21); `show_achievements_to_friends` (default on) and `leaderboard_opt_in` (default off), 2026-10-22 |
+| `favorites` | user, kind (`film` / `show` / `anime` / `manga` / `book` / `album`), position 0…9, title; key (user, kind, position), unique (user, kind, title) (FAV-001, 2026-10-23) |
 
 Rules:
 
@@ -1107,7 +1131,8 @@ Rules:
   they see each other's shelves and activity unless one turns off `share_library_with_friends`
   (owner, 2026-10-21: friendship is the opt-in). There are no public profile pages.
 - **What a friend sees** (`/v1/social/friends/{userId}/profile`, `/v1/activity`): titles, status,
-  rating, the last episode ticked, book page, and finish dates. Never notes or owned. Activity is
+  rating, the last episode ticked, book page, manga chapter, finish dates and the user's
+  favorites (FAV-001). Never notes or owned. Favorites follow `share_library_with_friends`. Activity is
   read from `library_items` and `episode_progress` at query time, ticks only when
   `watched_at_known`, so an import never floods a friend's feed.
 - **Invite links (SOC-002, 2026-10-21).** `https://aaruapp.com/i/{code}`, one use. Redeeming

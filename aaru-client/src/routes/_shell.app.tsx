@@ -93,7 +93,7 @@ import { offeredRecap, periodLabel } from '../lib/recap/model'
 
 import type { AgentPlan } from '../lib/plans/server'
 import { flip, leave } from '../lib/motion'
-import { setEpisode } from '../lib/title/server'
+import { markSeason, setEpisode } from '../lib/title/server'
 import {
   calendarQuery,
   discoverQuery,
@@ -585,6 +585,43 @@ function Home() {
     }
   }
 
+  /** Tonight's season tick: every aired episode of the card's season, as one action. The next
+   * card is only known once the server answers, so nothing moves until then. */
+  async function markSeasonWatched(entry: ContinueEntry) {
+    const id = entry.libraryItemId
+    const season = entry.next.season
+    if (busy().has(id)) return
+    setBusyFor(id, true)
+    setProblem(null)
+    try {
+      await markSeason({ data: { id, season } })
+    } catch (err) {
+      setProblem(
+        err instanceof Error ? err.message : `Season ${season} was not marked.`,
+      )
+      setBusyFor(id, false)
+      return
+    }
+    const now = Date.now()
+    setAirings((rows) =>
+      rows.map((a) =>
+        a.libraryItemId === id &&
+        a.season === season &&
+        Date.parse(a.airsAt) <= now
+          ? { ...a, watched: true }
+          : a,
+      ),
+    )
+    void loadTonight()
+    try {
+      showUpNext(await freshUpNext())
+    } catch {
+      // The write landed; Continue watching catches up on the next visit.
+    } finally {
+      setBusyFor(id, false)
+    }
+  }
+
   return (
     <div class="atmos flex-1">
       <div class="w-full min-w-0 px-4 pt-6 pb-16 md:px-8 lg:pt-8 2xl:px-12">
@@ -640,6 +677,7 @@ function Home() {
                   tonight={picked()}
                   busy={busy().has(picked().primary.entry.libraryItemId)}
                   onWatched={(entry) => void markWatched(entry)}
+                  onSeasonWatched={(entry) => void markSeasonWatched(entry)}
                   onSetAside={(pick, verdict) =>
                     void setAsideTonight(pick, verdict)
                   }

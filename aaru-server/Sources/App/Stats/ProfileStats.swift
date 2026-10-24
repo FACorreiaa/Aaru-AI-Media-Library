@@ -64,7 +64,8 @@ struct ProfileDigest {
     init(_ rows: [ProfileRow]) {
         stats.byKind = Self.kinds.map { PeriodStats.KindTotals(kind: $0) }
         var rated: [(titleID: TitleID, rating: Double)] = []
-        for row in rows where row.type != .album {
+        // Albums and manga have no place in the profile's watch-and-read stats yet.
+        for row in rows where row.type != .album && row.type != .manga {
             add(row)
             if let rating = row.rating {
                 rated.append((row.titleID, rating))

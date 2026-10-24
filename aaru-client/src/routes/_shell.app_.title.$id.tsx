@@ -1,4 +1,9 @@
-import { createFileRoute, useNavigate, useRouter } from '@tanstack/solid-router'
+import {
+  Link,
+  createFileRoute,
+  useNavigate,
+  useRouter,
+} from '@tanstack/solid-router'
 import { BackLink } from '../components/shell/BackLink'
 import {
   For,
@@ -17,6 +22,7 @@ import { AlbumHeader, Tracklist } from '../components/AlbumParts'
 import { DiscussButton } from '../components/groups/DiscussButton'
 import { RecommendDialog } from '../components/Recommendations'
 import { EpisodeSheet } from '../components/EpisodeSheet'
+import { PostCard } from '../components/board/PostCard'
 import { Poster } from '../components/Poster'
 import { SeasonMap } from '../components/SeasonMap'
 import { Segmented } from '../components/Segmented'
@@ -49,6 +55,7 @@ import {
   cardClass,
   toast,
 } from '~/components/ui'
+import { loadFromFriends } from '../lib/board/server'
 import { lastShown } from '../lib/presence'
 import { cn } from '~/lib/utils'
 import { KINDS, kindOf, statusOptions } from '../lib/library/model'
@@ -134,6 +141,12 @@ function TitleRoom() {
   const [pageNumber, setPageNumber] = createSignal(
     page().entry.bookProgress?.page?.toString() ?? '',
   )
+  const [chapterNumber, setChapterNumber] = createSignal(
+    page().entry.mangaProgress?.chapter?.toString() ?? '',
+  )
+  const [volumeNumber, setVolumeNumber] = createSignal(
+    page().entry.mangaProgress?.volume?.toString() ?? '',
+  )
 
   // A server-rendered <textarea> carries `value` only as an attribute, which the browser
   // ignores, and hydration does not set the property: a saved note looked empty after a load.
@@ -141,6 +154,29 @@ function TitleRoom() {
   onMount(() => {
     if (notesField) notesField.value = notes()
   })
+
+  // BOARD-002: what friends wrote about this title. Read in the browser after the room shows,
+  // and a failed read just leaves the section out.
+  const [fromFriends, setFromFriends] = createSignal<Awaited<
+    ReturnType<typeof loadFromFriends>
+  > | null>(null)
+  onMount(() => {
+    loadFromFriends({ data: { titleId: page().entry.title.id } })
+      .then(setFromFriends)
+      .catch(() => undefined)
+  })
+  const friendHandles = createMemo(
+    () =>
+      new Set(
+        [
+          fromFriends()?.myHandle,
+          ...(fromFriends()?.friendHandles ?? []),
+          ...(fromFriends()?.posts.map((p) => p.author.handle) ?? []),
+        ]
+          .filter((h): h is string => Boolean(h))
+          .map((h) => h.toLowerCase()),
+      ),
+  )
 
   const [opened, setOpened] = createSignal<Episode | null>(null)
   const shownEpisode = lastShown(opened)
@@ -673,6 +709,80 @@ function TitleRoom() {
                   </TextField>
                 </form>
               </Show>
+              <Show when={entry().title.type === 'manga'}>
+                <form
+                  class="flex flex-col gap-3 text-sm font-medium"
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    const chapter = Number.parseInt(chapterNumber(), 10)
+                    const volume = Number.parseInt(volumeNumber(), 10)
+                    const patch = {
+                      ...(Number.isFinite(chapter) && {
+                        mangaChapter: chapter,
+                      }),
+                      ...(Number.isFinite(volume) && { mangaVolume: volume }),
+                    }
+                    if (Object.keys(patch).length > 0) {
+                      void update(patch, {
+                        mangaProgress: {
+                          ...entry().mangaProgress,
+                          ...(Number.isFinite(chapter) && { chapter }),
+                          ...(Number.isFinite(volume) && { volume }),
+                        },
+                      })
+                    }
+                  }}
+                >
+                  <TextField
+                    class="flex w-auto flex-row items-center justify-between gap-4"
+                    value={chapterNumber()}
+                    onChange={setChapterNumber}
+                  >
+                    <TextFieldLabel>
+                      Chapter
+                      <Show when={entry().title.chapterCount}>
+                        {(total) => (
+                          <span class="ml-1 font-normal text-muted">
+                            of {total()}
+                          </span>
+                        )}
+                      </Show>
+                    </TextFieldLabel>
+                    <TextFieldInput
+                      inputmode="numeric"
+                      class="min-h-9 w-24 rounded-full border-0 bg-paper px-4 py-1.5 text-right text-sm"
+                    />
+                  </TextField>
+                  <TextField
+                    class="flex w-auto flex-row items-center justify-between gap-4"
+                    value={volumeNumber()}
+                    onChange={setVolumeNumber}
+                  >
+                    <TextFieldLabel>
+                      Volume
+                      <Show when={entry().title.volumeCount}>
+                        {(total) => (
+                          <span class="ml-1 font-normal text-muted">
+                            of {total()}
+                          </span>
+                        )}
+                      </Show>
+                    </TextFieldLabel>
+                    <TextFieldInput
+                      inputmode="numeric"
+                      class="min-h-9 w-24 rounded-full border-0 bg-paper px-4 py-1.5 text-right text-sm"
+                    />
+                  </TextField>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    type="submit"
+                    class="self-end"
+                  >
+                    Save progress
+                  </Button>
+                </form>
+              </Show>
             </Card>
             <section>
               <TextField value={notes()} onChange={setNotes} class="gap-0">
@@ -700,6 +810,50 @@ function TitleRoom() {
                 </Button>
               </Show>
             </section>
+
+            <Show
+              when={
+                fromFriends() &&
+                (fromFriends()!.posts.length > 0 ||
+                  fromFriends()!.friendHandles.length > 0)
+              }
+            >
+              <section aria-labelledby="from-friends">
+                <h2 id="from-friends" class="eyebrow">
+                  From friends
+                </h2>
+                <Show
+                  when={fromFriends()!.posts.length > 0}
+                  fallback={
+                    <p class="mt-3 text-sm text-muted">
+                      None of your friends has written about this yet.
+                    </p>
+                  }
+                >
+                  <ul class="mt-1 divide-y divide-line">
+                    <For each={fromFriends()!.posts.slice(0, 5)}>
+                      {(post) => (
+                        <li>
+                          <PostCard
+                            post={post}
+                            hideTitle
+                            handles={friendHandles()}
+                            myHandle={fromFriends()!.myHandle?.toLowerCase()}
+                          />
+                        </li>
+                      )}
+                    </For>
+                  </ul>
+                </Show>
+                <Link
+                  to="/app/friends"
+                  search={{ title: page().entry.id }}
+                  class="mt-2 inline-block text-sm font-medium text-accent hover:underline"
+                >
+                  Write about this
+                </Link>
+              </section>
+            </Show>
 
             <Show when={entry().title.type === 'show' && title()?.synopsis}>
               <section>

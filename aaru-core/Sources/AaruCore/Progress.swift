@@ -42,6 +42,24 @@ public struct BookProgress: Codable, Hashable, Sendable {
     }
 }
 
+/// Reading position for a manga (MNG-001): the last chapter and volume read. Either or both,
+/// since some readers count chapters and others count volumes.
+public struct MangaProgress: Codable, Hashable, Sendable {
+    public var chapter: Int?
+    public var volume: Int?
+
+    public init(chapter: Int? = nil, volume: Int? = nil) throws {
+        if let chapter, chapter < 0 {
+            throw ValidationError.invalidMangaProgress
+        }
+        if let volume, volume < 0 {
+            throw ValidationError.invalidMangaProgress
+        }
+        self.chapter = chapter
+        self.volume = volume
+    }
+}
+
 /// Progress for a library item, if the media type has any.
 ///
 /// Movies carry none: `finished` is the whole signal. v1 stores no continuous
@@ -49,6 +67,7 @@ public struct BookProgress: Codable, Hashable, Sendable {
 public enum Progress: Hashable, Sendable {
     case show(ShowProgress)
     case book(BookProgress)
+    case manga(MangaProgress)
 
     public var show: ShowProgress? {
         if case let .show(progress) = self {
@@ -63,15 +82,22 @@ public enum Progress: Hashable, Sendable {
         }
         return nil
     }
+
+    public var manga: MangaProgress? {
+        if case let .manga(progress) = self {
+            return progress
+        }
+        return nil
+    }
 }
 
 extension Progress: Codable {
     private enum Kind: String, Codable {
-        case show, book
+        case show, book, manga
     }
 
     private enum CodingKeys: String, CodingKey {
-        case kind, show, book
+        case kind, show, book, manga
     }
 
     public init(from decoder: any Decoder) throws {
@@ -81,6 +107,8 @@ extension Progress: Codable {
             self = try .show(container.decode(ShowProgress.self, forKey: .show))
         case .book:
             self = try .book(container.decode(BookProgress.self, forKey: .book))
+        case .manga:
+            self = try .manga(container.decode(MangaProgress.self, forKey: .manga))
         }
     }
 
@@ -93,6 +121,9 @@ extension Progress: Codable {
         case let .book(progress):
             try container.encode(Kind.book, forKey: .kind)
             try container.encode(progress, forKey: .book)
+        case let .manga(progress):
+            try container.encode(Kind.manga, forKey: .kind)
+            try container.encode(progress, forKey: .manga)
         }
     }
 }

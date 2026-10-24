@@ -1055,6 +1055,171 @@ public struct Client: APIProtocol {
             }
         )
     }
+    /// Your favorites, an ordered top 10 per kind (FAV-001). Profile data, not your library.
+    ///
+    /// - Remark: HTTP `GET /v1/me/favorites`.
+    /// - Remark: Generated from `#/paths//v1/me/favorites/get(getMyFavorites)`.
+    public func getMyFavorites(_ input: Operations.GetMyFavorites.Input) async throws -> Operations.GetMyFavorites.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.GetMyFavorites.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/me/favorites",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .get
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.GetMyFavorites.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.Favorites.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                default:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(body: body)
+                    )
+                }
+            }
+        )
+    }
+    /// Replace one kind's favorites with these titles, in this order: add, remove and reorder are all this call. Any catalog title, at most 10, each once, each of this kind; else 422. Not journaled.
+    ///
+    /// - Remark: HTTP `PUT /v1/me/favorites/{kind}`.
+    /// - Remark: Generated from `#/paths//v1/me/favorites/{kind}/put(setMyFavorites)`.
+    public func setMyFavorites(_ input: Operations.SetMyFavorites.Input) async throws -> Operations.SetMyFavorites.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.SetMyFavorites.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/me/favorites/{}",
+                    parameters: [
+                        input.path.kind
+                    ]
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .put
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                let body: OpenAPIRuntime.HTTPBody?
+                switch input.body {
+                case let .json(value):
+                    body = try converter.setRequiredRequestBodyAsJSON(
+                        value,
+                        headerFields: &request.headerFields,
+                        contentType: "application/json; charset=utf-8"
+                    )
+                }
+                return (request, body)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.SetMyFavorites.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.Favorites.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                default:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(body: body)
+                    )
+                }
+            }
+        )
+    }
     /// The user with exactly this handle and where they stand with you. 404 when nobody holds it or either of you blocked the other.
     ///
     /// - Remark: HTTP `GET /v1/social/users/{handle}`.
@@ -11603,7 +11768,7 @@ public struct Client: APIProtocol {
             }
         )
     }
-    /// Import a public AniList anime list by username. Read and matched in the background, written only after approval.
+    /// Import a public AniList anime and manga list by username. Read and matched in the background, written only after approval.
     ///
     /// - Remark: HTTP `POST /v1/imports/anilist`.
     /// - Remark: Generated from `#/paths//v1/imports/anilist/post(createAniListImport)`.
@@ -12096,6 +12261,224 @@ public struct Client: APIProtocol {
             serializer: { input in
                 let path = try converter.renderedPath(
                     template: "/v1/imports/trakt/connection",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .delete
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 204:
+                    return .noContent(.init())
+                default:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(body: body)
+                    )
+                }
+            }
+        )
+    }
+    /// Start connecting MyAnimeList (PKCE, `plain`, the only method MAL accepts). Open the returned address in a browser. MAL then redirects to GET /v1/connections/mal/callback (a plain redirect route outside this spec), which sends the browser on to `returnTo` with `mal=connected|denied|failed`. Once connected, anime progress written from then on is pushed to the MAL list (SCR-005).
+    ///
+    /// - Remark: HTTP `POST /v1/connections/mal/connect`.
+    /// - Remark: Generated from `#/paths//v1/connections/mal/connect/post(connectMAL)`.
+    public func connectMAL(_ input: Operations.ConnectMAL.Input) async throws -> Operations.ConnectMAL.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.ConnectMAL.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/connections/mal/connect",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .post
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                let body: OpenAPIRuntime.HTTPBody?
+                switch input.body {
+                case let .json(value):
+                    body = try converter.setRequiredRequestBodyAsJSON(
+                        value,
+                        headerFields: &request.headerFields,
+                        contentType: "application/json; charset=utf-8"
+                    )
+                }
+                return (request, body)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.ConnectMAL.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.MALConnectStart.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                default:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(body: body)
+                    )
+                }
+            }
+        )
+    }
+    /// - Remark: HTTP `GET /v1/connections/mal`.
+    /// - Remark: Generated from `#/paths//v1/connections/mal/get(getMALConnection)`.
+    public func getMALConnection(_ input: Operations.GetMALConnection.Input) async throws -> Operations.GetMALConnection.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.GetMALConnection.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/connections/mal",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .get
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.GetMALConnection.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.MALConnection.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                default:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(body: body)
+                    )
+                }
+            }
+        )
+    }
+    /// Forget the MyAnimeList tokens. Nothing more is pushed; the MAL list and the library stay as they are.
+    ///
+    /// - Remark: HTTP `DELETE /v1/connections/mal`.
+    /// - Remark: Generated from `#/paths//v1/connections/mal/delete(disconnectMAL)`.
+    public func disconnectMAL(_ input: Operations.DisconnectMAL.Input) async throws -> Operations.DisconnectMAL.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.DisconnectMAL.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/connections/mal",
                     parameters: []
                 )
                 var request: HTTPTypes.HTTPRequest = .init(

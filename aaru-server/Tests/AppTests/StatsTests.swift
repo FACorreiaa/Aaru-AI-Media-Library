@@ -280,6 +280,7 @@ struct StatsTests {
             #expect(try totals(reply) == [
                 "episodesWatched": 3, "minutesWatched": 3 * 45 + 100, "activeDays": 4,
                 "moviesFinished": 1, "showsFinished": 0, "animeFinished": 0, "booksFinished": 0, "albumsFinished": 0,
+                "mangaFinished": 0,
             ])
             let body = try reply.json()
             #expect((body["topTitles"] as? [[String: Any]])?.count == 2)

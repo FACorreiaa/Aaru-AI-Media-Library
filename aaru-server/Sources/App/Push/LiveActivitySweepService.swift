@@ -14,7 +14,12 @@ struct LiveActivitySweepService: Service {
     var now: @Sendable () -> Date = { Date() }
 
     func run() async throws {
-        guard let notifier else { return }
+        // Without APNs there is nothing to sweep, but returning would end the service group and
+        // take the server down with it: wait for shutdown instead.
+        guard let notifier else {
+            try? await gracefulShutdown()
+            return
+        }
         try await cancelWhenGracefulShutdown {
             while !Task.isCancelled {
                 do {

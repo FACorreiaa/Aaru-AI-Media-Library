@@ -17,6 +17,7 @@ final class Stores: Sendable {
     let stats: any StatsStore
     let importJobs: any ImportJobStore
     let trakt: any TraktStore
+    let mal: any MALStore
     let push: any PushStore
     let agentTokens: any AgentTokenStore
     let watchEvents: any WatchEventStore
@@ -35,6 +36,7 @@ final class Stores: Sendable {
     let capture: any CaptureStore
     let entitlements: any EntitlementStore
     let boards: any BoardStore
+    let favorites: any FavoriteStore
 
     init(
         health: any DatabaseHealth,
@@ -50,6 +52,7 @@ final class Stores: Sendable {
         stats: any StatsStore,
         importJobs: any ImportJobStore,
         trakt: any TraktStore,
+        mal: any MALStore,
         push: any PushStore,
         agentTokens: any AgentTokenStore,
         watchEvents: any WatchEventStore,
@@ -67,7 +70,8 @@ final class Stores: Sendable {
         tonight: any TonightStore,
         capture: any CaptureStore,
         entitlements: any EntitlementStore,
-        boards: any BoardStore
+        boards: any BoardStore,
+        favorites: any FavoriteStore
     ) {
         self.health = health
         self.users = users
@@ -82,6 +86,7 @@ final class Stores: Sendable {
         self.stats = stats
         self.importJobs = importJobs
         self.trakt = trakt
+        self.mal = mal
         self.push = push
         self.agentTokens = agentTokens
         self.watchEvents = watchEvents
@@ -100,5 +105,6 @@ final class Stores: Sendable {
         self.capture = capture
         self.entitlements = entitlements
         self.boards = boards
+        self.favorites = favorites
     }
 }

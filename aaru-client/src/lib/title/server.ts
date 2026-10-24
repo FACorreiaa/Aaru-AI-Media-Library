@@ -125,7 +125,11 @@ export const updateItem = createServerFn({ method: 'POST' })
           notes: z.string().max(10_000),
           isOwned: z.boolean(),
           bookPage: z.number().int().min(0),
-          clear: z.array(z.enum(['rating', 'notes', 'bookProgress'])),
+          mangaChapter: z.number().int().min(0),
+          mangaVolume: z.number().int().min(0),
+          clear: z.array(
+            z.enum(['rating', 'notes', 'bookProgress', 'mangaProgress']),
+          ),
         })
         .partial(),
     }),

@@ -334,6 +334,7 @@ func fakeStores(databaseReachable: Bool = true) -> Stores {
         stats: untouched,
         importJobs: untouched,
         trakt: untouched,
+        mal: UntouchedMALStore(),
         push: untouched,
         agentTokens: untouched,
         watchEvents: untouched,
@@ -351,7 +352,8 @@ func fakeStores(databaseReachable: Bool = true) -> Stores {
         tonight: untouched,
         capture: untouched,
         entitlements: untouched,
-        boards: untouched
+        boards: untouched,
+        favorites: untouched
     )
 }
 

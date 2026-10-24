@@ -51,6 +51,7 @@ const SCOPES: Array<{ kind: Scope; label: string }> = [
 
 const PLACEHOLDERS: Partial<Record<Scope, string>> = {
   book: 'Title, author or ISBN',
+  manga: 'Manga, manhwa or light novel',
   album: 'Album or artist',
 }
 
@@ -353,6 +354,14 @@ export function SearchPanel(props: {
             }
           >
             <li class="py-3">
+              <Button
+                variant="soft"
+                size="bare"
+                onClick={() => setKind('manga')}
+                class="w-full justify-start rounded-panel px-3 py-2 text-left text-sm text-accent"
+              >
+                Search Manga for “{query().trim()}”
+              </Button>
               <Button
                 variant="soft"
                 size="bare"

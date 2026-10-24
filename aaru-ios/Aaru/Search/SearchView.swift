@@ -5,7 +5,7 @@ import SwiftUI
 /// All (Open Library and MusicBrainz are slow and noisy), so All ends with rows that search them
 /// instead.
 enum SearchScope: String, CaseIterable, Identifiable {
-    case all, film, show, anime, book, music
+    case all, film, show, anime, manga, book, music
 
     var id: String {
         rawValue
@@ -34,6 +34,7 @@ extension MediaKind {
     var searchPrompt: String {
         switch self {
         case .book: "Title, author or ISBN"
+        case .manga: "Manga, manhwa or light novel"
         case .music: "Album or artist"
         case .film, .show, .anime: "Title"
         }

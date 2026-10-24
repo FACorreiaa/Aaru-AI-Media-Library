@@ -58,6 +58,9 @@ let allMigrations: [any Migration] = [
     AddCapture(),
     AddEntitlements(),
     CreateBoards(),
+    AddManga(),
+    CreateFavorites(),
+    CreateMALConnections(),
 ]
 
 struct MigrationNeedsSQL: Error, CustomStringConvertible {

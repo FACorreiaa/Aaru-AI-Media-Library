@@ -96,6 +96,14 @@ export function pickMarkable(pick: TonightPick): ContinueEntry | null {
   return null
 }
 
+/** The card whose season the season tick marks: only while aired episodes after the next one
+ * remain in its season. At the season's last, or with one left, it is the episode tick. */
+export function pickSeasonMarkable(pick: TonightPick): ContinueEntry | null {
+  const entry = pickMarkable(pick)
+  if (!entry || entry.isFinale || entry.remainingCount <= 1) return null
+  return entry
+}
+
 /** "S4 · E3 · Name". Empty for a book or a film. */
 export function pickEpisode(pick: TonightPick): string {
   if (pick.kind === 'continue') return nextLine(pick.entry)

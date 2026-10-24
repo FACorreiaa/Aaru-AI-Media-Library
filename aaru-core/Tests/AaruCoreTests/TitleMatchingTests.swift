@@ -69,3 +69,44 @@ struct CrossTypeMatchingTests {
         #expect(fromAniList.known.map(\.provider) == ["anilist", "mal"])
     }
 }
+
+/// IMP-020: a book one year off matches only with its author, and only books.
+struct BookYearToleranceTests {
+    let goodreads = MediaRef(type: .book, title: "Leviathan Wakes", year: 2011)
+
+    @Test
+    func oneYearOffMatchesWithTheSameAuthor() {
+        let hit = MediaRef(type: .book, title: "Leviathan Wakes", year: 2012)
+        #expect(MatchKey.canMergeBook(goodreads, author: "James S.A. Corey", hit, byline: "James S. A. Corey"))
+        #expect(MatchKey.canMergeBook(goodreads, author: "James S.A. Corey", hit, byline: "Someone, James S. A. Corey"))
+        #expect(MatchKey.canMerge(goodreads, hit) == false, "plain matching stays exact")
+    }
+
+    @Test
+    func noAuthorOrAnotherAuthorDoesNotMatch() {
+        let hit = MediaRef(type: .book, title: "Leviathan Wakes", year: 2012)
+        #expect(MatchKey.canMergeBook(goodreads, author: "Someone Else", hit, byline: "James S. A. Corey") == false)
+        #expect(MatchKey.canMergeBook(goodreads, author: nil, hit, byline: "James S. A. Corey") == false)
+        #expect(MatchKey.canMergeBook(goodreads, author: "James S.A. Corey", hit, byline: nil) == false)
+        #expect(MatchKey.sameAuthor("James Corey", byline: "James S. A. Corey") == false)
+        #expect(MatchKey.sameAuthor("", byline: "") == false)
+    }
+
+    @Test
+    func twoYearsOffOrNoYearOrAnotherTitleDoesNotMatch() {
+        let far = MediaRef(type: .book, title: "Leviathan Wakes", year: 2013)
+        let noYear = MediaRef(type: .book, title: "Leviathan Wakes", year: nil)
+        let other = MediaRef(type: .book, title: "Caliban's War", year: 2012)
+        for hit in [far, noYear, other] {
+            #expect(MatchKey
+                .canMergeBook(goodreads, author: "James S.A. Corey", hit, byline: "James S. A. Corey") == false)
+        }
+    }
+
+    @Test
+    func otherKindsAreNeverLoosened() {
+        let film = MediaRef(type: .movie, title: "Dune", year: 2021)
+        let nextYear = MediaRef(type: .movie, title: "Dune", year: 2022)
+        #expect(MatchKey.canMergeBook(film, author: "Denis Villeneuve", nextYear, byline: "Denis Villeneuve") == false)
+    }
+}

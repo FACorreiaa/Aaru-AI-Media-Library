@@ -148,6 +148,10 @@ genre chips, the same status / rating / notes as any title, then the tracklist (
 length in tabular figures; "Disc 1"… only when there is more than one). No playback and no
 ticks: the tracklist is catalog data. Without one yet, a quiet "Tracklist not available yet".
 
+**A manga's room (MNG-001, 2026-10-23)** is a book's room with chapter and volume in place of the
+page: two number fields, each with its total when AniList knows it, saved together. The byline
+is the story and art credits.
+
 **Built 2026-10-21 (web, iPhone, iPad, Mac):** the room opens on a hero: the title's backdrop
 under a veil that fades into Paper (or, without art, the room's own reed code, seeded by the
 title id so each room has its rhythm), the poster standing over the hero's lower edge, the name
@@ -183,7 +187,9 @@ kept (Home's cache on Apple, `localStorage` on the web, cleared on sign-out), so
 offline. The device composes it as above only when no answer for today exists. Each pick has
 "Not tonight" (gone for the day) and "Not for me" (ranked lower for 14 days): buttons on the
 web, a "…" menu and a context menu on Apple. The card moves on at once, then Tonight loads
-again. Mark watched shows only when the pick is a show's next episode.
+again. Mark watched shows only when the pick is a show's next episode; beside it, "Season N
+watched" (PROG-006, owner 2026-10-23) ticks every aired episode of that season, shown only while
+episodes after the next one remain in it.
 
 ## 6. The shelf (library as query, not as app section)
 
@@ -211,7 +217,10 @@ since the shelf is then that list. Each group shows its newest six, with "Show a
 the rest in place. Below Now the shelf has its own heading, naming the filter ("Shows ·
 Watching", "All titles") with a count; arriving with `?status=` or `?kind=` scrolls to it.
 Cards scroll sideways on phones and sit in a grid wider. **Listening** (albums, cover and artist, **Listened** to close) joined on 2026-10-21. Books
-carry Open Library's page count, so a page reads "Page 120 of 412" with its bar.
+carry Open Library's page count, so a page reads "Page 120 of 412" with its bar. Manga joined
+Reading on 2026-10-23 (MNG-001): a portrait cover like a book, "Ch. 112 of 364 · Vol. 12" (the
+totals only when AniList knows them), **Read ch. 113** as the next step and **Mark read** to
+close it.
 
 A **list** is the hand-made counterpart: membership in an order the user chose, titles in the
 library or not. It fills from inside: "Add titles" opens search aimed at the list, and a hit
@@ -592,9 +601,15 @@ ship before the Phase 2 gate.
   Aaru since"; the time in days and hours in the display face, with hours and episodes under;
   four tiles (shows watched · watching, anime, films, books read); where the time went (TV,
   anime, films, one stacked bar); the top eight genres; the three titles with the most time;
-  networks; mean score and the ratings histogram; then Insights and Recap. It counts the library
-  as it is, undated ticks included, and says so ("Includes episodes without a watch date").
-  Static, like §13b. Badges (`BadgeShelf`) live on Achievements (below).
+  networks; mean score and the ratings histogram; Favorites; then Insights and Recap. It counts
+  the library as it is, undated ticks included, and says so ("Includes episodes without a watch
+  date"). Static, like §13b. Badges (`BadgeShelf`) live on Achievements (below).
+- **Favorites** (`FavoritesRow`, FAV-001, owner 2026-10-23) — a top 10 per kind (Films, Shows,
+  Anime, Manga, Books, Music), any title from the catalog, first is the favorite. Picked in
+  Settings → Account; on the profile, one numbered row of covers per kind with something in it,
+  and "Edit" back to Settings (with no favorites, one line saying where to pick them). The only
+  part of the profile a friend also sees: on their view of you, after Recently finished, while
+  you share your library.
 - **Badges** (`BadgeShelf`, pulled forward 2026-10-22) — discovery badges and milestone badges,
   tiered. See "Achievements" below.
 - **Leaderboard** (pulled forward 2026-10-22) — friends only, weekly, opt-in. Never global.
@@ -611,7 +626,7 @@ The feeling to protect: **social is a room you invite people into, not a feed yo
 Friends is its own page on the web and its own sidebar destination on iPad and Mac, between
 Lists and Groups. On iPhone the five tabs are full (§18), so Groups opens it from a Friends
 button in its toolbar, and Settings → Friends & privacy links to it (Apple audit, 2026-10-22,
-APL-043). It opens on "Lately": one quiet row
+APL-043). It opens on Board; Lately is its second view (BOARD-002, below). Lately is one quiet row
 per friend, title and day ("Ana watched 3 episodes, up to S1 · E3 Severance", "Today"), with the
 poster, and Earlier for more. No unread badge and no push: you visit it. Below come Invite,
 requests, friends and blocks.
@@ -641,6 +656,35 @@ only friends see it. A spent, expired or revoked link says so plainly, with no d
 The sender invites from Friends: "Invite a friend", or "Invite to watch something together"
 through the title picker. The link opens the share sheet (copied to the clipboard on desktop
 web), and open invites list what they say, the days left, and Revoke.
+
+### Board (BOARD-002, 2026-10-23)
+
+The Board lives on Friends, not in a Social tab (owner, 2026-10-23; the spec's tab is dropped).
+Friends opens on **Board**; a `Board | Lately` segmented control holds Lately (For you from
+friends, activity, leaderboard, Invite, requests, friends). No nav rename, Groups untouched.
+
+- **Composer.** An inline box at the top of Board that grows on focus: no floating button, no
+  dialog. It offers + Title, half stars, the spoiler choice, and, once a title is chosen, a
+  one-line review effect ("Adds Severance to Watched, ★4½"; "Watched, or Watching if it's still
+  airing" for a show; "Updates your rating. Its status stays." for a title already in the
+  library). `@` suggests your friends; there is no `@aaru` until BOARD-004. It also starts
+  with a title from `/app/friends?title=<library item id>`, which is where "Write about this" goes.
+- **Post rows.** Author, day, words, the attached title with its stars, Upvote and the comment
+  count. The poster is not a link: title pages are library items and a friend's title is
+  usually not yours, so friends' posts carry "Add to my library" instead. A spoiler sits behind
+  `SpoilerVeil`; the author never sees a veil.
+- **Recent / Top this week.** Recent is the default and pages with "Show older"; Top this week is
+  one ranked page.
+- **Empty.** The owl: no friends points to Invite (in Lately); friends with no posts says it is
+  quiet. The composer stays either way.
+- **Post page** (`/app/friends/posts/$postId`). The post, the upvoters' names beside the Upvote
+  button, then the thread: comments with one level of replies. Reply is a visible button; when
+  answering a reply it prefills `@name`. A deleted comment with replies reads "Comment deleted"
+  in muted text with its replies still under it. Menus: Edit, Delete and Report on a post;
+  Delete sits in a comment's ⋯ menu.
+- **From friends on a title.** After the notes on a title page: up to five post rows about this
+  title and "Write about this" (to Friends with the title in the composer). Hidden when there
+  are no posts and no friends.
 
 ### Achievements (GAM-001…005, WID-007, pulled forward 2026-10-22)
 
@@ -798,8 +842,9 @@ bottom, Insights and Settings.
 - **Web.** One shell for every `/app` page. At 1024px and up a persistent left sidebar
   (collapsible to icons): the wordmark, Search (⌘K; opens in place on every page), the six
   destinations with Friends between Lists and Groups (its own page since SOC-003, owner
-  2026-10-21), a gap, Insights, Settings, and last the account row (name and @handle, opens
-  Settings → Account). Groups carries the mention count. Below 1024px a top bar (wordmark,
+  2026-10-21; it opens on Board, and Lately is its second view), a gap, Insights, Settings,
+  and last the account row (name and @handle, opens Settings → Account). Groups carries the
+  mention count. Below 1024px a top bar (wordmark,
   Search, menu) opens the same sidebar as a sheet. No page draws its own header or nav. Detail
   pages (a title, a list, an import, a channel) sit inside the shell with a back link that
   names where you came from. Sign out lives on Account only.
@@ -828,11 +873,11 @@ new import source or connected app joins its page; it never gets a page of its o
 
 | # | Page | Web slug | Sections, in order |
 | --- | --- | --- | --- |
-| 1 | Account | `account` | Name and handle (one editor) · Signed in with, Link Google · Aaru Plus (state; buy and manage on Apple only) · On this device: Appearance (System / Light / Dark) · Sign out |
+| 1 | Account | `account` | Name and handle (one editor) · Favorites (a top 10 per kind, FAV-001) · Signed in with, Link Google · Aaru Plus (state; buy and manage on Apple only) · On this device: Appearance (System / Light / Dark) · Sign out |
 | 2 | Friends & privacy | `friends` | Add a friend · Asking you · Waiting on · Friends · Blocked · Show my badges and level to friends · Join the weekly friends board (2026-10-22) · Location: Concerts near, Remove (only while concerts are on). Footer: "Friends find you by your exact handle. Nobody can search or browse for you, and your library stays private." |
 | 3 | Notifications | `notifications` | New episodes · Mentions in groups · Group invites · this browser's alerts (web). Footer: "Requests from your connected agents always alert you." The switches are per account, so the Mac shows them too: "Alerts go to your iPhone and your browsers." |
 | 4 | Import | `import` | Trakt · Bring your history, in `CLAUDE.md`'s import order: Stremio history, IMDb, Letterboxd, Goodreads, Pogdesign CAT, Netflix, MyAnimeList, AniList, Any other CSV · Imports (the jobs; "No imports yet." when none) |
-| 5 | Connections | `connections` | Agents: the picker (Claude, Claude Code, Codex, Hermes, Gemini CLI, other MCP client, Browser extension) and live connections · Stremio: the addon, with "Import your Stremio history" linking to Import · Music: scrobblers, the last listen → Listens. One verb: Disconnect |
+| 5 | Connections | `connections` | Agents: the picker (Claude, Claude Code, Codex, Hermes, Gemini CLI, other MCP client, Browser extension) and live connections · Stremio: the addon, with "Import your Stremio history" linking to Import · MyAnimeList: connect, what goes over (status, episodes and score per season; only changes from now on; removals stay), "Connected as … · since …", Reconnect when MAL stopped accepting Aaru (SCR-005, owner 2026-10-23) · Music: scrobblers, the last listen → Listens. One verb: Disconnect |
 | 6 | Your data | `data` | Recaps: this year, last month, last year · History: every journaled action, newest first, by whom (you, an import, a connection), with Undo · Export: Everything (JSON), Library spreadsheet (CSV) |
 | 7 | About | `about` | Wordmark, version, channel (Apple) · Credits · Privacy policy, About Aaru, Contact |
 | 8 | Delete account | `delete` | One sentence on what goes, a link to Your data → Export, **Delete account** in danger styling; confirm "Delete account?" with **Delete account and library** / Keep it |
@@ -841,7 +886,7 @@ Where each existing piece goes:
 
 | Page | Web (`aaru-client/src`) | Apple (`aaru-ios/Aaru`) |
 | --- | --- | --- |
-| Account | `AccountPage`: `ProfileEditor` (handle and name), Signed in with + Link Google, Aaru Plus (`plusLine`), `AppearanceSection`, Sign out | `AccountSettings` first section; `PlusSection` + `PlusPaywall` (`Aaru/Plus`); `ProfileEditor` from `Social/FriendsView.swift`; `AppearancePicker` (off the Settings root and the Mac "General" pane) |
+| Account | `AccountPage`: `ProfileEditor` (handle and name), `FavoritesEditor` (kind chips, move up/down, remove, Add through `TitlePicker`), Signed in with + Link Google, Aaru Plus (`plusLine`), `AppearanceSection`, Sign out | `AccountSettings` first section; `PlusSection` + `PlusPaywall` (`Aaru/Plus`); `ProfileEditor` from `Social/FriendsView.swift`; Favorites under Handle on Friends & privacy opens `FavoritesEditor` (`Aaru/Profile`, drag to reorder, swipe to remove, Add through `TitlePickerSheet` fixed to the kind); `AppearancePicker` (off the Settings root and the Mac "General" pane) |
 | Friends & privacy | `FriendsCard` (handle, the way to `/app/friends`, Show my library to friends); `ConcertPlaceSection`. The friend lists (`FriendsSection`, with `InviteFriends`) live on `/app/friends` | `FriendsPage` (`Social/FriendsView.swift`): handle, a Friends row that opens Friends (`router.showFriends()`), Show my library to friends; `ConcertPlaceSection`. The friend lists, invites and requests live on Friends (`FriendsScreen`), as on the web |
 | Notifications | `NotificationsSection` | `NotificationsSection`, out of `AccountSettings`, on iOS and Mac |
 | Import | `ImportsPage`: `TraktImport`, `StremioHistoryImport`, `FILE_SOURCES` tiles, `CatImport`, the AniList form, the jobs list → `/app/imports/$id`. Trakt returns to `/app/settings/import?trakt=` | `ImportsSettings` without `ExportDataSection`: `TraktSection`, the history section, `CATImportSheet`, `StremioHistoryImport`, the jobs → `ImportDetailView` |

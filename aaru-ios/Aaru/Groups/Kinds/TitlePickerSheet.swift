@@ -2,9 +2,12 @@ import AaruAPI
 import SwiftUI
 
 /// A catalog search that picks one title, for title channels, shelves and watch parties. The
-/// same search as Add; picking never touches the library.
+/// same search as Add; picking never touches the library. Given a kind, it searches only that
+/// kind and hides the kind control (favorites, FAV-001).
 struct TitlePickerSheet: View {
     let navigationTitle: String
+    /// The one kind to search, else the user picks.
+    let fixedKind: MediaKind?
     /// True when the pick was used; the sheet then closes.
     let onPick: (CatalogHit) async -> Bool
 
@@ -15,10 +18,17 @@ struct TitlePickerSheet: View {
     @State private var kind = MediaKind.show
     @State private var picking: String?
 
-    init(api: Client?, navigationTitle: String, onPick: @escaping (CatalogHit) async -> Bool) {
+    init(
+        api: Client?,
+        navigationTitle: String,
+        kind: MediaKind? = nil,
+        onPick: @escaping (CatalogHit) async -> Bool
+    ) {
         self.navigationTitle = navigationTitle
+        fixedKind = kind
         self.onPick = onPick
         _model = State(initialValue: TitlePickerModel(api: api))
+        _kind = State(initialValue: kind ?? .show)
     }
 
     private struct SearchKey: Equatable {
@@ -29,9 +39,11 @@ struct TitlePickerSheet: View {
     var body: some View {
         NavigationStack {
             List {
-                KindPicker(kind: $kind, compact: typeSize.isAccessibilitySize)
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
+                if fixedKind == nil {
+                    KindPicker(kind: $kind, compact: typeSize.isAccessibilitySize)
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                }
                 if let problem = model.problem {
                     Text(problem).font(.footnote).foregroundStyle(Color(.danger)).listRowBackground(Color.clear)
                 }

@@ -2,6 +2,7 @@ import { createServerFn } from '@tanstack/solid-start'
 import { getCookie } from '@tanstack/solid-start/server'
 import { z } from 'zod'
 import { api } from '../api/client'
+import { MEDIA_TYPES } from '../media'
 import { errorMessage } from '../api/errors'
 import { SESSION_COOKIE } from '../session/cookie'
 import { sessionRejected, sessionToken } from '../session/guard'
@@ -154,7 +155,7 @@ export const loadInvites = createServerFn({ method: 'GET' }).handler(
 
 const mediaRef = z.object({
   titleId: z.string().uuid().optional(),
-  type: z.enum(['movie', 'show', 'book', 'album']),
+  type: z.enum(MEDIA_TYPES),
   ids: z.record(z.string(), z.string()).optional(),
   title: z.string().optional(),
   year: z.number().int().optional(),
@@ -309,7 +310,7 @@ export const saveSocialSettings = createServerFn({ method: 'POST' })
 export const loadFriendsPage = createServerFn({ method: 'GET' }).handler(
   async () => {
     const client = api(sessionToken())
-    const [me, activity, social, recommendations, progress, board] =
+    const [me, activity, social, recommendations, progress, board, posts] =
       await Promise.all([
         client.GET('/v1/me'),
         client.GET('/v1/activity'),
@@ -317,12 +318,32 @@ export const loadFriendsPage = createServerFn({ method: 'GET' }).handler(
         client.GET('/v1/me/recommendations'),
         client.GET('/v1/me/progress'),
         client.GET('/v1/social/leaderboard'),
+        // BOARD-002: the Board's first Recent page. Here, in the handler, rather than a second
+        // call in the route's loader: route options ship in every page's entry chunk.
+        client.GET('/v1/board', { params: { query: { sort: 'recent' } } }),
       ])
     const account = check(me, 'Your account could not be loaded.')
     return {
       handle: account.handle,
       displayName: account.displayName,
       social,
+      // A Board that fails to load says so in place; Lately still opens.
+      posts: posts.data
+        ? {
+            data: {
+              posts: posts.data.items,
+              friendCount: social.friends.length,
+              me: { id: account.userId, handle: account.handle },
+            },
+            problem: undefined,
+          }
+        : {
+            data: null,
+            problem: errorMessage(
+              posts.error,
+              'The Board could not be loaded.',
+            ),
+          },
       // GAM-002/005: the "You" card and "This week". Either missing just leaves its card out.
       progress: progress.data ?? null,
       board: board.data ?? null,

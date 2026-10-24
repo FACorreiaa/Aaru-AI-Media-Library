@@ -1,8 +1,8 @@
 import AaruCore
 import Foundation
 
-/// AniList adapter (CAT-007): the anime catalog, over GraphQL. Reads need no key.
-/// Each AniList entry is one season/cour, so its episodes are season 1.
+/// AniList adapter (CAT-007): the anime and manga catalog (MNG-001), over GraphQL. Reads need no
+/// key. Each AniList anime entry is one season/cour, so its episodes are season 1.
 struct AniListCatalog: CatalogSearching, EpisodeListing, MALBatchHydrating {
     static let endpoint = URL(string: "https://graphql.anilist.co")!
 
@@ -11,7 +11,7 @@ struct AniListCatalog: CatalogSearching, EpisodeListing, MALBatchHydrating {
     var userAgent = AppConfig.defaultProviderUserAgent
 
     static let mediaFields = """
-    id idMal format status episodes duration genres
+    id idMal type format status episodes duration chapters volumes genres
     title { romaji english native }
     startDate { year month day }
     coverImage { large }
@@ -20,17 +20,36 @@ struct AniListCatalog: CatalogSearching, EpisodeListing, MALBatchHydrating {
     description(asHtml: false)
     """
 
-    func search(query: String, type _: MediaType) async throws -> [CatalogHit] {
+    /// A manga's credits: the people who wrote and drew it become its byline.
+    static let staffFields = "staff(perPage: 6, sort: [RELEVANCE, ROLE]) { edges { role node { name { full } } } }"
+
+    /// AniList's own split: everything Aaru calls manga is its `MANGA` type, the rest is `ANIME`.
+    static func aniListType(_ type: MediaType) -> String {
+        type == .manga ? "MANGA" : "ANIME"
+    }
+
+    /// Fields for one kind: manga also asks for its credits.
+    static func fields(_ type: MediaType) -> String {
+        type == .manga ? "\(mediaFields) \(staffFields)" : mediaFields
+    }
+
+    func search(query: String, type: MediaType) async throws -> [CatalogHit] {
+        // Manga search hides adult works, as Discover does for anime.
+        let adult = type == .manga ? ", isAdult: false" : ""
         let body = try await post(SearchData.self, """
         query ($search: String) {
-          Page(perPage: 20) { media(search: $search, type: ANIME, sort: SEARCH_MATCH) { \(Self.mediaFields) } }
+          Page(perPage: 20) {
+            media(search: $search, type: \(Self.aniListType(type))\(adult), sort: SEARCH_MATCH) {
+              \(Self.fields(type))
+            }
+          }
         }
         """, variables: ["search": .string(query)])
         return body.page.media.map(\.hit)
     }
 
-    func hydrate(ids: ExternalIDs, type _: MediaType) async throws -> CatalogTitle? {
-        guard let media = try await media(for: ids) else { return nil }
+    func hydrate(ids: ExternalIDs, type: MediaType) async throws -> CatalogTitle? {
+        guard let media = try await media(for: ids, type: type) else { return nil }
         var hit = media.hit
         hit.ids = hit.ids.filling(from: ids)
         return CatalogTitle(
@@ -41,14 +60,17 @@ struct AniListCatalog: CatalogSearching, EpisodeListing, MALBatchHydrating {
     /// IMP-017: many MyAnimeList entries at once, 50 per request, keyed by MAL id. One request
     /// instead of 50 matters under AniList's 90-a-minute limit: a 2,000-entry export takes
     /// seconds, not 20 minutes. An id AniList does not know is simply missing from the result.
-    func hydrate(malIDs: [String]) async throws -> [String: CatalogTitle] {
+    /// MAL numbers anime and manga apart, so `type` says which list the ids come from.
+    func hydrate(malIDs: [String], type: MediaType) async throws -> [String: CatalogTitle] {
         let ids = Array(Set(malIDs.compactMap { Int($0) })).sorted()
         var titles: [String: CatalogTitle] = [:]
         for start in stride(from: 0, to: ids.count, by: Self.batchSize) {
             let batch = Array(ids[start ..< min(start + Self.batchSize, ids.count)])
             let body = try await post(SearchData.self, """
             query ($ids: [Int]) {
-              Page(perPage: \(Self.batchSize)) { media(idMal_in: $ids, type: ANIME) { \(Self.mediaFields) } }
+              Page(perPage: \(Self.batchSize)) {
+                media(idMal_in: $ids, type: \(Self.aniListType(type))) { \(Self.fields(type)) }
+              }
             }
             """, variables: ["ids": .ints(batch)])
             for media in body.page.media {
@@ -66,7 +88,7 @@ struct AniListCatalog: CatalogSearching, EpisodeListing, MALBatchHydrating {
     static let batchSize = 50
 
     func episodes(ids: ExternalIDs) async throws -> CatalogEpisodes? {
-        guard let media = try await media(for: ids, withSchedule: true) else { return nil }
+        guard let media = try await media(for: ids, type: .show, withSchedule: true) else { return nil }
         let aired = media.airingSchedule?.nodes ?? []
         var airsAt: [Int: Date] = Dictionary(
             aired.map { ($0.episode, Date(timeIntervalSince1970: TimeInterval($0.airingAt))) },
@@ -115,7 +137,11 @@ struct AniListCatalog: CatalogSearching, EpisodeListing, MALBatchHydrating {
 
     // MARK: Plumbing
 
-    private func media(for ids: ExternalIDs, withSchedule: Bool = false) async throws -> AniListMedia? {
+    private func media(
+        for ids: ExternalIDs,
+        type: MediaType,
+        withSchedule: Bool = false
+    ) async throws -> AniListMedia? {
         let schedule = withSchedule
             ? """
             airingSchedule(notYetAired: false, perPage: 50) { nodes { episode airingAt } }
@@ -136,7 +162,9 @@ struct AniListCatalog: CatalogSearching, EpisodeListing, MALBatchHydrating {
         }
         do {
             let body = try await post(MediaData.self, """
-            query ($id: Int) { Media(\(selector), type: ANIME) { \(Self.mediaFields) \(schedule) } }
+            query ($id: Int) {
+              Media(\(selector), type: \(Self.aniListType(type))) { \(Self.fields(type)) \(schedule) }
+            }
             """, variables: variables)
             return body.media
         } catch let error as ProviderError where error.kind == .notFound {
@@ -215,6 +243,18 @@ private struct MediaData: Decodable {
     enum CodingKeys: String, CodingKey { case media = "Media" }
 }
 
+/// One person's credit on a manga: "Story & Art", Eiichiro Oda.
+struct AniListCredit: Decodable {
+    struct Person: Decodable { let name: AniListName }
+
+    let role: String?
+    let node: Person
+}
+
+struct AniListName: Decodable {
+    let full: String?
+}
+
 struct StreamingEpisode: Decodable, Sendable {
     let title: String?
 }
@@ -251,12 +291,19 @@ struct AniListMedia: Decodable {
 
     struct Schedule: Decodable { let nodes: [Airing] }
 
+    struct Staff: Decodable { let edges: [AniListCredit] }
+
     let id: Int
     let idMal: Int?
+    /// `ANIME` or `MANGA`.
+    let type: String?
     let format: String?
     let status: String?
     let episodes: Int?
     let duration: Int?
+    let chapters: Int?
+    let volumes: Int?
+    let staff: Staff?
     let genres: [String]?
     let title: Titles
     let startDate: StartDate?
@@ -268,22 +315,44 @@ struct AniListMedia: Decodable {
     let nextAiringEpisode: Airing?
     let streamingEpisodes: [StreamingEpisode]?
 
+    var isManga: Bool {
+        type == "MANGA"
+    }
+
     var hit: CatalogHit {
         let display = title.english ?? title.romaji ?? title.native ?? "Untitled"
-        return CatalogHit(
-            type: format == "MOVIE" ? .movie : .show,
+        var hit = CatalogHit(
+            type: isManga ? .manga : format == "MOVIE" ? .movie : .show,
             title: display,
             originalTitle: title.native.flatMap { $0 == display ? nil : $0 },
             year: startDate?.year,
             posterURL: coverImage?.large.flatMap(URL.init(string:)),
             overview: description.map(AniListText.plain)?.nilIfBlank,
-            byline: nil,
+            byline: isManga ? authors : nil,
             ids: ExternalIDs(anilist: String(id), mal: idMal.map(String.init)),
-            isAnime: true,
+            isAnime: !isManga,
             backdropURL: backdropURL,
-            network: network,
+            network: isManga ? nil : network,
             releaseDate: startDate?.text
         )
+        if isManga {
+            hit.chapterCount = chapters.flatMap { $0 > 0 ? $0 : nil }
+            hit.volumeCount = volumes.flatMap { $0 > 0 ? $0 : nil }
+        }
+        return hit
+    }
+
+    /// Who wrote and drew it ("Story & Art", "Story", "Art", "Original Story"), in AniList's
+    /// order, once each. Translators, letterers and editors are left out.
+    var authors: String? {
+        var names: [String] = []
+        for edge in staff?.edges ?? [] {
+            guard let role = edge.role, role.range(of: #"(?i)\b(story|art)\b"#, options: .regularExpression) != nil,
+                  let name = edge.node.name.full?.nilIfBlank, !names.contains(name)
+            else { continue }
+            names.append(name)
+        }
+        return names.isEmpty ? nil : names.prefix(2).joined(separator: ", ")
     }
 
     var backdropURL: URL? {

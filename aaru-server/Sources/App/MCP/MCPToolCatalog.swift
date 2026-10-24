@@ -58,8 +58,9 @@ enum MCPToolCatalog {
         inputSchema: object([
             "query": string("Words to search for, 1 to 200 characters."),
             "type": enumeration(
-                ["all", "movie", "show", "anime", "book", "album"],
-                "What to search. all is films, shows and anime together; books only with book, albums only with album."
+                ["all", "movie", "show", "anime", "book", "album", "manga"],
+                "What to search. all is films, shows and anime together; books only with book, albums only with "
+                    + "album, manga only with manga."
             ),
             "titleId": string("An Aaru title id, to read that title's detail instead of searching."),
         ]),
@@ -83,7 +84,7 @@ enum MCPToolCatalog {
                 ["wishlist", "in_progress", "finished", "dropped"],
                 "wishlist is plan to watch, read or listen; in_progress is watching, reading or listening."
             ),
-            "type": enumeration(["movie", "show", "book", "album"], "Only this kind of title."),
+            "type": enumeration(["movie", "show", "book", "album", "manga"], "Only this kind of title."),
             "anime": .object(["type": .string("boolean"), "description": .string("Only anime, or no anime.")]),
             "owned": .object(["type": .string("boolean"), "description": .string("Only titles the user owns.")]),
             "listId": string("Only items on this list."),
@@ -186,7 +187,7 @@ enum MCPToolCatalog {
                 "description": .string("{type, ids} copied from a search hit, or {type, titleId}."),
                 "required": .array([.string("type")]),
                 "properties": .object([
-                    "type": enumeration(["movie", "show", "book", "album"], nil),
+                    "type": enumeration(["movie", "show", "book", "album", "manga"], nil),
                     "ids": .object(["type": .string("object")]),
                     "titleId": string(nil),
                     "title": string(nil),
@@ -210,9 +211,11 @@ enum MCPToolCatalog {
                     "bookPercent": .object([
                         "type": .string("number"), "minimum": .number(0), "maximum": .number(100),
                     ]),
+                    "mangaChapter": .object(["type": .string("integer"), "minimum": .number(0)]),
+                    "mangaVolume": .object(["type": .string("integer"), "minimum": .number(0)]),
                     "clear": .object([
                         "type": .string("array"),
-                        "items": enumeration(["rating", "notes", "bookProgress"], nil),
+                        "items": enumeration(["rating", "notes", "bookProgress", "mangaProgress"], nil),
                     ]),
                 ]),
             ]),

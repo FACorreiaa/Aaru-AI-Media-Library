@@ -9,7 +9,7 @@ import { StoreButtons } from '../components/StoreButtons'
 import { cardClass } from '~/components/ui'
 // No `cn` here: it brings tailwind-merge, and the landing page joins no conflicting classes.
 import { FAN, KIND_CARDS } from '../lib/landing/art'
-import { SITE_URL, X_URL } from '../lib/site'
+import { DISCORD_URL, SITE_URL, X_URL } from '../lib/site'
 import { useSignedIn } from '../lib/session/use-signed-in'
 import appIcon from '../assets/brand/app-icon.webp'
 import tmdbLogo from '../assets/brand/tmdb-blue-short.svg'
@@ -246,7 +246,7 @@ function Landing() {
               <MascotMedallion class="w-12 shrink-0" />
               <span>A calm place where stories live.</span>
             </div>
-            <div class="flex items-center gap-4">
+            <div class="flex flex-wrap items-center gap-4">
               <LegalLinks />
               <a
                 href={X_URL}
@@ -256,6 +256,14 @@ function Landing() {
               >
                 <XIcon class="h-3.5 w-3.5" />
                 @fatc88
+              </a>
+              <a
+                href={DISCORD_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="hover:text-ink"
+              >
+                Join us on Discord
               </a>
               <span>© {new Date().getFullYear()} Aaru</span>
             </div>

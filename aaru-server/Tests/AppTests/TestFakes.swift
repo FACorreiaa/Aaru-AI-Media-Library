@@ -152,12 +152,12 @@ final class FakeCatalog: CatalogSearching, EpisodeListing, MultiSearching, MALBa
         }
     }
 
-    func hydrate(malIDs: [String]) async throws -> [String: CatalogTitle] {
+    func hydrate(malIDs: [String], type: AaruCore.MediaType) async throws -> [String: CatalogTitle] {
         try record("hydrateMAL")
         let wanted = Set(malIDs)
         return lock.withLock {
             var found: [String: CatalogTitle] = [:]
-            for title in titles {
+            for title in titles where (title.hit.type == .manga) == (type == .manga) {
                 if let mal = title.hit.ids.mal, wanted.contains(mal), found[mal] == nil {
                     found[mal] = title
                 }

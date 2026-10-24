@@ -209,6 +209,40 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/me/favorites': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Your favorites, an ordered top 10 per kind (FAV-001). Profile data, not your library. */
+    get: operations['getMyFavorites']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/favorites/{kind}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /** Replace one kind's favorites with these titles, in this order: add, remove and reorder are all this call. Any catalog title, at most 10, each once, each of this kind; else 422. Not journaled. */
+    put: operations['setMyFavorites']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/social/users/{handle}': {
     parameters: {
       query?: never
@@ -2071,7 +2105,7 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Import a public AniList anime list by username. Read and matched in the background, written only after approval. */
+    /** Import a public AniList anime and manga list by username. Read and matched in the background, written only after approval. */
     post: operations['createAniListImport']
     delete?: never
     options?: never
@@ -2159,6 +2193,40 @@ export interface paths {
     post?: never
     /** Revoke the Trakt tokens on Trakt, then forget them. Imported items stay. */
     delete: operations['disconnectTrakt']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/connections/mal/connect': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Start connecting MyAnimeList (PKCE, `plain`, the only method MAL accepts). Open the returned address in a browser. MAL then redirects to GET /v1/connections/mal/callback (a plain redirect route outside this spec), which sends the browser on to `returnTo` with `mal=connected|denied|failed`. Once connected, anime progress written from then on is pushed to the MAL list (SCR-005). */
+    post: operations['connectMAL']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/connections/mal': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['getMALConnection']
+    put?: never
+    post?: never
+    /** Forget the MyAnimeList tokens. Nothing more is pushed; the MAL list and the library stay as they are. */
+    delete: operations['disconnectMAL']
     options?: never
     head?: never
     patch?: never
@@ -2541,6 +2609,21 @@ export interface components {
       /** Format: date-time */
       connectedAt?: string
     }
+    MALConnectRequest: {
+      /** @description Where the browser goes after MyAnimeList (the app's `aaru://` scheme or the web app). Must be allowed by the server. */
+      returnTo: string
+    }
+    MALConnectStart: {
+      authorizeUrl: string
+    }
+    MALConnection: {
+      connected: boolean
+      username?: string
+      /** Format: date-time */
+      connectedAt?: string
+      /** @description MyAnimeList refused the tokens. Nothing is pushed until the user connects again. */
+      needsReconnect: boolean
+    }
     StremioLink: {
       code: string
       /**
@@ -2845,6 +2928,8 @@ export interface components {
       lastSeason?: number
       lastEpisode?: number
       bookPage?: number
+      /** @description Manga. The last chapter they read. */
+      mangaChapter?: number
       /** Format: date-time */
       finishedAt?: string
       /** Format: date-time */
@@ -2856,6 +2941,8 @@ export interface components {
       anime: number
       book: number
       album: number
+      /** @description MNG-001. Absent from servers before it. */
+      manga?: number
     }
     FriendCompare: {
       /** @description Titles you both plan to watch or read. */
@@ -2875,6 +2962,26 @@ export interface components {
       recentlyFinished?: components['schemas']['FriendItem'][]
       compare?: components['schemas']['FriendCompare']
       achievements?: components['schemas']['FriendAchievements']
+      /** @description Their top 10s (FAV-001). Sent only while they share their library. */
+      favorites?: components['schemas']['Favorites']
+    }
+    /**
+     * @description A favorites kind. Anime is any anime, film or series.
+     * @enum {string}
+     */
+    FavoriteKind: 'film' | 'show' | 'anime' | 'manga' | 'book' | 'album'
+    /** @description An ordered top 10 per kind (FAV-001), first is the favorite. */
+    Favorites: {
+      film: components['schemas']['TitleSummary'][]
+      show: components['schemas']['TitleSummary'][]
+      anime: components['schemas']['TitleSummary'][]
+      manga: components['schemas']['TitleSummary'][]
+      book: components['schemas']['TitleSummary'][]
+      album: components['schemas']['TitleSummary'][]
+    }
+    FavoritesUpdate: {
+      /** @description The whole kind, in order. Empty clears it. More than 10 is a 422. */
+      items: components['schemas']['MediaRef'][]
     }
     /** @description Absent when the friend turned off showing their badges and level. */
     FriendAchievements: {
@@ -3497,10 +3604,10 @@ export interface components {
       musicbrainz?: string
     }
     /**
-     * @description `album` (MUS-001) is a MusicBrainz release group of type Album or EP: status, rating and notes, no progress.
+     * @description `album` (MUS-001) is a MusicBrainz release group of type Album or EP: status, rating and notes, no progress. `manga` (MNG-001) is one AniList work of type MANGA (manga, manhwa, manhua, one-shots and light novels), read by chapter and volume.
      * @enum {string}
      */
-    MediaType: 'movie' | 'show' | 'book' | 'album'
+    MediaType: 'movie' | 'show' | 'book' | 'album' | 'manga'
     CatalogHit: {
       type: components['schemas']['MediaType']
       title: string
@@ -3508,7 +3615,7 @@ export interface components {
       year?: number
       posterUrl?: string
       overview?: string
-      /** @description Authors, for books; the artist credit, for albums. */
+      /** @description Authors, for books and manga; the artist credit, for albums. */
       byline?: string
       isAnime: boolean
       ids: components['schemas']['ExternalIds']
@@ -3664,7 +3771,7 @@ export interface components {
       runtimeMinutes?: number
       /** @description Shows only. */
       seasons?: components['schemas']['Season'][]
-      /** @description Authors, for books; the artist credit, for albums. */
+      /** @description Authors, for books and manga; the artist credit, for albums. */
       byline?: string
       /** @description Albums only (MUS-001), at most five, most tagged first. */
       genres?: string[]
@@ -3701,8 +3808,12 @@ export interface components {
       isOwned?: boolean
       bookPage?: number
       bookPercent?: number
+      /** @description Manga only. The last chapter read. */
+      mangaChapter?: number
+      /** @description Manga only. The last volume read. */
+      mangaVolume?: number
       /** @description Fields to empty. */
-      clear?: ('rating' | 'notes' | 'bookProgress')[]
+      clear?: ('rating' | 'notes' | 'bookProgress' | 'mangaProgress')[]
     }
     EpisodeWatched: {
       watched: boolean
@@ -3721,6 +3832,11 @@ export interface components {
       page?: number
       percent?: number
     }
+    /** @description MNG-001. Either or both. */
+    MangaProgress: {
+      chapter?: number
+      volume?: number
+    }
     TitleSummary: {
       /** Format: uuid */
       id: string
@@ -3733,10 +3849,14 @@ export interface components {
       backdropUrl?: string
       /** @description Shows only. Network or streaming service ("HBO", "Netflix", "Crunchyroll"). */
       network?: string
-      /** @description Authors, for books; the artist credit, for albums. */
+      /** @description Authors, for books and manga; the artist credit, for albums. */
       byline?: string
       /** @description Books only, when known (Open Library's median across editions). */
       pageCount?: number
+      /** @description Manga only, once AniList knows it (absent while a series runs). */
+      chapterCount?: number
+      /** @description Manga only, once AniList knows it. */
+      volumeCount?: number
       isAnime: boolean
       ids: components['schemas']['ExternalIds']
     }
@@ -3756,6 +3876,7 @@ export interface components {
       finishedAt?: string
       progress?: components['schemas']['ShowProgress']
       bookProgress?: components['schemas']['BookProgress']
+      mangaProgress?: components['schemas']['MangaProgress']
       /**
        * @description Every watched episode of a show, in order. Only on single-item responses (the item,
        *     and episode and season writes); lists and sync leave it out.
@@ -3791,6 +3912,7 @@ export interface components {
       }[]
       /** @description Every listen in your listening log, newest first (MUS-005). */
       listens?: components['schemas']['Listen'][]
+      favorites?: components['schemas']['Favorites']
     }
     LibraryPage: {
       items: components['schemas']['LibraryEntry'][]
@@ -4025,7 +4147,7 @@ export interface components {
       isPartial: boolean
       totals: components['schemas']['StatsTotals']
       prior?: components['schemas']['StatsTotals']
-      /** @description Movie, show, anime and book, always, in that order; then album (MUS-001) only when the period finished one. They sum to `totals`. */
+      /** @description Movie, show, anime and book, always, in that order; then album (MUS-001) and manga (MNG-001), each only when the period finished one. They sum to `totals`. */
       byKind: components['schemas']['StatsKind'][]
       /** @description One per month of the year, one per day of the month or rolling span, or one per year (all time) from the first active year to this one, in order. */
       buckets: components['schemas']['StatsBucket'][]
@@ -4179,13 +4301,15 @@ export interface components {
       booksFinished: number
       /** @description MUS-001. Albums have no minutes. */
       albumsFinished: number
+      /** @description MNG-001. Manga has no minutes. */
+      mangaFinished?: number
     }
     StatsKind: {
       /**
        * @description Anime is its own kind, films and shows alike; never counted again as either.
        * @enum {string}
        */
-      kind: 'movie' | 'show' | 'anime' | 'book' | 'album'
+      kind: 'movie' | 'show' | 'anime' | 'book' | 'album' | 'manga'
       episodes: number
       minutes: number
       finished: number
@@ -4556,6 +4680,54 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['SocialUser']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getMyFavorites: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Every kind, each in your order; an empty list for a kind with none. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Favorites']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  setMyFavorites: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        kind: components['schemas']['FavoriteKind']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['FavoritesUpdate']
+      }
+    }
+    responses: {
+      /** @description All your favorites after the change. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Favorites']
         }
       }
       default: components['responses']['Error']
@@ -6911,8 +7083,8 @@ export interface operations {
     parameters: {
       query: {
         q: string
-        /** @description `all` searches films, shows and anime together (TMDB and AniList in parallel, merged; books and albums are never included); `anime` searches AniList; `movie`/`show` TMDB; `book` Open Library; `album` MusicBrainz (albums and EPs, MUS-001). */
-        type: 'all' | 'movie' | 'show' | 'anime' | 'book' | 'album'
+        /** @description `all` searches films, shows and anime together (TMDB and AniList in parallel, merged; books and albums are never included); `anime` searches AniList; `movie`/`show` TMDB; `book` Open Library; `album` MusicBrainz (albums and EPs, MUS-001); `manga` AniList (MNG-001; empty and incomplete while AniList is down). */
+        type: 'all' | 'movie' | 'show' | 'anime' | 'book' | 'album' | 'manga'
       }
       header?: never
       path?: never
@@ -7680,7 +7852,7 @@ export interface operations {
   createCSVImport: {
     parameters: {
       query: {
-        /** @description `auto` detects the format: MyAnimeList-format XML (also exported by Kitsu and AniList), an IMDb, Letterboxd, Netflix viewing activity, TV Time or Goodreads CSV, or any other CSV read by its column names (`csv`). `tvtime` takes one CSV from TV Time's export at a time: `tvtime-series-episodes.csv`, `tvtime-series.csv` or `tvtime-movies.csv` (Export my data), or `tracking-prod-records-v2.csv`, `tracking-prod-records.csv`, `followed_tv_show.csv` or `seen_episode.csv` (GDPR export). */
+        /** @description `auto` detects the format: MyAnimeList-format XML, anime or manga (also exported by Kitsu and AniList), an IMDb, Letterboxd, Netflix viewing activity, TV Time or Goodreads CSV, or any other CSV read by its column names (`csv`). `tvtime` takes one CSV from TV Time's export at a time: `tvtime-series-episodes.csv`, `tvtime-series.csv` or `tvtime-movies.csv` (Export my data), or `tracking-prod-records-v2.csv`, `tracking-prod-records.csv`, `followed_tv_show.csv` or `seen_episode.csv` (GDPR export). */
         source:
           | 'auto'
           | 'imdb'
@@ -7949,6 +8121,71 @@ export interface operations {
     }
   }
   disconnectTrakt: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Disconnected. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  connectMAL: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MALConnectRequest']
+      }
+    }
+    responses: {
+      /** @description Where to send the browser. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['MALConnectStart']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getMALConnection: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Whether MyAnimeList is connected, and whether it must be connected again. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['MALConnection']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  disconnectMAL: {
     parameters: {
       query?: never
       header?: never

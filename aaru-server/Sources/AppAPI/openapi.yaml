@@ -232,6 +232,40 @@ paths:
               schema: {$ref: '#/components/schemas/SocialUser'}
         default:
           $ref: '#/components/responses/Error'
+  /v1/me/favorites:
+    get:
+      operationId: getMyFavorites
+      summary: Your favorites, an ordered top 10 per kind (FAV-001). Profile data, not your library.
+      responses:
+        '200':
+          description: Every kind, each in your order; an empty list for a kind with none.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Favorites'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/me/favorites/{kind}:
+    put:
+      operationId: setMyFavorites
+      summary: >-
+        Replace one kind's favorites with these titles, in this order: add, remove and reorder are
+        all this call. Any catalog title, at most 10, each once, each of this kind; else 422. Not
+        journaled.
+      parameters:
+        - {name: kind, in: path, required: true, schema: {$ref: '#/components/schemas/FavoriteKind'}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/FavoritesUpdate'}
+      responses:
+        '200':
+          description: All your favorites after the change.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Favorites'}
+        default:
+          $ref: '#/components/responses/Error'
   /v1/social/users/{handle}:
     get:
       operationId: getSocialUser
@@ -1764,10 +1798,11 @@ paths:
           description: >-
             `all` searches films, shows and anime together (TMDB and AniList in parallel, merged;
             books and albums are never included); `anime` searches AniList; `movie`/`show` TMDB;
-            `book` Open Library; `album` MusicBrainz (albums and EPs, MUS-001).
+            `book` Open Library; `album` MusicBrainz (albums and EPs, MUS-001); `manga` AniList
+            (MNG-001; empty and incomplete while AniList is down).
           schema:
             type: string
-            enum: [all, movie, show, anime, book, album]
+            enum: [all, movie, show, anime, book, album, manga]
       responses:
         '200':
           description: >-
@@ -2303,7 +2338,7 @@ paths:
             type: string
             enum: [auto, imdb, letterboxd, netflix, tvtime, goodreads, mal, csv]
           description: >-
-            `auto` detects the format: MyAnimeList-format XML (also exported by Kitsu and AniList),
+            `auto` detects the format: MyAnimeList-format XML, anime or manga (also exported by Kitsu and AniList),
             an IMDb, Letterboxd, Netflix viewing activity, TV Time or Goodreads CSV, or any other CSV
             read by its column names (`csv`). `tvtime` takes one CSV from TV Time's export at a time:
             `tvtime-series-episodes.csv`, `tvtime-series.csv` or `tvtime-movies.csv` (Export my
@@ -2414,7 +2449,7 @@ paths:
   /v1/imports/anilist:
     post:
       operationId: createAniListImport
-      summary: Import a public AniList anime list by username. Read and matched in the background, written only after approval.
+      summary: Import a public AniList anime and manga list by username. Read and matched in the background, written only after approval.
       requestBody:
         required: true
         content:
@@ -2511,6 +2546,46 @@ paths:
     delete:
       operationId: disconnectTrakt
       summary: Revoke the Trakt tokens on Trakt, then forget them. Imported items stay.
+      responses:
+        '204':
+          description: Disconnected.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/connections/mal/connect:
+    post:
+      operationId: connectMAL
+      summary: >-
+        Start connecting MyAnimeList (PKCE, `plain`, the only method MAL accepts). Open the returned address in a
+        browser. MAL then redirects to GET /v1/connections/mal/callback (a plain redirect route outside this spec),
+        which sends the browser on to `returnTo` with `mal=connected|denied|failed`. Once connected, anime progress
+        written from then on is pushed to the MAL list (SCR-005).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/MALConnectRequest'}
+      responses:
+        '200':
+          description: Where to send the browser.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/MALConnectStart'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/connections/mal:
+    get:
+      operationId: getMALConnection
+      responses:
+        '200':
+          description: Whether MyAnimeList is connected, and whether it must be connected again.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/MALConnection'}
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: disconnectMAL
+      summary: Forget the MyAnimeList tokens. Nothing more is pushed; the MAL list and the library stay as they are.
       responses:
         '204':
           description: Disconnected.
@@ -3017,6 +3092,28 @@ components:
         connected: {type: boolean}
         username: {type: string}
         connectedAt: {type: string, format: date-time}
+    MALConnectRequest:
+      type: object
+      required: [returnTo]
+      properties:
+        returnTo:
+          type: string
+          description: Where the browser goes after MyAnimeList (the app's `aaru://` scheme or the web app). Must be allowed by the server.
+    MALConnectStart:
+      type: object
+      required: [authorizeUrl]
+      properties:
+        authorizeUrl: {type: string}
+    MALConnection:
+      type: object
+      required: [connected, needsReconnect]
+      properties:
+        connected: {type: boolean}
+        username: {type: string}
+        connectedAt: {type: string, format: date-time}
+        needsReconnect:
+          type: boolean
+          description: MyAnimeList refused the tokens. Nothing is pushed until the user connects again.
     StremioLink:
       type: object
       required: [code, link, qrcode, expiresAt]
@@ -3373,6 +3470,7 @@ components:
         lastSeason: {type: integer, description: Shows. The last episode they ticked.}
         lastEpisode: {type: integer}
         bookPage: {type: integer}
+        mangaChapter: {type: integer, description: Manga. The last chapter they read.}
         finishedAt: {type: string, format: date-time}
         updatedAt: {type: string, format: date-time}
     KindCounts:
@@ -3384,6 +3482,7 @@ components:
         anime: {type: integer}
         book: {type: integer}
         album: {type: integer}
+        manga: {type: integer, description: MNG-001. Absent from servers before it.}
     FriendCompare:
       type: object
       required: [bothWant, bothFinished, theyLoved]
@@ -3415,6 +3514,32 @@ components:
           items: {$ref: '#/components/schemas/FriendItem'}
         compare: {$ref: '#/components/schemas/FriendCompare'}
         achievements: {$ref: '#/components/schemas/FriendAchievements'}
+        favorites:
+          $ref: '#/components/schemas/Favorites'
+          description: Their top 10s (FAV-001). Sent only while they share their library.
+    FavoriteKind:
+      type: string
+      enum: [film, show, anime, manga, book, album]
+      description: A favorites kind. Anime is any anime, film or series.
+    Favorites:
+      type: object
+      required: [film, show, anime, manga, book, album]
+      description: An ordered top 10 per kind (FAV-001), first is the favorite.
+      properties:
+        film: {type: array, maxItems: 10, items: {$ref: '#/components/schemas/TitleSummary'}}
+        show: {type: array, maxItems: 10, items: {$ref: '#/components/schemas/TitleSummary'}}
+        anime: {type: array, maxItems: 10, items: {$ref: '#/components/schemas/TitleSummary'}}
+        manga: {type: array, maxItems: 10, items: {$ref: '#/components/schemas/TitleSummary'}}
+        book: {type: array, maxItems: 10, items: {$ref: '#/components/schemas/TitleSummary'}}
+        album: {type: array, maxItems: 10, items: {$ref: '#/components/schemas/TitleSummary'}}
+    FavoritesUpdate:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          description: The whole kind, in order. Empty clears it. More than 10 is a 422.
+          items: {$ref: '#/components/schemas/MediaRef'}
     FriendAchievements:
       type: object
       required: [level, badges]
@@ -4091,8 +4216,9 @@ components:
       type: string
       description: >-
         `album` (MUS-001) is a MusicBrainz release group of type Album or EP: status, rating and
-        notes, no progress.
-      enum: [movie, show, book, album]
+        notes, no progress. `manga` (MNG-001) is one AniList work of type MANGA (manga, manhwa,
+        manhua, one-shots and light novels), read by chapter and volume.
+      enum: [movie, show, book, album, manga]
     CatalogHit:
       type: object
       required: [type, title, isAnime, ids]
@@ -4105,7 +4231,7 @@ components:
         overview: {type: string}
         byline:
           type: string
-          description: Authors, for books; the artist credit, for albums.
+          description: Authors, for books and manga; the artist credit, for albums.
         isAnime: {type: boolean}
         ids: {$ref: '#/components/schemas/ExternalIds'}
         libraryItemId:
@@ -4340,7 +4466,7 @@ components:
           items: {$ref: '#/components/schemas/Season'}
         byline:
           type: string
-          description: Authors, for books; the artist credit, for albums.
+          description: Authors, for books and manga; the artist credit, for albums.
         genres:
           type: array
           description: Albums only (MUS-001), at most five, most tagged first.
@@ -4393,12 +4519,14 @@ components:
         isOwned: {type: boolean}
         bookPage: {type: integer}
         bookPercent: {type: number}
+        mangaChapter: {type: integer, description: Manga only. The last chapter read.}
+        mangaVolume: {type: integer, description: Manga only. The last volume read.}
         clear:
           type: array
           description: Fields to empty.
           items:
             type: string
-            enum: [rating, notes, bookProgress]
+            enum: [rating, notes, bookProgress, mangaProgress]
     EpisodeWatched:
       type: object
       required: [watched]
@@ -4423,6 +4551,12 @@ components:
       properties:
         page: {type: integer}
         percent: {type: number}
+    MangaProgress:
+      type: object
+      description: MNG-001. Either or both.
+      properties:
+        chapter: {type: integer}
+        volume: {type: integer}
     TitleSummary:
       type: object
       required: [id, type, title, isAnime, ids]
@@ -4441,10 +4575,16 @@ components:
           description: Shows only. Network or streaming service ("HBO", "Netflix", "Crunchyroll").
         byline:
           type: string
-          description: Authors, for books; the artist credit, for albums.
+          description: Authors, for books and manga; the artist credit, for albums.
         pageCount:
           type: integer
           description: Books only, when known (Open Library's median across editions).
+        chapterCount:
+          type: integer
+          description: Manga only, once AniList knows it (absent while a series runs).
+        volumeCount:
+          type: integer
+          description: Manga only, once AniList knows it.
         isAnime: {type: boolean}
         ids: {$ref: '#/components/schemas/ExternalIds'}
     LibraryEntry:
@@ -4462,6 +4602,7 @@ components:
         finishedAt: {type: string, format: date-time}
         progress: {$ref: '#/components/schemas/ShowProgress'}
         bookProgress: {$ref: '#/components/schemas/BookProgress'}
+        mangaProgress: {$ref: '#/components/schemas/MangaProgress'}
         watchedEpisodes:
           type: array
           description: |
@@ -4521,6 +4662,7 @@ components:
           type: array
           description: Every listen in your listening log, newest first (MUS-005).
           items: {$ref: '#/components/schemas/Listen'}
+        favorites: {$ref: '#/components/schemas/Favorites'}
     LibraryPage:
       type: object
       required: [items, page]
@@ -4853,8 +4995,8 @@ components:
         byKind:
           type: array
           description: >-
-            Movie, show, anime and book, always, in that order; then album (MUS-001) only when the
-            period finished one. They sum to `totals`.
+            Movie, show, anime and book, always, in that order; then album (MUS-001) and manga
+            (MNG-001), each only when the period finished one. They sum to `totals`.
           items: {$ref: '#/components/schemas/StatsKind'}
         buckets:
           type: array
@@ -5055,13 +5197,16 @@ components:
         albumsFinished:
           type: integer
           description: MUS-001. Albums have no minutes.
+        mangaFinished:
+          type: integer
+          description: MNG-001. Manga has no minutes.
     StatsKind:
       type: object
       required: [kind, episodes, minutes, finished]
       properties:
         kind:
           type: string
-          enum: [movie, show, anime, book, album]
+          enum: [movie, show, anime, book, album, manga]
           description: Anime is its own kind, films and shows alike; never counted again as either.
         episodes: {type: integer}
         minutes: {type: integer}

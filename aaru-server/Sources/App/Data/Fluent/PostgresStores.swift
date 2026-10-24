@@ -24,6 +24,7 @@ extension Stores {
             stats: PostgresStatsStore(sql: sql),
             importJobs: PostgresImportJobStore(sql: sql),
             trakt: PostgresTraktStore(sql: sql),
+            mal: PostgresMALStore(sql: sql),
             push: PostgresPushStore(sql: sql),
             agentTokens: PostgresAgentTokenStore(sql: sql),
             watchEvents: PostgresWatchEventStore(sql: sql),
@@ -41,7 +42,8 @@ extension Stores {
             tonight: PostgresTonightStore(sql: sql),
             capture: PostgresCaptureStore(sql: sql),
             entitlements: PostgresEntitlementStore(sql: sql),
-            boards: PostgresBoardStore(database: database)
+            boards: PostgresBoardStore(database: database),
+            favorites: PostgresFavoriteStore(database: database)
         )
     }
 }

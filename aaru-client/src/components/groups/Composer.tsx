@@ -1,4 +1,4 @@
-import { For, Show, createSignal } from 'solid-js'
+import { Show, createSignal } from 'solid-js'
 import type { JSX } from 'solid-js'
 import {
   Button,
@@ -6,18 +6,10 @@ import {
   TextFieldLabel,
   TextFieldTextArea,
 } from '~/components/ui'
-import { suggestMentions, suggestionHandle } from '../../lib/groups/agent'
-import type { MentionSuggestion } from '../../lib/groups/agent'
-import {
-  MAX_MESSAGE_LENGTH,
-  applyMention,
-  mentionQuery,
-  remainingLabel,
-} from '../../lib/groups/model'
+import { MAX_MESSAGE_LENGTH, remainingLabel } from '../../lib/groups/model'
 import type { GroupMember } from '../../lib/groups/server'
-import { monogram } from '../../lib/social/model'
+import { MentionList, createMentions } from '../Mentions'
 import { AaruAvatar, AssistantTag } from './AgentParts'
-import { Monogram } from './shell'
 
 /**
  * The channel's composer: one box that grows, Enter sends and Shift+Enter adds a line, `@`
@@ -39,18 +31,19 @@ export function Composer(props: {
 }) {
   let box: HTMLTextAreaElement | undefined
   const [text, setText] = createSignal('')
-  const [query, setQuery] = createSignal<{
-    start: number
-    query: string
-  } | null>(null)
-  const [highlight, setHighlight] = createSignal(0)
+  const mentions = createMentions({
+    people: () => props.members,
+    meId: () => props.meId,
+    agent: () => props.agent,
+    id: 'group-composer-mentions',
+    box: () => box,
+    text,
+    onPick: (value) => {
+      setText(value)
+      resize()
+    },
+  })
 
-  const suggestions = () => {
-    const q = query()
-    return q
-      ? suggestMentions(props.members, q.query, props.meId, props.agent)
-      : []
-  }
   const remaining = () => remainingLabel(text())
   const tooLong = () => text().length > MAX_MESSAGE_LENGTH
   const canSend = () => text().trim().length > 0 && !tooLong()
@@ -63,25 +56,7 @@ export function Composer(props: {
 
   function update(value: string, caret: number) {
     setText(value)
-    setQuery(mentionQuery(value, caret))
-    setHighlight(0)
-    resize()
-  }
-
-  function pick(suggestion: MentionSuggestion) {
-    const q = query()
-    if (!q || !box) return
-    const next = applyMention(
-      text(),
-      q.start,
-      box.selectionStart,
-      suggestionHandle(suggestion),
-    )
-    setText(next.text)
-    setQuery(null)
-    box.value = next.text
-    box.setSelectionRange(next.caret, next.caret)
-    box.focus()
+    mentions.track(value, caret)
     resize()
   }
 
@@ -89,35 +64,13 @@ export function Composer(props: {
     if (!canSend()) return
     props.onSend(text().trim())
     setText('')
-    setQuery(null)
+    mentions.close()
     if (box) box.value = ''
     resize()
   }
 
   function onKeyDown(event: KeyboardEvent) {
-    const list = suggestions()
-    if (list.length > 0) {
-      if (event.key === 'ArrowDown') {
-        event.preventDefault()
-        setHighlight((highlight() + 1) % list.length)
-        return
-      }
-      if (event.key === 'ArrowUp') {
-        event.preventDefault()
-        setHighlight((highlight() - 1 + list.length) % list.length)
-        return
-      }
-      if (event.key === 'Enter' || event.key === 'Tab') {
-        event.preventDefault()
-        pick(list[highlight()])
-        return
-      }
-      if (event.key === 'Escape') {
-        event.preventDefault()
-        setQuery(null)
-        return
-      }
-    }
+    if (mentions.onKeyDown(event)) return
     if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
       event.preventDefault()
       send()
@@ -126,60 +79,23 @@ export function Composer(props: {
 
   return (
     <div class="relative px-3 pt-1 pb-3 md:px-4 md:pb-4">
-      <Show when={suggestions().length > 0}>
-        <ul
-          id="group-composer-mentions"
-          role="listbox"
-          aria-label="Who to tag"
-          class="absolute animate-in duration-150 fade-in-0 slide-in-from-bottom-1 right-3 bottom-full left-3 mb-1 overflow-hidden rounded-panel border border-line bg-paper py-1 shadow-lift md:right-4 md:left-4"
-        >
-          <For each={suggestions()}>
-            {(suggestion, index) => (
-              <li
-                id={`group-composer-mention-${index()}`}
-                role="option"
-                aria-selected={index() === highlight()}
-                onPointerDown={(e) => {
-                  e.preventDefault()
-                  pick(suggestion)
-                }}
-                onPointerEnter={() => setHighlight(index())}
-                class={`flex cursor-pointer items-center gap-3 px-3 py-2 text-sm ${index() === highlight() ? 'bg-surface' : ''}`}
-              >
-                <Show
-                  when={suggestion.kind === 'member' && suggestion.member}
-                  fallback={
-                    <>
-                      <AaruAvatar size="sm" />
-                      <span class="font-medium">Aaru</span>
-                      <span class="text-muted">@aaru</span>
-                      <AssistantTag />
-                    </>
-                  }
-                >
-                  {(member) => (
-                    <>
-                      <Monogram text={monogram(member().user)} size="sm" />
-                      <span class="font-medium">
-                        {member().user.displayName ??
-                          `@${member().user.handle}`}
-                      </span>
-                      <Show when={member().user.displayName}>
-                        <span class="text-muted">@{member().user.handle}</span>
-                      </Show>
-                    </>
-                  )}
-                </Show>
-              </li>
-            )}
-          </For>
-        </ul>
-      </Show>
+      <MentionList
+        mentions={mentions}
+        class="right-3 bottom-full left-3 mb-1 slide-in-from-bottom-1 md:right-4 md:left-4"
+        agentRow={() => (
+          <>
+            <AaruAvatar size="sm" />
+            <span class="font-medium">Aaru</span>
+            <span class="text-muted">@aaru</span>
+            <AssistantTag />
+          </>
+        )}
+      />
       <Show when={props.accessory}>
         <div class="mb-1.5 flex">{props.accessory}</div>
       </Show>
       <div
-        class={`flex items-end gap-2 rounded-card bg-surface px-3 py-2 focus-within:ring-2 ${tooLong() ? 'ring-2 ring-danger' : 'focus-within:ring-accent'}`}
+        class={`flex items-end gap-2 rounded-2xl bg-surface px-3 py-2 focus-within:ring-2 ${tooLong() ? 'ring-2 ring-danger' : 'focus-within:ring-accent'}`}
       >
         <TextField
           value={text()}
@@ -196,22 +112,16 @@ export function Composer(props: {
             placeholder={`Write in #${props.channelName}`}
             role="combobox"
             aria-autocomplete="list"
-            aria-expanded={suggestions().length > 0}
-            aria-controls="group-composer-mentions"
-            aria-activedescendant={
-              suggestions().length > 0
-                ? `group-composer-mention-${highlight()}`
-                : undefined
-            }
+            aria-expanded={mentions.expanded()}
+            aria-controls={mentions.id}
+            aria-activedescendant={mentions.activeId()}
             onInput={(e) => {
               update(e.currentTarget.value, e.currentTarget.selectionStart)
               if (e.currentTarget.value.trim()) props.onTyping?.()
             }}
-            onClick={() => {
-              if (box) setQuery(mentionQuery(box.value, box.selectionStart))
-            }}
+            onClick={() => mentions.sync()}
             onKeyDown={onKeyDown}
-            onBlur={() => setQuery(null)}
+            onBlur={() => mentions.close()}
             class="max-h-[220px] min-h-7 flex-1 resize-none rounded-none border-0 bg-transparent px-0 py-1 text-base leading-6 placeholder:text-muted focus-visible:ring-0 md:text-base"
           />
         </TextField>
@@ -230,7 +140,7 @@ export function Composer(props: {
           onClick={send}
           disabled={!canSend()}
           aria-label="Send"
-          class="shrink-0 disabled:opacity-50"
+          class="shrink-0 disabled:opacity-30"
         >
           <svg
             viewBox="0 0 20 20"

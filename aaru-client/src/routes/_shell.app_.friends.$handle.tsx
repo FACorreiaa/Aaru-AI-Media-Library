@@ -1,6 +1,7 @@
 import { Link, createFileRoute } from '@tanstack/solid-router'
 import { For, Show, createSignal } from 'solid-js'
 import type { JSX } from 'solid-js'
+import { FavoritesRow } from '../components/FavoritesRow'
 import { Poster } from '../components/Poster'
 import { AwardShelf } from '../components/achievements/BadgeShelf'
 import { BackLink } from '../components/shell/BackLink'
@@ -194,6 +195,8 @@ function Profile() {
                       )}
                     </For>
                   </Shelf>
+
+                  <FavoritesRow favorites={friend().favorites} />
                 </Show>
               </>
             )

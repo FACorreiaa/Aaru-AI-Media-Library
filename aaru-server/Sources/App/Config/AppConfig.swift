@@ -82,6 +82,8 @@ struct AppConfig: Sendable {
     var openLibraryUserAgent: String
     /// Nil when `TRAKT_CLIENT_ID` is unset: Trakt connect answers 503, everything else works.
     var trakt: TraktSettings?
+    /// Nil when `MAL_CLIENT_ID` is unset: MyAnimeList connect answers 503 and nothing is pushed.
+    var mal: MALSettings?
     /// Nil when `APNS_PRIVATE_KEY` is unset: devices still register, no push is sent.
     var push: PushSettings?
     /// `VAPID_CONFIG`: swift-webpush's VAPID configuration JSON. Nil turns web push off. Generate
@@ -131,6 +133,7 @@ struct AppConfig: Sendable {
                 default: defaultProviderUserAgent
             ),
             trakt: traktSettings(from: reader),
+            mal: malSettings(from: reader),
             push: pushSettings(from: reader),
             vapidConfigJSON: reader.string(forKey: "vapid.config").flatMap { $0.isEmpty ? nil : $0 },
             publicBaseURL: publicBaseURL(from: reader),
@@ -228,6 +231,33 @@ struct AppConfig: Sendable {
         )
         return TraktSettings(
             clientID: clientID,
+            redirectURI: redirectURI,
+            returnPrefixes: returns.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) },
+            tokenCipher: cipher
+        )
+    }
+
+    /// `MAL_TOKEN_KEY` (base64, 32 bytes) is required once MyAnimeList is on (SCR-005).
+    /// `MAL_CLIENT_SECRET` only when the MAL app is registered as "web".
+    private static func malSettings(from reader: ConfigReader) throws -> MALSettings? {
+        guard let clientID = reader.string(forKey: "mal.client.id"), !clientID.isEmpty else { return nil }
+        let redirect = reader.string(
+            forKey: "mal.redirect.uri", default: "https://api.aaruapp.com/v1/connections/mal/callback"
+        )
+        guard let redirectURI = URL(string: redirect) else {
+            throw MissingConfigError(environmentName: "MAL_REDIRECT_URI", key: "mal.redirect.uri")
+        }
+        let key = try required("mal.token.key", env: "MAL_TOKEN_KEY", in: reader)
+        guard let cipher = try? TokenCipher(base64Key: key) else {
+            throw MissingConfigError(environmentName: "MAL_TOKEN_KEY (32 bytes, base64)", key: "mal.token.key")
+        }
+        let returns = reader.string(
+            forKey: "mal.return.prefixes",
+            default: "aaru://,https://aaruapp.com/,https://beta.aaruapp.com/"
+        )
+        return MALSettings(
+            clientID: clientID,
+            clientSecret: reader.string(forKey: "mal.client.secret").flatMap(\.nilIfBlank),
             redirectURI: redirectURI,
             returnPrefixes: returns.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) },
             tokenCipher: cipher

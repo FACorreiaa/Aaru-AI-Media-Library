@@ -33,7 +33,7 @@ final class HomeModel {
     /// Activity's order. Empty when nothing plays.
     private(set) var nowPlaying: [NowPlayingItem] = []
     /// Discover hits being added right now, by hit id.
-    private(set) var adding: Set<String> = []
+    var adding: Set<String> = []
     private(set) var isLoading = false
     private(set) var hasLoaded = false
     /// The first load failed and nothing is on screen: Home shows the error state, not a spinner
@@ -53,8 +53,8 @@ final class HomeModel {
     /// Previews only: the Listening row without a shelf behind it.
     @ObservationIgnored private var previewListening: [LibraryRow]?
 
-    @ObservationIgnored private let api: Client?
-    @ObservationIgnored private let library: LibraryModel?
+    @ObservationIgnored let api: Client?
+    @ObservationIgnored let library: LibraryModel?
     @ObservationIgnored private let cache: HomeCache?
     @ObservationIgnored let calendar: Calendar
     @ObservationIgnored let now: () -> Date
@@ -338,6 +338,19 @@ final class HomeModel {
 }
 
 extension HomeModel {
+    /// Tonight's season tick (PROG-006). Nothing moves until the server answers; then Home reloads.
+    func markSeasonWatched(_ entry: ContinueEntry) async {
+        let id = entry.libraryItemId
+        guard let library, !pending.contains(id) else { return }
+        problem = nil
+        pending.insert(id)
+        defer { pending.remove(id) }
+        problem = await library.markSeasonWatched(id, season: entry.next.season, api: api)
+        if problem == nil {
+            await shelfChanged()
+        }
+    }
+
     private static func notSaved(_ entry: ContinueEntry) -> String {
         "\(entry.title.title) \(EpisodeCode.short(season: entry.next.season, number: entry.next.number)) was not saved."
     }
@@ -375,25 +388,5 @@ extension HomeModel {
         guard airingFeed.entries.contains(where: { $0.cellID == entry.cellID }) else { return false }
         airingFeed.open(entry)
         return true
-    }
-}
-
-// MARK: Discover
-
-extension HomeModel {
-    /// The library item a Discover hit opens: the server's mark, else a match on the shelf
-    /// (it may have been added since the rows loaded).
-    func libraryItemID(_ hit: CatalogHit) -> String? {
-        hit.libraryItemId ?? library?.entry(matching: hit)?.id
-    }
-
-    /// Adds a Discover hit with a status, as search does. The card turns into a link to it (the
-    /// shelf now has it), and the revision bump reloads Home once.
-    func add(_ hit: CatalogHit, status: LibraryStatus) async {
-        guard let api, let library, !adding.contains(hit.id) else { return }
-        problem = nil
-        adding.insert(hit.id)
-        defer { adding.remove(hit.id) }
-        problem = await library.add(hit, status: status, api: api)
     }
 }

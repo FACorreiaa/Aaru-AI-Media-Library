@@ -76,7 +76,8 @@ extension LibraryStore {
                 fields: ItemFields(
                     status: item.status, rating: item.rating?.value, notes: item.notes, isOwned: item.isOwned,
                     finishedAt: item.finishedAt, bookPage: entry.bookProgress?.page,
-                    bookPercent: entry.bookProgress?.percent
+                    bookPercent: entry.bookProgress?.percent, mangaChapter: entry.mangaProgress?.chapter,
+                    mangaVolume: entry.mangaProgress?.volume
                 ),
                 statusByHand: statusSetByHand(itemID: item.id),
                 watched: watched(itemID: item.id)

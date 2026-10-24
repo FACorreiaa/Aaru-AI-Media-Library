@@ -15,7 +15,8 @@ struct WireContractTests {
 
     @Test
     func mediaTypeRawValuesAreStable() {
-        #expect(MediaType.allCases.map(\.rawValue) == ["movie", "show", "book", "album"])
+        #expect(MediaType.allCases.map(\.rawValue) == ["movie", "show", "book", "album", "manga"]
+        )
     }
 
     @Test

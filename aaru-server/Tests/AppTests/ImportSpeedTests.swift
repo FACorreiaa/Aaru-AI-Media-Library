@@ -48,7 +48,7 @@ struct ImportSpeedTests {
             name: "anilist", transport: stub, pacer: RequestPacer(requestsPerSecond: 1000, burst: 100)
         ))
         let ids = (1 ... 120).map(String.init)
-        let titles = try await catalog.hydrate(malIDs: ids + ["5", "x"])
+        let titles = try await catalog.hydrate(malIDs: ids + ["5", "x"], type: .show)
 
         #expect(stub.requests.count == 3, "120 ids, 50 per request")
         #expect(titles.count == 119)

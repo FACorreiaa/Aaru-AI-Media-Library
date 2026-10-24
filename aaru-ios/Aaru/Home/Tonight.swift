@@ -39,6 +39,13 @@ enum TonightPick {
         }
     }
 
+    /// The card whose season the season tick marks: only while aired episodes after the next one
+    /// remain in its season. At the season's last, or with one left, it is the episode tick.
+    var seasonMarkable: ContinueEntry? {
+        guard let entry = markable, !entry.isFinale, entry.remainingCount > 1 else { return nil }
+        return entry
+    }
+
     /// "S4 · E3 · Name". Empty for a book or a film.
     var episodeLine: String {
         switch self {

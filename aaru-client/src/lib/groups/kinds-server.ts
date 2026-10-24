@@ -5,6 +5,7 @@ import { api } from '../api/client'
 import { sessionToken } from '../session/guard'
 import type { components } from '../api/schema'
 import type { LibraryEntry } from '../library/model'
+import { mediaRef } from './media-ref'
 import { check, checkEmpty } from './responses'
 import type { GroupSummary } from './server'
 
@@ -16,14 +17,6 @@ export type ChannelItem = components['schemas']['ChannelItem']
 export type WatchPartyView = components['schemas']['WatchPartyView']
 
 const uuid = z.string().uuid()
-// The server's `MediaRef`, as in ./server. Private for the same reason: no zod in the browser.
-const mediaRef = z.object({
-  titleId: uuid.optional(),
-  type: z.enum(MEDIA_TYPES),
-  ids: z.record(z.string(), z.string()).optional(),
-  title: z.string().optional(),
-  year: z.number().int().optional(),
-})
 const channelRef = z.object({ groupId: uuid, channelId: uuid })
 const path = (data: { groupId: string; channelId: string }) => ({
   params: { path: { groupId: data.groupId, channelId: data.channelId } },

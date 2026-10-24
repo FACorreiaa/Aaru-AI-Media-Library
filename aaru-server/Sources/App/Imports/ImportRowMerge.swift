@@ -87,12 +87,18 @@ extension ImportService {
                 merged.status = status
             }
             merged.rating = merged.rating ?? row.rating
+            merged.notes = merged.notes ?? row.notes
+            if row.isOwned == true {
+                merged.isOwned = true
+            }
             if let finished = row.finishedAt, finished > (merged.finishedAt ?? .distantPast) {
                 merged.finishedAt = finished
             }
             if let watched = row.watched {
                 merged.watched = Array(Set(merged.watched ?? []).union(watched)).sorted()
             }
+            merged.mangaChapter = [merged.mangaChapter, row.mangaChapter].compactMap(\.self).max()
+            merged.mangaVolume = [merged.mangaVolume, row.mangaVolume].compactMap(\.self).max()
             if row.listOnly != true {
                 merged.listOnly = nil
             }

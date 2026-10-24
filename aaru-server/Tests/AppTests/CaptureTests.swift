@@ -40,12 +40,17 @@ struct CaptureTests {
             return
         }
         #expect(book.type == .book && book.ids.openLibrary == "OL45804W")
+        guard case let .title(manga) = try parse("https://anilist.co/manga/30013/One-Piece") else {
+            Issue.record("an AniList manga link is a manga")
+            return
+        }
+        #expect(manga.type == .manga && manga.ids.anilist == "30013")
 
         #expect(try parse("https://letterboxd.com/someone/list/films/") == .useCSV(site: "Letterboxd"))
         #expect(try parse("https://boxd.it/abc") == .useCSV(site: "Letterboxd"))
         #expect(try parse("https://m.imdb.com/title/tt0133093/") == .useCSV(site: "IMDb"))
         for other in [
-            "https://anilist.co/manga/30013", "https://www.themoviedb.org/person/6384",
+            "https://www.themoviedb.org/person/6384",
             "https://openlibrary.org/authors/OL34184A", "https://example.com/movie/603", "ftp://themoviedb.org/movie/1",
         ] {
             #expect(try parse(other) == .unsupported, "\(other)")
