@@ -54,8 +54,7 @@ public enum BoardRules {
 
     /// What posting a review does to the library, in words. Nil without a rating: it changes
     /// nothing. The status words are per kind and live in the app, so they come in as arguments.
-    // swiftlint:disable:next function_parameter_count
-    public static func reviewEffect(
+    public static func reviewEffect( // swiftlint:disable:this function_parameter_count
         title: String,
         isShow: Bool,
         inLibrary: Bool,
@@ -186,10 +185,11 @@ public enum BoardRules {
     /// The box's text when the reply target changes from one prefill to another: an untouched box (or
     /// one holding only the old prefill) takes the new one; typed words keep, with the new tag in
     /// front unless they already start with it.
-    public static func prefillReply(_ text: String, from: String, to: String) -> String {
-        if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || text == from {
-            return to
-        }
+    public static func prefillReply(_ text: String, from old: String, to new: String) -> String {
+        if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || text == old { return new }
+        let rest = !old.isEmpty && text.hasPrefix(old) ? String(text.dropFirst(old.count)) : text
+        return rest.hasPrefix(new) ? rest : new + rest
+    }
         let rest = !from.isEmpty && text.hasPrefix(from) ? String(text.dropFirst(from.count)) : text
         return rest.hasPrefix(to) ? rest : to + rest
     }
