@@ -265,6 +265,8 @@ private struct MainTabs: View {
                 }
             }
             .modifier(OptionalUnlockToast(model: progress))
+            // The App Store rating ask, after a good moment and never over a badge.
+            .reviewPrompt(holdWhile: progress?.holdsReviewPrompt ?? false)
             // The socket is open while the app is active, and its events keep groups current.
             .task { await groups.follow() }
             .task(id: scenePhase) {

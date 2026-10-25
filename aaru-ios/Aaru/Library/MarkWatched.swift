@@ -101,7 +101,7 @@ extension LibraryModel {
                        var entry = try? item.body.json
                     {
                         entry.watchedEpisodes = nil
-                        upsert(entry)
+                        upsert(entry, restore: true)
                     }
                 }
                 Task { try? await WidgetSync.refresh(api: api) }
