@@ -118,6 +118,7 @@ struct DiscoverScreen: View {
                 .navigationDestination(for: String.self) { id in
                     LibraryEntryDestination(id: id, api: api, library: library, lists: lists)
                 }
+                .catalogDestination(api: api, library: library, lists: lists)
                 .sheet(item: $listTarget) { hit in
                     ListPickerSheet(
                         ref: .init(_type: hit._type, ids: hit.ids, title: hit.title, year: hit.year),
