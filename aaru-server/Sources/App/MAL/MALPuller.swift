@@ -146,7 +146,8 @@ struct MALPuller: Sendable {
             lists: [],
             watched: AnimeListImport.progress(
                 list.numEpisodesWatched ?? 0, total: node.numEpisodes, status: status, isMovie: isMovie
-            )
+            ),
+            knowsOnHold: true
         )
     }
 }

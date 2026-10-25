@@ -105,7 +105,9 @@ Titles are shared across users. Do not put ratings or status on `Title`.
 - `id` — Aaru UUID
 - `userId`
 - `titleId`
-- `status` — `wishlist` | `in_progress` | `finished` | `dropped` (consumption only)
+- `status` — `wishlist` | `in_progress` | `on_hold` | `finished` | `dropped` (consumption only).
+  `on_hold` (LIB-007) is paused on purpose: no calendar, Up Next, Tonight or airing alert reads
+  it, stats and counts do, and a new episode tick or reading position moves it to `in_progress`
 - `rating` — optional. Scale is fixed: 1–10 in 0.5 steps, enforced by `AaruCore.Rating`
 - `notes`
 - `isOwned: Bool` — ownership, independent of consumption. A wishlist item can be owned.
@@ -392,7 +394,8 @@ Both are derived reads over the user's library. Neither has its own table.
   (last episode of the season). Ordered by last activity. It feeds `ContinueRow`, the Up Next
   widget, and the Live Activity.
 - **UPN-002** adds two optional fields. `counts` is items per status (`wishlist`,
-  `inProgress`, `finished`, `dropped`) for Home's chips. `unfinished` feeds `UnfinishedRow`:
+  `inProgress`, `onHold`, `finished`, `dropped`) for Home's chips. An `on_hold` item is never
+  in Continue watching, the calendar or Unfinished (LIB-007). `unfinished` feeds `UnfinishedRow`:
   every `dropped` item and every `in_progress` item whose `updated_at` is at least 30 days old
   (`reason` `dropped` | `stalled`, `since`, and `next` for a show's next aired episode), never
   one already in Continue watching, newest first, at most 20. Stalled reads `updated_at`, so a
@@ -721,7 +724,8 @@ POST /imports/*  →  parse the file (bounded, 5 MB) into import_rows; the file 
                          lease, which is the progress clients show
                       3. merge rows that matched one title (anime seasons tick their TMDB
                          season), then decide: create / update (fill-empty, status forward
-                         only, never past one the user chose) / skip / unmatched
+                         only, never past one the user chose; in progress ↔ on hold sideways,
+                         resumed only by a source that has on hold) / skip / unmatched
                       4. job → planned (nothing written yet)
 POST /imports/{id}/apply  →  decide again against the current library, then write every
                     create, update and list membership as ONE journaled batch action, so the
@@ -1148,8 +1152,9 @@ each pass reads `LibraryStore.changes` since the cursor for users with newer wri
 import, a scrobble or an undo all go out the same way, and nothing on the write path calls it. A
 TMDB show splits into one MAL entry per season through `anime_mappings` (a season two MAL entries
 share is skipped); any other anime uses its own MAL id. `mal_entry_states` keeps what Aaru and MAL
-last agreed on per entry: a push sends only what differs, an `on_hold` entry stays on hold until
-the ticks move, and SCR-010 will use the same row to drop echoes. A 401/403 marks the connection
+last agreed on per entry: a push sends only what differs, and SCR-010 uses the same row to drop
+echoes. Aaru's `on_hold` goes out as MAL's `on_hold` (LIB-007); a tick resumes the item, so it
+goes out as `watching`. A 401/403 marks the connection
 `revoked_at` and pushing stops until the user connects again. Deletes are not pushed.
 
 **MyAnimeList read-back (SCR-010, owner 2026-10-23, as built)** is the one exception to "never

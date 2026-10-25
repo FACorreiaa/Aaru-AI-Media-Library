@@ -265,7 +265,13 @@ describe('last 7 days strip', () => {
 describe('status count chips', () => {
   it('uses the neutral words and skips empty statuses', () => {
     expect(
-      countChips({ wishlist: 12, inProgress: 3, finished: 0, dropped: 1 }),
+      countChips({
+        wishlist: 12,
+        inProgress: 3,
+        onHold: 0,
+        finished: 0,
+        dropped: 1,
+      }),
     ).toEqual([
       { status: 'wishlist', label: 'Planned', count: 12 },
       { status: 'in_progress', label: 'In progress', count: 3 },

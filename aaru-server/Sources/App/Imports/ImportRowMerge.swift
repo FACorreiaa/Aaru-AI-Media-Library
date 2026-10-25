@@ -109,11 +109,12 @@ extension ImportService {
 
 extension LibraryStatus {
     /// How far along a status is, for imports that only move forward. Dropped is not on the
-    /// line: an import never moves an item into or out of it.
+    /// line: an import never moves an item into or out of it. On hold ranks with in progress
+    /// (LIB-007): the import moves between the two sideways only (`ImportService.promote`).
     var importRank: Int {
         switch self {
         case .wishlist: 0
-        case .inProgress: 1
+        case .inProgress, .onHold: 1
         case .finished: 2
         case .dropped: -1
         }

@@ -60,6 +60,7 @@ struct AccountExport: Sendable {
         switch status {
         case .wishlist: "Plan to watch"
         case .inProgress: "Watching"
+        case .onHold: "On hold"
         case .finished: "Completed"
         case .dropped: "Dropped"
         }

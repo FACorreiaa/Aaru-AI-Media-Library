@@ -5084,7 +5084,11 @@ components:
         lengthMs: {type: integer}
     LibraryStatus:
       type: string
-      enum: [wishlist, in_progress, finished, dropped]
+      description: >-
+        Consumption only. `on_hold` is paused on purpose (LIB-007): it ranks with `in_progress` for
+        imports, is left off Up Next, Tonight, the calendar and airing alerts, and a new tick moves it
+        back to `in_progress`. Labels are per kind; `on_hold` reads "On hold" for every kind.
+      enum: [wishlist, in_progress, on_hold, finished, dropped]
     MediaRef:
       type: object
       required: [type]
@@ -5576,10 +5580,11 @@ components:
     LibraryCounts:
       type: object
       description: The user's library items per status.
-      required: [wishlist, inProgress, finished, dropped]
+      required: [wishlist, inProgress, onHold, finished, dropped]
       properties:
         wishlist: {type: integer}
         inProgress: {type: integer}
+        onHold: {type: integer}
         finished: {type: integer}
         dropped: {type: integer}
     UnfinishedEntry:

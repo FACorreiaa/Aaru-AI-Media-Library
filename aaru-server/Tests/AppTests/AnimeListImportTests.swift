@@ -58,6 +58,18 @@ struct AnimeListImportTests {
         #expect(throws: ImportFormatError.self) { try MALListParser.parse("Const,Title\ntt1,X") }
     }
 
+    @Test("LIB-007: on hold (MAL's On-Hold and 3, AniList's PAUSED) is Aaru's on hold; rewatching stays in progress")
+    func onHoldMapping() {
+        for word in ["On-Hold", "onhold", "3", "PAUSED"] {
+            #expect(AnimeListImport.status(word) == .onHold, "\(word)")
+        }
+        for word in ["Watching", "CURRENT", "REPEATING", "1", "Reading"] {
+            #expect(AnimeListImport.status(word) == .inProgress, "\(word)")
+        }
+        let rows = MALListParser.animeRows(Self.malExport)
+        #expect(rows.allSatisfy { $0.knowsOnHold == true }, "MAL has on hold, so its watching may resume one")
+    }
+
     @Test("AniList: a public list becomes rows with both ids; a private list is notFound")
     func anilistReader() async throws {
         let stub = StubTransport { request in

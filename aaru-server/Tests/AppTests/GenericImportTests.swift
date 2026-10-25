@@ -37,6 +37,17 @@ struct GenericImportTests {
         #expect(throws: ImportFormatError.self) { try GenericCSVParser.parse(CSVTable("Foo,Bar\n1,2")) }
     }
 
+    @Test("LIB-007: on hold and paused read as on hold, the word Aaru's own export writes")
+    func onHoldWords() {
+        #expect(GenericCSVParser.status("On hold") == .onHold)
+        #expect(GenericCSVParser.status("on-hold") == .onHold)
+        #expect(GenericCSVParser.status("Paused") == .onHold)
+        #expect(GenericCSVParser.status(AccountExport.statusWord(.onHold)) == .onHold)
+        for status in LibraryStatus.allCases {
+            #expect(GenericCSVParser.status(AccountExport.statusWord(status)) == status, "\(status) round-trips")
+        }
+    }
+
     @Test("Ratings: 0–5 doubles, 0–10 stays, percentages divide by ten")
     func ratingScales() {
         #expect(GenericCSVParser.ratingScale([3, 4.5]) == 2)

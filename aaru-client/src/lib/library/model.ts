@@ -60,6 +60,7 @@ export const STATUS_ORDER: LibraryStatus[] = [
 const VIDEO_LABELS: Record<LibraryStatus, string> = {
   wishlist: 'Plan to watch',
   in_progress: 'Watching',
+  on_hold: 'On hold',
   finished: 'Watched',
   dropped: 'Dropped',
 }
@@ -67,6 +68,7 @@ const VIDEO_LABELS: Record<LibraryStatus, string> = {
 const BOOK_LABELS: Record<LibraryStatus, string> = {
   wishlist: 'Plan to read',
   in_progress: 'Reading',
+  on_hold: 'On hold',
   finished: 'Read',
   dropped: 'Dropped',
 }
@@ -74,6 +76,7 @@ const BOOK_LABELS: Record<LibraryStatus, string> = {
 const LISTEN_LABELS: Record<LibraryStatus, string> = {
   wishlist: 'Plan to listen',
   in_progress: 'Listening',
+  on_hold: 'On hold',
   finished: 'Listened',
   dropped: 'Dropped',
 }
@@ -82,6 +85,7 @@ const LISTEN_LABELS: Record<LibraryStatus, string> = {
 const NEUTRAL_LABELS: Record<LibraryStatus, string> = {
   wishlist: 'Planned',
   in_progress: 'In progress',
+  on_hold: 'On hold',
   finished: 'Finished',
   dropped: 'Dropped',
 }

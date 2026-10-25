@@ -49,6 +49,10 @@ struct ImportRow: Codable, Sendable, Equatable {
     /// The source says the user owns a copy (Goodreads "Owned Copies", IMP-020). Only ever sets
     /// the flag, never clears it.
     var isOwned: Bool?
+    /// The source has an on-hold status (MyAnimeList, AniList), so its "watching" means not on
+    /// hold: such a row may resume an on-hold item (LIB-007). Other sources call anything
+    /// started in progress, and never resume one.
+    var knowsOnHold: Bool?
 
     var mediaRef: MediaRef {
         MediaRef(type: type, ids: ids, title: title, year: year)

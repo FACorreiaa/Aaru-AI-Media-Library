@@ -44,7 +44,7 @@ struct GroupAgentTools {
             inputSchema: schema(
                 ["status": .object([
                     "type": .string("string"),
-                    "enum": .array(["wishlist", "in_progress", "finished", "dropped"].map(ModelJSON.string)),
+                    "enum": .array(["wishlist", "in_progress", "on_hold", "finished", "dropped"].map(ModelJSON.string)),
                 ])],
                 required: []
             )

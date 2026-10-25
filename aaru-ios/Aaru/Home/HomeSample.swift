@@ -53,7 +53,7 @@ extension HomeModel {
                 upNext: .init(
                     continueWatching: continueWatching,
                     startWatching: startWatching,
-                    counts: .init(wishlist: 60, inProgress: 12, finished: 186, dropped: 4)
+                    counts: .init(wishlist: 60, inProgress: 12, onHold: 0, finished: 186, dropped: 4)
                 ),
                 airing: airing
             ),

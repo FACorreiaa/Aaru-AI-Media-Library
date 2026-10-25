@@ -56,6 +56,7 @@ struct StartEntry: Sendable, Equatable {
 struct LibraryCounts: Sendable, Equatable {
     var wishlist = 0
     var inProgress = 0
+    var onHold = 0
     var finished = 0
     var dropped = 0
 }

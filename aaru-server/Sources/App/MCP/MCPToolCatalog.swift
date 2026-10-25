@@ -81,8 +81,9 @@ enum MCPToolCatalog {
         inputSchema: object([
             "libraryItemId": string("One item's id. Other filters are ignored."),
             "status": enumeration(
-                ["wishlist", "in_progress", "finished", "dropped"],
-                "wishlist is plan to watch, read or listen; in_progress is watching, reading or listening."
+                ["wishlist", "in_progress", "on_hold", "finished", "dropped"],
+                "wishlist is plan to watch, read or listen; in_progress is watching, reading or listening; "
+                    + "on_hold is on hold, paused on purpose."
             ),
             "type": enumeration(["movie", "show", "book", "album", "manga"], "Only this kind of title."),
             "anime": .object(["type": .string("boolean"), "description": .string("Only anime, or no anime.")]),
@@ -194,13 +195,13 @@ enum MCPToolCatalog {
                     "year": .object(["type": .string("integer")]),
                 ]),
             ]),
-            "status": enumeration(["wishlist", "in_progress", "finished", "dropped"], nil),
+            "status": enumeration(["wishlist", "in_progress", "on_hold", "finished", "dropped"], nil),
             "libraryItemId": string(nil),
             "patch": .object([
                 "type": .string("object"),
                 "additionalProperties": .bool(false),
                 "properties": .object([
-                    "status": enumeration(["wishlist", "in_progress", "finished", "dropped"], nil),
+                    "status": enumeration(["wishlist", "in_progress", "on_hold", "finished", "dropped"], nil),
                     "rating": .object([
                         "type": .string("number"), "minimum": .number(0.5), "maximum": .number(5),
                         "description": .string("Half steps from 0.5 to 5."),

@@ -83,7 +83,13 @@ export const addToLibrary = createServerFn({ method: 'POST' })
       ids: externalIds,
       title: z.string(),
       year: z.number().int().optional(),
-      status: z.enum(['wishlist', 'in_progress', 'finished', 'dropped']),
+      status: z.enum([
+        'wishlist',
+        'in_progress',
+        'on_hold',
+        'finished',
+        'dropped',
+      ]),
     }),
   )
   .handler(async ({ data }): Promise<LibraryEntry> => {

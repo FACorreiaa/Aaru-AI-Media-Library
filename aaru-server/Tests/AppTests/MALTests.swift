@@ -64,7 +64,9 @@ struct MALTests {
     }
 
     /// A two-season anime (3 episodes each) whose seasons map to MAL entries `mal1` and `mal2`.
-    func anime(_ env: LibraryHarness, seasons: [Int: [String]]) async throws -> (tmdb: String, item: String) {
+    func anime(_ env: LibraryHarness, seasons: [Int: [String]], status: String = "in_progress") async throws
+        -> (tmdb: String, item: String)
+    {
         let tmdb = env.stubShow("Frieren", status: .ended)
         for (season, malIDs) in seasons {
             for mal in malIDs {
@@ -73,7 +75,7 @@ struct MALTests {
                 ))
             }
         }
-        return try (tmdb, await env.add("show", tmdb: tmdb, status: "in_progress"))
+        return try (tmdb, await env.add("show", tmdb: tmdb, status: status))
     }
 
     func tick(_ env: LibraryHarness, _ item: String, _ season: Int, _ episode: Int) async throws {
@@ -178,22 +180,21 @@ struct MALTests {
         }
     }
 
-    @Test("SCR-005: an entry on hold on MAL stays on hold until Aaru's ticks move")
-    func keepsOnHold() async throws {
+    @Test("LIB-007: an item on hold goes to MAL as on hold; a tick resumes it and MAL reads watching")
+    func pushesOnHold() async throws {
         let fake = FakeMAL()
         try await LibraryHarness.run(mal: api(fake)) { env in
             let mal1 = uniqueID("m")
             try await connect(env)
             let (_, item) = try await anime(env, seasons: [1: [mal1]])
-            try await env.stores.mal.saveEntryState(
-                MALEntryState(malID: mal1, status: .onHold, episodes: 0, score: 0), title: nil, userID: env.userID
-            )
-            _ = try await env.send(.patch, "/v1/library/items/\(item)", json: ["rating": 6])
+            _ = try await env.send(.patch, "/v1/library/items/\(item)", json: ["status": "on_hold", "rating": 6])
             try await pusher(env, fake).runOnce()
             #expect(fake.patches.last?.fields["status"] == "on_hold")
             #expect(fake.patches.last?.fields["score"] == "6")
 
             try await tick(env, item, 1, 1)
+            let resumed = try await env.send(.get, "/v1/library/items/\(item)").json()
+            #expect(resumed["status"] as? String == "in_progress", "a new tick resumes an item on hold")
             try await pusher(env, fake).runOnce()
             #expect(fake.patches.last?.fields["status"] == "watching")
         }
@@ -235,7 +236,7 @@ struct MALTests {
         func state(_ status: LibraryStatus, ticks: Int, total: Int? = 12, first: Bool = true) -> MALEntryState? {
             let item = LibraryItem(userID: UserID(), titleID: TitleID(), status: status)
             return MALPusher.state(
-                malID: "1", item: item, share: .init(ticks: ticks, total: total, isFirst: first), known: nil
+                malID: "1", item: item, share: .init(ticks: ticks, total: total, isFirst: first)
             )
         }
         #expect(state(.finished, ticks: 0)?.episodes == 12, "finished counts every episode")
@@ -244,5 +245,9 @@ struct MALTests {
         #expect(state(.inProgress, ticks: 0, first: false) == nil, "an unstarted later season stays off MAL")
         #expect(state(.inProgress, ticks: 12)?.status == .completed)
         #expect(state(.dropped, ticks: 3)?.status == .dropped)
+        #expect(state(.onHold, ticks: 3)?.status == .onHold, "on hold is MAL's on hold (LIB-007)")
+        #expect(state(.onHold, ticks: 3)?.episodes == 3)
+        #expect(state(.onHold, ticks: 12)?.status == .completed, "a season watched through is completed")
+        #expect(state(.onHold, ticks: 0, first: false) == nil, "an unstarted later season stays off MAL")
     }
 }

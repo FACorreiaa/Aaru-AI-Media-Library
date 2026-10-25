@@ -4,13 +4,14 @@ import SwiftUI
 
 extension LibraryCounts {
     var total: Int {
-        wishlist + inProgress + finished + dropped
+        wishlist + inProgress + onHold + finished + dropped
     }
 
     func count(_ status: LibraryStatus) -> Int {
         switch status {
         case .wishlist: wishlist
         case .inProgress: inProgress
+        case .onHold: onHold
         case .finished: finished
         case .dropped: dropped
         }

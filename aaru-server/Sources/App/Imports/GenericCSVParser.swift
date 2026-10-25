@@ -146,11 +146,12 @@ enum GenericCSVParser {
             "current",
             "currentlyreading",
             "currentlywatching",
-            "onhold",
-            "paused",
             "rewatching",
         ].contains(word) {
             return .inProgress
+        }
+        if ["onhold", "paused"].contains(word) {
+            return .onHold
         }
         if ["dropped", "abandoned", "didnotfinish", "dnf", "stopped"].contains(word) {
             return .dropped

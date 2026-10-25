@@ -25,6 +25,7 @@ struct ProfileStats: Sendable, Equatable {
     struct Counts: Sendable, Equatable {
         var wishlist = 0
         var inProgress = 0
+        var onHold = 0
         var finished = 0
         var dropped = 0
     }
@@ -159,6 +160,7 @@ struct ProfileDigest {
         switch status {
         case .wishlist: counts.wishlist += 1
         case .inProgress: counts.inProgress += 1
+        case .onHold: counts.onHold += 1
         case .finished: counts.finished += 1
         case .dropped: counts.dropped += 1
         }

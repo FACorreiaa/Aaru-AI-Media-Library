@@ -158,11 +158,13 @@ Use these words in code, APIs, and UI:
 
 - **Title** — a movie, show, anime, manga, book, or album in the catalog
 - **Library item** — a user’s relationship to a title
-- **Status** — consumption only: `wishlist` | `in_progress` | `finished` | `dropped`. These
-  stored values never change; UI labels are per kind: films, shows and anime read Plan to
+- **Status** — consumption only: `wishlist` | `in_progress` | `on_hold` | `finished` | `dropped`.
+  These stored values never change; UI labels are per kind: films, shows and anime read Plan to
   watch / Watching / Watched / Dropped, books and manga Plan to read / Reading / Read / Dropped, albums
   Plan to listen / Listening / Listened / Dropped, no kind Planned / In progress / Finished /
-  Dropped
+  Dropped; `on_hold` reads On hold for every kind. On hold is paused on purpose (LIB-007, owner
+  2026-10-25): left off Now, Up Next, Tonight, the week and airing alerts, counted in stats and
+  status counts, and a new tick or reading position moves it back to `in_progress`
 - **Album** — one MusicBrainz release group of type Album or EP: the tracked unit of music.
   Status, rating and notes only; its tracklist is catalog data, never ticked
 - **Manga** — one AniList work of type MANGA (manga, manhwa, manhua, one-shot, light novel):
@@ -328,6 +330,8 @@ Matching key: external IDs first, then normalized title + year + type. Never mer
 Merging sources (owner, 2026-10-20): an import fills empty fields and adds missing ticks, and may
 move a status forward (`wishlist` → `in_progress` → `finished`). It never moves one backward, never
 out of `dropped`, and never past a status the user chose themselves (`library_items.status_by_hand`).
+`on_hold` ranks with `in_progress`: a row that says on hold pauses an item in progress, and only a
+source that has on hold (MAL, AniList) resumes one (LIB-007).
 Anime from MAL or AniList resolves to the TMDB show through `anime_mappings` (by AniList id, else MAL
 id); entries for later seasons tick the TMDB season they map to and merge into one row.
 

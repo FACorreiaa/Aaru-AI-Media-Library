@@ -82,6 +82,11 @@ library layer stay separate, external IDs stored whenever known, no second backe
   gets a filter that searches every item the screen holds, not only the page in view, and shows
   20 at a time: numbered pages on the web (page in the URL), 20 more on scroll on Apple. The
   filter runs on the client over what is already loaded; catalog search stays the shell's Search.
+- **On hold, a fifth status (owner, 2026-10-25, LIB-007).** MyAnimeList-style: `on_hold` is
+  paused on purpose, "On hold" for every kind. Every import used to read MAL's on hold as in
+  progress, so ~117 paused anime filled Watching. Ranks with in progress for imports; hidden from
+  Now, Up Next, Tonight, the week and airing alerts; counted in stats. Clients get status tabs
+  with counts on Library in a follow-up.
 - **Open any title, in the library or not (owner, 2026-10-24, LIB-006).** A search hit, a
   Discover card or a list member opens its title page; one not in the library shows the same page
   with Add buttons and adds nothing until tapped. Needs a server route that resolves a catalog
@@ -624,6 +629,7 @@ account or a stranger that has not happened yet.
 | LIB-004 | Done | LibraryTests "LIB-004: a delete on one device…" | |
 | LIB-005 | Built, unverified | `lib/paging.test.ts`; `components/Paged.tsx`, `Design/Paging.swift` | Client-only (owner, 2026-10-24); not yet run on TestFlight |
 | LIB-006 | Built, unverified | TitlePreviewTests; `lib/title/preview.test.ts`; `TitlePreviewView.swift` | Needs the API promoted before clients can open it; not yet run on TestFlight |
+| LIB-007 | Built, unverified | ImportMergeTests, ScheduleTests, MALTests, AnimeListImportTests "LIB-007…" | Server, API and backfill only; clients label it but cannot pick it yet. Promote only after a TestFlight build that decodes `on_hold` |
 | AUD-001 | Done | #2; `actions` journal, LibraryService.swift | |
 | AUD-002 | Done | #2; `/v1/actions/{id}/undo`, 409 tests | Clients undo through PROG-005's toast only; no undo ribbon |
 | PROG-001 | Done | #2; episodes PUT route | |
@@ -1390,6 +1396,24 @@ buttons, nothing written until tapped. Search hits, Discover cards and list memb
 
 **Done when:** opening a hit not in the library shows its page and leaves the library unchanged
 until Add; opening one in the library shows the usual page.
+
+### LIB-007 · On hold as a fifth status · M · owner, 2026-10-25
+**Needs:** LIB-001, IMP-004, SCR-005, SCR-010.
+`on_hold` joins `LibraryStatus` (wire value `on_hold`, label "On hold" for every kind): paused
+on purpose. It ranks with `in_progress` for imports. Calendar, Up Next, Tonight, airing alerts
+and the anime backlog read `in_progress` only, so an item on hold leaves them; stats, profile
+counts and `/v1/up-next` `counts` (`onHold`) include it. A new episode tick, a scrobble, or a
+page or chapter read on moves it back to `in_progress`. Imports move between the two sideways
+when the status was not set by hand: a row that says on hold pauses, and only a source that has
+on hold (MAL XML, AniList, MAL read-back) resumes, so a Trakt or Netflix history never does.
+MAL's on hold (and AniList's PAUSED) maps to `on_hold`; MAL push sends `on_hold`. A generic CSV
+reads "on hold"/"paused", the word Aaru's export writes. A migration widens the CHECK and puts
+back on hold every item in progress, not set by hand, whose MAL entries Aaru knows have one on
+hold and none watching.
+
+**Done when:** pausing an anime on MAL moves it to On hold in Aaru within one read-back and
+out of Up Next; ticking an episode brings it back to Watching and MAL reads watching; a status
+set by hand never moves; dropped stays dropped.
 
 ### AUD-001 · Action journal · M
 **Needs:** LIB-003, SRV-006.
@@ -2313,7 +2337,8 @@ lists, ratings (`tv_show_rate.csv`, `ratings-live-votes.csv`), the JSON copies, 
 **Needs:** IMP-005, CAT-009.
 MAL's list export (XML): `series_animedb_id`, watched episodes, status, score. `mal` id is a hard
 external ID. Status maps: Watching → `in_progress`, Completed → `finished`, On-Hold →
-`in_progress`, Dropped → `dropped`, Plan to Watch → `wishlist`. Score 1–10 maps 1:1.
+`on_hold` (LIB-007, 2026-10-25; was `in_progress`), Dropped → `dropped`, Plan to Watch →
+`wishlist`. Score 1–10 maps 1:1.
 
 **Done when:** a MAL export with 300 entries lands with episode progress, and entries without a
 TMDB mapping still import as AniList-backed titles rather than unmatched.
@@ -2824,11 +2849,12 @@ token appears in a response or log.
 **MAL details (owner, 2026-10-23):** MAL's OAuth accepts only the `plain` PKCE challenge; tokens
 last about 31 days and refresh the way Trakt's do (`TraktConnectService`,
 `PostgresTraktStore.refreshConnection`). Aaru's TMDB show splits back into one MAL entry per
-mapped season (`anime_mappings`); a season with no MAL id is skipped, not an error. `in_progress`
-is not pushed over MAL's `on_hold` unless Aaru's ticks moved. Each push is kept per entry
+mapped season (`anime_mappings`); a season with no MAL id is skipped, not an error. Aaru's
+`on_hold` is pushed as MAL's `on_hold` (LIB-007, 2026-10-25; before it, `in_progress` was kept
+from overwriting MAL's `on_hold` unless Aaru's ticks moved). Each push is kept per entry
 (`mal_entry_state`) so SCR-010 recognises it when it comes back, and writes SCR-010 makes are
 never pushed. Also done when: a show with two mapped seasons updates two MAL entries, and an
-`on_hold` entry stays `on_hold` when only its rating changed.
+item on hold reaches MAL as `on_hold`.
 The PR that builds it changes `docs/privacy.md` first (MAL in "Imports" and "Who else is
 involved"); `/privacy` is rendered from that file, so it does not change before the feature exists.
 

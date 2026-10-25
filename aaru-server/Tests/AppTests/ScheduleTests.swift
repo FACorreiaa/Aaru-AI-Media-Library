@@ -228,13 +228,14 @@ struct ScheduleTests {
             _ = try await env.add("movie", tmdb: env.stubMovie("Seen"), status: "finished")
             _ = try await env.add("movie", tmdb: env.stubMovie("Quit"), status: "dropped")
             _ = try await addBook(env, "Reading", status: "in_progress")
+            _ = try await addBook(env, "Paused", status: "on_hold")
             let (_, other) = try await signedInUser(env.stores)
             _ = try await env.send(.post, "/v1/library/items", json: [
                 "mediaRef": ["type": "movie", "ids": ["tmdb": env.stubMovie("Theirs")]], "status": "dropped",
             ], token: other)
 
             let counts = try await env.send(.get, "/v1/up-next").json()["counts"] as? [String: Int]
-            #expect(counts == ["wishlist": 1, "inProgress": 1, "finished": 1, "dropped": 1])
+            #expect(counts == ["wishlist": 1, "inProgress": 1, "onHold": 1, "finished": 1, "dropped": 1])
         }
     }
 
@@ -268,6 +269,32 @@ struct ScheduleTests {
             #expect(rows.allSatisfy { $0["since"] is String })
             let continued = home["continueWatching"] as? [[String: Any]]
             #expect(continued?.compactMap { $0["libraryItemId"] as? String } == [continuing])
+        }
+    }
+}
+
+/// LIB-007 beside UPN-001, outside the suite's body so it stays short.
+extension ScheduleTests {
+    @Test("LIB-007: a show on hold leaves Up Next and the calendar; a new tick brings it back")
+    func onHoldIsHidden() async throws {
+        try await LibraryHarness.run { env in
+            let id = try await env.add("show", tmdb: stubAiring(env, "Pluribus", days: [-23, -16, -9, 2]))
+            _ = try await env.send(.put, "/v1/library/items/\(id)/episodes/1/1", json: ["watched": true])
+            _ = try await env.send(.patch, "/v1/library/items/\(id)", json: ["status": "on_hold"])
+            let now = Date()
+            let week = "/v1/calendar?from=\(iso(now))&to=\(iso(now.addingTimeInterval(7 * Self.day)))"
+
+            var home = try await env.send(.get, "/v1/up-next").json()
+            #expect((home["continueWatching"] as? [Any])?.isEmpty == true)
+            #expect(try await (env.send(.get, week).json()["items"] as? [Any])?.isEmpty == true)
+
+            _ = try await env.send(.put, "/v1/library/items/\(id)/episodes/1/2", json: ["watched": true])
+            let item = try await env.send(.get, "/v1/library/items/\(id)").json()
+            #expect(item["status"] as? String == "in_progress", "a tick resumes it")
+            home = try await env.send(.get, "/v1/up-next").json()
+            let row = try #require((home["continueWatching"] as? [[String: Any]])?.first)
+            #expect((row["next"] as? [String: Any])?["number"] as? Int == 3)
+            #expect(try await (env.send(.get, week).json()["items"] as? [Any])?.count == 1)
         }
     }
 }
