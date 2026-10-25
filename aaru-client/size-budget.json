@@ -1,5 +1,5 @@
 {
-  "totalJs": 516000,
+  "totalJs": 531817,
   "css": 27137,
   "shared": 91100,
   "routes": {
@@ -24,7 +24,7 @@
     "/_shell/app_/library_/now/$group": 133700,
     "/_shell/app_/lists/": 101900,
     "/_shell/app_/lists/$id": 131900,
-    "/_shell/app_/music": 99988,
+    "/_shell/app_/music": 103005,
     "/_shell/app_/plans/$id": 94700,
     "/_shell/app_/profile": 103638,
     "/_shell/app_/recap": 103100,
