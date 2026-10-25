@@ -162,6 +162,39 @@ struct MALTests {
         }
     }
 
+    @Test("SCR-005: a show finished before its new season aired sends that season as watching")
+    func airingSeasonOfFinishedShow() async throws {
+        let fake = FakeMAL()
+        try await LibraryHarness.run(mal: api(fake)) { env in
+            let (mal1, mal2) = (uniqueID("m"), uniqueID("m"))
+            try await connect(env)
+            let tmdb = env.stubShow("Aoashi", status: .ended)
+            for (season, mal) in [(1, mal1), (2, mal2)] {
+                try await env.stores.animeMappings.upsert(AnimeMapping(
+                    anilist: uniqueID("al"), mal: mal, anidb: nil, tvdb: nil, tmdb: tmdb, tmdbSeason: season
+                ))
+            }
+            let item = try await env.add("show", tmdb: tmdb, status: "finished")
+            try await pusher(env, fake).runOnce()
+            #expect(fake.patches.count { $0.fields["status"] == "completed" } == 2)
+
+            // Season 2 grows an episode still to air; the show stays finished in Aaru.
+            let title = try #require(try await env.stores.titles.find(ids: ExternalIDs(tmdb: tmdb), type: .show))
+            let next = CatalogEpisode(
+                season: 2, episode: 4, name: nil, airsAt: Date().addingTimeInterval(7 * 86400),
+                runtimeMinutes: nil, tmdbEpisodeID: nil
+            )
+            try await env.stores.titles.saveEpisodes(
+                title.id, CatalogEpisodes(status: .returning, episodes: [next]), hydratedAt: Date()
+            )
+            _ = try await env.send(.patch, "/v1/library/items/\(item)", json: ["rating": 8])
+            try await pusher(env, fake).runOnce()
+            let last = try #require(fake.patches.last { $0.malID == mal2 })
+            #expect(last.fields["status"] == "watching", "season 2 is still airing: never completed")
+            #expect(last.fields["num_watched_episodes"] == "3")
+        }
+    }
+
     @Test("SCR-005: connecting never pushes the library as it was; a split cour is skipped")
     func onlyLaterWritesAndNoSplitCours() async throws {
         let fake = FakeMAL()
@@ -232,13 +265,20 @@ struct MALTests {
         let movie = Title(type: .movie, title: "X", ids: ExternalIDs(mal: "9"))
         #expect(MALPusher.targets(movie, tmdbMappings: [], anilistMapping: nil).isEmpty)
 
-        func state(_ status: LibraryStatus, ticks: Int, total: Int? = 12, first: Bool = true) -> MALEntryState? {
+        func state(
+            _ status: LibraryStatus, ticks: Int, total: Int? = 12, first: Bool = true, airing: Bool = false
+        ) -> MALEntryState? {
             let item = LibraryItem(userID: UserID(), titleID: TitleID(), status: status)
             return MALPusher.state(
-                malID: "1", item: item, share: .init(ticks: ticks, total: total, isFirst: first), known: nil
+                malID: "1", item: item,
+                share: .init(ticks: ticks, total: total, isFirst: first, isAiring: airing), known: nil
             )
         }
         #expect(state(.finished, ticks: 0)?.episodes == 12, "finished counts every episode")
+        let airing = state(.finished, ticks: 1, total: 24, first: false, airing: true)
+        #expect(airing?.status == .watching, "a season still airing is never completed")
+        #expect(airing?.episodes == 1)
+        #expect(state(.finished, ticks: 0, first: false, airing: true) == nil, "an unstarted new season stays off MAL")
         #expect(state(.wishlist, ticks: 0)?.status == .planToWatch)
         #expect(state(.wishlist, ticks: 0, first: false) == nil, "a plan does not add every season")
         #expect(state(.inProgress, ticks: 0, first: false) == nil, "an unstarted later season stays off MAL")
