@@ -43,7 +43,8 @@ extension Stores {
             capture: PostgresCaptureStore(sql: sql),
             entitlements: PostgresEntitlementStore(sql: sql),
             boards: PostgresBoardStore(database: database),
-            favorites: PostgresFavoriteStore(database: database)
+            favorites: PostgresFavoriteStore(database: database),
+            sports: PostgresSportsStore(database: database)
         )
     }
 }

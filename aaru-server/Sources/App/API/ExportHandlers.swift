@@ -26,6 +26,7 @@ extension APIImplementation {
         async let groupMessages = stores.groups.exportMessages(userID)
         async let listens = services.listens.all(userID: userID)
         async let favorites = FavoriteService.favorites(of: userID, stores: stores)
+        async let sports = sportsExport(userID)
         return try await .ok(.init(
             headers: .init(contentDisposition: "attachment; filename=\"aaru-export-\(stamp).json\""),
             body: .json(.init(
@@ -50,8 +51,18 @@ extension APIImplementation {
                     .init(group: $0.group, channel: $0.channel, body: $0.body, createdAt: $0.createdAt)
                 },
                 listens: listens.map(Components.Schemas.Listen.init),
-                favorites: .init(favorites)
+                favorites: .init(favorites),
+                sports: sports
             ))
         ))
+    }
+
+    /// The Sports tab's follows and "Where to watch" country (SPT-001).
+    private func sportsExport(_ userID: UserID) async throws -> Components.Schemas.SportsExport {
+        async let follows = services.sports.follows(userID: userID)
+        async let country = services.sports.watchCountry(userID: userID)
+        return try await .init(
+            follows: follows.map { .init($0, following: [Self.followKey($0)]) }, watchCountryCode: country
+        )
     }
 }
