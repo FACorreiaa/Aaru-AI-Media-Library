@@ -500,8 +500,8 @@ still apply to anything that ever moves here.
 
 Music (MUS-008, 2026-10-21) comes last, under the library's numbers, and shows even when nothing
 was tracked: listening is not library activity. Two tiles (listens, hours) with the same change
-rules, an Artists / Tracks / Albums switch over the top five, and "All listening ›" to the Music
-page. That page is Recent and Top: rows of a 40pt cover (a ♪ while the album is unknown), the
+rules, an Artists / Tracks / Albums switch over the top five, and "All listening ›" to Listens
+on the Music page (§13d). Listens is Recent and Top: rows of a 40pt cover (a ♪ while the album is unknown), the
 track, "artist · album" and the time, under Today / Yesterday / date headings, fifty at a time;
 Top is twenty rows for 7 days, 30 days, this year or all time. Wide screens show both side by
 side; a phone switches Recent | Top. An album row is a link only where it leads somewhere.
