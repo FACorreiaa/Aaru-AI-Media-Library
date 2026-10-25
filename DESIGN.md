@@ -473,6 +473,11 @@ each row's distance is from the city or position when there is one. Clear (the f
 cancelling search on Apple) returns to everything near. Empty reads "No <name> concerts within
 50 km." with "Try Anywhere." in Near, "No upcoming <name> concerts listed." in Anywhere. On iPhone
 and Mac it is the screen's own search field with search scopes; Anywhere is list only (no Map).
+Submitting first offers "Which one?": Ticketmaster's performers for the name, each a row with a
+round picture (or the initial) and the name, then a last muted row with a magnifier, "All events
+matching “<name>”". Picking a performer fills the field with their name and lists only their
+dates; the last row lists everything matching the name. With no performer to offer, the list goes
+straight to everything matching (2026-10-25).
 
 ## 13b. Insights (pulled forward 2026-10-20)
 

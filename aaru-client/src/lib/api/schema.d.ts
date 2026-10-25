@@ -1721,6 +1721,26 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/concerts/performers': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Performers whose name matches what the user typed, to pick one before a search (MUS-010).
+     * @description Ticketmaster's own performer list for the name, best first, up to eight. Picking one and sending its `id` as `performerId` to `/v1/concerts/search` lists only that performer's concerts. POST so the name never sits in a URL; not logged, cached by the server.
+     */
+    post: operations['searchConcertPerformers']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/concerts/artists': {
     parameters: {
       query?: never
@@ -4145,6 +4165,8 @@ export interface components {
     ConcertSearchRequest: {
       /** @description The artist's name, 2 to 100 characters. Not logged. */
       q: string
+      /** @description A performer's `id` from `/v1/concerts/performers`: only their concerts. Absent searches `q` as free text. Letters, digits, `-` and `_`, at most 64. */
+      performerId?: string
       scope: components['schemas']['ConcertSearchScope']
       /** @description Sent with `longitude` for a one-off position; absent uses the saved city. */
       latitude?: number
@@ -4163,6 +4185,8 @@ export interface components {
     ConcertSearchPage: {
       /** @description The name as searched, trimmed. */
       query: string
+      /** @description The performer searched by, when one was picked. */
+      performerId?: string
       scope: components['schemas']['ConcertSearchScope']
       place?: components['schemas']['ConcertPlace']
       /** @description Present for `near`. */
@@ -4170,6 +4194,22 @@ export interface components {
       items: components['schemas']['Concert'][]
       page: number
       hasMore: boolean
+      /** @description Concerts are off, or Ticketmaster did not answer and nothing was cached. */
+      unavailable: boolean
+    }
+    ConcertPerformerRequest: {
+      /** @description The name as typed, 2 to 100 characters. Not logged. */
+      q: string
+    }
+    /** @description One performer as Ticketmaster lists them. */
+    ConcertPerformer: {
+      id: string
+      name: string
+      /** @description Ticketmaster's picture of the performer, referenced, never hosted. */
+      imageUrl?: string
+    }
+    ConcertPerformerList: {
+      items: components['schemas']['ConcertPerformer'][]
       /** @description Concerts are off, or Ticketmaster did not answer and nothing was cached. */
       unavailable: boolean
     }
@@ -7696,6 +7736,31 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['ConcertSearchPage']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  searchConcertPerformers: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ConcertPerformerRequest']
+      }
+    }
+    responses: {
+      /** @description The performers. `unavailable` when concerts are off or the provider is down. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ConcertPerformerList']
         }
       }
       default: components['responses']['Error']

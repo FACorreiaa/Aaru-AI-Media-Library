@@ -34,6 +34,14 @@ library layer stay separate, external IDs stored whenever known, no second backe
 - **Anime is first-class from P1** (AniList catalog, `anilist`/`mal`/`anidb` external IDs).
 - DMs are **Signal-grade (libsignal)**. Licence and web support are OPEN — see DM-003, DM-004.
 
+## Decisions recorded 2026-10-25
+
+- **Pick the performer before a concert search (owner, 2026-10-25, MUS-010).** Submitting an
+  artist's name now lists Ticketmaster's performers for it first; picking one lists only that
+  performer's concerts, by Ticketmaster's id. The free text the owner chose on 2026-10-24 stays as
+  the last row, "All events matching …", for festivals and bills without a named act, and is what
+  runs when Ticketmaster offers no performer.
+
 ## Decisions recorded 2026-10-24
 
 - **Now group pages and the anime backlog (owner, 2026-10-24, APP-018).** "Show all N" on
@@ -655,7 +663,7 @@ account or a stranger that has not happened yet.
 | MUS-007 | Built, unverified | MusicSection (web, Apple); ListenBrainzRouteTests `musicSetup`; music model tests | Not deployed; steps checked against client source, not tried with a real scrobbler |
 | MUS-008 | Built, unverified | ListenStatsTests; listening-model and recap deck tests; `/app/music`, MusicView, MusicInsights, OnRepeatCard | Not deployed; not run on a device with real listens |
 | MUS-009 | Not started | — | Waits for a Bandsintown app id |
-| MUS-010 | Built, unverified | ConcertTests; concerts model tests; ConcertList, ConcertsView | This PR; not deployed |
+| MUS-010 | Built, unverified | ConcertSearchTests; concerts model tests; ConcertList, ConcertsView | Free text: #189, deployed 2f1f5f1 (infra #469). Performer pick: this PR, not deployed. Not tried with the real key |
 | MNG-001 | Built, unverified | #175; MangaTests, AniListMangaAdapterTests; deployed f6cc317 (infra #456), TestFlight from d9c6341 | Not run on a device |
 | MNG-002 | Built, unverified | #175; MangaImportTests, AnimeListImportTests; deployed f6cc317 (infra #456) | No real MAL manga export or AniList manga list run yet |
 | FAV-001 | Built, unverified | #176; FavoritesTests, favorites model tests; deployed f6cc317 (infra #456), TestFlight from f6cc317 | Not run on a device or in a browser |
@@ -1843,6 +1851,12 @@ saved city's or the one-off position's cell and the 25 · 50 · 100 km radius, l
 from the city or position itself. Same 6 h cache, keyed by the lowercased name; the name is not
 logged. Matching is the provider's free text, so a search can list other acts whose events carry
 the word; Aaru does not filter by name.
+
+Performer pick (owner, 2026-10-25): submitting first asks `POST /v1/concerts/performers` for
+Ticketmaster's performers matching the name (up to eight, with a picture when there is one, cached
+6 h by the lowercased name). Picking one searches with its id (`performerId` → Ticketmaster's
+`attractionId`), so only that performer's concerts list; the last row, "All events matching …",
+runs the free-text search. With no performer to offer, the free-text search runs straight away.
 
 **Done when:** on iPhone, Mac and web, searching an artist Near Madrid lists their Madrid-area
 dates inside the radius, Anywhere lists every upcoming date with its distance from the city, and

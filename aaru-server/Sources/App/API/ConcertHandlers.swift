@@ -31,8 +31,10 @@ extension APIImplementation {
     func searchConcerts(_ input: Operations.SearchConcerts.Input) async throws -> Operations.SearchConcerts.Output {
         guard case let .json(body) = input.body else { throw AppError.badRequest() }
         let userID = try currentUser()
-        let query = body.q.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard (2 ... 100).contains(query.count) else { throw Self.invalid("q", "Type 2 to 100 characters.") }
+        let query = try Self.artistName(body.q)
+        if let id = body.performerId, !Self.isPerformerID(id) {
+            throw Self.invalid("performerId", "Not a performer from the list.")
+        }
         let page = try Self.concertPage(body.page)
         let point = try Self.oneOffPoint(body.latitude, body.longitude)
         let scope: ConcertSearchScope = switch body.scope {
@@ -42,7 +44,10 @@ extension APIImplementation {
         let found: ConcertService.Searched
         do {
             found = try await services.concerts.search(
-                ConcertSearch(query: query, scope: scope, radiusKm: body.radiusKm.rawValue, page: page),
+                ConcertSearch(
+                    query: query, performerID: body.performerId, scope: scope, radiusKm: body.radiusKm.rawValue,
+                    page: page
+                ),
                 userID: userID, point: point
             )
         } catch is NoConcertPlace {
@@ -50,6 +55,7 @@ extension APIImplementation {
         }
         return .ok(.init(body: .json(.init(
             query: found.query,
+            performerId: found.performerID,
             scope: found.scope == .near ? .near : .anywhere,
             place: found.place.map { Components.Schemas.ConcertPlace($0) },
             radiusKm: found.radiusKm,
@@ -57,6 +63,20 @@ extension APIImplementation {
             page: found.page,
             hasMore: found.results.hasMore,
             unavailable: found.unavailable
+        ))))
+    }
+
+    func searchConcertPerformers(
+        _ input: Operations.SearchConcertPerformers.Input
+    ) async throws -> Operations.SearchConcertPerformers.Output {
+        guard case let .json(body) = input.body else { throw AppError.badRequest() }
+        _ = try currentUser()
+        let found = try await services.concerts.performers(matching: Self.artistName(body.q))
+        return .ok(.init(body: .json(.init(
+            items: (found ?? []).map {
+                Components.Schemas.ConcertPerformer(id: $0.id, name: $0.name, imageUrl: $0.imageURL?.absoluteString)
+            },
+            unavailable: found == nil
         ))))
     }
 
@@ -119,6 +139,19 @@ extension APIImplementation {
     private static let noPlace = AppError(
         status: .conflict, code: "no_place", message: "Choose a city for concerts in Settings, or use your location."
     )
+
+    /// An artist's name as typed: trimmed, 2 to 100 characters.
+    private static func artistName(_ text: String) throws -> String {
+        let name = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard (2 ... 100).contains(name.count) else { throw invalid("q", "Type 2 to 100 characters.") }
+        return name
+    }
+
+    /// A provider performer id: letters, digits, `-` and `_`, at most 64.
+    private static func isPerformerID(_ id: String) -> Bool {
+        (1 ... 64).contains(id.count)
+            && id.allSatisfy { $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "-" || $0 == "_") }
+    }
 
     private static func concertPage(_ page: Int?) throws -> Int {
         let page = page ?? 1

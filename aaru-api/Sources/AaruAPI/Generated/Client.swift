@@ -9263,6 +9263,94 @@ public struct Client: APIProtocol {
             }
         )
     }
+    /// Performers whose name matches what the user typed, to pick one before a search (MUS-010).
+    ///
+    /// Ticketmaster's own performer list for the name, best first, up to eight. Picking one and sending its `id` as `performerId` to `/v1/concerts/search` lists only that performer's concerts. POST so the name never sits in a URL; not logged, cached by the server.
+    ///
+    /// - Remark: HTTP `POST /v1/concerts/performers`.
+    /// - Remark: Generated from `#/paths//v1/concerts/performers/post(searchConcertPerformers)`.
+    public func searchConcertPerformers(_ input: Operations.SearchConcertPerformers.Input) async throws -> Operations.SearchConcertPerformers.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.SearchConcertPerformers.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/concerts/performers",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .post
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                let body: OpenAPIRuntime.HTTPBody?
+                switch input.body {
+                case let .json(value):
+                    body = try converter.setRequiredRequestBodyAsJSON(
+                        value,
+                        headerFields: &request.headerFields,
+                        contentType: "application/json; charset=utf-8"
+                    )
+                }
+                return (request, body)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.SearchConcertPerformers.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ConcertPerformerList.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                default:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(body: body)
+                    )
+                }
+            }
+        )
+    }
     /// Upcoming concerts by the artists of the user's albums (MUS-003).
     ///
     /// Derived from the user's own library, like the calendar; dropped albums aside. An artist counts only when Ticketmaster lists them with the same MusicBrainz id. Artists added in the last hour may still be `pending`.

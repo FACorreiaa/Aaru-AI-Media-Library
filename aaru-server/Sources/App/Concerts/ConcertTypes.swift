@@ -35,9 +35,18 @@ enum ConcertSearchScope: String, Sendable, Equatable {
     case anywhere
 }
 
+/// What a search by artist matches (MUS-010): the provider's free text, or one performer the
+/// user picked from the provider's own list.
+enum ConcertMatch: Sendable, Equatable {
+    case keyword(String)
+    case performer(id: String)
+}
+
 /// One search by artist (MUS-010): the name as typed, trimmed, and where to look.
 struct ConcertSearch: Sendable, Equatable {
     var query: String
+    /// The provider's id of a performer picked from the list; nil searches the name as free text.
+    var performerID: String?
     var scope: ConcertSearchScope
     /// Used by `near` only.
     var radiusKm: Int
@@ -150,15 +159,17 @@ struct ConcertAttraction: Sendable, Equatable {
     var id: String
     var name: String
     var musicbrainzIDs: [String]
+    /// The provider's picture of the performer, referenced, never hosted.
+    var imageURL: URL?
 }
 
 /// Concerts from a provider (Ticketmaster today). Named for the job, not the vendor.
 protocol ConcertListing: Sendable {
     /// Music events around a point, soonest first. `page` is 1-based.
     func near(_ point: GeoPoint, radiusKm: Int, page: Int, from: Date) async throws -> ConcertResults
-    /// Music events matching `keyword` as free text, soonest first: around `near` (a point and a
-    /// radius in km) when given, else anywhere. `page` is 1-based (MUS-010).
-    func search(_ keyword: String, near: (point: GeoPoint, radiusKm: Int)?, page: Int, from: Date) async throws
+    /// Music events matching a name as free text or by one performer, soonest first: around
+    /// `near` (a point and a radius in km) when given, else anywhere. `page` is 1-based (MUS-010).
+    func search(_ match: ConcertMatch, near: (point: GeoPoint, radiusKm: Int)?, page: Int, from: Date) async throws
         -> ConcertResults
     /// Upcoming events for these provider performer ids, soonest first.
     func performing(_ attractionIDs: [String], from: Date) async throws -> [Concert]

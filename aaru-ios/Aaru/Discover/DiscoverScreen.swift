@@ -80,7 +80,7 @@ struct DiscoverScreen: View {
                             Text(concerts.nearScopeLabel).tag(ConcertSearchScope.near)
                             Text("Anywhere").tag(ConcertSearchScope.anywhere)
                         }
-                        .onSubmit(of: .search) { concerts.submitSearch() }
+                        .onSubmit(of: .search) { Task { await concerts.submitSearch() } }
                         // Cancel, or the field's ×, goes back to everything near.
                         .onChange(of: concerts.searchText) { _, text in
                             if text.trimmingCharacters(in: .whitespaces).isEmpty {

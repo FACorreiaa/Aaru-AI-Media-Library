@@ -30,7 +30,7 @@ struct ConcertsView: View {
         }
         #if os(macOS)
         .toolbar {
-            if model.nearState != .noPlace, !model.searchesAnywhere {
+            if model.nearState != .noPlace, !model.searchesAnywhere, model.performerChoices == nil {
                 ToolbarItemGroup {
                     RadiusPicker(radius: $model.radius).fixedSize()
                     LayoutPicker(layout: $model.layout).fixedSize()
@@ -115,37 +115,41 @@ private struct NearSection: View {
         VStack(alignment: .leading, spacing: 12) {
             NearHeader(model: model, onChooseCity: onChooseCity)
             #if os(iOS)
-                if model.nearState != .noPlace, !model.searchesAnywhere {
+                if model.nearState != .noPlace, !model.searchesAnywhere, model.performerChoices == nil {
                     HStack(spacing: 12) {
                         RadiusPicker(radius: $model.radius)
                         LayoutPicker(layout: $model.layout).fixedSize()
                     }
                 }
             #endif
-            switch model.nearState {
-            case .idle, .loading:
-                PlaceholderRows(count: 4, label: "Loading concerts")
-            case .noPlace:
-                ContentUnavailableView {
-                    Label("Where should Aaru look?", systemImage: "mappin.and.ellipse")
-                } description: {
-                    Text("Choose a city to keep, or use your approximate location once.")
-                } actions: {
-                    Button("Choose a city", action: onChooseCity)
-                        .buttonStyle(.borderedProminent)
-                    Button(model.isLocating ? "Locating…" : "Use my location", action: useMyLocation)
-                        .buttonStyle(.bordered)
-                        .disabled(model.isLocating)
+            if let choices = model.performerChoices {
+                PerformerChoicesList(model: model, choices: choices)
+            } else {
+                switch model.nearState {
+                case .idle, .loading:
+                    PlaceholderRows(count: 4, label: "Loading concerts")
+                case .noPlace:
+                    ContentUnavailableView {
+                        Label("Where should Aaru look?", systemImage: "mappin.and.ellipse")
+                    } description: {
+                        Text("Choose a city to keep, or use your approximate location once.")
+                    } actions: {
+                        Button("Choose a city", action: onChooseCity)
+                            .buttonStyle(.borderedProminent)
+                        Button(model.isLocating ? "Locating…" : "Use my location", action: useMyLocation)
+                            .buttonStyle(.bordered)
+                            .disabled(model.isLocating)
+                    }
+                case .failed:
+                    ContentUnavailableView {
+                        Label("Concerts could not be loaded", systemImage: "exclamationmark.triangle")
+                    } actions: {
+                        Button("Try again", action: retry)
+                            .buttonStyle(.bordered)
+                    }
+                case .loaded:
+                    NearResults(model: model)
                 }
-            case .failed:
-                ContentUnavailableView {
-                    Label("Concerts could not be loaded", systemImage: "exclamationmark.triangle")
-                } actions: {
-                    Button("Try again", action: retry)
-                        .buttonStyle(.bordered)
-                }
-            case .loaded:
-                NearResults(model: model)
             }
         }
     }
@@ -243,12 +247,90 @@ private struct NearResults: View {
     }
 }
 
+/// The provider's performers for a submitted name, best first, then every event matching the
+/// name, for festivals and bills without a named act (MUS-010).
+private struct PerformerChoicesList: View {
+    let model: ConcertsModel
+    let choices: PerformerChoices
+
+    var body: some View {
+        switch choices {
+        case .loading:
+            PlaceholderRows(count: 3, label: "Looking for artists")
+        case let .ready(name, performers):
+            VStack(alignment: .leading, spacing: 0) {
+                Text("Which one?")
+                    .font(.subheadline)
+                    .foregroundStyle(Color(.muted))
+                    .padding(.bottom, 4)
+                ForEach(performers, id: \.id) { performer in
+                    ChoiceRow {
+                        PerformerAvatar(performer: performer)
+                        Text(performer.name)
+                            .foregroundStyle(Color(.ink))
+                    } action: {
+                        model.choose(performer)
+                    }
+                    Divider()
+                }
+                ChoiceRow {
+                    Image(systemName: "magnifyingglass")
+                        .frame(width: 40, height: 40)
+                        .overlay(Circle().strokeBorder(Color(.line)))
+                    Text("All events matching “\(name)”")
+                        .foregroundStyle(Color(.muted))
+                } action: {
+                    model.chooseAll(name)
+                }
+            }
+        }
+    }
+}
+
+private struct ChoiceRow<Label: View>: View {
+    @ViewBuilder let label: Label
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                label
+                Spacer(minLength: 0)
+            }
+            .lineLimit(1)
+            .padding(.vertical, 8)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+/// Ticketmaster's picture of the performer, or their initial.
+private struct PerformerAvatar: View {
+    let performer: ConcertPerformer
+
+    var body: some View {
+        AsyncImage(url: performer.imageUrl.flatMap(URL.init(string:))) { image in
+            image.resizable().scaledToFill()
+        } placeholder: {
+            Text(performer.name.prefix(1))
+                .font(.headline)
+                .foregroundStyle(Color(.ink))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color(.surface))
+        }
+        .frame(width: 40, height: 40)
+        .clipShape(.circle)
+        .accessibilityHidden(true)
+    }
+}
+
 /// Nothing listed: in range, or for the searched artist (MUS-010), with the next thing to try.
 private struct EmptyNear: View {
     @Bindable var model: ConcertsModel
 
     var body: some View {
-        if let artist = model.searchedArtist {
+        if let artist = model.searchedArtist?.name {
             if model.scope == .anywhere {
                 ContentUnavailableView(
                     "No upcoming \(artist) concerts listed", systemImage: "music.mic",

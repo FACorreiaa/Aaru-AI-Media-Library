@@ -596,6 +596,13 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/concerts/search`.
     /// - Remark: Generated from `#/paths//v1/concerts/search/post(searchConcerts)`.
     func searchConcerts(_ input: Operations.SearchConcerts.Input) async throws -> Operations.SearchConcerts.Output
+    /// Performers whose name matches what the user typed, to pick one before a search (MUS-010).
+    ///
+    /// Ticketmaster's own performer list for the name, best first, up to eight. Picking one and sending its `id` as `performerId` to `/v1/concerts/search` lists only that performer's concerts. POST so the name never sits in a URL; not logged, cached by the server.
+    ///
+    /// - Remark: HTTP `POST /v1/concerts/performers`.
+    /// - Remark: Generated from `#/paths//v1/concerts/performers/post(searchConcertPerformers)`.
+    func searchConcertPerformers(_ input: Operations.SearchConcertPerformers.Input) async throws -> Operations.SearchConcertPerformers.Output
     /// Upcoming concerts by the artists of the user's albums (MUS-003).
     ///
     /// Derived from the user's own library, like the calendar; dropped albums aside. An artist counts only when Ticketmaster lists them with the same MusicBrainz id. Artists added in the last hour may still be `pending`.
@@ -2363,6 +2370,21 @@ extension APIProtocol {
         body: Operations.SearchConcerts.Input.Body
     ) async throws -> Operations.SearchConcerts.Output {
         try await searchConcerts(Operations.SearchConcerts.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Performers whose name matches what the user typed, to pick one before a search (MUS-010).
+    ///
+    /// Ticketmaster's own performer list for the name, best first, up to eight. Picking one and sending its `id` as `performerId` to `/v1/concerts/search` lists only that performer's concerts. POST so the name never sits in a URL; not logged, cached by the server.
+    ///
+    /// - Remark: HTTP `POST /v1/concerts/performers`.
+    /// - Remark: Generated from `#/paths//v1/concerts/performers/post(searchConcertPerformers)`.
+    public func searchConcertPerformers(
+        headers: Operations.SearchConcertPerformers.Input.Headers = .init(),
+        body: Operations.SearchConcertPerformers.Input.Body
+    ) async throws -> Operations.SearchConcertPerformers.Output {
+        try await searchConcertPerformers(Operations.SearchConcertPerformers.Input(
             headers: headers,
             body: body
         ))
@@ -9597,6 +9619,10 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/ConcertSearchRequest/q`.
             public var q: Swift.String
+            /// A performer's `id` from `/v1/concerts/performers`: only their concerts. Absent searches `q` as free text. Letters, digits, `-` and `_`, at most 64.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchRequest/performerId`.
+            public var performerId: Swift.String?
             /// - Remark: Generated from `#/components/schemas/ConcertSearchRequest/scope`.
             public var scope: Components.Schemas.ConcertSearchScope
             /// Sent with `longitude` for a one-off position; absent uses the saved city.
@@ -9625,6 +9651,7 @@ public enum Components {
             ///
             /// - Parameters:
             ///   - q: The artist's name, 2 to 100 characters. Not logged.
+            ///   - performerId: A performer's `id` from `/v1/concerts/performers`: only their concerts. Absent searches `q` as free text. Letters, digits, `-` and `_`, at most 64.
             ///   - scope:
             ///   - latitude: Sent with `longitude` for a one-off position; absent uses the saved city.
             ///   - longitude:
@@ -9632,6 +9659,7 @@ public enum Components {
             ///   - page: 1-based, at most 10.
             public init(
                 q: Swift.String,
+                performerId: Swift.String? = nil,
                 scope: Components.Schemas.ConcertSearchScope,
                 latitude: Swift.Double? = nil,
                 longitude: Swift.Double? = nil,
@@ -9639,6 +9667,7 @@ public enum Components {
                 page: Swift.Int? = nil
             ) {
                 self.q = q
+                self.performerId = performerId
                 self.scope = scope
                 self.latitude = latitude
                 self.longitude = longitude
@@ -9647,6 +9676,7 @@ public enum Components {
             }
             public enum CodingKeys: String, CodingKey {
                 case q
+                case performerId
                 case scope
                 case latitude
                 case longitude
@@ -9660,6 +9690,10 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/ConcertSearchPage/query`.
             public var query: Swift.String
+            /// The performer searched by, when one was picked.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchPage/performerId`.
+            public var performerId: Swift.String?
             /// - Remark: Generated from `#/components/schemas/ConcertSearchPage/scope`.
             public var scope: Components.Schemas.ConcertSearchScope
             /// - Remark: Generated from `#/components/schemas/ConcertSearchPage/place`.
@@ -9682,6 +9716,7 @@ public enum Components {
             ///
             /// - Parameters:
             ///   - query: The name as searched, trimmed.
+            ///   - performerId: The performer searched by, when one was picked.
             ///   - scope:
             ///   - place:
             ///   - radiusKm: Present for `near`.
@@ -9691,6 +9726,7 @@ public enum Components {
             ///   - unavailable: Concerts are off, or Ticketmaster did not answer and nothing was cached.
             public init(
                 query: Swift.String,
+                performerId: Swift.String? = nil,
                 scope: Components.Schemas.ConcertSearchScope,
                 place: Components.Schemas.ConcertPlace? = nil,
                 radiusKm: Swift.Int? = nil,
@@ -9700,6 +9736,7 @@ public enum Components {
                 unavailable: Swift.Bool
             ) {
                 self.query = query
+                self.performerId = performerId
                 self.scope = scope
                 self.place = place
                 self.radiusKm = radiusKm
@@ -9710,12 +9747,88 @@ public enum Components {
             }
             public enum CodingKeys: String, CodingKey {
                 case query
+                case performerId
                 case scope
                 case place
                 case radiusKm
                 case items
                 case page
                 case hasMore
+                case unavailable
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ConcertPerformerRequest`.
+        public struct ConcertPerformerRequest: Codable, Hashable, Sendable {
+            /// The name as typed, 2 to 100 characters. Not logged.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertPerformerRequest/q`.
+            public var q: Swift.String
+            /// Creates a new `ConcertPerformerRequest`.
+            ///
+            /// - Parameters:
+            ///   - q: The name as typed, 2 to 100 characters. Not logged.
+            public init(q: Swift.String) {
+                self.q = q
+            }
+            public enum CodingKeys: String, CodingKey {
+                case q
+            }
+        }
+        /// One performer as Ticketmaster lists them.
+        ///
+        /// - Remark: Generated from `#/components/schemas/ConcertPerformer`.
+        public struct ConcertPerformer: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ConcertPerformer/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ConcertPerformer/name`.
+            public var name: Swift.String
+            /// Ticketmaster's picture of the performer, referenced, never hosted.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertPerformer/imageUrl`.
+            public var imageUrl: Swift.String?
+            /// Creates a new `ConcertPerformer`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - name:
+            ///   - imageUrl: Ticketmaster's picture of the performer, referenced, never hosted.
+            public init(
+                id: Swift.String,
+                name: Swift.String,
+                imageUrl: Swift.String? = nil
+            ) {
+                self.id = id
+                self.name = name
+                self.imageUrl = imageUrl
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case name
+                case imageUrl
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ConcertPerformerList`.
+        public struct ConcertPerformerList: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ConcertPerformerList/items`.
+            public var items: [Components.Schemas.ConcertPerformer]
+            /// Concerts are off, or Ticketmaster did not answer and nothing was cached.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertPerformerList/unavailable`.
+            public var unavailable: Swift.Bool
+            /// Creates a new `ConcertPerformerList`.
+            ///
+            /// - Parameters:
+            ///   - items:
+            ///   - unavailable: Concerts are off, or Ticketmaster did not answer and nothing was cached.
+            public init(
+                items: [Components.Schemas.ConcertPerformer],
+                unavailable: Swift.Bool
+            ) {
+                self.items = items
+                self.unavailable = unavailable
+            }
+            public enum CodingKeys: String, CodingKey {
+                case items
                 case unavailable
             }
         }
@@ -29953,6 +30066,148 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/concerts/search/post(searchConcerts)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Performers whose name matches what the user typed, to pick one before a search (MUS-010).
+    ///
+    /// Ticketmaster's own performer list for the name, best first, up to eight. Picking one and sending its `id` as `performerId` to `/v1/concerts/search` lists only that performer's concerts. POST so the name never sits in a URL; not logged, cached by the server.
+    ///
+    /// - Remark: HTTP `POST /v1/concerts/performers`.
+    /// - Remark: Generated from `#/paths//v1/concerts/performers/post(searchConcertPerformers)`.
+    public enum SearchConcertPerformers {
+        public static let id: Swift.String = "searchConcertPerformers"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/concerts/performers/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SearchConcertPerformers.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SearchConcertPerformers.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.SearchConcertPerformers.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/concerts/performers/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/concerts/performers/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.ConcertPerformerRequest)
+            }
+            public var body: Operations.SearchConcertPerformers.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.SearchConcertPerformers.Input.Headers = .init(),
+                body: Operations.SearchConcertPerformers.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/concerts/performers/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/concerts/performers/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.ConcertPerformerList)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ConcertPerformerList {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.SearchConcertPerformers.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.SearchConcertPerformers.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The performers. `unavailable` when concerts are off or the provider is down.
+            ///
+            /// - Remark: Generated from `#/paths//v1/concerts/performers/post(searchConcertPerformers)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.SearchConcertPerformers.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.SearchConcertPerformers.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/concerts/performers/post(searchConcertPerformers)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

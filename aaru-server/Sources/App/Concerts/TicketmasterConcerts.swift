@@ -47,10 +47,13 @@ struct TicketmasterConcerts: ConcertListing {
         ])
     }
 
-    func search(_ keyword: String, near: (point: GeoPoint, radiusKm: Int)?, page: Int, from: Date) async throws
+    func search(_ match: ConcertMatch, near: (point: GeoPoint, radiusKm: Int)?, page: Int, from: Date) async throws
         -> ConcertResults
     {
-        var query = ["keyword": keyword]
+        var query: [String: String] = switch match {
+        case let .keyword(keyword): ["keyword": keyword]
+        case let .performer(id): ["attractionId": id]
+        }
         if let near {
             query["geoPoint"] = near.point.geohash()
             query["radius"] = String(near.radiusKm)
@@ -79,7 +82,8 @@ struct TicketmasterConcerts: ConcertListing {
         return (response.embedded?.attractions ?? []).map {
             ConcertAttraction(
                 id: $0.id, name: $0.name,
-                musicbrainzIDs: ($0.externalLinks?.musicbrainz ?? []).compactMap(\.id).map { $0.lowercased() }
+                musicbrainzIDs: ($0.externalLinks?.musicbrainz ?? []).compactMap(\.id).map { $0.lowercased() },
+                imageURL: pickImage($0.images, minWidth: 200)
             )
         }
     }
@@ -237,13 +241,18 @@ private struct Event: Decodable {
         )
     }
 
-    /// The smallest wide image at least 500 px across; Ticketmaster's own placeholders aside.
+    /// The event's poster: a wide image at least 500 px across.
     private var poster: URL? {
-        let usable = (images ?? []).filter { $0.fallback != true }
-        let wide = usable.filter { $0.ratio == "16_9" }.sorted { ($0.width ?? 0) < ($1.width ?? 0) }
-        let pick = wide.first { ($0.width ?? 0) >= 500 } ?? wide.last ?? usable.first
-        return pick.flatMap { URL(string: $0.url) }
+        pickImage(images, minWidth: 500)
     }
+}
+
+/// The smallest wide image at least `minWidth` across; Ticketmaster's own placeholders aside.
+private func pickImage(_ images: [EventImage]?, minWidth: Int) -> URL? {
+    let usable = (images ?? []).filter { $0.fallback != true }
+    let wide = usable.filter { $0.ratio == "16_9" }.sorted { ($0.width ?? 0) < ($1.width ?? 0) }
+    let pick = wide.first { ($0.width ?? 0) >= minWidth } ?? wide.last ?? usable.first
+    return pick.flatMap { URL(string: $0.url) }
 }
 
 private struct MusicBrainzLink: Decodable {
@@ -258,6 +267,7 @@ private struct Attraction: Decodable {
     let id: String
     let name: String
     let externalLinks: AttractionLinks?
+    let images: [EventImage]?
 }
 
 private struct AttractionPage: Decodable {
