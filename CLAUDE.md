@@ -228,7 +228,8 @@ Use these words in code, APIs, and UI:
   count); activity badges read points events and streak days (live only). About 15% are hidden
   until earned
 - **Recap** — a read-only summary of one month or year (`/v1/me/stats`), played as a story.
-  Derived only from the user's own library; imported or restored ticks are not activity
+  Derived only from the user's own library; imported or restored ticks, and seasons or whole
+  shows marked watched, are not activity
 - **Group** — a friends-only space a user creates and invites friends into. It holds channels
   and always has `#general`
 - **Channel** — one place to talk inside a group. Kind: `text` | `title` (one title, with a

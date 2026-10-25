@@ -217,9 +217,9 @@ struct PostgresLibraryStore: LibraryStore {
         """).run()
     }
 
-    /// Writes whose ticks were not watched today: an import, and the whole show marked watched
-    /// (PROG-005).
-    static let undatedKinds: Set<String> = ["import", "show"]
+    /// Writes whose ticks were not watched today: an import, a season marked watched (a catch-up,
+    /// owner 2026-10-25), and the whole show marked watched (PROG-005).
+    static let undatedKinds: Set<String> = ["import", "season", "show"]
 
     /// `now()` is the transaction's start, so it picks out exactly the rows this write made. A
     /// snapshot insert already writes them unknown.

@@ -367,7 +367,8 @@ clients only map its key to words.
 
 The whole show marked watched (PROG-005) journals as kind `show`, and its ticks are marked
 unknown the same way an import's are (`PostgresLibraryStore.undatedKinds`), so a 60-episode mark
-never lands on today. `PATCH status: finished` on a show and adding a show as finished go through
+never lands on today. A season marked watched (kind `season`) is a catch-up too and is undated
+the same way (owner, 2026-10-25: 88 season taps had put 3,700 episodes into one week's stats). `PATCH status: finished` on a show and adding a show as finished go through
 the same rule in `LibraryService`.
 
 The profile (GAM-006b, `GET /v1/me/profile/stats`) is the other read: `StatsStore.library` returns

@@ -107,7 +107,8 @@ extension LibraryService {
         )
     }
 
-    /// Every aired episode of a season; unaired ones are left alone.
+    /// Every aired episode of a season; unaired ones are left alone. The ticks are undated (the
+    /// journal kind "season"): a season tick is a catch-up, not this week's watching.
     func prepareSeason(_ show: ShowContext, season: Int) async throws -> PreparedWrite {
         let inSeason = show.episodes.filter { $0.season == season }
         guard !inSeason.isEmpty else { throw ValidationError.invalidEpisodeNumber(season: season, episode: 1) }
