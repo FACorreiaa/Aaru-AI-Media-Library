@@ -2,8 +2,13 @@ import AaruAPI
 import SwiftUI
 
 /// "Now" at the top of Library (APP-017): what the user is in the middle of, as big cards with a
-/// progress bar and the one next step — tick the next episode, move a book's page, finish.
+/// progress bar and the one next step — tick the next episode, move a book's page, finish. Each
+/// group shows its newest `cap`; "Show all N" pushes the group's page (APP-018), where the anime
+/// backlog waits too.
 struct NowSection: View {
+    /// Two rows of the wide grid, as on the web.
+    static let cap = 6
+
     let library: LibraryModel
     let api: Client?
     let kind: MediaKind?
@@ -30,7 +35,14 @@ struct NowSection: View {
                             .font(.aaruDisplay(.title2, weight: .semibold))
                             .accessibilityAddTraits(.isHeader)
                         Spacer()
-                        Text("\(group.items.count)").foregroundStyle(Color(.muted))
+                        if group.items.count > Self.cap {
+                            NavigationLink(value: NowGroupRoute(group: group.id, kind: kind)) {
+                                Text("Show all \(group.items.count)")
+                            }
+                            .font(.subheadline.weight(.medium))
+                        } else {
+                            Text("\(group.items.count)").foregroundStyle(Color(.muted))
+                        }
                     }
                     .padding(.horizontal, 16)
                     if isWide {
@@ -47,6 +59,16 @@ struct NowSection: View {
                         .scrollIndicators(.hidden)
                         .scrollTargetBehavior(.viewAligned)
                     }
+                    if group.backlogCount > 0 {
+                        NavigationLink(value: NowGroupRoute(group: group.id, kind: kind, opensBacklog: true)) {
+                            Text(group.backlogCount == 1
+                                ? "1 anime in your backlog →"
+                                : "\(group.backlogCount) anime in your backlog →")
+                        }
+                        .font(.footnote)
+                        .foregroundStyle(Color(.muted))
+                        .padding(.horizontal, 16)
+                    }
                 }
             }
         }
@@ -54,16 +76,10 @@ struct NowSection: View {
     }
 
     private func cards(_ group: NowGroup) -> some View {
-        ForEach(group.items) { item in
+        ForEach(group.items.prefix(Self.cap)) { item in
             NowCard(item: item, isPending: library.nowPending.contains(item.id)) { action in
                 Task {
-                    let problem: String? = switch action {
-                    case .tickNext: await library.tickNext(item, api: api)
-                    case let .page(page): await library.setPage(page, of: item, api: api)
-                    case let .chapter(chapter): await library.setChapter(chapter, of: item, api: api)
-                    case .finish: await library.finish(item, api: api)
-                    }
-                    if let problem {
+                    if let problem = await library.perform(action, on: item, api: api) {
                         onProblem(problem)
                     }
                 }
@@ -90,13 +106,18 @@ private struct NowCardWidth: ViewModifier {
     }
 }
 
-private struct NowCard: View {
-    enum Action {
-        case tickNext, page(Int), chapter(Int), finish
-    }
+/// The one next step a Now card or row offers.
+enum NowAction {
+    case tickNext, page(Int), chapter(Int), finish
+}
+
+struct NowCard: View {
+    typealias Action = NowAction
 
     let item: NowItem
     let isPending: Bool
+    /// The Watching page's facts under the progress, one per line (APP-018).
+    var lines: [String] = []
     let perform: (Action) -> Void
 
     @State private var editingPage = false
@@ -115,6 +136,13 @@ private struct NowCard: View {
                 .accessibilityHint("Opens the title")
             VStack(alignment: .leading, spacing: AaruSpace.medium) {
                 progress
+                if !lines.isEmpty {
+                    VStack(alignment: .leading, spacing: AaruSpace.xsmall) {
+                        ForEach(lines, id: \.self) { Text($0) }
+                    }
+                    .font(.footnote)
+                    .foregroundStyle(Color(.muted))
+                }
                 actions
             }
             .padding(AaruSpace.large)
