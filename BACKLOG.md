@@ -2701,6 +2701,13 @@ and Music; Music has Albums · Concerts · Listens. The Discover toolbar's Sport
 ### NAV-003 · Docs · S
 DESIGN.md §13a, §13c, §13d and §18; VIEWS.md; CLAUDE.md's Discover; ARCHITECTURE.md.
 
+### DISC-005 · Apple: the + on a Discover card adds · S · owner, 2026-10-25
+The + on a poster not yet on the shelf was only a mark, so on iPhone's Books, Manga and Music a
+tap on it did nothing. It is now a menu: a tap adds the title as planned, a hold offers every
+addable status and "Add to list…". The poster still opens the catalog page, and a hold on it
+still adds. One card, so Home, Discover, Seasons, On air and the kind screens all get it. The web
+card already has Add and List….
+
 ## P2 · Web (`aaru-client`)
 
 SolidJS + TanStack Start on Cloudflare Workers (since 2026-10-14), a pure client of `/v1` at

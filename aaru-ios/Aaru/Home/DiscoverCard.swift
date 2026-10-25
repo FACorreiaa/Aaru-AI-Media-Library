@@ -1,10 +1,11 @@
 import AaruAPI
 import SwiftUI
 
-/// `DiscoverCard` (DISC-001): a poster from a public row, on Home and on Discover. Not yet on
-/// the shelf, a tap opens its catalog page (`TitlePreviewView`, LIB-006) and a hold is the add
-/// menu (a status or a list); on the shelf, it opens the item and wears a check. A release date
-/// shows as a badge. Every stack that shows these cards registers `catalogDestination`.
+/// `DiscoverCard` (DISC-001): a poster from a public row, on Home, Discover and the kind pages.
+/// Not yet on the shelf, a tap opens its catalog page (`TitlePreviewView`, LIB-006), the + on the
+/// poster adds it as planned and holding the + (or the poster) offers a status or a list; on the
+/// shelf, it opens the item and wears a check. A release date shows as a badge. Every stack that
+/// shows these cards registers `catalogDestination`.
 struct DiscoverCard: View {
     let hit: CatalogHit
     /// The caller's item for this title, when they have it.
@@ -37,9 +38,11 @@ struct DiscoverCard: View {
                         Divider()
                         Button("Add to list…", systemImage: "text.badge.plus", action: onAddToList)
                     }
-                    .disabled(isAdding)
                     .accessibilityLabel(hit.title)
                     .accessibilityHint("Opens its page. Hold to add.")
+                    // Beside the link, not in its label, so a tap on the + adds instead of opening.
+                    .overlay(alignment: .topTrailing) { addMenu }
+                    .disabled(isAdding)
             }
         }
         .buttonStyle(.plain)
@@ -49,7 +52,11 @@ struct DiscoverCard: View {
     private var card: some View {
         VStack(alignment: .leading, spacing: 6) {
             HomeArt(url: hit.posterUrl.flatMap(URL.init(string:)), aspect: kind.posterAspect)
-                .overlay(alignment: .topTrailing) { shelfMark.padding(6) }
+                .overlay(alignment: .topTrailing) {
+                    if libraryItemID != nil {
+                        shelfMark.padding(6)
+                    }
+                }
                 .overlay(alignment: .topLeading) {
                     if let badge {
                         HomeChip(text: badge, tint: Color(.accent).opacity(0.9)).padding(6)
@@ -77,6 +84,33 @@ struct DiscoverCard: View {
         .frame(width: width)
         .frame(maxWidth: width == nil ? .infinity : nil, alignment: .leading)
         .contentShape(Rectangle())
+    }
+
+    /// The + on a poster not yet on the shelf: a tap adds it as planned, a hold offers the other
+    /// statuses and "Add to list…".
+    private var addMenu: some View {
+        Menu {
+            ForEach(LibraryStatus.addable) { status in
+                Button(status.label(for: kind)) { onAdd(status) }
+            }
+            Divider()
+            Button("Add to list…", systemImage: "text.badge.plus", action: onAddToList)
+        } label: {
+            shelfMark
+                // The circle stays small; the tap target is the poster's corner.
+                .padding(6)
+                .frame(minWidth: 44, minHeight: 44, alignment: .topTrailing)
+                .contentShape(.rect)
+        } primaryAction: {
+            onAdd(.wishlist)
+        }
+        .menuIndicator(.hidden)
+        .buttonStyle(.borderless)
+        .fixedSize()
+        .accessibilityLabel("Add \(hit.title) to your library")
+        .accessibilityHint(
+            "Adds it as \(LibraryStatus.wishlist.label(for: kind)). Touch and hold for a status or a list."
+        )
     }
 
     @ViewBuilder
