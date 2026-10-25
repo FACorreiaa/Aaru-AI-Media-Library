@@ -41,6 +41,20 @@ struct ShowWatchedTests {
         }
     }
 
+    @Test("A season marked watched is a catch-up: undated, so only real ticks are this week's watching")
+    func seasonUndated() async throws {
+        try await LibraryHarness.run { env in
+            let id = try await env.add("show", tmdb: env.stubShow("Severance", status: .ended))
+            _ = try await env.send(.put, "/v1/library/items/\(id)/episodes/1/1", json: ["watched": true])
+            #expect(try await env.send(.post, "/v1/library/items/\(id)/seasons/2/watched").status == .ok)
+
+            let week = try await env.send(.get, "/v1/me/stats?span=last7").json()
+            #expect((week["totals"] as? [String: Any])?["episodesWatched"] as? Int == 1)
+            let profile = try await env.send(.get, "/v1/me/profile/stats").json()
+            #expect(profile["episodesWatched"] as? Int == 4)
+        }
+    }
+
     @Test("PROG-005: a running show ticks aired episodes only and stays in progress; again is a no-op")
     func runningShow() async throws {
         try await LibraryHarness.run { env in
