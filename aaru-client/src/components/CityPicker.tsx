@@ -137,7 +137,7 @@ export function CityPicker(props: {
               </Match>
               <Match when={places() === null && !searching()}>
                 <p class="px-2 py-3 text-sm text-muted">
-                  Concerts on Discover start from this city when you don’t share
+                  Concerts on Music start from this city when you don’t share
                   your location.
                 </p>
               </Match>
