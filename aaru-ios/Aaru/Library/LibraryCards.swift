@@ -91,7 +91,7 @@ struct LibraryGrid<Menu: View>: View {
             spacing: 20
         ) {
             ForEach(rows) { row in
-                NavigationLink(value: row.id) { PosterCard(row: row) }
+                NavigationLink(value: row.id) { LibraryPosterCard(row: row) }
                     .buttonStyle(.plain)
                     .posterHover()
                     .contextMenu { menu(row) }
@@ -102,7 +102,8 @@ struct LibraryGrid<Menu: View>: View {
     }
 }
 
-private struct PosterCard: View {
+/// One library poster with its title and status: the grid's card, and a kind page's shelf (NAV-002).
+struct LibraryPosterCard: View {
     let row: LibraryRow
     @Environment(\.dynamicTypeSize) private var typeSize
 

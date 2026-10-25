@@ -8,6 +8,7 @@ typealias StartEntry = Components.Schemas.StartEntry
 typealias UnfinishedEntry = Components.Schemas.UnfinishedEntry
 typealias LibraryCounts = Components.Schemas.LibraryCounts
 typealias DiscoverRow = Components.Schemas.DiscoverRow
+typealias DiscoverRowKind = Components.Schemas.DiscoverRowKind
 
 /// Home (APP-009, APP-013): Continue watching, Start watching, Unfinished and the status counts
 /// from `/v1/up-next`; the albums being listened to from the shelf (MUS-001); the next two weeks of airings from
