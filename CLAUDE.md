@@ -186,6 +186,9 @@ Use these words in code, APIs, and UI:
 - **List** — user-curated collection of library items, stored as membership rows
 - **Shelf** — a *saved query* over library items (`saved_queries`), not membership. Shares a
   renderer with List; never shares a table. Users "pin a shelf" and "add to a list"
+- **Anime backlog** — an anime in progress the user never touched in Aaru: status from an
+  import (not set by hand) and no live tick. It stays `in_progress` but leaves Now for its
+  group page. Derived on the server (`inBacklog`), never stored, never a status (APP-018)
 - **Action** — one journaled, undoable library write, whether the user or the agent made it
 - **Import job** — one run of Trakt or a CSV/list ingest
 - **Capture** — one-shot intake of pasted text, an image, or a URL. It is an *import source*,
