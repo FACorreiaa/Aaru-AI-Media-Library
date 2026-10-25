@@ -69,6 +69,8 @@ struct AboutView: View {
                 Link("About Aaru on the web", destination: Self.url("https://aaruapp.com/about"))
                 Link("Contact", destination: Self.url("mailto:privacy@aaruapp.com"))
                 Link("Join us on Discord", destination: Self.url("https://discord.gg/GG55YPANC"))
+                @Bindable var review = ReviewPrompter.shared
+                Toggle("Ask me to rate Aaru", isOn: $review.isEnabled)
             }
         }
         .formStyle(.grouped)

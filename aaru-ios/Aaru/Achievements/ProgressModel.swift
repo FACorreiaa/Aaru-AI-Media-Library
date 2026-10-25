@@ -46,14 +46,25 @@ final class ProgressModel {
     /// A top tier reached live: one full card, once.
     var reveal: BadgeAward?
     var problem: String?
+    /// From a write until its progress read lands: a badge may be on its way.
+    private(set) var isCheckingForUnlocks = false
 
     @ObservationIgnored let api: Client?
+    /// A badge earned live is a milestone for the rating ask; its presenter waits on
+    /// `holdsReviewPrompt`, so the sheet comes after the toast or the reveal, never over it.
+    @ObservationIgnored private let review: ReviewPrompter
     @ObservationIgnored private var pending: Task<Void, Never>?
     /// Awards already toasted on this device, so a seen-mark that failed never toasts twice.
     @ObservationIgnored private var shown: Set<String> = []
 
-    init(api: Client?) {
+    init(api: Client?, review: ReviewPrompter = .shared) {
         self.api = api
+        self.review = review
+    }
+
+    /// The rating ask waits while a badge is being checked for, toasted or revealed.
+    var holdsReviewPrompt: Bool {
+        isCheckingForUnlocks || unlock != nil || reveal != nil
     }
 
     /// Reads progress; any badge not yet seen becomes the toast (and maybe the reveal), then is
@@ -71,10 +82,15 @@ final class ProgressModel {
     /// After a write: refresh once things settle, so a run of ticks reads progress once.
     func refreshSoon() {
         pending?.cancel()
+        isCheckingForUnlocks = true
         pending = Task { [weak self] in
             try? await Task.sleep(for: .seconds(1.5))
             guard !Task.isCancelled else { return }
             await self?.refresh()
+            // A later write's read owns the flag once this one was cancelled.
+            if !Task.isCancelled {
+                self?.isCheckingForUnlocks = false
+            }
         }
     }
 
@@ -118,6 +134,7 @@ final class ProgressModel {
 
     func reset() {
         pending?.cancel()
+        isCheckingForUnlocks = false
         progress = nil
         badges = []
         hasLoadedBadges = false
@@ -141,6 +158,9 @@ final class ProgressModel {
         } else if let first = fresh.first {
             unlock = unseen.count == 1 ? .one(first) : .several(count: unseen.count, first: first)
             reveal = fresh.first(where: \.reveal)
+            // Asks only once the toast or the reveal has gone (`holdsReviewPrompt`). A summary
+            // (an import, a plan, the backfill) never asks.
+            review.recordMilestone()
         }
         await markSeen(unseen)
     }

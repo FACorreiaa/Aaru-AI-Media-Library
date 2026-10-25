@@ -996,7 +996,7 @@ new import source or connected app joins its page; it never gets a page of its o
 | 4 | Import | `import` | Trakt · Bring your history, in `CLAUDE.md`'s import order: Stremio history, IMDb, Letterboxd, Goodreads, Pogdesign CAT, Netflix, MyAnimeList, AniList, Any other CSV · Imports (the jobs; "No imports yet." when none) |
 | 5 | Connections | `connections` | Agents: the picker (Claude, Claude Code, Codex, Hermes, Gemini CLI, other MCP client, Browser extension) and live connections · Stremio: the addon, with "Import your Stremio history" linking to Import · MyAnimeList: connect, what goes over (status, episodes and score per season; only changes from now on, both ways, forward only; removals stay on the other side), "Connected as … · since …" and "Last read …", the entries removed on MyAnimeList that Aaru keeps, Reconnect when MAL stopped accepting Aaru (SCR-005, SCR-010, owner 2026-10-23) · Music: scrobblers, the last listen → Listens. One verb: Disconnect |
 | 6 | Your data | `data` | Recaps: this year, last month, last year · History: every journaled action, newest first, by whom (you, an import, a connection), with Undo · Export: Everything (JSON), Library spreadsheet (CSV) |
-| 7 | About | `about` | Wordmark, version, channel (Apple) · Credits · Privacy policy, About Aaru, Contact |
+| 7 | About | `about` | Wordmark, version, channel (Apple) · Credits · Privacy policy, About Aaru, Contact · Ask me to rate Aaru (Apple, on by default) |
 | 8 | Delete account | `delete` | One sentence on what goes, a link to Your data → Export, **Delete account** in danger styling; confirm "Delete account?" with **Delete account and library** / Keep it |
 
 Where each existing piece goes:
@@ -1009,7 +1009,7 @@ Where each existing piece goes:
 | Import | `ImportsPage`: `TraktImport`, `StremioHistoryImport`, `FILE_SOURCES` tiles, `CatImport`, the AniList form, the jobs list → `/app/imports/$id`. Trakt returns to `/app/settings/import?trakt=` | `ImportsSettings` without `ExportDataSection`: `TraktSection`, the history section, `CATImportSheet`, `StremioHistoryImport`, the jobs → `ImportDetailView` |
 | Connections | `ConnectionsSection`, `StremioSection`, `MusicSection` | `ConnectionsSection` (+ `ConnectionSetupView`, `BrowserExtensionView`), `StremioSection`, `MusicSection` (from `ConnectedAppsSettings`) |
 | Your data | `_shell.app_.settings.data`: recap shortcuts, History (`/v1/actions`, Undo per action), Export | recap shortcuts (`RecapDeck`'s, now also in Library's menu); `ExportDataSection`; History (new) |
-| About | `_shell.app_.settings.about`: wordmark, `Credits`, links | `AboutView` without the delete section |
+| About | `_shell.app_.settings.about`: wordmark, `Credits`, links | `AboutView` without the delete section, plus the "Ask me to rate Aaru" switch (`Aaru/Review`) |
 | Delete account | `_shell.app_.settings.delete` with `ConfirmDialog` | `AboutView`'s delete section and dialog |
 
 **Presentation.**

@@ -33,9 +33,12 @@ final class LibraryModel {
     @ObservationIgnored private var token: String?
     @ObservationIgnored private let cache: LibraryCache
     @ObservationIgnored private var knownKeys: Set<String> = []
+    /// Progress made here counts toward asking for a rating; a sync never does.
+    @ObservationIgnored private let review: ReviewPrompter
 
-    init(cache: LibraryCache = LibraryCache()) {
+    init(cache: LibraryCache = LibraryCache(), review: ReviewPrompter = .shared) {
         self.cache = cache
+        self.review = review
         if let snapshot = cache.load() {
             token = snapshot.token
             entries = snapshot.entries.keyed(by: \.id)
@@ -166,9 +169,15 @@ final class LibraryModel {
         }
     }
 
-    /// A write the user just made (an add from search): shown at once, no refetch.
-    func upsert(_ entry: LibraryEntry) {
+    /// A write the user just made (an add from search, a tick, a status): shown at once, no
+    /// refetch. Moving forward counts toward asking for a rating, and a first title finished is a
+    /// milestone; a `restore` (an undo putting back what was) is not progress.
+    func upsert(_ entry: LibraryEntry, restore: Bool = false) {
+        let before = entries[entry.id]
         entries[entry.id] = entry
+        if !restore {
+            noteProgress(from: before, to: entry)
+        }
         publish()
         persist()
         revision += 1
@@ -183,6 +192,27 @@ final class LibraryModel {
         lastRemoval = nil
         cache.clear()
         publish()
+    }
+
+    /// The rating ask's successes (`ReviewPrompter`): every write that lands here comes from a
+    /// tap, so syncs, imports and widget intents never count.
+    private func noteProgress(from before: LibraryEntry?, to after: LibraryEntry) {
+        if after.status == .finished, before?.status != .finished {
+            review.recordSuccess()
+            review.recordMilestone(once: "firstFinished")
+        } else if Self.progressed(from: before, to: after) {
+            review.recordSuccess()
+        }
+    }
+
+    /// An episode ticked, a page or a chapter further: anything but a step back.
+    private static func progressed(from before: LibraryEntry?, to after: LibraryEntry) -> Bool {
+        func moved(_ value: (LibraryEntry?) -> Int?) -> Bool {
+            (value(after) ?? 0) > (value(before) ?? 0)
+        }
+        return moved { $0?.progress?.watchedCount }
+            || moved { $0?.bookProgress?.page }
+            || moved { $0?.mangaProgress?.chapter }
     }
 
     private func publish() {
