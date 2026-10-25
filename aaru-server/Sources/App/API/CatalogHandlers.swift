@@ -16,9 +16,11 @@ extension APIImplementation {
     func getDiscover(_: Operations.GetDiscover.Input) async throws -> Operations.GetDiscover.Output {
         let rows = try await services.discover.rows(userID: currentUser())
         return .ok(.init(body: .json(.init(rows: rows.map { row in
-            .init(id: row.list.rawValue, title: row.title, items: row.items.map {
-                Components.Schemas.CatalogHit($0.hit, libraryItemID: $0.libraryItemID)
-            }, note: row.note)
+            .init(
+                id: row.list.rawValue, kind: .init(rawValue: row.list.kind.rawValue) ?? .film, title: row.title,
+                items: row.items.map { Components.Schemas.CatalogHit($0.hit, libraryItemID: $0.libraryItemID) },
+                note: row.note
+            )
         }))))
     }
 

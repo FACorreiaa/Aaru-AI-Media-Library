@@ -561,6 +561,14 @@ and clients hide the view). Paced at 4/s; a `CallBudget` stops at 4,500 calls a 
 - **City picker.** `GET /v1/concerts/places?q=` → `OpenMeteoPlaces` (no key). The request log
   drops this route's query. `PUT`/`DELETE /v1/me/concert-place` save and forget the city.
 
+### Discover rows by kind (DISC-004)
+
+`DiscoverList.kind` gives every row a `DiscoverRowKind` (`film | show | anime | manga | book |
+album`), sent as `DiscoverRow.kind`. Clients filter on it: Discover shows film, show and anime
+rows, and the Books, Manga and Music pages show their own, all from the one cached
+`GET /v1/discover`. AniList serves the two manga rows (type MANGA, `status: RELEASING`, trending
+or popular). Only anime rows fall back to TMDB while AniList is down.
+
 ### Sports (SPT-001…005)
 
 `Sources/App/Sports/`, behind `SportsListing` (named for the job). `TheSportsDBSports` calls

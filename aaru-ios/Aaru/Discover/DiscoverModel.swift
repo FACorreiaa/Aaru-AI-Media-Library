@@ -33,16 +33,17 @@ final class DiscoverModel {
         hasLoaded = true
     }
 
-    /// Rows with something to show, in the server's order.
-    var visibleRows: [DiscoverRow] {
-        rows.filter { !$0.items.isEmpty }
+    /// Rows of these kinds with something to show, in the server's order (DISC-004: each row
+    /// says its kind). Discover's Today takes films, shows and anime; a kind page takes its own.
+    func visibleRows(of kinds: Set<DiscoverRowKind>) -> [DiscoverRow] {
+        rows.filter { kinds.contains($0.kind) && !$0.items.isEmpty }
     }
 
-    /// LIB-005: every title on Discover that matches the filter, once, under the first row that
-    /// has it (its release badge reads that row).
-    func matches(_ query: String) -> [DiscoverMatch] {
+    /// LIB-005: every title in these kinds' rows that matches the filter, once, under the first
+    /// row that has it (its release badge reads that row).
+    func matches(_ query: String, in kinds: Set<DiscoverRowKind>) -> [DiscoverMatch] {
         var seen = Set<String>()
-        return visibleRows.flatMap { row in
+        return visibleRows(of: kinds).flatMap { row in
             row.items.compactMap { hit -> DiscoverMatch? in
                 guard Paging.matches(query, hit.title, hit.byline), seen.insert(hit.id).inserted else { return nil }
                 return DiscoverMatch(row: row.id, hit: hit)

@@ -8426,12 +8426,25 @@ public enum Components {
                 case notice
             }
         }
+        /// What a Discover row holds (DISC-004), as Library's kinds: anime is its own kind. Discover shows film, show and anime rows; the Books, Manga and Music pages show their own.
+        ///
+        /// - Remark: Generated from `#/components/schemas/DiscoverRowKind`.
+        @frozen public enum DiscoverRowKind: String, Codable, Hashable, Sendable, CaseIterable {
+            case film = "film"
+            case show = "show"
+            case anime = "anime"
+            case manga = "manga"
+            case book = "book"
+            case album = "album"
+        }
         /// - Remark: Generated from `#/components/schemas/DiscoverRow`.
         public struct DiscoverRow: Codable, Hashable, Sendable {
-            /// Stable row key, e.g. `tv_trending`, `anime_season`, `books_trending`, `music_new`. Not an enum: the server may add rows, and clients render any row they get.
+            /// Stable row key, e.g. `tv_trending`, `anime_season`, `books_trending`, `manga_trending`, `music_new`. Not an enum: the server may add rows, and clients render any row they get.
             ///
             /// - Remark: Generated from `#/components/schemas/DiscoverRow/id`.
             public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/DiscoverRow/kind`.
+            public var kind: Components.Schemas.DiscoverRowKind
             /// Display title, e.g. "Fall 2026 anime".
             ///
             /// - Remark: Generated from `#/components/schemas/DiscoverRow/title`.
@@ -8445,23 +8458,27 @@ public enum Components {
             /// Creates a new `DiscoverRow`.
             ///
             /// - Parameters:
-            ///   - id: Stable row key, e.g. `tv_trending`, `anime_season`, `books_trending`, `music_new`. Not an enum: the server may add rows, and clients render any row they get.
+            ///   - id: Stable row key, e.g. `tv_trending`, `anime_season`, `books_trending`, `manga_trending`, `music_new`. Not an enum: the server may add rows, and clients render any row they get.
+            ///   - kind:
             ///   - title: Display title, e.g. "Fall 2026 anime".
             ///   - items:
             ///   - note: Where a stand-in row came from, e.g. TMDB while AniList is down.
             public init(
                 id: Swift.String,
+                kind: Components.Schemas.DiscoverRowKind,
                 title: Swift.String,
                 items: [Components.Schemas.CatalogHit],
                 note: Swift.String? = nil
             ) {
                 self.id = id
+                self.kind = kind
                 self.title = title
                 self.items = items
                 self.note = note
             }
             public enum CodingKeys: String, CodingKey {
                 case id
+                case kind
                 case title
                 case items
                 case note

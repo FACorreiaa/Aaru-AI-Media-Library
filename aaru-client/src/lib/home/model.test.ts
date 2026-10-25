@@ -326,10 +326,16 @@ describe('markAdded', () => {
   const rows: DiscoverRow[] = [
     {
       id: 'movies_trending',
+      kind: 'film',
       title: 'Trending movies',
       items: [hit('1', 'A'), hit('2', 'B')],
     },
-    { id: 'movies_in_theaters', title: 'In theaters', items: [hit('1', 'A')] },
+    {
+      id: 'movies_in_theaters',
+      kind: 'film',
+      title: 'In theaters',
+      items: [hit('1', 'A')],
+    },
   ]
 
   it('links every card for the added title, in every row', () => {
@@ -357,10 +363,16 @@ describe('markOnShelf', () => {
   const rows: DiscoverRow[] = [
     {
       id: 'tv_trending',
+      kind: 'show',
       title: 'Trending shows',
       items: [hit({ tmdb: '1', imdb: 'tt1' }, 'A'), hit({ tmdb: '2' }, 'B')],
     },
-    { id: 'tv_new', title: 'New shows', items: [hit({ imdb: 'tt1' }, 'A')] },
+    {
+      id: 'tv_new',
+      kind: 'show',
+      title: 'New shows',
+      items: [hit({ imdb: 'tt1' }, 'A')],
+    },
   ]
   const entry = {
     id: 'item-1',

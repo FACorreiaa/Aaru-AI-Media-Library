@@ -3905,9 +3905,15 @@ export interface components {
       /** @description Why the items are partial, in words to show, e.g. AniList being down while TMDB's Japanese animation stands in. */
       notice?: string
     }
+    /**
+     * @description What a Discover row holds (DISC-004), as Library's kinds: anime is its own kind. Discover shows film, show and anime rows; the Books, Manga and Music pages show their own.
+     * @enum {string}
+     */
+    DiscoverRowKind: 'film' | 'show' | 'anime' | 'manga' | 'book' | 'album'
     DiscoverRow: {
-      /** @description Stable row key, e.g. `tv_trending`, `anime_season`, `books_trending`, `music_new`. Not an enum: the server may add rows, and clients render any row they get. */
+      /** @description Stable row key, e.g. `tv_trending`, `anime_season`, `books_trending`, `manga_trending`, `music_new`. Not an enum: the server may add rows, and clients render any row they get. */
       id: string
+      kind: components['schemas']['DiscoverRowKind']
       /** @description Display title, e.g. "Fall 2026 anime". */
       title: string
       items: components['schemas']['CatalogHit'][]

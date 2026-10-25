@@ -4,6 +4,7 @@ import {
   dateBlock,
   detailLine,
   distanceLabel,
+  isRetiredConcertsView,
   parseView,
   pendingLine,
   placeLabel,
@@ -13,7 +14,6 @@ import {
   roundPosition,
   searchEmptyLine,
   searchHeading,
-  shownView,
 } from './model'
 import type { Concert } from './model'
 
@@ -29,18 +29,22 @@ const concert = (over: Partial<Concert> = {}): Concert => ({
 describe('discover view', () => {
   it('reads the three views and nothing else', () => {
     expect(parseView('today')).toBe('today')
+    expect(parseView('on-air')).toBe('on-air')
     expect(parseView('seasons')).toBe('seasons')
-    expect(parseView('concerts')).toBe('concerts')
-    expect(parseView('Concerts')).toBeUndefined()
+    expect(parseView('Seasons')).toBeUndefined()
     expect(parseView(3)).toBeUndefined()
     expect(parseView(undefined)).toBeUndefined()
   })
 
-  it('falls back to Today when concerts are off', () => {
-    expect(shownView('concerts', true)).toBe('concerts')
-    expect(shownView('concerts', false)).toBe('today')
-    expect(shownView('seasons', false)).toBe('seasons')
-    expect(shownView(undefined, true)).toBe('today')
+  it('no longer has a Concerts view (NAV-001)', () => {
+    expect(parseView('concerts')).toBeUndefined()
+  })
+
+  it('sends only the old Concerts view on to Music', () => {
+    expect(isRetiredConcertsView('concerts')).toBe(true)
+    expect(isRetiredConcertsView('Concerts')).toBe(false)
+    expect(isRetiredConcertsView('seasons')).toBe(false)
+    expect(isRetiredConcertsView(undefined)).toBe(false)
   })
 })
 

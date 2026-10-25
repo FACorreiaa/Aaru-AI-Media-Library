@@ -4,12 +4,16 @@ import SwiftUI
 /// Discover (APP-012, DISC-001): catalog rows to add from without typing, with the same cards as
 /// Home's Discover rows. Renders the cache first, then refreshes. Credits the providers whose rows
 /// are on screen (UX-048). A segmented control switches Today's rows for On air (this week's shows
-/// by channel, DISC-003), the Seasons view (DISC-002) and, when the server has concerts on, the
-/// Concerts view (MUS-003). LIB-005: Today's filter turns the rows into one grid of the titles
-/// that match, 20 at a time with more on scroll.
+/// by channel, DISC-003) and the Seasons view (DISC-002). Today holds films, shows and anime only:
+/// books, manga and albums have their own pages, and Concerts lives on Music (NAV-002). LIB-005:
+/// Today's filter turns the rows into one grid of the titles that match, 20 at a time with more on
+/// scroll.
 struct DiscoverScreen: View {
+    /// The row kinds Today shows (DISC-004).
+    static let todayKinds: Set<DiscoverRowKind> = [.film, .show, .anime]
+
     enum Section: String, CaseIterable, Identifiable {
-        case today, onAir, seasons, concerts
+        case today, onAir, seasons
 
         var id: String {
             rawValue
@@ -20,7 +24,6 @@ struct DiscoverScreen: View {
             case .today: "Today"
             case .onAir: "On air"
             case .seasons: "Seasons"
-            case .concerts: "Concerts"
             }
         }
     }
@@ -32,7 +35,6 @@ struct DiscoverScreen: View {
     @State private var model: DiscoverModel
     @State private var onAir: OnAirModel
     @State private var seasons: SeasonModel
-    @State private var concerts: ConcertsModel
     @State private var section: Section = .today
     @State private var listTarget: CatalogHit?
     @State private var query = ""
@@ -56,11 +58,9 @@ struct DiscoverScreen: View {
         _model = State(initialValue: model ?? DiscoverModel(api: api, library: library))
         _onAir = State(initialValue: OnAirModel(api: api, library: library))
         _seasons = State(initialValue: SeasonModel(api: api, library: library))
-        _concerts = State(initialValue: ConcertsModel(api: api))
     }
 
     var body: some View {
-        @Bindable var router = router
         NavigationStack {
             Group {
                 switch section {
@@ -73,20 +73,6 @@ struct DiscoverScreen: View {
                         .task { await onAir.loadIfNeeded() }
                 case .seasons:
                     SeasonBrowser(model: seasons, compact: compact) { listTarget = $0 }
-                case .concerts:
-                    ConcertsView(model: concerts)
-                        .searchable(text: $concerts.searchText, prompt: "Search an artist")
-                        .searchScopes($concerts.scope) {
-                            Text(concerts.nearScopeLabel).tag(ConcertSearchScope.near)
-                            Text("Anywhere").tag(ConcertSearchScope.anywhere)
-                        }
-                        .onSubmit(of: .search) { Task { await concerts.submitSearch() } }
-                        // Cancel, or the field's ×, goes back to everything near.
-                        .onChange(of: concerts.searchText) { _, text in
-                            if text.trimmingCharacters(in: .whitespaces).isEmpty {
-                                concerts.clearSearch()
-                            }
-                        }
                 }
             }
             .navigationTitle("Discover")
@@ -105,25 +91,8 @@ struct DiscoverScreen: View {
                     ToolbarItem(placement: .primaryAction) {
                         Button("Search", systemImage: "magnifyingglass") { router.showsSearch = true }
                     }
-                    // iPhone has no Sports tab: it opens from here (SPT-004).
-                    if compact, router.sportsAvailable {
-                        ToolbarItem(placement: .primaryAction) {
-                            Button(AppTab.sports.title, systemImage: AppTab.sports.symbol) {
-                                router.showsSportsInDiscover = true
-                            }
-                        }
-                    }
-                }
-                .navigationDestination(isPresented: $router.showsSportsInDiscover) {
-                    SportsView(api: api)
                 }
                 .task { await model.loadIfNeeded() }
-                .task { await concerts.loadSetting() }
-                .onChange(of: concerts.available) { _, available in
-                    if !available, section == .concerts {
-                        section = .today
-                    }
-                }
                 // View → Refresh (⌘R) reloads the section on screen.
                 .refreshesOnCommand(.discover) { await reload() }
                 .refreshable { await reload() }
@@ -143,7 +112,6 @@ struct DiscoverScreen: View {
                     case .today: ProblemBanner(message: model.problem) { model.problem = nil }
                     case .onAir: ProblemBanner(message: onAir.problem) { onAir.problem = nil }
                     case .seasons: ProblemBanner(message: seasons.problem) { seasons.problem = nil }
-                    case .concerts: ProblemBanner(message: concerts.problem) { concerts.problem = nil }
                     }
                 }
                 .background(Color(.paper))
@@ -155,7 +123,6 @@ struct DiscoverScreen: View {
         case .today: await model.load()
         case .onAir: await onAir.load()
         case .seasons: await seasons.reload()
-        case .concerts: await concerts.reload()
         }
     }
 
@@ -173,14 +140,9 @@ struct DiscoverScreen: View {
         section = .seasons
     }
 
-    /// Concerts only when the server has them on.
-    private var sections: [Section] {
-        Section.allCases.filter { $0 != .concerts || concerts.available }
-    }
-
     private var sectionPicker: some View {
         Picker("Discover", selection: $section) {
-            ForEach(sections) { section in
+            ForEach(Section.allCases) { section in
                 Text(section.label).tag(section)
             }
         }
@@ -189,7 +151,7 @@ struct DiscoverScreen: View {
     }
 
     @ViewBuilder private var content: some View {
-        let rows = model.visibleRows
+        let rows = model.visibleRows(of: Self.todayKinds)
         if rows.isEmpty, model.isLoading || !model.hasLoaded, model.problem == nil {
             ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if rows.isEmpty, model.problem != nil {
@@ -208,7 +170,7 @@ struct DiscoverScreen: View {
                     .buttonStyle(.borderedProminent)
             }
         } else if !query.isEmpty {
-            found(model.matches(query))
+            found(model.matches(query, in: Self.todayKinds))
         } else {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: AaruSpace.section) {
@@ -285,13 +247,13 @@ extension DiscoverScreen {
 struct DiscoverCredits: View {
     let providers: [String]
 
-    /// Each kind's source, in a fixed order: films and shows from TMDB, anime from AniList, books
-    /// from Open Library, albums from ListenBrainz.
+    /// Each kind's source, in a fixed order: films and shows from TMDB, anime and manga from
+    /// AniList, books from Open Library, albums from ListenBrainz.
     static func providers(for rows: [DiscoverRow]) -> [String] {
         let kinds = Set(rows.flatMap(\.items).map { MediaKind(type: $0._type, isAnime: $0.isAnime) })
         return [
             ("TMDB", kinds.contains(.film) || kinds.contains(.show)),
-            ("AniList", kinds.contains(.anime)),
+            ("AniList", kinds.contains(.anime) || kinds.contains(.manga)),
             ("Open Library", kinds.contains(.book)),
             ("ListenBrainz", kinds.contains(.music)),
         ].filter(\.1).map(\.0)
