@@ -710,7 +710,7 @@ account or a stranger that has not happened yet.
 | APP-014 | Done | #43; LibraryRow.swift, library/model.ts labels | |
 | APP-015 | Done | #43; RootView `lists` tab | |
 | APP-017 | Built | library/NowSection (web), Library/NowSection (Apple) | Watching, Reading, Listening; book page counts from Open Library (`titles.page_count`, backfilled) |
-| APP-018 | In progress | server #187 (`inBacklog`, `lastWatchedAt`, `GET /v1/library/watching`, promoted); web `routes/_shell.app_.library_.now.$group.tsx`; Apple `Library/NowGroupView` next | Now group pages, Grid/List, the anime backlog (decision 2026-10-24) |
+| APP-018 | Built | server #187 (`inBacklog`, `lastWatchedAt`, `GET /v1/library/watching`, promoted); web #191 `routes/_shell.app_.library_.now.$group.tsx`; Apple `Library/NowGroupView` | Now group pages, Grid/List, the anime backlog (decision 2026-10-24) |
 | LAND-001 | Partial | #5, #9; routes/index.tsx, demo/ gone | No prerender config found; Lighthouse never run |
 | LAND-002 | Open | no waitlist code | |
 | LAND-003 | Done | #27; docs/privacy.md, /privacy | Names all six third parties |
