@@ -83,6 +83,35 @@ struct DiscoverTests {
         #expect(body.contains("isAdult: false"))
     }
 
+    @Test("DISC-004: AniList's manga rows ask for publishing manga, trending or popular, no adult works")
+    func aniListManga() async throws {
+        let stub = transport(["": #"""
+        {"data":{"Page":{"media":[
+          {"id":30013,"idMal":13,"type":"MANGA","format":"MANGA","status":"RELEASING","title":{"english":"One Piece"},
+           "startDate":{"year":1997},"coverImage":{"large":"https://img/m.jpg"}}]}}}
+        """#])
+        let catalog = AniListCatalog(client: client(stub, "anilist"))
+        let trending = try await catalog.list(.mangaTrending, now: Self.now)
+        #expect(trending.map(\.type) == [.manga])
+        #expect(trending.allSatisfy { !$0.isAnime })
+        _ = try await catalog.list(.mangaPublishing, now: Self.now)
+        let bodies = stub.requests.compactMap { $0.body.flatMap { String(bytes: $0, encoding: .utf8) } }
+        #expect(bodies.count == 2)
+        #expect(bodies.allSatisfy { $0.contains("type: MANGA, isAdult: false, status: RELEASING") })
+        #expect(bodies.first?.contains("sort: TRENDING_DESC") == true)
+        #expect(bodies.last?.contains("sort: POPULARITY_DESC") == true)
+    }
+
+    @Test("DISC-004: every row says its kind, with anime apart from shows")
+    func rowKinds() {
+        #expect(DiscoverList.tvTrending.kind == .show)
+        #expect(DiscoverList.moviesInTheaters.kind == .film)
+        #expect(DiscoverList.animeTrending.kind == .anime)
+        #expect(DiscoverList.booksTrending.kind == .book)
+        #expect(DiscoverList.mangaPublishing.kind == .manga)
+        #expect(DiscoverList.musicUpcoming.kind == .album)
+    }
+
     @Test("Open Library's weekly trending works become book hits")
     func openLibraryTrending() async throws {
         let stub = transport(["/trending/weekly.json": #"""
@@ -186,6 +215,7 @@ struct DiscoverTests {
             let fallback = AnimeStandIn()
             let service = DiscoverService(stores: stores, providers: [DownAniList()], animeFallback: fallback)
             let rows = try await service.rows(userID: UserID())
+            // Manga has no stand-in: its rows are absent while AniList is down.
             #expect(Set(rows.map(\.list)) == [.animeSeason, .animeTrending])
             #expect(rows.allSatisfy { $0.note == DiscoverService.animeFallbackNote })
             #expect(rows.allSatisfy { $0.items.allSatisfy(\.hit.isAnime) })
@@ -228,6 +258,7 @@ struct DiscoverTests {
             #expect(reply.status == .ok)
             let rows = try #require(try reply.json()["rows"] as? [[String: Any]])
             #expect(rows.map { $0["id"] as? String } == ["tv_trending", "movies_trending"])
+            #expect(rows.map { $0["kind"] as? String } == ["show", "film"])
             let movies = try #require(rows.last?["items"] as? [[String: Any]])
             #expect(movies.map { $0["libraryItemId"] as? String } == [itemID, nil])
             let shows = try #require(rows.first?["items"] as? [[String: Any]])
@@ -273,7 +304,7 @@ private struct HalfBroken: DiscoverListing {
 /// AniList answering "disabled".
 private struct DownAniList: DiscoverListing {
     var discoverLists: Set<DiscoverList> {
-        [.animeSeason, .animeTrending]
+        [.animeSeason, .animeTrending, .mangaTrending, .mangaPublishing]
     }
 
     func list(_: DiscoverList, now _: Date) async throws -> [CatalogHit] {

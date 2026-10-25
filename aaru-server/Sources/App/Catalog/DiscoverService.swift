@@ -14,24 +14,39 @@ enum DiscoverList: String, Sendable, CaseIterable {
     case tvNew = "tv_new"
     case moviesInTheaters = "movies_in_theaters"
     case booksTrending = "books_trending"
+    case mangaTrending = "manga_trending"
+    case mangaPublishing = "manga_publishing"
     case musicNew = "music_new"
     case musicUpcoming = "music_upcoming"
 
     func title(now: Date) -> String {
+        guard self == .animeSeason else { return Self.titles[self] ?? rawValue }
+        return SeasonOfYear.current(now).map { "\($0.title) anime" } ?? "This season's anime"
+    }
+
+    private static let titles: [DiscoverList: String] = [
+        .tvTrending: "Trending shows", .moviesTrending: "Trending movies", .tvOnAir: "On the air",
+        .animeTrending: "Trending anime", .tvNew: "New shows", .moviesInTheaters: "In theaters",
+        .booksTrending: "Trending books", .mangaTrending: "Trending manga", .mangaPublishing: "Publishing now",
+        .musicNew: "New albums", .musicUpcoming: "Coming soon",
+    ]
+
+    /// The kind of title a row holds (DISC-004), so each client page shows only its own rows.
+    var kind: DiscoverRowKind {
         switch self {
-        case .tvTrending: "Trending shows"
-        case .animeSeason:
-            SeasonOfYear.current(now).map { "\($0.title) anime" } ?? "This season's anime"
-        case .moviesTrending: "Trending movies"
-        case .tvOnAir: "On the air"
-        case .animeTrending: "Trending anime"
-        case .tvNew: "New shows"
-        case .moviesInTheaters: "In theaters"
-        case .booksTrending: "Trending books"
-        case .musicNew: "New albums"
-        case .musicUpcoming: "Coming soon"
+        case .tvTrending, .tvOnAir, .tvNew: .show
+        case .moviesTrending, .moviesInTheaters: .film
+        case .animeSeason, .animeTrending: .anime
+        case .booksTrending: .book
+        case .mangaTrending, .mangaPublishing: .manga
+        case .musicNew, .musicUpcoming: .album
         }
     }
+}
+
+/// What a Discover row holds: Library's kinds, where anime is its own kind.
+enum DiscoverRowKind: String, Sendable {
+    case film, show, anime, manga, book, album
 }
 
 /// A provider that serves some of the Discover lists.
@@ -160,7 +175,8 @@ struct DiscoverService: Sendable {
         do {
             return try await DiscoverFetch(hits: source.list(list, now: now))
         } catch let error as ProviderError where error.isAniListOutage {
-            guard let animeFallback else { throw error }
+            // Only anime has a stand-in: manga rows are simply absent while AniList is down.
+            guard let animeFallback, list.kind == .anime else { throw error }
             let hits = try await animeFallback.list(list, now: now)
             return DiscoverFetch(hits: hits, ttl: Self.fallbackTTL, note: Self.animeFallbackNote)
         }
