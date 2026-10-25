@@ -6,6 +6,7 @@ import { errorMessage } from '../api/errors'
 import { sessionRejected, sessionToken } from '../session/guard'
 import { SEARCH_TYPES } from './model'
 import type { LibraryEntry, SearchResults } from './model'
+import type { WatchingItem } from './now'
 
 // APP-003/APP-004 on the web: the same `/v1` routes the Apple apps call, sent with the session.
 
@@ -17,6 +18,19 @@ export const getLibrary = createServerFn({ method: 'GET' }).handler(
     if (response.status === 401) sessionRejected()
     if (!data)
       throw new Error(errorMessage(error, 'The library could not be loaded.'))
+    return data.items
+  },
+)
+
+/** APP-018: films, shows and anime in progress, with each show's next airing and what is left. */
+export const getWatching = createServerFn({ method: 'GET' }).handler(
+  async (): Promise<WatchingItem[]> => {
+    const { data, error, response } = await api(sessionToken()).GET(
+      '/v1/library/watching',
+    )
+    if (response.status === 401) sessionRejected()
+    if (!data)
+      throw new Error(errorMessage(error, 'Watching could not be loaded.'))
     return data.items
   },
 )

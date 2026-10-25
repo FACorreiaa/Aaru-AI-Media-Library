@@ -56,6 +56,7 @@ import { Route as ShellAppTitleIdRouteImport } from './routes/_shell.app_.title.
 import { Route as ShellAppFriendsPostsPostIdRouteImport } from './routes/_shell.app_.friends.posts.$postId'
 import { Route as ShellAppGroupsGroupIdIndexRouteImport } from './routes/_shell.app_.groups.$groupId.index'
 import { Route as ShellAppGroupsGroupIdChannelIdRouteImport } from './routes/_shell.app_.groups.$groupId.$channelId'
+import { Route as ShellAppLibraryNowGroupRouteImport } from './routes/_shell.app_.library_.now.$group'
 import { Route as ShellAppCatalogTypeProviderRefRouteImport } from './routes/_shell.app_.catalog.$type.$provider.$ref'
 
 const IndexRoute = IndexRouteImport.update({
@@ -299,6 +300,11 @@ const ShellAppGroupsGroupIdChannelIdRoute =
     path: '/$channelId',
     getParentRoute: () => ShellAppGroupsGroupIdRoute,
   } as any)
+const ShellAppLibraryNowGroupRoute = ShellAppLibraryNowGroupRouteImport.update({
+  id: '/app_/library_/now/$group',
+  path: '/app/library/now/$group',
+  getParentRoute: () => ShellRoute,
+} as any)
 const ShellAppCatalogTypeProviderRefRoute =
   ShellAppCatalogTypeProviderRefRouteImport.update({
     id: '/app_/catalog/$type/$provider/$ref',
@@ -352,6 +358,7 @@ export interface FileRoutesByFullPath {
   '/app/settings/': typeof ShellAppSettingsIndexRoute
   '/app/friends/posts/$postId': typeof ShellAppFriendsPostsPostIdRoute
   '/app/groups/$groupId/$channelId': typeof ShellAppGroupsGroupIdChannelIdRoute
+  '/app/library/now/$group': typeof ShellAppLibraryNowGroupRoute
   '/app/groups/$groupId/': typeof ShellAppGroupsGroupIdIndexRoute
   '/app/catalog/$type/$provider/$ref': typeof ShellAppCatalogTypeProviderRefRoute
 }
@@ -398,6 +405,7 @@ export interface FileRoutesByTo {
   '/app/settings': typeof ShellAppSettingsIndexRoute
   '/app/friends/posts/$postId': typeof ShellAppFriendsPostsPostIdRoute
   '/app/groups/$groupId/$channelId': typeof ShellAppGroupsGroupIdChannelIdRoute
+  '/app/library/now/$group': typeof ShellAppLibraryNowGroupRoute
   '/app/groups/$groupId': typeof ShellAppGroupsGroupIdIndexRoute
   '/app/catalog/$type/$provider/$ref': typeof ShellAppCatalogTypeProviderRefRoute
 }
@@ -449,6 +457,7 @@ export interface FileRoutesById {
   '/_shell/app_/settings/': typeof ShellAppSettingsIndexRoute
   '/_shell/app_/friends/posts/$postId': typeof ShellAppFriendsPostsPostIdRoute
   '/_shell/app_/groups/$groupId/$channelId': typeof ShellAppGroupsGroupIdChannelIdRoute
+  '/_shell/app_/library_/now/$group': typeof ShellAppLibraryNowGroupRoute
   '/_shell/app_/groups/$groupId/': typeof ShellAppGroupsGroupIdIndexRoute
   '/_shell/app_/catalog/$type/$provider/$ref': typeof ShellAppCatalogTypeProviderRefRoute
 }
@@ -500,6 +509,7 @@ export interface FileRouteTypes {
     | '/app/settings/'
     | '/app/friends/posts/$postId'
     | '/app/groups/$groupId/$channelId'
+    | '/app/library/now/$group'
     | '/app/groups/$groupId/'
     | '/app/catalog/$type/$provider/$ref'
   fileRoutesByTo: FileRoutesByTo
@@ -546,6 +556,7 @@ export interface FileRouteTypes {
     | '/app/settings'
     | '/app/friends/posts/$postId'
     | '/app/groups/$groupId/$channelId'
+    | '/app/library/now/$group'
     | '/app/groups/$groupId'
     | '/app/catalog/$type/$provider/$ref'
   id:
@@ -596,6 +607,7 @@ export interface FileRouteTypes {
     | '/_shell/app_/settings/'
     | '/_shell/app_/friends/posts/$postId'
     | '/_shell/app_/groups/$groupId/$channelId'
+    | '/_shell/app_/library_/now/$group'
     | '/_shell/app_/groups/$groupId/'
     | '/_shell/app_/catalog/$type/$provider/$ref'
   fileRoutesById: FileRoutesById
@@ -945,6 +957,13 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof ShellAppGroupsGroupIdChannelIdRouteImport
       parentRoute: typeof ShellAppGroupsGroupIdRoute
     }
+    '/_shell/app_/library_/now/$group': {
+      id: '/_shell/app_/library_/now/$group'
+      path: '/app/library/now/$group'
+      fullPath: '/app/library/now/$group'
+      preLoaderRoute: typeof ShellAppLibraryNowGroupRouteImport
+      parentRoute: typeof ShellRoute
+    }
     '/_shell/app_/catalog/$type/$provider/$ref': {
       id: '/_shell/app_/catalog/$type/$provider/$ref'
       path: '/app/catalog/$type/$provider/$ref'
@@ -1038,6 +1057,7 @@ interface ShellRouteChildren {
   ShellAppFriendsIndexRoute: typeof ShellAppFriendsIndexRoute
   ShellAppListsIndexRoute: typeof ShellAppListsIndexRoute
   ShellAppFriendsPostsPostIdRoute: typeof ShellAppFriendsPostsPostIdRoute
+  ShellAppLibraryNowGroupRoute: typeof ShellAppLibraryNowGroupRoute
   ShellAppCatalogTypeProviderRefRoute: typeof ShellAppCatalogTypeProviderRefRoute
 }
 
@@ -1062,6 +1082,7 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellAppFriendsIndexRoute: ShellAppFriendsIndexRoute,
   ShellAppListsIndexRoute: ShellAppListsIndexRoute,
   ShellAppFriendsPostsPostIdRoute: ShellAppFriendsPostsPostIdRoute,
+  ShellAppLibraryNowGroupRoute: ShellAppLibraryNowGroupRoute,
   ShellAppCatalogTypeProviderRefRoute: ShellAppCatalogTypeProviderRefRoute,
 }
 

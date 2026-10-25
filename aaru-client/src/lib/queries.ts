@@ -5,7 +5,7 @@ import { getCalendar } from './calendar/server'
 import { getConcertPlace } from './concerts/server'
 import { getDiscover, getUpNext } from './home/server'
 import { listImports } from './imports/server'
-import { getLibrary } from './library/server'
+import { getLibrary, getWatching } from './library/server'
 import { getList, getLists } from './lists/server'
 import { listPendingPlans } from './plans/server'
 import { getProfileStats } from './profile/server'
@@ -37,6 +37,11 @@ export const concertPlaceQuery = queryOptions({
 export const libraryQuery = queryOptions({
   queryKey: ['library'],
   queryFn: () => getLibrary(),
+})
+
+export const watchingQuery = queryOptions({
+  queryKey: ['watching'],
+  queryFn: () => getWatching(),
 })
 
 export const titlePageQuery = (id: string) =>
