@@ -1947,6 +1947,27 @@ paths:
               schema: {$ref: '#/components/schemas/ConcertSearchPage'}
         default:
           $ref: '#/components/responses/Error'
+  /v1/concerts/performers:
+    post:
+      operationId: searchConcertPerformers
+      summary: Performers whose name matches what the user typed, to pick one before a search (MUS-010).
+      description: >-
+        Ticketmaster's own performer list for the name, best first, up to eight. Picking one and
+        sending its `id` as `performerId` to `/v1/concerts/search` lists only that performer's
+        concerts. POST so the name never sits in a URL; not logged, cached by the server.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ConcertPerformerRequest'}
+      responses:
+        '200':
+          description: The performers. `unavailable` when concerts are off or the provider is down.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ConcertPerformerList'}
+        default:
+          $ref: '#/components/responses/Error'
   /v1/concerts/artists:
     get:
       operationId: getArtistConcerts
@@ -4902,6 +4923,11 @@ components:
         q:
           type: string
           description: The artist's name, 2 to 100 characters. Not logged.
+        performerId:
+          type: string
+          description: >-
+            A performer's `id` from `/v1/concerts/performers`: only their concerts. Absent searches
+            `q` as free text. Letters, digits, `-` and `_`, at most 64.
         scope: {$ref: '#/components/schemas/ConcertSearchScope'}
         latitude:
           type: number
@@ -4922,6 +4948,9 @@ components:
         query:
           type: string
           description: The name as searched, trimmed.
+        performerId:
+          type: string
+          description: The performer searched by, when one was picked.
         scope: {$ref: '#/components/schemas/ConcertSearchScope'}
         place: {$ref: '#/components/schemas/ConcertPlace'}
         radiusKm:
@@ -4932,6 +4961,33 @@ components:
           items: {$ref: '#/components/schemas/Concert'}
         page: {type: integer}
         hasMore: {type: boolean}
+        unavailable:
+          type: boolean
+          description: Concerts are off, or Ticketmaster did not answer and nothing was cached.
+    ConcertPerformerRequest:
+      type: object
+      required: [q]
+      properties:
+        q:
+          type: string
+          description: The name as typed, 2 to 100 characters. Not logged.
+    ConcertPerformer:
+      type: object
+      description: One performer as Ticketmaster lists them.
+      required: [id, name]
+      properties:
+        id: {type: string}
+        name: {type: string}
+        imageUrl:
+          type: string
+          description: Ticketmaster's picture of the performer, referenced, never hosted.
+    ConcertPerformerList:
+      type: object
+      required: [items, unavailable]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/ConcertPerformer'}
         unavailable:
           type: boolean
           description: Concerts are off, or Ticketmaster did not answer and nothing was cached.

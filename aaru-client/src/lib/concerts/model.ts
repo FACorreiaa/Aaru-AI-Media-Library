@@ -11,6 +11,8 @@ export type ConcertPlace = components['schemas']['ConcertPlace']
 export type ConcertPlaceSetting = components['schemas']['ConcertPlaceSetting']
 export type ConcertSearchPage = components['schemas']['ConcertSearchPage']
 export type SearchScope = components['schemas']['ConcertSearchScope']
+export type ConcertPerformer = components['schemas']['ConcertPerformer']
+export type ConcertPerformerList = components['schemas']['ConcertPerformerList']
 
 export const RADII = [25, 50, 100] as const
 export type Radius = (typeof RADII)[number]

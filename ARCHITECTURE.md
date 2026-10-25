@@ -548,7 +548,12 @@ and clients hide the view). Paced at 4/s; a `CallBudget` stops at 4,500 calls a 
   `scope: near` adds the same cell and radius as `/near` (no centre is 409 `no_place`);
   `scope: anywhere` sends the keyword alone, and the server adds `distanceKm` from the point or
   saved city to the venue's own position (haversine) after the cache, so results are shared by
-  everyone. Cache key `search:<lowercased name>:<cell|*>:<radius|*>:<page>`.
+  everyone. Cache key `search:<lowercased name>:<cell|*>:<radius|*>:<page>`. Picking a performer
+  first (2026-10-25): `POST /v1/concerts/performers` returns Ticketmaster's attractions for the
+  name (`attractions(named:)`, the same call the artist matcher uses; up to eight, cached by the
+  lowercased name in its own `ConcertCache`), and `performerId` on the search switches
+  `ConcertMatch` from `.keyword` to `.performer`, sent as `attractionId`; its cache key is
+  `search:performer=<id>:…`.
 - **City picker.** `GET /v1/concerts/places?q=` → `OpenMeteoPlaces` (no key). The request log
   drops this route's query. `PUT`/`DELETE /v1/me/concert-place` save and forget the city.
 

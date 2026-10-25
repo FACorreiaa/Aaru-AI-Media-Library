@@ -28,13 +28,13 @@ struct ConcertsFetcher {
     }
 
     /// One artist's page, kept as a Near page.
-    func search(_ artist: String, scope: ConcertSearchScope, page: Int) async throws -> ConcertFetch {
+    func search(_ artist: ArtistSearch, scope: ConcertSearchScope, page: Int) async throws -> ConcertFetch {
         guard let radiusKm = Components.Schemas.ConcertSearchRequest.RadiusKmPayload(rawValue: radius.rawValue) else {
             return .failed
         }
         let body = Components.Schemas.ConcertSearchRequest(
-            q: artist, scope: scope, latitude: point?.latitude, longitude: point?.longitude, radiusKm: radiusKm,
-            page: page
+            q: artist.name, performerId: artist.performerID, scope: scope, latitude: point?.latitude,
+            longitude: point?.longitude, radiusKm: radiusKm, page: page
         )
         switch try await api.searchConcerts(body: .json(body)) {
         case let .ok(response):
@@ -46,6 +46,17 @@ struct ConcertsFetcher {
             return Task.isCancelled ? .cancelled : .page(page)
         case let .default(statusCode, error):
             return Self.failure(statusCode, try? error.body.json.code)
+        }
+    }
+
+    /// The provider's performers for a typed name, best first; empty when it is not answering.
+    func performers(_ name: String) async throws -> [ConcertPerformer] {
+        switch try await api.searchConcertPerformers(body: .json(.init(q: name))) {
+        case let .ok(response):
+            let list = try response.body.json
+            return list.unavailable ? [] : list.items
+        case .default:
+            return []
         }
     }
 

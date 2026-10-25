@@ -14,7 +14,7 @@ final class FakeConcerts: ConcertListing, AlbumArtistListing, @unchecked Sendabl
     }
 
     struct SearchCall {
-        var keyword: String
+        var match: ConcertMatch
         var point: GeoPoint?
         var radiusKm: Int?
         var page: Int
@@ -63,11 +63,11 @@ final class FakeConcerts: ConcertListing, AlbumArtistListing, @unchecked Sendabl
         return ConcertResults(concerts: nearConcerts, hasMore: false)
     }
 
-    func search(_ keyword: String, near: (point: GeoPoint, radiusKm: Int)?, page: Int, from _: Date) async throws
+    func search(_ match: ConcertMatch, near: (point: GeoPoint, radiusKm: Int)?, page: Int, from _: Date) async throws
         -> ConcertResults
     {
         lock.withLock {
-            searchCalls.append(SearchCall(keyword: keyword, point: near?.point, radiusKm: near?.radiusKm, page: page))
+            searchCalls.append(SearchCall(match: match, point: near?.point, radiusKm: near?.radiusKm, page: page))
         }
         try check()
         return ConcertResults(concerts: searchConcerts, hasMore: false)

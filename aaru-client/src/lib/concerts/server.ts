@@ -7,6 +7,7 @@ import type {
   ArtistConcerts,
   ConcertPage,
   ConcertPlace,
+  ConcertPerformerList,
   ConcertPlaceSetting,
   ConcertSearchPage,
 } from './model'
@@ -127,6 +128,10 @@ export const searchConcerts = createServerFn({ method: 'POST' })
     z
       .object({
         q: z.string().trim().min(2).max(100),
+        performerId: z
+          .string()
+          .regex(/^[A-Za-z0-9_-]{1,64}$/)
+          .optional(),
         scope: z.enum(['near', 'anywhere']),
         latitude: z.number().min(-90).max(90).optional(),
         longitude: z.number().min(-180).max(180).optional(),
@@ -150,3 +155,15 @@ export const searchConcerts = createServerFn({ method: 'POST' })
       page: check(result, 'Concerts could not be searched right now.'),
     }
   })
+
+/** Performers matching a typed name, to pick one before a search (MUS-010). */
+export const searchConcertPerformers = createServerFn({ method: 'POST' })
+  .validator(z.object({ q: z.string().trim().min(2).max(100) }))
+  .handler(async ({ data }): Promise<ConcertPerformerList> =>
+    check(
+      await api(sessionToken()).POST('/v1/concerts/performers', {
+        body: data,
+      }),
+      'Artists could not be searched right now.',
+    ),
+  )

@@ -29,8 +29,9 @@ struct ConcertSearchAdapterTests {
         let point = try #require(GeoPoint(latitude: 42.6, longitude: -5.6))
         let from = Date(timeIntervalSince1970: 1_792_000_000)
 
-        let near = try await concerts.search("Radiohead", near: (point, 100), page: 2, from: from)
-        let anywhere = try await concerts.search("Radiohead", near: nil, page: 1, from: from)
+        let near = try await concerts.search(.keyword("Radiohead"), near: (point, 100), page: 2, from: from)
+        let anywhere = try await concerts.search(.keyword("Radiohead"), near: nil, page: 1, from: from)
+        _ = try await concerts.search(.performer(id: "K8vZ917G"), near: nil, page: 1, from: from)
 
         let queries = stub.requests.map { request in
             let items = URLComponents(url: request.url, resolvingAgainstBaseURL: false)?.queryItems ?? []
@@ -41,8 +42,30 @@ struct ConcertSearchAdapterTests {
         #expect(queries[0]["page"] == "1" && queries[0]["sort"] == "date,asc")
         #expect(queries[1]["keyword"] == "Radiohead")
         #expect(queries[1]["geoPoint"] == nil && queries[1]["radius"] == nil, "anywhere sends no area")
+        #expect(queries[2]["attractionId"] == "K8vZ917G" && queries[2]["keyword"] == nil, "a picked performer, by id")
         #expect(!near.hasMore)
         #expect(anywhere.concerts.map(\.venuePoint) == [GeoPoint(latitude: 40.424, longitude: -3.672), nil])
+    }
+
+    @Test("Performers carry a picture when Ticketmaster has a real one")
+    func performerImages() async throws {
+        let stub = StubTransport { _ in OutboundResponse(status: 200, body: Data(#"""
+        {"_embedded":{"attractions":[
+          {"id":"K1","name":"Radiohead","images":[
+            {"url":"https://s1.ticketm.net/fallback.jpg","ratio":"16_9","width":205,"fallback":true},
+            {"url":"https://s1.ticketm.net/big.jpg","ratio":"16_9","width":1024,"fallback":false},
+            {"url":"https://s1.ticketm.net/small.jpg","ratio":"16_9","width":205,"fallback":false}]},
+          {"id":"K2","name":"Radiohead Tribute"}
+        ]}}
+        """#.utf8)) }
+        let concerts = TicketmasterConcerts(
+            client: ProviderClient(
+                name: "ticketmaster", transport: stub, pacer: RequestPacer(requestsPerSecond: 1000, burst: 100)
+            ),
+            apiKey: "test-key", budget: CallBudget(limit: 100)
+        )
+        let found = try await concerts.attractions(named: "Radiohead")
+        #expect(found.map(\.imageURL?.absoluteString) == ["https://s1.ticketm.net/small.jpg", nil])
     }
 
     @Test("Distances between points are great-circle kilometres")
@@ -120,7 +143,7 @@ struct ConcertSearchAPITests {
             #expect(nowhere["radiusKm"] == nil && nowhere["place"] == nil)
             let bare = try #require(nowhere["items"] as? [[String: Any]])
             #expect(bare.count == 2 && bare.allSatisfy { $0["distanceKm"] == nil }, "no centre, no distance")
-            #expect(fake.searched.last?.keyword == name && fake.searched.last?.point == nil)
+            #expect(fake.searched.last?.match == .keyword(name) && fake.searched.last?.point == nil)
 
             _ = try await env.send(.put, "/v1/me/concert-place", json: [
                 "name": "Lisbon", "latitude": 38.72, "longitude": -9.14,
@@ -135,6 +158,56 @@ struct ConcertSearchAPITests {
             #expect(abs(distance - 502) < 3, "Lisbon to Madrid, worked out by the server")
             #expect(measured.last?["distanceKm"] == nil, "a venue without a position has no distance")
             #expect(measured.first?["venuePoint"] == nil, "the venue's position stays on the server")
+        }
+    }
+
+    @Test("Performers for a name: Ticketmaster's list, each once, at most eight, cached by name")
+    func performers() async throws {
+        let fake = Self.fake()
+        let name = uniqueID("Radiohead")
+        fake.attractionsByName[name] = (1 ... 10).map {
+            ConcertAttraction(id: "K\($0)", name: "\(name) \($0)", musicbrainzIDs: [])
+        } + [ConcertAttraction(id: "K1", name: name, musicbrainzIDs: [])]
+        try await LibraryHarness.run(concerts: fake) { env in
+            let list = try await env.send(.post, "/v1/concerts/performers", json: ["q": " \(name) "]).json()
+            let items = try #require(list["items"] as? [[String: Any]])
+            #expect(items.compactMap { $0["id"] as? String } == (1 ... 8).map { "K\($0)" })
+            #expect(list["unavailable"] as? Bool == false)
+            _ = try await env.send(.post, "/v1/concerts/performers", json: ["q": name.uppercased()])
+            #expect(fake.lookedUp.count { $0.lowercased() == name.lowercased() } == 1, "one call per name")
+
+            let short = try await env.send(.post, "/v1/concerts/performers", json: ["q": "R"])
+            #expect(short.status == .unprocessableContent)
+        }
+        try await LibraryHarness.run { env in
+            let off = try await env.send(.post, "/v1/concerts/performers", json: ["q": "Radiohead"]).json()
+            #expect(off["unavailable"] as? Bool == true && (off["items"] as? [Any])?.isEmpty == true)
+        }
+    }
+
+    @Test("A picked performer is searched by id, apart from the same name as free text")
+    func byPerformer() async throws {
+        let fake = Self.fake()
+        try await LibraryHarness.run(concerts: fake) { env in
+            let name = uniqueID("Radiohead")
+            let picked = try await env.send(.post, "/v1/concerts/search", json: [
+                "q": name, "performerId": "K8vZ917G", "scope": "anywhere", "radiusKm": 50,
+            ]).json()
+            #expect(picked["performerId"] as? String == "K8vZ917G" && picked["query"] as? String == name)
+            #expect(fake.searched.last?.match == .performer(id: "K8vZ917G"))
+
+            _ = try await env.send(.post, "/v1/concerts/search", json: [
+                "q": name, "scope": "anywhere", "radiusKm": 50,
+            ])
+            #expect(fake.searched.count == 2, "free text is its own search, not the performer's cache")
+            #expect(fake.searched.last?.match == .keyword(name))
+
+            for bad in ["", "K8v Z9", "K8vZ917G?x=1", String(repeating: "K", count: 65)] {
+                let response = try await env.send(.post, "/v1/concerts/search", json: [
+                    "q": name, "performerId": bad, "scope": "anywhere", "radiusKm": 50,
+                ])
+                #expect(response.status == .unprocessableContent)
+            }
         }
     }
 
