@@ -1,8 +1,10 @@
 import { queryOptions } from '@tanstack/solid-query'
+import type { QueryClient } from '@tanstack/solid-query'
 import { PROGRESS_KEY } from './achievements/keys'
 import { getBadges, getProgress } from './achievements/server'
 import { getCalendar } from './calendar/server'
 import { getConcertPlace } from './concerts/server'
+import type { DiscoverRow } from './home/model'
 import { getDiscover, getUpNext } from './home/server'
 import { listImports } from './imports/server'
 import { getLibrary, getWatching } from './library/server'
@@ -108,3 +110,23 @@ export const calendarQuery = (range: { from: string; to: string }) =>
     queryKey: ['calendar', range.from, range.to],
     queryFn: () => getCalendar({ data: range }),
   })
+
+/**
+ * NAV-001: what a kind page (Books, Manga, Music) loads, from the caches Library, Home and
+ * Discover share. The library is the page's own question, so its failure is the page's; the
+ * public rows are an extra, and without them the shelf still stands.
+ */
+export async function loadKindPage(queryClient: QueryClient) {
+  const [entries, discover] = await Promise.all([
+    queryClient.query(libraryQuery),
+    queryClient.query(discoverQuery).then(
+      (rows) => ({ rows, rowsProblem: null }),
+      (err: unknown) => ({
+        rows: [] as DiscoverRow[],
+        rowsProblem:
+          err instanceof Error ? err.message : 'Discover is not available.',
+      }),
+    ),
+  ])
+  return { entries, ...discover }
+}

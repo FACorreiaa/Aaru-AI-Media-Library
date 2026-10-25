@@ -317,7 +317,7 @@ What the Mac app does today (Apple audit, 2026-10-21, `docs/audit/apple.md`):
   over a 760 × 520 minimum. Settings is the Settings scene, sized to its content.
 - **Menu bar.** File → New List (⌘N). Edit → Search Titles (⌘F, the catalog search sheet over
   any destination). View → Refresh (⌘R, the selected destination reloads), the standard sidebar
-  and toolbar commands. Go → the eight sidebar rows (⌘1…⌘8). ⌘, opens Settings. A hardware
+  and toolbar commands. Go → the sidebar rows in order, ⌘1…⌘9 for the first nine. ⌘, opens Settings. A hardware
   keyboard on iPad gets the same shortcuts, with Settings in Go.
 - **Settings scene.** Seven panes (§18), each the same page view iPhone and iPad push, each with
   its own stack for an import job or History.
@@ -425,10 +425,12 @@ Rows are the Field's artifacts, not new chrome. The composer still sits on top.
 
 Something to add without typing. The Discover tab/page (APP-012) is DISC-001's rows, the ones
 Home shows under the user's own, as a full destination: Trending shows, this season's anime,
-Trending movies, On the air, Trending anime, New shows, In theaters, Trending books. Each card
+Trending movies, On the air, Trending anime, New shows, In theaters. Each card
 carries a kind badge and a date badge; a card the user already has (`libraryItemId`) reads "On
-your shelf" and opens the item, anything else offers Add (with a status) and Add to list. TMDB,
-AniList and Open Library credits sit in the footer.
+your shelf" and opens the item, anything else offers Add (with a status) and Add to list. TMDB
+and AniList credits sit in the footer. Since 2026-10-25 (DISC-004, NAV-001…002) Discover holds
+shows, films and anime only: the book, manga and album rows live on their own pages (§13d), and
+Concerts on Music. Home still shows every row.
 
 It is catalog data, the same lists for everyone. It is **not** recommendations: no "because you
 watched", no taste profile, nothing read from other users. A tab on iPhone, a sidebar
@@ -453,8 +455,8 @@ more" rather than endless scroll. A new season comes in from the side it lies on
 entrance only; a fade with reduced motion). While a season loads, still placeholders at the
 real poster size stand in: nothing shimmers. A provider that is down says so on its own kind.
 
-**Concerts (MUS-003, 2026-10-21).** The control becomes Today | Seasons | Concerts; Concerts is
-absent while the server has no concert provider. Two sections: "Your artists on tour" (artists of
+**Concerts (MUS-003, 2026-10-21; on the Music page since 2026-10-25).** A view of the Music
+page (§13d), absent while the server has no concert provider. Two sections: "Your artists on tour" (artists of
 the user's own albums, like the calendar, so not a recommendation) and "Near <city>" with "Use my
 location" and a 25 · 50 · 100 km switch. A date-led list: each row opens with a ticket-stub date
 block (the day large in the display face, month and weekday small), then the act, "venue ·
@@ -498,8 +500,8 @@ still apply to anything that ever moves here.
 
 Music (MUS-008, 2026-10-21) comes last, under the library's numbers, and shows even when nothing
 was tracked: listening is not library activity. Two tiles (listens, hours) with the same change
-rules, an Artists / Tracks / Albums switch over the top five, and "All listening ›" to the Music
-page. That page is Recent and Top: rows of a 40pt cover (a ♪ while the album is unknown), the
+rules, an Artists / Tracks / Albums switch over the top five, and "All listening ›" to Listens
+on the Music page (§13d). Listens is Recent and Top: rows of a 40pt cover (a ♪ while the album is unknown), the
 track, "artist · album" and the time, under Today / Yesterday / date headings, fifty at a time;
 Top is twenty rows for 7 days, 30 days, this year or all time. Wide screens show both side by
 side; a phone switches Recent | Top. An album row is a link only where it leads somewhere.
@@ -527,8 +529,24 @@ colour. A segmented control switches **Favorites** and **Schedule**.
 - **Refresh.** Every 90 s while the tab is visible and a live game is on screen; never a spinner
   over content that is already there. "Data: TheSportsDB" closes the tab, small and muted.
 - **Settings.** A Sports section holds the "Where to watch" country.
-- **iPhone** keeps its five tabs (no "More" tab); Sports opens from a button in Discover's
-  toolbar. iPad and Mac show it in the sidebar; the web nav lists it. Hidden everywhere while the server has no sports provider.
+- **Where.** In More (§18) on every client: iOS's More tab on iPhone, the More section of the
+  sidebar on iPad, Mac and the web. Hidden everywhere while the server has no sports provider.
+
+## 13d. Books, Manga, Music (NAV-001…002, owner 2026-10-25)
+
+One page per kind, all in More (§18), built from one shape so they read alike:
+
+- **Your shelf first.** In progress, then Planned, each a short poster row in the kind's words
+  (Reading / Plan to read for books and manga; Listening / Plan to listen for albums) with "See
+  all" into Library filtered to that kind and status. An empty shelf says so in one quiet line.
+- **Then the kind's Discover rows** (§13a, by `kind`): Trending books; Trending manga and
+  Publishing now; New albums and Coming soon. Same cards, same Add, same "On your shelf".
+- **Credits** name only the providers on the page: Open Library; AniList; ListenBrainz,
+  MusicBrainz and the Cover Art Archive, with Ticketmaster for concerts.
+- **Music** has three views, Albums · Concerts · Listens: Albums is the shelf and rows above,
+  Concerts is MUS-003/MUS-010 moved from Discover, Listens is the listen log (Recent | Top). On the
+  web Listens is `/app/music?view=listens`; Insights' "All listens ›" and Library's menu open it.
+  The page is **Music** (the albums kind) and the log keeps its name, **Listens**.
 
 ## 14. Week grid (Phase 2)
 
@@ -923,24 +941,27 @@ On the web, one component library, then performance:
 Same names, same order, on every platform. Findings that led here and the work list for each
 client: `docs/audit/ux.md`.
 
-**Destinations.** Home · Discover · Library · Calendar · Lists · Groups, then, set apart at the
-bottom, Insights and Settings.
+**Destinations.** Home · Discover · Library · Calendar · Lists · Friends, then **More**: Groups ·
+Books · Manga · Music · Sports (Sports only while the server has it), then, set apart at the
+bottom, Insights and Settings (owner, 2026-10-25).
 
 - **Web.** One shell for every `/app` page. At 1024px and up a persistent left sidebar
   (collapsible to icons): the wordmark, Search (⌘K; opens in place on every page), the six
-  destinations with Friends between Lists and Groups (its own page since SOC-003, owner
-  2026-10-21; it opens on Board, and Lately is its second view), a gap, Insights, Settings,
-  and last the account row (name and @handle, opens Settings → Account). Groups carries the
-  mention count. Below 1024px a top bar (wordmark,
+  destinations (Friends is its own page since SOC-003, owner 2026-10-21; it opens on Board, and
+  Lately is its second view), a collapsible More group (open while you are on one of its pages,
+  else as you last left it; flat when the sidebar is icons), a gap, Insights, Settings, and last
+  the account row (name and @handle, opens Settings → Account). Groups carries the mention count,
+  and a closed More shows a dot when there are mentions. Below 1024px a top bar (wordmark,
   Search, menu) opens the same sidebar as a sheet. No page draws its own header or nav. Detail
   pages (a title, a list, an import, a channel) sit inside the shell with a back link that
   names where you came from. Sign out lives on Account only.
-- **iPad.** The `sidebarAdaptable` sidebar: the seven (Friends between Lists and Groups), then a
-  bottom section with Insights and Settings.
+- **iPad.** The `sidebarAdaptable` sidebar: the six, a More section, then a bottom section with
+  Insights and Settings. The floating tab bar holds Home, Discover, Library and Calendar.
 - **Mac.** The same sidebar without Settings: Settings is the Settings scene (⌘, and the app
-  menu) and nothing else. A Go menu switches the eight rows with ⌘1…⌘8.
-- **iPhone.** The tab bar holds five: Home · Discover · Library · Calendar · Groups. A sixth tab
-  would push Lists, Groups and its badge behind More. Lists opens from Library (a "Lists" row on
+  menu) and nothing else. A Go menu switches the rows in order, ⌘1…⌘9 for the first nine.
+- **iPhone.** The tab bar: Home · Discover · Library · Calendar · More. iOS's More lists Groups,
+  Books, Manga, Music and Sports; the Groups mention count shows on its row there (owner,
+  2026-10-25, reversing the five-tab call below). Lists opens from Library (a "Lists" row on
   top and in the toolbar) and from Home's lists; Friends from a Friends button in Groups'
   toolbar and from Settings → Friends & privacy; Insights from Home's Last 7 days and Library's
   More menu; Settings from an account button (`person.crop.circle`, top trailing on Home and
@@ -1000,8 +1021,8 @@ Where each existing piece goes:
   Mac pane.
 
 **What changed from the plan, and why.**
-- iPhone keeps five tabs (above). Lists, not Groups, moves: the Groups badge must stay visible,
-  and a list is a view of the library. Owner confirmed, 2026-10-21.
+- iPhone kept five tabs on 2026-10-21 so the Groups badge stayed visible; on 2026-10-25 the
+  owner chose a More tab instead (above). Lists still opens from Library.
 - Appearance had no page: it joins Account as "On this device", and the Mac "General" pane goes.
 - "Concerts near" moves from Account to Friends & privacy → Location: it is the only place Aaru
   stores where you are.
@@ -1018,8 +1039,8 @@ Where each existing piece goes:
 
 **Apple, as built (audit, 2026-10-21, `docs/audit/apple.md`).**
 
-- **Shell.** iPhone: the five tabs and nothing else in the tab bar (no More; Lists inside Library,
-  Friends inside Groups), an account button (`person.crop.circle`, top trailing on
+- **Shell.** iPhone: Home, Discover, Library, Calendar and iOS's More (Groups, Books, Manga,
+  Music, Sports; since 2026-10-25), with Lists inside Library and Friends inside Groups, an account button (`person.crop.circle`, top trailing on
   Home and Library) that presents Settings as a sheet with Done. iPad and Mac:
   `.sidebarAdaptable` with every destination, Insights (and Settings on iPad) in a bottom
   section. One catalog search sheet at the root, opened by each screen's Search button and ⌘F.

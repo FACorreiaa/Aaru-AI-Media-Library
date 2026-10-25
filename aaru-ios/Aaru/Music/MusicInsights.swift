@@ -2,7 +2,7 @@ import AaruAPI
 import SwiftUI
 
 /// MUS-008 · Insights' "Music": the period's listens and time against the window before, then
-/// its top five artists, tracks or albums, and a way into the whole log.
+/// its top five artists, tracks or albums, and a way into the whole log on the Music page.
 struct MusicInsights: View {
     let music: Components.Schemas.StatsMusic
     let period: InsightsPeriod
@@ -10,6 +10,7 @@ struct MusicInsights: View {
     let library: LibraryModel?
 
     @State private var model: TopListensModel
+    @Environment(AppRouter.self) private var router
 
     init(music: Components.Schemas.StatsMusic, period: InsightsPeriod, api: Client?, library: LibraryModel?) {
         self.music = music
@@ -39,8 +40,9 @@ struct MusicInsights: View {
                 .pickerStyle(.segmented)
                 top.frame(minHeight: 64, alignment: .top)
             }
-            NavigationLink {
-                MusicView(api: api, library: library)
+            // The Music page's Listens view (NAV-002).
+            Button {
+                router.showListens()
             } label: {
                 // The log's one name (UX-049).
                 HStack(spacing: 4) {
@@ -50,6 +52,7 @@ struct MusicInsights: View {
                 }
             }
             .font(.body.weight(.semibold))
+            .buttonStyle(.borderless)
         }
         .task(id: "\(period.hashValue)-\(model.rank.rawValue)") {
             guard music.listens > 0 else { return }

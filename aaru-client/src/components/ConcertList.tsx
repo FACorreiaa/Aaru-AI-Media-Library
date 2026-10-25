@@ -85,7 +85,7 @@ type Near =
   | { state: 'ready'; page: Listed; items: Concert[] }
 
 /**
- * MUS-003: Discover's Concerts view. Two date-led lists: upcoming shows by the artists of the
+ * MUS-003: the Music page's Concerts section (on Discover until NAV-001). Two date-led lists: upcoming shows by the artists of the
  * user's albums, then music events near the saved city or a one-off position, inside 25, 50 or
  * 100 km. A position is asked for only on a tap, rounded to two decimals here, sent once in a
  * POST body and kept nowhere but this component's memory. Tickets link out to Ticketmaster.
