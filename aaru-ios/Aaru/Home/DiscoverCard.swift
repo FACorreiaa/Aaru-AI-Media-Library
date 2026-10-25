@@ -31,7 +31,7 @@ struct DiscoverCard: View {
             } else {
                 NavigationLink(value: CatalogRoute(hit: hit)) { card }
                     .contextMenu {
-                        ForEach([LibraryStatus.wishlist, .inProgress, .finished]) { status in
+                        ForEach(LibraryStatus.addable) { status in
                             Button(status.label(for: kind)) { onAdd(status) }
                         }
                         Divider()

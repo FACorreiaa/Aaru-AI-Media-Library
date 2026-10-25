@@ -35,7 +35,6 @@ export const KINDS: Array<{
   { kind: 'album', label: 'Music', search: 'album' },
 ]
 
-/** Stored order of the four statuses. The words differ per kind; the values never do. */
 const KIND_NAMES: Record<MediaKind, string> = {
   film: 'Film',
   show: 'Show',
@@ -50,9 +49,12 @@ export function kindName(kind: MediaKind): string {
   return KIND_NAMES[kind]
 }
 
+/** Stored order of the five statuses. The words differ per kind; the values never do. On hold
+ * (LIB-007) sits beside in progress: a paused title, not a finished one. */
 export const STATUS_ORDER: LibraryStatus[] = [
   'wishlist',
   'in_progress',
+  'on_hold',
   'finished',
   'dropped',
 ]

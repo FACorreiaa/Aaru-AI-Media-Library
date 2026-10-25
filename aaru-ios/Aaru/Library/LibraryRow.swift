@@ -83,6 +83,13 @@ extension LibraryStatus: @retroactive Identifiable {
         rawValue
     }
 
+    /// The statuses a title can be added with (Add menus, a card's hold): every one but dropped.
+    static let addable: [LibraryStatus] = [.wishlist, .inProgress, .onHold, .finished]
+
+    /// Library's status tabs, MyAnimeList's way round (LIB-007): what you are in the middle of
+    /// first, then planned, paused, done and dropped.
+    static let tabOrder: [LibraryStatus] = [.inProgress, .wishlist, .onHold, .finished, .dropped]
+
     /// The status in the words of what it is on: "Watching" a show, "Reading" a book,
     /// "Listening" to an album. With no kind (a mixed shelf, the Any filter) the neutral words.
     func label(for kind: MediaKind?) -> String {

@@ -13,6 +13,7 @@ import {
   upsert,
 } from './model'
 import type { CatalogHit, LibraryEntry } from './model'
+import { statusTabs } from './tabs'
 
 function entry(
   id: string,
@@ -164,6 +165,7 @@ describe('status labels', () => {
       expect(labels(kind)).toEqual([
         'Plan to watch',
         'Watching',
+        'On hold',
         'Watched',
         'Dropped',
       ])
@@ -175,6 +177,7 @@ describe('status labels', () => {
     expect(labels('book')).toEqual([
       'Plan to read',
       'Reading',
+      'On hold',
       'Read',
       'Dropped',
     ])
@@ -185,6 +188,7 @@ describe('status labels', () => {
     expect(labels('album')).toEqual([
       'Plan to listen',
       'Listening',
+      'On hold',
       'Listened',
       'Dropped',
     ])
@@ -195,6 +199,7 @@ describe('status labels', () => {
     expect(labels(null)).toEqual([
       'Planned',
       'In progress',
+      'On hold',
       'Finished',
       'Dropped',
     ])
@@ -206,9 +211,95 @@ describe('status labels', () => {
       expect(statusOptions(kind).map((o) => o.status)).toEqual([
         'wishlist',
         'in_progress',
+        'on_hold',
         'finished',
         'dropped',
       ])
     }
+  })
+
+  it('calls on hold On hold for every kind', () => {
+    for (const kind of [
+      'film',
+      'show',
+      'anime',
+      'manga',
+      'book',
+      'album',
+      null,
+    ] as const)
+      expect(statusLabel('on_hold', kind)).toBe('On hold')
+  })
+})
+
+describe('status tabs', () => {
+  const anime = (id: string, status: LibraryEntry['status']) =>
+    entry(id, {
+      status,
+      title: {
+        id: `t-${id}`,
+        type: 'show',
+        title: `Anime ${id}`,
+        isAnime: true,
+        ids: { anilist: id },
+      },
+    })
+  const book = (id: string, status: LibraryEntry['status']) =>
+    entry(id, {
+      status,
+      title: {
+        id: `t-${id}`,
+        type: 'book',
+        title: `Book ${id}`,
+        isAnime: false,
+        ids: { isbn: id },
+      },
+    })
+  const library = [
+    anime('a1', 'in_progress'),
+    anime('a2', 'on_hold'),
+    anime('a3', 'on_hold'),
+    book('b1', 'in_progress'),
+    book('b2', 'finished'),
+    entry('s1', { status: 'dropped' }),
+  ]
+
+  it('puts All first, then the statuses the MyAnimeList way, counted', () => {
+    expect(
+      statusTabs(library, null).map((t) => [t.status, t.label, t.count]),
+    ).toEqual([
+      [null, 'All', 6],
+      ['in_progress', 'In progress', 2],
+      ['wishlist', 'Planned', 0],
+      ['on_hold', 'On hold', 2],
+      ['finished', 'Finished', 1],
+      ['dropped', 'Dropped', 1],
+    ])
+  })
+
+  it('words and counts the tabs for the chosen kind', () => {
+    expect(statusTabs(library, 'anime').map((t) => [t.label, t.count])).toEqual(
+      [
+        ['All', 3],
+        ['Watching', 1],
+        ['Plan to watch', 0],
+        ['On hold', 2],
+        ['Watched', 0],
+        ['Dropped', 0],
+      ],
+    )
+    expect(statusTabs(library, 'book').map((t) => t.label)).toEqual([
+      'All',
+      'Reading',
+      'Plan to read',
+      'On hold',
+      'Read',
+      'Dropped',
+    ])
+  })
+
+  it('agrees with the shelf each tab opens', () => {
+    for (const tab of statusTabs(library, 'anime'))
+      expect(tab.count).toBe(shelf(library, 'anime', tab.status).length)
   })
 })

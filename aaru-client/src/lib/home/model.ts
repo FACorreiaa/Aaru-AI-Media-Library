@@ -210,6 +210,7 @@ export function countChips(counts: LibraryCounts | undefined): CountChip[] {
   const all: Array<[LibraryStatus, number]> = [
     ['wishlist', counts.wishlist],
     ['in_progress', counts.inProgress],
+    ['on_hold', counts.onHold],
     ['finished', counts.finished],
     ['dropped', counts.dropped],
   ]

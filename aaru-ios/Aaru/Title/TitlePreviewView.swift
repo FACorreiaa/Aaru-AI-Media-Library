@@ -99,7 +99,7 @@ struct TitlePreviewView: View {
     private var actions: some View {
         HStack(spacing: 12) {
             Menu {
-                ForEach([LibraryStatus.wishlist, .inProgress, .finished]) { status in
+                ForEach(LibraryStatus.addable) { status in
                     Button(status.label(for: kind)) { add(status) }
                 }
             } label: {

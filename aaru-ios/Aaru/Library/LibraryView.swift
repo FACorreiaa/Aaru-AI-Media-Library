@@ -59,6 +59,7 @@ struct LibraryView: View {
                 .safeAreaInset(edge: .top, spacing: 0) {
                     LibraryFilterBar(
                         filter: $filter,
+                        counts: library.statusCounts(kind: filter.kind),
                         syncProblem: library.firstSyncProblem == nil ? library.syncProblem : nil
                     )
                 }
