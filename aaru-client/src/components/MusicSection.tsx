@@ -140,6 +140,7 @@ export function MusicSection(props: {
             </span>
             <Link
               to="/app/music"
+              search={{ view: 'listens' }}
               class="mt-1 inline-block font-semibold text-accent hover:underline"
             >
               All listens ›

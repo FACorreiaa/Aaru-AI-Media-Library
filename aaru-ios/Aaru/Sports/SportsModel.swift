@@ -302,11 +302,12 @@ final class SportSettingsModel {
         settings?.watchCountryCode
     }
 
-    /// Whether this server has Sports on; false when it could not be asked.
-    static func isAvailable(api: Client?) async -> Bool {
+    /// Whether this server has Sports on; nil when it could not be asked, so a failed re-check
+    /// on return to the app keeps what was known.
+    static func isAvailable(api: Client?) async -> Bool? {
         let model = SportSettingsModel(api: api)
         await model.load()
-        return model.available
+        return model.settings.map(\.available)
     }
 
     /// A failure leaves Sports hidden.

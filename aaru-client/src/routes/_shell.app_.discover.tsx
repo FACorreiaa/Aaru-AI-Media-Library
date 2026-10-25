@@ -1,5 +1,10 @@
 import { OwlEmpty } from '../components/Brand'
-import { Link, createFileRoute, useRouter } from '@tanstack/solid-router'
+import {
+  Link,
+  createFileRoute,
+  redirect,
+  useRouter,
+} from '@tanstack/solid-router'
 import {
   For,
   Match,
@@ -15,19 +20,19 @@ import { Alert, AlertDescription, Button, Skeleton } from '~/components/ui'
 import { useAppShell } from '../components/shell/context'
 import { CREDITS, TMDB_URL } from '../lib/credits'
 import { localDayKey } from '../lib/calendar/model'
-import type { ConcertPlaceSetting } from '../lib/concerts/model'
-import { parseView, shownView } from '../lib/concerts/view'
+import { isRetiredConcertsView, parseView } from '../lib/concerts/view'
 import type { DiscoverView } from '../lib/concerts/view'
 import type { DiscoverRow } from '../lib/home/model'
+import { TODAY_KINDS, rowsOfKinds } from '../lib/discover/kind'
 import { seasonOf } from '../lib/discover/season'
 import type { SeasonKey, SeasonKind } from '../lib/discover/season'
 import { optionalEnum, optionalInt, optionalString } from '../lib/search-params'
 import { FilterField } from '../components/Paged'
 import { prefersReducedMotion } from '../lib/reduced-motion'
 import { Segmented } from '../components/Segmented'
-import { concertPlaceQuery, discoverQuery } from '../lib/queries'
+import { discoverQuery } from '../lib/queries'
 
-// The On air, Seasons and Concerts views load on their own, the first time someone opens them.
+// The On air and Seasons views load on their own, the first time someone opens them.
 const OnAirGuide = lazy(() =>
   import('../components/OnAirGuide').then((m) => ({
     default: m.OnAirGuide,
@@ -38,19 +43,15 @@ const SeasonBrowser = lazy(() =>
     default: m.SeasonBrowser,
   })),
 )
-const ConcertList = lazy(() =>
-  import('../components/ConcertList').then((m) => ({
-    default: m.ConcertList,
-  })),
-)
 
 // Discover on the web, the twin of the Apple apps' Discover tab: the same public rows Home
 // shows under the user's own (DISC-001), on a page of their own, each card addable in place.
 // The server names and orders the rows and marks the titles already on the shelf.
 // `?view=on-air` is DISC-003's On air view: this week's shows by channel or streamer.
 // `?view=seasons` is DISC-002's Seasons view: one season of anime, shows or films at a time.
-// `?view=concerts` is MUS-003's Concerts view, offered only where the server has concerts on.
 // LIB-005: `?q=` filters Today's rows into one grid of matching titles, 20 to a `?page=`.
+// NAV-001 (2026-10-25): Today keeps films, shows and anime; books, manga and albums have their
+// own pages. Concerts moved to Music, and an old `?view=concerts` link is sent there.
 export const Route = createFileRoute('/_shell/app_/discover')({
   head: () => ({ meta: [{ title: 'Discover · Aaru' }] }),
   validateSearch: (
@@ -75,42 +76,37 @@ export const Route = createFileRoute('/_shell/app_/discover')({
     q: optionalString(search.q),
     page: optionalInt(search.page, 1, 100_000),
   }),
-  loader: async ({ context: { queryClient } }) => {
-    const [discover, concerts] = await Promise.all([
-      queryClient.query(discoverQuery).then(
-        (rows) => ({ rows, problem: null }),
-        (err: unknown) => ({
-          rows: [] as DiscoverRow[],
-          problem:
-            err instanceof Error
-              ? err.message
-              : 'Discover is not available right now.',
-        }),
-      ),
-      // Concerts are an extra: without an answer the Concerts view stays hidden.
-      queryClient
-        .query(concertPlaceQuery)
-        .catch((): ConcertPlaceSetting | null => null),
-    ])
-    return { ...discover, concerts }
+  beforeLoad: ({ location }) => {
+    // `location.search` is the URL's own, before `validateSearch` drops the old view.
+    if (isRetiredConcertsView((location.search as { view?: unknown }).view))
+      throw redirect({ to: '/app/music', hash: 'concerts', replace: true })
   },
+  loader: ({ context: { queryClient } }) =>
+    queryClient.query(discoverQuery).then(
+      (rows) => ({ rows, problem: null }),
+      (err: unknown) => ({
+        rows: [] as DiscoverRow[],
+        problem:
+          err instanceof Error
+            ? err.message
+            : 'Discover is not available right now.',
+      }),
+    ),
   component: DiscoverPage,
 })
 
 const ANILIST = CREDITS.find((c) => c.name === 'AniList')?.href ?? ''
 const TVMAZE = CREDITS.find((c) => c.name === 'TVmaze')?.href ?? ''
 const JUSTWATCH = CREDITS.find((c) => c.name === 'JustWatch')?.href ?? ''
-const OPEN_LIBRARY = CREDITS.find((c) => c.name === 'Open Library')?.href ?? ''
 
 type Source = { name: string; href: string }
 const TMDB: Source = { name: 'TMDB', href: TMDB_URL }
 
-/** UX-048: the credit names the providers of the rows on screen. Concerts carry their own. */
+/** UX-048: the credit names the providers of the rows on screen. */
 function sourcesFor(
   view: DiscoverView,
   kind: SeasonKind | undefined,
 ): Source[] {
-  if (view === 'concerts') return []
   if (view === 'on-air')
     return [
       TMDB,
@@ -121,14 +117,10 @@ function sourcesFor(
     return (kind ?? 'anime') === 'anime'
       ? [{ name: 'AniList', href: ANILIST }]
       : [TMDB]
-  return [
-    TMDB,
-    { name: 'AniList', href: ANILIST },
-    { name: 'Open Library', href: OPEN_LIBRARY },
-  ]
+  return [TMDB, { name: 'AniList', href: ANILIST }]
 }
 
-/** Seasons and Concerts load their code on first view: a row-sized placeholder holds the page. */
+/** On air and Seasons load their code on first view: a row-sized placeholder holds the page. */
 function Placeholder() {
   return (
     <div class="mt-8 flex flex-col gap-4" aria-hidden="true">
@@ -148,12 +140,12 @@ function DiscoverPage() {
   const navigate = Route.useNavigate()
   const router = useRouter()
   const shell = useAppShell()
-  const [rows, setRows] = createSignal<DiscoverRow[]>(loaded().rows)
+  // Today's kinds only; Home shares the cache and shows every row.
+  const [rows, setRows] = createSignal<DiscoverRow[]>(
+    rowsOfKinds(loaded().rows, TODAY_KINDS),
+  )
   const [today, setToday] = createSignal<string | null>(null)
   const [problem, setProblem] = createSignal<string | null>(loaded().problem)
-  const [concerts, setConcerts] = createSignal<ConcertPlaceSetting | null>(
-    loaded().concerts,
-  )
 
   // The filter answers each keystroke from this signal; the URL follows.
   const [query, setQuery] = createSignal(search().q ?? '')
@@ -181,8 +173,7 @@ function DiscoverPage() {
   // The release badges count days from the viewer's today, which only the browser knows.
   onMount(() => setToday(localDayKey(new Date())))
 
-  const concertsOn = () => concerts()?.available === true
-  const view = () => shownView(search().view, concertsOn())
+  const view = (): DiscoverView => search().view ?? 'today'
   // Until the browser says, the server's day stands in: it only picks the default season.
   const day = () => today() ?? localDayKey(new Date())
   const season = (): SeasonKey => {
@@ -219,9 +210,6 @@ function DiscoverPage() {
             { value: 'today', label: 'Today' },
             { value: 'on-air', label: 'On air' },
             { value: 'seasons', label: 'Seasons' },
-            ...(concertsOn()
-              ? [{ value: 'concerts' as const, label: 'Concerts' }]
-              : []),
           ]}
           value={view()}
           onChange={(next) => {
@@ -301,17 +289,6 @@ function DiscoverPage() {
                 onProblem={setProblem}
               />
             </Suspense>
-          </Match>
-          <Match when={view() === 'concerts' && concerts()}>
-            {(setting) => (
-              <Suspense fallback={<Placeholder />}>
-                <ConcertList
-                  setting={setting()}
-                  today={day()}
-                  onSettingChange={setConcerts}
-                />
-              </Suspense>
-            )}
           </Match>
         </Switch>
 

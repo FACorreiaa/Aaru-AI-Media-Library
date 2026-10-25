@@ -11,7 +11,7 @@ const CityPicker = lazy(() =>
   import('./CityPicker').then((m) => ({ default: m.CityPicker })),
 )
 
-/** Friends & privacy → Location (DESIGN.md §18): the city Discover's Concerts view starts
+/** Friends & privacy → Location (DESIGN.md §18): the city Music's Concerts section starts
  * from (MUS-003), the one place Aaru stores where you are. */
 export function ConcertPlaceSection(props: { setting: ConcertPlaceSetting }) {
   const [setting, setSetting] = createSignal(props.setting)
@@ -46,7 +46,7 @@ export function ConcertPlaceSection(props: { setting: ConcertPlaceSetting }) {
         when={setting().place}
         fallback={
           <p class="mt-1 text-sm text-muted">
-            No city yet. Concerts on Discover start from it when you don’t share
+            No city yet. Concerts on Music start from it when you don’t share
             your location.
           </p>
         }
@@ -55,7 +55,7 @@ export function ConcertPlaceSection(props: { setting: ConcertPlaceSetting }) {
           <>
             <p class="mt-1 font-medium text-ink">{placeLabel(place())}</p>
             <p class="mt-1 text-sm text-muted">
-              Concerts on Discover start from here. Saved to about a kilometre.
+              Concerts on Music start from here. Saved to about a kilometre.
             </p>
           </>
         )}

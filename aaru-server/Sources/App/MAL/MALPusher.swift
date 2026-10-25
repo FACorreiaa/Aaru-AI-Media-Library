@@ -14,12 +14,13 @@ struct MALPusher: Sendable {
     let logger: Logger
     var now: @Sendable () -> Date = { Date() }
 
-    /// One entry's share of a show: its ticks, its episodes when known, and whether it is the
-    /// show's first entry.
+    /// One entry's share of a show: its ticks, its episodes when known, whether it is the show's
+    /// first entry, and whether any of its episodes is still to air.
     struct Share: Sendable, Equatable {
         var ticks: Int
         var total: Int?
         var isFirst: Bool
+        var isAiring = false
     }
 
     /// One MAL entry an Aaru show stands for. `season` nil: an anime that is not a TMDB show,
@@ -91,7 +92,8 @@ struct MALPusher: Sendable {
                 let inSeason = { (season: Int) in target.season.map { $0 == season } ?? (season > 0) }
                 let count = (ticks[entry.item.id] ?? []).count(where: { inSeason($0.season) })
                 let total = episodes.count(where: { inSeason($0.season) })
-                let share = Share(ticks: count, total: total > 0 ? total : nil, isFirst: index == 0)
+                let isAiring = episodes.contains { inSeason($0.season) && ($0.airsAt.map { $0 > now } ?? false) }
+                let share = Share(ticks: count, total: total > 0 ? total : nil, isFirst: index == 0, isAiring: isAiring)
                 guard let state = Self.state(malID: target.malID, item: entry.item, share: share),
                       state != states[target.malID]
                 else { continue }
@@ -129,13 +131,14 @@ struct MALPusher: Sendable {
 
     /// What one MAL entry should say, or nil when Aaru has nothing to say about it (a later
     /// season nobody started). Only the first entry carries a show's plan or a drop with no ticks,
-    /// so planning a show does not add every season to MAL. On hold is Aaru's own status
-    /// (LIB-007), sent as MAL's on hold; a season already watched through is completed.
+    /// so planning a show does not add every season to MAL. A season still airing is never
+    /// completed: in a show finished before that season aired, it goes as one in progress. On
+    /// hold is Aaru's own status (LIB-007), sent as MAL's on hold.
     static func state(malID: String, item: LibraryItem, share: Share) -> MALEntryState? {
         let (ticks, total, isFirst) = (share.ticks, share.total, share.isFirst)
         let score = item.rating.map { Int($0.value.rounded()) } ?? 0
         let state: MALEntryState
-        switch item.status {
+        switch item.status == .finished && share.isAiring ? .inProgress : item.status {
         case .finished:
             state = MALEntryState(malID: malID, status: .completed, episodes: total ?? ticks, score: score)
         case .dropped:

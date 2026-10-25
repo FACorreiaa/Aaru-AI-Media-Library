@@ -197,8 +197,10 @@ Use these words in code, APIs, and UI:
   not a subsystem: it produces a `MatchTable` then a `PlanCard`, and never writes unplanned
 - **Discover** — provider-curated public rows (DISC-001: trending, on the air, new shows, in
   theaters, this season's anime, trending books; MUS-002: new albums, albums coming soon), the
-  same for every user, plus the On air view (DISC-003): the week's airings by channel. Shown on Home and
-  as the Discover tab/page. Catalog data like search, never a recommendation
+  same for every user, plus the On air view (DISC-003): the week's airings by channel. Each row
+  says its kind (DISC-004): the Discover page shows shows, films and anime; the Books, Manga and
+  Music pages show their own rows under the user's shelf, and Music holds Concerts. Home shows
+  every row. Catalog data like search, never a recommendation
 - **Agent token** — a per-user, scoped, revocable credential an outside agent uses to reach
   Aaru's tool layer. Not an API key for a third-party developer
 - **Approval** — the user's yes to a plan an agent proposed. Approval happens inside Aaru; no

@@ -118,14 +118,14 @@ extension HomeModel {
             .init(_type: type, title: name, year: year, isAnime: anime, ids: .init(tmdb: name))
         }
         return [
-            .init(id: "tv_trending", title: "Trending shows", items: [
+            .init(id: "tv_trending", kind: .show, title: "Trending shows", items: [
                 hit("Pluribus", 2025), hit("The Pitt", 2025), hit("Severance", 2022), hit("Andor", 2022),
             ]),
-            .init(id: "anime_season", title: "Fall 2026 anime", items: [
+            .init(id: "anime_season", kind: .anime, title: "Fall 2026 anime", items: [
                 hit("The Apothecary Diaries", 2026, anime: true), hit("Black Clover", 2026, anime: true),
                 hit("Cyberpunk: Edgerunners 2", 2026, type: .movie, anime: true),
             ]),
-            .init(id: "books_trending", title: "Trending books", items: [
+            .init(id: "books_trending", kind: .book, title: "Trending books", items: [
                 .init(
                     _type: .book,
                     title: "Atomic Habits",

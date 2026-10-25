@@ -4555,15 +4555,22 @@ components:
           description: >-
             Why the items are partial, in words to show, e.g. AniList being down while TMDB's
             Japanese animation stands in.
+    DiscoverRowKind:
+      type: string
+      enum: [film, show, anime, manga, book, album]
+      description: >-
+        What a Discover row holds (DISC-004), as Library's kinds: anime is its own kind. Discover
+        shows film, show and anime rows; the Books, Manga and Music pages show their own.
     DiscoverRow:
       type: object
-      required: [id, title, items]
+      required: [id, kind, title, items]
       properties:
         id:
           type: string
           description: >-
-            Stable row key, e.g. `tv_trending`, `anime_season`, `books_trending`, `music_new`. Not an enum:
-            the server may add rows, and clients render any row they get.
+            Stable row key, e.g. `tv_trending`, `anime_season`, `books_trending`, `manga_trending`,
+            `music_new`. Not an enum: the server may add rows, and clients render any row they get.
+        kind: {$ref: '#/components/schemas/DiscoverRowKind'}
         title:
           type: string
           description: Display title, e.g. "Fall 2026 anime".
