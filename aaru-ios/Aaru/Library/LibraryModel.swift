@@ -60,6 +60,16 @@ final class LibraryModel {
         rows.filter { (kind == nil || $0.kind == kind) && (status == nil || $0.status == status) }
     }
 
+    /// How many titles of one kind (every kind for nil) sit in each status: Library's status tabs
+    /// (LIB-007). Read from the synced shelf, so each count matches the rows its tab shows.
+    func statusCounts(kind: MediaKind?) -> [LibraryStatus: Int] {
+        var counts: [LibraryStatus: Int] = [:]
+        for row in rows where kind == nil || row.kind == kind {
+            counts[row.status, default: 0] += 1
+        }
+        return counts
+    }
+
     /// Whether a search hit is already in the library, by any shared provider id.
     func contains(_ hit: CatalogHit) -> Bool {
         !knownKeys.isDisjoint(with: hit.ids.keys)

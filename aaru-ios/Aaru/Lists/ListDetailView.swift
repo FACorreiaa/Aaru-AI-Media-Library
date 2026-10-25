@@ -179,7 +179,7 @@ private struct AddMemberButton: View {
 
     var body: some View {
         Menu {
-            ForEach([LibraryStatus.wishlist, .inProgress, .finished]) { status in
+            ForEach(LibraryStatus.addable) { status in
                 Button(status.label(for: kind)) { add(status) }
             }
         } label: {

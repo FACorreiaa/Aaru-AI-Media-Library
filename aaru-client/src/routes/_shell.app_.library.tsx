@@ -14,26 +14,12 @@ import { AddToListDialog } from '../components/AddToListDialog'
 import { CardMenu } from '../components/CardMenu'
 import { Poster } from '../components/Poster'
 import { Segmented } from '../components/Segmented'
-import {
-  Button,
-  buttonVariants,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectPortal,
-  SelectTrigger,
-  SelectValue,
-} from '~/components/ui'
+import { Button, buttonVariants } from '~/components/ui'
 import { NowSection } from '../components/library/NowSection'
 import { lastShown } from '../lib/presence'
 import { prefersReducedMotion } from '../lib/reduced-motion'
-import {
-  KINDS,
-  shelf,
-  statusLabel,
-  statusOptions,
-  upsert,
-} from '../lib/library/model'
+import { KINDS, shelf, statusLabel, upsert } from '../lib/library/model'
+import { statusTabs } from '../lib/library/tabs'
 import type {
   LibraryEntry,
   LibraryStatus,
@@ -51,8 +37,16 @@ import type { MarkTarget } from '../lib/title/model'
 // Search loads only when it is first opened: it is not part of the page's first paint.
 // LIB-005: `?q=` filters every title in the library by name (original title and byline too),
 // and the shelf shows 20 at a time with page numbers (`?page=`).
+// LIB-007: the status is a strip of tabs with counts (All · Watching · Plan to watch · On hold ·
+// Watched · Dropped, worded for the kind), still `?status=`, so Home's chips land on a tab.
 
-const STATUSES = ['wishlist', 'in_progress', 'finished', 'dropped'] as const
+const STATUSES = [
+  'wishlist',
+  'in_progress',
+  'on_hold',
+  'finished',
+  'dropped',
+] as const
 const KIND_VALUES = ['film', 'show', 'anime', 'manga', 'book', 'album'] as const
 
 export const Route = createFileRoute('/_shell/app_/library')({
@@ -77,7 +71,7 @@ export const Route = createFileRoute('/_shell/app_/library')({
 })
 
 type Layout = 'grid' | 'rows'
-type StatusChoice = { value: LibraryStatus | 'any'; label: string }
+type StatusTabValue = LibraryStatus | 'all'
 
 function readLayout(): Layout {
   try {
@@ -205,12 +199,9 @@ function Library() {
     ].filter(Boolean)
     return parts.length > 0 ? parts.join(' · ') : 'All titles'
   }
-  const statusChoices = createMemo<StatusChoice[]>(() => [
-    { value: 'any', label: 'Any status' },
-    ...statusOptions(kind()).map((s) => ({ value: s.status, label: s.label })),
-  ])
-  const statusChoice = () =>
-    statusChoices().find((c) => c.value === (status() ?? 'any'))
+  // Counted from the whole library this page already holds, so each tab agrees with the shelf it
+  // opens, per kind, and follows a mark made here without another request.
+  const tabs = createMemo(() => statusTabs(entries(), kind()))
 
   function chooseLayout(next: Layout) {
     setLayout(next)
@@ -242,32 +233,6 @@ function Library() {
               setFilters({ kind: next === 'all' ? null : next })
             }
           />
-          <Select<StatusChoice>
-            aria-label="Status"
-            options={statusChoices()}
-            optionValue="value"
-            optionTextValue="label"
-            value={statusChoice()}
-            disallowEmptySelection
-            onChange={(choice) => {
-              if (choice)
-                setFilters({
-                  status: choice.value === 'any' ? null : choice.value,
-                })
-            }}
-            itemComponent={(p) => (
-              <SelectItem item={p.item}>{p.item.rawValue.label}</SelectItem>
-            )}
-          >
-            <SelectTrigger class="h-auto rounded-full border-line py-1.5 pr-3 pl-4 font-medium shadow-none">
-              <SelectValue<StatusChoice>>
-                {(state) => state.selectedOption().label}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectPortal>
-              <SelectContent class="rounded-panel border-line bg-paper" />
-            </SelectPortal>
-          </Select>
           <FilterField
             label="Filter your library"
             placeholder="Filter your library"
@@ -285,6 +250,27 @@ function Library() {
             onChange={chooseLayout}
           />
         </div>
+
+        <Segmented<StatusTabValue>
+          label="Status"
+          variant="chip"
+          class="mt-3"
+          trackClass="flex-nowrap overflow-x-auto pb-1 [scrollbar-width:none]"
+          itemClass="gap-1.5 px-4 py-1.5 text-sm"
+          options={tabs().map((tab) => ({
+            value: tab.status ?? 'all',
+            label: (
+              <>
+                <span>{tab.label}</span>
+                <span class="tabular-nums opacity-70">{tab.count}</span>
+              </>
+            ),
+          }))}
+          value={status() ?? 'all'}
+          onChange={(next) =>
+            setFilters({ status: next === 'all' ? null : next })
+          }
+        />
 
         {/* A chosen status or a filter is the shelf's own question; Now would only repeat part of it. */}
         <Show when={!status() && !query()}>

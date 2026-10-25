@@ -9,7 +9,7 @@ struct AddMenu: View {
 
     var body: some View {
         Menu {
-            ForEach([LibraryStatus.wishlist, .inProgress, .finished]) { status in
+            ForEach(LibraryStatus.addable) { status in
                 Button(status.label(for: kind)) { onAdd(status) }
             }
             Divider()

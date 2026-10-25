@@ -3,43 +3,28 @@ import SwiftUI
 // Library's pieces (`LibraryView`): the filter bar, the poster grid and its cards, the row, the
 // iPhone "Lists" entry and the ribbon after a removal.
 
-/// Kind chips and the status menu, with the offline line under them.
+/// Kind chips, then the status tabs with their counts (LIB-007), with the offline line under them.
 struct LibraryFilterBar: View {
     @Binding var filter: LibraryFilter
+    /// Titles of the chosen kind in each status, from `LibraryModel.statusCounts(kind:)`.
+    let counts: [LibraryStatus: Int]
     /// "Offline. Showing your library from the last sync." A first failure is the main error.
     let syncProblem: String?
 
     var body: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 0) {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     FilterChip(title: "All", isOn: filter.kind == nil) { filter.kind = nil }
                     ForEach(MediaKind.allCases) { option in
                         FilterChip(title: option.label, isOn: filter.kind == option) { filter.kind = option }
                     }
-                    Menu {
-                        Picker("Status", selection: $filter.status) {
-                            Text("Any status").tag(LibraryStatus?.none)
-                            ForEach(LibraryStatus.allCases) { Text($0.label(for: filter.kind)).tag(Optional($0)) }
-                        }
-                    } label: {
-                        Label(
-                            filter.status?.label(for: filter.kind) ?? "Any status",
-                            systemImage: "line.3.horizontal.decrease"
-                        )
-                        .font(.subheadline.weight(.medium))
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, AaruSpace.small)
-                        .overlay(Capsule().strokeBorder(Color(.lineStrong)))
-                        .frame(minHeight: 44)
-                        .contentShape(.rect)
-                    }
-                    .menuStyle(.button)
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Status: \(filter.status?.label(for: filter.kind) ?? "Any status")")
                 }
                 .padding(.horizontal, 16)
             }
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("Kind")
+            StatusTabs(filter: $filter, counts: counts)
             if let syncProblem {
                 Label(syncProblem, systemImage: "wifi.slash")
                     .font(.footnote)
@@ -53,26 +38,71 @@ struct LibraryFilterBar: View {
     }
 }
 
-/// A capsule toggle. The capsule is drawn small; the target is 44 pt tall.
+/// All · Watching · Plan to watch · On hold · Watched · Dropped, worded for the chosen kind, each
+/// with its count. One strip that scrolls sideways; the chosen tab is scrolled into view, so a
+/// Home count chip that opens Dropped shows it chosen.
+private struct StatusTabs: View {
+    @Binding var filter: LibraryFilter
+    let counts: [LibraryStatus: Int]
+
+    var body: some View {
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    FilterChip(title: "All", count: counts.values.reduce(0, +), isOn: filter.status == nil) {
+                        filter.status = nil
+                    }
+                    .id(LibraryStatus?.none)
+                    ForEach(LibraryStatus.tabOrder) { status in
+                        FilterChip(
+                            title: status.label(for: filter.kind),
+                            count: counts[status, default: 0],
+                            isOn: filter.status == status
+                        ) { filter.status = status }
+                            .id(Optional(status))
+                    }
+                }
+                .padding(.horizontal, 16)
+            }
+            .onAppear { proxy.scrollTo(filter.status) }
+            .onChange(of: filter.status) { proxy.scrollTo(filter.status) }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Status")
+    }
+}
+
+/// A capsule toggle, with a count when it has one. The capsule is drawn small; the target is
+/// 44 pt tall.
 private struct FilterChip: View {
     let title: String
+    var count: Int?
     let isOn: Bool
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            Text(title)
-                .font(.subheadline.weight(.medium))
-                .padding(.horizontal, AaruSpace.medium)
-                .padding(.vertical, AaruSpace.small)
-                .foregroundStyle(isOn ? Color(.paper) : Color(.ink))
-                .background(isOn ? Color(.ink) : .clear, in: Capsule())
-                .overlay(Capsule().strokeBorder(isOn ? Color.clear : Color(.lineStrong)))
-                .frame(minHeight: 44)
-                .contentShape(.rect)
+            HStack(spacing: 6) {
+                Text(title)
+                if let count {
+                    Text(count.formatted())
+                        .monospacedDigit()
+                        .foregroundStyle(isOn ? Color(.paper) : Color(.muted))
+                }
+            }
+            .font(.subheadline.weight(.medium))
+            .padding(.horizontal, AaruSpace.medium)
+            .padding(.vertical, AaruSpace.small)
+            .foregroundStyle(isOn ? Color(.paper) : Color(.ink))
+            .background(isOn ? Color(.ink) : .clear, in: Capsule())
+            .overlay(Capsule().strokeBorder(isOn ? Color.clear : Color(.lineStrong)))
+            .frame(minHeight: 44)
+            .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .accessibilityAddTraits(isOn ? .isSelected : [])
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(count.map { "\(title), \($0.formatted())" } ?? title)
+        .accessibilityAddTraits(isOn ? [.isButton, .isSelected] : .isButton)
     }
 }
 

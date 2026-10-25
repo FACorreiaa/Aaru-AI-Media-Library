@@ -95,8 +95,9 @@ library layer stay separate, external IDs stored whenever known, no second backe
 - **On hold, a fifth status (owner, 2026-10-25, LIB-007).** MyAnimeList-style: `on_hold` is
   paused on purpose, "On hold" for every kind. Every import used to read MAL's on hold as in
   progress, so ~117 paused anime filled Watching. Ranks with in progress for imports; hidden from
-  Now, Up Next, Tonight, the week and airing alerts; counted in stats. Clients get status tabs
-  with counts on Library in a follow-up.
+  Now, Up Next, Tonight, the week and airing alerts; counted in stats. Library gets status tabs
+  with counts, web and Apple (All · Watching · Plan to watch · On hold · Watched · Dropped),
+  URL-driven so Home's chips land on a tab.
 - **Open any title, in the library or not (owner, 2026-10-24, LIB-006).** A search hit, a
   Discover card or a list member opens its title page; one not in the library shows the same page
   with Add buttons and adds nothing until tapped. Needs a server route that resolves a catalog
@@ -639,7 +640,7 @@ account or a stranger that has not happened yet.
 | LIB-004 | Done | LibraryTests "LIB-004: a delete on one device…" | |
 | LIB-005 | Built, unverified | `lib/paging.test.ts`; `components/Paged.tsx`, `Design/Paging.swift` | Client-only (owner, 2026-10-24); not yet run on TestFlight |
 | LIB-006 | Built, unverified | TitlePreviewTests; `lib/title/preview.test.ts`; `TitlePreviewView.swift` | Needs the API promoted before clients can open it; not yet run on TestFlight |
-| LIB-007 | Built, unverified | ImportMergeTests, ScheduleTests, MALTests, AnimeListImportTests "LIB-007…" | Server, API and backfill only; clients label it but cannot pick it yet. Promote only after a TestFlight build that decodes `on_hold` |
+| LIB-007 | Built, unverified | ImportMergeTests, ScheduleTests, MALTests, AnimeListImportTests "LIB-007…"; `lib/library/model.test.ts` "status tabs", `lib/home/model.test.ts` | Server, API, backfill, and clients: On hold in every status picker, Library status tabs with counts (web `Segmented` strip, Apple `StatusTabs`). Not seen signed in on either client. Promote only after a TestFlight build that decodes `on_hold` |
 | AUD-001 | Done | #2; `actions` journal, LibraryService.swift | |
 | AUD-002 | Done | #2; `/v1/actions/{id}/undo`, 409 tests | Clients undo through PROG-005's toast only; no undo ribbon |
 | PROG-001 | Done | #2; episodes PUT route | |
@@ -1421,9 +1422,18 @@ reads "on hold"/"paused", the word Aaru's export writes. A migration widens the 
 back on hold every item in progress, not set by hand, whose MAL entries Aaru knows have one on
 hold and none watching.
 
+**Clients.** On hold is in every status picker (Add menus, a title's status, a Discover
+card's hold) and in Home's count chips. Library's status menu becomes a strip of tabs: All ·
+Watching · Plan to watch · On hold · Watched · Dropped, worded for the chosen kind, each with its
+count. The counts come from the synced shelf the page already holds (`/v1/library/sync`), not
+`/v1/up-next` `counts`, which are all kinds together: so a tab's count is per kind and always
+matches the rows it opens. The tab is `?status=` on the web and `LibraryFilter.status` on Apple,
+so Home's chips and old links still land on it.
+
 **Done when:** pausing an anime on MAL moves it to On hold in Aaru within one read-back and
 out of Up Next; ticking an episode brings it back to Watching and MAL reads watching; a status
-set by hand never moves; dropped stays dropped.
+set by hand never moves; dropped stays dropped; Library's On hold tab lists the paused anime with
+their count on web and iPhone.
 
 ### AUD-001 · Action journal · M
 **Needs:** LIB-003, SRV-006.

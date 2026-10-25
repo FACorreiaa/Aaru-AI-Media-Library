@@ -277,6 +277,22 @@ describe('status count chips', () => {
       { status: 'in_progress', label: 'In progress', count: 3 },
       { status: 'dropped', label: 'Dropped', count: 1 },
     ])
+  })
+
+  it('shows On hold beside in progress once something is paused', () => {
+    expect(
+      countChips({
+        wishlist: 0,
+        inProgress: 3,
+        onHold: 117,
+        finished: 4,
+        dropped: 0,
+      }).map((chip) => [chip.status, chip.label, chip.count]),
+    ).toEqual([
+      ['in_progress', 'In progress', 3],
+      ['on_hold', 'On hold', 117],
+      ['finished', 'Finished', 4],
+    ])
     expect(countChips(undefined)).toEqual([])
   })
 })

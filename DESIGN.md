@@ -221,7 +221,16 @@ backdrop with the title on it; a book card is its cover. Each shows how far alon
 ticks the next aired episode, **Update page** moves a book, **Mark read** / **Mark watched**
 closes it (wording aligned 2026-10-21, UX-043/044). The filters sit under the page title,
 above Now (2026-10-22). A kind chip narrows Now with the shelf; choosing any status hides it,
-since the shelf is then that list. Each group shows its newest six, with "Show all N" to open
+since the shelf is then that list. **Status tabs** (LIB-007, owner 2026-10-25): under the kind
+chips, one strip of tabs the MyAnimeList way round, **All · Watching · Plan to watch · On hold ·
+Watched · Dropped**, worded for the chosen kind (Reading / Plan to read / Read for books and
+manga, Listening for albums, In progress / Planned / Finished with no kind) and each with its
+count of that kind's titles. Every tab shows, at 0 too, so the strip never shifts; it scrolls
+sideways on a phone, and the chosen tab is the filled chip. The tab is the `?status=` filter on
+the web and the router's `LibraryFilter.status` on Apple, so Home's count chips land on it.
+**On hold** is one word for every kind: paused on purpose, out of Now, Up Next and the week,
+and back to Watching with the next tick. Every status picker (Add menus, a title's status, a
+Discover card's hold) offers it. Each group shows its newest six, with "Show all N" to open
 the group's own page (APP-018, 2026-10-24): every title in progress as backdrop cards (Grid) or
 dense rows (List), the choice remembered per device, sorted by the last tick, the next airing or
 A–Z, narrowed by kind. A Watching card or row adds the show's facts, one per line: "Apple TV+ ·
@@ -404,8 +413,8 @@ rows of wide cards, one job per row.
   under Tonight since 2026-10-21 (§1): the four figures as number over word, always all four,
   and the bars with each day's initial; "Insights →" opens Insights. Shown at zero too ("Nothing
   tracked yet"), so a new account sees where its week will land.
-- **Status counts** — one chip per status with its per-kind label and count; a tap opens
-  Library filtered to it.
+- **Status counts** — one chip per status with its per-kind label and count, On hold beside In
+  progress (LIB-007); a tap opens Library on that status tab.
 - **Unfinished business** (`UnfinishedRow`) — the §1 artifact made real: every dropped item and
   anything in progress untouched for 30 days, "Dropped" or "Paused 6 weeks", with "Resume at
   S2 · E3" for a show. Never a title already in Continue watching.
