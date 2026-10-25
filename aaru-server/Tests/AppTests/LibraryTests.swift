@@ -1,5 +1,6 @@
 import AaruCore
 import Foundation
+import HTTPTypes
 import Testing
 @testable import aaru
 
@@ -107,6 +108,26 @@ struct LibraryTests {
             #expect(try await env.send(.patch, "/v1/library/items/\(id)", json: ["rating": 42])
                 .status == .unprocessableContent)
             #expect(try await env.actionCount() == 3, "a rejected write leaves no row")
+        }
+    }
+
+    @Test("An episode or season tick names its action in Aaru-Action, so Home can offer Undo")
+    func tickNamesAction() async throws {
+        try await LibraryHarness.run { env in
+            let id = try await env.add("show", tmdb: env.stubShow("Andor", status: .returning))
+            let action = try #require(HTTPField.Name("Aaru-Action"))
+
+            let tick = try await env.send(.put, "/v1/library/items/\(id)/episodes/1/1", json: ["watched": true])
+            let tickAction = try #require(tick.headers[action])
+            #expect(try await env.send(.post, "/v1/actions/\(tickAction)/undo").status == .ok)
+            let untouched = try await env.stores.library.watched(itemID: #require(LibraryItemID(uuidString: id)))
+            #expect(untouched.isEmpty)
+
+            let season = try await env.send(.post, "/v1/library/items/\(id)/seasons/1/watched")
+            let seasonAction = try #require(season.headers[action])
+            #expect(try await env.send(.post, "/v1/actions/\(seasonAction)/undo").status == .ok)
+            let undone = try await env.stores.library.watched(itemID: #require(LibraryItemID(uuidString: id)))
+            #expect(undone.isEmpty)
         }
     }
 

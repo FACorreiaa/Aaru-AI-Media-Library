@@ -19,12 +19,21 @@ export function offerUndo(
   actionId: string,
   onUndone: () => void,
 ) {
+  offerUndoWith(message, () => undoAction({ data: { id: actionId } }), onUndone)
+}
+
+/** The same toast for a write that is not journaled (a Tonight verdict): `undo` takes it back. */
+export function offerUndoWith(
+  message: string,
+  undo: () => Promise<unknown>,
+  onUndone: () => void,
+) {
   toast(message, {
     duration: UNDO_MS,
     action: {
       label: 'Undo',
       onClick: () => {
-        undoAction({ data: { id: actionId } }).then(onUndone, (err: unknown) =>
+        undo().then(onUndone, (err: unknown) =>
           toastFailure(err, 'That could not be undone.'),
         )
       },

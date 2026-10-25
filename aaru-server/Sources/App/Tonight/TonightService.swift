@@ -48,6 +48,13 @@ struct TonightService: Sendable {
         ProductEvents.capture(.tonightRejected, userID: userID, ["verdict": verdict.rawValue])
     }
 
+    /// The Undo after "Not tonight" or "Not for me": today's verdict on the item, gone. Nothing
+    /// to take back, or an item that is not the user's, changes nothing.
+    func clearFeedback(itemID: LibraryItemID, userID: UserID, timeZone: String?) async throws {
+        let zone = try Self.zone(timeZone)
+        try await stores.tonight.clearFeedback(itemID: itemID, day: LocalDay(now(), in: zone), userID: userID)
+    }
+
     // MARK: Ranking
 
     /// What Tonight ranks: the rows Home already reads, plus books in progress.

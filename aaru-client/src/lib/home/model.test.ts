@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
+  setAsideMessage,
+  tickedMessage,
   advance,
   airingBadge,
   countChips,
@@ -433,5 +435,21 @@ describe('listening row', () => {
 
   it('is empty without albums, so the row hides', () => {
     expect(listening([])).toEqual([])
+  })
+})
+
+describe('Home undo toasts', () => {
+  it('names the episode or season that was ticked', () => {
+    expect(tickedMessage('Blue Box', 1, 3)).toBe('Marked S1 · E3 of Blue Box')
+    expect(tickedMessage('Blue Box', 2)).toBe('Marked season 2 of Blue Box')
+  })
+
+  it('says what a Tonight verdict does', () => {
+    expect(setAsideMessage('Blue Box', 'not_tonight')).toBe(
+      'Blue Box set aside for today',
+    )
+    expect(setAsideMessage('Blue Box', 'rejected')).toBe(
+      'Blue Box ranked lower for 14 days',
+    )
   })
 })

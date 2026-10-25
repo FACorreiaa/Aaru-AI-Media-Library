@@ -4,6 +4,7 @@ import type { CalendarEntry } from '../calendar/model'
 import { hitKey, idKeys, statusLabel } from '../library/model'
 import type { LibraryEntry, LibraryStatus } from '../library/model'
 import type { Stats } from '../recap/model'
+import { episodeCode } from '../title/model'
 
 // APP-009: the Home rows' pure parts (Trakt-style Continue watching, Start watching, and the
 // next airings). Labels and the calendar row's day maths are computed in the browser: the
@@ -277,4 +278,25 @@ export function listening(entries: LibraryEntry[]): LibraryEntry[] {
   return entries
     .filter((e) => e.title.type === 'album' && e.status === 'in_progress')
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+}
+
+/** The Undo toast after a tick on Home: "Marked S1 · E3 of Blue Box", or the season. */
+export function tickedMessage(
+  name: string,
+  season: number,
+  episode?: number,
+): string {
+  return episode === undefined
+    ? `Marked season ${season} of ${name}`
+    : `Marked ${episodeCode(season, episode)} of ${name}`
+}
+
+/** The Undo toast after "Not tonight" or "Not for me", saying what it did. */
+export function setAsideMessage(
+  name: string,
+  verdict: 'not_tonight' | 'rejected',
+): string {
+  return verdict === 'not_tonight'
+    ? `${name} set aside for today`
+    : `${name} ranked lower for 14 days`
 }

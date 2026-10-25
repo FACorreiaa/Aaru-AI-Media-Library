@@ -2360,6 +2360,10 @@ paths:
       responses:
         '200':
           description: The item with updated progress.
+          headers:
+            Aaru-Action:
+              description: The journaled action this write made, for `POST /v1/actions/{id}/undo`.
+              schema: {type: string, format: uuid}
           content:
             application/json:
               schema: {$ref: '#/components/schemas/LibraryEntry'}
@@ -2375,6 +2379,10 @@ paths:
       responses:
         '200':
           description: The item with updated progress.
+          headers:
+            Aaru-Action:
+              description: The journaled action this write made, for `POST /v1/actions/{id}/undo`.
+              schema: {type: string, format: uuid}
           content:
             application/json:
               schema: {$ref: '#/components/schemas/LibraryEntry'}
@@ -3074,6 +3082,22 @@ paths:
       responses:
         '204':
           description: Recorded.
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: clearTonightFeedback
+      summary: >-
+        Takes back today's "Not tonight" or "Not for me" on the item (the Undo after either).
+        Nothing to take back is still 204.
+      parameters:
+        - {name: id, in: path, required: true, description: The library item., schema: {type: string, format: uuid}}
+        - name: tz
+          in: query
+          description: IANA time zone for the local day. Absent means UTC.
+          schema: {type: string}
+      responses:
+        '204':
+          description: Cleared.
         default:
           $ref: '#/components/responses/Error'
 components:

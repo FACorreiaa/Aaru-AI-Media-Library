@@ -23,6 +23,16 @@ extension APIImplementation {
         )
         return .noContent(.init())
     }
+
+    func clearTonightFeedback(
+        _ input: Operations.ClearTonightFeedback.Input
+    ) async throws -> Operations.ClearTonightFeedback.Output {
+        guard let id = UUID(uuidString: input.path.id) else { throw AppError.notFound("No such library item.") }
+        try await services.tonight.clearFeedback(
+            itemID: LibraryItemID(id), userID: currentUser(), timeZone: input.query.tz
+        )
+        return .noContent(.init())
+    }
 }
 
 extension Components.Schemas.Tonight {

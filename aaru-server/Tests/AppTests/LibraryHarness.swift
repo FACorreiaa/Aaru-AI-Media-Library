@@ -20,6 +20,7 @@ struct LibraryHarness {
     struct Reply {
         let status: HTTPResponse.Status
         let body: Data
+        var headers: HTTPFields = [:]
 
         func json() throws -> [String: Any] {
             try (JSONSerialization.jsonObject(with: body) as? [String: Any]) ?? [:]
@@ -94,7 +95,7 @@ struct LibraryHarness {
             buffer = try ByteBuffer(bytes: JSONSerialization.data(withJSONObject: json))
         }
         return try await client.execute(uri: uri, method: method, headers: headers, body: buffer) { response in
-            Reply(status: response.status, body: Data(buffer: response.body))
+            Reply(status: response.status, body: Data(buffer: response.body), headers: response.headers)
         }
     }
 

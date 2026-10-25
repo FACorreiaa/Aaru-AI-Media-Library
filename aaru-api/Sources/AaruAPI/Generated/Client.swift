@@ -11333,6 +11333,11 @@ public struct Client: APIProtocol {
             deserializer: { response, responseBody in
                 switch response.status.code {
                 case 200:
+                    let headers: Operations.SetEpisodeWatched.Output.Ok.Headers = .init(aaruAction: try converter.getOptionalHeaderFieldAsURI(
+                        in: response.headerFields,
+                        name: "Aaru-Action",
+                        as: Swift.String.self
+                    ))
                     let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
                     let body: Operations.SetEpisodeWatched.Output.Ok.Body
                     let chosenContentType = try converter.bestContentType(
@@ -11353,7 +11358,10 @@ public struct Client: APIProtocol {
                     default:
                         preconditionFailure("bestContentType chose an invalid content type.")
                     }
-                    return .ok(.init(body: body))
+                    return .ok(.init(
+                        headers: headers,
+                        body: body
+                    ))
                 default:
                     let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
                     let body: Components.Responses._Error.Body
@@ -11413,6 +11421,11 @@ public struct Client: APIProtocol {
             deserializer: { response, responseBody in
                 switch response.status.code {
                 case 200:
+                    let headers: Operations.MarkSeasonWatched.Output.Ok.Headers = .init(aaruAction: try converter.getOptionalHeaderFieldAsURI(
+                        in: response.headerFields,
+                        name: "Aaru-Action",
+                        as: Swift.String.self
+                    ))
                     let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
                     let body: Operations.MarkSeasonWatched.Output.Ok.Body
                     let chosenContentType = try converter.bestContentType(
@@ -11433,7 +11446,10 @@ public struct Client: APIProtocol {
                     default:
                         preconditionFailure("bestContentType chose an invalid content type.")
                     }
-                    return .ok(.init(body: body))
+                    return .ok(.init(
+                        headers: headers,
+                        body: body
+                    ))
                 default:
                     let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
                     let body: Components.Responses._Error.Body
@@ -14802,6 +14818,72 @@ public struct Client: APIProtocol {
                     )
                 }
                 return (request, body)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 204:
+                    return .noContent(.init())
+                default:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(body: body)
+                    )
+                }
+            }
+        )
+    }
+    /// Takes back today's "Not tonight" or "Not for me" on the item (the Undo after either). Nothing to take back is still 204.
+    ///
+    /// - Remark: HTTP `DELETE /v1/tonight/{id}/feedback`.
+    /// - Remark: Generated from `#/paths//v1/tonight/{id}/feedback/delete(clearTonightFeedback)`.
+    public func clearTonightFeedback(_ input: Operations.ClearTonightFeedback.Input) async throws -> Operations.ClearTonightFeedback.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.ClearTonightFeedback.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/tonight/{}/feedback",
+                    parameters: [
+                        input.path.id
+                    ]
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .delete
+                )
+                suppressMutabilityWarning(&request)
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "tz",
+                    value: input.query.tz
+                )
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
             },
             deserializer: { response, responseBody in
                 switch response.status.code {

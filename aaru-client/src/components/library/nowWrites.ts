@@ -44,7 +44,7 @@ export function createNowWrites(onEntry: (entry: LibraryEntry) => void) {
               episode: next.number,
               watched: true,
             },
-          }),
+          }).then((ticked) => ticked.entry),
         ),
       onPage: (page: number) =>
         run(id, () => updateItem({ data: { id, patch: { bookPage: page } } })),

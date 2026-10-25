@@ -76,6 +76,14 @@ struct PostgresTonightStore: TonightStore {
         return row == nil ? nil : feedback
     }
 
+    func clearFeedback(itemID: LibraryItemID, day: LocalDay, userID: UserID) async throws {
+        try await sql.raw("""
+        DELETE FROM tonight_feedback
+        WHERE user_id = \(bind: userID.rawValue) AND library_item_id = \(bind: itemID.rawValue)
+          AND day = \(bind: day.description)::date
+        """).run()
+    }
+
     func recordPicks(_ ids: [LibraryItemID], day: LocalDay, userID: UserID, servedAt: Date) async throws -> Bool {
         struct Row: Decodable { let shown: Bool }
         guard !ids.isEmpty else { return false }

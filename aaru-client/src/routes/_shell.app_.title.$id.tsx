@@ -218,9 +218,11 @@ function TitleRoom() {
     setPending(new Set([...pending(), key]))
     try {
       commit(
-        await setEpisode({
-          data: { id: entry().id, season, episode: number, watched: watch },
-        }),
+        (
+          await setEpisode({
+            data: { id: entry().id, season, episode: number, watched: watch },
+          })
+        ).entry,
       )
     } catch (error) {
       setWatched(before)
@@ -243,7 +245,7 @@ function TitleRoom() {
     setWatched(new Set([...before, ...keys]))
     setPending(new Set([...pending(), ...keys]))
     try {
-      commit(await markSeason({ data: { id: entry().id, season } }))
+      commit((await markSeason({ data: { id: entry().id, season } })).entry)
     } catch (error) {
       setWatched(before)
       setProblem(

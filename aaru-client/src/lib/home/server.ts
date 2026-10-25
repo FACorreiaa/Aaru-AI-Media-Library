@@ -120,3 +120,21 @@ export const sendTonightFeedback = createServerFn({ method: 'POST' })
     if (!response.ok)
       throw new Error(errorMessage(error, 'That could not be set aside.'))
   })
+
+/** The Undo after "Not tonight" or "Not for me": today's verdict on the item is taken back. */
+export const clearTonightFeedback = createServerFn({ method: 'POST' })
+  .validator(
+    z.object({
+      id: z.string().uuid(),
+      tz: z.string().min(1).max(64),
+    }),
+  )
+  .handler(async ({ data }) => {
+    const { error, response } = await api(sessionToken()).DELETE(
+      '/v1/tonight/{id}/feedback',
+      { params: { path: { id: data.id }, query: { tz: data.tz } } },
+    )
+    if (response.status === 401) sessionRejected()
+    if (!response.ok)
+      throw new Error(errorMessage(error, 'That could not be undone.'))
+  })
