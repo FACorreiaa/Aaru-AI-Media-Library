@@ -13,6 +13,7 @@ import { cn } from '~/lib/utils'
 import { CREDITS } from '../lib/credits'
 import {
   DEFAULT_RADIUS,
+  MIN_SEARCH,
   RADII,
   artistsEmptyLine,
   dateBlock,
@@ -20,19 +21,36 @@ import {
   pendingLine,
   placeLine,
   roundPosition,
+  searchEmptyLine,
+  searchHeading,
 } from '../lib/concerts/model'
 import type {
   ArtistConcerts,
   Concert,
   ConcertPage,
+  ConcertPerformer,
   ConcertPlaceSetting,
   Radius,
+  SearchScope,
 } from '../lib/concerts/model'
-import { getArtistConcerts, getConcertsNear } from '../lib/concerts/server'
+import {
+  getArtistConcerts,
+  getConcertsNear,
+  searchConcertPerformers,
+  searchConcerts,
+} from '../lib/concerts/server'
 import { play } from '../lib/motion'
 import { CityPicker } from './CityPicker'
-import { Alert, Button, buttonVariants } from '~/components/ui'
+import {
+  Alert,
+  Button,
+  TextField,
+  TextFieldInput,
+  TextFieldLabel,
+  buttonVariants,
+} from '~/components/ui'
 import { Segmented } from './Segmented'
+import { SearchIcon } from './shell/icons'
 
 const TICKETMASTER = CREDITS.find((c) => c.name === 'Ticketmaster')?.href
 // UX-050: the vendor stays in the credit line, not the error.
@@ -43,14 +61,31 @@ const SKELETON_ROWS = 3
 
 type Position = { latitude: number; longitude: number }
 
+/** What the list keeps of a page, everything nearby or one artist's (MUS-010). */
+type Listed = Pick<
+  ConcertPage,
+  'page' | 'hasMore' | 'unavailable' | 'place'
+> & {
+  /** Absent for a search anywhere. */
+  radiusKm?: number
+}
+
+/** The artist the list is narrowed to (MUS-010): one picked performer, or every event matching the name. */
+type Searched = { name: string; performerId?: string }
+
+/** The performers offered for a submitted name, before one is picked. */
+type Choices =
+  | { state: 'loading'; name: string }
+  | { state: 'ready'; name: string; performers: ConcertPerformer[] }
+
 type Near =
   | { state: 'loading' }
   | { state: 'no_place' }
   | { state: 'failed'; message: string }
-  | { state: 'ready'; page: ConcertPage; items: Concert[] }
+  | { state: 'ready'; page: Listed; items: Concert[] }
 
 /**
- * MUS-003: Discover's Concerts view. Two date-led lists: upcoming shows by the artists of the
+ * MUS-003: the Music page's Concerts section (on Discover until NAV-001). Two date-led lists: upcoming shows by the artists of the
  * user's albums, then music events near the saved city or a one-off position, inside 25, 50 or
  * 100 km. A position is asked for only on a tap, rounded to two decimals here, sent once in a
  * POST body and kept nowhere but this component's memory. Tickets link out to Ticketmaster.
@@ -73,6 +108,14 @@ export function ConcertList(props: {
   const [locating, setLocating] = createSignal(false)
   const [locateProblem, setLocateProblem] = createSignal<string | null>(null)
   const [picking, setPicking] = createSignal(false)
+  // MUS-010: an artist's name, looked up only once submitted (each lookup spends the provider's
+  // daily calls). Submitting lists the provider's performers to pick from; the list is narrowed to
+  // the one picked, or to every event matching the name, near the same centre or anywhere.
+  const [text, setText] = createSignal('')
+  const [query, setQuery] = createSignal<Searched | null>(null)
+  const [choices, setChoices] = createSignal<Choices | null>(null)
+  const [scope, setScope] = createSignal<SearchScope>('near')
+  let latestChoices = 0
   let list: HTMLUListElement | undefined
   let latest = 0
 
@@ -95,8 +138,11 @@ export function ConcertList(props: {
   async function loadNear(page: number, fade = false) {
     const request = ++latest
     const at = position()
+    const searched = query()
+    const where = scope()
     setMoreFailed(null)
-    if (!at && !props.setting.place) {
+    // Anywhere needs no centre; everything else does.
+    if (!at && !props.setting.place && !(searched && where === 'anywhere')) {
       setBusy(false)
       setNear({ state: 'no_place' })
       return
@@ -105,9 +151,20 @@ export function ConcertList(props: {
     if (page === 1 && current.state !== 'ready') setNear({ state: 'loading' })
     setBusy(true)
     try {
-      const result = await getConcertsNear({
-        data: { ...(at ?? {}), radiusKm: radius(), page },
-      })
+      const result = searched
+        ? await searchConcerts({
+            data: {
+              q: searched.name,
+              performerId: searched.performerId,
+              scope: where,
+              ...(at ?? {}),
+              radiusKm: radius(),
+              page,
+            },
+          })
+        : await getConcertsNear({
+            data: { ...(at ?? {}), radiusKm: radius(), page },
+          })
       if (request !== latest) return
       if (result.noPlace) {
         setNear({ state: 'no_place' })
@@ -134,10 +191,17 @@ export function ConcertList(props: {
     }
   }
 
-  // A new radius, position or saved city starts over at page 1.
+  // A new radius, position, saved city, artist or scope starts over at page 1.
   createEffect(
     on(
-      () => [radius(), position(), props.setting.place] as const,
+      () =>
+        [
+          radius(),
+          position(),
+          props.setting.place,
+          query(),
+          query() ? scope() : null,
+        ] as const,
       (_, previous) => void loadNear(1, previous !== undefined),
     ),
   )
@@ -173,13 +237,66 @@ export function ConcertList(props: {
   }
 
   const savedName = () => props.setting.place?.name
-  const heading = () => {
-    if (position()) return 'Near you'
+  /** The city the list is around; null for a one-off position or no city. */
+  const centreName = () => {
+    if (position()) return null
     const current = near()
-    const name =
+    return (
       (current.state === 'ready' ? current.page.place?.name : undefined) ??
-      savedName()
-    return name ? `Near ${name}` : 'Near you'
+      savedName() ??
+      null
+    )
+  }
+  const heading = () => {
+    const searched = query()
+    if (searched) return searchHeading(searched.name, scope(), centreName())
+    const centre = centreName()
+    return centre ? `Near ${centre}` : 'Near you'
+  }
+
+  /** Performers for the name first; with none to offer, straight to every event matching it. */
+  async function submit(event: SubmitEvent) {
+    event.preventDefault()
+    const name = text().trim()
+    if (name.length < MIN_SEARCH) return
+    const request = ++latestChoices
+    setChoices({ state: 'loading', name })
+    let found: ConcertPerformer[] = []
+    try {
+      const offered = await searchConcertPerformers({ data: { q: name } })
+      found = offered.unavailable ? [] : offered.items
+    } catch {
+      // A failed lookup still searches the name.
+    }
+    if (request !== latestChoices) return
+    if (found.length === 0) chooseAll(name)
+    else setChoices({ state: 'ready', name, performers: found })
+  }
+  function choosePerformer(performer: ConcertPerformer) {
+    batch(() => {
+      setChoices(null)
+      setText(performer.name)
+      setQuery({ name: performer.name, performerId: performer.id })
+    })
+  }
+  function chooseAll(name: string) {
+    batch(() => {
+      setChoices(null)
+      setQuery({ name })
+    })
+  }
+  function typeName(value: string) {
+    setText(value)
+    // Emptying the field (its own ×) goes back to everything near.
+    if (!value.trim()) clearSearch()
+  }
+  function clearSearch() {
+    latestChoices++
+    batch(() => {
+      setText('')
+      setChoices(null)
+      setQuery(null)
+    })
   }
   const shownArtists = () => {
     const items = artists()?.items ?? []
@@ -293,7 +410,63 @@ export function ConcertList(props: {
           </Show>
         </div>
 
-        <Show when={near().state !== 'no_place'}>
+        <form
+          role="search"
+          class="mt-4 flex flex-wrap items-center gap-2"
+          onSubmit={submit}
+        >
+          <TextField
+            value={text()}
+            onChange={typeName}
+            class="min-w-0 flex-1 sm:max-w-sm"
+          >
+            <TextFieldLabel class="sr-only">Search an artist</TextFieldLabel>
+            <TextFieldInput
+              type="search"
+              autocomplete="off"
+              spellcheck={false}
+              enterkeyhint="search"
+              placeholder="Search an artist"
+              maxlength={100}
+              class="rounded-full border-0 bg-surface px-4 text-sm"
+            />
+          </TextField>
+          <Button
+            type="submit"
+            variant="quiet"
+            size="sm"
+            disabled={text().trim().length < MIN_SEARCH}
+          >
+            Search
+          </Button>
+          <Show when={query() || choices()}>
+            <Button variant="ghost" size="sm" onClick={clearSearch}>
+              Clear
+            </Button>
+          </Show>
+        </form>
+
+        <Show when={query() && !choices()}>
+          <Segmented
+            label="Where"
+            class="mt-3"
+            itemClass="px-4 py-1.5 text-sm whitespace-nowrap"
+            options={[
+              { value: 'near', label: `Near ${centreName() ?? 'you'}` },
+              { value: 'anywhere', label: 'Anywhere' },
+            ]}
+            value={scope()}
+            onChange={setScope}
+          />
+        </Show>
+
+        <Show
+          when={
+            near().state !== 'no_place' &&
+            !choices() &&
+            !(query() && scope() === 'anywhere')
+          }
+        >
           <Segmented
             label="Distance"
             variant="chip"
@@ -316,107 +489,147 @@ export function ConcertList(props: {
           )}
         </Show>
 
-        <Show when={near().state === 'no_place'}>
-          <div class="mt-4 rounded-panel bg-surface px-5 py-5">
-            <p class="text-ink">
-              Choose a city to see concerts around it, or share where you are
-              this once.
-            </p>
-            <p class="mt-1 text-sm text-muted">
-              Your location is rounded to about a kilometre and never saved.
-            </p>
-            <div class="mt-4 flex flex-wrap gap-2">
-              <Button
-                variant="default"
-                size="sm"
-                onClick={() => setPicking(true)}
-              >
-                Choose a city
-              </Button>
-              <Button
-                variant="quiet"
-                size="sm"
-                disabled={locating()}
-                onClick={locate}
-              >
-                {locating() ? 'Finding you…' : 'Use my location'}
-              </Button>
-            </div>
-          </div>
-        </Show>
-
-        <Show when={near().state === 'loading'}>{skeleton()}</Show>
-
         <Show
-          when={(() => {
-            const current = near()
-            return current.state === 'failed' ? current.message : null
-          })()}
+          when={!choices()}
+          fallback={
+            <PerformerChoices
+              choices={choices()!}
+              onPick={choosePerformer}
+              onAll={chooseAll}
+            />
+          }
         >
-          {(message) => (
-            <Retry message={message()} onRetry={() => void loadNear(1)} />
-          )}
-        </Show>
-
-        <Show when={ready()}>
-          {(current) => (
-            <Show
-              when={!current().page.unavailable}
-              fallback={
-                <div class="mt-3 flex flex-wrap items-center gap-3">
-                  <Quiet class="mt-0">{UNAVAILABLE}</Quiet>
-                  <Button
-                    variant="quiet"
-                    size="sm"
-                    onClick={() => void loadNear(1)}
-                  >
-                    Try again
-                  </Button>
-                </div>
-              }
-            >
-              <Show
-                when={current().items.length > 0}
-                fallback={
-                  <Quiet>
-                    No concerts within {current().page.radiusKm} km yet.
-                    <Show when={radius() !== 100}> Try a wider distance.</Show>
-                  </Quiet>
-                }
-              >
-                <ul
-                  ref={list}
-                  class="mt-3 divide-y divide-line transition-opacity"
-                  classList={{ 'opacity-60': busy() }}
-                  aria-busy={busy()}
+          <Show when={near().state === 'no_place'}>
+            <div class="mt-4 rounded-panel bg-surface px-5 py-5">
+              <p class="text-ink">
+                Choose a city to see concerts around it, or share where you are
+                this once.
+              </p>
+              <p class="mt-1 text-sm text-muted">
+                Your location is rounded to about a kilometre and never saved.
+              </p>
+              <div class="mt-4 flex flex-wrap gap-2">
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => setPicking(true)}
                 >
-                  <For each={current().items}>
-                    {(concert) => (
-                      <ConcertRow concert={concert} today={props.today} />
-                    )}
-                  </For>
-                </ul>
-                <Show when={moreFailed()}>
-                  {(message) => (
-                    <p role="alert" class="mt-3 text-sm text-danger">
-                      {message()}
-                    </p>
-                  )}
-                </Show>
-                <Show when={current().page.hasMore}>
-                  <div class="mt-4">
+                  Choose a city
+                </Button>
+                <Button
+                  variant="quiet"
+                  size="sm"
+                  disabled={locating()}
+                  onClick={locate}
+                >
+                  {locating() ? 'Finding you…' : 'Use my location'}
+                </Button>
+              </div>
+            </div>
+          </Show>
+
+          <Show when={near().state === 'loading'}>{skeleton()}</Show>
+
+          <Show
+            when={(() => {
+              const current = near()
+              return current.state === 'failed' ? current.message : null
+            })()}
+          >
+            {(message) => (
+              <Retry message={message()} onRetry={() => void loadNear(1)} />
+            )}
+          </Show>
+
+          <Show when={ready()}>
+            {(current) => (
+              <Show
+                when={!current().page.unavailable}
+                fallback={
+                  <div class="mt-3 flex flex-wrap items-center gap-3">
+                    <Quiet class="mt-0">{UNAVAILABLE}</Quiet>
                     <Button
                       variant="quiet"
-                      disabled={busy()}
-                      onClick={() => void loadNear(current().page.page + 1)}
+                      size="sm"
+                      onClick={() => void loadNear(1)}
                     >
-                      {busy() ? 'Loading…' : 'Show more'}
+                      Try again
                     </Button>
                   </div>
+                }
+              >
+                <Show
+                  when={current().items.length > 0}
+                  fallback={
+                    <Show
+                      when={query()}
+                      fallback={
+                        <Quiet>
+                          No concerts within {current().page.radiusKm} km yet.
+                          <Show when={radius() !== 100}>
+                            {' '}
+                            Try a wider distance.
+                          </Show>
+                        </Quiet>
+                      }
+                    >
+                      {(name) => (
+                        <div class="mt-3 flex flex-wrap items-center gap-3">
+                          <Quiet class="mt-0">
+                            {searchEmptyLine(
+                              name().name,
+                              scope(),
+                              current().page.radiusKm,
+                            )}
+                          </Quiet>
+                          <Show when={scope() === 'near'}>
+                            <Button
+                              variant="quiet"
+                              size="sm"
+                              onClick={() => setScope('anywhere')}
+                            >
+                              Try Anywhere
+                            </Button>
+                          </Show>
+                        </div>
+                      )}
+                    </Show>
+                  }
+                >
+                  <ul
+                    ref={list}
+                    class="mt-3 divide-y divide-line transition-opacity"
+                    classList={{ 'opacity-60': busy() }}
+                    aria-busy={busy()}
+                  >
+                    <For each={current().items}>
+                      {(concert) => (
+                        <ConcertRow concert={concert} today={props.today} />
+                      )}
+                    </For>
+                  </ul>
+                  <Show when={moreFailed()}>
+                    {(message) => (
+                      <p role="alert" class="mt-3 text-sm text-danger">
+                        {message()}
+                      </p>
+                    )}
+                  </Show>
+                  <Show when={current().page.hasMore}>
+                    <div class="mt-4">
+                      <Button
+                        variant="quiet"
+                        disabled={busy()}
+                        onClick={() => void loadNear(current().page.page + 1)}
+                      >
+                        {busy() ? 'Loading…' : 'Show more'}
+                      </Button>
+                    </div>
+                  </Show>
                 </Show>
               </Show>
-            </Show>
-          )}
+            )}
+          </Show>
         </Show>
 
         <p class="mt-8 text-xs text-muted">
@@ -516,6 +729,85 @@ function ConcertRow(props: { concert: Concert; today: string }) {
         Tickets <span aria-hidden="true">↗</span>
       </a>
     </li>
+  )
+}
+
+/**
+ * MUS-010: the provider's performers for a submitted name, best first, then every event matching
+ * the name as free text, for festivals and bills without a named act.
+ */
+function PerformerChoices(props: {
+  choices: Choices
+  onPick: (performer: ConcertPerformer) => void
+  onAll: (name: string) => void
+}) {
+  const row =
+    'h-auto w-full justify-start gap-3 rounded-none px-1 py-2.5 text-left font-normal'
+  return (
+    <Show
+      when={props.choices.state === 'ready' ? props.choices : null}
+      fallback={skeleton()}
+    >
+      {(ready) => (
+        <section class="mt-4" aria-label={`Artists named ${ready().name}`}>
+          <p class="text-sm text-muted">Which one?</p>
+          <ul class="mt-1 divide-y divide-line">
+            <For each={ready().performers}>
+              {(performer) => (
+                <li>
+                  <Button
+                    variant="ghost"
+                    size="bare"
+                    class={row}
+                    onClick={() => props.onPick(performer)}
+                  >
+                    <Show
+                      when={performer.imageUrl}
+                      fallback={
+                        <span
+                          aria-hidden="true"
+                          class="flex size-10 shrink-0 items-center justify-center rounded-full bg-surface font-display text-ink"
+                        >
+                          {performer.name.slice(0, 1)}
+                        </span>
+                      }
+                    >
+                      {(src) => (
+                        <img
+                          src={src()}
+                          alt=""
+                          loading="lazy"
+                          class="size-10 shrink-0 rounded-full object-cover"
+                        />
+                      )}
+                    </Show>
+                    <span class="truncate text-ink">{performer.name}</span>
+                  </Button>
+                </li>
+              )}
+            </For>
+            <li>
+              <Button
+                variant="ghost"
+                size="bare"
+                class={row}
+                onClick={() => props.onAll(ready().name)}
+              >
+                <span
+                  aria-hidden="true"
+                  class="flex size-10 shrink-0 items-center justify-center rounded-full border border-line"
+                >
+                  <SearchIcon class="size-4" />
+                </span>
+                <span class="truncate">
+                  All events matching “{ready().name}”
+                </span>
+              </Button>
+            </li>
+          </ul>
+        </section>
+      )}
+    </Show>
   )
 }
 

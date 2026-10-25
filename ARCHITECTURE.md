@@ -251,6 +251,7 @@ DELETE /v1/auth/session
 
 GET    /v1/search?q=&type=all|movie|show|anime|book   # all: CAT-019
 GET    /v1/titles/{id}
+POST   /v1/titles/resolve                 # LIB-006: a MediaRef's page; catalog only, never the library
 
 GET    /v1/calendar?from=&to=             # CAL-001
 GET    /v1/up-next                        # UPN-001; counts + unfinished UPN-002
@@ -258,6 +259,7 @@ GET    /v1/discover                       # DISC-001
 GET    /v1/discover/on-air?region=        # DISC-003
 
 GET    /v1/library/items
+GET    /v1/library/watching           # in-progress films/shows/anime + airing, next episode, time left (APP-018)
 POST   /v1/library/items
 GET    /v1/library/items/{id}
 PATCH  /v1/library/items/{id}
@@ -542,8 +544,51 @@ and clients hide the view). Paced at 4/s; a `CallBudget` stops at 4,500 calls a 
   even when empty), then up to 20 artists are matched by searching Ticketmaster performers by name
   and keeping only one whose `externalLinks.musicbrainz` carries the same MBID; rechecked after 30
   days. `GET /v1/concerts/artists` asks for the user's matched performers 20 ids a call, cached.
+- **Search by artist (MUS-010).** `POST /v1/concerts/search` (POST so the typed name never sits
+  in a URL): Ticketmaster's `keyword` on music events, free text, searched on submit only.
+  `scope: near` adds the same cell and radius as `/near` (no centre is 409 `no_place`);
+  `scope: anywhere` sends the keyword alone, and the server adds `distanceKm` from the point or
+  saved city to the venue's own position (haversine) after the cache, so results are shared by
+  everyone. Cache key `search:<lowercased name>:<cell|*>:<radius|*>:<page>`. Picking a performer
+  first (2026-10-25): `POST /v1/concerts/performers` returns Ticketmaster's attractions for the
+  name (`attractions(named:)`, the same call the artist matcher uses; up to eight, cached by the
+  lowercased name in its own `ConcertCache`), and `performerId` on the search switches
+  `ConcertMatch` from `.keyword` to `.performer`, sent as `attractionId`; its cache key is
+  `search:performer=<id>:…`.
 - **City picker.** `GET /v1/concerts/places?q=` → `OpenMeteoPlaces` (no key). The request log
   drops this route's query. `PUT`/`DELETE /v1/me/concert-place` save and forget the city.
+
+### Discover rows by kind (DISC-004)
+
+`DiscoverList.kind` gives every row a `DiscoverRowKind` (`film | show | anime | manga | book |
+album`), sent as `DiscoverRow.kind`. Clients filter on it: Discover shows film, show and anime
+rows, and the Books, Manga and Music pages show their own, all from the one cached
+`GET /v1/discover`. AniList serves the two manga rows (type MANGA, `status: RELEASING`, trending
+or popular). Only anime rows fall back to TMDB while AniList is down.
+
+### Sports (SPT-001…005)
+
+`Sources/App/Sports/`, behind `SportsListing` (named for the job). `TheSportsDBSports` calls
+TheSportsDB v2 with `THESPORTSDB_API_KEY` in `X-API-KEY`, and v1 (key in the path) for the two
+calls v2 lacks: a league's events on one day and an event's TV listings. Without the key
+`CatalogProviders.sports` is nil and every Sports answer is `unavailable` (`GET
+/v1/me/sport-settings` says `available: false`; clients hide the tab).
+
+- **Follows.** `sport_follows` (league, team or player by provider id, with a name, sport, badge,
+  league and team snapshot; at most 100) and `sport_settings` (the "Where to watch" country).
+  Following looks the entity up first; a player's league comes from their team, so a fighter's
+  fixtures are the promotion's cards, by id and never by name.
+- **Cache.** `SportsCache` holds every answer by key with its own freshness (livescores 90 s,
+  event 5 min, league day 15 min, schedules 30 min, TV 6 h, entities 24 h), shared by all users,
+  stale on failure and retried after a minute. Fetches are unstructured so a caller's deadline
+  never cancels them. A request primes what it needs, waits `patience` (3 s), and answers with
+  the rest `pending`; clients ask again a few seconds later.
+- **Answers.** Favorites (each follow's live, next and last), one local day (`date` + IANA `tz`,
+  fetched as the one or two UTC days it covers, plus followed teams' other competitions), and an
+  event with broadcasts split by country. The livescore feed is laid over listed events by id;
+  a past event with a score is finished.
+- **Isolation.** Sports writes no library row, action, point, activity or push, and no agent or
+  MCP tool reads it. The export carries the follows and the country.
 
 ### Anime catalog (AniList)
 

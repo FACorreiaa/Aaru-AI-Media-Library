@@ -2,8 +2,9 @@ import AaruAPI
 import SwiftUI
 
 /// `DiscoverCard` (DISC-001): a poster from a public row, on Home and on Discover. Not yet on
-/// the shelf, the poster is an add menu (tap for the wishlist, hold for a status or a list); on
-/// the shelf, it opens the item and wears a check. A release date shows as a badge.
+/// the shelf, a tap opens its catalog page (`TitlePreviewView`, LIB-006) and a hold is the add
+/// menu (a status or a list); on the shelf, it opens the item and wears a check. A release date
+/// shows as a badge. Every stack that shows these cards registers `catalogDestination`.
 struct DiscoverCard: View {
     let hit: CatalogHit
     /// The caller's item for this title, when they have it.
@@ -28,21 +29,17 @@ struct DiscoverCard: View {
                 NavigationLink(value: libraryItemID) { card }
                     .accessibilityLabel("\(hit.title), in your library")
             } else {
-                Menu {
-                    ForEach([LibraryStatus.wishlist, .inProgress, .finished]) { status in
-                        Button(status.label(for: kind)) { onAdd(status) }
+                NavigationLink(value: CatalogRoute(hit: hit)) { card }
+                    .contextMenu {
+                        ForEach([LibraryStatus.wishlist, .inProgress, .finished]) { status in
+                            Button(status.label(for: kind)) { onAdd(status) }
+                        }
+                        Divider()
+                        Button("Add to list…", systemImage: "text.badge.plus", action: onAddToList)
                     }
-                    Divider()
-                    Button("Add to list…", systemImage: "text.badge.plus", action: onAddToList)
-                } label: {
-                    card
-                } primaryAction: {
-                    onAdd(.wishlist)
-                }
-                .menuStyle(.button)
-                .disabled(isAdding)
-                .accessibilityLabel(hit.title)
-                .accessibilityHint("Adds as \(LibraryStatus.wishlist.label(for: kind)). Hold for other statuses.")
+                    .disabled(isAdding)
+                    .accessibilityLabel(hit.title)
+                    .accessibilityHint("Opens its page. Hold to add.")
             }
         }
         .buttonStyle(.plain)

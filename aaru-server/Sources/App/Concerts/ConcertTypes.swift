@@ -22,6 +22,35 @@ struct Concert: Sendable, Equatable {
     /// The provider's event page, where tickets are sold.
     var url: URL
     var imageURL: URL?
+    /// The venue's position, rounded, when the provider gives one. Only to work out a distance on
+    /// the server (MUS-010); never sent to a client.
+    var venuePoint: GeoPoint?
+}
+
+/// Where a search by artist looks (MUS-010).
+enum ConcertSearchScope: String, Sendable, Equatable {
+    /// Around a point or the saved city, inside a radius.
+    case near
+    /// Every upcoming date; no area is sent to the provider.
+    case anywhere
+}
+
+/// What a search by artist matches (MUS-010): the provider's free text, or one performer the
+/// user picked from the provider's own list.
+enum ConcertMatch: Sendable, Equatable {
+    case keyword(String)
+    case performer(id: String)
+}
+
+/// One search by artist (MUS-010): the name as typed, trimmed, and where to look.
+struct ConcertSearch: Sendable, Equatable {
+    var query: String
+    /// The provider's id of a performer picked from the list; nil searches the name as free text.
+    var performerID: String?
+    var scope: ConcertSearchScope
+    /// Used by `near` only.
+    var radiusKm: Int
+    var page: Int
 }
 
 /// One page of concerts.
@@ -42,6 +71,16 @@ struct GeoPoint: Sendable, Equatable {
         else { return nil }
         self.latitude = (latitude * 100).rounded() / 100
         self.longitude = (longitude * 100).rounded() / 100
+    }
+
+    /// Great-circle distance in kilometres (haversine, mean Earth radius).
+    func distanceKm(to other: GeoPoint) -> Double {
+        let radians = Double.pi / 180
+        let dLat = (other.latitude - latitude) * radians
+        let dLon = (other.longitude - longitude) * radians
+        let half = sin(dLat / 2) * sin(dLat / 2)
+            + cos(latitude * radians) * cos(other.latitude * radians) * sin(dLon / 2) * sin(dLon / 2)
+        return 6371.0088 * 2 * atan2(half.squareRoot(), (1 - half).squareRoot())
     }
 
     /// The geohash cell holding this point. Precision 5 is a cell of about 5 × 5 km, which is
@@ -120,12 +159,18 @@ struct ConcertAttraction: Sendable, Equatable {
     var id: String
     var name: String
     var musicbrainzIDs: [String]
+    /// The provider's picture of the performer, referenced, never hosted.
+    var imageURL: URL?
 }
 
 /// Concerts from a provider (Ticketmaster today). Named for the job, not the vendor.
 protocol ConcertListing: Sendable {
     /// Music events around a point, soonest first. `page` is 1-based.
     func near(_ point: GeoPoint, radiusKm: Int, page: Int, from: Date) async throws -> ConcertResults
+    /// Music events matching a name as free text or by one performer, soonest first: around
+    /// `near` (a point and a radius in km) when given, else anywhere. `page` is 1-based (MUS-010).
+    func search(_ match: ConcertMatch, near: (point: GeoPoint, radiusKm: Int)?, page: Int, from: Date) async throws
+        -> ConcertResults
     /// Upcoming events for these provider performer ids, soonest first.
     func performing(_ attractionIDs: [String], from: Date) async throws -> [Concert]
     /// Performers whose name matches, with their MusicBrainz links.

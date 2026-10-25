@@ -111,9 +111,21 @@ struct LibraryEntry: Sendable, Equatable {
     var progress: ProgressSummary?
     /// Manga only (MNG-001).
     var mangaProgress: (chapter: Int?, volume: Int?)?
+    /// The newest episode tick made live in Aaru; imported, pulled and restored ticks do not count
+    /// (`episode_progress.watched_at_known`).
+    var lastWatchedAt: Date?
+    /// The status was chosen by a tap, not an import (`library_items.status_by_hand`).
+    var statusByHand = false
+
+    /// APP-018 · an anime in progress the user never touched in Aaru: an imported status and no
+    /// live tick. Derived, never stored, never a status; Library's Now leaves it out of Watching.
+    var inBacklog: Bool {
+        title.isAnime && item.status == .inProgress && !statusByHand && lastWatchedAt == nil
+    }
 
     static func == (lhs: LibraryEntry, rhs: LibraryEntry) -> Bool {
         lhs.item == rhs.item && lhs.title == rhs.title && lhs.progress == rhs.progress
+            && lhs.lastWatchedAt == rhs.lastWatchedAt && lhs.statusByHand == rhs.statusByHand
             && lhs.bookProgress?.page == rhs.bookProgress?.page
             && lhs.bookProgress?.percent == rhs.bookProgress?.percent
             && lhs.mangaProgress?.chapter == rhs.mangaProgress?.chapter

@@ -62,6 +62,7 @@ describe('list model', () => {
           id: 'li-b',
           status: 'in_progress',
           isOwned: false,
+          inBacklog: false,
           addedAt: '2026-10-01T00:00:00Z',
           updatedAt: '2026-10-01T00:00:00Z',
           title: item('b').title,

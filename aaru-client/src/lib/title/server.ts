@@ -5,6 +5,8 @@ import { errorMessage } from '../api/errors'
 import { sessionRejected, sessionToken } from '../session/guard'
 import type { LibraryEntry } from '../library/model'
 import type { ShowWatched, TitleDetail } from './model'
+import { MEDIA_TYPES } from '../media'
+import { PREVIEW_PROVIDERS } from './preview'
 
 // APP-005 on the web: the same `/v1` routes the Apple apps call for the Title room.
 
@@ -161,3 +163,31 @@ export const removeItem = createServerFn({ method: 'POST' })
     if (!response.ok)
       throw new Error(errorMessage(error, 'The title was not removed.'))
   })
+
+/** LIB-006: the page for a title by one provider id, and the caller's item when they have it.
+ * Resolving may add the title to the catalog; it never adds it to the library. */
+export const resolveTitle = createServerFn({ method: 'GET' })
+  .validator(
+    z.object({
+      type: z.enum(MEDIA_TYPES),
+      provider: z.enum(PREVIEW_PROVIDERS),
+      ref: z.string().min(1).max(200),
+    }),
+  )
+  .handler(
+    async ({
+      data,
+    }): Promise<{ title: TitleDetail; libraryItemId?: string }> => {
+      const {
+        data: preview,
+        error,
+        response,
+      } = await api(sessionToken()).POST('/v1/titles/resolve', {
+        body: { type: data.type, ids: { [data.provider]: data.ref } },
+      })
+      if (response.status === 401) sessionRejected()
+      if (!preview)
+        throw new Error(errorMessage(error, 'This title could not be found.'))
+      return preview
+    },
+  )

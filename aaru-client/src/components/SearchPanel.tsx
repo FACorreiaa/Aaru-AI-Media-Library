@@ -27,6 +27,7 @@ import type {
 import { AddControl } from './AddControl'
 import { ListAddIcon } from './shell/icons'
 import { Poster } from './Poster'
+import { TitleLink } from './TitleLink'
 import { AddToListDialog } from './AddToListDialog'
 import {
   Button,
@@ -268,22 +269,30 @@ export function SearchPanel(props: {
               const kindOfHit = kindOf(hit.type, hit.isAnime)
               return (
                 <li class="flex items-center gap-4 border-b border-line py-3 last:border-0">
-                  <Poster
-                    url={hit.posterUrl}
-                    kind={kindOfHit}
-                    class="w-12 shrink-0"
-                  />
-                  <div class="min-w-0 flex-1">
-                    <p class="line-clamp-2 font-medium">{hit.title}</p>
-                    <p class="truncate text-sm text-muted">
-                      {(kindOfHit === 'album'
-                        ? [hit.byline, hit.year]
-                        : [kindName(kindOfHit), hit.year, hit.byline]
-                      )
-                        .filter(Boolean)
-                        .join(' · ')}
-                    </p>
-                  </div>
+                  {/* LIB-006: the hit opens its page; search closes behind it. */}
+                  <TitleLink
+                    hit={hit}
+                    libraryItemId={hit.libraryItemId}
+                    class="flex min-w-0 flex-1 items-center gap-4 rounded-card hover:text-accent"
+                    onClick={() => props.onClose()}
+                  >
+                    <Poster
+                      url={hit.posterUrl}
+                      kind={kindOfHit}
+                      class="w-12 shrink-0"
+                    />
+                    <div class="min-w-0 flex-1">
+                      <p class="line-clamp-2 font-medium">{hit.title}</p>
+                      <p class="truncate text-sm text-muted">
+                        {(kindOfHit === 'album'
+                          ? [hit.byline, hit.year]
+                          : [kindName(kindOfHit), hit.year, hit.byline]
+                        )
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </p>
+                    </div>
+                  </TitleLink>
                   <Show
                     when={props.list}
                     fallback={

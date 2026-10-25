@@ -40,22 +40,26 @@ struct TicketmasterConcerts: ConcertListing {
     let budget: CallBudget
 
     func near(_ point: GeoPoint, radiusKm: Int, page: Int, from: Date) async throws -> ConcertResults {
-        let response = try await get(EventPage.self, "events.json", [
-            "classificationName": "music",
+        try await musicEvents(page: page, from: from, [
             "geoPoint": point.geohash(),
             "radius": String(radiusKm),
             "unit": "km",
-            "sort": "date,asc",
-            "startDateTime": Self.timestamp(from),
-            "size": String(Self.pageSize),
-            "page": String(max(0, page - 1)),
         ])
-        let current = response.page?.number ?? 0
-        let pages = response.page?.totalPages ?? 0
-        return ConcertResults(
-            concerts: response.events.compactMap(\.concert),
-            hasMore: current + 1 < pages && current + 1 < Self.maxPage
-        )
+    }
+
+    func search(_ match: ConcertMatch, near: (point: GeoPoint, radiusKm: Int)?, page: Int, from: Date) async throws
+        -> ConcertResults
+    {
+        var query: [String: String] = switch match {
+        case let .keyword(keyword): ["keyword": keyword]
+        case let .performer(id): ["attractionId": id]
+        }
+        if let near {
+            query["geoPoint"] = near.point.geohash()
+            query["radius"] = String(near.radiusKm)
+            query["unit"] = "km"
+        }
+        return try await musicEvents(page: page, from: from, query)
     }
 
     func performing(_ attractionIDs: [String], from: Date) async throws -> [Concert] {
@@ -78,9 +82,27 @@ struct TicketmasterConcerts: ConcertListing {
         return (response.embedded?.attractions ?? []).map {
             ConcertAttraction(
                 id: $0.id, name: $0.name,
-                musicbrainzIDs: ($0.externalLinks?.musicbrainz ?? []).compactMap(\.id).map { $0.lowercased() }
+                musicbrainzIDs: ($0.externalLinks?.musicbrainz ?? []).compactMap(\.id).map { $0.lowercased() },
+                imageURL: pickImage($0.images, minWidth: 200)
             )
         }
+    }
+
+    /// One page of music events from `from` on, soonest first, narrowed by `query`.
+    private func musicEvents(page: Int, from: Date, _ query: [String: String]) async throws -> ConcertResults {
+        let response = try await get(EventPage.self, "events.json", query.merging([
+            "classificationName": "music",
+            "sort": "date,asc",
+            "startDateTime": Self.timestamp(from),
+            "size": String(Self.pageSize),
+            "page": String(max(0, page - 1)),
+        ]) { given, _ in given })
+        let current = response.page?.number ?? 0
+        let pages = response.page?.totalPages ?? 0
+        return ConcertResults(
+            concerts: response.events.compactMap(\.concert),
+            hasMore: current + 1 < pages && current + 1 < Self.maxPage
+        )
     }
 
     /// `2026-10-21T18:00:00Z`: Ticketmaster wants seconds and a literal Z, no fractions.
@@ -151,10 +173,24 @@ private struct Named: Decodable {
     let name: String?
 }
 
+/// Ticketmaster sends the coordinates as strings.
+private struct VenueLocation: Decodable {
+    let latitude: String?
+    let longitude: String?
+
+    var point: GeoPoint? {
+        guard let latitude = latitude.flatMap(Double.init), let longitude = longitude.flatMap(Double.init) else {
+            return nil
+        }
+        return GeoPoint(latitude: latitude, longitude: longitude)
+    }
+}
+
 private struct Venue: Decodable {
     let name: String?
     let city: Named?
     let country: Named?
+    let location: VenueLocation?
 }
 
 private struct Performer: Decodable {
@@ -200,17 +236,23 @@ private struct Event: Decodable {
             country: venue?.country?.name,
             distanceKm: distance.map { units?.uppercased().hasPrefix("MI") == true ? $0 * 1.609344 : $0 },
             url: link,
-            imageURL: poster
+            imageURL: poster,
+            venuePoint: venue?.location?.point
         )
     }
 
-    /// The smallest wide image at least 500 px across; Ticketmaster's own placeholders aside.
+    /// The event's poster: a wide image at least 500 px across.
     private var poster: URL? {
-        let usable = (images ?? []).filter { $0.fallback != true }
-        let wide = usable.filter { $0.ratio == "16_9" }.sorted { ($0.width ?? 0) < ($1.width ?? 0) }
-        let pick = wide.first { ($0.width ?? 0) >= 500 } ?? wide.last ?? usable.first
-        return pick.flatMap { URL(string: $0.url) }
+        pickImage(images, minWidth: 500)
     }
+}
+
+/// The smallest wide image at least `minWidth` across; Ticketmaster's own placeholders aside.
+private func pickImage(_ images: [EventImage]?, minWidth: Int) -> URL? {
+    let usable = (images ?? []).filter { $0.fallback != true }
+    let wide = usable.filter { $0.ratio == "16_9" }.sorted { ($0.width ?? 0) < ($1.width ?? 0) }
+    let pick = wide.first { ($0.width ?? 0) >= minWidth } ?? wide.last ?? usable.first
+    return pick.flatMap { URL(string: $0.url) }
 }
 
 private struct MusicBrainzLink: Decodable {
@@ -225,6 +267,7 @@ private struct Attraction: Decodable {
     let id: String
     let name: String
     let externalLinks: AttractionLinks?
+    let images: [EventImage]?
 }
 
 private struct AttractionPage: Decodable {

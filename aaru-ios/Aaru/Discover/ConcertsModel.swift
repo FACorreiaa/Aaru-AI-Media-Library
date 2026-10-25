@@ -2,57 +2,11 @@ import AaruAPI
 import Foundation
 import Observation
 
-typealias Concert = Components.Schemas.Concert
-typealias ConcertPlace = Components.Schemas.ConcertPlace
-typealias ConcertPage = Components.Schemas.ConcertPage
-typealias ArtistConcerts = Components.Schemas.ArtistConcerts
-typealias ConcertRadius = Components.Schemas.ConcertsNearRequest.RadiusKmPayload
-
-/// A point to look for concerts around, rounded to two decimals (about a kilometre). "Use my
-/// location" keeps one in memory for this visit only: it is never saved, here or on the server.
-struct ConcertPoint: Hashable {
-    let latitude: Double
-    let longitude: Double
-
-    init(latitude: Double, longitude: Double) {
-        self.latitude = (latitude * 100).rounded() / 100
-        self.longitude = (longitude * 100).rounded() / 100
-    }
-}
-
-extension ConcertPlace {
-    /// "Lisboa, Lisbon, Portugal": the parts there are, each once.
-    var label: String {
-        [name, detail].compactMap(\.self).joined(separator: ", ")
-    }
-
-    /// A row's identity in the city picker: name and point, compact.
-    var key: String {
-        "\(name)|\(latitude)|\(longitude)"
-    }
-
-    /// "Lisbon, Portugal", or nil when the place has nothing past its name.
-    var detail: String? {
-        let parts = [region, country].compactMap(\.self).filter { !$0.isEmpty && $0 != name }
-        return parts.isEmpty ? nil : parts.joined(separator: ", ")
-    }
-}
-
-extension ConcertRadius {
-    /// "50 km": the API's unit, the same in every locale.
-    var label: String {
-        "\(rawValue) km"
-    }
-
-    var spoken: String {
-        "\(rawValue) kilometres"
-    }
-}
-
 /// Concerts on Discover (MUS-003): upcoming concerts by the artists of the user's albums, and
 /// concerts within a radius of the saved "Concerts near" city or of a one-off approximate
 /// location. Catalog data from Ticketmaster, linked out for tickets. Also the "Concerts near"
-/// setting itself, which Settings edits through the same model.
+/// setting itself, which Settings edits through the same model. MUS-010 narrows the Near list
+/// to one artist's concerts, near the same centre or anywhere.
 @MainActor
 @Observable
 final class ConcertsModel {
@@ -81,7 +35,12 @@ final class ConcertsModel {
         var radius: ConcertRadius
         var point: ConcertPoint?
         var place: ConcertPlace?
+        var artist: ArtistSearch?
+        var scope: ConcertSearchScope?
     }
+
+    /// The shortest artist name a search sends; the server refuses less.
+    static let minSearch = 2
 
     private(set) var setting: Components.Schemas.ConcertPlaceSetting?
     var radius: ConcertRadius = ._50
@@ -95,6 +54,13 @@ final class ConcertsModel {
     private(set) var artistsFailed = false
     private(set) var isLocating = false
     var problem: String?
+    /// The search field. Only a submitted name searches: each search spends the provider's
+    /// daily calls.
+    var searchText = ""
+    /// The artist the Near list is narrowed to, once picked.
+    private(set) var searchedArtist: ArtistSearch?
+    private(set) var performerChoices: PerformerChoices?
+    var scope: ConcertSearchScope = .near
 
     @ObservationIgnored private let api: Client?
     @ObservationIgnored private var loadedQuery: Query?
@@ -129,7 +95,10 @@ final class ConcertsModel {
     }
 
     var query: Query {
-        Query(radius: radius, point: point, place: savedPlace)
+        Query(
+            radius: radius, point: point, place: savedPlace, artist: searchedArtist,
+            scope: searchedArtist == nil ? nil : scope
+        )
     }
 
     /// Every fetched page's concerts, each once.
@@ -148,14 +117,6 @@ final class ConcertsModel {
 
     var usesLocation: Bool {
         point != nil
-    }
-
-    /// "Near Lisboa", "Near you".
-    var nearTitle: String {
-        if point != nil {
-            return "Near you"
-        }
-        return (pages.first?.place ?? savedPlace).map { "Near \($0.name)" } ?? "Near you"
     }
 
     /// The centre the Near list was searched around, for the map.
@@ -208,7 +169,8 @@ final class ConcertsModel {
         if !force, loadedQuery == query, nearState == .loaded {
             return
         }
-        guard point != nil || savedPlace != nil else {
+        // Anywhere needs no centre; everything else does.
+        guard point != nil || savedPlace != nil || searchesAnywhere else {
             pages = []
             nearState = .noPlace
             loadedQuery = query
@@ -330,26 +292,14 @@ final class ConcertsModel {
 
     // MARK: Fetching
 
-    private enum Fetched {
-        case page(ConcertPage), noPlace, failed, cancelled
-    }
-
-    private func fetch(page: Int) async -> Fetched {
+    private func fetch(page: Int) async -> ConcertFetch {
         guard let api else { return .cancelled }
-        let body = Components.Schemas.ConcertsNearRequest(
-            latitude: point?.latitude, longitude: point?.longitude, radiusKm: radius, page: page
-        )
+        let fetcher = ConcertsFetcher(api: api, point: point, radius: radius)
         do {
-            switch try await api.getConcertsNear(body: .json(body)) {
-            case let .ok(response):
-                let page = try response.body.json
-                return Task.isCancelled ? .cancelled : .page(page)
-            case let .default(statusCode, error):
-                if statusCode == 409, (try? error.body.json.code) == "no_place" {
-                    return .noPlace
-                }
-                return .failed
+            if let artist = searchedArtist {
+                return try await fetcher.search(artist, scope: scope, page: page)
             }
+            return try await fetcher.near(page: page)
         } catch {
             return Self.isCancellation(error) ? .cancelled : .failed
         }
@@ -358,5 +308,65 @@ final class ConcertsModel {
     /// A newer search (another radius, another centre) cancels the one in flight: not a failure.
     private static func isCancellation(_ error: any Error) -> Bool {
         Task.isCancelled || error is CancellationError || (error as? URLError)?.code == .cancelled
+    }
+}
+
+// MARK: Search by artist (MUS-010)
+
+extension ConcertsModel {
+    /// An artist searched for anywhere: no radius, no map.
+    var searchesAnywhere: Bool {
+        searchedArtist != nil && scope == .anywhere
+    }
+
+    /// "Near Lisboa", "Near you"; "Radiohead near Lisboa", "Radiohead anywhere" while searching.
+    var nearTitle: String {
+        guard let artist = searchedArtist?.name else { return nearScopeLabel }
+        return scope == .anywhere ? "\(artist) anywhere" : "\(artist) near \(centreName ?? "you")"
+    }
+
+    /// "Near Lisboa", "Near you": the section's title, and the search's Near scope.
+    var nearScopeLabel: String {
+        centreName.map { "Near \($0)" } ?? "Near you"
+    }
+
+    /// The city the list is around; nil for a one-off position or no city.
+    private var centreName: String? {
+        point == nil ? (pages.first?.place ?? savedPlace)?.name : nil
+    }
+
+    /// Performers for the name first; with none to offer, straight to every event matching it.
+    func submitSearch() async {
+        let name = String(searchText.trimmingCharacters(in: .whitespacesAndNewlines).prefix(100))
+        guard name.count >= Self.minSearch, let api else { return }
+        performerChoices = .loading(name)
+        let fetcher = ConcertsFetcher(api: api, point: point, radius: radius)
+        // A failed lookup still searches the name.
+        let found = await (try? fetcher.performers(name)) ?? []
+        // Another name, a pick or Clear came first.
+        guard performerChoices == .loading(name) else { return }
+        if found.isEmpty {
+            chooseAll(name)
+        } else {
+            performerChoices = .ready(name, found)
+        }
+    }
+
+    func choose(_ performer: ConcertPerformer) {
+        performerChoices = nil
+        searchText = performer.name
+        searchedArtist = ArtistSearch(name: performer.name, performerID: performer.id)
+    }
+
+    /// Every event matching the name, for festivals and bills without a named act.
+    func chooseAll(_ name: String) {
+        performerChoices = nil
+        searchedArtist = ArtistSearch(name: name)
+    }
+
+    /// Back to everything near.
+    func clearSearch() {
+        performerChoices = nil
+        searchedArtist = nil
     }
 }

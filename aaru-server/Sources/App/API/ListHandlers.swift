@@ -129,14 +129,18 @@ extension Components.Schemas.ListItem {
             title: .init(member.title),
             entry: member.entry.map(Components.Schemas.LibraryEntry.init),
             showStatus: member.airing?.status.flatMap { .init(rawValue: $0.rawValue) },
-            nextAiring: member.airing?.next.flatMap { episode in
-                episode.airsAt.map {
-                    .init(
-                        season: episode.season, number: episode.episode, episodeName: episode.name, airsAt: $0,
-                        airTimeKnown: episode.airTimeKnown
-                    )
-                }
-            }
+            nextAiring: member.airing?.next.flatMap(Components.Schemas.UpcomingEpisode.init)
+        )
+    }
+}
+
+extension Components.Schemas.UpcomingEpisode {
+    /// Nil when the episode has no air date yet.
+    init?(_ episode: CatalogEpisode) {
+        guard let airsAt = episode.airsAt else { return nil }
+        self.init(
+            season: episode.season, number: episode.episode, episodeName: episode.name, airsAt: airsAt,
+            airTimeKnown: episode.airTimeKnown
         )
     }
 }

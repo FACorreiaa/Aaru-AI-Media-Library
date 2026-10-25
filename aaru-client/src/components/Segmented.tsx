@@ -40,6 +40,8 @@ export function Segmented<T extends string>(props: {
   class?: string
   /** Size and spacing of each choice, e.g. "min-h-9 px-4 text-sm". */
   itemClass?: string
+  /** Extra classes on the track, e.g. a strip that scrolls instead of wrapping. */
+  trackClass?: string
 }) {
   const variant = () => props.variant ?? 'pill'
   return (
@@ -54,6 +56,7 @@ export function Segmented<T extends string>(props: {
         class={cn(
           'p-0 group-[[aria-orientation=vertical]]/segmented-control:flex-col',
           tracks[variant()],
+          props.trackClass,
         )}
       >
         <For each={props.options}>

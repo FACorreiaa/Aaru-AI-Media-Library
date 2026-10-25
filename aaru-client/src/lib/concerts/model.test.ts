@@ -4,6 +4,7 @@ import {
   dateBlock,
   detailLine,
   distanceLabel,
+  isRetiredConcertsView,
   parseView,
   pendingLine,
   placeLabel,
@@ -11,7 +12,8 @@ import {
   placeQuery,
   roundCoordinate,
   roundPosition,
-  shownView,
+  searchEmptyLine,
+  searchHeading,
 } from './model'
 import type { Concert } from './model'
 
@@ -27,18 +29,22 @@ const concert = (over: Partial<Concert> = {}): Concert => ({
 describe('discover view', () => {
   it('reads the three views and nothing else', () => {
     expect(parseView('today')).toBe('today')
+    expect(parseView('on-air')).toBe('on-air')
     expect(parseView('seasons')).toBe('seasons')
-    expect(parseView('concerts')).toBe('concerts')
-    expect(parseView('Concerts')).toBeUndefined()
+    expect(parseView('Seasons')).toBeUndefined()
     expect(parseView(3)).toBeUndefined()
     expect(parseView(undefined)).toBeUndefined()
   })
 
-  it('falls back to Today when concerts are off', () => {
-    expect(shownView('concerts', true)).toBe('concerts')
-    expect(shownView('concerts', false)).toBe('today')
-    expect(shownView('seasons', false)).toBe('seasons')
-    expect(shownView(undefined, true)).toBe('today')
+  it('no longer has a Concerts view (NAV-001)', () => {
+    expect(parseView('concerts')).toBeUndefined()
+  })
+
+  it('sends only the old Concerts view on to Music', () => {
+    expect(isRetiredConcertsView('concerts')).toBe(true)
+    expect(isRetiredConcertsView('Concerts')).toBe(false)
+    expect(isRetiredConcertsView('seasons')).toBe(false)
+    expect(isRetiredConcertsView(undefined)).toBe(false)
   })
 })
 
@@ -155,5 +161,26 @@ describe('your artists', () => {
     expect(
       artistsEmptyLine({ ...found, matched: 1, items: [concert()] }),
     ).toBeNull()
+  })
+})
+
+describe('search by artist', () => {
+  it('heads the section with the artist and where it looks', () => {
+    expect(searchHeading('Radiohead', 'near', 'Lisbon')).toBe(
+      'Radiohead near Lisbon',
+    )
+    expect(searchHeading('Radiohead', 'near', null)).toBe('Radiohead near you')
+    expect(searchHeading('Radiohead', 'anywhere', 'Lisbon')).toBe(
+      'Radiohead anywhere',
+    )
+  })
+
+  it('says what was empty: the radius near, every date anywhere', () => {
+    expect(searchEmptyLine('Radiohead', 'near', 50)).toBe(
+      'No Radiohead concerts within 50 km.',
+    )
+    expect(searchEmptyLine('Radiohead', 'anywhere', undefined)).toBe(
+      'No upcoming Radiohead concerts listed.',
+    )
   })
 })

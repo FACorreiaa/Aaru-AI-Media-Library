@@ -1923,6 +1923,51 @@ paths:
               schema: {$ref: '#/components/schemas/ConcertPage'}
         default:
           $ref: '#/components/responses/Error'
+  /v1/concerts/search:
+    post:
+      operationId: searchConcerts
+      summary: Music events matching an artist's name, near a place or anywhere (MUS-010), soonest first.
+      description: >-
+        POST so neither the name nor a position sits in a URL. The name goes to Ticketmaster as
+        free text, so other acts whose events carry the word can match. `near` searches around a
+        one-off point or the saved city like `/v1/concerts/near` (with neither, 409 `no_place`);
+        `anywhere` sends the name alone, and each concert's `distanceKm` is worked out by the
+        server from the point or saved city when there is one. Neither name nor position is
+        logged; the same list for everyone, cached by the server.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ConcertSearchRequest'}
+      responses:
+        '200':
+          description: The page. `unavailable` when concerts are off or the provider is down.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ConcertSearchPage'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/concerts/performers:
+    post:
+      operationId: searchConcertPerformers
+      summary: Performers whose name matches what the user typed, to pick one before a search (MUS-010).
+      description: >-
+        Ticketmaster's own performer list for the name, best first, up to eight. Picking one and
+        sending its `id` as `performerId` to `/v1/concerts/search` lists only that performer's
+        concerts. POST so the name never sits in a URL; not logged, cached by the server.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ConcertPerformerRequest'}
+      responses:
+        '200':
+          description: The performers. `unavailable` when concerts are off or the provider is down.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ConcertPerformerList'}
+        default:
+          $ref: '#/components/responses/Error'
   /v1/concerts/artists:
     get:
       operationId: getArtistConcerts
@@ -1993,6 +2038,184 @@ paths:
           description: Removed, or there was none.
         default:
           $ref: '#/components/responses/Error'
+  /v1/sports/suggested:
+    get:
+      operationId: getSportSuggestions
+      summary: The first-run picks for Sports (SPT-002).
+      description: >-
+        A fixed list of leagues and promotions (Premier League, La Liga, NBA, NFL, UFC, WWE…) with
+        their badges once known. The same for everyone; never a recommendation.
+      responses:
+        '200':
+          description: The picks.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SportEntityList'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/sports/search:
+    get:
+      operationId: searchSports
+      summary: Leagues, teams and players by name, from the sports provider (SPT-002).
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: 2 to 100 characters.
+          schema: {type: string}
+        - name: kind
+          in: query
+          required: false
+          description: Absent searches all three.
+          schema: {$ref: '#/components/schemas/SportEntityKind'}
+      responses:
+        '200':
+          description: Up to ten of each kind, leagues first.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SportEntityList'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/sports/favorites:
+    get:
+      operationId: getSportFavorites
+      summary: Each followed league, team and player with what is live, next and last (SPT-002).
+      description: >-
+        Near-live: scores refresh about every two minutes for football, NFL, NBA, MLB and NHL.
+        UFC and WWE cards have results, not live scores. Entries still being fetched come back
+        `pending`; ask again in a few seconds.
+      responses:
+        '200':
+          description: The favorites, in follow order.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SportFavorites'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/sports/schedule:
+    get:
+      operationId: getSportSchedule
+      summary: One day of events for the leagues the user follows, favorites highlighted (SPT-002).
+      parameters:
+        - name: date
+          in: query
+          required: true
+          description: The local day, YYYY-MM-DD.
+          schema: {type: string}
+        - name: tz
+          in: query
+          required: false
+          description: The IANA time zone the day is in. Default UTC.
+          schema: {type: string}
+      responses:
+        '200':
+          description: The day, grouped by league.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SportSchedule'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/sports/events/{id}:
+    get:
+      operationId: getSportEvent
+      summary: One event with its live line and where to watch it (SPT-002, SPT-005).
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string}}
+      responses:
+        '200':
+          description: The event.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SportEventDetail'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/me/sport-follows:
+    get:
+      operationId: listSportFollows
+      summary: The leagues, teams and players the user follows in Sports, oldest first.
+      responses:
+        '200':
+          description: The follows.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SportFollowList'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/me/sport-follows/{kind}/{providerId}:
+    parameters:
+      - {name: kind, in: path, required: true, schema: {$ref: '#/components/schemas/SportEntityKind'}}
+      - {name: providerId, in: path, required: true, schema: {type: string}}
+    put:
+      operationId: followSport
+      summary: Follows a league, team or player by the sports provider's id. Idempotent.
+      description: >-
+        Sports only: never a library write, never journaled, never shown to friends. 404 when the
+        provider does not know the id, 409 `too_many_follows` past 100, 503 when Sports are off.
+      responses:
+        '200':
+          description: Followed.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SportEntity'}
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: unfollowSport
+      summary: Stops following. Idempotent.
+      responses:
+        '204':
+          description: Not followed any more, or never was.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/me/sport-settings:
+    get:
+      operationId: getSportSettings
+      summary: The country "Where to watch" looks at, and whether Sports are on at all.
+      responses:
+        '200':
+          description: The settings.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SportSettings'}
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      operationId: saveSportSettings
+      summary: Saves the "Where to watch" country; absent or null clears it.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/SportSettingsInput'}
+      responses:
+        '200':
+          description: Saved.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SportSettings'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/titles/resolve:
+    post:
+      operationId: resolveTitle
+      summary: >-
+        The page for a catalog ref, in the library or not (LIB-006). Resolving may add the title to
+        the catalog; it never adds it to the library.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MediaRef'
+      responses:
+        '200':
+          description: The title, and the caller's library item when they have it.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TitlePreview'
+        default:
+          $ref: '#/components/responses/Error'
   /v1/titles/{id}:
     get:
       operationId: getTitle
@@ -2034,6 +2257,21 @@ paths:
           content:
             application/json:
               schema: {$ref: '#/components/schemas/BoardPostPage'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/library/watching:
+    get:
+      operationId: listWatching
+      summary: >-
+        Films, shows and anime in progress with what Library's Watching page shows (APP-018):
+        the next episode to watch with its name and what is left, and a show's status and next
+        airing. Anime in the backlog are included with `entry.inBacklog`. Newest change first.
+      responses:
+        '200':
+          description: The titles in progress.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Watching'}
         default:
           $ref: '#/components/responses/Error'
   /v1/library/items:
@@ -4317,15 +4555,22 @@ components:
           description: >-
             Why the items are partial, in words to show, e.g. AniList being down while TMDB's
             Japanese animation stands in.
+    DiscoverRowKind:
+      type: string
+      enum: [film, show, anime, manga, book, album]
+      description: >-
+        What a Discover row holds (DISC-004), as Library's kinds: anime is its own kind. Discover
+        shows film, show and anime rows; the Books, Manga and Music pages show their own.
     DiscoverRow:
       type: object
-      required: [id, title, items]
+      required: [id, kind, title, items]
       properties:
         id:
           type: string
           description: >-
-            Stable row key, e.g. `tv_trending`, `anime_season`, `books_trending`, `music_new`. Not an enum:
-            the server may add rows, and clients render any row they get.
+            Stable row key, e.g. `tv_trending`, `anime_season`, `books_trending`, `manga_trending`,
+            `music_new`. Not an enum: the server may add rows, and clients render any row they get.
+        kind: {$ref: '#/components/schemas/DiscoverRowKind'}
         title:
           type: string
           description: Display title, e.g. "Fall 2026 anime".
@@ -4456,13 +4701,170 @@ components:
         country: {type: string}
         distanceKm:
           type: number
-          description: From the searched point. Absent for an artist's concerts.
+          description: >-
+            From the searched point, or from the point or saved city for an `anywhere` search.
+            Absent for "Your artists on tour", and when the venue's position is unknown.
         url:
           type: string
           description: Ticketmaster's event page.
         imageUrl:
           type: string
           description: Ticketmaster's image for the event, referenced, never hosted.
+    SportEntityKind:
+      type: string
+      enum: [league, team, player]
+    SportEntity:
+      type: object
+      description: >-
+        A league (or promotion: UFC, WWE), team or player from the sports provider, by its id.
+        Catalog data for Sports only; never a Title.
+      required: [kind, id, name, sport, following]
+      properties:
+        kind: {$ref: '#/components/schemas/SportEntityKind'}
+        id: {type: string, description: The provider's id.}
+        name: {type: string}
+        sport: {type: string, description: 'The provider''s sport: Soccer, Basketball, American Football, Fighting…'}
+        badgeUrl: {type: string, description: Badge, logo or photo, referenced, never hosted.}
+        country: {type: string}
+        leagueId: {type: string}
+        teamId: {type: string, description: A player's team (a fighter's division).}
+        teamName: {type: string}
+        following: {type: boolean, description: Whether the user follows it.}
+    SportEntityList:
+      type: object
+      required: [items, unavailable]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/SportEntity'}
+        unavailable:
+          type: boolean
+          description: True when Sports are off on this server.
+    SportFollowList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/SportEntity'}
+    SportSide:
+      type: object
+      required: [name]
+      properties:
+        id: {type: string}
+        name: {type: string}
+        badgeUrl: {type: string}
+        score: {type: integer}
+    SportEventStatus:
+      type: string
+      enum: [scheduled, live, finished, postponed, cancelled]
+    SportEvent:
+      type: object
+      description: >-
+        One match, game or card (a UFC or WWE event has no home and away). Catalog data, kept no
+        longer than the cache.
+      required: [id, sport, name, day, status, isFavorite]
+      properties:
+        id: {type: string}
+        sport: {type: string}
+        name: {type: string}
+        leagueId: {type: string}
+        league: {type: string}
+        leagueBadgeUrl: {type: string}
+        home: {$ref: '#/components/schemas/SportSide'}
+        away: {$ref: '#/components/schemas/SportSide'}
+        startsAt: {type: string, format: date-time, description: The exact start, when known.}
+        day: {type: string, description: 'The UTC day, YYYY-MM-DD.'}
+        status: {$ref: '#/components/schemas/SportEventStatus'}
+        progress: {type: string, description: 'The live clock or period: "67", "HT", "Q3". Live only.'}
+        venue: {type: string}
+        round: {type: string}
+        imageUrl: {type: string}
+        isFavorite: {type: boolean, description: A followed team or player's team plays in it.}
+    SportFavorite:
+      type: object
+      required: [entity, live, pending]
+      properties:
+        entity: {$ref: '#/components/schemas/SportEntity'}
+        live:
+          type: array
+          items: {$ref: '#/components/schemas/SportEvent'}
+        next: {$ref: '#/components/schemas/SportEvent'}
+        last: {$ref: '#/components/schemas/SportEvent'}
+        pending: {type: boolean, description: Still being fetched; ask again in a few seconds.}
+    SportFavorites:
+      type: object
+      required: [items, unavailable]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/SportFavorite'}
+        unavailable: {type: boolean}
+    SportScheduleGroup:
+      type: object
+      required: [league, sport, events]
+      properties:
+        leagueId: {type: string}
+        league: {type: string}
+        sport: {type: string}
+        badgeUrl: {type: string}
+        events:
+          type: array
+          items: {$ref: '#/components/schemas/SportEvent'}
+    SportSchedule:
+      type: object
+      required: [date, groups, pending, unavailable]
+      properties:
+        date: {type: string}
+        groups:
+          type: array
+          description: Leagues with a favorite first, then by name.
+          items: {$ref: '#/components/schemas/SportScheduleGroup'}
+        pending: {type: boolean, description: Some leagues are still being fetched.}
+        unavailable: {type: boolean}
+    SportBroadcast:
+      type: object
+      required: [channel]
+      properties:
+        channel: {type: string}
+        country: {type: string}
+        logoUrl: {type: string}
+    SportEventDetail:
+      type: object
+      required: [event, inYourCountry, elsewhere]
+      properties:
+        event: {$ref: '#/components/schemas/SportEvent'}
+        inYourCountry:
+          type: array
+          description: Channels in the "Where to watch" country. Empty when none is chosen.
+          items: {$ref: '#/components/schemas/SportBroadcast'}
+        elsewhere:
+          type: array
+          description: Every other channel the provider lists, by country.
+          items: {$ref: '#/components/schemas/SportBroadcast'}
+        watchCountryCode: {type: string}
+    SportSettings:
+      type: object
+      required: [available]
+      properties:
+        watchCountryCode: {type: string, description: ISO 3166-1 alpha-2.}
+        available:
+          type: boolean
+          description: False when Sports are off on this server; clients hide the Sports tab.
+    SportSettingsInput:
+      type: object
+      properties:
+        watchCountryCode:
+          type: [string, 'null']
+          description: ISO 3166-1 alpha-2; null or absent clears it.
+    SportsExport:
+      type: object
+      required: [follows]
+      properties:
+        follows:
+          type: array
+          items: {$ref: '#/components/schemas/SportEntity'}
+        watchCountryCode: {type: string}
     ConcertPlace:
       type: object
       required: [name, latitude, longitude]
@@ -4514,6 +4916,85 @@ components:
           items: {$ref: '#/components/schemas/Concert'}
         page: {type: integer}
         hasMore: {type: boolean}
+        unavailable:
+          type: boolean
+          description: Concerts are off, or Ticketmaster did not answer and nothing was cached.
+    ConcertSearchScope:
+      type: string
+      description: '`near` the point or saved city, inside `radiusKm`; `anywhere` for every upcoming date.'
+      enum: [near, anywhere]
+    ConcertSearchRequest:
+      type: object
+      required: [q, scope, radiusKm]
+      properties:
+        q:
+          type: string
+          description: The artist's name, 2 to 100 characters. Not logged.
+        performerId:
+          type: string
+          description: >-
+            A performer's `id` from `/v1/concerts/performers`: only their concerts. Absent searches
+            `q` as free text. Letters, digits, `-` and `_`, at most 64.
+        scope: {$ref: '#/components/schemas/ConcertSearchScope'}
+        latitude:
+          type: number
+          description: Sent with `longitude` for a one-off position; absent uses the saved city.
+        longitude: {type: number}
+        radiusKm:
+          type: integer
+          description: Used by `near` only.
+          enum: [25, 50, 100]
+        page:
+          type: integer
+          description: 1-based, at most 10.
+          default: 1
+    ConcertSearchPage:
+      type: object
+      required: [query, scope, items, page, hasMore, unavailable]
+      properties:
+        query:
+          type: string
+          description: The name as searched, trimmed.
+        performerId:
+          type: string
+          description: The performer searched by, when one was picked.
+        scope: {$ref: '#/components/schemas/ConcertSearchScope'}
+        place: {$ref: '#/components/schemas/ConcertPlace'}
+        radiusKm:
+          type: integer
+          description: Present for `near`.
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/Concert'}
+        page: {type: integer}
+        hasMore: {type: boolean}
+        unavailable:
+          type: boolean
+          description: Concerts are off, or Ticketmaster did not answer and nothing was cached.
+    ConcertPerformerRequest:
+      type: object
+      required: [q]
+      properties:
+        q:
+          type: string
+          description: The name as typed, 2 to 100 characters. Not logged.
+    ConcertPerformer:
+      type: object
+      description: One performer as Ticketmaster lists them.
+      required: [id, name]
+      properties:
+        id: {type: string}
+        name: {type: string}
+        imageUrl:
+          type: string
+          description: Ticketmaster's picture of the performer, referenced, never hosted.
+    ConcertPerformerList:
+      type: object
+      required: [items, unavailable]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/ConcertPerformer'}
         unavailable:
           type: boolean
           description: Concerts are off, or Ticketmaster did not answer and nothing was cached.
@@ -4591,6 +5072,15 @@ components:
             Albums only: the tracklist of the album's earliest official release, by disc then
             position. Absent when MusicBrainz could not be reached and none is stored yet.
           items: {$ref: '#/components/schemas/AlbumTrack'}
+    TitlePreview:
+      type: object
+      required: [title]
+      properties:
+        title: {$ref: '#/components/schemas/TitleDetail'}
+        libraryItemId:
+          type: string
+          format: uuid
+          description: Set when the title is in the caller's library; its title page is then the one to open.
     AlbumTrack:
       type: object
       required: [disc, position, name]
@@ -4703,7 +5193,7 @@ components:
         ids: {$ref: '#/components/schemas/ExternalIds'}
     LibraryEntry:
       type: object
-      required: [id, title, status, isOwned, addedAt, updatedAt]
+      required: [id, title, status, isOwned, addedAt, updatedAt, inBacklog]
       properties:
         id: {type: string, format: uuid}
         title: {$ref: '#/components/schemas/TitleSummary'}
@@ -4717,6 +5207,18 @@ components:
         progress: {$ref: '#/components/schemas/ShowProgress'}
         bookProgress: {$ref: '#/components/schemas/BookProgress'}
         mangaProgress: {$ref: '#/components/schemas/MangaProgress'}
+        lastWatchedAt:
+          type: string
+          format: date-time
+          description: >-
+            The newest episode tick the user made in Aaru. Imported, pulled and restored ticks do
+            not count. Absent when there is none.
+        inBacklog:
+          type: boolean
+          description: >-
+            APP-018 · an anime in progress the user never touched in Aaru: its status came from an
+            import and it has no tick made in Aaru. Derived on every read; the status stays
+            `in_progress`. Library's Now leaves these out of Watching.
         watchedEpisodes:
           type: array
           description: |
@@ -4777,6 +5279,7 @@ components:
           description: Every listen in your listening log, newest first (MUS-005).
           items: {$ref: '#/components/schemas/Listen'}
         favorites: {$ref: '#/components/schemas/Favorites'}
+        sports: {$ref: '#/components/schemas/SportsExport'}
     LibraryPage:
       type: object
       required: [items, page]
@@ -4868,6 +5371,31 @@ components:
           type: string
           enum: [upcoming, returning, ended, canceled]
         nextAiring: {$ref: '#/components/schemas/UpcomingEpisode'}
+    Watching:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/WatchingItem'}
+    WatchingItem:
+      type: object
+      description: >-
+        One title in progress. Shows whose episodes are loaded carry `showStatus` and
+        `nextAiring` (the first episode not aired yet); a show with an aired episode left to
+        watch carries `nextName`, `nextRuntimeMinutes`, `remainingCount` and `remainingMinutes`
+        (aired, unwatched, specials left out), as Up Next's ContinueEntry does.
+      required: [entry]
+      properties:
+        entry: {$ref: '#/components/schemas/LibraryEntry'}
+        showStatus:
+          type: string
+          enum: [upcoming, returning, ended, canceled]
+        nextAiring: {$ref: '#/components/schemas/UpcomingEpisode'}
+        nextName: {type: string}
+        nextRuntimeMinutes: {type: integer}
+        remainingCount: {type: integer}
+        remainingMinutes: {type: integer}
     UpcomingEpisode:
       type: object
       required: [season, number, airsAt, airTimeKnown]

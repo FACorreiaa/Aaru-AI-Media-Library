@@ -13,17 +13,30 @@ final class FakeConcerts: ConcertListing, AlbumArtistListing, @unchecked Sendabl
         var page: Int
     }
 
+    struct SearchCall {
+        var match: ConcertMatch
+        var point: GeoPoint?
+        var radiusKm: Int?
+        var page: Int
+    }
+
     private var nearCalls: [NearCall] = []
+    private var searchCalls: [SearchCall] = []
     private var performingCalls: [[String]] = []
     private var attractionCalls: [String] = []
     private var failing = false
     var nearConcerts: [Concert] = []
+    var searchConcerts: [Concert] = []
     var byAttraction: [String: [Concert]] = [:]
     var attractionsByName: [String: [ConcertAttraction]] = [:]
     var artistsByAlbum: [String: [MusicArtist]] = [:]
 
     var asked: [NearCall] {
         lock.withLock { nearCalls }
+    }
+
+    var searched: [SearchCall] {
+        lock.withLock { searchCalls }
     }
 
     var performers: [[String]] {
@@ -48,6 +61,16 @@ final class FakeConcerts: ConcertListing, AlbumArtistListing, @unchecked Sendabl
         lock.withLock { nearCalls.append(NearCall(point: point, radiusKm: radiusKm, page: page)) }
         try check()
         return ConcertResults(concerts: nearConcerts, hasMore: false)
+    }
+
+    func search(_ match: ConcertMatch, near: (point: GeoPoint, radiusKm: Int)?, page: Int, from _: Date) async throws
+        -> ConcertResults
+    {
+        lock.withLock {
+            searchCalls.append(SearchCall(match: match, point: near?.point, radiusKm: near?.radiusKm, page: page))
+        }
+        try check()
+        return ConcertResults(concerts: searchConcerts, hasMore: false)
     }
 
     func performing(_ attractionIDs: [String], from _: Date) async throws -> [Concert] {

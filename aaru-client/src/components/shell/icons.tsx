@@ -74,6 +74,47 @@ export const GroupsIcon = (p: IconProps) => (
   </Icon>
 )
 
+export const SportsIcon = (p: IconProps) => (
+  <Icon class={p.class}>
+    <path d="M8 4.5h8v5a4 4 0 0 1-8 0z" />
+    <path d="M8 6.5H5.5a2.5 2.5 0 0 0 2.6 3.4M16 6.5h2.5a2.5 2.5 0 0 1-2.6 3.4" />
+    <path d="M12 13.5v3M8.5 19.5h7M9.5 19.5c0-1.7 1.1-3 2.5-3s2.5 1.3 2.5 3" />
+  </Icon>
+)
+
+export const BooksIcon = (p: IconProps) => (
+  <Icon class={p.class}>
+    <path d="M12 6.5c-1.8-1.3-4.3-2-7.5-2v13c3.2 0 5.7.7 7.5 2 1.8-1.3 4.3-2 7.5-2v-13c-3.2 0-5.7.7-7.5 2z" />
+    <path d="M12 6.5v13" />
+  </Icon>
+)
+
+/** A page of panels: manga's unit. */
+export const MangaIcon = (p: IconProps) => (
+  <Icon class={p.class}>
+    <rect x="4.5" y="3.5" width="15" height="17" rx="1.5" />
+    <path d="M4.5 11h15M12 3.5V11M10 11l-2 9.5" />
+  </Icon>
+)
+
+export const MusicIcon = (p: IconProps) => (
+  <Icon class={p.class}>
+    <path d="M9 17.5V6l10-2v11.5" />
+    <circle cx="6.75" cy="17.5" r="2.25" />
+    <circle cx="16.75" cy="15.5" r="2.25" />
+  </Icon>
+)
+
+/** Four squares: the More group's header. */
+export const MoreIcon = (p: IconProps) => (
+  <Icon class={p.class}>
+    <rect x="4.5" y="4.5" width="6" height="6" rx="1.5" />
+    <rect x="13.5" y="4.5" width="6" height="6" rx="1.5" />
+    <rect x="4.5" y="13.5" width="6" height="6" rx="1.5" />
+    <rect x="13.5" y="13.5" width="6" height="6" rx="1.5" />
+  </Icon>
+)
+
 export const InsightsIcon = (p: IconProps) => (
   <Icon class={p.class}>
     <path d="M4.5 19.5h15" />

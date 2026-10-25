@@ -2,11 +2,11 @@ import Foundation
 import Observation
 
 /// The app's destinations (DESIGN.md §18), in sidebar order. iPhone's tab bar shows the first
-/// four and Groups; Lists, Friends, Insights and Settings live in the sidebar (iPad, Mac) and are
-/// reached on iPhone from Library (Lists), Groups and Friends & privacy (Friends), and the
-/// account button.
+/// four and More, which iOS builds from the rest of the compact tabs: Groups, Books, Manga, Music
+/// and Sports. Lists, Friends, Insights and Settings have no tab there and are reached from
+/// Library (Lists, Insights), Groups and Friends & privacy (Friends), and the account button.
 enum AppTab: String, CaseIterable, Identifiable {
-    case home, discover, library, calendar, lists, friends, groups, insights, settings
+    case home, discover, library, calendar, lists, friends, groups, books, manga, music, sports, insights, settings
 
     var id: String {
         rawValue
@@ -21,6 +21,10 @@ enum AppTab: String, CaseIterable, Identifiable {
         case .lists: "Lists"
         case .friends: "Friends"
         case .groups: "Groups"
+        case .books: "Books"
+        case .manga: "Manga"
+        case .music: "Music"
+        case .sports: "Sports"
         case .insights: "Insights"
         case .settings: "Settings"
         }
@@ -35,14 +39,32 @@ enum AppTab: String, CaseIterable, Identifiable {
         case .lists: "list.bullet.rectangle"
         case .friends: "person.2"
         case .groups: "bubble.left.and.bubble.right"
+        case .books: "book"
+        case .manga: "book.pages"
+        case .music: "music.note"
+        case .sports: "sportscourt"
         case .insights: "chart.bar"
         case .settings: "gearshape"
         }
     }
 
-    /// The seven destinations, above the gap in the sidebar. Friends sits between Lists and Groups
-    /// (SOC-003, as on the web).
-    static let primary: [AppTab] = [.home, .discover, .library, .calendar, .lists, .friends, .groups]
+    /// The kind a kind page shows (NAV-002): Books, Manga and Music. Nil for every other tab.
+    var kind: MediaKind? {
+        switch self {
+        case .books: .book
+        case .manga: .manga
+        case .music: .music
+        default: nil
+        }
+    }
+
+    /// The destinations at the top of the sidebar. Friends sits between Lists and the More
+    /// group (SOC-003, as on the web).
+    static let primary: [AppTab] = [.home, .discover, .library, .calendar, .lists, .friends]
+
+    /// The sidebar's More group, and iPhone's More tab (NAV-002). Sports (SPT-004) comes last,
+    /// and only while the server has it on.
+    static let more: [AppTab] = [.groups, .books, .manga, .music, .sports]
 
     /// Set apart at the bottom of the sidebar. The Mac has no Settings row: Settings is its
     /// Settings scene (⌘,).
@@ -54,12 +76,15 @@ enum AppTab: String, CaseIterable, Identifiable {
         #endif
     }
 
-    /// The Mac's Go menu: ⌘1…⌘8 for the eight sidebar rows.
-    static let goMenu: [AppTab] = primary + [.insights]
+    /// The Mac's Go menu, in sidebar order; ⌘1…⌘9 go to the first nine.
+    static let goMenu: [AppTab] = primary + more + [.insights]
 
-    /// Kept in the compact tab bar. The rest are sidebar-only there (§18, UX-001).
+    /// iPhone's tabs, in order: the first four sit in the bar and iOS gathers the rest under More.
+    static let compact: [AppTab] = [.home, .discover, .library, .calendar] + more
+
+    /// Has a tab on iPhone, in the bar or under More. The rest are sidebar-only (§18, UX-001).
     var isInCompactTabBar: Bool {
-        [.home, .discover, .library, .calendar, .groups].contains(self)
+        Self.compact.contains(self)
     }
 }
 
@@ -101,6 +126,24 @@ final class AppRouter {
     /// Whether the main window is in a compact width right now (set by the root view).
     var isCompact = false
 
+    /// Whether this server has Sports on (`getSportSettings`); the Sports tab shows only then.
+    var sportsAvailable = false {
+        didSet {
+            if !sportsAvailable, tab == .sports {
+                tab = .home
+            }
+        }
+    }
+
+    /// Music's view (NAV-002): its albums, Concerts or Listens. Here so Library's menu and Insights
+    /// can open Listens.
+    var musicPane: MusicPane = .albums
+
+    /// The Go menu's rows, without Sports while the server has it off.
+    var goMenu: [AppTab] {
+        AppTab.goMenu.filter { $0 != .sports || sportsAvailable }
+    }
+
     /// Opens Settings on a page, or on its list when `page` is nil, wherever Settings lives on
     /// this platform: the Settings scene (Mac), the sidebar row (regular width) or a sheet.
     func openSettings(_ page: SettingsPage? = nil) {
@@ -140,8 +183,8 @@ final class AppRouter {
         }
     }
 
-    /// Friends (SOC-003): its own destination in a sidebar. On iPhone the five tabs are full, so
-    /// Groups pushes it; from the Settings sheet, the sheet closes first.
+    /// Friends (SOC-003): its own destination in a sidebar. On iPhone it has no tab, so Groups
+    /// pushes it; from the Settings sheet, the sheet closes first.
     func showFriends() {
         #if os(iOS)
             if isCompact {
@@ -164,6 +207,12 @@ final class AppRouter {
             tab = .library
         default: tab = destination
         }
+    }
+
+    /// Listens (MUS-008): a view of the Music page, from Library's menu and Insights.
+    func showListens() {
+        musicPane = .listens
+        tab = .music
     }
 
     func showLibrary(status: LibraryStatus?) {
@@ -196,6 +245,8 @@ final class AppRouter {
         showsSearch = false
         showsListsInLibrary = false
         showsFriendsInGroups = false
+        musicPane = .albums
+        sportsAvailable = false
         pendingNewList = false
         pendingBoardTitle = nil
         settingsPath = []

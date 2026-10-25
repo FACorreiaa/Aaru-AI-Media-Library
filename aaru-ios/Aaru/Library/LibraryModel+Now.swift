@@ -48,26 +48,97 @@ struct NowItem: Identifiable {
     }
 }
 
-/// "Watching" or "Reading", with its cards.
+/// One of Now's groups, and the page "Show all" opens (APP-018).
+enum NowGroupID: String, CaseIterable, Hashable {
+    case watching, reading, listening
+
+    var title: String {
+        switch self {
+        case .watching: "Watching"
+        case .reading: "Reading"
+        case .listening: "Listening"
+        }
+    }
+
+    var kinds: [MediaKind] {
+        switch self {
+        case .watching: [.film, .show, .anime]
+        case .reading: [.book, .manga]
+        case .listening: [.music]
+        }
+    }
+}
+
+/// "Watching" or "Reading", with its cards. Anime in the backlog are counted, not listed.
 struct NowGroup: Identifiable {
-    let title: String
+    let id: NowGroupID
     let items: [NowItem]
+    let backlogCount: Int
+
+    var title: String {
+        id.title
+    }
+}
+
+/// How a Now group's page orders its titles (APP-018).
+enum NowSort: String, CaseIterable, Identifiable {
+    case recent, airsNext, title
 
     var id: String {
-        title
+        rawValue
+    }
+
+    func label(for group: NowGroupID) -> String {
+        switch self {
+        case .recent: group == .watching ? "Recently watched" : "Recent"
+        case .airsNext: "Airs next"
+        case .title: "A–Z"
+        }
+    }
+}
+
+extension LibraryEntry {
+    /// When the user last moved it: their newest tick in Aaru, else the item's last change.
+    var recentAt: Date {
+        lastWatchedAt ?? updatedAt
     }
 }
 
 extension LibraryModel {
+    /// In-progress items of a kind (or all), newest activity first.
+    private func nowItems(kind: MediaKind?) -> [NowItem] {
+        inProgress.sorted { $0.recentAt > $1.recentAt }
+            .map(NowItem.init)
+            .filter { kind == nil || $0.kind == kind }
+    }
+
     /// In-progress items grouped as the user would say it, newest first; a chosen kind keeps only
-    /// that kind, and empty groups are left out.
+    /// that kind, and empty groups are left out. Anime the user never touched in Aaru (the
+    /// server's `inBacklog`) wait on the Watching page instead.
     func nowGroups(kind: MediaKind?) -> [NowGroup] {
-        let items = inProgress.map(NowItem.init).filter { kind == nil || $0.kind == kind }
-        return [
-            NowGroup(title: "Watching", items: items.filter { ![.book, .manga, .music].contains($0.kind) }),
-            NowGroup(title: "Reading", items: items.filter { $0.kind == .book || $0.kind == .manga }),
-            NowGroup(title: "Listening", items: items.filter { $0.kind == .music }),
-        ].filter { !$0.items.isEmpty }
+        let items = nowItems(kind: kind)
+        return NowGroupID.allCases.map { group in
+            let all = items.filter { group.kinds.contains($0.kind) }
+            let active = all.filter { !$0.entry.inBacklog }
+            return NowGroup(id: group, items: active, backlogCount: all.count - active.count)
+        }
+        .filter { !$0.items.isEmpty || $0.backlogCount > 0 }
+    }
+
+    /// One group's page: what the user keeps up with, and the anime backlog apart.
+    func groupItems(_ group: NowGroupID, kind: MediaKind?) -> (active: [NowItem], backlog: [NowItem]) {
+        let all = nowItems(kind: kind).filter { group.kinds.contains($0.kind) }
+        return (all.filter { !$0.entry.inBacklog }, all.filter(\.entry.inBacklog))
+    }
+
+    /// Runs a card's or row's next step. Returns a problem to show, or nil.
+    func perform(_ action: NowAction, on item: NowItem, api: Client?) async -> String? {
+        switch action {
+        case .tickNext: await tickNext(item, api: api)
+        case let .page(page): await setPage(page, of: item, api: api)
+        case let .chapter(chapter): await setChapter(chapter, of: item, api: api)
+        case .finish: await finish(item, api: api)
+        }
     }
 
     /// Ticks the next episode. Returns a problem to show, or nil.

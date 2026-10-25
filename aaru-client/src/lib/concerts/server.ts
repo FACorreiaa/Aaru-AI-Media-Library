@@ -7,7 +7,9 @@ import type {
   ArtistConcerts,
   ConcertPage,
   ConcertPlace,
+  ConcertPerformerList,
   ConcertPlaceSetting,
+  ConcertSearchPage,
 } from './model'
 
 // MUS-003 on the web: the Worker forwards to `/v1/concerts/*` and `/v1/me/concert-place`, nothing
@@ -114,3 +116,54 @@ export const getConcertsNear = createServerFn({ method: 'POST' })
       page: check(result, 'Concerts could not be loaded.'),
     }
   })
+
+/** A page of an artist's concerts (MUS-010), or `noPlace` for `near` with no city or position. */
+export type SearchResult =
+  | { noPlace: false; page: ConcertSearchPage }
+  | { noPlace: true; message: string }
+
+// The name travels in the POST body like a position: never in a URL.
+export const searchConcerts = createServerFn({ method: 'POST' })
+  .validator(
+    z
+      .object({
+        q: z.string().trim().min(2).max(100),
+        performerId: z
+          .string()
+          .regex(/^[A-Za-z0-9_-]{1,64}$/)
+          .optional(),
+        scope: z.enum(['near', 'anywhere']),
+        latitude: z.number().min(-90).max(90).optional(),
+        longitude: z.number().min(-180).max(180).optional(),
+        radiusKm: z.union([z.literal(25), z.literal(50), z.literal(100)]),
+        page: z.number().int().min(1).max(10),
+      })
+      .refine(
+        (body) =>
+          (body.latitude === undefined) === (body.longitude === undefined),
+        { message: 'Send latitude and longitude together.' },
+      ),
+  )
+  .handler(async ({ data }): Promise<SearchResult> => {
+    const result = await api(sessionToken()).POST('/v1/concerts/search', {
+      body: data,
+    })
+    if (result.response.status === 409 && result.error?.code === 'no_place')
+      return { noPlace: true, message: result.error.message }
+    return {
+      noPlace: false,
+      page: check(result, 'Concerts could not be searched right now.'),
+    }
+  })
+
+/** Performers matching a typed name, to pick one before a search (MUS-010). */
+export const searchConcertPerformers = createServerFn({ method: 'POST' })
+  .validator(z.object({ q: z.string().trim().min(2).max(100) }))
+  .handler(async ({ data }): Promise<ConcertPerformerList> =>
+    check(
+      await api(sessionToken()).POST('/v1/concerts/performers', {
+        body: data,
+      }),
+      'Artists could not be searched right now.',
+    ),
+  )

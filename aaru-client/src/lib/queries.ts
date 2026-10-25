@@ -1,16 +1,19 @@
 import { queryOptions } from '@tanstack/solid-query'
+import type { QueryClient } from '@tanstack/solid-query'
 import { PROGRESS_KEY } from './achievements/keys'
 import { getBadges, getProgress } from './achievements/server'
 import { getCalendar } from './calendar/server'
 import { getConcertPlace } from './concerts/server'
+import type { DiscoverRow } from './home/model'
 import { getDiscover, getUpNext } from './home/server'
 import { listImports } from './imports/server'
-import { getLibrary } from './library/server'
+import { getLibrary, getWatching } from './library/server'
 import { getList, getLists } from './lists/server'
 import { listPendingPlans } from './plans/server'
 import { getProfileStats } from './profile/server'
 import { getStats } from './recap/server'
-import { getTitlePage } from './title/server'
+import { getTitlePage, resolveTitle } from './title/server'
+import type { PreviewParams } from './title/preview'
 
 // The reads the app's pages share, each under one cache key. A page's loader and its rows ask
 // through these, so Home and Library share one library and Home and Discover one set of rows.
@@ -38,10 +41,21 @@ export const libraryQuery = queryOptions({
   queryFn: () => getLibrary(),
 })
 
+export const watchingQuery = queryOptions({
+  queryKey: ['watching'],
+  queryFn: () => getWatching(),
+})
+
 export const titlePageQuery = (id: string) =>
   queryOptions({
     queryKey: ['title', id],
     queryFn: () => getTitlePage({ data: { id } }),
+  })
+
+export const titlePreviewQuery = (params: PreviewParams) =>
+  queryOptions({
+    queryKey: ['title-preview', params.type, params.provider, params.ref],
+    queryFn: () => resolveTitle({ data: params }),
   })
 
 export const listsQuery = queryOptions({
@@ -96,3 +110,23 @@ export const calendarQuery = (range: { from: string; to: string }) =>
     queryKey: ['calendar', range.from, range.to],
     queryFn: () => getCalendar({ data: range }),
   })
+
+/**
+ * NAV-001: what a kind page (Books, Manga, Music) loads, from the caches Library, Home and
+ * Discover share. The library is the page's own question, so its failure is the page's; the
+ * public rows are an extra, and without them the shelf still stands.
+ */
+export async function loadKindPage(queryClient: QueryClient) {
+  const [entries, discover] = await Promise.all([
+    queryClient.query(libraryQuery),
+    queryClient.query(discoverQuery).then(
+      (rows) => ({ rows, rowsProblem: null }),
+      (err: unknown) => ({
+        rows: [] as DiscoverRow[],
+        rowsProblem:
+          err instanceof Error ? err.message : 'Discover is not available.',
+      }),
+    ),
+  ])
+  return { entries, ...discover }
+}

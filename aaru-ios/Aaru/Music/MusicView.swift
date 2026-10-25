@@ -2,12 +2,25 @@ import AaruAPI
 import SwiftUI
 
 /// MUS-008: Listens, the log of what the user played, and its top lists (UX-049: the page is
-/// "Listens"; "Listening" stays for albums in progress). Recent and Top sit side by side when there is
-/// room and behind a switch when there is not. Reached from Library's menu, Insights and
-/// Settings → Connections → Music.
+/// "Listens"; "Listening" stays for albums in progress), pushed with its own title. Reached from
+/// Settings → Connections → Music; Library's menu and Insights open the Music page's Listens view
+/// instead (NAV-002).
 struct MusicView: View {
     let api: Client?
     /// Album rows open their title page only when this is passed and the album is in it.
+    var library: LibraryModel?
+
+    var body: some View {
+        ListensContent(api: api, library: library)
+            .navigationTitle("Listens")
+            .background(Color(.paper))
+    }
+}
+
+/// Listens' Recent and Top, side by side when there is room and behind a switch when there is
+/// not. The Music page shows it as its Listens view; `MusicView` pushes it.
+struct ListensContent: View {
+    let api: Client?
     var library: LibraryModel?
 
     @Environment(\.horizontalSizeClass) private var sizeClass
@@ -44,8 +57,6 @@ struct MusicView: View {
                 .frame(maxWidth: .infinity)
             }
         }
-        .navigationTitle("Listens")
-        .background(Color(.paper))
     }
 
     private func pane(_ title: String, @ViewBuilder content: () -> some View) -> some View {

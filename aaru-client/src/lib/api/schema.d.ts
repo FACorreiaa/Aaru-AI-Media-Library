@@ -1701,6 +1701,46 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/concerts/search': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Music events matching an artist's name, near a place or anywhere (MUS-010), soonest first.
+     * @description POST so neither the name nor a position sits in a URL. The name goes to Ticketmaster as free text, so other acts whose events carry the word can match. `near` searches around a one-off point or the saved city like `/v1/concerts/near` (with neither, 409 `no_place`); `anywhere` sends the name alone, and each concert's `distanceKm` is worked out by the server from the point or saved city when there is one. Neither name nor position is logged; the same list for everyone, cached by the server.
+     */
+    post: operations['searchConcerts']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/concerts/performers': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Performers whose name matches what the user typed, to pick one before a search (MUS-010).
+     * @description Ticketmaster's own performer list for the name, best first, up to eight. Picking one and sending its `id` as `performerId` to `/v1/concerts/search` lists only that performer's concerts. POST so the name never sits in a URL; not logged, cached by the server.
+     */
+    post: operations['searchConcertPerformers']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/concerts/artists': {
     parameters: {
       query?: never
@@ -1757,6 +1797,173 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/sports/suggested': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * The first-run picks for Sports (SPT-002).
+     * @description A fixed list of leagues and promotions (Premier League, La Liga, NBA, NFL, UFC, WWE…) with their badges once known. The same for everyone; never a recommendation.
+     */
+    get: operations['getSportSuggestions']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/sports/search': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Leagues, teams and players by name, from the sports provider (SPT-002). */
+    get: operations['searchSports']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/sports/favorites': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Each followed league, team and player with what is live, next and last (SPT-002).
+     * @description Near-live: scores refresh about every two minutes for football, NFL, NBA, MLB and NHL. UFC and WWE cards have results, not live scores. Entries still being fetched come back `pending`; ask again in a few seconds.
+     */
+    get: operations['getSportFavorites']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/sports/schedule': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** One day of events for the leagues the user follows, favorites highlighted (SPT-002). */
+    get: operations['getSportSchedule']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/sports/events/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** One event with its live line and where to watch it (SPT-002, SPT-005). */
+    get: operations['getSportEvent']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/sport-follows': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** The leagues, teams and players the user follows in Sports, oldest first. */
+    get: operations['listSportFollows']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/sport-follows/{kind}/{providerId}': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        kind: components['schemas']['SportEntityKind']
+        providerId: string
+      }
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Follows a league, team or player by the sports provider's id. Idempotent.
+     * @description Sports only: never a library write, never journaled, never shown to friends. 404 when the provider does not know the id, 409 `too_many_follows` past 100, 503 when Sports are off.
+     */
+    put: operations['followSport']
+    post?: never
+    /** Stops following. Idempotent. */
+    delete: operations['unfollowSport']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/sport-settings': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** The country "Where to watch" looks at, and whether Sports are on at all. */
+    get: operations['getSportSettings']
+    /** Saves the "Where to watch" country; absent or null clears it. */
+    put: operations['saveSportSettings']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/titles/resolve': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** The page for a catalog ref, in the library or not (LIB-006). Resolving may add the title to the catalog; it never adds it to the library. */
+    post: operations['resolveTitle']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/titles/{id}': {
     parameters: {
       query?: never
@@ -1783,6 +1990,23 @@ export interface paths {
     }
     /** Posts about this title by you and your friends, newest first. */
     get: operations['listTitlePosts']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/library/watching': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Films, shows and anime in progress with what Library's Watching page shows (APP-018): the next episode to watch with its name and what is left, and a show's status and next airing. Anime in the backlog are included with `entry.inBacklog`. Newest change first. */
+    get: operations['listWatching']
     put?: never
     post?: never
     delete?: never
@@ -3681,9 +3905,15 @@ export interface components {
       /** @description Why the items are partial, in words to show, e.g. AniList being down while TMDB's Japanese animation stands in. */
       notice?: string
     }
+    /**
+     * @description What a Discover row holds (DISC-004), as Library's kinds: anime is its own kind. Discover shows film, show and anime rows; the Books, Manga and Music pages show their own.
+     * @enum {string}
+     */
+    DiscoverRowKind: 'film' | 'show' | 'anime' | 'manga' | 'book' | 'album'
     DiscoverRow: {
-      /** @description Stable row key, e.g. `tv_trending`, `anime_season`, `books_trending`, `music_new`. Not an enum: the server may add rows, and clients render any row they get. */
+      /** @description Stable row key, e.g. `tv_trending`, `anime_season`, `books_trending`, `manga_trending`, `music_new`. Not an enum: the server may add rows, and clients render any row they get. */
       id: string
+      kind: components['schemas']['DiscoverRowKind']
       /** @description Display title, e.g. "Fall 2026 anime". */
       title: string
       items: components['schemas']['CatalogHit'][]
@@ -3768,12 +3998,129 @@ export interface components {
       venue?: string
       city?: string
       country?: string
-      /** @description From the searched point. Absent for an artist's concerts. */
+      /** @description From the searched point, or from the point or saved city for an `anywhere` search. Absent for "Your artists on tour", and when the venue's position is unknown. */
       distanceKm?: number
       /** @description Ticketmaster's event page. */
       url: string
       /** @description Ticketmaster's image for the event, referenced, never hosted. */
       imageUrl?: string
+    }
+    /** @enum {string} */
+    SportEntityKind: 'league' | 'team' | 'player'
+    /** @description A league (or promotion: UFC, WWE), team or player from the sports provider, by its id. Catalog data for Sports only; never a Title. */
+    SportEntity: {
+      kind: components['schemas']['SportEntityKind']
+      /** @description The provider's id. */
+      id: string
+      name: string
+      /** @description The provider's sport: Soccer, Basketball, American Football, Fighting… */
+      sport: string
+      /** @description Badge */
+      badgeUrl?: string
+      country?: string
+      leagueId?: string
+      /** @description A player's team (a fighter's division). */
+      teamId?: string
+      teamName?: string
+      /** @description Whether the user follows it. */
+      following: boolean
+    }
+    SportEntityList: {
+      items: components['schemas']['SportEntity'][]
+      /** @description True when Sports are off on this server. */
+      unavailable: boolean
+    }
+    SportFollowList: {
+      items: components['schemas']['SportEntity'][]
+    }
+    SportSide: {
+      id?: string
+      name: string
+      badgeUrl?: string
+      score?: number
+    }
+    /** @enum {string} */
+    SportEventStatus:
+      'scheduled' | 'live' | 'finished' | 'postponed' | 'cancelled'
+    /** @description One match, game or card (a UFC or WWE event has no home and away). Catalog data, kept no longer than the cache. */
+    SportEvent: {
+      id: string
+      sport: string
+      name: string
+      leagueId?: string
+      league?: string
+      leagueBadgeUrl?: string
+      home?: components['schemas']['SportSide']
+      away?: components['schemas']['SportSide']
+      /**
+       * Format: date-time
+       * @description The exact start
+       */
+      startsAt?: string
+      /** @description The UTC day, YYYY-MM-DD. */
+      day: string
+      status: components['schemas']['SportEventStatus']
+      /** @description The live clock or period: "67", "HT", "Q3". Live only. */
+      progress?: string
+      venue?: string
+      round?: string
+      imageUrl?: string
+      /** @description A followed team or player's team plays in it. */
+      isFavorite: boolean
+    }
+    SportFavorite: {
+      entity: components['schemas']['SportEntity']
+      live: components['schemas']['SportEvent'][]
+      next?: components['schemas']['SportEvent']
+      last?: components['schemas']['SportEvent']
+      /** @description Still being fetched; ask again in a few seconds. */
+      pending: boolean
+    }
+    SportFavorites: {
+      items: components['schemas']['SportFavorite'][]
+      unavailable: boolean
+    }
+    SportScheduleGroup: {
+      leagueId?: string
+      league: string
+      sport: string
+      badgeUrl?: string
+      events: components['schemas']['SportEvent'][]
+    }
+    SportSchedule: {
+      date: string
+      /** @description Leagues with a favorite first, then by name. */
+      groups: components['schemas']['SportScheduleGroup'][]
+      /** @description Some leagues are still being fetched. */
+      pending: boolean
+      unavailable: boolean
+    }
+    SportBroadcast: {
+      channel: string
+      country?: string
+      logoUrl?: string
+    }
+    SportEventDetail: {
+      event: components['schemas']['SportEvent']
+      /** @description Channels in the "Where to watch" country. Empty when none is chosen. */
+      inYourCountry: components['schemas']['SportBroadcast'][]
+      /** @description Every other channel the provider lists, by country. */
+      elsewhere: components['schemas']['SportBroadcast'][]
+      watchCountryCode?: string
+    }
+    SportSettings: {
+      /** @description ISO 3166-1 alpha-2. */
+      watchCountryCode?: string
+      /** @description False when Sports are off on this server; clients hide the Sports tab. */
+      available: boolean
+    }
+    SportSettingsInput: {
+      /** @description ISO 3166-1 alpha-2; null or absent clears it. */
+      watchCountryCode?: string | null
+    }
+    SportsExport: {
+      follows: components['schemas']['SportEntity'][]
+      watchCountryCode?: string
     }
     ConcertPlace: {
       /** @description 1 to 200 characters. */
@@ -3813,6 +4160,62 @@ export interface components {
       items: components['schemas']['Concert'][]
       page: number
       hasMore: boolean
+      /** @description Concerts are off, or Ticketmaster did not answer and nothing was cached. */
+      unavailable: boolean
+    }
+    /**
+     * @description `near` the point or saved city, inside `radiusKm`; `anywhere` for every upcoming date.
+     * @enum {string}
+     */
+    ConcertSearchScope: 'near' | 'anywhere'
+    ConcertSearchRequest: {
+      /** @description The artist's name, 2 to 100 characters. Not logged. */
+      q: string
+      /** @description A performer's `id` from `/v1/concerts/performers`: only their concerts. Absent searches `q` as free text. Letters, digits, `-` and `_`, at most 64. */
+      performerId?: string
+      scope: components['schemas']['ConcertSearchScope']
+      /** @description Sent with `longitude` for a one-off position; absent uses the saved city. */
+      latitude?: number
+      longitude?: number
+      /**
+       * @description Used by `near` only.
+       * @enum {integer}
+       */
+      radiusKm: 25 | 50 | 100
+      /**
+       * @description 1-based, at most 10.
+       * @default 1
+       */
+      page: number
+    }
+    ConcertSearchPage: {
+      /** @description The name as searched, trimmed. */
+      query: string
+      /** @description The performer searched by, when one was picked. */
+      performerId?: string
+      scope: components['schemas']['ConcertSearchScope']
+      place?: components['schemas']['ConcertPlace']
+      /** @description Present for `near`. */
+      radiusKm?: number
+      items: components['schemas']['Concert'][]
+      page: number
+      hasMore: boolean
+      /** @description Concerts are off, or Ticketmaster did not answer and nothing was cached. */
+      unavailable: boolean
+    }
+    ConcertPerformerRequest: {
+      /** @description The name as typed, 2 to 100 characters. Not logged. */
+      q: string
+    }
+    /** @description One performer as Ticketmaster lists them. */
+    ConcertPerformer: {
+      id: string
+      name: string
+      /** @description Ticketmaster's picture of the performer, referenced, never hosted. */
+      imageUrl?: string
+    }
+    ConcertPerformerList: {
+      items: components['schemas']['ConcertPerformer'][]
       /** @description Concerts are off, or Ticketmaster did not answer and nothing was cached. */
       unavailable: boolean
     }
@@ -3864,6 +4267,14 @@ export interface components {
       genres?: string[]
       /** @description Albums only: the tracklist of the album's earliest official release, by disc then position. Absent when MusicBrainz could not be reached and none is stored yet. */
       tracks?: components['schemas']['AlbumTrack'][]
+    }
+    TitlePreview: {
+      title: components['schemas']['TitleDetail']
+      /**
+       * Format: uuid
+       * @description Set when the title is in the caller's library; its title page is then the one to open.
+       */
+      libraryItemId?: string
     }
     AlbumTrack: {
       disc: number
@@ -3965,6 +4376,13 @@ export interface components {
       bookProgress?: components['schemas']['BookProgress']
       mangaProgress?: components['schemas']['MangaProgress']
       /**
+       * Format: date-time
+       * @description The newest episode tick the user made in Aaru. Imported, pulled and restored ticks do not count. Absent when there is none.
+       */
+      lastWatchedAt?: string
+      /** @description APP-018 · an anime in progress the user never touched in Aaru: its status came from an import and it has no tick made in Aaru. Derived on every read; the status stays `in_progress`. Library's Now leaves these out of Watching. */
+      inBacklog: boolean
+      /**
        * @description Every watched episode of a show, in order. Only on single-item responses (the item,
        *     and episode and season writes); lists and sync leave it out.
        */
@@ -4000,6 +4418,7 @@ export interface components {
       /** @description Every listen in your listening log, newest first (MUS-005). */
       listens?: components['schemas']['Listen'][]
       favorites?: components['schemas']['Favorites']
+      sports?: components['schemas']['SportsExport']
     }
     LibraryPage: {
       items: components['schemas']['LibraryEntry'][]
@@ -4063,6 +4482,20 @@ export interface components {
       /** @enum {string} */
       showStatus?: 'upcoming' | 'returning' | 'ended' | 'canceled'
       nextAiring?: components['schemas']['UpcomingEpisode']
+    }
+    Watching: {
+      items: components['schemas']['WatchingItem'][]
+    }
+    /** @description One title in progress. Shows whose episodes are loaded carry `showStatus` and `nextAiring` (the first episode not aired yet); a show with an aired episode left to watch carries `nextName`, `nextRuntimeMinutes`, `remainingCount` and `remainingMinutes` (aired, unwatched, specials left out), as Up Next's ContinueEntry does. */
+    WatchingItem: {
+      entry: components['schemas']['LibraryEntry']
+      /** @enum {string} */
+      showStatus?: 'upcoming' | 'returning' | 'ended' | 'canceled'
+      nextAiring?: components['schemas']['UpcomingEpisode']
+      nextName?: string
+      nextRuntimeMinutes?: number
+      remainingCount?: number
+      remainingMinutes?: number
     }
     UpcomingEpisode: {
       season: number
@@ -7289,6 +7722,56 @@ export interface operations {
       default: components['responses']['Error']
     }
   }
+  searchConcerts: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ConcertSearchRequest']
+      }
+    }
+    responses: {
+      /** @description The page. `unavailable` when concerts are off or the provider is down. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ConcertSearchPage']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  searchConcertPerformers: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ConcertPerformerRequest']
+      }
+    }
+    responses: {
+      /** @description The performers. `unavailable` when concerts are off or the provider is down. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ConcertPerformerList']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
   getArtistConcerts: {
     parameters: {
       query?: never
@@ -7399,6 +7882,261 @@ export interface operations {
       default: components['responses']['Error']
     }
   }
+  getSportSuggestions: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The picks. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SportEntityList']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  searchSports: {
+    parameters: {
+      query: {
+        /** @description 2 to 100 characters. */
+        q: string
+        /** @description Absent searches all three. */
+        kind?: components['schemas']['SportEntityKind']
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Up to ten of each kind, leagues first. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SportEntityList']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getSportFavorites: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The favorites, in follow order. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SportFavorites']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getSportSchedule: {
+    parameters: {
+      query: {
+        /** @description The local day, YYYY-MM-DD. */
+        date: string
+        /** @description The IANA time zone the day is in. Default UTC. */
+        tz?: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The day, grouped by league. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SportSchedule']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getSportEvent: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The event. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SportEventDetail']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  listSportFollows: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The follows. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SportFollowList']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  followSport: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        kind: components['schemas']['SportEntityKind']
+        providerId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Followed. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SportEntity']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  unfollowSport: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        kind: components['schemas']['SportEntityKind']
+        providerId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Not followed any more, or never was. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getSportSettings: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The settings. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SportSettings']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  saveSportSettings: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SportSettingsInput']
+      }
+    }
+    responses: {
+      /** @description Saved. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SportSettings']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  resolveTitle: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MediaRef']
+      }
+    }
+    responses: {
+      /** @description The title, and the caller's library item when they have it. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['TitlePreview']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
   getTitle: {
     parameters: {
       query?: never
@@ -7443,6 +8181,27 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['BoardPostPage']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  listWatching: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The titles in progress. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Watching']
         }
       }
       default: components['responses']['Error']

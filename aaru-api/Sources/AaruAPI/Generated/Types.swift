@@ -589,6 +589,20 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/concerts/near`.
     /// - Remark: Generated from `#/paths//v1/concerts/near/post(getConcertsNear)`.
     func getConcertsNear(_ input: Operations.GetConcertsNear.Input) async throws -> Operations.GetConcertsNear.Output
+    /// Music events matching an artist's name, near a place or anywhere (MUS-010), soonest first.
+    ///
+    /// POST so neither the name nor a position sits in a URL. The name goes to Ticketmaster as free text, so other acts whose events carry the word can match. `near` searches around a one-off point or the saved city like `/v1/concerts/near` (with neither, 409 `no_place`); `anywhere` sends the name alone, and each concert's `distanceKm` is worked out by the server from the point or saved city when there is one. Neither name nor position is logged; the same list for everyone, cached by the server.
+    ///
+    /// - Remark: HTTP `POST /v1/concerts/search`.
+    /// - Remark: Generated from `#/paths//v1/concerts/search/post(searchConcerts)`.
+    func searchConcerts(_ input: Operations.SearchConcerts.Input) async throws -> Operations.SearchConcerts.Output
+    /// Performers whose name matches what the user typed, to pick one before a search (MUS-010).
+    ///
+    /// Ticketmaster's own performer list for the name, best first, up to eight. Picking one and sending its `id` as `performerId` to `/v1/concerts/search` lists only that performer's concerts. POST so the name never sits in a URL; not logged, cached by the server.
+    ///
+    /// - Remark: HTTP `POST /v1/concerts/performers`.
+    /// - Remark: Generated from `#/paths//v1/concerts/performers/post(searchConcertPerformers)`.
+    func searchConcertPerformers(_ input: Operations.SearchConcertPerformers.Input) async throws -> Operations.SearchConcertPerformers.Output
     /// Upcoming concerts by the artists of the user's albums (MUS-003).
     ///
     /// Derived from the user's own library, like the calendar; dropped albums aside. An artist counts only when Ticketmaster lists them with the same MusicBrainz id. Artists added in the last hour may still be `pending`.
@@ -616,6 +630,67 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `DELETE /v1/me/concert-place`.
     /// - Remark: Generated from `#/paths//v1/me/concert-place/delete(deleteConcertPlace)`.
     func deleteConcertPlace(_ input: Operations.DeleteConcertPlace.Input) async throws -> Operations.DeleteConcertPlace.Output
+    /// The first-run picks for Sports (SPT-002).
+    ///
+    /// A fixed list of leagues and promotions (Premier League, La Liga, NBA, NFL, UFC, WWE…) with their badges once known. The same for everyone; never a recommendation.
+    ///
+    /// - Remark: HTTP `GET /v1/sports/suggested`.
+    /// - Remark: Generated from `#/paths//v1/sports/suggested/get(getSportSuggestions)`.
+    func getSportSuggestions(_ input: Operations.GetSportSuggestions.Input) async throws -> Operations.GetSportSuggestions.Output
+    /// Leagues, teams and players by name, from the sports provider (SPT-002).
+    ///
+    /// - Remark: HTTP `GET /v1/sports/search`.
+    /// - Remark: Generated from `#/paths//v1/sports/search/get(searchSports)`.
+    func searchSports(_ input: Operations.SearchSports.Input) async throws -> Operations.SearchSports.Output
+    /// Each followed league, team and player with what is live, next and last (SPT-002).
+    ///
+    /// Near-live: scores refresh about every two minutes for football, NFL, NBA, MLB and NHL. UFC and WWE cards have results, not live scores. Entries still being fetched come back `pending`; ask again in a few seconds.
+    ///
+    /// - Remark: HTTP `GET /v1/sports/favorites`.
+    /// - Remark: Generated from `#/paths//v1/sports/favorites/get(getSportFavorites)`.
+    func getSportFavorites(_ input: Operations.GetSportFavorites.Input) async throws -> Operations.GetSportFavorites.Output
+    /// One day of events for the leagues the user follows, favorites highlighted (SPT-002).
+    ///
+    /// - Remark: HTTP `GET /v1/sports/schedule`.
+    /// - Remark: Generated from `#/paths//v1/sports/schedule/get(getSportSchedule)`.
+    func getSportSchedule(_ input: Operations.GetSportSchedule.Input) async throws -> Operations.GetSportSchedule.Output
+    /// One event with its live line and where to watch it (SPT-002, SPT-005).
+    ///
+    /// - Remark: HTTP `GET /v1/sports/events/{id}`.
+    /// - Remark: Generated from `#/paths//v1/sports/events/{id}/get(getSportEvent)`.
+    func getSportEvent(_ input: Operations.GetSportEvent.Input) async throws -> Operations.GetSportEvent.Output
+    /// The leagues, teams and players the user follows in Sports, oldest first.
+    ///
+    /// - Remark: HTTP `GET /v1/me/sport-follows`.
+    /// - Remark: Generated from `#/paths//v1/me/sport-follows/get(listSportFollows)`.
+    func listSportFollows(_ input: Operations.ListSportFollows.Input) async throws -> Operations.ListSportFollows.Output
+    /// Follows a league, team or player by the sports provider's id. Idempotent.
+    ///
+    /// Sports only: never a library write, never journaled, never shown to friends. 404 when the provider does not know the id, 409 `too_many_follows` past 100, 503 when Sports are off.
+    ///
+    /// - Remark: HTTP `PUT /v1/me/sport-follows/{kind}/{providerId}`.
+    /// - Remark: Generated from `#/paths//v1/me/sport-follows/{kind}/{providerId}/put(followSport)`.
+    func followSport(_ input: Operations.FollowSport.Input) async throws -> Operations.FollowSport.Output
+    /// Stops following. Idempotent.
+    ///
+    /// - Remark: HTTP `DELETE /v1/me/sport-follows/{kind}/{providerId}`.
+    /// - Remark: Generated from `#/paths//v1/me/sport-follows/{kind}/{providerId}/delete(unfollowSport)`.
+    func unfollowSport(_ input: Operations.UnfollowSport.Input) async throws -> Operations.UnfollowSport.Output
+    /// The country "Where to watch" looks at, and whether Sports are on at all.
+    ///
+    /// - Remark: HTTP `GET /v1/me/sport-settings`.
+    /// - Remark: Generated from `#/paths//v1/me/sport-settings/get(getSportSettings)`.
+    func getSportSettings(_ input: Operations.GetSportSettings.Input) async throws -> Operations.GetSportSettings.Output
+    /// Saves the "Where to watch" country; absent or null clears it.
+    ///
+    /// - Remark: HTTP `PUT /v1/me/sport-settings`.
+    /// - Remark: Generated from `#/paths//v1/me/sport-settings/put(saveSportSettings)`.
+    func saveSportSettings(_ input: Operations.SaveSportSettings.Input) async throws -> Operations.SaveSportSettings.Output
+    /// The page for a catalog ref, in the library or not (LIB-006). Resolving may add the title to the catalog; it never adds it to the library.
+    ///
+    /// - Remark: HTTP `POST /v1/titles/resolve`.
+    /// - Remark: Generated from `#/paths//v1/titles/resolve/post(resolveTitle)`.
+    func resolveTitle(_ input: Operations.ResolveTitle.Input) async throws -> Operations.ResolveTitle.Output
     /// A title from the catalog. Shows include their seasons and episodes.
     ///
     /// - Remark: HTTP `GET /v1/titles/{id}`.
@@ -626,6 +701,11 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /v1/titles/{id}/posts`.
     /// - Remark: Generated from `#/paths//v1/titles/{id}/posts/get(listTitlePosts)`.
     func listTitlePosts(_ input: Operations.ListTitlePosts.Input) async throws -> Operations.ListTitlePosts.Output
+    /// Films, shows and anime in progress with what Library's Watching page shows (APP-018): the next episode to watch with its name and what is left, and a show's status and next airing. Anime in the backlog are included with `entry.inBacklog`. Newest change first.
+    ///
+    /// - Remark: HTTP `GET /v1/library/watching`.
+    /// - Remark: Generated from `#/paths//v1/library/watching/get(listWatching)`.
+    func listWatching(_ input: Operations.ListWatching.Input) async throws -> Operations.ListWatching.Output
     /// The user's library, most recently updated first. Shelves use the same filters.
     ///
     /// - Remark: HTTP `GET /v1/library/items`.
@@ -2279,6 +2359,36 @@ extension APIProtocol {
             body: body
         ))
     }
+    /// Music events matching an artist's name, near a place or anywhere (MUS-010), soonest first.
+    ///
+    /// POST so neither the name nor a position sits in a URL. The name goes to Ticketmaster as free text, so other acts whose events carry the word can match. `near` searches around a one-off point or the saved city like `/v1/concerts/near` (with neither, 409 `no_place`); `anywhere` sends the name alone, and each concert's `distanceKm` is worked out by the server from the point or saved city when there is one. Neither name nor position is logged; the same list for everyone, cached by the server.
+    ///
+    /// - Remark: HTTP `POST /v1/concerts/search`.
+    /// - Remark: Generated from `#/paths//v1/concerts/search/post(searchConcerts)`.
+    public func searchConcerts(
+        headers: Operations.SearchConcerts.Input.Headers = .init(),
+        body: Operations.SearchConcerts.Input.Body
+    ) async throws -> Operations.SearchConcerts.Output {
+        try await searchConcerts(Operations.SearchConcerts.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Performers whose name matches what the user typed, to pick one before a search (MUS-010).
+    ///
+    /// Ticketmaster's own performer list for the name, best first, up to eight. Picking one and sending its `id` as `performerId` to `/v1/concerts/search` lists only that performer's concerts. POST so the name never sits in a URL; not logged, cached by the server.
+    ///
+    /// - Remark: HTTP `POST /v1/concerts/performers`.
+    /// - Remark: Generated from `#/paths//v1/concerts/performers/post(searchConcertPerformers)`.
+    public func searchConcertPerformers(
+        headers: Operations.SearchConcertPerformers.Input.Headers = .init(),
+        body: Operations.SearchConcertPerformers.Input.Body
+    ) async throws -> Operations.SearchConcertPerformers.Output {
+        try await searchConcertPerformers(Operations.SearchConcertPerformers.Input(
+            headers: headers,
+            body: body
+        ))
+    }
     /// Upcoming concerts by the artists of the user's albums (MUS-003).
     ///
     /// Derived from the user's own library, like the calendar; dropped albums aside. An artist counts only when Ticketmaster lists them with the same MusicBrainz id. Artists added in the last hour may still be `pending`.
@@ -2328,6 +2438,131 @@ extension APIProtocol {
     public func deleteConcertPlace(headers: Operations.DeleteConcertPlace.Input.Headers = .init()) async throws -> Operations.DeleteConcertPlace.Output {
         try await deleteConcertPlace(Operations.DeleteConcertPlace.Input(headers: headers))
     }
+    /// The first-run picks for Sports (SPT-002).
+    ///
+    /// A fixed list of leagues and promotions (Premier League, La Liga, NBA, NFL, UFC, WWE…) with their badges once known. The same for everyone; never a recommendation.
+    ///
+    /// - Remark: HTTP `GET /v1/sports/suggested`.
+    /// - Remark: Generated from `#/paths//v1/sports/suggested/get(getSportSuggestions)`.
+    public func getSportSuggestions(headers: Operations.GetSportSuggestions.Input.Headers = .init()) async throws -> Operations.GetSportSuggestions.Output {
+        try await getSportSuggestions(Operations.GetSportSuggestions.Input(headers: headers))
+    }
+    /// Leagues, teams and players by name, from the sports provider (SPT-002).
+    ///
+    /// - Remark: HTTP `GET /v1/sports/search`.
+    /// - Remark: Generated from `#/paths//v1/sports/search/get(searchSports)`.
+    public func searchSports(
+        query: Operations.SearchSports.Input.Query,
+        headers: Operations.SearchSports.Input.Headers = .init()
+    ) async throws -> Operations.SearchSports.Output {
+        try await searchSports(Operations.SearchSports.Input(
+            query: query,
+            headers: headers
+        ))
+    }
+    /// Each followed league, team and player with what is live, next and last (SPT-002).
+    ///
+    /// Near-live: scores refresh about every two minutes for football, NFL, NBA, MLB and NHL. UFC and WWE cards have results, not live scores. Entries still being fetched come back `pending`; ask again in a few seconds.
+    ///
+    /// - Remark: HTTP `GET /v1/sports/favorites`.
+    /// - Remark: Generated from `#/paths//v1/sports/favorites/get(getSportFavorites)`.
+    public func getSportFavorites(headers: Operations.GetSportFavorites.Input.Headers = .init()) async throws -> Operations.GetSportFavorites.Output {
+        try await getSportFavorites(Operations.GetSportFavorites.Input(headers: headers))
+    }
+    /// One day of events for the leagues the user follows, favorites highlighted (SPT-002).
+    ///
+    /// - Remark: HTTP `GET /v1/sports/schedule`.
+    /// - Remark: Generated from `#/paths//v1/sports/schedule/get(getSportSchedule)`.
+    public func getSportSchedule(
+        query: Operations.GetSportSchedule.Input.Query,
+        headers: Operations.GetSportSchedule.Input.Headers = .init()
+    ) async throws -> Operations.GetSportSchedule.Output {
+        try await getSportSchedule(Operations.GetSportSchedule.Input(
+            query: query,
+            headers: headers
+        ))
+    }
+    /// One event with its live line and where to watch it (SPT-002, SPT-005).
+    ///
+    /// - Remark: HTTP `GET /v1/sports/events/{id}`.
+    /// - Remark: Generated from `#/paths//v1/sports/events/{id}/get(getSportEvent)`.
+    public func getSportEvent(
+        path: Operations.GetSportEvent.Input.Path,
+        headers: Operations.GetSportEvent.Input.Headers = .init()
+    ) async throws -> Operations.GetSportEvent.Output {
+        try await getSportEvent(Operations.GetSportEvent.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// The leagues, teams and players the user follows in Sports, oldest first.
+    ///
+    /// - Remark: HTTP `GET /v1/me/sport-follows`.
+    /// - Remark: Generated from `#/paths//v1/me/sport-follows/get(listSportFollows)`.
+    public func listSportFollows(headers: Operations.ListSportFollows.Input.Headers = .init()) async throws -> Operations.ListSportFollows.Output {
+        try await listSportFollows(Operations.ListSportFollows.Input(headers: headers))
+    }
+    /// Follows a league, team or player by the sports provider's id. Idempotent.
+    ///
+    /// Sports only: never a library write, never journaled, never shown to friends. 404 when the provider does not know the id, 409 `too_many_follows` past 100, 503 when Sports are off.
+    ///
+    /// - Remark: HTTP `PUT /v1/me/sport-follows/{kind}/{providerId}`.
+    /// - Remark: Generated from `#/paths//v1/me/sport-follows/{kind}/{providerId}/put(followSport)`.
+    public func followSport(
+        path: Operations.FollowSport.Input.Path,
+        headers: Operations.FollowSport.Input.Headers = .init()
+    ) async throws -> Operations.FollowSport.Output {
+        try await followSport(Operations.FollowSport.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Stops following. Idempotent.
+    ///
+    /// - Remark: HTTP `DELETE /v1/me/sport-follows/{kind}/{providerId}`.
+    /// - Remark: Generated from `#/paths//v1/me/sport-follows/{kind}/{providerId}/delete(unfollowSport)`.
+    public func unfollowSport(
+        path: Operations.UnfollowSport.Input.Path,
+        headers: Operations.UnfollowSport.Input.Headers = .init()
+    ) async throws -> Operations.UnfollowSport.Output {
+        try await unfollowSport(Operations.UnfollowSport.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// The country "Where to watch" looks at, and whether Sports are on at all.
+    ///
+    /// - Remark: HTTP `GET /v1/me/sport-settings`.
+    /// - Remark: Generated from `#/paths//v1/me/sport-settings/get(getSportSettings)`.
+    public func getSportSettings(headers: Operations.GetSportSettings.Input.Headers = .init()) async throws -> Operations.GetSportSettings.Output {
+        try await getSportSettings(Operations.GetSportSettings.Input(headers: headers))
+    }
+    /// Saves the "Where to watch" country; absent or null clears it.
+    ///
+    /// - Remark: HTTP `PUT /v1/me/sport-settings`.
+    /// - Remark: Generated from `#/paths//v1/me/sport-settings/put(saveSportSettings)`.
+    public func saveSportSettings(
+        headers: Operations.SaveSportSettings.Input.Headers = .init(),
+        body: Operations.SaveSportSettings.Input.Body
+    ) async throws -> Operations.SaveSportSettings.Output {
+        try await saveSportSettings(Operations.SaveSportSettings.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// The page for a catalog ref, in the library or not (LIB-006). Resolving may add the title to the catalog; it never adds it to the library.
+    ///
+    /// - Remark: HTTP `POST /v1/titles/resolve`.
+    /// - Remark: Generated from `#/paths//v1/titles/resolve/post(resolveTitle)`.
+    public func resolveTitle(
+        headers: Operations.ResolveTitle.Input.Headers = .init(),
+        body: Operations.ResolveTitle.Input.Body
+    ) async throws -> Operations.ResolveTitle.Output {
+        try await resolveTitle(Operations.ResolveTitle.Input(
+            headers: headers,
+            body: body
+        ))
+    }
     /// A title from the catalog. Shows include their seasons and episodes.
     ///
     /// - Remark: HTTP `GET /v1/titles/{id}`.
@@ -2355,6 +2590,13 @@ extension APIProtocol {
             query: query,
             headers: headers
         ))
+    }
+    /// Films, shows and anime in progress with what Library's Watching page shows (APP-018): the next episode to watch with its name and what is left, and a show's status and next airing. Anime in the backlog are included with `entry.inBacklog`. Newest change first.
+    ///
+    /// - Remark: HTTP `GET /v1/library/watching`.
+    /// - Remark: Generated from `#/paths//v1/library/watching/get(listWatching)`.
+    public func listWatching(headers: Operations.ListWatching.Input.Headers = .init()) async throws -> Operations.ListWatching.Output {
+        try await listWatching(Operations.ListWatching.Input(headers: headers))
     }
     /// The user's library, most recently updated first. Shelves use the same filters.
     ///
@@ -8184,12 +8426,25 @@ public enum Components {
                 case notice
             }
         }
+        /// What a Discover row holds (DISC-004), as Library's kinds: anime is its own kind. Discover shows film, show and anime rows; the Books, Manga and Music pages show their own.
+        ///
+        /// - Remark: Generated from `#/components/schemas/DiscoverRowKind`.
+        @frozen public enum DiscoverRowKind: String, Codable, Hashable, Sendable, CaseIterable {
+            case film = "film"
+            case show = "show"
+            case anime = "anime"
+            case manga = "manga"
+            case book = "book"
+            case album = "album"
+        }
         /// - Remark: Generated from `#/components/schemas/DiscoverRow`.
         public struct DiscoverRow: Codable, Hashable, Sendable {
-            /// Stable row key, e.g. `tv_trending`, `anime_season`, `books_trending`, `music_new`. Not an enum: the server may add rows, and clients render any row they get.
+            /// Stable row key, e.g. `tv_trending`, `anime_season`, `books_trending`, `manga_trending`, `music_new`. Not an enum: the server may add rows, and clients render any row they get.
             ///
             /// - Remark: Generated from `#/components/schemas/DiscoverRow/id`.
             public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/DiscoverRow/kind`.
+            public var kind: Components.Schemas.DiscoverRowKind
             /// Display title, e.g. "Fall 2026 anime".
             ///
             /// - Remark: Generated from `#/components/schemas/DiscoverRow/title`.
@@ -8203,23 +8458,27 @@ public enum Components {
             /// Creates a new `DiscoverRow`.
             ///
             /// - Parameters:
-            ///   - id: Stable row key, e.g. `tv_trending`, `anime_season`, `books_trending`, `music_new`. Not an enum: the server may add rows, and clients render any row they get.
+            ///   - id: Stable row key, e.g. `tv_trending`, `anime_season`, `books_trending`, `manga_trending`, `music_new`. Not an enum: the server may add rows, and clients render any row they get.
+            ///   - kind:
             ///   - title: Display title, e.g. "Fall 2026 anime".
             ///   - items:
             ///   - note: Where a stand-in row came from, e.g. TMDB while AniList is down.
             public init(
                 id: Swift.String,
+                kind: Components.Schemas.DiscoverRowKind,
                 title: Swift.String,
                 items: [Components.Schemas.CatalogHit],
                 note: Swift.String? = nil
             ) {
                 self.id = id
+                self.kind = kind
                 self.title = title
                 self.items = items
                 self.note = note
             }
             public enum CodingKeys: String, CodingKey {
                 case id
+                case kind
                 case title
                 case items
                 case note
@@ -8536,7 +8795,7 @@ public enum Components {
             public var city: Swift.String?
             /// - Remark: Generated from `#/components/schemas/Concert/country`.
             public var country: Swift.String?
-            /// From the searched point. Absent for an artist's concerts.
+            /// From the searched point, or from the point or saved city for an `anywhere` search. Absent for "Your artists on tour", and when the venue's position is unknown.
             ///
             /// - Remark: Generated from `#/components/schemas/Concert/distanceKm`.
             public var distanceKm: Swift.Double?
@@ -8560,7 +8819,7 @@ public enum Components {
             ///   - venue:
             ///   - city:
             ///   - country:
-            ///   - distanceKm: From the searched point. Absent for an artist's concerts.
+            ///   - distanceKm: From the searched point, or from the point or saved city for an `anywhere` search. Absent for "Your artists on tour", and when the venue's position is unknown.
             ///   - url: Ticketmaster's event page.
             ///   - imageUrl: Ticketmaster's image for the event, referenced, never hosted.
             public init(
@@ -8603,6 +8862,576 @@ public enum Components {
                 case distanceKm
                 case url
                 case imageUrl
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/SportEntityKind`.
+        @frozen public enum SportEntityKind: String, Codable, Hashable, Sendable, CaseIterable {
+            case league = "league"
+            case team = "team"
+            case player = "player"
+        }
+        /// A league (or promotion: UFC, WWE), team or player from the sports provider, by its id. Catalog data for Sports only; never a Title.
+        ///
+        /// - Remark: Generated from `#/components/schemas/SportEntity`.
+        public struct SportEntity: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/SportEntity/kind`.
+            public var kind: Components.Schemas.SportEntityKind
+            /// The provider's id.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SportEntity/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/SportEntity/name`.
+            public var name: Swift.String
+            /// The provider's sport: Soccer, Basketball, American Football, Fighting…
+            ///
+            /// - Remark: Generated from `#/components/schemas/SportEntity/sport`.
+            public var sport: Swift.String
+            /// Badge
+            ///
+            /// - Remark: Generated from `#/components/schemas/SportEntity/badgeUrl`.
+            public var badgeUrl: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/SportEntity/country`.
+            public var country: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/SportEntity/leagueId`.
+            public var leagueId: Swift.String?
+            /// A player's team (a fighter's division).
+            ///
+            /// - Remark: Generated from `#/components/schemas/SportEntity/teamId`.
+            public var teamId: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/SportEntity/teamName`.
+            public var teamName: Swift.String?
+            /// Whether the user follows it.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SportEntity/following`.
+            public var following: Swift.Bool
+            /// Creates a new `SportEntity`.
+            ///
+            /// - Parameters:
+            ///   - kind:
+            ///   - id: The provider's id.
+            ///   - name:
+            ///   - sport: The provider's sport: Soccer, Basketball, American Football, Fighting…
+            ///   - badgeUrl: Badge
+            ///   - country:
+            ///   - leagueId:
+            ///   - teamId: A player's team (a fighter's division).
+            ///   - teamName:
+            ///   - following: Whether the user follows it.
+            public init(
+                kind: Components.Schemas.SportEntityKind,
+                id: Swift.String,
+                name: Swift.String,
+                sport: Swift.String,
+                badgeUrl: Swift.String? = nil,
+                country: Swift.String? = nil,
+                leagueId: Swift.String? = nil,
+                teamId: Swift.String? = nil,
+                teamName: Swift.String? = nil,
+                following: Swift.Bool
+            ) {
+                self.kind = kind
+                self.id = id
+                self.name = name
+                self.sport = sport
+                self.badgeUrl = badgeUrl
+                self.country = country
+                self.leagueId = leagueId
+                self.teamId = teamId
+                self.teamName = teamName
+                self.following = following
+            }
+            public enum CodingKeys: String, CodingKey {
+                case kind
+                case id
+                case name
+                case sport
+                case badgeUrl
+                case country
+                case leagueId
+                case teamId
+                case teamName
+                case following
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/SportEntityList`.
+        public struct SportEntityList: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/SportEntityList/items`.
+            public var items: [Components.Schemas.SportEntity]
+            /// True when Sports are off on this server.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SportEntityList/unavailable`.
+            public var unavailable: Swift.Bool
+            /// Creates a new `SportEntityList`.
+            ///
+            /// - Parameters:
+            ///   - items:
+            ///   - unavailable: True when Sports are off on this server.
+            public init(
+                items: [Components.Schemas.SportEntity],
+                unavailable: Swift.Bool
+            ) {
+                self.items = items
+                self.unavailable = unavailable
+            }
+            public enum CodingKeys: String, CodingKey {
+                case items
+                case unavailable
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/SportFollowList`.
+        public struct SportFollowList: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/SportFollowList/items`.
+            public var items: [Components.Schemas.SportEntity]
+            /// Creates a new `SportFollowList`.
+            ///
+            /// - Parameters:
+            ///   - items:
+            public init(items: [Components.Schemas.SportEntity]) {
+                self.items = items
+            }
+            public enum CodingKeys: String, CodingKey {
+                case items
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/SportSide`.
+        public struct SportSide: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/SportSide/id`.
+            public var id: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/SportSide/name`.
+            public var name: Swift.String
+            /// - Remark: Generated from `#/components/schemas/SportSide/badgeUrl`.
+            public var badgeUrl: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/SportSide/score`.
+            public var score: Swift.Int?
+            /// Creates a new `SportSide`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - name:
+            ///   - badgeUrl:
+            ///   - score:
+            public init(
+                id: Swift.String? = nil,
+                name: Swift.String,
+                badgeUrl: Swift.String? = nil,
+                score: Swift.Int? = nil
+            ) {
+                self.id = id
+                self.name = name
+                self.badgeUrl = badgeUrl
+                self.score = score
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case name
+                case badgeUrl
+                case score
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/SportEventStatus`.
+        @frozen public enum SportEventStatus: String, Codable, Hashable, Sendable, CaseIterable {
+            case scheduled = "scheduled"
+            case live = "live"
+            case finished = "finished"
+            case postponed = "postponed"
+            case cancelled = "cancelled"
+        }
+        /// One match, game or card (a UFC or WWE event has no home and away). Catalog data, kept no longer than the cache.
+        ///
+        /// - Remark: Generated from `#/components/schemas/SportEvent`.
+        public struct SportEvent: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/SportEvent/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/SportEvent/sport`.
+            public var sport: Swift.String
+            /// - Remark: Generated from `#/components/schemas/SportEvent/name`.
+            public var name: Swift.String
+            /// - Remark: Generated from `#/components/schemas/SportEvent/leagueId`.
+            public var leagueId: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/SportEvent/league`.
+            public var league: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/SportEvent/leagueBadgeUrl`.
+            public var leagueBadgeUrl: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/SportEvent/home`.
+            public var home: Components.Schemas.SportSide?
+            /// - Remark: Generated from `#/components/schemas/SportEvent/away`.
+            public var away: Components.Schemas.SportSide?
+            /// The exact start
+            ///
+            /// - Remark: Generated from `#/components/schemas/SportEvent/startsAt`.
+            public var startsAt: Foundation.Date?
+            /// The UTC day, YYYY-MM-DD.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SportEvent/day`.
+            public var day: Swift.String
+            /// - Remark: Generated from `#/components/schemas/SportEvent/status`.
+            public var status: Components.Schemas.SportEventStatus
+            /// The live clock or period: "67", "HT", "Q3". Live only.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SportEvent/progress`.
+            public var progress: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/SportEvent/venue`.
+            public var venue: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/SportEvent/round`.
+            public var round: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/SportEvent/imageUrl`.
+            public var imageUrl: Swift.String?
+            /// A followed team or player's team plays in it.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SportEvent/isFavorite`.
+            public var isFavorite: Swift.Bool
+            /// Creates a new `SportEvent`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - sport:
+            ///   - name:
+            ///   - leagueId:
+            ///   - league:
+            ///   - leagueBadgeUrl:
+            ///   - home:
+            ///   - away:
+            ///   - startsAt: The exact start
+            ///   - day: The UTC day, YYYY-MM-DD.
+            ///   - status:
+            ///   - progress: The live clock or period: "67", "HT", "Q3". Live only.
+            ///   - venue:
+            ///   - round:
+            ///   - imageUrl:
+            ///   - isFavorite: A followed team or player's team plays in it.
+            public init(
+                id: Swift.String,
+                sport: Swift.String,
+                name: Swift.String,
+                leagueId: Swift.String? = nil,
+                league: Swift.String? = nil,
+                leagueBadgeUrl: Swift.String? = nil,
+                home: Components.Schemas.SportSide? = nil,
+                away: Components.Schemas.SportSide? = nil,
+                startsAt: Foundation.Date? = nil,
+                day: Swift.String,
+                status: Components.Schemas.SportEventStatus,
+                progress: Swift.String? = nil,
+                venue: Swift.String? = nil,
+                round: Swift.String? = nil,
+                imageUrl: Swift.String? = nil,
+                isFavorite: Swift.Bool
+            ) {
+                self.id = id
+                self.sport = sport
+                self.name = name
+                self.leagueId = leagueId
+                self.league = league
+                self.leagueBadgeUrl = leagueBadgeUrl
+                self.home = home
+                self.away = away
+                self.startsAt = startsAt
+                self.day = day
+                self.status = status
+                self.progress = progress
+                self.venue = venue
+                self.round = round
+                self.imageUrl = imageUrl
+                self.isFavorite = isFavorite
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case sport
+                case name
+                case leagueId
+                case league
+                case leagueBadgeUrl
+                case home
+                case away
+                case startsAt
+                case day
+                case status
+                case progress
+                case venue
+                case round
+                case imageUrl
+                case isFavorite
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/SportFavorite`.
+        public struct SportFavorite: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/SportFavorite/entity`.
+            public var entity: Components.Schemas.SportEntity
+            /// - Remark: Generated from `#/components/schemas/SportFavorite/live`.
+            public var live: [Components.Schemas.SportEvent]
+            /// - Remark: Generated from `#/components/schemas/SportFavorite/next`.
+            public var next: Components.Schemas.SportEvent?
+            /// - Remark: Generated from `#/components/schemas/SportFavorite/last`.
+            public var last: Components.Schemas.SportEvent?
+            /// Still being fetched; ask again in a few seconds.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SportFavorite/pending`.
+            public var pending: Swift.Bool
+            /// Creates a new `SportFavorite`.
+            ///
+            /// - Parameters:
+            ///   - entity:
+            ///   - live:
+            ///   - next:
+            ///   - last:
+            ///   - pending: Still being fetched; ask again in a few seconds.
+            public init(
+                entity: Components.Schemas.SportEntity,
+                live: [Components.Schemas.SportEvent],
+                next: Components.Schemas.SportEvent? = nil,
+                last: Components.Schemas.SportEvent? = nil,
+                pending: Swift.Bool
+            ) {
+                self.entity = entity
+                self.live = live
+                self.next = next
+                self.last = last
+                self.pending = pending
+            }
+            public enum CodingKeys: String, CodingKey {
+                case entity
+                case live
+                case next
+                case last
+                case pending
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/SportFavorites`.
+        public struct SportFavorites: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/SportFavorites/items`.
+            public var items: [Components.Schemas.SportFavorite]
+            /// - Remark: Generated from `#/components/schemas/SportFavorites/unavailable`.
+            public var unavailable: Swift.Bool
+            /// Creates a new `SportFavorites`.
+            ///
+            /// - Parameters:
+            ///   - items:
+            ///   - unavailable:
+            public init(
+                items: [Components.Schemas.SportFavorite],
+                unavailable: Swift.Bool
+            ) {
+                self.items = items
+                self.unavailable = unavailable
+            }
+            public enum CodingKeys: String, CodingKey {
+                case items
+                case unavailable
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/SportScheduleGroup`.
+        public struct SportScheduleGroup: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/SportScheduleGroup/leagueId`.
+            public var leagueId: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/SportScheduleGroup/league`.
+            public var league: Swift.String
+            /// - Remark: Generated from `#/components/schemas/SportScheduleGroup/sport`.
+            public var sport: Swift.String
+            /// - Remark: Generated from `#/components/schemas/SportScheduleGroup/badgeUrl`.
+            public var badgeUrl: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/SportScheduleGroup/events`.
+            public var events: [Components.Schemas.SportEvent]
+            /// Creates a new `SportScheduleGroup`.
+            ///
+            /// - Parameters:
+            ///   - leagueId:
+            ///   - league:
+            ///   - sport:
+            ///   - badgeUrl:
+            ///   - events:
+            public init(
+                leagueId: Swift.String? = nil,
+                league: Swift.String,
+                sport: Swift.String,
+                badgeUrl: Swift.String? = nil,
+                events: [Components.Schemas.SportEvent]
+            ) {
+                self.leagueId = leagueId
+                self.league = league
+                self.sport = sport
+                self.badgeUrl = badgeUrl
+                self.events = events
+            }
+            public enum CodingKeys: String, CodingKey {
+                case leagueId
+                case league
+                case sport
+                case badgeUrl
+                case events
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/SportSchedule`.
+        public struct SportSchedule: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/SportSchedule/date`.
+            public var date: Swift.String
+            /// Leagues with a favorite first, then by name.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SportSchedule/groups`.
+            public var groups: [Components.Schemas.SportScheduleGroup]
+            /// Some leagues are still being fetched.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SportSchedule/pending`.
+            public var pending: Swift.Bool
+            /// - Remark: Generated from `#/components/schemas/SportSchedule/unavailable`.
+            public var unavailable: Swift.Bool
+            /// Creates a new `SportSchedule`.
+            ///
+            /// - Parameters:
+            ///   - date:
+            ///   - groups: Leagues with a favorite first, then by name.
+            ///   - pending: Some leagues are still being fetched.
+            ///   - unavailable:
+            public init(
+                date: Swift.String,
+                groups: [Components.Schemas.SportScheduleGroup],
+                pending: Swift.Bool,
+                unavailable: Swift.Bool
+            ) {
+                self.date = date
+                self.groups = groups
+                self.pending = pending
+                self.unavailable = unavailable
+            }
+            public enum CodingKeys: String, CodingKey {
+                case date
+                case groups
+                case pending
+                case unavailable
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/SportBroadcast`.
+        public struct SportBroadcast: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/SportBroadcast/channel`.
+            public var channel: Swift.String
+            /// - Remark: Generated from `#/components/schemas/SportBroadcast/country`.
+            public var country: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/SportBroadcast/logoUrl`.
+            public var logoUrl: Swift.String?
+            /// Creates a new `SportBroadcast`.
+            ///
+            /// - Parameters:
+            ///   - channel:
+            ///   - country:
+            ///   - logoUrl:
+            public init(
+                channel: Swift.String,
+                country: Swift.String? = nil,
+                logoUrl: Swift.String? = nil
+            ) {
+                self.channel = channel
+                self.country = country
+                self.logoUrl = logoUrl
+            }
+            public enum CodingKeys: String, CodingKey {
+                case channel
+                case country
+                case logoUrl
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/SportEventDetail`.
+        public struct SportEventDetail: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/SportEventDetail/event`.
+            public var event: Components.Schemas.SportEvent
+            /// Channels in the "Where to watch" country. Empty when none is chosen.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SportEventDetail/inYourCountry`.
+            public var inYourCountry: [Components.Schemas.SportBroadcast]
+            /// Every other channel the provider lists, by country.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SportEventDetail/elsewhere`.
+            public var elsewhere: [Components.Schemas.SportBroadcast]
+            /// - Remark: Generated from `#/components/schemas/SportEventDetail/watchCountryCode`.
+            public var watchCountryCode: Swift.String?
+            /// Creates a new `SportEventDetail`.
+            ///
+            /// - Parameters:
+            ///   - event:
+            ///   - inYourCountry: Channels in the "Where to watch" country. Empty when none is chosen.
+            ///   - elsewhere: Every other channel the provider lists, by country.
+            ///   - watchCountryCode:
+            public init(
+                event: Components.Schemas.SportEvent,
+                inYourCountry: [Components.Schemas.SportBroadcast],
+                elsewhere: [Components.Schemas.SportBroadcast],
+                watchCountryCode: Swift.String? = nil
+            ) {
+                self.event = event
+                self.inYourCountry = inYourCountry
+                self.elsewhere = elsewhere
+                self.watchCountryCode = watchCountryCode
+            }
+            public enum CodingKeys: String, CodingKey {
+                case event
+                case inYourCountry
+                case elsewhere
+                case watchCountryCode
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/SportSettings`.
+        public struct SportSettings: Codable, Hashable, Sendable {
+            /// ISO 3166-1 alpha-2.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SportSettings/watchCountryCode`.
+            public var watchCountryCode: Swift.String?
+            /// False when Sports are off on this server; clients hide the Sports tab.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SportSettings/available`.
+            public var available: Swift.Bool
+            /// Creates a new `SportSettings`.
+            ///
+            /// - Parameters:
+            ///   - watchCountryCode: ISO 3166-1 alpha-2.
+            ///   - available: False when Sports are off on this server; clients hide the Sports tab.
+            public init(
+                watchCountryCode: Swift.String? = nil,
+                available: Swift.Bool
+            ) {
+                self.watchCountryCode = watchCountryCode
+                self.available = available
+            }
+            public enum CodingKeys: String, CodingKey {
+                case watchCountryCode
+                case available
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/SportSettingsInput`.
+        public struct SportSettingsInput: Codable, Hashable, Sendable {
+            /// ISO 3166-1 alpha-2; null or absent clears it.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SportSettingsInput/watchCountryCode`.
+            public var watchCountryCode: Swift.String?
+            /// Creates a new `SportSettingsInput`.
+            ///
+            /// - Parameters:
+            ///   - watchCountryCode: ISO 3166-1 alpha-2; null or absent clears it.
+            public init(watchCountryCode: Swift.String? = nil) {
+                self.watchCountryCode = watchCountryCode
+            }
+            public enum CodingKeys: String, CodingKey {
+                case watchCountryCode
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/SportsExport`.
+        public struct SportsExport: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/SportsExport/follows`.
+            public var follows: [Components.Schemas.SportEntity]
+            /// - Remark: Generated from `#/components/schemas/SportsExport/watchCountryCode`.
+            public var watchCountryCode: Swift.String?
+            /// Creates a new `SportsExport`.
+            ///
+            /// - Parameters:
+            ///   - follows:
+            ///   - watchCountryCode:
+            public init(
+                follows: [Components.Schemas.SportEntity],
+                watchCountryCode: Swift.String? = nil
+            ) {
+                self.follows = follows
+                self.watchCountryCode = watchCountryCode
+            }
+            public enum CodingKeys: String, CodingKey {
+                case follows
+                case watchCountryCode
             }
         }
         /// - Remark: Generated from `#/components/schemas/ConcertPlace`.
@@ -8791,6 +9620,232 @@ public enum Components {
                 case items
                 case page
                 case hasMore
+                case unavailable
+            }
+        }
+        /// `near` the point or saved city, inside `radiusKm`; `anywhere` for every upcoming date.
+        ///
+        /// - Remark: Generated from `#/components/schemas/ConcertSearchScope`.
+        @frozen public enum ConcertSearchScope: String, Codable, Hashable, Sendable, CaseIterable {
+            case near = "near"
+            case anywhere = "anywhere"
+        }
+        /// - Remark: Generated from `#/components/schemas/ConcertSearchRequest`.
+        public struct ConcertSearchRequest: Codable, Hashable, Sendable {
+            /// The artist's name, 2 to 100 characters. Not logged.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchRequest/q`.
+            public var q: Swift.String
+            /// A performer's `id` from `/v1/concerts/performers`: only their concerts. Absent searches `q` as free text. Letters, digits, `-` and `_`, at most 64.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchRequest/performerId`.
+            public var performerId: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchRequest/scope`.
+            public var scope: Components.Schemas.ConcertSearchScope
+            /// Sent with `longitude` for a one-off position; absent uses the saved city.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchRequest/latitude`.
+            public var latitude: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchRequest/longitude`.
+            public var longitude: Swift.Double?
+            /// Used by `near` only.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchRequest/radiusKm`.
+            @frozen public enum RadiusKmPayload: Int, Codable, Hashable, Sendable, CaseIterable {
+                case _25 = 25
+                case _50 = 50
+                case _100 = 100
+            }
+            /// Used by `near` only.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchRequest/radiusKm`.
+            public var radiusKm: Components.Schemas.ConcertSearchRequest.RadiusKmPayload
+            /// 1-based, at most 10.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchRequest/page`.
+            public var page: Swift.Int?
+            /// Creates a new `ConcertSearchRequest`.
+            ///
+            /// - Parameters:
+            ///   - q: The artist's name, 2 to 100 characters. Not logged.
+            ///   - performerId: A performer's `id` from `/v1/concerts/performers`: only their concerts. Absent searches `q` as free text. Letters, digits, `-` and `_`, at most 64.
+            ///   - scope:
+            ///   - latitude: Sent with `longitude` for a one-off position; absent uses the saved city.
+            ///   - longitude:
+            ///   - radiusKm: Used by `near` only.
+            ///   - page: 1-based, at most 10.
+            public init(
+                q: Swift.String,
+                performerId: Swift.String? = nil,
+                scope: Components.Schemas.ConcertSearchScope,
+                latitude: Swift.Double? = nil,
+                longitude: Swift.Double? = nil,
+                radiusKm: Components.Schemas.ConcertSearchRequest.RadiusKmPayload,
+                page: Swift.Int? = nil
+            ) {
+                self.q = q
+                self.performerId = performerId
+                self.scope = scope
+                self.latitude = latitude
+                self.longitude = longitude
+                self.radiusKm = radiusKm
+                self.page = page
+            }
+            public enum CodingKeys: String, CodingKey {
+                case q
+                case performerId
+                case scope
+                case latitude
+                case longitude
+                case radiusKm
+                case page
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ConcertSearchPage`.
+        public struct ConcertSearchPage: Codable, Hashable, Sendable {
+            /// The name as searched, trimmed.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchPage/query`.
+            public var query: Swift.String
+            /// The performer searched by, when one was picked.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchPage/performerId`.
+            public var performerId: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchPage/scope`.
+            public var scope: Components.Schemas.ConcertSearchScope
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchPage/place`.
+            public var place: Components.Schemas.ConcertPlace?
+            /// Present for `near`.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchPage/radiusKm`.
+            public var radiusKm: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchPage/items`.
+            public var items: [Components.Schemas.Concert]
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchPage/page`.
+            public var page: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchPage/hasMore`.
+            public var hasMore: Swift.Bool
+            /// Concerts are off, or Ticketmaster did not answer and nothing was cached.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertSearchPage/unavailable`.
+            public var unavailable: Swift.Bool
+            /// Creates a new `ConcertSearchPage`.
+            ///
+            /// - Parameters:
+            ///   - query: The name as searched, trimmed.
+            ///   - performerId: The performer searched by, when one was picked.
+            ///   - scope:
+            ///   - place:
+            ///   - radiusKm: Present for `near`.
+            ///   - items:
+            ///   - page:
+            ///   - hasMore:
+            ///   - unavailable: Concerts are off, or Ticketmaster did not answer and nothing was cached.
+            public init(
+                query: Swift.String,
+                performerId: Swift.String? = nil,
+                scope: Components.Schemas.ConcertSearchScope,
+                place: Components.Schemas.ConcertPlace? = nil,
+                radiusKm: Swift.Int? = nil,
+                items: [Components.Schemas.Concert],
+                page: Swift.Int,
+                hasMore: Swift.Bool,
+                unavailable: Swift.Bool
+            ) {
+                self.query = query
+                self.performerId = performerId
+                self.scope = scope
+                self.place = place
+                self.radiusKm = radiusKm
+                self.items = items
+                self.page = page
+                self.hasMore = hasMore
+                self.unavailable = unavailable
+            }
+            public enum CodingKeys: String, CodingKey {
+                case query
+                case performerId
+                case scope
+                case place
+                case radiusKm
+                case items
+                case page
+                case hasMore
+                case unavailable
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ConcertPerformerRequest`.
+        public struct ConcertPerformerRequest: Codable, Hashable, Sendable {
+            /// The name as typed, 2 to 100 characters. Not logged.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertPerformerRequest/q`.
+            public var q: Swift.String
+            /// Creates a new `ConcertPerformerRequest`.
+            ///
+            /// - Parameters:
+            ///   - q: The name as typed, 2 to 100 characters. Not logged.
+            public init(q: Swift.String) {
+                self.q = q
+            }
+            public enum CodingKeys: String, CodingKey {
+                case q
+            }
+        }
+        /// One performer as Ticketmaster lists them.
+        ///
+        /// - Remark: Generated from `#/components/schemas/ConcertPerformer`.
+        public struct ConcertPerformer: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ConcertPerformer/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ConcertPerformer/name`.
+            public var name: Swift.String
+            /// Ticketmaster's picture of the performer, referenced, never hosted.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertPerformer/imageUrl`.
+            public var imageUrl: Swift.String?
+            /// Creates a new `ConcertPerformer`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - name:
+            ///   - imageUrl: Ticketmaster's picture of the performer, referenced, never hosted.
+            public init(
+                id: Swift.String,
+                name: Swift.String,
+                imageUrl: Swift.String? = nil
+            ) {
+                self.id = id
+                self.name = name
+                self.imageUrl = imageUrl
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case name
+                case imageUrl
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ConcertPerformerList`.
+        public struct ConcertPerformerList: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ConcertPerformerList/items`.
+            public var items: [Components.Schemas.ConcertPerformer]
+            /// Concerts are off, or Ticketmaster did not answer and nothing was cached.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ConcertPerformerList/unavailable`.
+            public var unavailable: Swift.Bool
+            /// Creates a new `ConcertPerformerList`.
+            ///
+            /// - Parameters:
+            ///   - items:
+            ///   - unavailable: Concerts are off, or Ticketmaster did not answer and nothing was cached.
+            public init(
+                items: [Components.Schemas.ConcertPerformer],
+                unavailable: Swift.Bool
+            ) {
+                self.items = items
+                self.unavailable = unavailable
+            }
+            public enum CodingKeys: String, CodingKey {
+                case items
                 case unavailable
             }
         }
@@ -9035,6 +10090,31 @@ public enum Components {
                 case byline
                 case genres
                 case tracks
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/TitlePreview`.
+        public struct TitlePreview: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/TitlePreview/title`.
+            public var title: Components.Schemas.TitleDetail
+            /// Set when the title is in the caller's library; its title page is then the one to open.
+            ///
+            /// - Remark: Generated from `#/components/schemas/TitlePreview/libraryItemId`.
+            public var libraryItemId: Swift.String?
+            /// Creates a new `TitlePreview`.
+            ///
+            /// - Parameters:
+            ///   - title:
+            ///   - libraryItemId: Set when the title is in the caller's library; its title page is then the one to open.
+            public init(
+                title: Components.Schemas.TitleDetail,
+                libraryItemId: Swift.String? = nil
+            ) {
+                self.title = title
+                self.libraryItemId = libraryItemId
+            }
+            public enum CodingKeys: String, CodingKey {
+                case title
+                case libraryItemId
             }
         }
         /// - Remark: Generated from `#/components/schemas/AlbumTrack`.
@@ -9481,6 +10561,14 @@ public enum Components {
             public var bookProgress: Components.Schemas.BookProgress?
             /// - Remark: Generated from `#/components/schemas/LibraryEntry/mangaProgress`.
             public var mangaProgress: Components.Schemas.MangaProgress?
+            /// The newest episode tick the user made in Aaru. Imported, pulled and restored ticks do not count. Absent when there is none.
+            ///
+            /// - Remark: Generated from `#/components/schemas/LibraryEntry/lastWatchedAt`.
+            public var lastWatchedAt: Foundation.Date?
+            /// APP-018 · an anime in progress the user never touched in Aaru: its status came from an import and it has no tick made in Aaru. Derived on every read; the status stays `in_progress`. Library's Now leaves these out of Watching.
+            ///
+            /// - Remark: Generated from `#/components/schemas/LibraryEntry/inBacklog`.
+            public var inBacklog: Swift.Bool
             /// Every watched episode of a show, in order. Only on single-item responses (the item,
             /// and episode and season writes); lists and sync leave it out.
             ///
@@ -9502,6 +10590,8 @@ public enum Components {
             ///   - progress:
             ///   - bookProgress:
             ///   - mangaProgress:
+            ///   - lastWatchedAt: The newest episode tick the user made in Aaru. Imported, pulled and restored ticks do not count. Absent when there is none.
+            ///   - inBacklog: APP-018 · an anime in progress the user never touched in Aaru: its status came from an import and it has no tick made in Aaru. Derived on every read; the status stays `in_progress`. Library's Now leaves these out of Watching.
             ///   - watchedEpisodes: Every watched episode of a show, in order. Only on single-item responses (the item,
             public init(
                 id: Swift.String,
@@ -9516,6 +10606,8 @@ public enum Components {
                 progress: Components.Schemas.ShowProgress? = nil,
                 bookProgress: Components.Schemas.BookProgress? = nil,
                 mangaProgress: Components.Schemas.MangaProgress? = nil,
+                lastWatchedAt: Foundation.Date? = nil,
+                inBacklog: Swift.Bool,
                 watchedEpisodes: [Components.Schemas.EpisodeRef]? = nil
             ) {
                 self.id = id
@@ -9530,6 +10622,8 @@ public enum Components {
                 self.progress = progress
                 self.bookProgress = bookProgress
                 self.mangaProgress = mangaProgress
+                self.lastWatchedAt = lastWatchedAt
+                self.inBacklog = inBacklog
                 self.watchedEpisodes = watchedEpisodes
             }
             public enum CodingKeys: String, CodingKey {
@@ -9545,6 +10639,8 @@ public enum Components {
                 case progress
                 case bookProgress
                 case mangaProgress
+                case lastWatchedAt
+                case inBacklog
                 case watchedEpisodes
             }
         }
@@ -9673,6 +10769,8 @@ public enum Components {
             public var listens: [Components.Schemas.Listen]?
             /// - Remark: Generated from `#/components/schemas/AccountExport/favorites`.
             public var favorites: Components.Schemas.Favorites?
+            /// - Remark: Generated from `#/components/schemas/AccountExport/sports`.
+            public var sports: Components.Schemas.SportsExport?
             /// Creates a new `AccountExport`.
             ///
             /// - Parameters:
@@ -9687,6 +10785,7 @@ public enum Components {
             ///   - groupMessages: Messages you wrote in groups, oldest first.
             ///   - listens: Every listen in your listening log, newest first (MUS-005).
             ///   - favorites:
+            ///   - sports:
             public init(
                 exportedAt: Foundation.Date,
                 account: Components.Schemas.Me,
@@ -9698,7 +10797,8 @@ public enum Components {
                 groups: Components.Schemas.AccountExport.GroupsPayload? = nil,
                 groupMessages: Components.Schemas.AccountExport.GroupMessagesPayload? = nil,
                 listens: [Components.Schemas.Listen]? = nil,
-                favorites: Components.Schemas.Favorites? = nil
+                favorites: Components.Schemas.Favorites? = nil,
+                sports: Components.Schemas.SportsExport? = nil
             ) {
                 self.exportedAt = exportedAt
                 self.account = account
@@ -9711,6 +10811,7 @@ public enum Components {
                 self.groupMessages = groupMessages
                 self.listens = listens
                 self.favorites = favorites
+                self.sports = sports
             }
             public enum CodingKeys: String, CodingKey {
                 case exportedAt
@@ -9724,6 +10825,7 @@ public enum Components {
                 case groupMessages
                 case listens
                 case favorites
+                case sports
             }
         }
         /// - Remark: Generated from `#/components/schemas/LibraryPage`.
@@ -10015,6 +11117,83 @@ public enum Components {
                 case entry
                 case showStatus
                 case nextAiring
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/Watching`.
+        public struct Watching: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/Watching/items`.
+            public var items: [Components.Schemas.WatchingItem]
+            /// Creates a new `Watching`.
+            ///
+            /// - Parameters:
+            ///   - items:
+            public init(items: [Components.Schemas.WatchingItem]) {
+                self.items = items
+            }
+            public enum CodingKeys: String, CodingKey {
+                case items
+            }
+        }
+        /// One title in progress. Shows whose episodes are loaded carry `showStatus` and `nextAiring` (the first episode not aired yet); a show with an aired episode left to watch carries `nextName`, `nextRuntimeMinutes`, `remainingCount` and `remainingMinutes` (aired, unwatched, specials left out), as Up Next's ContinueEntry does.
+        ///
+        /// - Remark: Generated from `#/components/schemas/WatchingItem`.
+        public struct WatchingItem: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/WatchingItem/entry`.
+            public var entry: Components.Schemas.LibraryEntry
+            /// - Remark: Generated from `#/components/schemas/WatchingItem/showStatus`.
+            @frozen public enum ShowStatusPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case upcoming = "upcoming"
+                case returning = "returning"
+                case ended = "ended"
+                case canceled = "canceled"
+            }
+            /// - Remark: Generated from `#/components/schemas/WatchingItem/showStatus`.
+            public var showStatus: Components.Schemas.WatchingItem.ShowStatusPayload?
+            /// - Remark: Generated from `#/components/schemas/WatchingItem/nextAiring`.
+            public var nextAiring: Components.Schemas.UpcomingEpisode?
+            /// - Remark: Generated from `#/components/schemas/WatchingItem/nextName`.
+            public var nextName: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/WatchingItem/nextRuntimeMinutes`.
+            public var nextRuntimeMinutes: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/WatchingItem/remainingCount`.
+            public var remainingCount: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/WatchingItem/remainingMinutes`.
+            public var remainingMinutes: Swift.Int?
+            /// Creates a new `WatchingItem`.
+            ///
+            /// - Parameters:
+            ///   - entry:
+            ///   - showStatus:
+            ///   - nextAiring:
+            ///   - nextName:
+            ///   - nextRuntimeMinutes:
+            ///   - remainingCount:
+            ///   - remainingMinutes:
+            public init(
+                entry: Components.Schemas.LibraryEntry,
+                showStatus: Components.Schemas.WatchingItem.ShowStatusPayload? = nil,
+                nextAiring: Components.Schemas.UpcomingEpisode? = nil,
+                nextName: Swift.String? = nil,
+                nextRuntimeMinutes: Swift.Int? = nil,
+                remainingCount: Swift.Int? = nil,
+                remainingMinutes: Swift.Int? = nil
+            ) {
+                self.entry = entry
+                self.showStatus = showStatus
+                self.nextAiring = nextAiring
+                self.nextName = nextName
+                self.nextRuntimeMinutes = nextRuntimeMinutes
+                self.remainingCount = remainingCount
+                self.remainingMinutes = remainingMinutes
+            }
+            public enum CodingKeys: String, CodingKey {
+                case entry
+                case showStatus
+                case nextAiring
+                case nextName
+                case nextRuntimeMinutes
+                case remainingCount
+                case remainingMinutes
             }
         }
         /// - Remark: Generated from `#/components/schemas/UpcomingEpisode`.
@@ -28809,6 +29988,290 @@ public enum Operations {
             }
         }
     }
+    /// Music events matching an artist's name, near a place or anywhere (MUS-010), soonest first.
+    ///
+    /// POST so neither the name nor a position sits in a URL. The name goes to Ticketmaster as free text, so other acts whose events carry the word can match. `near` searches around a one-off point or the saved city like `/v1/concerts/near` (with neither, 409 `no_place`); `anywhere` sends the name alone, and each concert's `distanceKm` is worked out by the server from the point or saved city when there is one. Neither name nor position is logged; the same list for everyone, cached by the server.
+    ///
+    /// - Remark: HTTP `POST /v1/concerts/search`.
+    /// - Remark: Generated from `#/paths//v1/concerts/search/post(searchConcerts)`.
+    public enum SearchConcerts {
+        public static let id: Swift.String = "searchConcerts"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/concerts/search/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SearchConcerts.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SearchConcerts.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.SearchConcerts.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/concerts/search/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/concerts/search/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.ConcertSearchRequest)
+            }
+            public var body: Operations.SearchConcerts.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.SearchConcerts.Input.Headers = .init(),
+                body: Operations.SearchConcerts.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/concerts/search/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/concerts/search/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.ConcertSearchPage)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ConcertSearchPage {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.SearchConcerts.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.SearchConcerts.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The page. `unavailable` when concerts are off or the provider is down.
+            ///
+            /// - Remark: Generated from `#/paths//v1/concerts/search/post(searchConcerts)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.SearchConcerts.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.SearchConcerts.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/concerts/search/post(searchConcerts)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Performers whose name matches what the user typed, to pick one before a search (MUS-010).
+    ///
+    /// Ticketmaster's own performer list for the name, best first, up to eight. Picking one and sending its `id` as `performerId` to `/v1/concerts/search` lists only that performer's concerts. POST so the name never sits in a URL; not logged, cached by the server.
+    ///
+    /// - Remark: HTTP `POST /v1/concerts/performers`.
+    /// - Remark: Generated from `#/paths//v1/concerts/performers/post(searchConcertPerformers)`.
+    public enum SearchConcertPerformers {
+        public static let id: Swift.String = "searchConcertPerformers"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/concerts/performers/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SearchConcertPerformers.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SearchConcertPerformers.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.SearchConcertPerformers.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/concerts/performers/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/concerts/performers/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.ConcertPerformerRequest)
+            }
+            public var body: Operations.SearchConcertPerformers.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.SearchConcertPerformers.Input.Headers = .init(),
+                body: Operations.SearchConcertPerformers.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/concerts/performers/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/concerts/performers/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.ConcertPerformerList)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ConcertPerformerList {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.SearchConcertPerformers.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.SearchConcertPerformers.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The performers. `unavailable` when concerts are off or the provider is down.
+            ///
+            /// - Remark: Generated from `#/paths//v1/concerts/performers/post(searchConcertPerformers)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.SearchConcertPerformers.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.SearchConcertPerformers.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/concerts/performers/post(searchConcertPerformers)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
     /// Upcoming concerts by the artists of the user's albums (MUS-003).
     ///
     /// Derived from the user's own library, like the calendar; dropped albums aside. An artist counts only when Ticketmaster lists them with the same MusicBrainz id. Artists added in the last hour may still be `pending`.
@@ -29471,6 +30934,1563 @@ public enum Operations {
             }
         }
     }
+    /// The first-run picks for Sports (SPT-002).
+    ///
+    /// A fixed list of leagues and promotions (Premier League, La Liga, NBA, NFL, UFC, WWE…) with their badges once known. The same for everyone; never a recommendation.
+    ///
+    /// - Remark: HTTP `GET /v1/sports/suggested`.
+    /// - Remark: Generated from `#/paths//v1/sports/suggested/get(getSportSuggestions)`.
+    public enum GetSportSuggestions {
+        public static let id: Swift.String = "getSportSuggestions"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/sports/suggested/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetSportSuggestions.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetSportSuggestions.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetSportSuggestions.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.GetSportSuggestions.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/sports/suggested/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/sports/suggested/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.SportEntityList)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.SportEntityList {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetSportSuggestions.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetSportSuggestions.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The picks.
+            ///
+            /// - Remark: Generated from `#/paths//v1/sports/suggested/get(getSportSuggestions)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetSportSuggestions.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetSportSuggestions.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/sports/suggested/get(getSportSuggestions)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Leagues, teams and players by name, from the sports provider (SPT-002).
+    ///
+    /// - Remark: HTTP `GET /v1/sports/search`.
+    /// - Remark: Generated from `#/paths//v1/sports/search/get(searchSports)`.
+    public enum SearchSports {
+        public static let id: Swift.String = "searchSports"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/sports/search/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// 2 to 100 characters.
+                ///
+                /// - Remark: Generated from `#/paths/v1/sports/search/GET/query/q`.
+                public var q: Swift.String
+                /// Absent searches all three.
+                ///
+                /// - Remark: Generated from `#/paths/v1/sports/search/GET/query/kind`.
+                public var kind: Components.Schemas.SportEntityKind?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - q: 2 to 100 characters.
+                ///   - kind: Absent searches all three.
+                public init(
+                    q: Swift.String,
+                    kind: Components.Schemas.SportEntityKind? = nil
+                ) {
+                    self.q = q
+                    self.kind = kind
+                }
+            }
+            public var query: Operations.SearchSports.Input.Query
+            /// - Remark: Generated from `#/paths/v1/sports/search/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SearchSports.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SearchSports.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.SearchSports.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - query:
+            ///   - headers:
+            public init(
+                query: Operations.SearchSports.Input.Query,
+                headers: Operations.SearchSports.Input.Headers = .init()
+            ) {
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/sports/search/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/sports/search/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.SportEntityList)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.SportEntityList {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.SearchSports.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.SearchSports.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Up to ten of each kind, leagues first.
+            ///
+            /// - Remark: Generated from `#/paths//v1/sports/search/get(searchSports)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.SearchSports.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.SearchSports.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/sports/search/get(searchSports)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Each followed league, team and player with what is live, next and last (SPT-002).
+    ///
+    /// Near-live: scores refresh about every two minutes for football, NFL, NBA, MLB and NHL. UFC and WWE cards have results, not live scores. Entries still being fetched come back `pending`; ask again in a few seconds.
+    ///
+    /// - Remark: HTTP `GET /v1/sports/favorites`.
+    /// - Remark: Generated from `#/paths//v1/sports/favorites/get(getSportFavorites)`.
+    public enum GetSportFavorites {
+        public static let id: Swift.String = "getSportFavorites"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/sports/favorites/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetSportFavorites.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetSportFavorites.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetSportFavorites.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.GetSportFavorites.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/sports/favorites/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/sports/favorites/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.SportFavorites)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.SportFavorites {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetSportFavorites.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetSportFavorites.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The favorites, in follow order.
+            ///
+            /// - Remark: Generated from `#/paths//v1/sports/favorites/get(getSportFavorites)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetSportFavorites.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetSportFavorites.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/sports/favorites/get(getSportFavorites)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// One day of events for the leagues the user follows, favorites highlighted (SPT-002).
+    ///
+    /// - Remark: HTTP `GET /v1/sports/schedule`.
+    /// - Remark: Generated from `#/paths//v1/sports/schedule/get(getSportSchedule)`.
+    public enum GetSportSchedule {
+        public static let id: Swift.String = "getSportSchedule"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/sports/schedule/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// The local day, YYYY-MM-DD.
+                ///
+                /// - Remark: Generated from `#/paths/v1/sports/schedule/GET/query/date`.
+                public var date: Swift.String
+                /// The IANA time zone the day is in. Default UTC.
+                ///
+                /// - Remark: Generated from `#/paths/v1/sports/schedule/GET/query/tz`.
+                public var tz: Swift.String?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - date: The local day, YYYY-MM-DD.
+                ///   - tz: The IANA time zone the day is in. Default UTC.
+                public init(
+                    date: Swift.String,
+                    tz: Swift.String? = nil
+                ) {
+                    self.date = date
+                    self.tz = tz
+                }
+            }
+            public var query: Operations.GetSportSchedule.Input.Query
+            /// - Remark: Generated from `#/paths/v1/sports/schedule/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetSportSchedule.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetSportSchedule.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetSportSchedule.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - query:
+            ///   - headers:
+            public init(
+                query: Operations.GetSportSchedule.Input.Query,
+                headers: Operations.GetSportSchedule.Input.Headers = .init()
+            ) {
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/sports/schedule/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/sports/schedule/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.SportSchedule)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.SportSchedule {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetSportSchedule.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetSportSchedule.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The day, grouped by league.
+            ///
+            /// - Remark: Generated from `#/paths//v1/sports/schedule/get(getSportSchedule)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetSportSchedule.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetSportSchedule.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/sports/schedule/get(getSportSchedule)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// One event with its live line and where to watch it (SPT-002, SPT-005).
+    ///
+    /// - Remark: HTTP `GET /v1/sports/events/{id}`.
+    /// - Remark: Generated from `#/paths//v1/sports/events/{id}/get(getSportEvent)`.
+    public enum GetSportEvent {
+        public static let id: Swift.String = "getSportEvent"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/sports/events/{id}/GET/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/sports/events/{id}/GET/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.GetSportEvent.Input.Path
+            /// - Remark: Generated from `#/paths/v1/sports/events/{id}/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetSportEvent.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetSportEvent.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetSportEvent.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.GetSportEvent.Input.Path,
+                headers: Operations.GetSportEvent.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/sports/events/{id}/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/sports/events/{id}/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.SportEventDetail)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.SportEventDetail {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetSportEvent.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetSportEvent.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The event.
+            ///
+            /// - Remark: Generated from `#/paths//v1/sports/events/{id}/get(getSportEvent)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetSportEvent.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetSportEvent.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/sports/events/{id}/get(getSportEvent)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// The leagues, teams and players the user follows in Sports, oldest first.
+    ///
+    /// - Remark: HTTP `GET /v1/me/sport-follows`.
+    /// - Remark: Generated from `#/paths//v1/me/sport-follows/get(listSportFollows)`.
+    public enum ListSportFollows {
+        public static let id: Swift.String = "listSportFollows"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/sport-follows/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListSportFollows.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListSportFollows.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ListSportFollows.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.ListSportFollows.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/sport-follows/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/me/sport-follows/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.SportFollowList)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.SportFollowList {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ListSportFollows.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ListSportFollows.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The follows.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/sport-follows/get(listSportFollows)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ListSportFollows.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ListSportFollows.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/sport-follows/get(listSportFollows)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Follows a league, team or player by the sports provider's id. Idempotent.
+    ///
+    /// Sports only: never a library write, never journaled, never shown to friends. 404 when the provider does not know the id, 409 `too_many_follows` past 100, 503 when Sports are off.
+    ///
+    /// - Remark: HTTP `PUT /v1/me/sport-follows/{kind}/{providerId}`.
+    /// - Remark: Generated from `#/paths//v1/me/sport-follows/{kind}/{providerId}/put(followSport)`.
+    public enum FollowSport {
+        public static let id: Swift.String = "followSport"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/sport-follows/{kind}/{providerId}/PUT/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/sport-follows/{kind}/{providerId}/PUT/path/kind`.
+                public var kind: Components.Schemas.SportEntityKind
+                /// - Remark: Generated from `#/paths/v1/me/sport-follows/{kind}/{providerId}/PUT/path/providerId`.
+                public var providerId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - kind:
+                ///   - providerId:
+                public init(
+                    kind: Components.Schemas.SportEntityKind,
+                    providerId: Swift.String
+                ) {
+                    self.kind = kind
+                    self.providerId = providerId
+                }
+            }
+            public var path: Operations.FollowSport.Input.Path
+            /// - Remark: Generated from `#/paths/v1/me/sport-follows/{kind}/{providerId}/PUT/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.FollowSport.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.FollowSport.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.FollowSport.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.FollowSport.Input.Path,
+                headers: Operations.FollowSport.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/sport-follows/{kind}/{providerId}/PUT/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/me/sport-follows/{kind}/{providerId}/PUT/responses/200/content/application\/json`.
+                    case json(Components.Schemas.SportEntity)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.SportEntity {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.FollowSport.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.FollowSport.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Followed.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/sport-follows/{kind}/{providerId}/put(followSport)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.FollowSport.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.FollowSport.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/sport-follows/{kind}/{providerId}/put(followSport)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Stops following. Idempotent.
+    ///
+    /// - Remark: HTTP `DELETE /v1/me/sport-follows/{kind}/{providerId}`.
+    /// - Remark: Generated from `#/paths//v1/me/sport-follows/{kind}/{providerId}/delete(unfollowSport)`.
+    public enum UnfollowSport {
+        public static let id: Swift.String = "unfollowSport"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/sport-follows/{kind}/{providerId}/DELETE/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/sport-follows/{kind}/{providerId}/DELETE/path/kind`.
+                public var kind: Components.Schemas.SportEntityKind
+                /// - Remark: Generated from `#/paths/v1/me/sport-follows/{kind}/{providerId}/DELETE/path/providerId`.
+                public var providerId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - kind:
+                ///   - providerId:
+                public init(
+                    kind: Components.Schemas.SportEntityKind,
+                    providerId: Swift.String
+                ) {
+                    self.kind = kind
+                    self.providerId = providerId
+                }
+            }
+            public var path: Operations.UnfollowSport.Input.Path
+            /// - Remark: Generated from `#/paths/v1/me/sport-follows/{kind}/{providerId}/DELETE/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UnfollowSport.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UnfollowSport.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.UnfollowSport.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.UnfollowSport.Input.Path,
+                headers: Operations.UnfollowSport.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Not followed any more, or never was.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/sport-follows/{kind}/{providerId}/delete(unfollowSport)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.UnfollowSport.Output.NoContent)
+            /// Not followed any more, or never was.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/sport-follows/{kind}/{providerId}/delete(unfollowSport)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.UnfollowSport.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/sport-follows/{kind}/{providerId}/delete(unfollowSport)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// The country "Where to watch" looks at, and whether Sports are on at all.
+    ///
+    /// - Remark: HTTP `GET /v1/me/sport-settings`.
+    /// - Remark: Generated from `#/paths//v1/me/sport-settings/get(getSportSettings)`.
+    public enum GetSportSettings {
+        public static let id: Swift.String = "getSportSettings"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/sport-settings/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetSportSettings.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetSportSettings.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetSportSettings.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.GetSportSettings.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/sport-settings/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/me/sport-settings/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.SportSettings)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.SportSettings {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetSportSettings.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetSportSettings.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The settings.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/sport-settings/get(getSportSettings)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetSportSettings.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetSportSettings.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/sport-settings/get(getSportSettings)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Saves the "Where to watch" country; absent or null clears it.
+    ///
+    /// - Remark: HTTP `PUT /v1/me/sport-settings`.
+    /// - Remark: Generated from `#/paths//v1/me/sport-settings/put(saveSportSettings)`.
+    public enum SaveSportSettings {
+        public static let id: Swift.String = "saveSportSettings"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/sport-settings/PUT/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SaveSportSettings.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SaveSportSettings.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.SaveSportSettings.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/me/sport-settings/PUT/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/sport-settings/PUT/requestBody/content/application\/json`.
+                case json(Components.Schemas.SportSettingsInput)
+            }
+            public var body: Operations.SaveSportSettings.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.SaveSportSettings.Input.Headers = .init(),
+                body: Operations.SaveSportSettings.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/sport-settings/PUT/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/me/sport-settings/PUT/responses/200/content/application\/json`.
+                    case json(Components.Schemas.SportSettings)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.SportSettings {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.SaveSportSettings.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.SaveSportSettings.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Saved.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/sport-settings/put(saveSportSettings)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.SaveSportSettings.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.SaveSportSettings.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/sport-settings/put(saveSportSettings)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// The page for a catalog ref, in the library or not (LIB-006). Resolving may add the title to the catalog; it never adds it to the library.
+    ///
+    /// - Remark: HTTP `POST /v1/titles/resolve`.
+    /// - Remark: Generated from `#/paths//v1/titles/resolve/post(resolveTitle)`.
+    public enum ResolveTitle {
+        public static let id: Swift.String = "resolveTitle"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/titles/resolve/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ResolveTitle.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ResolveTitle.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ResolveTitle.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/titles/resolve/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/titles/resolve/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.MediaRef)
+            }
+            public var body: Operations.ResolveTitle.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.ResolveTitle.Input.Headers = .init(),
+                body: Operations.ResolveTitle.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/titles/resolve/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/titles/resolve/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.TitlePreview)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.TitlePreview {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ResolveTitle.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ResolveTitle.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The title, and the caller's library item when they have it.
+            ///
+            /// - Remark: Generated from `#/paths//v1/titles/resolve/post(resolveTitle)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ResolveTitle.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ResolveTitle.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/titles/resolve/post(resolveTitle)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
     /// A title from the catalog. Shows include their seasons and episodes.
     ///
     /// - Remark: HTTP `GET /v1/titles/{id}`.
@@ -29736,6 +32756,135 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/titles/{id}/posts/get(listTitlePosts)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Films, shows and anime in progress with what Library's Watching page shows (APP-018): the next episode to watch with its name and what is left, and a show's status and next airing. Anime in the backlog are included with `entry.inBacklog`. Newest change first.
+    ///
+    /// - Remark: HTTP `GET /v1/library/watching`.
+    /// - Remark: Generated from `#/paths//v1/library/watching/get(listWatching)`.
+    public enum ListWatching {
+        public static let id: Swift.String = "listWatching"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/library/watching/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListWatching.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListWatching.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ListWatching.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.ListWatching.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/library/watching/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/library/watching/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.Watching)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.Watching {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ListWatching.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ListWatching.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The titles in progress.
+            ///
+            /// - Remark: Generated from `#/paths//v1/library/watching/get(listWatching)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ListWatching.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ListWatching.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/library/watching/get(listWatching)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

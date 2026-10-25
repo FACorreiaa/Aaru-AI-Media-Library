@@ -113,6 +113,7 @@ struct HomeScreen: View {
                 .navigationDestination(for: String.self) { id in
                     LibraryEntryDestination(id: id, api: api, library: library, lists: lists)
                 }
+                .catalogDestination(api: api, library: library, lists: lists)
                 .navigationDestination(item: $openedCapture) { job in
                     if let imports {
                         ImportDetailView(id: job.id, imports: imports, library: library, lists: lists, api: api)

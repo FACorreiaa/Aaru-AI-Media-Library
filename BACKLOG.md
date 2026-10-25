@@ -34,8 +34,50 @@ library layer stay separate, external IDs stored whenever known, no second backe
 - **Anime is first-class from P1** (AniList catalog, `anilist`/`mal`/`anidb` external IDs).
 - DMs are **Signal-grade (libsignal)**. Licence and web support are OPEN — see DM-003, DM-004.
 
+## Decisions recorded 2026-10-25
+
+- **Pick the performer before a concert search (owner, 2026-10-25, MUS-010).** Submitting an
+  artist's name now lists Ticketmaster's performers for it first; picking one lists only that
+  performer's concerts, by Ticketmaster's id. The free text the owner chose on 2026-10-24 stays as
+  the last row, "All events matching …", for festivals and bills without a named act, and is what
+  runs when Ticketmaster offers no performer.
+- **Books, Manga, Music and Sports get their own destinations; a More menu (owner, 2026-10-25,
+  NAV-001…003, DISC-004).** Discover was too cluttered. It keeps Today (shows, films and anime),
+  On air and Seasons. Books, Manga and Music are pages of their own: the user's shelf for the kind
+  (in progress, then planned) above that kind's Discover rows. Music also holds Concerts (out of
+  Discover) and Listens. On iPhone the tab bar is Home · Discover · Library · Calendar · More,
+  and iOS's More lists Groups, Books, Manga, Music and Sports; the Groups mention badge moves to
+  its row inside More. This reverses the 2026-10-21 call to keep five tabs with no More. iPad,
+  Mac and the web keep the top destinations and put the same five in a More group. Discover rows
+  now carry their kind, and manga gets two rows of its own from AniList. Home still shows every
+  row.
+
 ## Decisions recorded 2026-10-24
 
+- **Now group pages and the anime backlog (owner, 2026-10-24, APP-018).** "Show all N" on
+  Library's Now opens the group's own page (`/app/library/now/{group}` on the web, a pushed view
+  on Apple) instead of expanding in place: every title in progress, Grid (backdrop cards) or List
+  (dense rows), sorted Recent (the last live tick), Airs next (Watching) or A–Z, narrowed by kind
+  chips only. Watching rows carry the show's facts from `GET /v1/library/watching`: channel and
+  show status, the next episode and its name, what is left, the next airing. TV and anime stay
+  together; the calendar is unchanged. An **anime backlog** item is an anime in progress whose
+  status came from an import (`status_by_hand = false`) with no live tick in Aaru. It stays
+  `in_progress` (MyAnimeList reads it back) but leaves Now for a collapsed "Anime backlog" on the
+  Watching page. Derived on the server (`LibraryEntry.inBacklog`), never stored; the first live
+  tick or a status set by hand brings it out for good. Imported TV and films never go there.
+  Apple matches the web: six cards a group and "Show all N".
+- **Sports, a tab of its own (owner, 2026-10-24).** Pulled forward past the P2 gate. Users follow
+  leagues and promotions (Premier League, NBA, NFL, UFC, WWE…), teams and players, and see their
+  fixtures, near-live scores, results and where to watch, SofaScore-style: a Favorites tab
+  (each follow's live, next and last) and a Schedule tab (one local day, favorites highlighted).
+  Sports lives only in that tab: no library rows, no Home rows, no stats, points, streaks or
+  recap, no friends' view, no agent or MCP tool, no push. Provider: TheSportsDB, Single Developer
+  tier ($9/month, 100 requests a minute, 2-minute livescores for football, NFL, NBA, MLB and NHL;
+  UFC and WWE cards have results, no live score). SofaScore has no official API and scraping is
+  out. Near-live means the clients refresh every 90 s while the tab is open; no socket. "Where to
+  watch" reads one country from Sports settings. Users may follow anything the provider has;
+  first run suggests the owner's list. On iPhone it opens from Discover's toolbar; the five-tab bar
+  is unchanged. SPT-001…005.
 - **On air by channel on Discover (owner, 2026-10-24, DISC-003).** Discover gets an On air view:
   the week's airings (TMDB's on-the-air set) grouped by the channel or streamer they premiere on,
   each with the next episode's day and, when TVmaze knows it, the exact time. "Streams on" pulls
@@ -54,6 +96,10 @@ library layer stay separate, external IDs stored whenever known, no second backe
   Discover card or a list member opens its title page; one not in the library shows the same page
   with Add buttons and adds nothing until tapped. Needs a server route that resolves a catalog
   ref to a title. Follows LIB-005.
+- **Concerts by artist, near the place or anywhere (owner, 2026-10-24, MUS-010).** The Concerts
+  view's "Near" section gets an artist search: free text sent as Ticketmaster's keyword (owner's
+  choice over picking a performer first), with a Near <city> | Anywhere switch. Any artist, not
+  only the library's, so it is a search like the catalog's, not a recommendation.
 
 ## Decisions recorded 2026-10-23
 
@@ -587,7 +633,7 @@ account or a stranger that has not happened yet.
 | LIB-003 | Done | #2; LibraryTests | |
 | LIB-004 | Done | LibraryTests "LIB-004: a delete on one device…" | |
 | LIB-005 | Built, unverified | `lib/paging.test.ts`; `components/Paged.tsx`, `Design/Paging.swift` | Client-only (owner, 2026-10-24); not yet run on TestFlight |
-| LIB-006 | Planned | | Title page without a library item (owner, 2026-10-24) |
+| LIB-006 | Built, unverified | TitlePreviewTests; `lib/title/preview.test.ts`; `TitlePreviewView.swift` | Needs the API promoted before clients can open it; not yet run on TestFlight |
 | AUD-001 | Done | #2; `actions` journal, LibraryService.swift | |
 | AUD-002 | Done | #2; `/v1/actions/{id}/undo`, 409 tests | Clients undo through PROG-005's toast only; no undo ribbon |
 | PROG-001 | Done | #2; episodes PUT route | |
@@ -627,6 +673,7 @@ account or a stranger that has not happened yet.
 | MUS-007 | Built, unverified | MusicSection (web, Apple); ListenBrainzRouteTests `musicSetup`; music model tests | Not deployed; steps checked against client source, not tried with a real scrobbler |
 | MUS-008 | Built, unverified | ListenStatsTests; listening-model and recap deck tests; `/app/music`, MusicView, MusicInsights, OnRepeatCard | Not deployed; not run on a device with real listens |
 | MUS-009 | Not started | — | Waits for a Bandsintown app id |
+| MUS-010 | Built, unverified | ConcertSearchTests; concerts model tests; ConcertList, ConcertsView | Free text: #189, deployed 2f1f5f1 (infra #469). Performer pick: this PR, not deployed. Not tried with the real key |
 | MNG-001 | Built, unverified | #175; MangaTests, AniListMangaAdapterTests; deployed f6cc317 (infra #456), TestFlight from d9c6341 | Not run on a device |
 | MNG-002 | Built, unverified | #175; MangaImportTests, AnimeListImportTests; deployed f6cc317 (infra #456) | No real MAL manga export or AniList manga list run yet |
 | FAV-001 | Built, unverified | #176; FavoritesTests, favorites model tests; deployed f6cc317 (infra #456), TestFlight from f6cc317 | Not run on a device or in a browser |
@@ -681,6 +728,7 @@ account or a stranger that has not happened yet.
 | APP-014 | Done | #43; LibraryRow.swift, library/model.ts labels | |
 | APP-015 | Done | #43; RootView `lists` tab | |
 | APP-017 | Built | library/NowSection (web), Library/NowSection (Apple) | Watching, Reading, Listening; book page counts from Open Library (`titles.page_count`, backfilled) |
+| APP-018 | Built | server #187 (`inBacklog`, `lastWatchedAt`, `GET /v1/library/watching`, promoted); web #191 `routes/_shell.app_.library_.now.$group.tsx`; Apple `Library/NowGroupView` | Now group pages, Grid/List, the anime backlog (decision 2026-10-24) |
 | LAND-001 | Partial | #5, #9; routes/index.tsx, demo/ gone | No prerender config found; Lighthouse never run |
 | LAND-002 | Open | no waitlist code | |
 | LAND-003 | Done | #27; docs/privacy.md, /privacy | Names all six third parties |
@@ -1803,6 +1851,27 @@ query is dropped from request logs. Not in the account export, like the other se
 **Done when:** concerts near a saved city and near "Use my location" list on three clients, and
 an artist in the library with a tour shows under "Your artists on tour".
 
+### MUS-010 · Concerts by artist, near or anywhere · M · owner 2026-10-24
+**Needs:** MUS-003.
+In the "Near" section of the Concerts view, a search field takes an artist's name and a
+Near <city> | Anywhere switch. `POST /v1/concerts/search` sends Ticketmaster the typed name as
+`keyword` on music events, on submit only (never per keystroke: the daily budget). Near adds the
+saved city's or the one-off position's cell and the 25 · 50 · 100 km radius, like
+`/v1/concerts/near`; Anywhere sends the name alone and the server works out each venue's distance
+from the city or position itself. Same 6 h cache, keyed by the lowercased name; the name is not
+logged. Matching is the provider's free text, so a search can list other acts whose events carry
+the word; Aaru does not filter by name.
+
+Performer pick (owner, 2026-10-25): submitting first asks `POST /v1/concerts/performers` for
+Ticketmaster's performers matching the name (up to eight, with a picture when there is one, cached
+6 h by the lowercased name). Picking one searches with its id (`performerId` → Ticketmaster's
+`attractionId`), so only that performer's concerts list; the last row, "All events matching …",
+runs the free-text search. With no performer to offer, the free-text search runs straight away.
+
+**Done when:** on iPhone, Mac and web, searching an artist Near Madrid lists their Madrid-area
+dates inside the radius, Anywhere lists every upcoming date with its distance from the city, and
+Clear returns to everything near.
+
 ### MUS-009 · Concerts from Bandsintown · M
 **Needs:** MUS-003, the owner's Bandsintown app id (partner application), sealed as
 `BANDSINTOWN_APP_ID` in `aaru-env`.
@@ -2519,6 +2588,83 @@ Lists is a tab on iPhone and a sidebar entry on iPad and Mac; Home shows list ch
 **Done when:** Lists is one tap from anywhere on iPhone and Mac.
 
 ---
+
+## P2 · Sports (pulled forward 2026-10-24)
+
+See the 2026-10-24 decision. Catalog data from TheSportsDB; Aaru keeps only what a user follows
+and their "Where to watch" country. Never a Title, never a library row.
+
+### SPT-001 · Sports provider, follows and settings · M
+**Needs:** the owner's TheSportsDB key (sealed `THESPORTSDB_API_KEY` in `aaru-env`).
+`SportsListing` behind `TheSportsDBSports` (v2 with the key in `X-API-KEY`; v1 for a league's day
+and an event's TV). `sport_follows` (league, team or player by provider id, with a name, sport,
+badge and league snapshot) and `sport_settings` (one country). At most 100 follows. A fighter's
+or wrestler's fixtures are their promotion's cards, reached by id through their division, never
+by name. Off without the key: every answer `unavailable`, clients hide the tab.
+
+As built: a shared in-memory cache, per kind (livescores 90 s, events 5 min, a league's day
+15 min, schedules 30 min, TV 6 h, entities 24 h), stale on failure, retried after a minute. A
+request waits 3 s for cold answers and returns the rest `pending`. The export carries the follows
+and the country; deleting the account deletes both.
+
+**Done when:** following a team, a league and a fighter works on three clients and survives the
+provider being down.
+
+### SPT-002 · Favorites, schedule and event · M
+**Needs:** SPT-001.
+`GET /v1/sports/favorites` (each follow's live, next and last), `GET /v1/sports/schedule?date&tz`
+(one local day for followed leagues and the leagues of followed teams and players, plus a followed
+team's games in other competitions; leagues with a favorite first), `GET /v1/sports/events/{id}`,
+`GET /v1/sports/search`, `GET /v1/sports/suggested`, `/v1/me/sport-follows`,
+`/v1/me/sport-settings`. Livescores are laid over listed events by id.
+
+**Done when:** a live match's score moves within about two minutes on the Favorites tab.
+
+### SPT-003 · Web Sports tab · M
+**Needs:** SPT-002.
+A Sports destination in the web nav: Favorites and Schedule tabs (date strip), event sheet with
+"Where to watch", search to follow, first-run picks, a Sports section in Settings for the
+country. Refreshes every 90 s while visible and a live event is on screen; `pending` answers
+are asked again after a few seconds. "Data: TheSportsDB" under the tab.
+
+### SPT-004 · iOS and Mac Sports tab · M
+**Needs:** SPT-002.
+`AppTab.sports`, in the sidebar on iPad and Mac and from Discover's toolbar on iPhone. The same surfaces
+as SPT-003 in SwiftUI; refresh while the scene is active.
+
+### SPT-005 · Where to watch, docs and key · S
+**Needs:** SPT-002.
+Broadcasts split into the chosen country and the rest (TheSportsDB's country names matched to
+ISO codes with aliases: USA, UK…). `docs/privacy.md` and `docs/providers.md` updated first;
+`THESPORTSDB_API_KEY` in the infra secrets template, sealed by the owner.
+
+Later, not built: a "kicks off in an hour" push, a match Live Activity, standings.
+
+## P2 · Navigation by kind (owner, 2026-10-25)
+
+See the 2026-10-25 decision. Same destinations, same order, on every client.
+
+### DISC-004 · Discover rows say their kind; manga rows · S
+`DiscoverRow.kind` (`film | show | anime | manga | book | album`, anime apart from shows) from
+`DiscoverList.kind`, so each page shows its own rows without guessing from ids. Two AniList rows,
+type MANGA, no adult works: Trending manga and Publishing now. No stand-in while AniList is down:
+the manga rows are simply absent.
+
+### NAV-001 · Web: Books, Manga, Music and a More group · M
+**Needs:** DISC-004.
+The sidebar: Home, Discover, Library, Calendar, Lists, Friends, then a collapsible More (Groups,
+Books, Manga, Music, Sports), then Insights and Settings. `/app/books` and `/app/manga` are new;
+`/app/music` becomes the Music page (shelf, New albums, Coming soon, Concerts, Listens). Discover
+drops the Concerts view (`?view=concerts` redirects to Music) and the book and album rows.
+
+### NAV-002 · Apple: the More tab and the kind screens · M
+**Needs:** DISC-004.
+iPhone: Home · Discover · Library · Calendar · More, with iOS's More listing Groups, Books, Manga,
+Music and Sports. iPad and Mac: a More section in the sidebar. `KindScreen` serves Books, Manga
+and Music; Music has Albums · Concerts · Listens. The Discover toolbar's Sports button goes.
+
+### NAV-003 · Docs · S
+DESIGN.md §13a, §13c, §13d and §18; VIEWS.md; CLAUDE.md's Discover; ARCHITECTURE.md.
 
 ## P2 · Web (`aaru-client`)
 

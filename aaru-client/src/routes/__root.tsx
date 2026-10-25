@@ -52,9 +52,11 @@ function RootComponent() {
     <html lang="en" data-theme={theme()}>
       <head>
         <HydrationScript />
-        <HeadContent />
       </head>
       <body>
+        {/* Solid does not hydrate <head>, so a HeadContent there never updates the title on
+            client navigation. In <body> it hydrates and still writes the tags into <head>. */}
+        <HeadContent />
         <Suspense>
           <Outlet />
         </Suspense>

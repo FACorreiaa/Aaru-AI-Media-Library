@@ -72,6 +72,11 @@ export const CREDITS: Credit[] = [
     href: 'https://www.ticketmaster.com',
   },
   {
+    lead: 'Sports data from ',
+    name: 'TheSportsDB',
+    href: 'https://www.thesportsdb.com',
+  },
+  {
     lead: 'City search by ',
     name: 'Open-Meteo',
     href: 'https://open-meteo.com',

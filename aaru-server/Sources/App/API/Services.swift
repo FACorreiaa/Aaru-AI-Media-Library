@@ -24,6 +24,7 @@ struct Services: Sendable {
     var groups: GroupService
     var board: BoardService
     var concerts: ConcertService
+    var sports: SportsService
     /// Aaru Plus (BIL-001). Purchases answer 503 until `App+build` gives it Apple's verifier.
     var billing: BillingService
     /// Open sockets and browser tickets (GRP-006). One per process.
@@ -80,17 +81,13 @@ struct Services: Sendable {
             scrobble: ScrobbleService(stores: stores, library: library, resolver: resolver),
             listens: ListenService(stores: stores),
             plans: PlanService(stores: stores, library: library),
-            oauth: OAuthService(
-                stores: stores, oauth: stores.oauth,
-                settings: .init(
-                    publicBaseURL: publicBaseURL, webBaseURL: oauth.webBaseURL, cookieDomain: oauth.cookieDomain
-                )
-            ),
+            oauth: oauthService(stores, publicBaseURL: publicBaseURL, oauth),
             social: SocialService(stores: stores),
             invites: InviteService(stores: stores, library: library, webBaseURL: oauth.webBaseURL),
             groups: groups,
             board: BoardService(stores: stores, resolver: resolver, library: library),
             concerts: ConcertService(stores: stores, listing: catalogs.concerts, places: catalogs.places),
+            sports: SportsService(stores: stores, listing: catalogs.sports),
             billing: BillingService(stores: stores, apple: nil),
             realtime: realtime,
             agentReplies: model.map {
@@ -108,6 +105,17 @@ struct Services: Sendable {
                 + [catalogs.releases].compactMap(\.self),
             animeFallback: catalogs.tmdb as? any DiscoverListing,
             nextEpisodeTiming: catalogs.airTimes as? any NextEpisodeTiming
+        )
+    }
+
+    private static func oauthService(
+        _ stores: Stores, publicBaseURL: URL, _ oauth: (webBaseURL: URL, cookieDomain: String?)
+    ) -> OAuthService {
+        OAuthService(
+            stores: stores, oauth: stores.oauth,
+            settings: .init(
+                publicBaseURL: publicBaseURL, webBaseURL: oauth.webBaseURL, cookieDomain: oauth.cookieDomain
+            )
         )
     }
 

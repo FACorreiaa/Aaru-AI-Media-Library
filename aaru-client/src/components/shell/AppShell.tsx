@@ -4,6 +4,7 @@ import {
   Show,
   Suspense,
   createEffect,
+  createMemo,
   createSignal,
   lazy,
   on,
@@ -16,6 +17,9 @@ import { Wordmark } from '../Brand'
 import type { Scope } from '../SearchPanel'
 import {
   Button,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
   Dialog,
   DialogContent,
   DialogPortal,
@@ -38,13 +42,27 @@ import {
 } from '~/components/ui'
 import { createFocusReturn, focusFieldOnOpen } from '../../lib/dialog-focus'
 import { listGroups } from '../../lib/groups/server'
+import { browserQueryClient } from '../../integrations/tanstack-query/provider'
+import { sportSettingsQuery } from '../../lib/sports/query'
 import { upsert } from '../../lib/library/model'
 import type { LibraryEntry } from '../../lib/library/model'
 import { getLibrary } from '../../lib/library/server'
 import { ShellContext } from './context'
 import type { AppShellContext, Previous, SearchHost } from './context'
 import {
+  BOTTOM,
+  TOP,
+  inMore,
+  isAt,
+  moreRows,
+  readMoreOpen,
+  writeMoreOpen,
+} from '../../lib/shell/nav'
+import type { NavPath, NavTarget } from '../../lib/shell/nav'
+import {
+  BooksIcon,
   CalendarIcon,
+  ChevronDownIcon,
   DiscoverIcon,
   FriendsIcon,
   GroupsIcon,
@@ -52,9 +70,13 @@ import {
   InsightsIcon,
   LibraryIcon,
   ListsIcon,
+  MangaIcon,
   MenuIcon,
+  MoreIcon,
+  MusicIcon,
   SearchIcon,
   SettingsIcon,
+  SportsIcon,
 } from './icons'
 
 const SearchPanel = lazy(() =>
@@ -68,60 +90,22 @@ const UnlockWatcher = lazy(() =>
   })),
 )
 
-type Destination = {
-  to:
-    | '/app'
-    | '/app/discover'
-    | '/app/library'
-    | '/app/calendar'
-    | '/app/lists'
-    | '/app/friends'
-    | '/app/groups'
-    | '/app/insights'
-    | '/app/settings'
-  label: string
-  icon: (p: { class?: string }) => JSX.Element
-  /** Other paths that belong to this destination. */
-  also?: string[]
-}
+type Icon = (p: { class?: string }) => JSX.Element
 
-// DESIGN.md §18: the six, then, set apart at the bottom, Insights and Settings.
-const DESTINATIONS: Destination[] = [
-  { to: '/app', label: 'Home', icon: HomeIcon, also: ['/app/plans'] },
-  { to: '/app/discover', label: 'Discover', icon: DiscoverIcon },
-  {
-    to: '/app/library',
-    label: 'Library',
-    icon: LibraryIcon,
-    also: ['/app/title'],
-  },
-  { to: '/app/calendar', label: 'Calendar', icon: CalendarIcon },
-  { to: '/app/lists', label: 'Lists', icon: ListsIcon },
-  // SOC-003 (owner, 2026-10-21): Friends is its own page, between Lists and Groups.
-  { to: '/app/friends', label: 'Friends', icon: FriendsIcon },
-  { to: '/app/groups', label: 'Groups', icon: GroupsIcon },
-]
-
-const BOTTOM: Destination[] = [
-  {
-    to: '/app/insights',
-    label: 'Insights',
-    icon: InsightsIcon,
-    also: ['/app/recap', '/app/music'],
-  },
-  {
-    to: '/app/settings',
-    label: 'Settings',
-    icon: SettingsIcon,
-    also: ['/app/imports'],
-  },
-]
-
-function isAt(path: string, d: Destination): boolean {
-  const under = (base: string) => path === base || path.startsWith(`${base}/`)
-  if (d.to === '/app')
-    return path === '/app' || path === '/app/' || (d.also ?? []).some(under)
-  return under(d.to) || (d.also ?? []).some(under)
+const ICONS: Record<NavPath, Icon> = {
+  '/app': HomeIcon,
+  '/app/discover': DiscoverIcon,
+  '/app/library': LibraryIcon,
+  '/app/calendar': CalendarIcon,
+  '/app/lists': ListsIcon,
+  '/app/friends': FriendsIcon,
+  '/app/groups': GroupsIcon,
+  '/app/books': BooksIcon,
+  '/app/manga': MangaIcon,
+  '/app/music': MusicIcon,
+  '/app/sports': SportsIcon,
+  '/app/insights': InsightsIcon,
+  '/app/settings': SettingsIcon,
 }
 
 /** "Andor · Aaru" → "Andor"; "Account · Settings · Aaru" → "Account". */
@@ -152,6 +136,7 @@ export function AppShell(props: {
   const [ownEntries, setOwnEntries] = createSignal<LibraryEntry[]>([])
   const [previous, setPrevious] = createSignal<Previous | null>(null)
   const [mentions, setMentions] = createSignal(0)
+  const [sportsOn, setSportsOn] = createSignal(false)
   // Esc or Done returns focus to the control that opened Search.
   const focusReturn = createFocusReturn()
   let ownRequested = false
@@ -205,14 +190,25 @@ export function AppShell(props: {
     // MyAnimeList changes come back on each open (SCR-010); the server ignores asks too close
     // together and accounts without MAL.
     const askMAL = () => void requestMALPull().catch(() => undefined)
+    // Without an answer the Sports row stays hidden, as Concerts do on Music. Asked again each
+    // time the tab comes back, so a server that turned Sports on shows it without a reload.
+    const checkSports = (fresh: boolean) =>
+      void browserQueryClient()
+        ?.fetchQuery(
+          fresh ? { ...sportSettingsQuery, staleTime: 0 } : sportSettingsQuery,
+        )
+        .then((settings) => setSportsOn(settings.available))
+        .catch(() => undefined)
     const visible = () => {
       if (document.visibilityState !== 'visible') return
       void refreshMentions()
+      checkSports(true)
       askMAL()
     }
     window.addEventListener('keydown', keydown)
     document.addEventListener('visibilitychange', visible)
     void refreshMentions()
+    checkSports(false)
     askMAL()
     // The page you leave is the one a detail page's back link names.
     const unsubscribe = router.subscribe('onBeforeNavigate', (event) => {
@@ -248,6 +244,7 @@ export function AppShell(props: {
         <AppSidebar
           session={props.session}
           mentions={mentions()}
+          sports={sportsOn()}
           onSearch={(from) => openSearch(undefined, from)}
         />
         <SidebarInset class="min-w-0">
@@ -304,11 +301,15 @@ export function AppShell(props: {
   )
 }
 
-function NavRow(props: { d: Destination; badge?: number }) {
+function NavRow(props: { d: NavTarget; badge?: number }) {
   const location = useLocation()
   const active = () => isAt(location().pathname, props.d)
   const label = () =>
     props.badge ? `${props.d.label}, ${props.badge} mentions` : props.d.label
+  const RowIcon = () => {
+    const Glyph = ICONS[props.d.to]
+    return <Glyph class="size-[1.15rem]! shrink-0" />
+  }
   return (
     <SidebarMenuItem>
       <SidebarMenuButton
@@ -321,7 +322,7 @@ function NavRow(props: { d: Destination; badge?: number }) {
         size="lg"
         class="h-10 gap-3 rounded-full px-3 text-md text-muted hover:bg-stone/70 hover:text-ink data-[active=true]:bg-stone data-[active=true]:font-semibold data-[active=true]:text-ink group-data-[collapsible=icon]:size-10! group-data-[collapsible=icon]:p-3!"
       >
-        <props.d.icon class="size-[1.15rem]! shrink-0" />
+        <RowIcon />
         <span>{props.d.label}</span>
       </SidebarMenuButton>
       <Show when={props.badge}>
@@ -335,9 +336,72 @@ function NavRow(props: { d: Destination; badge?: number }) {
   )
 }
 
+/**
+ * NAV-001: More (Groups, Books, Manga, Music, Sports) folds under one header. It is open on its
+ * own pages; elsewhere it keeps the state it was last left in (this browser only). Closed, the
+ * header carries a dot while Groups has mentions.
+ */
+function MoreGroup(props: {
+  rows: NavTarget[]
+  mentions: number
+  badgeFor: (d: NavTarget) => number | undefined
+}) {
+  const location = useLocation()
+  const inside = createMemo(() => inMore(location().pathname))
+  // What the user last chose. Read after mount: the server has no storage, so it renders the
+  // group closed unless the page is one of its rows.
+  let chosen = false
+  const [open, setOpen] = createSignal(inside())
+  onMount(() => {
+    chosen = readMoreOpen()
+    if (!inside()) setOpen(chosen)
+  })
+  // Arriving on a More page opens it; leaving goes back to the user's own choice.
+  createEffect(on(inside, (now) => setOpen(now || chosen), { defer: true }))
+  function toggle(next: boolean) {
+    chosen = next
+    setOpen(next)
+    writeMoreOpen(next)
+  }
+  const dot = () => !open() && props.mentions > 0
+
+  return (
+    <Collapsible open={open()} onOpenChange={toggle} class="group/more mt-0.5">
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <CollapsibleTrigger
+            as={SidebarMenuButton}
+            size="lg"
+            class="h-10 gap-3 rounded-full px-3 text-md text-muted hover:bg-stone/70 hover:text-ink"
+          >
+            <MoreIcon class="size-[1.15rem]! shrink-0" />
+            <span class="flex-1">More</span>
+            <Show when={dot()}>
+              <span
+                aria-hidden="true"
+                class="size-2 shrink-0 rounded-full bg-accent"
+              />
+              <span class="sr-only">, new mentions in Groups</span>
+            </Show>
+            <ChevronDownIcon class="size-4! shrink-0 transition-transform group-data-[expanded]/more:rotate-180 motion-reduce:transition-none" />
+          </CollapsibleTrigger>
+        </SidebarMenuItem>
+      </SidebarMenu>
+      <CollapsibleContent>
+        <SidebarMenu class="mt-0.5 gap-0.5 pl-3">
+          <For each={props.rows}>
+            {(d) => <NavRow d={d} badge={props.badgeFor(d)} />}
+          </For>
+        </SidebarMenu>
+      </CollapsibleContent>
+    </Collapsible>
+  )
+}
+
 function AppSidebar(props: {
   session: ShellSession
   mentions: number
+  sports: boolean
   onSearch: (from: Element) => void
 }) {
   const sidebar = useSidebar()
@@ -350,6 +414,11 @@ function AppSidebar(props: {
       { defer: true },
     ),
   )
+  // The persistent sidebar folded to icons; the phone sheet is never a rail.
+  const rail = () => sidebar.state() === 'collapsed' && !sidebar.isMobile()
+  const more = () => moreRows(props.sports)
+  const badgeFor = (d: NavTarget) =>
+    d.to === '/app/groups' ? props.mentions : undefined
   const name = () =>
     props.session.displayName ??
     (props.session.handle ? `@${props.session.handle}` : 'Your account')
@@ -391,15 +460,22 @@ function AppSidebar(props: {
       <SidebarContent class="px-1">
         <SidebarGroup>
           <SidebarMenu class="gap-0.5">
-            <For each={DESTINATIONS}>
-              {(d) => (
-                <NavRow
-                  d={d}
-                  badge={d.to === '/app/groups' ? props.mentions : undefined}
-                />
-              )}
-            </For>
+            <For each={TOP}>{(d) => <NavRow d={d} />}</For>
+            {/* In the icon rail a header would be one more unlabeled icon: More's rows stand
+ in the list as they are. */}
+            <Show when={rail()}>
+              <For each={more()}>
+                {(d) => <NavRow d={d} badge={badgeFor(d)} />}
+              </For>
+            </Show>
           </SidebarMenu>
+          <Show when={!rail()}>
+            <MoreGroup
+              rows={more()}
+              mentions={props.mentions}
+              badgeFor={badgeFor}
+            />
+          </Show>
         </SidebarGroup>
         <SidebarGroup class="mt-auto">
           <SidebarMenu class="gap-0.5">

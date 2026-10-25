@@ -22,15 +22,18 @@ import { Route as ConnectExtensionRouteImport } from './routes/connect.extension
 import { Route as ICodeRouteImport } from './routes/i.$code'
 import { Route as OauthConsentRouteImport } from './routes/oauth.consent'
 import { Route as ShellAppAchievementsRouteImport } from './routes/_shell.app_.achievements'
+import { Route as ShellAppBooksRouteImport } from './routes/_shell.app_.books'
 import { Route as ShellAppCalendarRouteImport } from './routes/_shell.app_.calendar'
 import { Route as ShellAppDiscoverRouteImport } from './routes/_shell.app_.discover'
 import { Route as ShellAppGroupsRouteImport } from './routes/_shell.app_.groups'
 import { Route as ShellAppInsightsRouteImport } from './routes/_shell.app_.insights'
 import { Route as ShellAppLibraryRouteImport } from './routes/_shell.app_.library'
+import { Route as ShellAppMangaRouteImport } from './routes/_shell.app_.manga'
 import { Route as ShellAppMusicRouteImport } from './routes/_shell.app_.music'
 import { Route as ShellAppProfileRouteImport } from './routes/_shell.app_.profile'
 import { Route as ShellAppRecapRouteImport } from './routes/_shell.app_.recap'
 import { Route as ShellAppSettingsRouteImport } from './routes/_shell.app_.settings'
+import { Route as ShellAppSportsRouteImport } from './routes/_shell.app_.sports'
 import { Route as ShellAppWeekRouteImport } from './routes/_shell.app_.week'
 import { Route as ShellAppFriendsIndexRouteImport } from './routes/_shell.app_.friends.index'
 import { Route as ShellAppFriendsHandleRouteImport } from './routes/_shell.app_.friends.$handle'
@@ -56,6 +59,8 @@ import { Route as ShellAppTitleIdRouteImport } from './routes/_shell.app_.title.
 import { Route as ShellAppFriendsPostsPostIdRouteImport } from './routes/_shell.app_.friends.posts.$postId'
 import { Route as ShellAppGroupsGroupIdIndexRouteImport } from './routes/_shell.app_.groups.$groupId.index'
 import { Route as ShellAppGroupsGroupIdChannelIdRouteImport } from './routes/_shell.app_.groups.$groupId.$channelId'
+import { Route as ShellAppLibraryNowGroupRouteImport } from './routes/_shell.app_.library_.now.$group'
+import { Route as ShellAppCatalogTypeProviderRefRouteImport } from './routes/_shell.app_.catalog.$type.$provider.$ref'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -122,6 +127,11 @@ const ShellAppAchievementsRoute = ShellAppAchievementsRouteImport.update({
   path: '/app/achievements',
   getParentRoute: () => ShellRoute,
 } as any)
+const ShellAppBooksRoute = ShellAppBooksRouteImport.update({
+  id: '/app_/books',
+  path: '/app/books',
+  getParentRoute: () => ShellRoute,
+} as any)
 const ShellAppCalendarRoute = ShellAppCalendarRouteImport.update({
   id: '/app_/calendar',
   path: '/app/calendar',
@@ -147,6 +157,11 @@ const ShellAppLibraryRoute = ShellAppLibraryRouteImport.update({
   path: '/app/library',
   getParentRoute: () => ShellRoute,
 } as any)
+const ShellAppMangaRoute = ShellAppMangaRouteImport.update({
+  id: '/app_/manga',
+  path: '/app/manga',
+  getParentRoute: () => ShellRoute,
+} as any)
 const ShellAppMusicRoute = ShellAppMusicRouteImport.update({
   id: '/app_/music',
   path: '/app/music',
@@ -165,6 +180,11 @@ const ShellAppRecapRoute = ShellAppRecapRouteImport.update({
 const ShellAppSettingsRoute = ShellAppSettingsRouteImport.update({
   id: '/app_/settings',
   path: '/app/settings',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellAppSportsRoute = ShellAppSportsRouteImport.update({
+  id: '/app_/sports',
+  path: '/app/sports',
   getParentRoute: () => ShellRoute,
 } as any)
 const ShellAppWeekRoute = ShellAppWeekRouteImport.update({
@@ -298,6 +318,17 @@ const ShellAppGroupsGroupIdChannelIdRoute =
     path: '/$channelId',
     getParentRoute: () => ShellAppGroupsGroupIdRoute,
   } as any)
+const ShellAppLibraryNowGroupRoute = ShellAppLibraryNowGroupRouteImport.update({
+  id: '/app_/library_/now/$group',
+  path: '/app/library/now/$group',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellAppCatalogTypeProviderRefRoute =
+  ShellAppCatalogTypeProviderRefRouteImport.update({
+    id: '/app_/catalog/$type/$provider/$ref',
+    path: '/app/catalog/$type/$provider/$ref',
+    getParentRoute: () => ShellRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -312,15 +343,18 @@ export interface FileRoutesByFullPath {
   '/i/$code': typeof ICodeRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/app/achievements': typeof ShellAppAchievementsRoute
+  '/app/books': typeof ShellAppBooksRoute
   '/app/calendar': typeof ShellAppCalendarRoute
   '/app/discover': typeof ShellAppDiscoverRoute
   '/app/groups': typeof ShellAppGroupsRouteWithChildren
   '/app/insights': typeof ShellAppInsightsRoute
   '/app/library': typeof ShellAppLibraryRoute
+  '/app/manga': typeof ShellAppMangaRoute
   '/app/music': typeof ShellAppMusicRoute
   '/app/profile': typeof ShellAppProfileRoute
   '/app/recap': typeof ShellAppRecapRoute
   '/app/settings': typeof ShellAppSettingsRouteWithChildren
+  '/app/sports': typeof ShellAppSportsRoute
   '/app/week': typeof ShellAppWeekRoute
   '/app/friends/$handle': typeof ShellAppFriendsHandleRoute
   '/app/groups/$groupId': typeof ShellAppGroupsGroupIdRouteWithChildren
@@ -345,7 +379,9 @@ export interface FileRoutesByFullPath {
   '/app/settings/': typeof ShellAppSettingsIndexRoute
   '/app/friends/posts/$postId': typeof ShellAppFriendsPostsPostIdRoute
   '/app/groups/$groupId/$channelId': typeof ShellAppGroupsGroupIdChannelIdRoute
+  '/app/library/now/$group': typeof ShellAppLibraryNowGroupRoute
   '/app/groups/$groupId/': typeof ShellAppGroupsGroupIdIndexRoute
+  '/app/catalog/$type/$provider/$ref': typeof ShellAppCatalogTypeProviderRefRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -360,13 +396,16 @@ export interface FileRoutesByTo {
   '/i/$code': typeof ICodeRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/app/achievements': typeof ShellAppAchievementsRoute
+  '/app/books': typeof ShellAppBooksRoute
   '/app/calendar': typeof ShellAppCalendarRoute
   '/app/discover': typeof ShellAppDiscoverRoute
   '/app/insights': typeof ShellAppInsightsRoute
   '/app/library': typeof ShellAppLibraryRoute
+  '/app/manga': typeof ShellAppMangaRoute
   '/app/music': typeof ShellAppMusicRoute
   '/app/profile': typeof ShellAppProfileRoute
   '/app/recap': typeof ShellAppRecapRoute
+  '/app/sports': typeof ShellAppSportsRoute
   '/app/week': typeof ShellAppWeekRoute
   '/app/friends/$handle': typeof ShellAppFriendsHandleRoute
   '/app/imports/$id': typeof ShellAppImportsIdRoute
@@ -390,7 +429,9 @@ export interface FileRoutesByTo {
   '/app/settings': typeof ShellAppSettingsIndexRoute
   '/app/friends/posts/$postId': typeof ShellAppFriendsPostsPostIdRoute
   '/app/groups/$groupId/$channelId': typeof ShellAppGroupsGroupIdChannelIdRoute
+  '/app/library/now/$group': typeof ShellAppLibraryNowGroupRoute
   '/app/groups/$groupId': typeof ShellAppGroupsGroupIdIndexRoute
+  '/app/catalog/$type/$provider/$ref': typeof ShellAppCatalogTypeProviderRefRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -407,15 +448,18 @@ export interface FileRoutesById {
   '/i/$code': typeof ICodeRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/_shell/app_/achievements': typeof ShellAppAchievementsRoute
+  '/_shell/app_/books': typeof ShellAppBooksRoute
   '/_shell/app_/calendar': typeof ShellAppCalendarRoute
   '/_shell/app_/discover': typeof ShellAppDiscoverRoute
   '/_shell/app_/groups': typeof ShellAppGroupsRouteWithChildren
   '/_shell/app_/insights': typeof ShellAppInsightsRoute
   '/_shell/app_/library': typeof ShellAppLibraryRoute
+  '/_shell/app_/manga': typeof ShellAppMangaRoute
   '/_shell/app_/music': typeof ShellAppMusicRoute
   '/_shell/app_/profile': typeof ShellAppProfileRoute
   '/_shell/app_/recap': typeof ShellAppRecapRoute
   '/_shell/app_/settings': typeof ShellAppSettingsRouteWithChildren
+  '/_shell/app_/sports': typeof ShellAppSportsRoute
   '/_shell/app_/week': typeof ShellAppWeekRoute
   '/_shell/app_/friends/$handle': typeof ShellAppFriendsHandleRoute
   '/_shell/app_/groups/$groupId': typeof ShellAppGroupsGroupIdRouteWithChildren
@@ -440,7 +484,9 @@ export interface FileRoutesById {
   '/_shell/app_/settings/': typeof ShellAppSettingsIndexRoute
   '/_shell/app_/friends/posts/$postId': typeof ShellAppFriendsPostsPostIdRoute
   '/_shell/app_/groups/$groupId/$channelId': typeof ShellAppGroupsGroupIdChannelIdRoute
+  '/_shell/app_/library_/now/$group': typeof ShellAppLibraryNowGroupRoute
   '/_shell/app_/groups/$groupId/': typeof ShellAppGroupsGroupIdIndexRoute
+  '/_shell/app_/catalog/$type/$provider/$ref': typeof ShellAppCatalogTypeProviderRefRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -457,15 +503,18 @@ export interface FileRouteTypes {
     | '/i/$code'
     | '/oauth/consent'
     | '/app/achievements'
+    | '/app/books'
     | '/app/calendar'
     | '/app/discover'
     | '/app/groups'
     | '/app/insights'
     | '/app/library'
+    | '/app/manga'
     | '/app/music'
     | '/app/profile'
     | '/app/recap'
     | '/app/settings'
+    | '/app/sports'
     | '/app/week'
     | '/app/friends/$handle'
     | '/app/groups/$groupId'
@@ -490,7 +539,9 @@ export interface FileRouteTypes {
     | '/app/settings/'
     | '/app/friends/posts/$postId'
     | '/app/groups/$groupId/$channelId'
+    | '/app/library/now/$group'
     | '/app/groups/$groupId/'
+    | '/app/catalog/$type/$provider/$ref'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -505,13 +556,16 @@ export interface FileRouteTypes {
     | '/i/$code'
     | '/oauth/consent'
     | '/app/achievements'
+    | '/app/books'
     | '/app/calendar'
     | '/app/discover'
     | '/app/insights'
     | '/app/library'
+    | '/app/manga'
     | '/app/music'
     | '/app/profile'
     | '/app/recap'
+    | '/app/sports'
     | '/app/week'
     | '/app/friends/$handle'
     | '/app/imports/$id'
@@ -535,7 +589,9 @@ export interface FileRouteTypes {
     | '/app/settings'
     | '/app/friends/posts/$postId'
     | '/app/groups/$groupId/$channelId'
+    | '/app/library/now/$group'
     | '/app/groups/$groupId'
+    | '/app/catalog/$type/$provider/$ref'
   id:
     | '__root__'
     | '/'
@@ -551,15 +607,18 @@ export interface FileRouteTypes {
     | '/i/$code'
     | '/oauth/consent'
     | '/_shell/app_/achievements'
+    | '/_shell/app_/books'
     | '/_shell/app_/calendar'
     | '/_shell/app_/discover'
     | '/_shell/app_/groups'
     | '/_shell/app_/insights'
     | '/_shell/app_/library'
+    | '/_shell/app_/manga'
     | '/_shell/app_/music'
     | '/_shell/app_/profile'
     | '/_shell/app_/recap'
     | '/_shell/app_/settings'
+    | '/_shell/app_/sports'
     | '/_shell/app_/week'
     | '/_shell/app_/friends/$handle'
     | '/_shell/app_/groups/$groupId'
@@ -584,7 +643,9 @@ export interface FileRouteTypes {
     | '/_shell/app_/settings/'
     | '/_shell/app_/friends/posts/$postId'
     | '/_shell/app_/groups/$groupId/$channelId'
+    | '/_shell/app_/library_/now/$group'
     | '/_shell/app_/groups/$groupId/'
+    | '/_shell/app_/catalog/$type/$provider/$ref'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -694,6 +755,13 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof ShellAppAchievementsRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_shell/app_/books': {
+      id: '/_shell/app_/books'
+      path: '/app/books'
+      fullPath: '/app/books'
+      preLoaderRoute: typeof ShellAppBooksRouteImport
+      parentRoute: typeof ShellRoute
+    }
     '/_shell/app_/calendar': {
       id: '/_shell/app_/calendar'
       path: '/app/calendar'
@@ -729,6 +797,13 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof ShellAppLibraryRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_shell/app_/manga': {
+      id: '/_shell/app_/manga'
+      path: '/app/manga'
+      fullPath: '/app/manga'
+      preLoaderRoute: typeof ShellAppMangaRouteImport
+      parentRoute: typeof ShellRoute
+    }
     '/_shell/app_/music': {
       id: '/_shell/app_/music'
       path: '/app/music'
@@ -755,6 +830,13 @@ declare module '@tanstack/solid-router' {
       path: '/app/settings'
       fullPath: '/app/settings'
       preLoaderRoute: typeof ShellAppSettingsRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/app_/sports': {
+      id: '/_shell/app_/sports'
+      path: '/app/sports'
+      fullPath: '/app/sports'
+      preLoaderRoute: typeof ShellAppSportsRouteImport
       parentRoute: typeof ShellRoute
     }
     '/_shell/app_/week': {
@@ -932,6 +1014,20 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof ShellAppGroupsGroupIdChannelIdRouteImport
       parentRoute: typeof ShellAppGroupsGroupIdRoute
     }
+    '/_shell/app_/library_/now/$group': {
+      id: '/_shell/app_/library_/now/$group'
+      path: '/app/library/now/$group'
+      fullPath: '/app/library/now/$group'
+      preLoaderRoute: typeof ShellAppLibraryNowGroupRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/app_/catalog/$type/$provider/$ref': {
+      id: '/_shell/app_/catalog/$type/$provider/$ref'
+      path: '/app/catalog/$type/$provider/$ref'
+      fullPath: '/app/catalog/$type/$provider/$ref'
+      preLoaderRoute: typeof ShellAppCatalogTypeProviderRefRouteImport
+      parentRoute: typeof ShellRoute
+    }
   }
 }
 
@@ -1000,15 +1096,18 @@ const ShellAppSettingsRouteWithChildren =
 interface ShellRouteChildren {
   ShellAppRoute: typeof ShellAppRoute
   ShellAppAchievementsRoute: typeof ShellAppAchievementsRoute
+  ShellAppBooksRoute: typeof ShellAppBooksRoute
   ShellAppCalendarRoute: typeof ShellAppCalendarRoute
   ShellAppDiscoverRoute: typeof ShellAppDiscoverRoute
   ShellAppGroupsRoute: typeof ShellAppGroupsRouteWithChildren
   ShellAppInsightsRoute: typeof ShellAppInsightsRoute
   ShellAppLibraryRoute: typeof ShellAppLibraryRoute
+  ShellAppMangaRoute: typeof ShellAppMangaRoute
   ShellAppMusicRoute: typeof ShellAppMusicRoute
   ShellAppProfileRoute: typeof ShellAppProfileRoute
   ShellAppRecapRoute: typeof ShellAppRecapRoute
   ShellAppSettingsRoute: typeof ShellAppSettingsRouteWithChildren
+  ShellAppSportsRoute: typeof ShellAppSportsRoute
   ShellAppWeekRoute: typeof ShellAppWeekRoute
   ShellAppFriendsHandleRoute: typeof ShellAppFriendsHandleRoute
   ShellAppImportsIdRoute: typeof ShellAppImportsIdRoute
@@ -1018,20 +1117,25 @@ interface ShellRouteChildren {
   ShellAppFriendsIndexRoute: typeof ShellAppFriendsIndexRoute
   ShellAppListsIndexRoute: typeof ShellAppListsIndexRoute
   ShellAppFriendsPostsPostIdRoute: typeof ShellAppFriendsPostsPostIdRoute
+  ShellAppLibraryNowGroupRoute: typeof ShellAppLibraryNowGroupRoute
+  ShellAppCatalogTypeProviderRefRoute: typeof ShellAppCatalogTypeProviderRefRoute
 }
 
 const ShellRouteChildren: ShellRouteChildren = {
   ShellAppRoute: ShellAppRoute,
   ShellAppAchievementsRoute: ShellAppAchievementsRoute,
+  ShellAppBooksRoute: ShellAppBooksRoute,
   ShellAppCalendarRoute: ShellAppCalendarRoute,
   ShellAppDiscoverRoute: ShellAppDiscoverRoute,
   ShellAppGroupsRoute: ShellAppGroupsRouteWithChildren,
   ShellAppInsightsRoute: ShellAppInsightsRoute,
   ShellAppLibraryRoute: ShellAppLibraryRoute,
+  ShellAppMangaRoute: ShellAppMangaRoute,
   ShellAppMusicRoute: ShellAppMusicRoute,
   ShellAppProfileRoute: ShellAppProfileRoute,
   ShellAppRecapRoute: ShellAppRecapRoute,
   ShellAppSettingsRoute: ShellAppSettingsRouteWithChildren,
+  ShellAppSportsRoute: ShellAppSportsRoute,
   ShellAppWeekRoute: ShellAppWeekRoute,
   ShellAppFriendsHandleRoute: ShellAppFriendsHandleRoute,
   ShellAppImportsIdRoute: ShellAppImportsIdRoute,
@@ -1041,6 +1145,8 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellAppFriendsIndexRoute: ShellAppFriendsIndexRoute,
   ShellAppListsIndexRoute: ShellAppListsIndexRoute,
   ShellAppFriendsPostsPostIdRoute: ShellAppFriendsPostsPostIdRoute,
+  ShellAppLibraryNowGroupRoute: ShellAppLibraryNowGroupRoute,
+  ShellAppCatalogTypeProviderRefRoute: ShellAppCatalogTypeProviderRefRoute,
 }
 
 const ShellRouteWithChildren = ShellRoute._addFileChildren(ShellRouteChildren)
@@ -1062,13 +1168,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/solid-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

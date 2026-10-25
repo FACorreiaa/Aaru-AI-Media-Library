@@ -26,6 +26,7 @@ import { prefersReducedMotion } from '../lib/reduced-motion'
 import { AddControl } from './AddControl'
 import { CardMenu } from './CardMenu'
 import { Poster } from './Poster'
+import { TitleLink } from './TitleLink'
 import { Badge, badgeVariants, Button } from '~/components/ui'
 
 // APP-009: Home's rows (DESIGN.md §13). Each row scrolls sideways and snaps; it takes focus so
@@ -430,10 +431,14 @@ export function DiscoverCard(props: {
       <Show
         when={h().libraryItemId}
         fallback={
-          <div class="relative">
+          <TitleLink
+            hit={h()}
+            class="relative block"
+            aria-label={`${h().title}, details`}
+          >
             <Poster url={h().posterUrl} kind={kind()} />
             <DateBadge />
-          </div>
+          </TitleLink>
         }
       >
         {(id) => (

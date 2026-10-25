@@ -35,6 +35,7 @@ This file is the working contract for anyone — human or agent — changing the
 | Catalog — manga | AniList GraphQL, type MANGA (any format: manga, manhwa, manhua, one-shot, light novel), with MAL ids; no fallback while AniList is down (MNG-001, pulled forward 2026-10-23) |
 | Catalog — books | Open Library (Google Books only if Open Library is insufficient); weekly trending for Discover |
 | Catalog — music | MusicBrainz release groups (albums, EPs) and tracklists, Cover Art Archive covers; no key, 1 req/s with a contact User-Agent (MUS-001). ListenBrainz fresh releases + sitewide stats for Discover's New albums / Coming soon (MUS-002) |
+| Catalog — sports | TheSportsDB (`THESPORTSDB_API_KEY`, premium, 100 req/min) behind `SportsListing`: leagues, teams, players, fixtures, 2-minute livescores, TV listings for the Sports tab only; off without the key (SPT-001) |
 | Concerts | Ticketmaster Discovery API v2 (`TICKETMASTER_API_KEY`, free, 5,000 calls/day; Aaru stops at 4,500), behind `ConcertListing`; off without the key. Tickets link out (MUS-003) |
 | Geocoding | Open-Meteo geocoding (no key, non-commercial) for the "Concerts near" city only (MUS-003) |
 | User import — primary | Trakt OAuth; Stremio history by link code (one library read, then logout; key never stored) |
@@ -172,6 +173,11 @@ Use these words in code, APIs, and UI:
   tickets; Aaru sells nothing and stores no event past the cache. A position used to find
   concerts is rounded to two decimals and never stored; the saved "Concerts near" city is the
   only place kept, and the user removes it in Settings
+- **Sport follow** — a league (or promotion: UFC, WWE), team or player a user follows in the
+  Sports tab, by the provider's id (`sport_follows`). Sports-only: never the social sense of
+  follow (there is none), never a Favorite, never shown to friends
+- **Sport event** — one match, game or card from the sports provider. Catalog data for the Sports
+  tab, kept no longer than the cache: never a Title, never a library item, never journaled
 - **Owned** — separate `isOwned` flag; do not overload status
 - **Favorite** — one title in a user's ordered top 10 for a kind (film, show, anime, manga,
   book, album), any catalog title. Profile data shown on the profile: not a library write, not
@@ -180,14 +186,19 @@ Use these words in code, APIs, and UI:
 - **List** — user-curated collection of library items, stored as membership rows
 - **Shelf** — a *saved query* over library items (`saved_queries`), not membership. Shares a
   renderer with List; never shares a table. Users "pin a shelf" and "add to a list"
+- **Anime backlog** — an anime in progress the user never touched in Aaru: status from an
+  import (not set by hand) and no live tick. It stays `in_progress` but leaves Now for its
+  group page. Derived on the server (`inBacklog`), never stored, never a status (APP-018)
 - **Action** — one journaled, undoable library write, whether the user or the agent made it
 - **Import job** — one run of Trakt or a CSV/list ingest
 - **Capture** — one-shot intake of pasted text, an image, or a URL. It is an *import source*,
   not a subsystem: it produces a `MatchTable` then a `PlanCard`, and never writes unplanned
 - **Discover** — provider-curated public rows (DISC-001: trending, on the air, new shows, in
   theaters, this season's anime, trending books; MUS-002: new albums, albums coming soon), the
-  same for every user, plus the On air view (DISC-003): the week's airings by channel. Shown on Home and
-  as the Discover tab/page. Catalog data like search, never a recommendation
+  same for every user, plus the On air view (DISC-003): the week's airings by channel. Each row
+  says its kind (DISC-004): the Discover page shows shows, films and anime; the Books, Manga and
+  Music pages show their own rows under the user's shelf, and Music holds Concerts. Home shows
+  every row. Catalog data like search, never a recommendation
 - **Agent token** — a per-user, scoped, revocable credential an outside agent uses to reach
   Aaru's tool layer. Not an API key for a third-party developer
 - **Approval** — the user's yes to a plan an agent proposed. Approval happens inside Aaru; no
@@ -273,7 +284,8 @@ concerts (MUS-001…003), 2026-10-21; friend invite links, profiles and basic so
 profile stats without badges (GAM-006b) and the whole show marked watched (PROG-005), 2026-10-22;
 the points ledger, levels, streaks, badges, the friends leaderboard and the streak widget
 (GAM-001…005, WID-007) and Boards, 2026-10-22; manga as a sixth kind with MAL and AniList manga
-imports (MNG-001…002) and profile favorites (FAV-001), 2026-10-23).
+imports (MNG-001…002) and profile favorites (FAV-001), 2026-10-23; the Sports tab (SPT-001…005),
+2026-10-24).
 
 ## Out of scope (do not add unless asked)
 

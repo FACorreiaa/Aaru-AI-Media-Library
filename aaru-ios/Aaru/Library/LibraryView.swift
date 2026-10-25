@@ -26,7 +26,6 @@ struct LibraryView: View {
     #endif
     @AppStorage("library.layout") private var layout = LibraryLayout.grid
     @State private var showsInsights = false
-    @State private var showsListens = false
     @State private var recap: RecapPeriod?
     /// The row whose "Add to list…" was chosen.
     @State private var listTarget: LibraryRow?
@@ -74,11 +73,13 @@ struct LibraryView: View {
                     // A missing item (removed elsewhere) says so instead of an empty screen (UX-071).
                     LibraryEntryDestination(id: id, api: api, library: library, lists: lists)
                 }
+                .navigationDestination(for: NowGroupRoute.self) { route in
+                    NowGroupView(route: route, library: library, api: api)
+                }
                 .navigationDestination(isPresented: $router.showsListsInLibrary) {
                     ListsView(lists: lists, library: library, api: api)
                 }
                 .navigationDestination(isPresented: $showsInsights) { InsightsView(api: api, library: library) }
-                .navigationDestination(isPresented: $showsListens) { MusicView(api: api, library: library) }
                 .sheet(item: $listTarget) { row in
                     if let entry = library.entry(row.id) {
                         ListPickerSheet(
@@ -226,7 +227,8 @@ struct LibraryView: View {
                 }
                 Divider()
                 Button("Insights", systemImage: "chart.bar") { showsInsights = true }
-                Button("Listens", systemImage: "music.note.list") { showsListens = true }
+                // Listens is a view of the Music page (NAV-002).
+                Button("Listens", systemImage: "music.note.list") { router.showListens() }
                 Menu("Recaps", systemImage: "sparkles") {
                     ForEach(RecapPeriod.shortcuts(now: .now, calendar: .aaru)) { period in
                         Button(period.label) { recap = period }
