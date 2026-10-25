@@ -53,6 +53,7 @@ struct AboutView: View {
                 CreditLink("Album rows from ListenBrainz", url: "https://listenbrainz.org")
                 CreditLink("Covers from the Cover Art Archive", url: "https://coverartarchive.org")
                 CreditLink("Concerts from Ticketmaster", url: "https://www.ticketmaster.com")
+                CreditLink("Sports data from TheSportsDB", url: "https://www.thesportsdb.com")
                 CreditLink("City search by Open-Meteo", url: "https://open-meteo.com")
                 CreditLink(
                     "History import from Trakt",

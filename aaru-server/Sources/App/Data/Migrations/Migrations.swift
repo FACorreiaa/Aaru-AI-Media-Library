@@ -62,6 +62,7 @@ let allMigrations: [any Migration] = [
     CreateFavorites(),
     CreateMALConnections(),
     AddMALPull(),
+    CreateSports(),
 ]
 
 struct MigrationNeedsSQL: Error, CustomStringConvertible {

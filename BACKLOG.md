@@ -36,6 +36,18 @@ library layer stay separate, external IDs stored whenever known, no second backe
 
 ## Decisions recorded 2026-10-24
 
+- **Sports, a tab of its own (owner, 2026-10-24).** Pulled forward past the P2 gate. Users follow
+  leagues and promotions (Premier League, NBA, NFL, UFC, WWE…), teams and players, and see their
+  fixtures, near-live scores, results and where to watch, SofaScore-style: a Favorites tab
+  (each follow's live, next and last) and a Schedule tab (one local day, favorites highlighted).
+  Sports lives only in that tab: no library rows, no Home rows, no stats, points, streaks or
+  recap, no friends' view, no agent or MCP tool, no push. Provider: TheSportsDB, Single Developer
+  tier ($9/month, 100 requests a minute, 2-minute livescores for football, NFL, NBA, MLB and NHL;
+  UFC and WWE cards have results, no live score). SofaScore has no official API and scraping is
+  out. Near-live means the clients refresh every 90 s while the tab is open; no socket. "Where to
+  watch" reads one country from Sports settings. Users may follow anything the provider has;
+  first run suggests the owner's list. On iPhone it opens from Discover's toolbar; the five-tab bar
+  is unchanged. SPT-001…005.
 - **On air by channel on Discover (owner, 2026-10-24, DISC-003).** Discover gets an On air view:
   the week's airings (TMDB's on-the-air set) grouped by the channel or streamer they premiere on,
   each with the next episode's day and, when TVmaze knows it, the exact time. "Streams on" pulls
@@ -2539,6 +2551,57 @@ Lists is a tab on iPhone and a sidebar entry on iPad and Mac; Home shows list ch
 **Done when:** Lists is one tap from anywhere on iPhone and Mac.
 
 ---
+
+## P2 · Sports (pulled forward 2026-10-24)
+
+See the 2026-10-24 decision. Catalog data from TheSportsDB; Aaru keeps only what a user follows
+and their "Where to watch" country. Never a Title, never a library row.
+
+### SPT-001 · Sports provider, follows and settings · M
+**Needs:** the owner's TheSportsDB key (sealed `THESPORTSDB_API_KEY` in `aaru-env`).
+`SportsListing` behind `TheSportsDBSports` (v2 with the key in `X-API-KEY`; v1 for a league's day
+and an event's TV). `sport_follows` (league, team or player by provider id, with a name, sport,
+badge and league snapshot) and `sport_settings` (one country). At most 100 follows. A fighter's
+or wrestler's fixtures are their promotion's cards, reached by id through their division, never
+by name. Off without the key: every answer `unavailable`, clients hide the tab.
+
+As built: a shared in-memory cache, per kind (livescores 90 s, events 5 min, a league's day
+15 min, schedules 30 min, TV 6 h, entities 24 h), stale on failure, retried after a minute. A
+request waits 3 s for cold answers and returns the rest `pending`. The export carries the follows
+and the country; deleting the account deletes both.
+
+**Done when:** following a team, a league and a fighter works on three clients and survives the
+provider being down.
+
+### SPT-002 · Favorites, schedule and event · M
+**Needs:** SPT-001.
+`GET /v1/sports/favorites` (each follow's live, next and last), `GET /v1/sports/schedule?date&tz`
+(one local day for followed leagues and the leagues of followed teams and players, plus a followed
+team's games in other competitions; leagues with a favorite first), `GET /v1/sports/events/{id}`,
+`GET /v1/sports/search`, `GET /v1/sports/suggested`, `/v1/me/sport-follows`,
+`/v1/me/sport-settings`. Livescores are laid over listed events by id.
+
+**Done when:** a live match's score moves within about two minutes on the Favorites tab.
+
+### SPT-003 · Web Sports tab · M
+**Needs:** SPT-002.
+A Sports destination in the web nav: Favorites and Schedule tabs (date strip), event sheet with
+"Where to watch", search to follow, first-run picks, a Sports section in Settings for the
+country. Refreshes every 90 s while visible and a live event is on screen; `pending` answers
+are asked again after a few seconds. "Data: TheSportsDB" under the tab.
+
+### SPT-004 · iOS and Mac Sports tab · M
+**Needs:** SPT-002.
+`AppTab.sports`, in the sidebar on iPad and Mac and from Discover's toolbar on iPhone. The same surfaces
+as SPT-003 in SwiftUI; refresh while the scene is active.
+
+### SPT-005 · Where to watch, docs and key · S
+**Needs:** SPT-002.
+Broadcasts split into the chosen country and the rest (TheSportsDB's country names matched to
+ISO codes with aliases: USA, UK…). `docs/privacy.md` and `docs/providers.md` updated first;
+`THESPORTSDB_API_KEY` in the infra secrets template, sealed by the owner.
+
+Later, not built: a "kicks off in an hour" push, a match Live Activity, standings.
 
 ## P2 · Web (`aaru-client`)
 

@@ -2,18 +2,21 @@ import AaruAPI
 import SwiftUI
 
 /// Settings → Friends & privacy (§18, SOC-001): your handle, the way to Friends, whether friends
-/// see your library, your favorites (FAV-001), and Location, the one place Aaru stores where you
-/// are (UX-022). The friend lists, invites and requests live on Friends itself.
+/// see your library, your favorites (FAV-001), Location, the one place Aaru stores where you
+/// are (UX-022), and Sports' "Where to watch" country (SPT-005). The friend lists, invites and
+/// requests live on Friends itself.
 struct FriendsPage: View {
     let social: SocialModel
     @State private var concerts: ConcertsModel
     @State private var favorites: FavoritesModel
+    @State private var sportSettings: SportSettingsModel
     @Environment(AppRouter.self) private var router
 
     init(api: Client?, social: SocialModel) {
         self.social = social
         _concerts = State(initialValue: ConcertsModel(api: api))
         _favorites = State(initialValue: FavoritesModel(api: api))
+        _sportSettings = State(initialValue: SportSettingsModel(api: api))
     }
 
     var body: some View {
@@ -73,65 +76,11 @@ struct FriendsPage: View {
                 )
             }
             ConcertPlaceSection(model: concerts) { social.problem = $0 }
+            SportSettingsSection(model: sportSettings) { social.problem = $0 }
         }
         .settingsPage("Friends & privacy", problem: $social.problem)
         .refreshable { await social.load() }
         .task { await social.load() }
-    }
-}
-
-/// Claim or change the handle, and the optional display name.
-struct ProfileEditor: View {
-    let model: SocialModel
-    @Environment(\.dismiss) private var dismiss
-    @State private var handle = ""
-    @State private var name = ""
-    @State private var saving = false
-
-    var body: some View {
-        Form {
-            Section {
-                HStack(spacing: 2) {
-                    Text("@").foregroundStyle(Color(.muted)).accessibilityHidden(true)
-                    TextField("Handle", text: $handle)
-                        .autocorrectionDisabled()
-                        .textContentType(.username)
-                    #if os(iOS)
-                        .textInputAutocapitalization(.never)
-                    #endif
-                }
-                TextField("Name (optional)", text: $name)
-                    .textContentType(.name)
-            } footer: {
-                Text(SocialModel.handleProblem(handle) ?? "3–20 letters, numbers or underscores.")
-            }
-            if let problem = model.problem {
-                Text(problem).foregroundStyle(Color(.danger))
-            }
-        }
-        .formStyle(.grouped)
-        .scrollContentBackground(.hidden)
-        .background(Color(.paper))
-        .navigationTitle("Name and handle")
-        .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
-                Button("Save") {
-                    Task {
-                        saving = true
-                        if await model.saveProfile(handle: handle, displayName: name) {
-                            dismiss()
-                        }
-                        saving = false
-                    }
-                }
-                .disabled(saving || SocialModel.handleProblem(handle) != nil)
-            }
-        }
-        .onAppear {
-            model.problem = nil
-            handle = model.handle ?? ""
-            name = model.displayName ?? ""
-        }
     }
 }
 

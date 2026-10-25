@@ -37,6 +37,7 @@ final class Stores: Sendable {
     let entitlements: any EntitlementStore
     let boards: any BoardStore
     let favorites: any FavoriteStore
+    let sports: any SportsStore
 
     init(
         health: any DatabaseHealth,
@@ -71,7 +72,8 @@ final class Stores: Sendable {
         capture: any CaptureStore,
         entitlements: any EntitlementStore,
         boards: any BoardStore,
-        favorites: any FavoriteStore
+        favorites: any FavoriteStore,
+        sports: any SportsStore
     ) {
         self.health = health
         self.users = users
@@ -106,5 +108,6 @@ final class Stores: Sendable {
         self.entitlements = entitlements
         self.boards = boards
         self.favorites = favorites
+        self.sports = sports
     }
 }

@@ -74,6 +74,14 @@ export const GroupsIcon = (p: IconProps) => (
   </Icon>
 )
 
+export const SportsIcon = (p: IconProps) => (
+  <Icon class={p.class}>
+    <path d="M8 4.5h8v5a4 4 0 0 1-8 0z" />
+    <path d="M8 6.5H5.5a2.5 2.5 0 0 0 2.6 3.4M16 6.5h2.5a2.5 2.5 0 0 1-2.6 3.4" />
+    <path d="M12 13.5v3M8.5 19.5h7M9.5 19.5c0-1.7 1.1-3 2.5-3s2.5 1.3 2.5 3" />
+  </Icon>
+)
+
 export const InsightsIcon = (p: IconProps) => (
   <Icon class={p.class}>
     <path d="M4.5 19.5h15" />

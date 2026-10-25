@@ -38,6 +38,8 @@ import {
 } from '~/components/ui'
 import { createFocusReturn, focusFieldOnOpen } from '../../lib/dialog-focus'
 import { listGroups } from '../../lib/groups/server'
+import { browserQueryClient } from '../../integrations/tanstack-query/provider'
+import { sportSettingsQuery } from '../../lib/sports/query'
 import { upsert } from '../../lib/library/model'
 import type { LibraryEntry } from '../../lib/library/model'
 import { getLibrary } from '../../lib/library/server'
@@ -55,6 +57,7 @@ import {
   MenuIcon,
   SearchIcon,
   SettingsIcon,
+  SportsIcon,
 } from './icons'
 
 const SearchPanel = lazy(() =>
@@ -77,6 +80,7 @@ type Destination = {
     | '/app/lists'
     | '/app/friends'
     | '/app/groups'
+    | '/app/sports'
     | '/app/insights'
     | '/app/settings'
   label: string
@@ -101,6 +105,14 @@ const DESTINATIONS: Destination[] = [
   { to: '/app/friends', label: 'Friends', icon: FriendsIcon },
   { to: '/app/groups', label: 'Groups', icon: GroupsIcon },
 ]
+
+// SPT-003 (owner, 2026-10-24): Sports is its own destination and lives only there. Listed only
+// while the server has a sports provider (`/v1/me/sport-settings` says `available`).
+const SPORTS: Destination = {
+  to: '/app/sports',
+  label: 'Sports',
+  icon: SportsIcon,
+}
 
 const BOTTOM: Destination[] = [
   {
@@ -152,6 +164,7 @@ export function AppShell(props: {
   const [ownEntries, setOwnEntries] = createSignal<LibraryEntry[]>([])
   const [previous, setPrevious] = createSignal<Previous | null>(null)
   const [mentions, setMentions] = createSignal(0)
+  const [sportsOn, setSportsOn] = createSignal(false)
   // Esc or Done returns focus to the control that opened Search.
   const focusReturn = createFocusReturn()
   let ownRequested = false
@@ -213,6 +226,11 @@ export function AppShell(props: {
     window.addEventListener('keydown', keydown)
     document.addEventListener('visibilitychange', visible)
     void refreshMentions()
+    // Without an answer the Sports tab stays hidden, as Concerts do on Discover.
+    void browserQueryClient()
+      ?.fetchQuery(sportSettingsQuery)
+      .then((settings) => setSportsOn(settings.available))
+      .catch(() => undefined)
     askMAL()
     // The page you leave is the one a detail page's back link names.
     const unsubscribe = router.subscribe('onBeforeNavigate', (event) => {
@@ -248,6 +266,7 @@ export function AppShell(props: {
         <AppSidebar
           session={props.session}
           mentions={mentions()}
+          sports={sportsOn()}
           onSearch={(from) => openSearch(undefined, from)}
         />
         <SidebarInset class="min-w-0">
@@ -338,6 +357,7 @@ function NavRow(props: { d: Destination; badge?: number }) {
 function AppSidebar(props: {
   session: ShellSession
   mentions: number
+  sports: boolean
   onSearch: (from: Element) => void
 }) {
   const sidebar = useSidebar()
@@ -391,7 +411,7 @@ function AppSidebar(props: {
       <SidebarContent class="px-1">
         <SidebarGroup>
           <SidebarMenu class="gap-0.5">
-            <For each={DESTINATIONS}>
+            <For each={props.sports ? [...DESTINATIONS, SPORTS] : DESTINATIONS}>
               {(d) => (
                 <NavRow
                   d={d}

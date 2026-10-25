@@ -116,6 +116,9 @@ struct CatalogProviders: Sendable {
     var concerts: (any ConcertListing)?
     /// The "Concerts near" city picker (MUS-003, Open-Meteo).
     var places: (any PlaceSearching)?
+    /// The Sports tab (SPT-001, TheSportsDB). Optional: nil without `THESPORTSDB_API_KEY`, and
+    /// every sports answer is then `unavailable`.
+    var sports: (any SportsListing)?
 }
 
 extension Date {
