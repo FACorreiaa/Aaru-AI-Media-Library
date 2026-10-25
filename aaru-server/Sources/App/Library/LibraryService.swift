@@ -364,19 +364,20 @@ extension LibraryEntry {
 extension LibraryStatus {
     /// The status as people read it, per kind (APP-014). The stored value never changes:
     /// films, shows and anime read Plan to watch / Watching / Watched; books and manga Plan to
-    /// read / Reading / Read; albums Plan to listen / Listening / Listened (MUS-001).
+    /// read / Reading / Read; albums Plan to listen / Listening / Listened (MUS-001). On hold reads
+    /// the same for every kind (LIB-007).
     func label(for type: MediaType) -> String {
-        switch (self, type) {
-        case (.wishlist, .book), (.wishlist, .manga): "Plan to read"
-        case (.wishlist, .album): "Plan to listen"
-        case (.wishlist, _): "Plan to watch"
-        case (.inProgress, .book), (.inProgress, .manga): "Reading"
-        case (.inProgress, .album): "Listening"
-        case (.inProgress, _): "Watching"
-        case (.finished, .book), (.finished, .manga): "Read"
-        case (.finished, .album): "Listened"
-        case (.finished, _): "Watched"
-        case (.dropped, _): "Dropped"
+        let (planned, active, done) = switch type {
+        case .book, .manga: ("Plan to read", "Reading", "Read")
+        case .album: ("Plan to listen", "Listening", "Listened")
+        case .movie, .show: ("Plan to watch", "Watching", "Watched")
+        }
+        return switch self {
+        case .wishlist: planned
+        case .inProgress: active
+        case .onHold: "On hold"
+        case .finished: done
+        case .dropped: "Dropped"
         }
     }
 }

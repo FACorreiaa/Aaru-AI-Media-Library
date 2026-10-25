@@ -122,7 +122,13 @@ export const updateItem = createServerFn({ method: 'POST' })
       id: itemId,
       patch: z
         .object({
-          status: z.enum(['wishlist', 'in_progress', 'finished', 'dropped']),
+          status: z.enum([
+            'wishlist',
+            'in_progress',
+            'on_hold',
+            'finished',
+            'dropped',
+          ]),
           rating: z.number().min(1).max(10),
           notes: z.string().max(10_000),
           isOwned: z.boolean(),

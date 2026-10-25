@@ -10152,10 +10152,13 @@ public enum Components {
                 case lengthMs
             }
         }
+        /// Consumption only. `on_hold` is paused on purpose (LIB-007): it ranks with `in_progress` for imports, is left off Up Next, Tonight, the calendar and airing alerts, and a new tick moves it back to `in_progress`. Labels are per kind; `on_hold` reads "On hold" for every kind.
+        ///
         /// - Remark: Generated from `#/components/schemas/LibraryStatus`.
         @frozen public enum LibraryStatus: String, Codable, Hashable, Sendable, CaseIterable {
             case wishlist = "wishlist"
             case inProgress = "in_progress"
+            case onHold = "on_hold"
             case finished = "finished"
             case dropped = "dropped"
         }
@@ -11830,6 +11833,8 @@ public enum Components {
             public var wishlist: Swift.Int
             /// - Remark: Generated from `#/components/schemas/LibraryCounts/inProgress`.
             public var inProgress: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/LibraryCounts/onHold`.
+            public var onHold: Swift.Int
             /// - Remark: Generated from `#/components/schemas/LibraryCounts/finished`.
             public var finished: Swift.Int
             /// - Remark: Generated from `#/components/schemas/LibraryCounts/dropped`.
@@ -11839,22 +11844,26 @@ public enum Components {
             /// - Parameters:
             ///   - wishlist:
             ///   - inProgress:
+            ///   - onHold:
             ///   - finished:
             ///   - dropped:
             public init(
                 wishlist: Swift.Int,
                 inProgress: Swift.Int,
+                onHold: Swift.Int,
                 finished: Swift.Int,
                 dropped: Swift.Int
             ) {
                 self.wishlist = wishlist
                 self.inProgress = inProgress
+                self.onHold = onHold
                 self.finished = finished
                 self.dropped = dropped
             }
             public enum CodingKeys: String, CodingKey {
                 case wishlist
                 case inProgress
+                case onHold
                 case finished
                 case dropped
             }

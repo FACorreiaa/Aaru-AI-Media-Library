@@ -53,8 +53,8 @@ extension Components.Schemas.ProfileStats {
 extension Components.Schemas.LibraryCounts {
     init(_ counts: ProfileStats.Counts) {
         self.init(
-            wishlist: counts.wishlist, inProgress: counts.inProgress, finished: counts.finished,
-            dropped: counts.dropped
+            wishlist: counts.wishlist, inProgress: counts.inProgress, onHold: counts.onHold,
+            finished: counts.finished, dropped: counts.dropped
         )
     }
 }

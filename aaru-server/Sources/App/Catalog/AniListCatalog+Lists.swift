@@ -42,7 +42,8 @@ extension AniListCatalog: AniListListReading {
             lists: [],
             watched: AnimeListImport.progress(
                 entry.progress ?? 0, total: media.episodes, status: status, isMovie: isMovie
-            )
+            ),
+            knowsOnHold: true
         )
     }
 
@@ -61,7 +62,8 @@ extension AniListCatalog: AniListListReading {
             finishedAt: entry.finished,
             lists: [],
             mangaChapter: AnimeListImport.read(entry.progress ?? 0, total: media.chapters, status: status),
-            mangaVolume: AnimeListImport.read(entry.progressVolumes ?? 0, total: media.volumes, status: status)
+            mangaVolume: AnimeListImport.read(entry.progressVolumes ?? 0, total: media.volumes, status: status),
+            knowsOnHold: true
         )
     }
 }

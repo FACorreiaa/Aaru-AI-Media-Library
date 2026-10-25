@@ -8,9 +8,10 @@ struct WireContractTests {
     func libraryStatusRawValuesAreStable() {
         #expect(LibraryStatus.wishlist.rawValue == "wishlist")
         #expect(LibraryStatus.inProgress.rawValue == "in_progress")
+        #expect(LibraryStatus.onHold.rawValue == "on_hold")
         #expect(LibraryStatus.finished.rawValue == "finished")
         #expect(LibraryStatus.dropped.rawValue == "dropped")
-        #expect(LibraryStatus.allCases.count == 4, "Status is consumption only; ownership is isOwned.")
+        #expect(LibraryStatus.allCases.count == 5, "Status is consumption only; ownership is isOwned.")
     }
 
     @Test

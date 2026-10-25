@@ -4,7 +4,8 @@ import Foundation
 /// What an import does to one title (IMP-004). It never overwrites: it fills an empty rating,
 /// finish date or notes, sets owned but never clears it (IMP-020), adds missing ticks, and moves
 /// a status forward (wishlist → in progress → finished), never backward, never out of dropped,
-/// never past a status the user chose.
+/// never past a status the user chose. In progress and on hold are one step; a source may move
+/// an item between them (LIB-007).
 extension ImportService {
     struct Decision {
         var outcome: ImportOutcome
@@ -64,13 +65,26 @@ extension ImportService {
         )
     }
 
-    /// Moves the status forward when the row is further along. Returns the new status, if any.
+    /// Moves the status forward when the row is further along, or sideways between in progress
+    /// and on hold (LIB-007) when the row says so. Returns the new status, if any.
     private static func promote(_ fields: inout ItemFields, by row: ImportRow, byHand: Bool) -> LibraryStatus? {
         let incoming = row.status ?? (row.hasProgress ? .inProgress : nil)
-        guard let incoming, fields.status != .dropped, incoming.importRank > fields.status.importRank, !byHand
+        guard let incoming, fields.status != .dropped, !byHand,
+              incoming.importRank > fields.status.importRank || sideways(from: fields.status, to: incoming, row: row)
         else { return nil }
         fields.status = incoming
         return incoming
+    }
+
+    /// In progress ↔ on hold, the one move that is not forward. Any row that says on hold pauses
+    /// an item in progress; only a source that has on hold (`ImportRow.knowsOnHold`) resumes one,
+    /// so a Trakt or Netflix history, where everything started is in progress, never does.
+    private static func sideways(from current: LibraryStatus, to incoming: LibraryStatus, row: ImportRow) -> Bool {
+        switch (current, incoming) {
+        case (.inProgress, .onHold): true
+        case (.onHold, .inProgress): row.status == .inProgress && row.knowsOnHold == true
+        default: false
+        }
     }
 
     /// A reading position only moves forward, like ticks are only added. Returns what it filled.

@@ -75,6 +75,13 @@ extension LibraryService {
         }
         try applyBookProgress(patch, to: &fields, type: current.title.type)
         try applyMangaProgress(patch, to: &fields, type: current.title.type)
+        // LIB-007: reading on from a page or chapter resumes an on-hold item, unless the same tap
+        // put it on hold.
+        let readsOn = patch.bookPage != nil || patch.bookPercent != nil || patch.mangaChapter != nil
+            || patch.mangaVolume != nil
+        if fields.status == .onHold, patch.status == nil, readsOn {
+            fields.status = .inProgress
+        }
         return fields
     }
 
@@ -140,8 +147,8 @@ extension LibraryService {
     }
 
     /// An episode op together with the status it implies, as one action: the first tick moves
-    /// wishlist → in progress; watching every aired episode of an ended or canceled show finishes
-    /// it. A running show never auto-finishes.
+    /// wishlist → in progress, and a new tick resumes an on-hold item (LIB-007); watching every
+    /// aired episode of an ended or canceled show finishes it. A running show never auto-finishes.
     func prepareProgress(
         watch: [EpisodeKey],
         unwatch: [EpisodeKey],
@@ -158,6 +165,9 @@ extension LibraryService {
         watched.subtract(unwatch)
         var fields = base ?? current.fields
         if fields.status == .wishlist, !watched.isEmpty {
+            fields.status = .inProgress
+        }
+        if fields.status == .onHold, !watch.isEmpty {
             fields.status = .inProgress
         }
         let airedRegular = show.episodes.filter {

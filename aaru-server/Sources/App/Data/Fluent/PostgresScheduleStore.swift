@@ -121,6 +121,7 @@ struct PostgresScheduleStore: ScheduleStore {
             switch LibraryStatus(rawValue: row.status) {
             case .wishlist: counts.wishlist = row.count
             case .inProgress: counts.inProgress = row.count
+            case .onHold: counts.onHold = row.count
             case .finished: counts.finished = row.count
             case .dropped: counts.dropped = row.count
             case nil: continue

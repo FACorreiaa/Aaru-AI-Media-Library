@@ -72,3 +72,43 @@ struct AddMALPull: SQLMigration {
         """,
     ]
 }
+
+/// LIB-007 · on hold, Aaru's fifth status (owner, 2026-10-25). Until now every import read MAL's
+/// on hold as in progress, so it filled Watching. The backfill puts back on hold the items in
+/// progress that nobody set by hand and whose MAL entries, as Aaru last read or wrote them, have
+/// one on hold and none watching. A TMDB show stands for the MAL entries its anime mapping names.
+struct AddOnHold: SQLMigration {
+    static let backfill = """
+    WITH entries AS (
+        SELECT li.id, s.status
+        FROM library_items li
+        JOIN titles t ON t.id = li.title_id
+        JOIN mal_entry_states s ON s.user_id = li.user_id AND s.removed_at IS NULL
+            AND (s.mal_id = t.mal
+                 OR (t.type = 'show' AND s.mal_id IN (SELECT m.mal FROM anime_mappings m WHERE m.tmdb = t.tmdb)))
+        WHERE li.status = 'in_progress' AND NOT li.status_by_hand
+    )
+    UPDATE library_items SET status = 'on_hold', updated_at = now()
+    WHERE id IN (
+        SELECT id FROM entries GROUP BY id
+        HAVING bool_or(status = 'on_hold') AND NOT bool_or(status = 'watching')
+    )
+    """
+
+    let forward = [
+        """
+        ALTER TABLE library_items DROP CONSTRAINT library_items_status_check,
+            ADD CONSTRAINT library_items_status_check
+                CHECK (status IN ('wishlist', 'in_progress', 'on_hold', 'finished', 'dropped'))
+        """,
+        Self.backfill,
+    ]
+    let backward = [
+        "UPDATE library_items SET status = 'in_progress', updated_at = now() WHERE status = 'on_hold'",
+        """
+        ALTER TABLE library_items DROP CONSTRAINT library_items_status_check,
+            ADD CONSTRAINT library_items_status_check
+                CHECK (status IN ('wishlist', 'in_progress', 'finished', 'dropped'))
+        """,
+    ]
+}

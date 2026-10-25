@@ -94,9 +94,8 @@ struct MALPusher: Sendable {
                 let total = episodes.count(where: { inSeason($0.season) })
                 let isAiring = episodes.contains { inSeason($0.season) && ($0.airsAt.map { $0 > now } ?? false) }
                 let share = Share(ticks: count, total: total > 0 ? total : nil, isFirst: index == 0, isAiring: isAiring)
-                guard let state = Self.state(
-                    malID: target.malID, item: entry.item, share: share, known: states[target.malID]
-                ), state != states[target.malID]
+                guard let state = Self.state(malID: target.malID, item: entry.item, share: share),
+                      state != states[target.malID]
                 else { continue }
                 do {
                     try await api.updateListStatus(malID: target.malID, state, token: token)
@@ -133,12 +132,12 @@ struct MALPusher: Sendable {
     /// What one MAL entry should say, or nil when Aaru has nothing to say about it (a later
     /// season nobody started). Only the first entry carries a show's plan or a drop with no ticks,
     /// so planning a show does not add every season to MAL. A season still airing is never
-    /// completed: in a show finished before that season aired, it goes as one in progress. An
-    /// entry the user put on hold on MAL stays on hold until Aaru's ticks move.
-    static func state(malID: String, item: LibraryItem, share: Share, known: MALEntryState?) -> MALEntryState? {
+    /// completed: in a show finished before that season aired, it goes as one in progress. On
+    /// hold is Aaru's own status (LIB-007), sent as MAL's on hold.
+    static func state(malID: String, item: LibraryItem, share: Share) -> MALEntryState? {
         let (ticks, total, isFirst) = (share.ticks, share.total, share.isFirst)
         let score = item.rating.map { Int($0.value.rounded()) } ?? 0
-        var state: MALEntryState
+        let state: MALEntryState
         switch item.status == .finished && share.isAiring ? .inProgress : item.status {
         case .finished:
             state = MALEntryState(malID: malID, status: .completed, episodes: total ?? ticks, score: score)
@@ -148,17 +147,15 @@ struct MALPusher: Sendable {
         case .wishlist:
             guard ticks > 0 || isFirst else { return nil }
             state = MALEntryState(malID: malID, status: .planToWatch, episodes: ticks, score: score)
-        case .inProgress:
+        case .inProgress, .onHold:
             if let total, ticks >= total {
                 state = MALEntryState(malID: malID, status: .completed, episodes: total, score: score)
             } else if ticks > 0 || isFirst {
-                state = MALEntryState(malID: malID, status: .watching, episodes: ticks, score: score)
+                let status: MALListStatus = item.status == .onHold ? .onHold : .watching
+                state = MALEntryState(malID: malID, status: status, episodes: ticks, score: score)
             } else {
                 return nil
             }
-        }
-        if let known, known.status == .onHold, state.status == .watching, state.episodes == known.episodes {
-            state.status = .onHold
         }
         return state
     }

@@ -31,8 +31,8 @@ extension Components.Schemas.UpNext {
             continueWatching: rows.continueWatching.map(Components.Schemas.ContinueEntry.init),
             startWatching: rows.startWatching.map(Components.Schemas.StartEntry.init),
             counts: .init(
-                wishlist: counts.wishlist, inProgress: counts.inProgress, finished: counts.finished,
-                dropped: counts.dropped
+                wishlist: counts.wishlist, inProgress: counts.inProgress, onHold: counts.onHold,
+                finished: counts.finished, dropped: counts.dropped
             ),
             unfinished: rows.unfinished.map(Components.Schemas.UnfinishedEntry.init)
         )

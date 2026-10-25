@@ -11,7 +11,7 @@ import {
 import type { ProfileStats } from './model'
 import { initials } from './initials'
 
-const none = { wishlist: 0, inProgress: 0, finished: 0, dropped: 0 }
+const none = { wishlist: 0, inProgress: 0, onHold: 0, finished: 0, dropped: 0 }
 
 function stats(overrides: Partial<ProfileStats> = {}): ProfileStats {
   return {

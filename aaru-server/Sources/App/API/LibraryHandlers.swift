@@ -147,6 +147,7 @@ extension LibraryStatus {
         switch dto {
         case .wishlist: self = .wishlist
         case .inProgress: self = .inProgress
+        case .onHold: self = .onHold
         case .finished: self = .finished
         case .dropped: self = .dropped
         }
@@ -158,6 +159,7 @@ extension Components.Schemas.LibraryStatus {
         switch status {
         case .wishlist: self = .wishlist
         case .inProgress: self = .inProgress
+        case .onHold: self = .onHold
         case .finished: self = .finished
         case .dropped: self = .dropped
         }

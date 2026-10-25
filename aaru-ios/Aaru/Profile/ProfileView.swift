@@ -262,7 +262,7 @@ private struct ProfileHeader: View {
 
 #Preview("Profile") {
     let counts = { (finished: Int, watching: Int) in
-        LibraryCounts(wishlist: 4, inProgress: watching, finished: finished, dropped: 1)
+        LibraryCounts(wishlist: 4, inProgress: watching, onHold: 0, finished: finished, dropped: 1)
     }
     let stats = ProfileStats(
         memberSince: .now.addingTimeInterval(-86400 * 12),
@@ -302,7 +302,7 @@ private struct ProfileHeader: View {
 }
 
 #Preview("New account") {
-    let zero = LibraryCounts(wishlist: 0, inProgress: 0, finished: 0, dropped: 0)
+    let zero = LibraryCounts(wishlist: 0, inProgress: 0, onHold: 0, finished: 0, dropped: 0)
     ProfileView(
         api: nil, library: LibraryModel(), lists: ListsModel(api: nil),
         model: ProfileModel(preview: ProfileStats(

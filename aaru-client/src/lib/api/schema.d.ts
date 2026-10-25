@@ -4282,8 +4282,12 @@ export interface components {
       name: string
       lengthMs?: number
     }
-    /** @enum {string} */
-    LibraryStatus: 'wishlist' | 'in_progress' | 'finished' | 'dropped'
+    /**
+     * @description Consumption only. `on_hold` is paused on purpose (LIB-007): it ranks with `in_progress` for imports, is left off Up Next, Tonight, the calendar and airing alerts, and a new tick moves it back to `in_progress`. Labels are per kind; `on_hold` reads "On hold" for every kind.
+     * @enum {string}
+     */
+    LibraryStatus:
+      'wishlist' | 'in_progress' | 'on_hold' | 'finished' | 'dropped'
     /** @description A title by Aaru id, by provider ids, or by title + year. */
     MediaRef: {
       /** Format: uuid */
@@ -4632,6 +4636,7 @@ export interface components {
     LibraryCounts: {
       wishlist: number
       inProgress: number
+      onHold: number
       finished: number
       dropped: number
     }

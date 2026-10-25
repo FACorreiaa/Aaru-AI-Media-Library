@@ -1,4 +1,5 @@
 import AaruCore
+import FluentSQL
 import Foundation
 import Logging
 import Testing
@@ -122,6 +123,55 @@ extension MALTests {
         }
     }
 
+    @Test("LIB-007: MAL pausing and resuming an entry moves Aaru's item to on hold and back")
+    func onHoldReadBack() async throws {
+        let fake = FakeMAL()
+        try await LibraryHarness.run(mal: api(fake)) { env in
+            let mal1 = malID()
+            try await connect(env)
+            let (_, item) = try await anime(env, seasons: [1: [mal1]], status: "wishlist")
+            try await tick(env, item, 1, 1)
+            #expect(try await itemStatus(env, item) == "in_progress", "a tick, not a status set by hand")
+
+            let now = Date()
+            fake.setList([Self.entry(mal1, "on_hold", episodes: 1, updated: now.addingTimeInterval(60))])
+            #expect(try await puller(env, fake).pull(due(env, since: now)) == 1)
+            #expect(try await itemStatus(env, item) == "on_hold")
+
+            fake.setList([Self.entry(mal1, "watching", episodes: 1, updated: now.addingTimeInterval(120))])
+            #expect(try await puller(env, fake).pull(due(env, since: now.addingTimeInterval(60))) == 1)
+            #expect(try await itemStatus(env, item) == "in_progress")
+            try await disconnect(env)
+        }
+    }
+
+    @Test("LIB-007: the backfill puts on hold what MAL has on hold, unless set by hand or watched on MAL")
+    func onHoldBackfill() async throws {
+        let fake = FakeMAL()
+        try await LibraryHarness.run(mal: api(fake)) { env in
+            let (held, byHand, split) = (malID(), malID(), (malID(), malID()))
+            let (_, imported) = try await anime(env, seasons: [1: [held]], status: "wishlist")
+            try await tick(env, imported, 1, 1)
+            let (_, chosen) = try await anime(env, seasons: [1: [byHand]])
+            let (_, mixed) = try await anime(env, seasons: [1: [split.0], 2: [split.1]], status: "wishlist")
+            try await tick(env, mixed, 1, 1)
+            for (mal, status) in [
+                (held, MALListStatus.onHold),
+                (byHand, .onHold),
+                (split.0, .onHold),
+                (split.1, .watching),
+            ] {
+                try await env.stores.mal.saveEntryState(
+                    MALEntryState(malID: mal, status: status, episodes: 1, score: 0), title: nil, userID: env.userID
+                )
+            }
+            try await withSQL { sql in try await sql.raw(SQLQueryString(AddOnHold.backfill)).run() }
+            #expect(try await itemStatus(env, imported) == "on_hold")
+            #expect(try await itemStatus(env, chosen) == "in_progress", "a status set by hand stays")
+            #expect(try await itemStatus(env, mixed) == "in_progress", "a season still watching on MAL")
+        }
+    }
+
     @Test("SCR-010: a full read lists entries removed on MAL; Aaru keeps its items")
     func removalsAreListedNotApplied() async throws {
         let fake = FakeMAL()
@@ -172,7 +222,8 @@ extension MALTests {
             return try #require(try MALAPI.decoder.decode(MALListPage.self, from: page).data.first)
         }
         let onHold = try decode(Self.entry("7", "on_hold", episodes: 2, score: 8, updated: now))
-        #expect(MALPuller.row(onHold).status == .inProgress)
+        #expect(MALPuller.row(onHold).status == .onHold, "MAL's on hold is Aaru's (LIB-007)")
+        #expect(MALPuller.row(onHold).knowsOnHold == true)
         #expect(MALPuller.row(onHold).watched?.count == 2)
         #expect(MALPuller.row(onHold).rating == 8)
         #expect(MALPuller.state(onHold) == MALEntryState(malID: "7", status: .onHold, episodes: 2, score: 8))

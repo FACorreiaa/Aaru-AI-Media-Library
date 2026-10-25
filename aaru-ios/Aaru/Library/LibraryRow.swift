@@ -95,6 +95,7 @@ extension LibraryStatus: @retroactive Identifiable {
         return switch self {
         case .wishlist: words.planned
         case .inProgress: words.active
+        case .onHold: "On hold"
         case .finished: words.done
         case .dropped: "Dropped"
         }

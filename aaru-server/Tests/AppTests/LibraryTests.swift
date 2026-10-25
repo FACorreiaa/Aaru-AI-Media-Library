@@ -241,6 +241,16 @@ struct ProgressTests {
             let progress = try #require(percent["bookProgress"] as? [String: Any])
             #expect(progress["percent"] as? Double == 40)
             #expect(progress["page"] == nil, "setting one clears the other")
+
+            // LIB-007: a page read on resumes a book on hold; a tap that holds it stays on hold.
+            let held = try await env.send(.patch, "/v1/library/items/\(id)", json: ["status": "on_hold"]).json()
+            #expect(held["status"] as? String == "on_hold")
+            let still = try await env.send(
+                .patch, "/v1/library/items/\(id)", json: ["status": "on_hold", "bookPage": 130]
+            ).json()
+            #expect(still["status"] as? String == "on_hold")
+            let resumed = try await env.send(.patch, "/v1/library/items/\(id)", json: ["bookPage": 140]).json()
+            #expect(resumed["status"] as? String == "in_progress")
         }
     }
 

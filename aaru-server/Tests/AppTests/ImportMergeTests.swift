@@ -158,6 +158,36 @@ struct ImportMergeTests {
         }
     }
 
+    @Test("LIB-007: on hold and in progress move sideways; never past a hand-set status, never out of dropped")
+    func onHoldMovesSideways() {
+        func decide(
+            _ current: LibraryStatus,
+            to incoming: LibraryStatus,
+            byHand: Bool = false,
+            knowsOnHold: Bool? = true
+        ) -> LibraryStatus? {
+            let row = ImportRow(
+                type: .show, title: "Frieren", ids: ExternalIDs(mal: "1"), status: incoming, lists: [],
+                knowsOnHold: knowsOnHold
+            )
+            let item = ImportItemState(
+                itemID: LibraryItemID(), fields: ItemFields(status: current, isOwned: false),
+                statusByHand: byHand, watched: []
+            )
+            return ImportService.decide(row, item: item).fields?.status
+        }
+        #expect(decide(.inProgress, to: .onHold) == .onHold, "MAL paused it")
+        #expect(decide(.onHold, to: .inProgress) == .inProgress, "MAL resumed it")
+        #expect(decide(.inProgress, to: .onHold, byHand: true) == nil, "the user's choice stays")
+        #expect(decide(.onHold, to: .inProgress, byHand: true) == nil, "the user's choice stays")
+        #expect(decide(.onHold, to: .inProgress, knowsOnHold: nil) == nil, "Trakt's in progress never resumes")
+        #expect(decide(.dropped, to: .onHold) == nil, "never out of dropped")
+        #expect(decide(.finished, to: .onHold) == nil, "never backward")
+        #expect(decide(.wishlist, to: .onHold) == .onHold, "forward from a plan")
+        #expect(decide(.onHold, to: .finished) == .finished, "forward to finished")
+        #expect(decide(.onHold, to: .wishlist) == nil, "never backward")
+    }
+
     @Test("A MAL row lands on the TMDB show a Trakt import created, not a second title")
     func malAfterTraktIsOneTitle() async throws {
         try await LibraryHarness.run { env in

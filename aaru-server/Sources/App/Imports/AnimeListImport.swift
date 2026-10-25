@@ -6,12 +6,13 @@ import Foundation
 /// resolve through AniList and the same show imported from both lands on one title. Episodes are
 /// season 1, as for every AniList entry.
 enum AnimeListImport {
-    /// MAL and AniList statuses on Aaru's four (IMP-013). On hold is still in progress. MAL's manga
-    /// list says reading and plan to read; its numeric codes are the anime list's.
+    /// MAL and AniList statuses on Aaru's five (IMP-013). On hold (AniList: paused) is Aaru's on
+    /// hold (LIB-007); rewatching is still in progress. MAL's manga list says reading and plan to
+    /// read; its numeric codes are the anime list's.
     static func status(_ value: String) -> LibraryStatus? {
         switch value.lowercased().replacingOccurrences(of: " ", with: "") {
-        case "watching", "reading", "1", "current", "repeating", "rereading", "on-hold", "onhold", "3", "paused":
-            .inProgress
+        case "watching", "reading", "1", "current", "repeating", "rereading": .inProgress
+        case "on-hold", "onhold", "3", "paused": .onHold
         case "completed", "2": .finished
         case "dropped", "4": .dropped
         case "plantowatch", "plantoread", "6", "planning": .wishlist
@@ -86,7 +87,8 @@ enum MALListParser {
                 ),
                 mangaVolume: AnimeListImport.read(
                     count("my_read_volumes") ?? 0, total: count("manga_volumes"), status: status
-                )
+                ),
+                knowsOnHold: true
             )
         }
     }
@@ -111,7 +113,8 @@ enum MALListParser {
                     field("my_watched_episodes", in: block).flatMap { Int($0) } ?? 0,
                     total: field("series_episodes", in: block).flatMap { Int($0) },
                     status: status, isMovie: isMovie
-                )
+                ),
+                knowsOnHold: true
             )
         }
     }
