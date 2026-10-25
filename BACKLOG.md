@@ -41,6 +41,16 @@ library layer stay separate, external IDs stored whenever known, no second backe
   performer's concerts, by Ticketmaster's id. The free text the owner chose on 2026-10-24 stays as
   the last row, "All events matching …", for festivals and bills without a named act, and is what
   runs when Ticketmaster offers no performer.
+- **Books, Manga, Music and Sports get their own destinations; a More menu (owner, 2026-10-25,
+  NAV-001…003, DISC-004).** Discover was too cluttered. It keeps Today (shows, films and anime),
+  On air and Seasons. Books, Manga and Music are pages of their own: the user's shelf for the kind
+  (in progress, then planned) above that kind's Discover rows. Music also holds Concerts (out of
+  Discover) and Listens. On iPhone the tab bar is Home · Discover · Library · Calendar · More,
+  and iOS's More lists Groups, Books, Manga, Music and Sports; the Groups mention badge moves to
+  its row inside More. This reverses the 2026-10-21 call to keep five tabs with no More. iPad,
+  Mac and the web keep the top destinations and put the same five in a More group. Discover rows
+  now carry their kind, and manga gets two rows of its own from AniList. Home still shows every
+  row.
 
 ## Decisions recorded 2026-10-24
 
@@ -2629,6 +2639,32 @@ ISO codes with aliases: USA, UK…). `docs/privacy.md` and `docs/providers.md` u
 `THESPORTSDB_API_KEY` in the infra secrets template, sealed by the owner.
 
 Later, not built: a "kicks off in an hour" push, a match Live Activity, standings.
+
+## P2 · Navigation by kind (owner, 2026-10-25)
+
+See the 2026-10-25 decision. Same destinations, same order, on every client.
+
+### DISC-004 · Discover rows say their kind; manga rows · S
+`DiscoverRow.kind` (`film | show | anime | manga | book | album`, anime apart from shows) from
+`DiscoverList.kind`, so each page shows its own rows without guessing from ids. Two AniList rows,
+type MANGA, no adult works: Trending manga and Publishing now. No stand-in while AniList is down:
+the manga rows are simply absent.
+
+### NAV-001 · Web: Books, Manga, Music and a More group · M
+**Needs:** DISC-004.
+The sidebar: Home, Discover, Library, Calendar, Lists, Friends, then a collapsible More (Groups,
+Books, Manga, Music, Sports), then Insights and Settings. `/app/books` and `/app/manga` are new;
+`/app/music` becomes the Music page (shelf, New albums, Coming soon, Concerts, Listens). Discover
+drops the Concerts view (`?view=concerts` redirects to Music) and the book and album rows.
+
+### NAV-002 · Apple: the More tab and the kind screens · M
+**Needs:** DISC-004.
+iPhone: Home · Discover · Library · Calendar · More, with iOS's More listing Groups, Books, Manga,
+Music and Sports. iPad and Mac: a More section in the sidebar. `KindScreen` serves Books, Manga
+and Music; Music has Albums · Concerts · Listens. The Discover toolbar's Sports button goes.
+
+### NAV-003 · Docs · S
+DESIGN.md §13a, §13c, §13d and §18; VIEWS.md; CLAUDE.md's Discover; ARCHITECTURE.md.
 
 ## P2 · Web (`aaru-client`)
 
