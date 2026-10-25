@@ -44,6 +44,18 @@ library layer stay separate, external IDs stored whenever known, no second backe
 
 ## Decisions recorded 2026-10-24
 
+- **Now group pages and the anime backlog (owner, 2026-10-24, APP-018).** "Show all N" on
+  Library's Now opens the group's own page (`/app/library/now/{group}` on the web, a pushed view
+  on Apple) instead of expanding in place: every title in progress, Grid (backdrop cards) or List
+  (dense rows), sorted Recent (the last live tick), Airs next (Watching) or A–Z, narrowed by kind
+  chips only. Watching rows carry the show's facts from `GET /v1/library/watching`: channel and
+  show status, the next episode and its name, what is left, the next airing. TV and anime stay
+  together; the calendar is unchanged. An **anime backlog** item is an anime in progress whose
+  status came from an import (`status_by_hand = false`) with no live tick in Aaru. It stays
+  `in_progress` (MyAnimeList reads it back) but leaves Now for a collapsed "Anime backlog" on the
+  Watching page. Derived on the server (`LibraryEntry.inBacklog`), never stored; the first live
+  tick or a status set by hand brings it out for good. Imported TV and films never go there.
+  Apple matches the web: six cards a group and "Show all N".
 - **Sports, a tab of its own (owner, 2026-10-24).** Pulled forward past the P2 gate. Users follow
   leagues and promotions (Premier League, NBA, NFL, UFC, WWE…), teams and players, and see their
   fixtures, near-live scores, results and where to watch, SofaScore-style: a Favorites tab
@@ -706,6 +718,7 @@ account or a stranger that has not happened yet.
 | APP-014 | Done | #43; LibraryRow.swift, library/model.ts labels | |
 | APP-015 | Done | #43; RootView `lists` tab | |
 | APP-017 | Built | library/NowSection (web), Library/NowSection (Apple) | Watching, Reading, Listening; book page counts from Open Library (`titles.page_count`, backfilled) |
+| APP-018 | In progress | server #187 (`inBacklog`, `lastWatchedAt`, `GET /v1/library/watching`, promoted); web `routes/_shell.app_.library_.now.$group.tsx`; Apple `Library/NowGroupView` next | Now group pages, Grid/List, the anime backlog (decision 2026-10-24) |
 | LAND-001 | Partial | #5, #9; routes/index.tsx, demo/ gone | No prerender config found; Lighthouse never run |
 | LAND-002 | Open | no waitlist code | |
 | LAND-003 | Done | #27; docs/privacy.md, /privacy | Names all six third parties |

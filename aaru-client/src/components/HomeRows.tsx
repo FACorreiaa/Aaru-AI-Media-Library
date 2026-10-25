@@ -26,6 +26,7 @@ import { prefersReducedMotion } from '../lib/reduced-motion'
 import { AddControl } from './AddControl'
 import { CardMenu } from './CardMenu'
 import { Poster } from './Poster'
+import { TitleLink } from './TitleLink'
 import { Badge, badgeVariants, Button } from '~/components/ui'
 
 // APP-009: Home's rows (DESIGN.md §13). Each row scrolls sideways and snaps; it takes focus so
@@ -396,8 +397,6 @@ export function DiscoverCard(props: {
   adding: boolean
   onAdd: (status: LibraryStatus) => void
   onList: () => void
-  /** A title not in the library has no page: its poster opens the preview instead. */
-  onPreview: () => void
   today?: string | null
   /** `row` (default) sits in a scrolling row at a fixed width; `grid` fills its grid cell. */
   layout?: 'row' | 'grid'
@@ -432,16 +431,14 @@ export function DiscoverCard(props: {
       <Show
         when={h().libraryItemId}
         fallback={
-          <Button
-            variant="ghost"
-            size="bare"
-            class="relative block w-full text-left"
+          <TitleLink
+            hit={h()}
+            class="relative block"
             aria-label={`${h().title}, details`}
-            onClick={() => props.onPreview()}
           >
             <Poster url={h().posterUrl} kind={kind()} />
             <DateBadge />
-          </Button>
+          </TitleLink>
         }
       >
         {(id) => (

@@ -51,7 +51,10 @@ struct MALPuller: Sendable {
     func pull(_ due: MALPullDue) async throws -> Int {
         let started = now()
         do {
-            guard let token = try await connect.accessToken(userID: due.userID) else { return 0 }
+            guard let token = try await connect.accessToken(userID: due.userID) else {
+                logger.notice("MyAnimeList read skipped: no usable token")
+                return 0
+            }
             let entries = try await read(due, token: token)
             let changed = entries.filter { $0.listStatus.updatedAt > due.cursor }
             let known = try await stores.mal.entryStates(
@@ -60,7 +63,9 @@ struct MALPuller: Sendable {
             let fresh = changed.filter { entry in
                 Self.state(entry).map { $0 != known[$0.malID] } ?? true
             }
-            let applied = try await imports.applyFromMAL(fresh.map(Self.row), userID: due.userID)
+            let planned = try await imports.applyFromMAL(fresh.map(Self.row), userID: due.userID)
+            let applied = planned.count { $0.outcome == .create || $0.outcome == .update }
+            log(due, read: entries.count, changed: changed.count, planned: planned)
             for entry in fresh {
                 guard let state = Self.state(entry) else { continue }
                 try await stores.mal.saveEntryState(state, title: entry.node.title, userID: due.userID)
@@ -78,6 +83,23 @@ struct MALPuller: Sendable {
         } catch let error as ProviderError where error.kind == .unauthorized {
             try await stores.mal.markRevoked(userID: due.userID, revokedAt: started)
             return 0
+        }
+    }
+
+    /// What one read saw and did, so a change on MAL that never reaches the library can be traced:
+    /// counts always, and each entry that wrote nothing, by MAL id and outcome. No user, title or
+    /// reason text: a reason can quote the title.
+    /// `skip` means the merge found nothing to move forward; `unmatched`, no catalog title.
+    private func log(_ due: MALPullDue, read: Int, changed: Int, planned: [PlannedRow]) {
+        logger.info("MyAnimeList list read", metadata: [
+            "entries": "\(read)", "changed": "\(changed)", "fresh": "\(planned.count)",
+            "applied": "\(planned.count { $0.outcome == .create || $0.outcome == .update })",
+            "cursor": "\(due.cursor.formatted(.iso8601))", "full": "\(due.fullRead)",
+        ])
+        for row in planned where row.outcome == .skip || row.outcome == .unmatched {
+            logger.notice("MyAnimeList entry not applied", metadata: [
+                "mal": "\(row.row.ids.mal ?? "")", "outcome": "\(row.outcome.rawValue)",
+            ])
         }
     }
 
@@ -133,18 +155,17 @@ extension ImportService {
     /// SCR-010: entries read back from MyAnimeList, matched, merged and written at once as one
     /// journaled action, so Undo takes it back. There is no plan to approve: the user connected
     /// MAL to keep the two lists in step, and the merge only fills gaps and moves forward.
-    /// Returns the titles added or updated.
-    func applyFromMAL(_ rows: [ImportRow], userID: UserID) async throws -> Int {
-        guard !rows.isEmpty else { return 0 }
+    /// Returns every row with its outcome: created and updated were written.
+    func applyFromMAL(_ rows: [ImportRow], userID: UserID) async throws -> [PlannedRow] {
+        guard !rows.isEmpty else { return [] }
         let pending = rows.enumerated().map { PlannedRow(index: $0.offset, row: $0.element, outcome: .pending) }
         var planned = try await plan(pending, userID: userID)
         let ops = try await writes(for: &planned, userID: userID)
-        guard !ops.isEmpty else { return 0 }
-        let stats = Self.stats(planned)
+        guard !ops.isEmpty else { return planned }
         try await stores.library.apply(
             .batch(ops), userID: userID, actor: .user, kind: "import",
-            summary: Self.summary(.malXML, stats: stats)
+            summary: Self.summary(.malXML, stats: Self.stats(planned))
         )
-        return stats.created + stats.updated
+        return planned
     }
 }

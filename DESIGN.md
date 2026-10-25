@@ -222,7 +222,13 @@ ticks the next aired episode, **Update page** moves a book, **Mark read** / **Ma
 closes it (wording aligned 2026-10-21, UX-043/044). The filters sit under the page title,
 above Now (2026-10-22). A kind chip narrows Now with the shelf; choosing any status hides it,
 since the shelf is then that list. Each group shows its newest six, with "Show all N" to open
-the rest in place. Below Now the shelf has its own heading, naming the filter ("Shows ·
+the group's own page (APP-018, 2026-10-24): every title in progress as backdrop cards (Grid) or
+dense rows (List), the choice remembered per device, sorted by the last tick, the next airing or
+A–Z, narrowed by kind. A Watching card or row adds the show's facts, one per line: "Apple TV+ ·
+Returning", "Next S2 · E3 · Name", "7 left · 5h 40m", "Airs S2 · E10 · Tomorrow", or "Caught
+up". Anime imported as watching and never touched in Aaru (the **anime backlog**) leave Now: a
+quiet "38 anime in your backlog →" under Watching opens that page's collapsed Anime backlog,
+below "Keeping up". One live tick brings a title up for good. Below Now the shelf has its own heading, naming the filter ("Shows ·
 Watching", "All titles") with a count; arriving with `?status=` or `?kind=` scrolls to it.
 Cards scroll sideways on phones and sit in a grid wider. **Listening** (albums, cover and artist, **Listened** to close) joined on 2026-10-21. Books
 carry Open Library's page count, so a page reads "Page 120 of 412" with its bar. Manga joined
