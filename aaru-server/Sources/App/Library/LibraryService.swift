@@ -36,6 +36,12 @@ struct ShowWatched: Sendable {
     var episodes: Int
 }
 
+/// An episode or season tick: the item after it, and the action Undo takes back.
+struct ProgressWrite: Sendable {
+    var entry: LibraryEntry
+    var action: ActionRecord
+}
+
 /// One sync answer: what changed, what was deleted, and the token for next time.
 struct SyncResult: Sendable {
     var entries: [LibraryEntry]
@@ -188,7 +194,7 @@ struct LibraryService: Sendable {
         key: EpisodeKey,
         watched: Bool,
         by caller: Caller = .user
-    ) async throws -> LibraryEntry {
+    ) async throws -> ProgressWrite {
         let show = try await showContext(id, userID: userID)
         guard show.episodes.contains(where: { $0.season == key.season && $0.episode == key.episode }) else {
             throw ValidationError.invalidEpisodeNumber(season: key.season, episode: key.episode)
@@ -198,8 +204,8 @@ struct LibraryService: Sendable {
             watch: watched ? [key] : [], unwatch: watched ? [] : [key], show: show,
             journal: ("episode", "Marked \(key) of \(show.entry.title.title) \(verb)")
         )
-        try await commit(write, userID: userID, caller: caller)
-        return try await entry(id, userID: userID)
+        let action = try await commit(write, userID: userID, caller: caller)
+        return try await ProgressWrite(entry: entry(id, userID: userID), action: action)
     }
 
     /// Ticks or unticks several episodes of one show as one action, for outside callers
@@ -222,11 +228,11 @@ struct LibraryService: Sendable {
 
     /// Marks every aired episode of a season watched in one action; unaired ones are left alone.
     func markSeasonWatched(_ id: LibraryItemID, userID: UserID, season: Int, by caller: Caller = .user) async throws
-        -> LibraryEntry
+        -> ProgressWrite
     {
         let show = try await showContext(id, userID: userID)
-        try await commit(prepareSeason(show, season: season), userID: userID, caller: caller)
-        return try await entry(id, userID: userID)
+        let action = try await commit(prepareSeason(show, season: season), userID: userID, caller: caller)
+        return try await ProgressWrite(entry: entry(id, userID: userID), action: action)
     }
 
     func showContext(_ id: LibraryItemID, userID: UserID) async throws -> ShowContext {

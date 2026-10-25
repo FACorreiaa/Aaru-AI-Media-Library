@@ -58,19 +58,23 @@ extension APIImplementation {
     {
         guard case let .json(body) = input.body else { throw AppError.badRequest() }
         let key = try EpisodeKey(season: input.path.season, episode: input.path.episode)
-        let entry = try await library.setEpisode(
+        let write = try await library.setEpisode(
             itemID(input.path.id), userID: currentUser(), key: key, watched: body.watched
         )
-        return try await .ok(.init(body: .json(withWatched(entry))))
+        return try await .ok(.init(
+            headers: .init(aaruAction: write.action.id.uuidString), body: .json(withWatched(write.entry))
+        ))
     }
 
     func markSeasonWatched(_ input: Operations.MarkSeasonWatched.Input) async throws -> Operations.MarkSeasonWatched
         .Output
     {
-        let entry = try await library.markSeasonWatched(
+        let write = try await library.markSeasonWatched(
             itemID(input.path.id), userID: currentUser(), season: input.path.season
         )
-        return try await .ok(.init(body: .json(withWatched(entry))))
+        return try await .ok(.init(
+            headers: .init(aaruAction: write.action.id.uuidString), body: .json(withWatched(write.entry))
+        ))
     }
 
     func markShowWatched(_ input: Operations.MarkShowWatched.Input) async throws -> Operations.MarkShowWatched.Output {

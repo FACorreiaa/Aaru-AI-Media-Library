@@ -52,6 +52,8 @@ import {
   countChips,
   listening,
   markOnShelf,
+  setAsideMessage,
+  tickedMessage,
   weekStrip,
   upcoming,
 } from '../lib/home/model'
@@ -74,7 +76,12 @@ import type {
   TonightPick,
   TonightVerdict,
 } from '../lib/home/tonight'
-import { getTonight, sendTonightFeedback } from '../lib/home/server'
+import {
+  clearTonightFeedback,
+  getTonight,
+  sendTonightFeedback,
+} from '../lib/home/server'
+import { offerUndo, offerUndoWith } from '../components/undo-toast'
 import { daypartHeading } from '../lib/appearance'
 import type { ImportJob } from '../lib/imports/server'
 import { waitingCaptures } from '../lib/capture/model'
@@ -94,6 +101,7 @@ import { offeredRecap, periodLabel } from '../lib/recap/model'
 import type { AgentPlan } from '../lib/plans/server'
 import { flip, leave } from '../lib/motion'
 import { markSeason, setEpisode } from '../lib/title/server'
+import type { Ticked } from '../lib/title/server'
 import {
   calendarQuery,
   discoverQuery,
@@ -414,7 +422,44 @@ function Home() {
       )
       return
     }
+    offerUndoWith(
+      setAsideMessage(pick.entry.title.title, verdict),
+      () => clearTonightFeedback({ data: { id, tz: viewerTimeZone() } }),
+      () => void loadTonight(),
+    )
     void loadTonight()
+  }
+
+  /** After an Undo on Home: the rows, Tonight, the week and the airings as the server has them. */
+  async function reloadAfterUndo() {
+    void loadTonight()
+    void loadStrip()
+    try {
+      showUpNext(await freshUpNext())
+      setAirings(
+        (
+          await queryClient.query({
+            ...calendarQuery(airingWindow(localDayKey(new Date()))),
+            staleTime: 0,
+          })
+        ).items,
+      )
+    } catch {
+      // The undo landed; the rows catch up on the next visit.
+    }
+  }
+
+  /** The Undo toast after a tick, when the server named the action. */
+  function offerTickUndo(
+    actionId: string | null,
+    name: string,
+    season: number,
+    episode?: number,
+  ) {
+    if (!actionId) return
+    offerUndo(tickedMessage(name, season, episode), actionId, () => {
+      void reloadAfterUndo()
+    })
   }
 
   onMount(async () => {
@@ -547,8 +592,9 @@ function Home() {
       await leave(card)
       void flip(row, step)
     } else step()
+    let ticked: Ticked
     try {
-      await setEpisode({
+      ticked = await setEpisode({
         data: {
           id,
           season: entry.next.season,
@@ -568,6 +614,12 @@ function Home() {
       setBusyFor(id, false)
       return
     }
+    offerTickUndo(
+      ticked.actionId,
+      entry.title.title,
+      entry.next.season,
+      entry.next.number,
+    )
     const match = airings().find(
       (a) =>
         a.libraryItemId === id &&
@@ -593,8 +645,9 @@ function Home() {
     if (busy().has(id)) return
     setBusyFor(id, true)
     setProblem(null)
+    let ticked: Ticked
     try {
-      await markSeason({ data: { id, season } })
+      ticked = await markSeason({ data: { id, season } })
     } catch (err) {
       setProblem(
         err instanceof Error ? err.message : `Season ${season} was not marked.`,
@@ -602,6 +655,7 @@ function Home() {
       setBusyFor(id, false)
       return
     }
+    offerTickUndo(ticked.actionId, entry.title.title, season)
     const now = Date.now()
     setAirings((rows) =>
       rows.map((a) =>

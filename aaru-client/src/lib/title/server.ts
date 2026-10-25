@@ -12,6 +12,17 @@ import { PREVIEW_PROVIDERS } from './preview'
 
 const itemId = z.string().uuid()
 
+/** An episode or season tick: the item after it, and the action Undo takes back (absent from
+ * a server that does not name it yet, so the page simply offers no Undo). */
+export interface Ticked {
+  entry: LibraryEntry
+  actionId: string | null
+}
+
+function tickedAction(response: Response): string | null {
+  return response.headers.get('Aaru-Action')
+}
+
 /** The library item (with its watched episodes) and the title it points at. A title that
  * fails to load comes back as `titleError`, so the page can say so and offer a retry. */
 export const getTitlePage = createServerFn({ method: 'GET' })
@@ -56,7 +67,7 @@ export const setEpisode = createServerFn({ method: 'POST' })
       watched: z.boolean(),
     }),
   )
-  .handler(async ({ data }): Promise<LibraryEntry> => {
+  .handler(async ({ data }): Promise<Ticked> => {
     const {
       data: entry,
       error,
@@ -76,12 +87,12 @@ export const setEpisode = createServerFn({ method: 'POST' })
         errorMessage(error, `S${data.season} E${data.episode} was not saved.`),
       )
     }
-    return entry
+    return { entry, actionId: tickedAction(response) }
   })
 
 export const markSeason = createServerFn({ method: 'POST' })
   .validator(z.object({ id: itemId, season: z.number().int().min(1) }))
-  .handler(async ({ data }): Promise<LibraryEntry> => {
+  .handler(async ({ data }): Promise<Ticked> => {
     const {
       data: entry,
       error,
@@ -95,7 +106,7 @@ export const markSeason = createServerFn({ method: 'POST' })
       throw new Error(
         errorMessage(error, `Season ${data.season} was not marked.`),
       )
-    return entry
+    return { entry, actionId: tickedAction(response) }
   })
 
 /** Ticks every aired episode of a show as one undoable action. An ended show comes back

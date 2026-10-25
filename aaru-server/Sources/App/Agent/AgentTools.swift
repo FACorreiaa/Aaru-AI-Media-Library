@@ -188,12 +188,12 @@ struct AgentTools: Sendable {
             entry = try await library.patch(id, userID: caller.userID, patch: patch, by: agent)
         case let .episodes(id, keys, season, watched):
             if let season {
-                entry = try await library.markSeasonWatched(id, userID: caller.userID, season: season, by: agent)
+                entry = try await library.markSeasonWatched(id, userID: caller.userID, season: season, by: agent).entry
             } else if keys.count == 1 {
                 // A single tick validates the episode, as the route does.
                 entry = try await library.setEpisode(
                     id, userID: caller.userID, key: keys[0], watched: watched, by: agent
-                )
+                ).entry
             } else if let changed = try await library.setEpisodes(
                 id, userID: caller.userID, keys: keys, watched: watched, by: agent
             ) {

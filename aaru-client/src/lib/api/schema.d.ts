@@ -2660,7 +2660,8 @@ export interface paths {
     put?: never
     /** "Not tonight" hides the item until the local day ends; "rejected" (not for me) weighs against it for 14 days. */
     post: operations['sendTonightFeedback']
-    delete?: never
+    /** Takes back today's "Not tonight" or "Not for me" on the item (the Undo after either). Nothing to take back is still 204. */
+    delete: operations['clearTonightFeedback']
     options?: never
     head?: never
     patch?: never
@@ -8358,6 +8359,8 @@ export interface operations {
       /** @description The item with updated progress. */
       200: {
         headers: {
+          /** @description The journaled action this write made, for `POST /v1/actions/{id}/undo`. */
+          'Aaru-Action'?: string
           [name: string]: unknown
         }
         content: {
@@ -8382,6 +8385,8 @@ export interface operations {
       /** @description The item with updated progress. */
       200: {
         headers: {
+          /** @description The journaled action this write made, for `POST /v1/actions/{id}/undo`. */
+          'Aaru-Action'?: string
           [name: string]: unknown
         }
         content: {
@@ -9408,6 +9413,31 @@ export interface operations {
     }
     responses: {
       /** @description Recorded. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  clearTonightFeedback: {
+    parameters: {
+      query?: {
+        /** @description IANA time zone for the local day. Absent means UTC. */
+        tz?: string
+      }
+      header?: never
+      path: {
+        /** @description The library item. */
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Cleared. */
       204: {
         headers: {
           [name: string]: unknown

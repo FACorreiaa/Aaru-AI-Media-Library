@@ -305,6 +305,13 @@ at the bottom: "Marked 62 episodes of Severance · Undo", about six seconds, a s
 iOS, read out by VoiceOver and the web's live region. A running show says "Caught up on 18 aired
 episodes · Undo"; nothing to tick says "Already caught up", with no Undo.
 
+**Home's taps (web, 2026-10-25).** Every write on the Field offers the same toast: a tick on a
+Continue watching card or Tonight ("Marked S1 · E3 of Blue Box · Undo"), Tonight's season tick
+("Marked season 2 of Blue Box"), and Tonight's verdicts, which also say what they do ("Blue Box
+set aside for today", "Blue Box ranked lower for 14 days"). Ticks undo their journaled action
+(the API names it in the `Aaru-Action` header); a verdict is not journaled, and Undo clears it
+(`DELETE /v1/tonight/{id}/feedback`). The Apple apps have not followed yet.
+
 **Mark show watched.** A long press on a show's card (iOS: Library, Home's rows) or its card
 menu on the web (⋯, right-click, long press) offers "Mark show watched"; a film offers "Mark
 watched". It applies at once, with the toast above, never a dialog. Choosing Watched for a show

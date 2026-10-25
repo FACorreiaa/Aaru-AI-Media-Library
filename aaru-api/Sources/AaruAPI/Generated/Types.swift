@@ -919,6 +919,11 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/tonight/{id}/feedback`.
     /// - Remark: Generated from `#/paths//v1/tonight/{id}/feedback/post(sendTonightFeedback)`.
     func sendTonightFeedback(_ input: Operations.SendTonightFeedback.Input) async throws -> Operations.SendTonightFeedback.Output
+    /// Takes back today's "Not tonight" or "Not for me" on the item (the Undo after either). Nothing to take back is still 204.
+    ///
+    /// - Remark: HTTP `DELETE /v1/tonight/{id}/feedback`.
+    /// - Remark: Generated from `#/paths//v1/tonight/{id}/feedback/delete(clearTonightFeedback)`.
+    func clearTonightFeedback(_ input: Operations.ClearTonightFeedback.Input) async throws -> Operations.ClearTonightFeedback.Output
 }
 
 /// Convenience overloads for operation inputs.
@@ -3157,6 +3162,21 @@ extension APIProtocol {
             query: query,
             headers: headers,
             body: body
+        ))
+    }
+    /// Takes back today's "Not tonight" or "Not for me" on the item (the Undo after either). Nothing to take back is still 204.
+    ///
+    /// - Remark: HTTP `DELETE /v1/tonight/{id}/feedback`.
+    /// - Remark: Generated from `#/paths//v1/tonight/{id}/feedback/delete(clearTonightFeedback)`.
+    public func clearTonightFeedback(
+        path: Operations.ClearTonightFeedback.Input.Path,
+        query: Operations.ClearTonightFeedback.Input.Query = .init(),
+        headers: Operations.ClearTonightFeedback.Input.Headers = .init()
+    ) async throws -> Operations.ClearTonightFeedback.Output {
+        try await clearTonightFeedback(Operations.ClearTonightFeedback.Input(
+            path: path,
+            query: query,
+            headers: headers
         ))
     }
 }
@@ -33756,6 +33776,22 @@ public enum Operations {
         }
         @frozen public enum Output: Sendable, Hashable {
             public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/library/items/{id}/episodes/{season}/{episode}/PUT/responses/200/headers`.
+                public struct Headers: Sendable, Hashable {
+                    /// The journaled action this write made, for `POST /v1/actions/{id}/undo`.
+                    ///
+                    /// - Remark: Generated from `#/paths/v1/library/items/{id}/episodes/{season}/{episode}/PUT/responses/200/headers/Aaru-Action`.
+                    public var aaruAction: Swift.String?
+                    /// Creates a new `Headers`.
+                    ///
+                    /// - Parameters:
+                    ///   - aaruAction: The journaled action this write made, for `POST /v1/actions/{id}/undo`.
+                    public init(aaruAction: Swift.String? = nil) {
+                        self.aaruAction = aaruAction
+                    }
+                }
+                /// Received HTTP response headers
+                public var headers: Operations.SetEpisodeWatched.Output.Ok.Headers
                 /// - Remark: Generated from `#/paths/v1/library/items/{id}/episodes/{season}/{episode}/PUT/responses/200/content`.
                 @frozen public enum Body: Sendable, Hashable {
                     /// - Remark: Generated from `#/paths/v1/library/items/{id}/episodes/{season}/{episode}/PUT/responses/200/content/application\/json`.
@@ -33778,8 +33814,13 @@ public enum Operations {
                 /// Creates a new `Ok`.
                 ///
                 /// - Parameters:
+                ///   - headers: Received HTTP response headers
                 ///   - body: Received HTTP response body
-                public init(body: Operations.SetEpisodeWatched.Output.Ok.Body) {
+                public init(
+                    headers: Operations.SetEpisodeWatched.Output.Ok.Headers = .init(),
+                    body: Operations.SetEpisodeWatched.Output.Ok.Body
+                ) {
+                    self.headers = headers
                     self.body = body
                 }
             }
@@ -33910,6 +33951,22 @@ public enum Operations {
         }
         @frozen public enum Output: Sendable, Hashable {
             public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/library/items/{id}/seasons/{season}/watched/POST/responses/200/headers`.
+                public struct Headers: Sendable, Hashable {
+                    /// The journaled action this write made, for `POST /v1/actions/{id}/undo`.
+                    ///
+                    /// - Remark: Generated from `#/paths/v1/library/items/{id}/seasons/{season}/watched/POST/responses/200/headers/Aaru-Action`.
+                    public var aaruAction: Swift.String?
+                    /// Creates a new `Headers`.
+                    ///
+                    /// - Parameters:
+                    ///   - aaruAction: The journaled action this write made, for `POST /v1/actions/{id}/undo`.
+                    public init(aaruAction: Swift.String? = nil) {
+                        self.aaruAction = aaruAction
+                    }
+                }
+                /// Received HTTP response headers
+                public var headers: Operations.MarkSeasonWatched.Output.Ok.Headers
                 /// - Remark: Generated from `#/paths/v1/library/items/{id}/seasons/{season}/watched/POST/responses/200/content`.
                 @frozen public enum Body: Sendable, Hashable {
                     /// - Remark: Generated from `#/paths/v1/library/items/{id}/seasons/{season}/watched/POST/responses/200/content/application\/json`.
@@ -33932,8 +33989,13 @@ public enum Operations {
                 /// Creates a new `Ok`.
                 ///
                 /// - Parameters:
+                ///   - headers: Received HTTP response headers
                 ///   - body: Received HTTP response body
-                public init(body: Operations.MarkSeasonWatched.Output.Ok.Body) {
+                public init(
+                    headers: Operations.MarkSeasonWatched.Output.Ok.Headers = .init(),
+                    body: Operations.MarkSeasonWatched.Output.Ok.Body
+                ) {
+                    self.headers = headers
                     self.body = body
                 }
             }
@@ -40098,6 +40160,157 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/tonight/{id}/feedback/post(sendTonightFeedback)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Takes back today's "Not tonight" or "Not for me" on the item (the Undo after either). Nothing to take back is still 204.
+    ///
+    /// - Remark: HTTP `DELETE /v1/tonight/{id}/feedback`.
+    /// - Remark: Generated from `#/paths//v1/tonight/{id}/feedback/delete(clearTonightFeedback)`.
+    public enum ClearTonightFeedback {
+        public static let id: Swift.String = "clearTonightFeedback"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/tonight/{id}/feedback/DELETE/path`.
+            public struct Path: Sendable, Hashable {
+                /// The library item.
+                ///
+                /// - Remark: Generated from `#/paths/v1/tonight/{id}/feedback/DELETE/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id: The library item.
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.ClearTonightFeedback.Input.Path
+            /// - Remark: Generated from `#/paths/v1/tonight/{id}/feedback/DELETE/query`.
+            public struct Query: Sendable, Hashable {
+                /// IANA time zone for the local day. Absent means UTC.
+                ///
+                /// - Remark: Generated from `#/paths/v1/tonight/{id}/feedback/DELETE/query/tz`.
+                public var tz: Swift.String?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - tz: IANA time zone for the local day. Absent means UTC.
+                public init(tz: Swift.String? = nil) {
+                    self.tz = tz
+                }
+            }
+            public var query: Operations.ClearTonightFeedback.Input.Query
+            /// - Remark: Generated from `#/paths/v1/tonight/{id}/feedback/DELETE/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ClearTonightFeedback.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ClearTonightFeedback.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ClearTonightFeedback.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - query:
+            ///   - headers:
+            public init(
+                path: Operations.ClearTonightFeedback.Input.Path,
+                query: Operations.ClearTonightFeedback.Input.Query = .init(),
+                headers: Operations.ClearTonightFeedback.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Cleared.
+            ///
+            /// - Remark: Generated from `#/paths//v1/tonight/{id}/feedback/delete(clearTonightFeedback)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.ClearTonightFeedback.Output.NoContent)
+            /// Cleared.
+            ///
+            /// - Remark: Generated from `#/paths//v1/tonight/{id}/feedback/delete(clearTonightFeedback)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.ClearTonightFeedback.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/tonight/{id}/feedback/delete(clearTonightFeedback)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

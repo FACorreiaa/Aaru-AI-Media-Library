@@ -19,6 +19,10 @@ extension UntouchedStore: TonightStore {
         throw Touched()
     }
 
+    func clearFeedback(itemID _: LibraryItemID, day _: LocalDay, userID _: UserID) async throws {
+        throw Touched()
+    }
+
     func recordPicks(_: [LibraryItemID], day _: LocalDay, userID _: UserID, servedAt _: Date) async throws -> Bool {
         throw Touched()
     }

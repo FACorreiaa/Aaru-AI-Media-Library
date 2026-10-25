@@ -68,6 +68,8 @@ protocol TonightStore: Sendable {
     func feedback(userID: UserID, since: Date) async throws -> [TonightFeedback]
     /// Nil when the item is not the user's.
     func saveFeedback(_ feedback: TonightFeedback, userID: UserID) async throws -> TonightFeedback?
+    /// Removes the user's verdicts on the item given on `day`: the Undo after one.
+    func clearFeedback(itemID: LibraryItemID, day: LocalDay, userID: UserID) async throws
     /// Records what the strip showed on `day`, the latest showing winning. True when this is the
     /// first time the strip showed anything that day.
     func recordPicks(_ ids: [LibraryItemID], day: LocalDay, userID: UserID, servedAt: Date) async throws -> Bool

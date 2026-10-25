@@ -223,6 +223,30 @@ struct TonightHTTPTests {
         }
     }
 
+    @Test("Undo takes back today's verdict; nothing to take back, or someone else's item, is still 204")
+    func clearFeedback() async throws {
+        try await LibraryHarness.run { env in
+            let first = try await env.add("show", tmdb: stubShow(env, "Severance", aired: 6), status: "in_progress")
+            let second = try await env.add("show", tmdb: stubShow(env, "Andor", aired: 6), status: "in_progress")
+            _ = try await env.send(
+                .post, "/v1/tonight/\(first)/feedback?tz=Europe/Lisbon", json: ["verdict": "not_tonight"]
+            )
+            #expect(try await picks(env).compactMap { $0["libraryItemId"] as? String } == [second])
+
+            // Someone else clearing it changes nothing.
+            let (_, other) = try await signedInUser(env.stores)
+            let foreign = try await env.send(.delete, "/v1/tonight/\(first)/feedback", token: other)
+            #expect(foreign.status == .noContent)
+            #expect(try await picks(env).compactMap { $0["libraryItemId"] as? String } == [second])
+
+            let undo = try await env.send(.delete, "/v1/tonight/\(first)/feedback?tz=Europe/Lisbon")
+            #expect(undo.status == .noContent)
+            #expect(try Set(await picks(env).compactMap { $0["libraryItemId"] as? String }) == [first, second])
+            let again = try await env.send(.delete, "/v1/tonight/\(first)/feedback?tz=Europe/Lisbon")
+            #expect(again.status == .noContent)
+        }
+    }
+
     @Test("an empty library gives an empty strip, never an error")
     func empty() async throws {
         try await LibraryHarness.run { env in
