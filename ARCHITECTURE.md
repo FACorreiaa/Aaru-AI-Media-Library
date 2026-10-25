@@ -259,6 +259,7 @@ GET    /v1/discover                       # DISC-001
 GET    /v1/discover/on-air?region=        # DISC-003
 
 GET    /v1/library/items
+GET    /v1/library/watching           # in-progress films/shows/anime + airing, next episode, time left (APP-018)
 POST   /v1/library/items
 GET    /v1/library/items/{id}
 PATCH  /v1/library/items/{id}
