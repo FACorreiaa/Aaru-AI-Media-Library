@@ -5,10 +5,13 @@ import Foundation
 
 extension AniListCatalog: DiscoverListing {
     var discoverLists: Set<DiscoverList> {
-        [.animeSeason, .animeTrending]
+        [.animeSeason, .animeTrending, .mangaTrending, .mangaPublishing]
     }
 
     func list(_ list: DiscoverList, now: Date) async throws -> [CatalogHit] {
+        if list.kind == .manga {
+            return try await mangaList(list)
+        }
         let filter: String
         switch list {
         case .animeSeason:
@@ -24,6 +27,21 @@ extension AniListCatalog: DiscoverListing {
           Page(perPage: 20) {
             media(type: ANIME, isAdult: false, format_in: [TV, TV_SHORT, ONA, MOVIE], \(filter)) {
               \(Self.mediaFields)
+            }
+          }
+        }
+        """, variables: [:])
+        return body.page.media.map(\.hit)
+    }
+
+    /// DISC-004: what is trending, and the most popular series still publishing. No adult works.
+    private func mangaList(_ list: DiscoverList) async throws -> [CatalogHit] {
+        let sort = list == .mangaTrending ? "TRENDING_DESC" : "POPULARITY_DESC"
+        let body = try await post(SearchData.self, """
+        query {
+          Page(perPage: 20) {
+            media(type: MANGA, isAdult: false, status: RELEASING, sort: \(sort)) {
+              \(Self.fields(.manga))
             }
           }
         }

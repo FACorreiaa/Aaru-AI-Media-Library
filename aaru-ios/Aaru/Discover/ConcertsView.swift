@@ -1,9 +1,9 @@
 import SwiftUI
 
-/// Discover's Concerts view (MUS-003): "Your artists on tour", then concerts near the saved
-/// city or near the viewer once, within 25, 50 or 100 km, as a date-led list or a map of the
-/// searched area. Tickets open Ticketmaster; Aaru sells nothing. On the Mac the radius and the
-/// List/Map switch sit in the toolbar, as Discover's own switch does.
+/// Music's Concerts view (MUS-003, moved from Discover by NAV-002): "Your artists on tour", then
+/// concerts near the saved city or near the viewer once, within 25, 50 or 100 km, as a date-led
+/// list or a map of the searched area. Tickets open Ticketmaster; Aaru sells nothing. On the Mac
+/// the radius and the List/Map switch sit in the toolbar, as Music's own switch does.
 struct ConcertsView: View {
     @Bindable var model: ConcertsModel
 

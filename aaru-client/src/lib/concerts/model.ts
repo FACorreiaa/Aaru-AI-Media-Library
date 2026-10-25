@@ -19,7 +19,7 @@ export type Radius = (typeof RADII)[number]
 export const DEFAULT_RADIUS: Radius = 50
 
 // Discover's view param lives in its own module: route options ship in the entry chunk.
-export { DISCOVER_VIEWS, parseView, shownView } from './view'
+export { DISCOVER_VIEWS, isRetiredConcertsView, parseView } from './view'
 export type { DiscoverView } from './view'
 // How a city is named and searched, apart too: Settings needs only this much.
 export { placeLabel, placeQuery } from './place'

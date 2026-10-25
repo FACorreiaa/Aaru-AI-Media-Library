@@ -95,6 +95,7 @@ export function MusicInsights(props: {
       </div>
       <Link
         to="/app/music"
+        search={{ view: 'listens' }}
         class="mt-2 inline-block text-sm font-semibold text-accent hover:underline"
       >
         All listens ›
