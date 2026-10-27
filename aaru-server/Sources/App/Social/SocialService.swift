@@ -27,6 +27,18 @@ struct SocialService: Sendable {
 
     /// Pending requests a user may have out at once.
     static let maxOutgoingRequests = 50
+    /// SOC-008: handle lookups, friend requests and handle changes a user may make per hour,
+    /// counted apart, so nobody can walk the handle space.
+    static let lookupsPerHour = 60
+    static let requestsPerHour = 30
+    static let handleChangesPerHour = 10
+    /// Static: the service is a value built per use, so an instance limiter would start over.
+    static let lookupLimiter = FixedWindowRateLimiter(limit: lookupsPerHour, window: 60 * 60)
+    static let requestLimiter = FixedWindowRateLimiter(limit: requestsPerHour, window: 60 * 60)
+    static let handleChangeLimiter = FixedWindowRateLimiter(limit: handleChangesPerHour, window: 60 * 60)
+    static let rateLimited = AppError(
+        status: .tooManyRequests, code: "rate_limited", message: "Too many tries. Try again later."
+    )
     static let maxDisplayNameLength = 50
     /// Handles nobody may claim. `aaru` is how a group message tags the agent.
     static let reservedHandles: Set<String> = [
@@ -48,6 +60,11 @@ struct SocialService: Sendable {
     func saveProfile(_ userID: UserID, _ change: ProfileChange) async throws -> UserProfile {
         let handle = try change.handle.map(Self.validHandle)
         guard let saved = try await stores.users.profile(userID) else { throw AppError.unauthorized() }
+        // A change counts before the store says "taken", which would otherwise answer who holds a
+        // handle as fast as anyone asks. Resaving the current handle is free.
+        if let handle, handle != saved.handle {
+            guard await Self.handleChangeLimiter.allow(userID.description, now: now()) else { throw Self.rateLimited }
+        }
         let name = try Self.name(change, saved: saved.name)
         try await stores.social.saveProfile(userID, handle: handle, name: name == saved.name ? nil : name)
         guard let profile = try await stores.users.profile(userID) else { throw AppError.unauthorized() }
@@ -69,7 +86,30 @@ struct SocialService: Sendable {
         return name == saved.displayName ? saved : PersonName(splitting: name)
     }
 
+    /// A friend or yourself costs nothing: the web opens a friend's profile through this lookup on
+    /// every hover. Everything else counts, misses too, and past the budget all of it answers 429,
+    /// so the limit itself tells nobody who exists.
     func lookup(handle: String, viewer: UserID) async throws -> (user: SocialUser, relationship: Relationship) {
+        do {
+            let found = try await resolve(handle: handle, viewer: viewer)
+            if found.relationship != .friend, found.relationship != .self {
+                try await spendLookup(viewer)
+            }
+            return found
+        } catch let miss as AppError where miss.status == .notFound {
+            try await spendLookup(viewer)
+            throw miss
+        }
+    }
+
+    private func spendLookup(_ viewer: UserID) async throws {
+        guard await Self.lookupLimiter.allow(viewer.description, now: now()) else { throw Self.rateLimited }
+    }
+
+    private func resolve(
+        handle: String,
+        viewer: UserID
+    ) async throws -> (user: SocialUser, relationship: Relationship) {
         let handle = handle.trimmingCharacters(in: .whitespaces).lowercased()
         guard let user = try await stores.social.socialUser(handle: handle) else { throw Self.noSuchUser }
         return try await (user, relationship(viewer, user.id))
@@ -81,7 +121,9 @@ struct SocialService: Sendable {
     /// asking a friend or asking twice changes nothing.
     func sendRequest(from viewer: UserID, toHandle handle: String) async throws -> (SocialUser, Relationship) {
         _ = try await requireHandle(viewer)
-        let (target, current) = try await lookup(handle: handle, viewer: viewer)
+        // Every ask counts, no-ops too: walking handles is what the limit stops.
+        guard await Self.requestLimiter.allow(viewer.description, now: now()) else { throw Self.rateLimited }
+        let (target, current) = try await resolve(handle: handle, viewer: viewer)
         switch current {
         case .self:
             throw Self.invalid("handle", "You can't add yourself.")

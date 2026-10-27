@@ -182,4 +182,73 @@ struct SocialTests {
             #expect(try await env.send(.get, "/v1/social/users/\(ana.handle)").status == .notFound)
         }
     }
+
+    @Test("SOC-008: lookups and requests are limited per hour, separately")
+    func rateLimits() async throws {
+        try await LibraryHarness.run { env in
+            _ = try await env.send(.put, "/v1/me/profile", json: ["handle": freshHandle()])
+            let ana = try await friendlyUser(env)
+            for _ in 0 ..< SocialService.lookupsPerHour {
+                #expect(try await env.send(.get, "/v1/social/users/\(freshHandle())").status == .notFound)
+            }
+            let over = try await env.send(.get, "/v1/social/users/\(ana.handle)")
+            #expect(over.status == .tooManyRequests)
+            #expect(try over.json()["code"] as? String == "rate_limited")
+            // A spent lookup budget leaves requests alone.
+            #expect(try await env.send(.post, "/v1/social/friend-requests", json: ["handle": ana.handle]).status
+                == .ok)
+            for _ in 1 ..< SocialService.requestsPerHour {
+                _ = try await env.send(.post, "/v1/social/friend-requests", json: ["handle": freshHandle()])
+            }
+            #expect(try await env.send(.post, "/v1/social/friend-requests", json: ["handle": ana.handle]).status
+                == .tooManyRequests)
+            // Another user is unaffected.
+            #expect(try await env.send(.get, "/v1/social/users/\(ana.handle)", token: ana.token).status == .ok)
+        }
+    }
+
+    @Test("SOC-008: a friend or yourself costs no lookup; spent requests leave lookups alone")
+    func rateLimitsSpareFriends() async throws {
+        try await LibraryHarness.run { env in
+            let mine = freshHandle()
+            _ = try await env.send(.put, "/v1/me/profile", json: ["handle": mine])
+            let ana = try await friendlyUser(env)
+            _ = try await env.send(.post, "/v1/social/friend-requests", json: ["handle": ana.handle])
+            _ = try await env.send(.post, "/v1/social/friend-requests", json: ["handle": mine], token: ana.token)
+            for _ in 1 ..< SocialService.requestsPerHour {
+                _ = try await env.send(.post, "/v1/social/friend-requests", json: ["handle": freshHandle()])
+            }
+            #expect(try await env.send(.post, "/v1/social/friend-requests", json: ["handle": freshHandle()]).status
+                == .tooManyRequests)
+            // A spent request budget leaves lookups alone.
+            let bob = try await friendlyUser(env)
+            #expect(try await env.send(.get, "/v1/social/users/\(bob.handle)").status == .ok)
+            for _ in 1 ..< SocialService.lookupsPerHour {
+                _ = try await env.send(.get, "/v1/social/users/\(freshHandle())")
+            }
+            #expect(try await env.send(.get, "/v1/social/users/\(freshHandle())").status == .tooManyRequests)
+            #expect(try await env.send(.get, "/v1/social/users/\(bob.handle)").status == .tooManyRequests)
+            // Profiles of friends open through this lookup on every hover: those, and yourself, are free.
+            let friend = try await env.send(.get, "/v1/social/users/\(ana.handle)")
+            #expect(friend.status == .ok)
+            #expect(try relationship(friend) == "friend")
+            #expect(try await env.send(.get, "/v1/social/users/\(mine)").status == .ok)
+        }
+    }
+
+    @Test("SOC-008: handle changes are limited per hour; probing a taken one counts; resaving is free")
+    func handleChangeLimit() async throws {
+        try await LibraryHarness.run { env in
+            let taken = try await friendlyUser(env).handle
+            for _ in 0 ..< SocialService.handleChangesPerHour {
+                #expect(try await env.send(.put, "/v1/me/profile", json: ["handle": freshHandle()]).status == .ok)
+            }
+            // "That handle is taken" would say who is on Aaru, so a taken one costs like any change.
+            let probe = try await env.send(.put, "/v1/me/profile", json: ["handle": taken])
+            #expect(probe.status == .tooManyRequests)
+            let current = try #require(try await env.send(.get, "/v1/me").json()["handle"] as? String)
+            #expect(try await env.send(.put, "/v1/me/profile", json: ["handle": current, "displayName": "Ana"]).status
+                == .ok)
+        }
+    }
 }

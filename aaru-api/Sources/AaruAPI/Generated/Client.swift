@@ -969,7 +969,7 @@ public struct Client: APIProtocol {
             }
         )
     }
-    /// Claim or change your handle, and your first and last name (SOC-001b). Handles are how friends find you; others see the two names joined. Every field is optional: one left out keeps its value.
+    /// Claim or change your handle, and your first and last name (SOC-001b). Handles are how friends find you; others see the two names joined. Every field is optional: one left out keeps its value. At most 10 handle changes a user per hour, a taken handle included (429).
     ///
     /// - Remark: HTTP `PUT /v1/me/profile`.
     /// - Remark: Generated from `#/paths//v1/me/profile/put(updateProfile)`.
@@ -1469,7 +1469,7 @@ public struct Client: APIProtocol {
             }
         )
     }
-    /// The user with exactly this handle and where they stand with you. 404 when nobody holds it or either of you blocked the other.
+    /// The user with exactly this handle and where they stand with you. 404 when nobody holds it or either of you blocked the other. A friend or yourself is free; anyone else, misses included, at most 60 a user per hour (429).
     ///
     /// - Remark: HTTP `GET /v1/social/users/{handle}`.
     /// - Remark: Generated from `#/paths//v1/social/users/{handle}/get(getSocialUser)`.
@@ -1625,7 +1625,7 @@ public struct Client: APIProtocol {
             }
         )
     }
-    /// Ask someone to be friends, by handle. If they already asked you, you become friends. Needs your own handle.
+    /// Ask someone to be friends, by handle. If they already asked you, you become friends. Needs your own handle. At most 30 a user per hour (429).
     ///
     /// - Remark: HTTP `POST /v1/social/friend-requests`.
     /// - Remark: Generated from `#/paths//v1/social/friend-requests/post(sendFriendRequest)`.

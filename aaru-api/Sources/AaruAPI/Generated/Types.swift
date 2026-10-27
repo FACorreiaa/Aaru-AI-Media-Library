@@ -71,7 +71,7 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/billing/apple/notifications`.
     /// - Remark: Generated from `#/paths//v1/billing/apple/notifications/post(receiveAppleNotification)`.
     func receiveAppleNotification(_ input: Operations.ReceiveAppleNotification.Input) async throws -> Operations.ReceiveAppleNotification.Output
-    /// Claim or change your handle, and your first and last name (SOC-001b). Handles are how friends find you; others see the two names joined. Every field is optional: one left out keeps its value.
+    /// Claim or change your handle, and your first and last name (SOC-001b). Handles are how friends find you; others see the two names joined. Every field is optional: one left out keeps its value. At most 10 handle changes a user per hour, a taken handle included (429).
     ///
     /// - Remark: HTTP `PUT /v1/me/profile`.
     /// - Remark: Generated from `#/paths//v1/me/profile/put(updateProfile)`.
@@ -101,7 +101,7 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `PUT /v1/me/favorites/{kind}`.
     /// - Remark: Generated from `#/paths//v1/me/favorites/{kind}/put(setMyFavorites)`.
     func setMyFavorites(_ input: Operations.SetMyFavorites.Input) async throws -> Operations.SetMyFavorites.Output
-    /// The user with exactly this handle and where they stand with you. 404 when nobody holds it or either of you blocked the other.
+    /// The user with exactly this handle and where they stand with you. 404 when nobody holds it or either of you blocked the other. A friend or yourself is free; anyone else, misses included, at most 60 a user per hour (429).
     ///
     /// - Remark: HTTP `GET /v1/social/users/{handle}`.
     /// - Remark: Generated from `#/paths//v1/social/users/{handle}/get(getSocialUser)`.
@@ -111,7 +111,7 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /v1/social/friend-requests`.
     /// - Remark: Generated from `#/paths//v1/social/friend-requests/get(listFriendRequests)`.
     func listFriendRequests(_ input: Operations.ListFriendRequests.Input) async throws -> Operations.ListFriendRequests.Output
-    /// Ask someone to be friends, by handle. If they already asked you, you become friends. Needs your own handle.
+    /// Ask someone to be friends, by handle. If they already asked you, you become friends. Needs your own handle. At most 30 a user per hour (429).
     ///
     /// - Remark: HTTP `POST /v1/social/friend-requests`.
     /// - Remark: Generated from `#/paths//v1/social/friend-requests/post(sendFriendRequest)`.
@@ -1084,7 +1084,7 @@ extension APIProtocol {
             body: body
         ))
     }
-    /// Claim or change your handle, and your first and last name (SOC-001b). Handles are how friends find you; others see the two names joined. Every field is optional: one left out keeps its value.
+    /// Claim or change your handle, and your first and last name (SOC-001b). Handles are how friends find you; others see the two names joined. Every field is optional: one left out keeps its value. At most 10 handle changes a user per hour, a taken handle included (429).
     ///
     /// - Remark: HTTP `PUT /v1/me/profile`.
     /// - Remark: Generated from `#/paths//v1/me/profile/put(updateProfile)`.
@@ -1154,7 +1154,7 @@ extension APIProtocol {
             body: body
         ))
     }
-    /// The user with exactly this handle and where they stand with you. 404 when nobody holds it or either of you blocked the other.
+    /// The user with exactly this handle and where they stand with you. 404 when nobody holds it or either of you blocked the other. A friend or yourself is free; anyone else, misses included, at most 60 a user per hour (429).
     ///
     /// - Remark: HTTP `GET /v1/social/users/{handle}`.
     /// - Remark: Generated from `#/paths//v1/social/users/{handle}/get(getSocialUser)`.
@@ -1174,7 +1174,7 @@ extension APIProtocol {
     public func listFriendRequests(headers: Operations.ListFriendRequests.Input.Headers = .init()) async throws -> Operations.ListFriendRequests.Output {
         try await listFriendRequests(Operations.ListFriendRequests.Input(headers: headers))
     }
-    /// Ask someone to be friends, by handle. If they already asked you, you become friends. Needs your own handle.
+    /// Ask someone to be friends, by handle. If they already asked you, you become friends. Needs your own handle. At most 30 a user per hour (429).
     ///
     /// - Remark: HTTP `POST /v1/social/friend-requests`.
     /// - Remark: Generated from `#/paths//v1/social/friend-requests/post(sendFriendRequest)`.
@@ -14890,7 +14890,7 @@ public enum Operations {
             }
         }
     }
-    /// Claim or change your handle, and your first and last name (SOC-001b). Handles are how friends find you; others see the two names joined. Every field is optional: one left out keeps its value.
+    /// Claim or change your handle, and your first and last name (SOC-001b). Handles are how friends find you; others see the two names joined. Every field is optional: one left out keeps its value. At most 10 handle changes a user per hour, a taken handle included (429).
     ///
     /// - Remark: HTTP `PUT /v1/me/profile`.
     /// - Remark: Generated from `#/paths//v1/me/profile/put(updateProfile)`.
@@ -15755,7 +15755,7 @@ public enum Operations {
             }
         }
     }
-    /// The user with exactly this handle and where they stand with you. 404 when nobody holds it or either of you blocked the other.
+    /// The user with exactly this handle and where they stand with you. 404 when nobody holds it or either of you blocked the other. A friend or yourself is free; anyone else, misses included, at most 60 a user per hour (429).
     ///
     /// - Remark: HTTP `GET /v1/social/users/{handle}`.
     /// - Remark: Generated from `#/paths//v1/social/users/{handle}/get(getSocialUser)`.
@@ -16031,7 +16031,7 @@ public enum Operations {
             }
         }
     }
-    /// Ask someone to be friends, by handle. If they already asked you, you become friends. Needs your own handle.
+    /// Ask someone to be friends, by handle. If they already asked you, you become friends. Needs your own handle. At most 30 a user per hour (429).
     ///
     /// - Remark: HTTP `POST /v1/social/friend-requests`.
     /// - Remark: Generated from `#/paths//v1/social/friend-requests/post(sendFriendRequest)`.
