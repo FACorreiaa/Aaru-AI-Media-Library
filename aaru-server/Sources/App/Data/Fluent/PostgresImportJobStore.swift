@@ -21,14 +21,18 @@ struct PostgresImportJobStore: ImportJobStore {
         var rowsTotal: Int?
         var rowsMatched: Int?
         var actionId: UUID?
+        var listensStaged: Int?
 
         var job: ImportJob? {
             guard let source = ImportSource(rawValue: source), let state = ImportJobState(rawValue: state)
             else { return nil }
+            // A listening import's plays leave staging when applied (MUS-004); its counts stay.
+            let total = source.isListens
+                ? max(listensStaged ?? 0, stats.created + stats.skipped) : rowsTotal ?? 0
             return ImportJob(
                 id: ImportJobID(id), userID: UserID(userId), source: source, state: state, stats: stats,
                 errorSummary: errorSummary, filename: filename, createdAt: createdAt, updatedAt: updatedAt,
-                rowsTotal: rowsTotal ?? 0, rowsMatched: rowsMatched ?? 0, actionID: actionId
+                rowsTotal: total, rowsMatched: rowsMatched ?? 0, actionID: actionId
             )
         }
     }
@@ -36,7 +40,8 @@ struct PostgresImportJobStore: ImportJobStore {
     private static let columns: SQLQueryString = """
     id, user_id, source, state, stats, error_summary, filename, created_at, updated_at, attempts, rows_matched,
     action_id,
-    (SELECT count(*)::integer FROM import_rows r WHERE r.job_id = import_jobs.id) AS rows_total
+    (SELECT count(*)::integer FROM import_rows r WHERE r.job_id = import_jobs.id) AS rows_total,
+    (SELECT count(*)::integer FROM import_listens l WHERE l.job_id = import_jobs.id) AS listens_staged
     """
     /// Rows per INSERT: well under Postgres's 65,535 bind parameters at three per row.
     private static let insertChunk = 500

@@ -8,7 +8,9 @@ import { offerUndo } from '../components/undo-toast'
 import {
   appliedMessage,
   importSteps,
+  isListens,
   isWorking,
+  listensAppliedMessage,
   sourceLabel,
   stateLabel,
 } from '../lib/imports/model'
@@ -19,12 +21,14 @@ import {
   getImport,
   listImports,
 } from '../lib/imports/server'
+import { undoListenImport } from '../lib/imports/listens-server'
 import type { ImportDetail, ImportRow } from '../lib/imports/server'
 import { captureHeadline } from '../lib/capture/model'
 
 // APP-007 on the web: one import. A ledger of steps while it is matched (IMP-017), then the
 // plan to approve. An unmatched row can be matched by hand, before or after approval (IMP-011).
 // A capture (AG-006) is reviewed here too, as a plan card: it came from Home and goes back there.
+// A listening history (MUS-004) has no rows: its counts, then Add, then Undo here.
 export const Route = createFileRoute('/_shell/app_/imports/$id')({
   loader: ({ params }) => getImport({ data: { id: params.id } }),
   // UX-013: the tab names the import.
@@ -56,6 +60,8 @@ function ImportPage() {
   const shownRow = lastShown(finding)
   const job = () => detail().job
   const capture = () => job().source === 'capture'
+  const listens = () => isListens(job())
+  const [notice, setNotice] = createSignal<string | null>(null)
   const home = () => (capture() ? '/app' : '/app/settings/import')
   const planned = () => job().state === 'planned'
   const resolvable = () =>
@@ -85,6 +91,7 @@ function ImportPage() {
     try {
       const applied = await applyImport({ data: { id: job().id } })
       setDetail(await getImport({ data: { id: job().id } }))
+      if (listens()) setNotice(listensAppliedMessage(applied.stats))
       // The whole import is one action, so the toast offers Undo.
       if (applied.actionId) {
         offerUndo(appliedMessage(applied.stats), applied.actionId, () => {
@@ -110,6 +117,18 @@ function ImportPage() {
         error instanceof Error
           ? error.message
           : 'The import was not discarded.',
+      )
+    }
+  }
+
+  async function undoListens() {
+    setProblem(null)
+    try {
+      await undoListenImport({ data: { id: job().id } })
+      await navigate({ to: home() })
+    } catch (error) {
+      setProblem(
+        error instanceof Error ? error.message : 'The import was not undone.',
       )
     }
   }
@@ -160,7 +179,8 @@ function ImportPage() {
             {capture()
               ? 'on Home under Waiting for you'
               : 'under Settings → Import'}
-            , and nothing reaches your library until you approve it.
+            , and nothing reaches your {listens() ? 'Music log' : 'library'}{' '}
+            until you approve it.
           </p>
           <Show when={job().state === 'queued'}>
             <Button
@@ -190,7 +210,71 @@ function ImportPage() {
           )}
         </Show>
 
-        <Show when={!isWorking(job()) && job().state !== 'failed'}>
+        <Show when={notice()}>
+          {(message) => (
+            <p role="status" class="mt-3 text-sm">
+              {message()}
+            </p>
+          )}
+        </Show>
+
+        <Show when={listens() && !isWorking(job()) && job().state !== 'failed'}>
+          <div class="mt-6 grid max-w-[56rem] grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-3">
+            {stat(planned() ? 'New listens' : 'Added', job().stats.created)}
+            {stat('Already in your log', job().stats.skipped)}
+            {stat('Left out', job().stats.ignored ?? 0)}
+          </div>
+          <Show when={planned()}>
+            <div class="mt-6 flex flex-wrap items-center gap-3">
+              <Button
+                variant="default"
+                size="lg"
+                disabled={applying() || job().stats.created === 0}
+                onClick={apply}
+              >
+                {applying()
+                  ? 'Adding…'
+                  : `Add ${count.format(job().stats.created)} listens`}
+              </Button>
+              <Button
+                variant="ghost"
+                size="bare"
+                onClick={discard}
+                class="min-h-9 text-sm hover:text-danger"
+              >
+                Discard
+              </Button>
+              <span class="text-sm text-muted">
+                Each listen counts on the day you played it. Left out: podcasts,
+                plays under 30 s and videos that are not music.
+              </span>
+            </div>
+          </Show>
+          <Show when={job().state === 'succeeded'}>
+            <p class="mt-6 text-sm text-muted">
+              These listens are in your{' '}
+              <Link
+                to="/app/music"
+                class="font-medium text-accent hover:underline"
+              >
+                Music
+              </Link>{' '}
+              log.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              class="mt-3"
+              onClick={undoListens}
+            >
+              Undo this import
+            </Button>
+          </Show>
+        </Show>
+
+        <Show
+          when={!listens() && !isWorking(job()) && job().state !== 'failed'}
+        >
           <div class="mt-6 grid max-w-[56rem] grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-3">
             {stat(
               planned() ? 'New in your library' : 'Added',
@@ -202,7 +286,7 @@ function ImportPage() {
           </div>
         </Show>
 
-        <Show when={planned()}>
+        <Show when={!listens() && planned()}>
           <div class="mt-6 flex flex-wrap items-center gap-3">
             <Button
               variant="default"
@@ -230,7 +314,12 @@ function ImportPage() {
           </div>
         </Show>
         {/* UX-060: an applied import is one action in History, undone from there. */}
-        <Show when={job().state === 'succeeded' || job().state === 'partial'}>
+        <Show
+          when={
+            !listens() &&
+            (job().state === 'succeeded' || job().state === 'partial')
+          }
+        >
           <p class="mt-6 text-sm text-muted">
             This import is one action in your history.{' '}
             <Link

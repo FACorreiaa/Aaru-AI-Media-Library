@@ -64,15 +64,30 @@ const SOURCE_LABELS: Record<ImportJob['source'], string> = {
   anilist: 'AniList',
   csv: 'CSV',
   capture: 'Capture',
+  lastfm: 'Last.fm',
+  listenbrainz: 'ListenBrainz',
+  spotify_json: 'Spotify',
+  youtube_takeout: 'YouTube',
 }
 
 export const sourceLabel = (job: ImportJob) => SOURCE_LABELS[job.source]
+
+const LISTEN_SOURCES: ReadonlyArray<ImportJob['source']> = [
+  'lastfm',
+  'listenbrainz',
+  'spotify_json',
+  'youtube_takeout',
+]
+
+/** MUS-004: an import of past listening, applied to the listening log and undone by itself. */
+export const isListens = (job: ImportJob) => LISTEN_SOURCES.includes(job.source)
 
 export function stateLabel(job: ImportJob): string {
   switch (job.state) {
     case 'queued':
       return job.errorSummary ? 'Paused, retrying soon' : 'In line'
     case 'running': {
+      if (isListens(job)) return 'Reading listens…'
       const share = progressShare(job)
       return share === null
         ? 'Matching titles…'
@@ -107,11 +122,17 @@ export interface ImportStep {
 const count = (n: number) => n.toLocaleString('en')
 
 /** Sources whose rows the worker reads from an account, not from an upload. */
-const READ_BY_WORKER: ReadonlyArray<ImportJob['source']> = ['trakt', 'anilist']
+const READ_BY_WORKER: ReadonlyArray<ImportJob['source']> = [
+  'trakt',
+  'anilist',
+  'lastfm',
+  'listenbrainz',
+]
 
 /** The steps of a queued or running import, in order; empty once it has a plan or an end. */
 export function importSteps(job: ImportJob): ImportStep[] {
   if (!isWorking(job)) return []
+  if (isListens(job)) return listenSteps(job)
   const source = sourceLabel(job)
   const running = job.state === 'running'
   const known = job.rowsTotal > 0
@@ -161,6 +182,43 @@ export function importSteps(job: ImportJob): ImportStep[] {
   ]
 }
 
+/** A listening import's steps: the plays are read, then checked against the log (MUS-004). */
+function listenSteps(job: ImportJob): ImportStep[] {
+  const running = job.state === 'running'
+  const fromAccount = READ_BY_WORKER.includes(job.source)
+  // An account is read page by page while running; the count grows as it goes.
+  const reading = fromAccount && running
+  const read = job.rowsTotal
+  const plays = `${count(read)} ${read === 1 ? 'play' : 'plays'}`
+  return [
+    {
+      label: fromAccount
+        ? `Read your ${sourceLabel(job)} listens`
+        : 'Read your file',
+      detail: read > 0 ? (reading ? `${plays} so far` : plays) : undefined,
+      state: reading ? 'current' : fromAccount && !running ? 'todo' : 'done',
+    },
+    {
+      label: 'Wait for a free slot',
+      detail: running
+        ? undefined
+        : job.errorSummary
+          ? `Paused: ${job.errorSummary} Trying again shortly; nothing is lost.`
+          : 'Starts in a few seconds.',
+      state: running ? 'done' : 'current',
+    },
+    {
+      label: 'Check against your listening log',
+      state: running && !reading ? 'current' : 'todo',
+    },
+    {
+      label: 'Ready for you to review',
+      detail: 'Nothing is added until you approve.',
+      state: 'todo',
+    },
+  ]
+}
+
 /** Still changing on the server: the page polls until it is not. */
 export const isWorking = (job: ImportJob) =>
   job.state === 'queued' || job.state === 'running'
@@ -189,6 +247,13 @@ export function traktResult(
     default:
       return null
   }
+}
+
+/** After a listening import is applied: "Added 1,204 listens". */
+export function listensAppliedMessage(stats: ImportJob['stats']): string {
+  return stats.created === 1
+    ? 'Added 1 listen'
+    : `Added ${count(stats.created)} listens`
 }
 
 /** The toast after an import is applied: "Imported 12 titles", "Imported 12 titles · filled in 3". */

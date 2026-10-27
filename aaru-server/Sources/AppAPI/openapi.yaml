@@ -2611,11 +2611,15 @@ paths:
           required: true
           schema:
             type: string
-            enum: [auto, imdb, letterboxd, netflix, tvtime, goodreads, mal, csv]
+            enum: [auto, imdb, letterboxd, netflix, tvtime, goodreads, mal, csv, spotify, youtube]
           description: >-
             `auto` detects the format: MyAnimeList-format XML, anime or manga (also exported by Kitsu and AniList),
             an IMDb, Letterboxd, Netflix viewing activity, TV Time or Goodreads CSV, or any other CSV
-            read by its column names (`csv`). `tvtime` takes one CSV from TV Time's export at a time:
+            read by its column names (`csv`); for an `application/octet-stream` body, Spotify's extended streaming history
+            or Google Takeout's YouTube watch history. `spotify` and `youtube` are listening history
+            (MUS-004): their plays go to the listening log, never the library, and the job's stats
+            count new listens (`created`), listens already in the log (`skipped`) and plays left out
+            (`ignored`). `tvtime` takes one CSV from TV Time's export at a time:
             `tvtime-series-episodes.csv`, `tvtime-series.csv` or `tvtime-movies.csv` (Export my
             data), or `tracking-prod-records-v2.csv`, `tracking-prod-records.csv`,
             `followed_tv_show.csv` or `seen_episode.csv` (GDPR export).
@@ -2631,6 +2635,10 @@ paths:
             schema: {type: string, format: binary}
           # MyAnimeList's list export, decompressed (source=mal).
           application/xml:
+            schema: {type: string, format: binary}
+          # Listening history (source=spotify, youtube or auto): one Streaming_History_Audio_*.json, or
+          # Takeout's watch-history.json, sent as its bytes. Up to 24 MB; other files up to 5 MB.
+          application/octet-stream:
             schema: {type: string, format: binary}
       responses:
         '202':
@@ -2734,6 +2742,46 @@ paths:
               required: [username]
               properties:
                 username: {type: string, description: "AniList username: 2–20 letters, digits or underscores."}
+      responses:
+        '202':
+          description: Queued.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ImportJob'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/imports/lastfm:
+    post:
+      operationId: createLastFMImport
+      summary: >-
+        Import a Last.fm account's scrobbles by username (MUS-004). Read in the background into the listening
+        log, written only after approval. A second import of the same account reads only what came after the
+        last one. 503 `lastfm_unavailable` when the server has no Last.fm key.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ListenAccount'}
+      responses:
+        '202':
+          description: Queued.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ImportJob'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/imports/listenbrainz:
+    post:
+      operationId: createListenBrainzImport
+      summary: >-
+        Import a ListenBrainz account's listens by username (MUS-004). Read in the background into the
+        listening log, written only after approval. A second import of the same account reads only what came
+        after the last one.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ListenAccount'}
       responses:
         '202':
           description: Queued.
@@ -2911,6 +2959,20 @@ paths:
           content:
             application/json:
               schema: {$ref: '#/components/schemas/ImportJob'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/imports/{id}/undo:
+    post:
+      operationId: undoListenImport
+      summary: >-
+        Undo an applied listening-history import (MUS-004): deletes the listens it wrote and the import.
+        409 `import_not_listens` for a library import (undo its action instead), 409 `import_not_applied`
+        before it is applied (delete it instead).
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '204':
+          description: Undone.
         default:
           $ref: '#/components/responses/Error'
   /v1/imports/{id}/rows/{index}/resolve:
@@ -3448,7 +3510,10 @@ components:
         id: {type: string, format: uuid}
         source:
           type: string
-          enum: [trakt, stremio, imdb_csv, letterboxd_csv, goodreads_csv, cat_list, cat_ics, netflix_csv, tvtime_csv, mal_xml, anilist, csv, capture]
+          enum: [trakt, stremio, imdb_csv, letterboxd_csv, goodreads_csv, cat_list, cat_ics, netflix_csv, tvtime_csv, mal_xml, anilist, csv, capture, lastfm, listenbrainz, spotify_json, youtube_takeout]
+          description: >-
+            `lastfm`, `listenbrainz`, `spotify_json` and `youtube_takeout` are listening history (MUS-004):
+            they have no rows, are applied into the listening log, and undo with POST /v1/imports/{id}/undo.
         state:
           type: string
           enum: [queued, running, planned, succeeded, failed, partial]
@@ -3457,14 +3522,15 @@ components:
         errorSummary: {type: string}
         filename:
           type: string
-          description: The uploaded file's name, or the AniList username for an `anilist` import.
+          description: >-
+            The uploaded file's name, or the username for an `anilist`, `lastfm` or `listenbrainz` import.
         createdAt: {type: string, format: date-time}
         updatedAt: {type: string, format: date-time}
         rowsTotal:
           type: integer
           description: >-
-            Rows read from the file or provider. 0 for a Trakt or AniList import until the worker
-            has read the account.
+            Rows read from the file or provider. 0 for a Trakt, AniList, Last.fm or ListenBrainz import
+            until the worker has read the account. For listening history, the plays read that are music.
         rowsMatched:
           type: integer
           description: >-
@@ -3484,6 +3550,16 @@ components:
         updated: {type: integer}
         skipped: {type: integer}
         unmatched: {type: integer}
+        ignored:
+          type: integer
+          description: >-
+            Listening history only (MUS-004): plays left out by rule (podcasts, plays under 30 s, videos that are
+            not music).
+    ListenAccount:
+      type: object
+      required: [username]
+      properties:
+        username: {type: string, description: "The account's username, 1–64 characters."}
     ImportList:
       type: object
       required: [items]

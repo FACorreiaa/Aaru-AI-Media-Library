@@ -1,6 +1,6 @@
 # Privacy policy
 
-_Last updated 21 October 2026._
+_Last updated 27 October 2026._
 
 Aaru is a private media library: what you watch and read, kept for you. This page says what
 Aaru stores, who else sees any of it, and how to delete it. If anything here stops matching
@@ -39,6 +39,17 @@ keeps the rows it found with that import so you can review the plan before anyth
 The uploaded file itself is not kept. If you connect Trakt, Aaru stores Trakt's access tokens
 encrypted and uses them only to import your history when you ask; disconnecting revokes them on
 Trakt and deletes them here. Aaru uses Trakt but is not endorsed or certified by Trakt.
+
+**Your listening.** If you connect a music scrobbler, Aaru keeps each track it reports you
+played: the artist, track and album, its length, any ids the scrobbler sends, when you played it,
+and which scrobbler and service it came from. You can also import your past listening: from
+Last.fm or ListenBrainz by your username (their public listening history), or from a Spotify
+extended streaming history or a YouTube Takeout watch history file. From a Spotify file Aaru
+reads only the track, artist, album, when it played and for how long; it never reads the IP
+address or country in it. From a YouTube file it reads only music: YouTube Music plays and
+videos from an artist's own music channel. The file itself is not kept. Imported listens count
+on the day you played them, in your Insights and Recap, and each import can be undone, which
+deletes the listens it added. Friends never see your listens.
 
 **MyAnimeList.** If you connect MyAnimeList, Aaru stores its access tokens encrypted. From then
 on, when an anime changes in your Aaru library, Aaru sends its status, watched episodes and score
@@ -194,6 +205,8 @@ Aaru only uses these services, and only for the purpose listed:
   (Cinemeta) for a show's episode list by its IMDb id, never who you are.
 - **TMDB, TVmaze, AniList, Open Library, MusicBrainz and ListenBrainz** provide catalog data.
   Aaru's server sends them what you search for and catalog ids, never who you are.
+- **Last.fm and ListenBrainz**, only if you import your listening from them. Aaru's server sends
+  the username you type and reads that account's public listening history.
 - **JustWatch**, through TMDB, says where a show streams in your country on Discover's On air
   view. Your app reads the country from your device's language settings and sends it with that
   request only. Aaru never stores it, and TMDB and JustWatch never receive it: the server

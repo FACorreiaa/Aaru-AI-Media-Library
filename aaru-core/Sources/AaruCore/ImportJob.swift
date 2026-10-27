@@ -28,10 +28,25 @@ public enum ImportSource: String, Codable, Hashable, Sendable, CaseIterable {
     /// merge order: the user asks for it, and it never reconciles a connected source. Last, so it
     /// never outranks one.
     case capture
+    /// Past listening (MUS-004): a Last.fm or ListenBrainz account by username, a Spotify extended
+    /// streaming history file, or Google Takeout's YouTube watch history. These fill the listening
+    /// log, never the library, so they are in no merge order.
+    case lastFM = "lastfm"
+    case listenBrainz = "listenbrainz"
+    case spotifyJSON = "spotify_json"
+    case youTubeTakeout = "youtube_takeout"
 
     /// Position in the merge order, lowest first.
     public var mergeRank: Int {
         ImportSource.allCases.firstIndex(of: self) ?? ImportSource.allCases.count
+    }
+
+    /// Whether the import brings listens (MUS-004) rather than library rows.
+    public var isListens: Bool {
+        switch self {
+        case .lastFM, .listenBrainz, .spotifyJSON, .youTubeTakeout: true
+        default: false
+        }
     }
 }
 
@@ -55,17 +70,33 @@ public enum ImportJobState: String, Codable, Hashable, Sendable, CaseIterable {
 }
 
 /// What an import run did. Unmatched rows are counted, never silently dropped.
+///
+/// A listening import (MUS-004) counts new listens as `created`, listens already in the log as
+/// `skipped`, and plays it left out by rule (podcasts, plays under 30 s, videos that are not
+/// music) as `ignored`.
 public struct ImportStats: Codable, Hashable, Sendable {
     public var created: Int
     public var updated: Int
     public var skipped: Int
     public var unmatched: Int
+    public var ignored: Int
 
-    public init(created: Int = 0, updated: Int = 0, skipped: Int = 0, unmatched: Int = 0) {
+    public init(created: Int = 0, updated: Int = 0, skipped: Int = 0, unmatched: Int = 0, ignored: Int = 0) {
         self.created = created
         self.updated = updated
         self.skipped = skipped
         self.unmatched = unmatched
+        self.ignored = ignored
+    }
+
+    /// Stats stored before `ignored` existed decode with none.
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        created = try container.decode(Int.self, forKey: .created)
+        updated = try container.decode(Int.self, forKey: .updated)
+        skipped = try container.decode(Int.self, forKey: .skipped)
+        unmatched = try container.decode(Int.self, forKey: .unmatched)
+        ignored = try container.decodeIfPresent(Int.self, forKey: .ignored) ?? 0
     }
 
     public var total: Int {
@@ -73,7 +104,7 @@ public struct ImportStats: Codable, Hashable, Sendable {
     }
 }
 
-/// One run of a Trakt, CSV, or CAT ingest.
+/// One run of a Trakt, CSV, or CAT ingest, or of a listening-history import (MUS-004).
 ///
 /// Imports are one-way into Aaru. Re-running an import updates in place via
 /// `(userID, titleID)`; it does not duplicate items.

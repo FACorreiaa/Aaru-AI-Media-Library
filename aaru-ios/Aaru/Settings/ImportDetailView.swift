@@ -76,11 +76,14 @@ struct ImportDetailView: View {
                     } footer: {
                         Text(
                             "You can leave: the plan waits \(job.isCapture ? "on Home" : "under Settings → Import"), "
-                                + "and nothing reaches your library until you approve it."
+                                + "and nothing reaches your \(job.isListens ? "Music log" : "library") until you "
+                                + "approve it."
                         )
                     }
                 }
-                if !job.isWorking, job.state != .failed {
+                if job.isListens {
+                    listenSections(job)
+                } else if !job.isWorking, job.state != .failed {
                     Section(job.state == .planned ? "The plan" : "Result") {
                         LabeledContent(
                             job.state == .planned ? "New in your library" : "Added",
@@ -91,7 +94,7 @@ struct ImportDetailView: View {
                         LabeledContent("Not matched", value: "\(job.stats.unmatched)")
                     }
                 }
-                if job.state == .planned {
+                if job.state == .planned, !job.isListens {
                     Section {
                         Button(applying ? "Adding…" : job.isCapture ? "Approve" : "Approve and import") {
                             Task { await apply() }
@@ -102,7 +105,7 @@ struct ImportDetailView: View {
                         Text("One step to undo: it lands in History, in Your data, as a single action.")
                     }
                 }
-                if job.state == .succeeded || job.state == .partial {
+                if job.state == .succeeded || job.state == .partial, !job.isListens {
                     Section {
                         Button("See it in History", systemImage: "clock.arrow.circlepath") { router.openHistory() }
                     } footer: {
@@ -248,6 +251,11 @@ struct ImportDetailView: View {
         defer { applying = false }
         guard let applied = await imports.apply(id) else { return }
         detail = await imports.detail(id)
+        if applied.isListens {
+            let added = applied.stats.created
+            toasts?.show(added == 1 ? "Added 1 listen" : "Added \(added.formatted()) listens")
+            return
+        }
         await onApplied()
         guard let actionID = applied.actionId, let api else { return }
         toasts?.show(Self.appliedMessage(applied.stats)) {
@@ -264,6 +272,47 @@ struct ImportDetailView: View {
     static func appliedMessage(_ stats: Components.Schemas.ImportStats) -> String {
         let added = stats.created == 1 ? "Imported 1 title" : "Imported \(stats.created) titles"
         return stats.updated > 0 ? "\(added) · filled in \(stats.updated)" : added
+    }
+}
+
+extension ImportDetailView {
+    /// A listening import (MUS-004): its counts, then Add, then Undo. It has no rows.
+    @ViewBuilder
+    private func listenSections(_ job: ImportJob) -> some View {
+        if !job.isWorking, job.state != .failed {
+            Section(job.state == .planned ? "The plan" : "Result") {
+                LabeledContent(job.state == .planned ? "New listens" : "Added", value: job.stats.created.formatted())
+                LabeledContent("Already in your log", value: job.stats.skipped.formatted())
+                LabeledContent("Left out", value: (job.stats.ignored ?? 0).formatted())
+            }
+        }
+        if job.state == .planned {
+            Section {
+                Button(applying ? "Adding…" : "Add \(job.stats.created.formatted()) listens") {
+                    Task { await apply() }
+                }
+                .disabled(applying || job.stats.created == 0)
+                Button("Discard", role: .destructive) { confirmsDiscard = true }
+            } footer: {
+                Text(
+                    "Each listen counts on the day you played it. Left out: podcasts, plays under 30 s and "
+                        + "videos that are not music."
+                )
+            }
+        }
+        if job.state == .succeeded {
+            Section {
+                Button("Undo this import", role: .destructive) {
+                    Task {
+                        if await imports.undoListens(id) {
+                            dismiss()
+                        }
+                    }
+                }
+            } footer: {
+                Text("These listens are in your Music log. Undo removes them all in one step.")
+            }
+        }
     }
 }
 

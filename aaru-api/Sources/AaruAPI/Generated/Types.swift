@@ -816,6 +816,16 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/imports/anilist`.
     /// - Remark: Generated from `#/paths//v1/imports/anilist/post(createAniListImport)`.
     func createAniListImport(_ input: Operations.CreateAniListImport.Input) async throws -> Operations.CreateAniListImport.Output
+    /// Import a Last.fm account's scrobbles by username (MUS-004). Read in the background into the listening log, written only after approval. A second import of the same account reads only what came after the last one. 503 `lastfm_unavailable` when the server has no Last.fm key.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/lastfm`.
+    /// - Remark: Generated from `#/paths//v1/imports/lastfm/post(createLastFMImport)`.
+    func createLastFMImport(_ input: Operations.CreateLastFMImport.Input) async throws -> Operations.CreateLastFMImport.Output
+    /// Import a ListenBrainz account's listens by username (MUS-004). Read in the background into the listening log, written only after approval. A second import of the same account reads only what came after the last one.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/listenbrainz`.
+    /// - Remark: Generated from `#/paths//v1/imports/listenbrainz/post(createListenBrainzImport)`.
+    func createListenBrainzImport(_ input: Operations.CreateListenBrainzImport.Input) async throws -> Operations.CreateListenBrainzImport.Output
     /// Start a Stremio history import. Show the user `link` (or `qrcode`) to approve on stremio.com, then poll POST /v1/imports/stremio/link/{code}. No password reaches Aaru; the session the code opens is used for one library read, then logged out.
     ///
     /// - Remark: HTTP `POST /v1/imports/stremio/link`.
@@ -877,6 +887,11 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/imports/{id}/apply`.
     /// - Remark: Generated from `#/paths//v1/imports/{id}/apply/post(applyImport)`.
     func applyImport(_ input: Operations.ApplyImport.Input) async throws -> Operations.ApplyImport.Output
+    /// Undo an applied listening-history import (MUS-004): deletes the listens it wrote and the import. 409 `import_not_listens` for a library import (undo its action instead), 409 `import_not_applied` before it is applied (delete it instead).
+    ///
+    /// - Remark: HTTP `POST /v1/imports/{id}/undo`.
+    /// - Remark: Generated from `#/paths//v1/imports/{id}/undo/post(undoListenImport)`.
+    func undoListenImport(_ input: Operations.UndoListenImport.Input) async throws -> Operations.UndoListenImport.Output
     /// Match one unmatched row by hand (IMP-011), with a title the person picked from a search. Before the plan is approved the pick joins the plan; after it, the row is written at once as its own undoable action. The source's status, rating and ticks come with it, merged like any import row.
     ///
     /// - Remark: HTTP `POST /v1/imports/{id}/rows/{index}/resolve`.
@@ -2921,6 +2936,32 @@ extension APIProtocol {
             body: body
         ))
     }
+    /// Import a Last.fm account's scrobbles by username (MUS-004). Read in the background into the listening log, written only after approval. A second import of the same account reads only what came after the last one. 503 `lastfm_unavailable` when the server has no Last.fm key.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/lastfm`.
+    /// - Remark: Generated from `#/paths//v1/imports/lastfm/post(createLastFMImport)`.
+    public func createLastFMImport(
+        headers: Operations.CreateLastFMImport.Input.Headers = .init(),
+        body: Operations.CreateLastFMImport.Input.Body
+    ) async throws -> Operations.CreateLastFMImport.Output {
+        try await createLastFMImport(Operations.CreateLastFMImport.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Import a ListenBrainz account's listens by username (MUS-004). Read in the background into the listening log, written only after approval. A second import of the same account reads only what came after the last one.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/listenbrainz`.
+    /// - Remark: Generated from `#/paths//v1/imports/listenbrainz/post(createListenBrainzImport)`.
+    public func createListenBrainzImport(
+        headers: Operations.CreateListenBrainzImport.Input.Headers = .init(),
+        body: Operations.CreateListenBrainzImport.Input.Body
+    ) async throws -> Operations.CreateListenBrainzImport.Output {
+        try await createListenBrainzImport(Operations.CreateListenBrainzImport.Input(
+            headers: headers,
+            body: body
+        ))
+    }
     /// Start a Stremio history import. Show the user `link` (or `qrcode`) to approve on stremio.com, then poll POST /v1/imports/stremio/link/{code}. No password reaches Aaru; the session the code opens is used for one library read, then logged out.
     ///
     /// - Remark: HTTP `POST /v1/imports/stremio/link`.
@@ -3040,6 +3081,19 @@ extension APIProtocol {
         headers: Operations.ApplyImport.Input.Headers = .init()
     ) async throws -> Operations.ApplyImport.Output {
         try await applyImport(Operations.ApplyImport.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Undo an applied listening-history import (MUS-004): deletes the listens it wrote and the import. 409 `import_not_listens` for a library import (undo its action instead), 409 `import_not_applied` before it is applied (delete it instead).
+    ///
+    /// - Remark: HTTP `POST /v1/imports/{id}/undo`.
+    /// - Remark: Generated from `#/paths//v1/imports/{id}/undo/post(undoListenImport)`.
+    public func undoListenImport(
+        path: Operations.UndoListenImport.Input.Path,
+        headers: Operations.UndoListenImport.Input.Headers = .init()
+    ) async throws -> Operations.UndoListenImport.Output {
+        try await undoListenImport(Operations.UndoListenImport.Input(
             path: path,
             headers: headers
         ))
@@ -4272,6 +4326,8 @@ public enum Components {
         public struct ImportJob: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/ImportJob/id`.
             public var id: Swift.String
+            /// `lastfm`, `listenbrainz`, `spotify_json` and `youtube_takeout` are listening history (MUS-004): they have no rows, are applied into the listening log, and undo with POST /v1/imports/{id}/undo.
+            ///
             /// - Remark: Generated from `#/components/schemas/ImportJob/source`.
             @frozen public enum SourcePayload: String, Codable, Hashable, Sendable, CaseIterable {
                 case trakt = "trakt"
@@ -4287,7 +4343,13 @@ public enum Components {
                 case anilist = "anilist"
                 case csv = "csv"
                 case capture = "capture"
+                case lastfm = "lastfm"
+                case listenbrainz = "listenbrainz"
+                case spotifyJson = "spotify_json"
+                case youtubeTakeout = "youtube_takeout"
             }
+            /// `lastfm`, `listenbrainz`, `spotify_json` and `youtube_takeout` are listening history (MUS-004): they have no rows, are applied into the listening log, and undo with POST /v1/imports/{id}/undo.
+            ///
             /// - Remark: Generated from `#/components/schemas/ImportJob/source`.
             public var source: Components.Schemas.ImportJob.SourcePayload
             /// `planned` waits for approval; nothing is written before it.
@@ -4309,7 +4371,7 @@ public enum Components {
             public var stats: Components.Schemas.ImportStats
             /// - Remark: Generated from `#/components/schemas/ImportJob/errorSummary`.
             public var errorSummary: Swift.String?
-            /// The uploaded file's name, or the AniList username for an `anilist` import.
+            /// The uploaded file's name, or the username for an `anilist`, `lastfm` or `listenbrainz` import.
             ///
             /// - Remark: Generated from `#/components/schemas/ImportJob/filename`.
             public var filename: Swift.String?
@@ -4317,7 +4379,7 @@ public enum Components {
             public var createdAt: Foundation.Date
             /// - Remark: Generated from `#/components/schemas/ImportJob/updatedAt`.
             public var updatedAt: Foundation.Date
-            /// Rows read from the file or provider. 0 for a Trakt or AniList import until the worker has read the account.
+            /// Rows read from the file or provider. 0 for a Trakt, AniList, Last.fm or ListenBrainz import until the worker has read the account. For listening history, the plays read that are music.
             ///
             /// - Remark: Generated from `#/components/schemas/ImportJob/rowsTotal`.
             public var rowsTotal: Swift.Int
@@ -4333,14 +4395,14 @@ public enum Components {
             ///
             /// - Parameters:
             ///   - id:
-            ///   - source:
+            ///   - source: `lastfm`, `listenbrainz`, `spotify_json` and `youtube_takeout` are listening history (MUS-004): they have no rows, are applied into the listening log, and undo with POST /v1/imports/{id}/undo.
             ///   - state: `planned` waits for approval; nothing is written before it.
             ///   - stats:
             ///   - errorSummary:
-            ///   - filename: The uploaded file's name, or the AniList username for an `anilist` import.
+            ///   - filename: The uploaded file's name, or the username for an `anilist`, `lastfm` or `listenbrainz` import.
             ///   - createdAt:
             ///   - updatedAt:
-            ///   - rowsTotal: Rows read from the file or provider. 0 for a Trakt or AniList import until the worker has read the account.
+            ///   - rowsTotal: Rows read from the file or provider. 0 for a Trakt, AniList, Last.fm or ListenBrainz import until the worker has read the account. For listening history, the plays read that are music.
             ///   - rowsMatched: Rows matched so far while `running` (IMP-017); back to 0 when a failed attempt is retried. With `rowsTotal` it is the import's progress.
             ///   - actionId: The action that applied the plan, once approved and if it wrote anything. Undo it with POST /v1/actions/{id}/undo.
             public init(
@@ -4392,6 +4454,10 @@ public enum Components {
             public var skipped: Swift.Int
             /// - Remark: Generated from `#/components/schemas/ImportStats/unmatched`.
             public var unmatched: Swift.Int
+            /// Listening history only (MUS-004): plays left out by rule (podcasts, plays under 30 s, videos that are not music).
+            ///
+            /// - Remark: Generated from `#/components/schemas/ImportStats/ignored`.
+            public var ignored: Swift.Int?
             /// Creates a new `ImportStats`.
             ///
             /// - Parameters:
@@ -4399,22 +4465,43 @@ public enum Components {
             ///   - updated:
             ///   - skipped:
             ///   - unmatched:
+            ///   - ignored: Listening history only (MUS-004): plays left out by rule (podcasts, plays under 30 s, videos that are not music).
             public init(
                 created: Swift.Int,
                 updated: Swift.Int,
                 skipped: Swift.Int,
-                unmatched: Swift.Int
+                unmatched: Swift.Int,
+                ignored: Swift.Int? = nil
             ) {
                 self.created = created
                 self.updated = updated
                 self.skipped = skipped
                 self.unmatched = unmatched
+                self.ignored = ignored
             }
             public enum CodingKeys: String, CodingKey {
                 case created
                 case updated
                 case skipped
                 case unmatched
+                case ignored
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ListenAccount`.
+        public struct ListenAccount: Codable, Hashable, Sendable {
+            /// The account's username, 1–64 characters.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ListenAccount/username`.
+            public var username: Swift.String
+            /// Creates a new `ListenAccount`.
+            ///
+            /// - Parameters:
+            ///   - username: The account's username, 1–64 characters.
+            public init(username: Swift.String) {
+                self.username = username
+            }
+            public enum CodingKeys: String, CodingKey {
+                case username
             }
         }
         /// - Remark: Generated from `#/components/schemas/ImportList`.
@@ -36166,8 +36253,10 @@ public enum Operations {
                     case goodreads = "goodreads"
                     case mal = "mal"
                     case csv = "csv"
+                    case spotify = "spotify"
+                    case youtube = "youtube"
                 }
-                /// `auto` detects the format: MyAnimeList-format XML, anime or manga (also exported by Kitsu and AniList), an IMDb, Letterboxd, Netflix viewing activity, TV Time or Goodreads CSV, or any other CSV read by its column names (`csv`). `tvtime` takes one CSV from TV Time's export at a time: `tvtime-series-episodes.csv`, `tvtime-series.csv` or `tvtime-movies.csv` (Export my data), or `tracking-prod-records-v2.csv`, `tracking-prod-records.csv`, `followed_tv_show.csv` or `seen_episode.csv` (GDPR export).
+                /// `auto` detects the format: MyAnimeList-format XML, anime or manga (also exported by Kitsu and AniList), an IMDb, Letterboxd, Netflix viewing activity, TV Time or Goodreads CSV, or any other CSV read by its column names (`csv`); for an `application/octet-stream` body, Spotify's extended streaming history or Google Takeout's YouTube watch history. `spotify` and `youtube` are listening history (MUS-004): their plays go to the listening log, never the library, and the job's stats count new listens (`created`), listens already in the log (`skipped`) and plays left out (`ignored`). `tvtime` takes one CSV from TV Time's export at a time: `tvtime-series-episodes.csv`, `tvtime-series.csv` or `tvtime-movies.csv` (Export my data), or `tracking-prod-records-v2.csv`, `tracking-prod-records.csv`, `followed_tv_show.csv` or `seen_episode.csv` (GDPR export).
                 ///
                 /// - Remark: Generated from `#/paths/v1/imports/csv/POST/query/source`.
                 public var source: Operations.CreateCSVImport.Input.Query.SourcePayload
@@ -36178,7 +36267,7 @@ public enum Operations {
                 /// Creates a new `Query`.
                 ///
                 /// - Parameters:
-                ///   - source: `auto` detects the format: MyAnimeList-format XML, anime or manga (also exported by Kitsu and AniList), an IMDb, Letterboxd, Netflix viewing activity, TV Time or Goodreads CSV, or any other CSV read by its column names (`csv`). `tvtime` takes one CSV from TV Time's export at a time: `tvtime-series-episodes.csv`, `tvtime-series.csv` or `tvtime-movies.csv` (Export my data), or `tracking-prod-records-v2.csv`, `tracking-prod-records.csv`, `followed_tv_show.csv` or `seen_episode.csv` (GDPR export).
+                ///   - source: `auto` detects the format: MyAnimeList-format XML, anime or manga (also exported by Kitsu and AniList), an IMDb, Letterboxd, Netflix viewing activity, TV Time or Goodreads CSV, or any other CSV read by its column names (`csv`); for an `application/octet-stream` body, Spotify's extended streaming history or Google Takeout's YouTube watch history. `spotify` and `youtube` are listening history (MUS-004): their plays go to the listening log, never the library, and the job's stats count new listens (`created`), listens already in the log (`skipped`) and plays left out (`ignored`). `tvtime` takes one CSV from TV Time's export at a time: `tvtime-series-episodes.csv`, `tvtime-series.csv` or `tvtime-movies.csv` (Export my data), or `tracking-prod-records-v2.csv`, `tracking-prod-records.csv`, `followed_tv_show.csv` or `seen_episode.csv` (GDPR export).
                 ///   - filename: The file's name. Letterboxd's watchlist export is told apart by it.
                 public init(
                     source: Operations.CreateCSVImport.Input.Query.SourcePayload,
@@ -36207,6 +36296,8 @@ public enum Operations {
                 case csv(OpenAPIRuntime.HTTPBody)
                 /// - Remark: Generated from `#/paths/v1/imports/csv/POST/requestBody/content/application\/xml`.
                 case xml(OpenAPIRuntime.HTTPBody)
+                /// - Remark: Generated from `#/paths/v1/imports/csv/POST/requestBody/content/application\/octet-stream`.
+                case binary(OpenAPIRuntime.HTTPBody)
             }
             public var body: Operations.CreateCSVImport.Input.Body
             /// Creates a new `Input`.
@@ -36909,6 +37000,286 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/imports/anilist/post(createAniListImport)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Import a Last.fm account's scrobbles by username (MUS-004). Read in the background into the listening log, written only after approval. A second import of the same account reads only what came after the last one. 503 `lastfm_unavailable` when the server has no Last.fm key.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/lastfm`.
+    /// - Remark: Generated from `#/paths//v1/imports/lastfm/post(createLastFMImport)`.
+    public enum CreateLastFMImport {
+        public static let id: Swift.String = "createLastFMImport"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/imports/lastfm/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateLastFMImport.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateLastFMImport.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.CreateLastFMImport.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/imports/lastfm/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/lastfm/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.ListenAccount)
+            }
+            public var body: Operations.CreateLastFMImport.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.CreateLastFMImport.Input.Headers = .init(),
+                body: Operations.CreateLastFMImport.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Accepted: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/lastfm/POST/responses/202/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/imports/lastfm/POST/responses/202/content/application\/json`.
+                    case json(Components.Schemas.ImportJob)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ImportJob {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.CreateLastFMImport.Output.Accepted.Body
+                /// Creates a new `Accepted`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.CreateLastFMImport.Output.Accepted.Body) {
+                    self.body = body
+                }
+            }
+            /// Queued.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/lastfm/post(createLastFMImport)/responses/202`.
+            ///
+            /// HTTP response code: `202 accepted`.
+            case accepted(Operations.CreateLastFMImport.Output.Accepted)
+            /// The associated value of the enum case if `self` is `.accepted`.
+            ///
+            /// - Throws: An error if `self` is not `.accepted`.
+            /// - SeeAlso: `.accepted`.
+            public var accepted: Operations.CreateLastFMImport.Output.Accepted {
+                get throws {
+                    switch self {
+                    case let .accepted(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "accepted",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/lastfm/post(createLastFMImport)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Import a ListenBrainz account's listens by username (MUS-004). Read in the background into the listening log, written only after approval. A second import of the same account reads only what came after the last one.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/listenbrainz`.
+    /// - Remark: Generated from `#/paths//v1/imports/listenbrainz/post(createListenBrainzImport)`.
+    public enum CreateListenBrainzImport {
+        public static let id: Swift.String = "createListenBrainzImport"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/imports/listenbrainz/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateListenBrainzImport.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateListenBrainzImport.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.CreateListenBrainzImport.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/imports/listenbrainz/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/listenbrainz/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.ListenAccount)
+            }
+            public var body: Operations.CreateListenBrainzImport.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.CreateListenBrainzImport.Input.Headers = .init(),
+                body: Operations.CreateListenBrainzImport.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Accepted: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/listenbrainz/POST/responses/202/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/imports/listenbrainz/POST/responses/202/content/application\/json`.
+                    case json(Components.Schemas.ImportJob)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ImportJob {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.CreateListenBrainzImport.Output.Accepted.Body
+                /// Creates a new `Accepted`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.CreateListenBrainzImport.Output.Accepted.Body) {
+                    self.body = body
+                }
+            }
+            /// Queued.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/listenbrainz/post(createListenBrainzImport)/responses/202`.
+            ///
+            /// HTTP response code: `202 accepted`.
+            case accepted(Operations.CreateListenBrainzImport.Output.Accepted)
+            /// The associated value of the enum case if `self` is `.accepted`.
+            ///
+            /// - Throws: An error if `self` is not `.accepted`.
+            /// - SeeAlso: `.accepted`.
+            public var accepted: Operations.CreateListenBrainzImport.Output.Accepted {
+                get throws {
+                    switch self {
+                    case let .accepted(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "accepted",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/listenbrainz/post(createListenBrainzImport)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)
@@ -38647,6 +39018,137 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/imports/{id}/apply/post(applyImport)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Undo an applied listening-history import (MUS-004): deletes the listens it wrote and the import. 409 `import_not_listens` for a library import (undo its action instead), 409 `import_not_applied` before it is applied (delete it instead).
+    ///
+    /// - Remark: HTTP `POST /v1/imports/{id}/undo`.
+    /// - Remark: Generated from `#/paths//v1/imports/{id}/undo/post(undoListenImport)`.
+    public enum UndoListenImport {
+        public static let id: Swift.String = "undoListenImport"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/imports/{id}/undo/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/{id}/undo/POST/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.UndoListenImport.Input.Path
+            /// - Remark: Generated from `#/paths/v1/imports/{id}/undo/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UndoListenImport.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UndoListenImport.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.UndoListenImport.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.UndoListenImport.Input.Path,
+                headers: Operations.UndoListenImport.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Undone.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/{id}/undo/post(undoListenImport)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.UndoListenImport.Output.NoContent)
+            /// Undone.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/{id}/undo/post(undoListenImport)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.UndoListenImport.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/{id}/undo/post(undoListenImport)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

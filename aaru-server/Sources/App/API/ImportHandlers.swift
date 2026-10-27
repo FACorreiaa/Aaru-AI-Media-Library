@@ -13,22 +13,40 @@ extension APIImplementation {
     func createCSVImport(_ input: Operations.CreateCSVImport.Input) async throws -> Operations.CreateCSVImport
         .Output
     {
-        let body: HTTPBody = switch input.body {
-        case let .csv(body), let .xml(body): body
+        let body: HTTPBody
+        switch input.body {
+        case let .csv(file), let .xml(file): body = file
+        case let .binary(file): return try await createListenFileImport(file, query: input.query)
         }
         let text = try await Self.text(body)
-        let source: ImportSource
-        switch input.query.source {
-        case .imdb: source = .imdbCSV
-        case .letterboxd: source = .letterboxdCSV
-        case .netflix: source = .netflixCSV
-        case .tvtime: source = .tvTimeCSV
-        case .goodreads: source = .goodreadsCSV
-        case .mal: source = .malXML
-        case .csv: source = .genericCSV
+        let source = try Self.fileSource(input.query.source, text: text)
+        let job = try await services.imports.createCSVImport(
+            userID: currentUser(), source: source, filename: input.query.filename, text: text
+        )
+        return .accepted(.init(body: .json(.init(job))))
+    }
+
+    /// A text export's source: the one asked for, or what `auto` detects.
+    private static func fileSource(_ asked: Operations.CreateCSVImport.Input.Query.SourcePayload, text: String) throws
+        -> ImportSource
+    {
+        switch asked {
+        case .imdb: return .imdbCSV
+        case .letterboxd: return .letterboxdCSV
+        case .netflix: return .netflixCSV
+        case .tvtime: return .tvTimeCSV
+        case .goodreads: return .goodreadsCSV
+        case .mal: return .malXML
+        case .csv: return .genericCSV
+        case .spotify, .youtube:
+            throw AppError(
+                status: .unprocessableContent, code: "validation_failed",
+                message: "Send Spotify and YouTube history as the JSON file itself, not as a CSV.",
+                details: ["file": "Send the JSON file itself."]
+            )
         case .auto:
             do {
-                source = try ImportFormatDetector.detect(text)
+                return try ImportFormatDetector.detect(text)
             } catch let error as ImportFormatError {
                 throw AppError(
                     status: .unprocessableContent, code: "validation_failed", message: error.message,
@@ -36,10 +54,70 @@ extension APIImplementation {
                 )
             }
         }
-        let job = try await services.imports.createCSVImport(
-            userID: currentUser(), source: source, filename: input.query.filename, text: text
+    }
+
+    /// MUS-004: a Spotify or YouTube listening history file. Bigger than an export, so its own limit.
+    private func createListenFileImport(_ body: HTTPBody, query: Operations.CreateCSVImport.Input.Query) async throws
+        -> Operations.CreateCSVImport.Output
+    {
+        let source: ImportSource?
+        switch query.source {
+        case .spotify: source = .spotifyJSON
+        case .youtube: source = .youTubeTakeout
+        case .auto: source = nil
+        default:
+            throw AppError(
+                status: .unprocessableContent, code: "validation_failed",
+                message: "Only Spotify and YouTube history are JSON. Send other exports as CSV or XML.",
+                details: ["file": "Only Spotify and YouTube history are JSON."]
+            )
+        }
+        let limit = ImportService.maxListenUploadBytes
+        let tooLarge = AppError(
+            status: .contentTooLarge, code: "file_too_large",
+            message: "That file is larger than 24 MB, the most Aaru reads at once. Spotify splits its history into "
+                + "smaller files: add them one at a time."
+        )
+        if case let .known(length) = body.length, length > limit {
+            throw tooLarge
+        }
+        let data: Data
+        do {
+            data = try await Data(collecting: body, upTo: limit)
+        } catch {
+            throw tooLarge
+        }
+        let job = try await services.imports.createListenFileImport(
+            userID: currentUser(), source: source, filename: query.filename, data: data
         )
         return .accepted(.init(body: .json(.init(job))))
+    }
+
+    func createLastFMImport(_ input: Operations.CreateLastFMImport.Input) async throws
+        -> Operations.CreateLastFMImport.Output
+    {
+        guard case let .json(body) = input.body else { throw AppError.badRequest() }
+        let job = try await services.imports.createListenAccountImport(
+            userID: currentUser(), source: .lastFM, username: body.username
+        )
+        return .accepted(.init(body: .json(.init(job))))
+    }
+
+    func createListenBrainzImport(_ input: Operations.CreateListenBrainzImport.Input) async throws
+        -> Operations.CreateListenBrainzImport.Output
+    {
+        guard case let .json(body) = input.body else { throw AppError.badRequest() }
+        let job = try await services.imports.createListenAccountImport(
+            userID: currentUser(), source: .listenBrainz, username: body.username
+        )
+        return .accepted(.init(body: .json(.init(job))))
+    }
+
+    func undoListenImport(_ input: Operations.UndoListenImport.Input) async throws
+        -> Operations.UndoListenImport.Output
+    {
+        try await services.imports.undoListens(importID(input.path.id), userID: currentUser())
+        return .noContent(.init())
     }
 
     func createCATImport(_ input: Operations.CreateCATImport.Input) async throws -> Operations.CreateCATImport
@@ -210,7 +288,8 @@ extension Components.Schemas.ImportJob {
             state: .init(rawValue: job.state.rawValue) ?? .queued,
             stats: .init(
                 created: job.stats.created, updated: job.stats.updated,
-                skipped: job.stats.skipped, unmatched: job.stats.unmatched
+                skipped: job.stats.skipped, unmatched: job.stats.unmatched,
+                ignored: job.source.isListens ? job.stats.ignored : nil
             ),
             errorSummary: job.errorSummary,
             filename: job.filename,

@@ -36,7 +36,22 @@ library layer stay separate, external IDs stored whenever known, no second backe
 
 ## Decisions recorded 2026-10-27
 
-Design: `docs/superpowers/specs/2026-10-27-friends-groups-design.md`.
+- **Imported listens count in Insights and the Recap, on the day they were played (owner,
+  2026-10-27, MUS-004).** The library's rule is that undated history is not activity: an episode
+  tick from an import has no watch date (`watched_at_known = false`) and stays out, while a dated
+  finish from an import counts on its day (2026-10-16). Every listen source carries the moment of
+  each play, so an imported listen counts like a live one. It earns **no points**, even from the
+  last day (a backlog is not a day's listening); the music badges, which read the listening log,
+  count it and arrive as one summary, as a library import's do. Undoing the import removes its
+  listens, and the stats with them.
+- **YouTube is two sources (owner, 2026-10-27).** MUS-004 reads plain YouTube history from
+  Takeout as well as YouTube Music, and SCR-011 turns the extension's YouTube plays into listens.
+  Both keep music only, and nothing is guessed: a YouTube Music entry, or a video from an
+  auto-generated `… - Topic` channel (the artist is the channel's name without the suffix, the
+  track is the video's title). The extension may also use the song and artist YouTube itself
+  shows on the watch page. Every other video stays a play, as SCR-009 said, and is never stored.
+
+Friends and groups (design: `docs/superpowers/specs/2026-10-27-friends-groups-design.md`):
 
 - **Finding friends is opt-in discovery, not search (owner, 2026-10-27, SOC-008…011).**
   - Adding a friend worked; finding one was the slow part.
@@ -727,6 +742,7 @@ account or a stranger that has not happened yet.
 | MUS-001 | Built, unverified | #93; MusicTests, StatsTests; deployed f5dcb8c (infra #412) | Not run on a device |
 | MUS-002 | Built, unverified | #98; ListenBrainzReleasesTests; deployed 8b3f017 (infra #413) | Not run on a device |
 | MUS-003 | Built, unverified | #105; ConcertTests; deployed f0525f0 (infra #415, key #414) | Not run on a device; Ticketmaster lists nothing in Portugal (MUS-009) |
+| MUS-004 | Built, unverified | ListenImportTests, ListenImportParserTests; web import model tests; Settings → Import → Music history (web, Apple) | Not deployed; `LASTFM_API_KEY` sealed in infra #478; parsers checked against stubs and hand-made files only, not a real Last.fm, ListenBrainz, Spotify or Takeout export |
 | MUS-005 | Built, unverified | ListenBrainzRouteTests | Not deployed; not tried with a real scrobbler |
 | MUS-006 | Built, unverified | RecordingMatchTests, ListenResolverTests | Not deployed; not run against MusicBrainz itself |
 | MUS-007 | Built, unverified | MusicSection (web, Apple); ListenBrainzRouteTests `musicSetup`; music model tests | Not deployed; steps checked against client source, not tried with a real scrobbler |
@@ -802,6 +818,7 @@ account or a stranger that has not happened yet.
 | SCR-008 | Built, unverified | NowPlaying.swift, LiveActivityPush.swift, NowPlayingTests; `NowPlayingCard` (web, iOS); `/v1/me/now-playing` | Live Activity pushes not yet seen on a device; the activity became SCR-009's |
 | SCR-009 | Built, unverified | LivePlays.swift, LiveSetNotifier.swift, LiveActivitySweepService.swift, `live_plays`, `live_activity_states`; NowPlayingTests(+Plays); `NowPlayingActivityAttributes`, NowPlayingLiveActivity; `aaru-extension/src/sites/youtube.ts` | Not seen on a device; YouTube selectors not checked on the live site |
 | SCR-010 | Built, unverified | MALPuller, `MALSyncService`, `AddMALPull`, `POST /v1/connections/mal/pull`, `removed` on `GET /v1/connections/mal`; MALPullTests | Clients ask on open and list removals; MAL's written OK before anyone but the owner connects |
+| SCR-011 | Not started | — | Follows MUS-004 |
 | SOC-001 | Built, unverified | `profiles`, `PUT /v1/me/profile`, `social_settings` (`share_library_with_friends`), `/v1/me/social-settings`, `/v1/social/friends/{userId}/profile`; SocialTests, FriendTests | Points, streaks and leaderboard settings wait for P5 |
 | SOC-002 | Built, unverified | requests, friends, blocks, reports; invite links (`social_invites`, `/v1/social/invites`, `/v1/invites/{code}`, web `/i/{code}`, AASA); SocialTests, InviteTests | Seed signing ran on the branch 2026-10-21; universal links not tried on a device; contact email hash not built |
 | SOC-003 | Partial | `GET /v1/activity` (dated ticks and finishes, 14 days); FriendTests; web `/app/friends`, iOS Friends tab | No `FriendStories` on Home, no scrobbles, no save-to-wishlist yet |
@@ -1996,14 +2013,24 @@ and under "Near Lisbon" on three clients.
 
 ### MUS-004 · Listening history import · M · pulled forward 2026-10-21
 **Needs:** MUS-005.
-Past listens into the listening log, as import jobs the user confirms, undone by job: Last.fm by
-username (`user.getRecentTracks`), ListenBrainz by username, Spotify's extended streaming
-history (`ts` is when a play ended; plays under 30 s and podcast episodes are skipped), and
-YouTube Music from Google Takeout's `watch-history.json` (`header` "YouTube Music" only). The
-same duplicate window as live listens applies. Never part of the library import order.
+Past listens into the listening log, as import jobs the user confirms, undone by job (decisions
+2026-10-27). Last.fm by username (`user.getRecentTracks`, `LASTFM_API_KEY`; off without it) and
+ListenBrainz by username (`/1/user/{name}/listens`), each read again only from the newest listen
+of its last applied import. Spotify's extended streaming history, one
+`Streaming_History_Audio_*.json` at a time: `ts` is when a play ended, so the listen starts at
+`ts − ms_played`; plays under 30 s, podcast episodes and audiobooks are left out, and the file's
+IP address and country are never read into a row. Google Takeout's `watch-history.json`:
+YouTube Music entries, and YouTube entries from a `… - Topic` channel; ads and other videos are
+left out. `source=auto` tells the two JSON files apart. The same duplicate window as live
+listens applies, against the log and inside the file. A job shows how many listens are new,
+how many are already in the log and how many were left out; applying writes the new ones with
+`source = 'import'`, and undo deletes exactly those. Imported listens count in Insights and the
+Recap on their own day, earn no points, and count toward music badges. Never part of the library
+import order.
 
-**Done when:** a Last.fm username and a Spotify history file each import with a count of new and
-duplicate listens, show in the log, and undo in one step.
+**Done when:** a Last.fm username, a Spotify history file and a YouTube Takeout file each import
+with a count of new and duplicate listens, show in the log and on their own days in Insights,
+earn no points, and undo in one step.
 
 ### MUS-005 · Listening log and ListenBrainz ingest · M · pulled forward 2026-10-21
 **Needs:** OUT-001.
@@ -3122,6 +3149,19 @@ them. A 401/403 marks the connection revoked in settings.
 coming back changes nothing; a MAL status that would move backward, leave `dropped` or pass a
 hand-set status is ignored; an entry removed on MAL shows in settings and stays in Aaru; and the
 tests use a stub MAL server only.
+
+### SCR-011 · YouTube music plays as listens · M · owner, 2026-10-27
+**Needs:** SCR-009, MUS-005.
+A YouTube video the extension reports is written as one live listen when it is music (decisions
+2026-10-27): its channel is an auto-generated `… - Topic` one, or the watch page shows YouTube's
+own song and artist for it. It is written once per play, when the play reaches half the video or
+4 minutes, dated from the play's start, with the client "Aaru extension" and the service
+"YouTube", and earns a live listen's points. A listen from another scrobbler naming the same
+video inside the duplicate window is the same play, whichever arrives first. Every other video
+stays a play and is never stored.
+
+**Done when:** a `- Topic` video played past half in Chrome shows once in the log, Web Scrobbler
+on the same video adds nothing, and a video that is not music adds nothing.
 
 ## P4 · Profiles, friends, activity
 
