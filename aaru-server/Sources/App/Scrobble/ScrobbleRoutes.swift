@@ -67,16 +67,20 @@ struct ScrobbleRoutes: Sendable {
         }
     }
 
-    /// A YouTube video (SCR-009): a play, never a watch event, so it matches and ticks nothing.
+    /// A YouTube video (SCR-009): a play, never a watch event, so it matches and ticks nothing. A
+    /// music video heard long enough is also a listen (SCR-011).
     private func play(_ body: ScrobbleBody, action: PlaybackAction, from caller: AgentCaller) async throws
         -> Response
     {
+        let video = try body.video(action, now: scrobble.now())
+        if let listen = try body.videoListen(now: scrobble.now()) {
+            try await scrobble.heard(listen, from: caller)
+        }
         guard action != .stop else {
-            _ = try body.video(action, now: scrobble.now())
             try await scrobble.stopPlay(.video, from: caller)
             return try Self.json(ScrobbleAnswer(outcome: .stoppedWithoutChange, title: nil))
         }
-        try await scrobble.play(body.video(action, now: scrobble.now()), from: caller)
+        try await scrobble.play(video, from: caller)
         return try Self.json(ScrobbleAnswer(outcome: .recorded, title: nil))
     }
 
@@ -110,6 +114,14 @@ struct ScrobbleBody: Decodable {
         var id: String
         var title: String
         var channel: String?
+        /// SCR-011: the track, when the page says the video is music.
+        var music: VideoMusic?
+    }
+
+    struct VideoMusic: Decodable {
+        var artist: String
+        var track: String
+        var album: String?
     }
 
     struct Item: Decodable {
@@ -256,5 +268,32 @@ struct ScrobbleAnswer: Encodable {
         case .unmatched: "unmatched"
         }
         self.title = title.map { MatchedTitle(id: $0.id.description, name: $0.title, year: $0.year) }
+    }
+}
+
+// MARK: Music videos (SCR-011)
+
+extension ScrobbleBody {
+    /// A listen is sent once half the track or 4 minutes has played, whichever comes first, as
+    /// ListenBrainz asks of every scrobbler; a video under 30 s is never one.
+    static let heardAfter: TimeInterval = 4 * 60
+    static let shortestListen: TimeInterval = 30
+
+    /// The listen a YouTube music video makes once heard, dated from when it began playing. Nil
+    /// before then, and for a video the page did not say is music.
+    func videoListen(now: Date) throws -> NewListen? {
+        guard let video, let music = video.music, let durationMs, durationMs > 0 else { return nil }
+        let length = TimeInterval(durationMs) / 1000
+        let played = length * progress / 100
+        guard length >= Self.shortestListen, played >= min(length / 2, Self.heardAfter) else { return nil }
+        guard let artist = ListenSubmission.text(music.artist), let track = ListenSubmission.text(music.track) else {
+            throw Invalid(message: "video.music needs an artist and a track.")
+        }
+        let began = now.addingTimeInterval(-played).timeIntervalSince1970.rounded(.down)
+        return NewListen(
+            listenedAt: Date(timeIntervalSince1970: began), artist: artist, track: track,
+            album: ListenSubmission.text(music.album), durationMs: Int(durationMs),
+            originURL: "https://www.youtube.com/watch?v=\(video.id)", client: "Aaru extension", musicService: "YouTube"
+        )
     }
 }

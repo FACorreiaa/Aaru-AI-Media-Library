@@ -14,7 +14,8 @@ export type SendResult =
   | { kind: 'failed'; retry: boolean }
 
 /** Trakt's scrobble body, named by title: these sites have no ids Aaru knows. A YouTube video
- * goes as `video` instead (SCR-009): Aaru shows it as playing and never matches it. */
+ * goes as `video` instead (SCR-009): Aaru shows it as playing and never matches it; a music
+ * video carries its track, which Aaru logs as a listen once heard (SCR-011). */
 export function body(call: Call) {
   const { playing } = call
   const common = {
@@ -30,6 +31,7 @@ export function body(call: Call) {
         id: playing.ref,
         title: playing.title,
         channel: playing.channel,
+        ...(playing.music ? { music: playing.music } : {}),
       },
     }
   const item = { title: playing.title, year: playing.year }

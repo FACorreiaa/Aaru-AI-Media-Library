@@ -28,4 +28,24 @@ describe('scrobble body', () => {
       },
     })
   })
+
+  it('carries the track of a music video (SCR-011)', () => {
+    const call = body({
+      action: 'start',
+      playing: {
+        source: 'youtube',
+        ref: 'dQw4w9WgXcQ',
+        type: 'video',
+        title: 'Teardrop',
+        channel: 'Massive Attack - Topic',
+        music: { artist: 'Massive Attack', track: 'Teardrop' },
+      },
+      progress: 60,
+      durationMs: 330_000,
+    })
+    expect('video' in call && call.video.music).toStrictEqual({
+      artist: 'Massive Attack',
+      track: 'Teardrop',
+    })
+  })
 })

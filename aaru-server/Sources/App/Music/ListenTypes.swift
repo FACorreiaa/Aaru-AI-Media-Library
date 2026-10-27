@@ -31,6 +31,18 @@ struct NewListen: Sendable, Equatable {
     var duplicateWindow: TimeInterval {
         durationMs.map { min(90, Double($0) / 2000) } ?? 30
     }
+
+    /// The YouTube video a listen was heard on, from its `origin_url` (SCR-011).
+    var youTubeVideoID: String? {
+        originURL.flatMap(Listen.youTubeVideoID)
+    }
+
+    /// Two listens of the same YouTube video this close together are one play, whatever their
+    /// spellings: the extension's and a music scrobbler's (SCR-011). The video's length; 30 s
+    /// when unknown.
+    var videoWindow: TimeInterval {
+        durationMs.map { Double($0) / 1000 } ?? 30
+    }
 }
 
 /// One stored listen.
@@ -52,6 +64,24 @@ struct Listen: Sendable, Equatable {
     /// makes two scrobblers' spellings of one play the same.
     static func trackKey(artist: String, track: String) -> String {
         fold(artist) + "\u{1F}" + fold(track)
+    }
+
+    /// The pattern that finds a video id in a YouTube URL, here and in SQL.
+    static let youTubeVideoPattern = "(?:[?&]v=|youtu\\.be/)([A-Za-z0-9_-]{11})"
+
+    /// A YouTube watch link's video id: `youtube.com/watch?v=…`, `music.youtube.com/watch?v=…` or
+    /// `youtu.be/…`. Nil for any other link.
+    static func youTubeVideoID(_ url: String) -> String? {
+        guard let components = URLComponents(string: url), let host = components.host?.lowercased() else { return nil }
+        let id = if host == "youtu.be" {
+            String(components.path.dropFirst())
+        } else if host == "youtube.com" || host.hasSuffix(".youtube.com"), components.path == "/watch" {
+            components.queryItems?.first { $0.name == "v" }?.value ?? ""
+        } else {
+            ""
+        }
+        let valid = id.count == 11 && id.allSatisfy { $0.isASCII && ($0.isLetter || $0.isNumber || "-_".contains($0)) }
+        return valid ? id : nil
     }
 
     /// Case-, width- and space-folded, so two spellings of one name compare equal.

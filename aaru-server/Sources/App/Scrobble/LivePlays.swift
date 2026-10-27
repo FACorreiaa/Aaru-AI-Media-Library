@@ -216,6 +216,12 @@ extension ScrobbleService {
         await liveActivity?.sync(userID: caller.userID, now: now())
     }
 
+    /// SCR-011: a music video heard long enough. Every report past that point sends it again; the
+    /// log keeps one per video per play, and one if a music scrobbler heard the same video.
+    func heard(_ listen: NewListen, from caller: AgentCaller) async throws {
+        _ = try await ListenService(stores: stores, now: now).submit([listen], from: caller)
+    }
+
     /// The connection stopped its `kind` of play: a video's `stop`.
     func stopPlay(_ kind: LivePlay.Kind, from caller: AgentCaller) async throws {
         try await stores.watchEvents.removePlay(kind, userID: caller.userID, agentTokenID: caller.token.id)
