@@ -119,6 +119,9 @@ struct CatalogProviders: Sendable {
     /// The Sports tab (SPT-001, TheSportsDB). Optional: nil without `THESPORTSDB_API_KEY`, and
     /// every sports answer is then `unavailable`.
     var sports: (any SportsListing)?
+    /// Listening history by username (MUS-004): ListenBrainz on the Discover rows' client, and
+    /// Last.fm when `LASTFM_API_KEY` is set.
+    var listenHistory: [ImportSource: any ListenHistoryReading] = [:]
 }
 
 extension Date {

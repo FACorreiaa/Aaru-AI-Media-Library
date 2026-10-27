@@ -17,7 +17,14 @@ extension ImportFileSource: @retroactive Identifiable {
         case .tvtime: "TV Time"
         case .goodreads: "Goodreads"
         case .mal: "MyAnimeList"
+        case .spotify: "Spotify"
+        case .youtube: "YouTube"
         }
+    }
+
+    /// Listening history (MUS-004): JSON into the listening log, never the library.
+    var isListening: Bool {
+        self == .spotify || self == .youtube
     }
 
     var hint: String {
@@ -35,6 +42,12 @@ extension ImportFileSource: @retroactive Identifiable {
             "On Goodreads: My Books → Import and export → Export Library, then upload the CSV. "
                 + "Goodreads closed its API, so there is no connect option. Custom shelves become lists."
         case .mal: "On MyAnimeList: Profile → Export → Anime list or Manga list. The .xml or .xml.gz file."
+        case .spotify:
+            "Ask Spotify for your Extended streaming history (Account → Privacy). Unzip it and add one "
+                + "Streaming_History_Audio file at a time. Podcasts and plays under 30 s are left out."
+        case .youtube:
+            "Google Takeout → YouTube and YouTube Music → history, in JSON. Add watch-history.json: YouTube "
+                + "Music plays and artist Topic channels come in, other videos are left out."
         }
     }
 }
@@ -54,12 +67,22 @@ extension ImportJob {
         case .anilist: "AniList"
         case .csv: "CSV"
         case .capture: "Capture"
+        case .lastfm: "Last.fm"
+        case .listenbrainz: "ListenBrainz"
+        case .spotifyJson: "Spotify"
+        case .youtubeTakeout: "YouTube"
         }
+    }
+
+    /// An import of past listening (MUS-004): applied to the listening log and undone by itself.
+    var isListens: Bool {
+        [.lastfm, .listenbrainz, .spotifyJson, .youtubeTakeout].contains(source)
     }
 
     var stateLabel: String {
         switch state {
         case .queued: errorSummary == nil ? "In line" : "Paused, retrying soon"
+        case .running where isListens: "Reading listens…"
         case .running: rowsTotal > 0
             ? "Matching titles… \(min(100, rowsMatched * 100 / rowsTotal))%"
             : "Matching titles…"
@@ -83,11 +106,17 @@ enum HistorySource: Hashable, Identifiable {
     case file(ImportFileSource)
     case cat
     case aniList
+    /// Listening history by username (MUS-004).
+    case lastFM
+    case listenBrainz
 
     static let ordered: [HistorySource] = [
         .stremio, .file(.imdb), .file(.letterboxd), .file(.goodreads), .cat, .file(.netflix), .file(.tvtime),
         .file(.mal), .aniList, .file(.auto),
     ]
+
+    /// "Music history": past listening, into the listening log (MUS-004).
+    static let music: [HistorySource] = [.lastFM, .listenBrainz, .file(.spotify), .file(.youtube)]
 
     var id: String {
         switch self {
@@ -95,6 +124,8 @@ enum HistorySource: Hashable, Identifiable {
         case let .file(source): source.rawValue
         case .cat: "cat"
         case .aniList: "anilist"
+        case .lastFM: "lastfm"
+        case .listenBrainz: "listenbrainz"
         }
     }
 
@@ -104,6 +135,8 @@ enum HistorySource: Hashable, Identifiable {
         case let .file(source): source.label
         case .cat: "Pogdesign CAT"
         case .aniList: "AniList"
+        case .lastFM: "Last.fm"
+        case .listenBrainz: "ListenBrainz"
         }
     }
 
@@ -113,6 +146,8 @@ enum HistorySource: Hashable, Identifiable {
         case let .file(source): source.hint
         case .cat: "Your iCal link or file, or a list of shows."
         case .aniList: "Your public anime and manga lists, by username."
+        case .lastFM: "Your scrobbles, by username. Recent listening must not be hidden on Last.fm."
+        case .listenBrainz: "Your listens, by username."
         }
     }
 }

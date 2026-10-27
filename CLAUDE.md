@@ -40,6 +40,7 @@ This file is the working contract for anyone — human or agent — changing the
 | Geocoding | Open-Meteo geocoding (no key, non-commercial) for the "Concerts near" city only (MUS-003) |
 | User import — primary | Trakt OAuth; Stremio history by link code (one library read, then logout; key never stored) |
 | User import — files | IMDb CSV, Letterboxd CSV, Goodreads CSV, CAT show list / ICS file or iCal link, Netflix viewing activity CSV (one profile), TV Time export (its CSVs one at a time: Export my data or the GDPR export), MAL-format XML, anime or manga (MyAnimeList, Kitsu, AniList exports), AniList anime and manga lists by username, any other CSV read by its column names; `source=auto` detects the format |
+| User import — music | Last.fm and ListenBrainz by username, Spotify extended streaming history, Google Takeout's YouTube and YouTube Music history (music only) into the listening log as import jobs undone by job (MUS-004). Never library rows, never in the import order |
 | Scrobble — music | ListenBrainz's submit protocol at `/listenbrainz/1/` with music tokens only (MUS-005, owner 2026-10-21): Web Scrobbler, Pano Scrobbler, Navidrome, Jellyfin's plugin. No Spotify OAuth, no native Apple Music path |
 | Scrobble (P3) | `POST /v1/scrobble/*` (Trakt-shaped, scrobble tokens only), the browser extension for Netflix / Disney+ / Prime Video (SCR-007, owner exception 2026-10-21), Plex + Jellyfin webhooks, Stremio addon (catalogs + `player`/`library` events, no `stream`; pulled forward 2026-10-19) |
 | MyAnimeList sync | OAuth PKCE per user: anime progress pushed out (SCR-005) and the list read back on app open and every 6 h (SCR-010), the one two-way exception |
@@ -210,8 +211,10 @@ Use these words in code, APIs, and UI:
 - **Play** — a track (a scrobbler's `playing_now`) or a YouTube video a player reports that is
   not a Title (SCR-009). It lives only while it plays, is never a listen or a watch event, and
   never ticks anything. It exists for Now playing
-- **Listen** — one play of a track a music scrobbler sent (MUS-005). Append-only and never a
-  library write; the same play sent twice is kept once
+- **Listen** — one play of a track a music scrobbler sent (MUS-005) or a history import brought
+  in (MUS-004). Append-only and never a library write; the same play sent twice is kept once. An
+  imported listen counts on its own day in Insights and the Recap, earns no points, and counts
+  toward music badges
 - **Friend** — a mutual, accepted connection. There is no one-way follow
 - **Invite** — a one-use link (`aaruapp.com/i/{code}`, 14 days) that makes whoever opens it the
   sender's friend, optionally carrying one title to watch together. Friend invites only: groups
@@ -327,6 +330,8 @@ Capture is **not** in this order. It is a user-triggered one-shot, applied when 
 and never as part of reconciling an account's connected sources.
 
 Scrobbles are not in this order either: they are live events, applied as they arrive.
+Listening-history imports (MUS-004) are not in it either: they fill the listening log, never the
+library.
 
 Matching key: external IDs first, then normalized title + year + type. Never merge two titles that only share a similar name.
 

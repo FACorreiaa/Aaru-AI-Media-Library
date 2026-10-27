@@ -178,6 +178,9 @@ extension ImportService {
                 message: job.state.isTerminal ? "This import was already applied." : "This import has no plan yet."
             )
         }
+        if job.source.isListens {
+            return try await applyListens(job)
+        }
         var rows = try await stores.importJobs.rows(jobID: id)
         let ops = try await writes(for: &rows, userID: userID)
         job.stats = Self.stats(rows)

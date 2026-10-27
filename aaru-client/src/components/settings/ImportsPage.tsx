@@ -17,15 +17,29 @@ import {
   TextFieldLabel,
 } from '~/components/ui'
 import { FILE_SOURCES, sourceLabel, stateLabel } from '../../lib/imports/model'
-import { readImportFile } from '../../lib/imports/file'
+import { LISTEN_FILE_SOURCES } from '../../lib/imports/listens'
+import { readImportFile, readListenFile } from '../../lib/imports/file'
 import { startAniListImport, uploadImport } from '../../lib/imports/server'
+import {
+  startListenAccountImport,
+  uploadListenHistory,
+} from '../../lib/imports/listens-server'
 import type { ImportJob, TraktConnection } from '../../lib/imports/server'
 import { SettingsPageTitle } from './SettingsNav'
 import { SettingsSection } from './SettingsSection'
 
 type FileSource = (typeof FILE_SOURCES)[number]['source']
+type ListenFileSource = (typeof LISTEN_FILE_SOURCES)[number]['source']
+type FileOption = {
+  source: FileSource | ListenFileSource
+  label: string
+  hint: string
+  accept: string
+}
 const fileSource = (source: FileSource) =>
   FILE_SOURCES.find((s) => s.source === source)!
+const listenFileSource = (source: ListenFileSource) =>
+  LISTEN_FILE_SOURCES.find((s) => s.source === source)!
 
 const tile = 'flex flex-col gap-1 rounded-card border border-line p-4'
 
@@ -38,7 +52,9 @@ export function ImportsPage(props: {
   const navigate = useNavigate()
   const [trakt, setTrakt] = createSignal(props.trakt)
   const [jobs, setJobs] = createSignal<ImportJob[]>(props.imports)
-  const [uploading, setUploading] = createSignal<FileSource | null>(null)
+  const [uploading, setUploading] = createSignal<FileOption['source'] | null>(
+    null,
+  )
   const [problem, setProblem] = createSignal<string | null>(null)
   const [anilistName, setAnilistName] = createSignal('')
   const [anilistBusy, setAnilistBusy] = createSignal(false)
@@ -57,6 +73,27 @@ export function ImportsPage(props: {
       const text = await readImportFile(file)
       const filename = file.name.replace(/\.gz$/i, '')
       await open(await uploadImport({ data: { source, filename, text } }))
+    } catch (error) {
+      setProblem(
+        error instanceof Error
+          ? error.message
+          : 'That file could not be imported.',
+      )
+    } finally {
+      setUploading(null)
+    }
+  }
+
+  async function uploadListens(source: ListenFileSource, file: File) {
+    setProblem(null)
+    setUploading(source)
+    try {
+      const text = await readListenFile(file)
+      await open(
+        await uploadListenHistory({
+          data: { source, filename: file.name, text },
+        }),
+      )
     } catch (error) {
       setProblem(
         error instanceof Error
@@ -93,6 +130,26 @@ export function ImportsPage(props: {
   function FileTile(p: { source: FileSource }) {
     const option = fileSource(p.source)
     return (
+      <UploadTile
+        option={option}
+        onFile={(file) => void upload(option.source, file)}
+      />
+    )
+  }
+
+  function ListenFileTile(p: { source: ListenFileSource }) {
+    const option = listenFileSource(p.source)
+    return (
+      <UploadTile
+        option={option}
+        onFile={(file) => void uploadListens(option.source, file)}
+      />
+    )
+  }
+
+  function UploadTile(p: { option: FileOption; onFile: (file: File) => void }) {
+    const option = p.option
+    return (
       <FileField
         class={`${tile} size-auto items-stretch justify-start`}
         accept={option.accept}
@@ -100,7 +157,7 @@ export function ImportsPage(props: {
         disabled={uploading() !== null}
         onFileAccept={(files) => {
           const file = files.at(0)
-          if (file) void upload(option.source, file)
+          if (file) p.onFile(file)
         }}
         onFileReject={() =>
           setProblem(`That is not a file Aaru reads for ${option.label}.`)
@@ -211,6 +268,29 @@ export function ImportsPage(props: {
         </div>
       </SettingsSection>
 
+      <SettingsSection id="music-history" title="Music history">
+        <p class="mb-3 max-w-prose text-sm text-muted">
+          Past listening goes to your Music log, never your library. Each listen
+          counts on the day you played it, and an import undoes in one step.
+        </p>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <ListenAccountForm
+            service="lastfm"
+            label="Last.fm"
+            description="Your username. Your recent listening must not be hidden in Last.fm's privacy settings."
+            onImported={(job) => void open(job)}
+          />
+          <ListenAccountForm
+            service="listenbrainz"
+            label="ListenBrainz"
+            description="Your username. Listens on ListenBrainz are public."
+            onImported={(job) => void open(job)}
+          />
+          <ListenFileTile source="spotify" />
+          <ListenFileTile source="youtube" />
+        </div>
+      </SettingsSection>
+
       <SettingsSection id="imports" title="Imports">
         <Show
           when={jobs().length > 0}
@@ -245,5 +325,77 @@ export function ImportsPage(props: {
         </Show>
       </SettingsSection>
     </>
+  )
+}
+
+/** MUS-004: a Last.fm or ListenBrainz username, read by the server in the background. */
+function ListenAccountForm(props: {
+  service: 'lastfm' | 'listenbrainz'
+  label: string
+  description: string
+  onImported: (job: ImportJob) => void
+}) {
+  const [name, setName] = createSignal('')
+  const [busy, setBusy] = createSignal(false)
+  const [problem, setProblem] = createSignal<string | null>(null)
+
+  async function submit(event: SubmitEvent) {
+    event.preventDefault()
+    if (busy()) return
+    setProblem(null)
+    setBusy(true)
+    try {
+      const job = await startListenAccountImport({
+        data: { service: props.service, username: name() },
+      })
+      setName('')
+      props.onImported(job)
+    } catch (error) {
+      setProblem(
+        error instanceof Error
+          ? error.message
+          : `That ${props.label} import could not be started.`,
+      )
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <form class={`${tile} gap-2`} onSubmit={submit}>
+      <TextField
+        value={name()}
+        onChange={setName}
+        validationState={problem() ? 'invalid' : 'valid'}
+        class="gap-1"
+      >
+        <TextFieldLabel class="text-base">
+          Import from {props.label}
+        </TextFieldLabel>
+        <TextFieldDescription class="text-xs text-muted">
+          {props.description}
+        </TextFieldDescription>
+        <div class="mt-1 flex flex-wrap gap-2">
+          <TextFieldInput
+            name="username"
+            autocomplete="off"
+            autocapitalize="off"
+            spellcheck={false}
+            placeholder="username"
+            class="min-w-0 flex-1"
+          />
+          <Button
+            variant="outline"
+            type="submit"
+            disabled={busy() || name().trim() === ''}
+          >
+            {busy() ? 'Starting…' : 'Import'}
+          </Button>
+        </div>
+        <TextFieldErrorMessage class="text-sm text-danger">
+          {problem()}
+        </TextFieldErrorMessage>
+      </TextField>
+    </form>
   )
 }

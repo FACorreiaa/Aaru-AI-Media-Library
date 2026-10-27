@@ -64,24 +64,30 @@ struct ListenSubmission {
             }
         }
         let info = metadata.additionalInfo
+        // ListenBrainz's own match (history pages only) fills what the scrobbler did not send.
+        let mapping = metadata.mbidMapping
         return NewListen(
             listenedAt: listenedAt, artist: artist, track: track, album: text(metadata.releaseName),
-            durationMs: info?.durationMs, isrc: text(info?.isrc), recordingMBID: mbid(info?.recordingMbid),
-            releaseMBID: mbid(info?.releaseMbid), releaseGroupMBID: mbid(info?.releaseGroupMbid),
-            artistMBID: mbid(info?.artistMbids?.first), spotifyID: text(info?.spotifyId),
+            durationMs: info?.durationMs, isrc: text(info?.isrc),
+            recordingMBID: mbid(info?.recordingMbid) ?? mbid(mapping?.recordingMbid),
+            releaseMBID: mbid(info?.releaseMbid) ?? mbid(mapping?.releaseMbid),
+            releaseGroupMBID: mbid(info?.releaseGroupMbid),
+            artistMBID: mbid(info?.artistMbids?.first) ?? mbid(mapping?.artistMbids?.first),
+            spotifyID: text(info?.spotifyId),
             originURL: text(info?.originUrl).flatMap { $0.hasPrefix("https://") || $0.hasPrefix("http://") ? $0 : nil },
             client: text(info?.submissionClient ?? info?.mediaPlayer),
             musicService: text(info?.musicServiceName ?? info?.musicService)
         )
     }
 
-    private static func text(_ value: String?) -> String? {
+    /// Trimmed, at most 500 characters, nil when empty: what a listen's text columns accept.
+    static func text(_ value: String?) -> String? {
         guard let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines), !trimmed.isEmpty else { return nil }
         return String(trimmed.prefix(maxText))
     }
 
     /// MusicBrainz ids are UUIDs; anything else is dropped rather than stored.
-    private static func mbid(_ value: String?) -> String? {
+    static func mbid(_ value: String?) -> String? {
         value.flatMap(UUID.init(uuidString:))?.uuidString.lowercased()
     }
 }
@@ -98,10 +104,62 @@ private struct SubmissionBody: Decodable {
         var trackName: String?
         var releaseName: String?
         var additionalInfo: ListenAdditionalInfo?
+        var mbidMapping: ListenMBIDMapping?
     }
 
     var listenType: String
     var payload: [Payload]
+}
+
+/// What ListenBrainz matched a listen to, on `GET /1/user/{name}/listens` only. Read leniently:
+/// an odd value is ignored, never a reason to refuse the listen.
+private struct ListenMBIDMapping: Decodable {
+    var recordingMbid: String?
+    var releaseMbid: String?
+    var artistMbids: [String]?
+
+    enum CodingKeys: String, CodingKey {
+        case recordingMbid, releaseMbid, artistMbids
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try? decoder.container(keyedBy: CodingKeys.self)
+        recordingMbid = (try? container?.decodeIfPresent(String.self, forKey: .recordingMbid)) ?? nil
+        releaseMbid = (try? container?.decodeIfPresent(String.self, forKey: .releaseMbid)) ?? nil
+        artistMbids = (try? container?.decodeIfPresent([String].self, forKey: .artistMbids)) ?? nil
+    }
+}
+
+/// A page of a user's listens as ListenBrainz serves them (`GET /1/user/{name}/listens`).
+private struct HistoryBody: Decodable {
+    struct Payload: Decodable {
+        var listens: [SubmissionBody.Payload]
+    }
+
+    var payload: Payload
+}
+
+extension ListenSubmission {
+    /// One page of a user's ListenBrainz history (MUS-004), read as a submission's listens are:
+    /// a listen that would be refused live is left out and counted. `oldest` is the page's earliest
+    /// time, which asks for the next page; nil when the page is empty.
+    static func historyPage(json: Data, now: Date) throws -> (page: ListenHistoryPage, oldest: Int64?) {
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        guard let body = try? decoder.decode(HistoryBody.self, from: json) else {
+            throw Invalid(message: "The body is not a page of ListenBrainz listens.")
+        }
+        var page = ListenHistoryPage()
+        for payload in body.payload.listens {
+            if var listen = try? listen(payload, kind: .import, now: now) {
+                listen.client = listen.client ?? "ListenBrainz"
+                page.listens.append(listen)
+            } else {
+                page.ignored += 1
+            }
+        }
+        return (page, body.payload.listens.compactMap(\.listenedAt).min())
+    }
 }
 
 /// `additional_info` is free-form; the fields Aaru keeps are read leniently and a field of

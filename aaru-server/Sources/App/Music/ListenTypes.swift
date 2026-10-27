@@ -124,4 +124,23 @@ protocol ListenStore: Sendable {
     /// Keeps what MusicBrainz said, and fills the ids of every listen of that track and album
     /// that lacks them. Returns how many listens gained an album.
     func resolve(_ lookup: ListenLookup, as match: RecordingMatch, at date: Date) async throws -> Int
+
+    // MUS-004 · listening history imports. An import job's plays wait in staging until the user
+    // applies them; applying keeps what the live duplicate window would keep.
+
+    /// Adds plays to a job's staging, numbered from `index`.
+    func stage(_ listens: [NewListen], jobID: ImportJobID, from index: Int) async throws
+    /// Empties a job's staging, so a retried fetch starts over.
+    func clearStaged(jobID: ImportJobID) async throws
+    /// How many staged plays applying would keep: those outside every stored listen's duplicate
+    /// window and outside the window of the play before them of the same track.
+    func countNew(jobID: ImportJobID, userID: UserID) async throws -> Int
+    /// Writes the plays `countNew` counts as the job's `import` listens, then empties its staging.
+    /// Returns how many were written.
+    func applyStaged(jobID: ImportJobID, userID: UserID) async throws -> Int
+    /// Deletes the listens a job wrote. Returns how many.
+    func deleteImported(jobID: ImportJobID, userID: UserID) async throws -> Int
+    /// The newest listen an applied import of this source and account wrote, so the next import of
+    /// it reads only what came after.
+    func newestImported(userID: UserID, source: ImportSource, account: String) async throws -> Date?
 }

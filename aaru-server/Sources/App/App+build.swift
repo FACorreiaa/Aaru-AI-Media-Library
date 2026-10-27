@@ -1,3 +1,4 @@
+import AaruCore
 import Configuration
 import FluentPostgresDriver
 import FluentSQL
@@ -334,6 +335,10 @@ func makeCATCalendarFeed(_ transport: any HTTPTransport) -> CATCalendarFeed {
 /// One `ProviderClient` (and so one rate pacer) per provider, shared by every caller.
 func makeCatalogProviders(config: AppConfig, transport: any HTTPTransport) -> CatalogProviders {
     let musicBrainz = makeMusicBrainz(userAgent: config.openLibraryUserAgent, transport)
+    // Discover's album rows and listening imports (MUS-004) share ListenBrainz's pacer.
+    let listenBrainz = ProviderClient(
+        name: "listenbrainz", transport: transport, pacer: RequestPacer(requestsPerSecond: 1, burst: 2)
+    )
     return CatalogProviders(
         tmdb: TMDBCatalog(
             client: ProviderClient(
@@ -368,18 +373,12 @@ func makeCatalogProviders(config: AppConfig, transport: any HTTPTransport) -> Ca
             )
         ),
         music: musicBrainz,
-        releases: ListenBrainzReleases(
-            client: ProviderClient(
-                name: "listenbrainz",
-                transport: transport,
-                pacer: RequestPacer(requestsPerSecond: 1, burst: 2)
-            ),
-            userAgent: config.openLibraryUserAgent
-        ),
+        releases: ListenBrainzReleases(client: listenBrainz, userAgent: config.openLibraryUserAgent),
         recordings: musicBrainz,
         concerts: config.concertsAPIKey.map { makeConcertListing(apiKey: $0, transport) },
         places: makePlaceSearch(transport),
-        sports: config.sportsAPIKey.map { makeSportsListing(apiKey: $0, transport) }
+        sports: config.sportsAPIKey.map { makeSportsListing(apiKey: $0, transport) },
+        listenHistory: makeListenHistory(config: config, listenBrainz: listenBrainz, transport)
     )
 }
 

@@ -788,6 +788,31 @@ not in the merge order, and it plans and applies like every other import (one pl
 - **Plus fair use:** a Plus account has no monthly limit but gets 429 `capture_fair_use` after 30
   captures in a UTC day.
 
+### Listening history (MUS-004)
+
+A listening-history import is an import job whose rows are listens, not titles. It is out of the
+merge order (listens never touch the library) and is not journaled: a listen is not a library
+write, so the job itself is the undo.
+
+```text
+POST /imports/csv (application/json)  →  Spotify `Streaming_History_Audio_*.json` or Takeout
+                    `watch-history.json`, parsed in the request (24 MB, one parse at a time)
+POST /imports/lastfm | /imports/listenbrainz {username}  →  job only; the worker reads the pages
+                 →  import_listens (staging, one row per play) → count new / already in the log
+                    with the live duplicate window → job planned
+POST /imports/{id}/apply  →  one set-based insert into `listens` (`source = 'import'`,
+                    `import_job_id`) under the per-user listen lock → succeeded
+POST /imports/{id}/undo   →  delete the job's listens, take back music badges no longer met,
+                    delete the job
+```
+
+- Spotify's `ts` is when a play ended; the listen starts at `ts − ms_played`, the moment a
+  scrobbler would have sent, so a play scrobbled live and imported later is kept once.
+- Imported listens count in Insights and the Recap on their own day (`StatsService.music` reads
+  every listen); they earn no points, and the music badges count them (decisions 2026-10-27).
+- Last.fm (`LASTFM_API_KEY`, off without it) has its own pacer; ListenBrainz shares the release
+  rows' client and its one-a-second pacer.
+
 ### Aaru Plus (BIL-001…004)
 
 Plus is a StoreKit 2 subscription (`aaru_plus_monthly`, `aaru_plus_yearly`) bought in the Apple

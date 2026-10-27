@@ -105,6 +105,48 @@ struct AddMusicLookups: SQLMigration {
     ]
 }
 
+/// MUS-004 · listening history imports. An imported listen is marked `import` and names its job,
+/// so undoing the import deletes exactly those listens; deleting the job keeps them, as a library
+/// import's items stay. `import_listens` holds a job's plays from upload until it is applied.
+struct AddListenImports: SQLMigration {
+    let forward = [
+        "ALTER TABLE listens DROP CONSTRAINT listens_source_check",
+        "ALTER TABLE listens ADD CONSTRAINT listens_source_check CHECK (source IN ('live', 'import'))",
+        "ALTER TABLE listens ADD COLUMN import_job_id uuid REFERENCES import_jobs(id) ON DELETE SET NULL",
+        "CREATE INDEX listens_import_job ON listens (import_job_id) WHERE import_job_id IS NOT NULL",
+        """
+        CREATE TABLE import_listens (
+            job_id uuid NOT NULL REFERENCES import_jobs(id) ON DELETE CASCADE,
+            idx integer NOT NULL,
+            listened_at timestamptz NOT NULL,
+            artist text NOT NULL CHECK (char_length(artist) BETWEEN 1 AND 500),
+            track text NOT NULL CHECK (char_length(track) BETWEEN 1 AND 500),
+            album text CHECK (char_length(album) BETWEEN 1 AND 500),
+            track_key text NOT NULL,
+            duration_ms integer CHECK (duration_ms > 0),
+            isrc text,
+            recording_mbid text,
+            release_mbid text,
+            release_group_mbid text,
+            artist_mbid text,
+            spotify_id text,
+            origin_url text,
+            client text,
+            music_service text,
+            PRIMARY KEY (job_id, idx)
+        )
+        """,
+    ]
+    let backward = [
+        "DROP TABLE import_listens",
+        "DELETE FROM listens WHERE source = 'import'",
+        "DROP INDEX listens_import_job",
+        "ALTER TABLE listens DROP COLUMN import_job_id",
+        "ALTER TABLE listens DROP CONSTRAINT listens_source_check",
+        "ALTER TABLE listens ADD CONSTRAINT listens_source_check CHECK (source IN ('live'))",
+    ]
+}
+
 /// APP-017 · a book's page count, so "Now" can draw a reading bar from a page. Filled when a book
 /// is added and, for books stored before this, by the catalog refresher; every attempt stamped.
 struct AddTitlePageCount: SQLMigration {
