@@ -250,7 +250,7 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** The user with exactly this handle and where they stand with you. 404 when nobody holds it or either of you blocked the other. */
+    /** The user with exactly this handle and where they stand with you. 404 when nobody holds it or either of you blocked the other. At most 60 a user per hour (429). */
     get: operations['getSocialUser']
     put?: never
     post?: never
@@ -270,7 +270,7 @@ export interface paths {
     /** Pending requests to you and from you, newest first. */
     get: operations['listFriendRequests']
     put?: never
-    /** Ask someone to be friends, by handle. If they already asked you, you become friends. Needs your own handle. */
+    /** Ask someone to be friends, by handle. If they already asked you, you become friends. Needs your own handle. At most 30 a user per hour (429). */
     post: operations['sendFriendRequest']
     delete?: never
     options?: never

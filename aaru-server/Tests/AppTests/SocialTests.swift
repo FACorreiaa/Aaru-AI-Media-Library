@@ -182,4 +182,28 @@ struct SocialTests {
             #expect(try await env.send(.get, "/v1/social/users/\(ana.handle)").status == .notFound)
         }
     }
+
+    @Test("SOC-008: lookups and requests are limited per hour, separately")
+    func rateLimits() async throws {
+        try await LibraryHarness.run { env in
+            _ = try await env.send(.put, "/v1/me/profile", json: ["handle": freshHandle()])
+            let ana = try await friendlyUser(env)
+            for _ in 0 ..< SocialService.lookupsPerHour {
+                #expect(try await env.send(.get, "/v1/social/users/\(freshHandle())").status == .notFound)
+            }
+            let over = try await env.send(.get, "/v1/social/users/\(ana.handle)")
+            #expect(over.status == .tooManyRequests)
+            #expect(try over.json()["code"] as? String == "rate_limited")
+            // A spent lookup budget leaves requests alone.
+            #expect(try await env.send(.post, "/v1/social/friend-requests", json: ["handle": ana.handle]).status
+                == .ok)
+            for _ in 1 ..< SocialService.requestsPerHour {
+                _ = try await env.send(.post, "/v1/social/friend-requests", json: ["handle": freshHandle()])
+            }
+            #expect(try await env.send(.post, "/v1/social/friend-requests", json: ["handle": ana.handle]).status
+                == .tooManyRequests)
+            // Another user is unaffected.
+            #expect(try await env.send(.get, "/v1/social/users/\(ana.handle)", token: ana.token).status == .ok)
+        }
+    }
 }

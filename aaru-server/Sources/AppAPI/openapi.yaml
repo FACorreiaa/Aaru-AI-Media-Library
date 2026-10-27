@@ -269,7 +269,7 @@ paths:
   /v1/social/users/{handle}:
     get:
       operationId: getSocialUser
-      summary: The user with exactly this handle and where they stand with you. 404 when nobody holds it or either of you blocked the other.
+      summary: The user with exactly this handle and where they stand with you. 404 when nobody holds it or either of you blocked the other. At most 60 a user per hour (429).
       parameters:
         - {name: handle, in: path, required: true, schema: {type: string}}
       responses:
@@ -294,7 +294,7 @@ paths:
           $ref: '#/components/responses/Error'
     post:
       operationId: sendFriendRequest
-      summary: Ask someone to be friends, by handle. If they already asked you, you become friends. Needs your own handle.
+      summary: Ask someone to be friends, by handle. If they already asked you, you become friends. Needs your own handle. At most 30 a user per hour (429).
       requestBody:
         required: true
         content:
