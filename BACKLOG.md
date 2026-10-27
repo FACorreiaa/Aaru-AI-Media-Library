@@ -829,6 +829,7 @@ account or a stranger that has not happened yet.
 | SCR-010 | Built, unverified | MALPuller, `MALSyncService`, `AddMALPull`, `POST /v1/connections/mal/pull`, `removed` on `GET /v1/connections/mal`; MALPullTests | Clients ask on open and list removals; MAL's written OK before anyone but the owner connects |
 | SCR-011 | Built, unverified | VideoListenTests; extension sites/api tests | Not deployed; not tried in Chrome on a real `- Topic` video; YouTube's own song credit not read (see the item) |
 | SOC-001 | Built, unverified | `profiles`, `PUT /v1/me/profile`, `social_settings` (`share_library_with_friends`), `/v1/me/social-settings`, `/v1/social/friends/{userId}/profile`; SocialTests, FriendTests | Points, streaks and leaderboard settings wait for P5 |
+| SOC-001b | Done | #208; `AddProfileDetails`, `PUT/DELETE /v1/me/avatar`, `GET /v1/users/{userId}/avatar`; ProfileTests, web avatar tests | Not deployed (infra #480 open); not run on a device or in a browser |
 | SOC-002 | Built, unverified | requests, friends, blocks, reports; invite links (`social_invites`, `/v1/social/invites`, `/v1/invites/{code}`, web `/i/{code}`, AASA); SocialTests, InviteTests | Seed signing ran on the branch 2026-10-21; universal links not tried on a device; contact email hash not built |
 | SOC-003 | Partial | `GET /v1/activity` (dated ticks and finishes, 14 days); FriendTests; web `/app/friends`, iOS Friends tab | No `FriendStories` on Home, no scrobbles, no save-to-wishlist yet |
 | SOC-004 | Open | none | |
