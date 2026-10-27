@@ -218,7 +218,7 @@ paths:
   /v1/me/profile:
     put:
       operationId: updateProfile
-      summary: Claim or change your handle, and optionally your display name. Handles are how friends find you.
+      summary: Claim or change your handle, and optionally your display name. Handles are how friends find you. At most 10 handle changes a user per hour, a taken handle included (429).
       requestBody:
         required: true
         content:
@@ -269,7 +269,7 @@ paths:
   /v1/social/users/{handle}:
     get:
       operationId: getSocialUser
-      summary: The user with exactly this handle and where they stand with you. 404 when nobody holds it or either of you blocked the other. At most 60 a user per hour (429).
+      summary: The user with exactly this handle and where they stand with you. 404 when nobody holds it or either of you blocked the other. A friend or yourself is free; anyone else, misses included, at most 60 a user per hour (429).
       parameters:
         - {name: handle, in: path, required: true, schema: {type: string}}
       responses:

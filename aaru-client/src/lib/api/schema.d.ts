@@ -200,7 +200,7 @@ export interface paths {
       cookie?: never
     }
     get?: never
-    /** Claim or change your handle, and optionally your display name. Handles are how friends find you. */
+    /** Claim or change your handle, and optionally your display name. Handles are how friends find you. At most 10 handle changes a user per hour, a taken handle included (429). */
     put: operations['updateProfile']
     post?: never
     delete?: never
@@ -250,7 +250,7 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** The user with exactly this handle and where they stand with you. 404 when nobody holds it or either of you blocked the other. At most 60 a user per hour (429). */
+    /** The user with exactly this handle and where they stand with you. 404 when nobody holds it or either of you blocked the other. A friend or yourself is free; anyone else, misses included, at most 60 a user per hour (429). */
     get: operations['getSocialUser']
     put?: never
     post?: never

@@ -71,7 +71,7 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/billing/apple/notifications`.
     /// - Remark: Generated from `#/paths//v1/billing/apple/notifications/post(receiveAppleNotification)`.
     func receiveAppleNotification(_ input: Operations.ReceiveAppleNotification.Input) async throws -> Operations.ReceiveAppleNotification.Output
-    /// Claim or change your handle, and optionally your display name. Handles are how friends find you.
+    /// Claim or change your handle, and optionally your display name. Handles are how friends find you. At most 10 handle changes a user per hour, a taken handle included (429).
     ///
     /// - Remark: HTTP `PUT /v1/me/profile`.
     /// - Remark: Generated from `#/paths//v1/me/profile/put(updateProfile)`.
@@ -86,7 +86,7 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `PUT /v1/me/favorites/{kind}`.
     /// - Remark: Generated from `#/paths//v1/me/favorites/{kind}/put(setMyFavorites)`.
     func setMyFavorites(_ input: Operations.SetMyFavorites.Input) async throws -> Operations.SetMyFavorites.Output
-    /// The user with exactly this handle and where they stand with you. 404 when nobody holds it or either of you blocked the other. At most 60 a user per hour (429).
+    /// The user with exactly this handle and where they stand with you. 404 when nobody holds it or either of you blocked the other. A friend or yourself is free; anyone else, misses included, at most 60 a user per hour (429).
     ///
     /// - Remark: HTTP `GET /v1/social/users/{handle}`.
     /// - Remark: Generated from `#/paths//v1/social/users/{handle}/get(getSocialUser)`.
@@ -1054,7 +1054,7 @@ extension APIProtocol {
             body: body
         ))
     }
-    /// Claim or change your handle, and optionally your display name. Handles are how friends find you.
+    /// Claim or change your handle, and optionally your display name. Handles are how friends find you. At most 10 handle changes a user per hour, a taken handle included (429).
     ///
     /// - Remark: HTTP `PUT /v1/me/profile`.
     /// - Remark: Generated from `#/paths//v1/me/profile/put(updateProfile)`.
@@ -1089,7 +1089,7 @@ extension APIProtocol {
             body: body
         ))
     }
-    /// The user with exactly this handle and where they stand with you. 404 when nobody holds it or either of you blocked the other. At most 60 a user per hour (429).
+    /// The user with exactly this handle and where they stand with you. 404 when nobody holds it or either of you blocked the other. A friend or yourself is free; anyone else, misses included, at most 60 a user per hour (429).
     ///
     /// - Remark: HTTP `GET /v1/social/users/{handle}`.
     /// - Remark: Generated from `#/paths//v1/social/users/{handle}/get(getSocialUser)`.
@@ -14665,7 +14665,7 @@ public enum Operations {
             }
         }
     }
-    /// Claim or change your handle, and optionally your display name. Handles are how friends find you.
+    /// Claim or change your handle, and optionally your display name. Handles are how friends find you. At most 10 handle changes a user per hour, a taken handle included (429).
     ///
     /// - Remark: HTTP `PUT /v1/me/profile`.
     /// - Remark: Generated from `#/paths//v1/me/profile/put(updateProfile)`.
@@ -15090,7 +15090,7 @@ public enum Operations {
             }
         }
     }
-    /// The user with exactly this handle and where they stand with you. 404 when nobody holds it or either of you blocked the other. At most 60 a user per hour (429).
+    /// The user with exactly this handle and where they stand with you. 404 when nobody holds it or either of you blocked the other. A friend or yourself is free; anyone else, misses included, at most 60 a user per hour (429).
     ///
     /// - Remark: HTTP `GET /v1/social/users/{handle}`.
     /// - Remark: Generated from `#/paths//v1/social/users/{handle}/get(getSocialUser)`.
