@@ -68,8 +68,8 @@ Design: `docs/superpowers/specs/2026-10-27-friends-groups-design.md`.
   GRP-014…017).**
   - Reactions: the six quick ones plus a full emoji picker.
   - Replies quote one message. No threads.
-  - Images are stored on Aaru's own MinIO. Members get links that expire after five minutes,
-    and location data is stripped before upload.
+  - Images are stored on Aaru's own MinIO. That members get links that expire after five
+    minutes, and that location data is stripped before upload, are design calls, not the owner's.
   - "Show when I'm online" is asked once, when someone joins or creates their first group, and
     stays hidden until answered.
 - **This reverses:**
@@ -809,7 +809,7 @@ account or a stranger that has not happened yet.
 | SOC-005 | Partial | #17, #42, #45; Push.swift, `/v1/devices`, `/v1/me/notifications` | Airing push only; no friend-request category |
 | SOC-006 | Built, unverified | `social_recommendations`, `/v1/social/recommendations`, `/v1/me/recommendations*`; InteractionTests; web Recommend (title page, profile) and inbox, iOS RecommendSheet and inbox | No push to the recipient yet (needs a notification category) |
 | SOC-007 | Built, unverified | `social_reactions`, `PUT/DELETE /v1/activity/{id}/reaction`, reactions on `ActivityItem`; InteractionTests; web and iOS Lately rows | |
-| SOC-008 | Built, unverified | `SocialService.lookupLimiter`/`requestLimiter` (60 and 30 a user per hour, 429 `rate_limited`); SocialTests.rateLimits | In-process: one replica |
+| SOC-008 | Built, unverified | `SocialService.lookupLimiter`/`requestLimiter`/`handleChangeLimiter` (60, 30 and 10 a user per hour, 429 `rate_limited`; friend and self lookups free); SocialTests.rateLimits, rateLimitsSpareFriends, handleChangeLimit | In-process: one replica. Web shows a 429 on a non-friend's profile as "Not your friend" until SOC-009 |
 | SOC-009 | Open | none | |
 | SOC-010 | Open | none | |
 | SOC-011 | Open | none | |
@@ -825,19 +825,19 @@ account or a stranger that has not happened yet.
 | GAM-006e | Done | #67; StatsTests+YearReview, recap model tests | Persona copy awaits the owner; Apple story never run on device |
 | GAM-006b | Partial | #43 Insights; ShowWatchedTests "GAM-006b" | Profile pulled forward 2026-10-22; badges wait for GAM-001 |
 | CAT-018 | Done | #66; GenreTests, CatalogAdapterTests "genre names" | Pulled forward 2026-10-21 for GAM-006e; backfill runs in the catalog refresher |
-| GRP-001 | Built, unverified | #72; `groups`, `group_members`, `#general` in one transaction; GroupTests | two-browser / device check not recorded |
-| GRP-002 | Built, unverified | #72; `group_invites`, `/v1/groups/{g}/invites`, `/v1/me/group-invites`; GroupTests | A block left pending invites until GRP-013 |
-| GRP-003 | Built, unverified | #72; `group_messages`, `group_read_state`, cursor paging, nonce; GroupTests, GroupTests+Nonce | two-browser / device check not recorded |
-| GRP-004 | Built, unverified | #72; web `/app/groups/*`, `components/groups/*`; `lib/groups/model.test.ts` | Two-browser check not recorded |
-| GRP-005 | Built, unverified | #72; `aaru-ios/Aaru/Groups/*` | Simulator and Mac check not recorded; no iOS tests |
-| GRP-006 | Built, unverified | #72; `/v1/ws`, `RealtimeHub`, `/v1/realtime/ticket`; RealtimeTests | Single replica only; no Valkey fan-out |
-| GRP-007 | Built, unverified | #72; title channels, `share_progress`, spoiler veil; GroupKindTests | two-browser / device check not recorded |
-| GRP-008 | Built, unverified | #72; `group_channel_items`; GroupKindTests | two-browser / device check not recorded |
-| GRP-009 | Built, unverified | #72; `watch_sessions`, `watch_ready`, `/party`; GroupKindTests | two-browser / device check not recorded |
-| GRP-010 | Built, unverified | #72; `Agent/ModelProviding.swift`; AgentTests | Off without `ANTHROPIC_API_KEY` |
-| GRP-011 | Built, unverified | #72; `agent_replies`, `AgentReplyWorker`; AgentTests | Off without `ANTHROPIC_API_KEY` |
-| GRP-012 | Built 2026-10-21 | #74; `group_mentions`/`group_invites` switches, per-group mute; GroupPushTests | |
-| GRP-013 | Built, unverified | `PostgresSocialStore.unfriend`/`block` drop the pair's `group_invites`; `GroupService.accept` re-checks friendship; GroupTests.invitesEndWithFriendship | |
+| GRP-001 | Built, unverified | #74; `groups`, `group_members`, `#general` in one transaction; GroupTests | two-browser / device check not recorded |
+| GRP-002 | Built, unverified | #74; `group_invites`, `/v1/groups/{g}/invites`, `/v1/me/group-invites`; GroupTests | A block left pending invites until GRP-013 |
+| GRP-003 | Built, unverified | #74; `group_messages`, `group_read_state`, cursor paging, nonce; GroupTests, GroupTests+Nonce | two-browser / device check not recorded |
+| GRP-004 | Built, unverified | #74; web `/app/groups/*`, `components/groups/*`; `lib/groups/model.test.ts` | Two-browser check not recorded |
+| GRP-005 | Built, unverified | #74; `aaru-ios/Aaru/Groups/*` | Simulator and Mac check not recorded; no iOS tests |
+| GRP-006 | Built, unverified | #74; `/v1/ws`, `RealtimeHub`, `/v1/realtime/ticket`; RealtimeTests | Single replica only; no Valkey fan-out |
+| GRP-007 | Built, unverified | #74; title channels, `share_progress`, spoiler veil; GroupKindTests | two-browser / device check not recorded |
+| GRP-008 | Built, unverified | #74; `group_channel_items`; GroupKindTests | two-browser / device check not recorded |
+| GRP-009 | Built, unverified | #74; `watch_sessions`, `watch_ready`, `/party`; GroupKindTests | two-browser / device check not recorded |
+| GRP-010 | Built, unverified | #74; `Agent/ModelProviding.swift`; AgentTests | Off without `ANTHROPIC_API_KEY` |
+| GRP-011 | Built, unverified | #74; `agent_replies`, `AgentReplyWorker`; AgentTests | Off without `ANTHROPIC_API_KEY` |
+| GRP-012 | Built 2026-10-21 | #72 (landed via #74); `group_mentions`/`group_invites` switches, per-group mute; GroupPushTests | |
+| GRP-013 | Built, unverified | `PostgresSocialStore.unfriend`/`block` drop the pair's `group_invites`; `GroupService.accept` re-checks friendship; GroupTests.invitesEndWithFriendship, blockDropsOnlyThePairsInvites, acceptRechecksFriendship | No live inbox update when an invite drops (reload shows it) |
 | GRP-014 | Open | none | |
 | GRP-015 | Open | none | |
 | GRP-016 | Open | none | |
@@ -3214,12 +3214,19 @@ friends left; your own rows take no reaction.
 **Needs:** SOC-002. Owner, 2026-10-27.
 Handle lookups and friend requests had no limit, so anyone could step through handles one
 after another.
-- 60 lookups and 30 requests per user per hour, counted separately.
+- 60 lookups, 30 requests and 10 handle changes per user per hour, counted separately.
 - Beyond that, 429 `rate_limited`.
+- Looking up a friend or yourself costs nothing, because the web opens a friend's profile through
+  that lookup on every hover.
+- Trying a taken handle counts as a change, since "taken" also says who is on Aaru. Resaving
+  your current handle is free.
 - In-process like the other limiters, since the API runs one replica.
 
-**Done when:** the 61st lookup and the 31st request in an hour answer 429, a spent lookup budget
-leaves requests alone, and another user is unaffected.
+**Done when:**
+- the 61st lookup, the 31st request and the 11th handle change in an hour answer 429
+- each budget leaves the others alone
+- a friend's profile still opens once the lookup budget is spent
+- another user is unaffected
 
 ### SOC-009 · Add from anywhere, invite signup, friend alerts · M
 **Needs:** SOC-008, SOC-005. Owner, 2026-10-27.
@@ -3461,8 +3468,8 @@ alerts through web push and open `/app/groups/{g}/{c}`. Mac push stays off.
 ### GRP-013 · Group invites end with the friendship · S
 **Needs:** GRP-002. 2026-10-27.
 A block or an unfriend left the pair's pending group invites in place, and accept did not
-re-check. A stale invite could still be accepted after a block, which goes against GRP-002's
-"neither side may have blocked the other".
+re-check. A stale invite could still be accepted after a block, which goes against the
+2026-10-20 rule that group membership is friends-only.
 - Unfriending or blocking now deletes the pair's pending invites, in both directions.
 - Accept re-checks that the inviter and invitee are friends. If not, it answers like a missing
   invite and removes it.

@@ -27,13 +27,15 @@ struct SocialService: Sendable {
 
     /// Pending requests a user may have out at once.
     static let maxOutgoingRequests = 50
-    /// SOC-008: handle lookups and friend requests a user may make per hour, counted apart, so
-    /// nobody can walk the handle space.
+    /// SOC-008: handle lookups, friend requests and handle changes a user may make per hour,
+    /// counted apart, so nobody can walk the handle space.
     static let lookupsPerHour = 60
     static let requestsPerHour = 30
+    static let handleChangesPerHour = 10
     /// Static: the service is a value built per use, so an instance limiter would start over.
     static let lookupLimiter = FixedWindowRateLimiter(limit: lookupsPerHour, window: 60 * 60)
     static let requestLimiter = FixedWindowRateLimiter(limit: requestsPerHour, window: 60 * 60)
+    static let handleChangeLimiter = FixedWindowRateLimiter(limit: handleChangesPerHour, window: 60 * 60)
     static let rateLimited = AppError(
         status: .tooManyRequests, code: "rate_limited", message: "Too many tries. Try again later."
     )
@@ -49,14 +51,34 @@ struct SocialService: Sendable {
     func saveProfile(_ userID: UserID, handle: String, displayName: String??) async throws -> SocialUser {
         let handle = try Self.validHandle(handle)
         let displayName = try displayName.map(Self.validDisplayName)
+        // A change counts before the store says "taken", which would otherwise answer who holds a
+        // handle as fast as anyone asks. Resaving the current handle is free.
+        if try await stores.social.socialUser(userID)?.handle != handle {
+            guard await Self.handleChangeLimiter.allow(userID.description, now: now()) else { throw Self.rateLimited }
+        }
         try await stores.social.saveProfile(userID, handle: handle, displayName: displayName)
         guard let user = try await stores.social.socialUser(userID) else { throw AppError.unauthorized() }
         return user
     }
 
+    /// A friend or yourself costs nothing: the web opens a friend's profile through this lookup on
+    /// every hover. Everything else counts, misses too, and past the budget all of it answers 429,
+    /// so the limit itself tells nobody who exists.
     func lookup(handle: String, viewer: UserID) async throws -> (user: SocialUser, relationship: Relationship) {
+        do {
+            let found = try await resolve(handle: handle, viewer: viewer)
+            if found.relationship != .friend, found.relationship != .self {
+                try await spendLookup(viewer)
+            }
+            return found
+        } catch let miss as AppError where miss.status == .notFound {
+            try await spendLookup(viewer)
+            throw miss
+        }
+    }
+
+    private func spendLookup(_ viewer: UserID) async throws {
         guard await Self.lookupLimiter.allow(viewer.description, now: now()) else { throw Self.rateLimited }
-        return try await resolve(handle: handle, viewer: viewer)
     }
 
     private func resolve(
