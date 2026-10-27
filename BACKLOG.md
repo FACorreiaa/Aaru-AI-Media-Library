@@ -34,6 +34,58 @@ library layer stay separate, external IDs stored whenever known, no second backe
 - **Anime is first-class from P1** (AniList catalog, `anilist`/`mal`/`anidb` external IDs).
 - DMs are **Signal-grade (libsignal)**. Licence and web support are OPEN — see DM-003, DM-004.
 
+## Decisions recorded 2026-10-27
+
+Design: `docs/superpowers/specs/2026-10-27-friends-groups-design.md`.
+
+- **Finding friends is opt-in discovery, not search (owner, 2026-10-27, SOC-008…011).**
+  - Adding a friend worked; finding one was the slow part.
+  - Three sources, each off until the user turns it on in Friends & privacy:
+    - an email Aaru has verified
+    - a connected Trakt account
+    - a connected AniList account
+  - Matching keys are HMACs, never stored in the clear. An uploaded contact list is matched,
+    then dropped.
+  - "People you may know" draws on those matches and on shared groups, never on friends of
+    friends.
+  - Social sources only where the API is free. Facebook, Discord, X, Instagram and
+    MyAnimeList friends are out: paid, closed, or no endpoint.
+- **Phone numbers are deferred (owner, 2026-10-27).** Verifying a number needs paid SMS, and an
+  unverified one lets someone pose as you in your friends' contacts. Revisit once a
+  verification choice is made.
+- **Trakt is keyed by slug, refreshed daily (owner, 2026-10-27, SOC-010).**
+  - The slug is the only id Trakt's friends and following lists return.
+  - Each opted-in user's slug is re-read every day. Until then, a renamed account's old name
+    could match whoever takes it.
+  - AniList needs its own sign-in (OAuth). An import by username proves nothing about who owns
+    the account.
+- **iPhone gets a Friends tab, and Groups move to the top (owner, 2026-10-27, NAV-004).**
+  - The tab bar becomes Home · Discover · Library · Friends · More.
+  - The Friends tab holds Groups | Friends | Board, with requests and suggestions on top.
+  - Calendar moves into More.
+  - Web, iPad and Mac put Groups in the top destinations, next to Friends.
+- **Groups get message reactions, replies, images and who's online (owner, 2026-10-27,
+  GRP-014…017).**
+  - Reactions: the six quick ones plus a full emoji picker.
+  - Replies quote one message. No threads.
+  - Images are stored on Aaru's own MinIO. Members get links that expire after five minutes,
+    and location data is stripped before upload.
+  - "Show when I'm online" is asked once, when someone joins or creates their first group, and
+    stays hidden until answered.
+- **This reverses:**
+  - "friends by handle only, no email hash" (2026-10-20)
+  - "nobody can search or browse for you" in `docs/privacy.md`
+  - "no presence, attachments or invite links in v1" for groups (2026-10-20), except invite
+    links, which stay out
+  - NAV-002's iPhone tabs (2026-10-25)
+  - RT-001's friends-only presence, but only for group co-members who said yes
+- **Kept as is:**
+  - no group invite links
+  - no public or discoverable groups
+  - friends stay mutual, with no follow
+  - group membership stays friends-only
+  - the agent never sends requests or invites
+
 ## Decisions recorded 2026-10-25
 
 - **Pick the performer before a concert search (owner, 2026-10-25, MUS-010).** Submitting an
@@ -757,6 +809,11 @@ account or a stranger that has not happened yet.
 | SOC-005 | Partial | #17, #42, #45; Push.swift, `/v1/devices`, `/v1/me/notifications` | Airing push only; no friend-request category |
 | SOC-006 | Built, unverified | `social_recommendations`, `/v1/social/recommendations`, `/v1/me/recommendations*`; InteractionTests; web Recommend (title page, profile) and inbox, iOS RecommendSheet and inbox | No push to the recipient yet (needs a notification category) |
 | SOC-007 | Built, unverified | `social_reactions`, `PUT/DELETE /v1/activity/{id}/reaction`, reactions on `ActivityItem`; InteractionTests; web and iOS Lately rows | |
+| SOC-008 | Open | none | |
+| SOC-009 | Open | none | |
+| SOC-010 | Open | none | |
+| SOC-011 | Open | none | |
+| NAV-004 | Open | none | |
 | SHR-001 | Open | none | |
 | GAM-001 | Built, unverified | `points_events`, `PointsRules`, award/revoke in the library transaction, friend/room/listen/import hooks; GamificationTests; web `/app/achievements` + iOS `Achievements/` | owner judges design; TestFlight |
 | GAM-002 | Built, unverified | `Levels`, `GET /v1/me/progress`, `GET /v1/me/points`; GamificationTests; web `/app/achievements` + iOS `Achievements/` | owner judges design; TestFlight |
@@ -768,14 +825,31 @@ account or a stranger that has not happened yet.
 | GAM-006e | Done | #67; StatsTests+YearReview, recap model tests | Persona copy awaits the owner; Apple story never run on device |
 | GAM-006b | Partial | #43 Insights; ShowWatchedTests "GAM-006b" | Profile pulled forward 2026-10-22; badges wait for GAM-001 |
 | CAT-018 | Done | #66; GenreTests, CatalogAdapterTests "genre names" | Pulled forward 2026-10-21 for GAM-006e; backfill runs in the catalog refresher |
+| GRP-001 | Built, unverified | #72; `groups`, `group_members`, `#general` in one transaction; GroupTests | two-browser / device check not recorded |
+| GRP-002 | Built, unverified | #72; `group_invites`, `/v1/groups/{g}/invites`, `/v1/me/group-invites`; GroupTests | A block left pending invites until GRP-013 |
+| GRP-003 | Built, unverified | #72; `group_messages`, `group_read_state`, cursor paging, nonce; GroupTests, GroupTests+Nonce | two-browser / device check not recorded |
+| GRP-004 | Built, unverified | #72; web `/app/groups/*`, `components/groups/*`; `lib/groups/model.test.ts` | Two-browser check not recorded |
+| GRP-005 | Built, unverified | #72; `aaru-ios/Aaru/Groups/*` | Simulator and Mac check not recorded; no iOS tests |
+| GRP-006 | Built, unverified | #72; `/v1/ws`, `RealtimeHub`, `/v1/realtime/ticket`; RealtimeTests | Single replica only; no Valkey fan-out |
+| GRP-007 | Built, unverified | #72; title channels, `share_progress`, spoiler veil; GroupKindTests | two-browser / device check not recorded |
+| GRP-008 | Built, unverified | #72; `group_channel_items`; GroupKindTests | two-browser / device check not recorded |
+| GRP-009 | Built, unverified | #72; `watch_sessions`, `watch_ready`, `/party`; GroupKindTests | two-browser / device check not recorded |
+| GRP-010 | Built, unverified | #72; `Agent/ModelProviding.swift`; AgentTests | Off without `ANTHROPIC_API_KEY` |
+| GRP-011 | Built, unverified | #72; `agent_replies`, `AgentReplyWorker`; AgentTests | Off without `ANTHROPIC_API_KEY` |
+| GRP-012 | Built 2026-10-21 | #74; `group_mentions`/`group_invites` switches, per-group mute; GroupPushTests | |
+| GRP-013 | Open | none | |
+| GRP-014 | Open | none | |
+| GRP-015 | Open | none | |
+| GRP-016 | Open | none | |
+| GRP-017 | Open | none | |
 | RT-001 | Open | none (PR #48 open) | |
 | DM-001 | Open | none | |
 | DM-002 | Open | none | |
 | DM-003 | Open | none | |
 | DM-004 | Open | none | |
 | DM-005 | Open | none | |
-| ROOM-001 | Open | none | |
-| ROOM-002 | Open | none | |
+| ROOM-001 | Closed (GRP-009) | folded into watch channels, 2026-10-20 | |
+| ROOM-002 | Closed (GRP-009) | folded into watch channels, 2026-10-20 | |
 | ROOM-003 | Open | none | |
 | ROOM-004 | Open | none | |
 | AG-001 | Built | Agent/AgentTools.swift | All five tools, over MCP; no in-app composer (AG-004) |
@@ -2701,6 +2775,22 @@ and Music; Music has Albums · Concerts · Listens. The Discover toolbar's Sport
 ### NAV-003 · Docs · S
 DESIGN.md §13a, §13c, §13d and §18; VIEWS.md; CLAUDE.md's Discover; ARCHITECTURE.md.
 
+### NAV-004 · A Friends tab; Groups at the top · M
+**Needs:** NAV-002. Owner, 2026-10-27.
+- **iPhone:** the tab bar becomes Home · Discover · Library · Friends · More.
+  - The Friends tab holds Groups | Friends | Board and opens on Groups.
+  - Requests and People you may know sit on top.
+  - Calendar joins Books, Manga, Music and Sports in More.
+- **Web:** `TOP` gains Groups after Friends, and More keeps Books, Manga, Music and Sports.
+- **iPad and Mac:** Groups moves into the sidebar's top section.
+- **Badge:** unread mentions plus incoming requests.
+
+**Done when:**
+- iPhone shows the five tabs above, with Calendar in More
+- the Friends tab opens on Groups
+- web and the sidebar list Groups next to Friends
+- the badge counts mentions and requests
+
 ### DISC-005 · Apple: the + on a Discover card adds · S · owner, 2026-10-25
 The + on a poster not yet on the shelf was only a mark, so on iPhone's Books, Manga and Music a
 tap on it did nothing. It is now a menu: a tap adds the title as planned, a hold offers every
@@ -3120,6 +3210,72 @@ removes the reaction from view.
 from ❤️ 😂 😮 😭 🔥 👏. Lately now shows your own rows too ("You finished Heat"), so you see what
 friends left; your own rows take no reaction.
 
+### SOC-008 · Rate limits on finding and asking · S
+**Needs:** SOC-002. Owner, 2026-10-27.
+Handle lookups and friend requests had no limit, so anyone could step through handles one
+after another.
+- 60 lookups and 30 requests per user per hour, counted separately.
+- Beyond that, 429 `rate_limited`.
+- In-process like the other limiters, since the API runs one replica.
+
+**Done when:** the 61st lookup and the 31st request in an hour answer 429, a spent lookup budget
+leaves requests alone, and another user is unaffected.
+
+### SOC-009 · Add from anywhere, invite signup, friend alerts · M
+**Needs:** SOC-008, SOC-005. Owner, 2026-10-27.
+- **Alerts:** push (APNs and web push) for a new request, an accepted one, and a redeemed
+  invite, behind a new notification switch. This is SOC-005's friend-request category.
+- **Badge:** incoming requests on the Friends row and tab.
+- **Add from anywhere:** group member rows and a non-friend's profile page offer Add, Requested
+  or Accept instead of a dead end.
+- **Invite signup:** signing up from `/i/{code}` takes the handle as part of signup and redeems
+  the invite as soon as it is claimed. No extra tap; this replaces SOC-002's "one tap after
+  sign-up". iOS keeps the pending code for an hour, even if the app is killed, and the
+  magic-link email carries it across devices.
+- **Events:** `friend_added` fires on every path that makes two people friends.
+
+**Done when:**
+- a request reaches the other person's devices
+- Add on a group member sends a request
+- a fresh account opened from an invite lands as friends with no tap after the handle
+- the pending invite survives a killed iOS app
+
+### SOC-010 · Find me by email, Trakt or AniList · L
+**Needs:** SOC-008. Owner, 2026-10-27.
+- **Switches:** three in Friends & privacy, all off by default. Turning one off deletes its row
+  at once.
+- **Storage:** `social_discovery` holds HMAC-SHA256 keys under a sealed `DISCOVERY_PEPPER`:
+  - a verified email. Sign in with Apple users can add one findable email, verified like magic
+    sign-in.
+  - a Trakt slug from the existing connection, re-read daily
+  - an AniList numeric id, from a new AniList OAuth connect
+- **Contacts:** iPhone and Mac match contacts' emails, at most 2,000 per call and 3 calls a
+  day. The upload is never stored.
+- **Web:** the add field takes an email, 20 an hour. A not-opted-in, unknown or mistyped email
+  gets the same 404.
+- **Follows:** Trakt and AniList follow lists are read through `ProviderClient` and cached for
+  a day.
+
+**Done when:**
+- A finds B by email only while B's switch is on
+- a not-opted-in email and an unknown email get identical answers
+- no uploaded email is stored or logged
+- Trakt and AniList matches work against stub servers
+
+### SOC-011 · People you may know · M
+**Needs:** SOC-010. Owner, 2026-10-27.
+- `GET /v1/social/suggestions` returns up to 20 people, each with a reason and the
+  relationship. The reason is a shared group, a Trakt or AniList follow, or your contacts.
+- Shared-group suggestions are computed live. Contact and provider matches are kept in
+  `social_suggestions` for 30 days: the matches only, never the upload.
+- Never shown: yourself, your friends, either side of a block, or anyone without a handle.
+- Add sends a request. Dismiss hides that person for good.
+- A strip above Board | Lately holds requests, suggestions, an add field that takes a handle
+  or an email, and Invite.
+
+**Done when:** a group co-member appears with "In {group}", a blocked user never does, Add sends
+a request, and a dismissed person stays gone.
+
 ### SHR-001 · Shared lists · M
 **Needs:** SOC-002, LST-002.
 Was M12+. Share a list with friends, read-only first (`list_members`, `lists.visibility`
@@ -3301,6 +3457,79 @@ start, and no push payload contains message text.
 
 Built 2026-10-21: both switches are off until turned on, like `airing`. Browsers get the same
 alerts through web push and open `/app/groups/{g}/{c}`. Mac push stays off.
+
+### GRP-013 · Group invites end with the friendship · S
+**Needs:** GRP-002. 2026-10-27.
+A block or an unfriend left the pair's pending group invites in place, and accept did not
+re-check. A stale invite could still be accepted after a block, which goes against GRP-002's
+"neither side may have blocked the other".
+- Unfriending or blocking now deletes the pair's pending invites, in both directions.
+- Accept re-checks that the inviter and invitee are friends. If not, it answers like a missing
+  invite and removes it.
+- A third member's invite to either of them stays.
+
+**Done when:** after an unfriend or a block, the invite is gone from the inbox and its accept
+answers 404; a re-befriended pair can be invited again; another member's invite survives.
+
+### GRP-014 · Message reactions · M
+**Needs:** GRP-003. Owner, 2026-10-27.
+- **Emoji:** the six quick ones from `Reaction.all`, plus "more", which opens the full emoji
+  picker. The server takes any single emoji grapheme, with at most 20 distinct emoji per
+  message.
+- **Storage:** `group_message_reactions(message_id, user_id, emoji)`. The key spans all three,
+  so reacting twice changes nothing.
+- **Routes:** `PUT` and `DELETE …/messages/{m}/reactions/{emoji}`.
+- **Wire:** the message DTO carries per-emoji counts and `mine`. A `message.reactions` socket
+  event goes to members only.
+
+**Done when:** a reaction shows live on another member's client within 2 s, reacting twice
+counts once, and a non-member gets 404.
+
+### GRP-015 · Replies · M
+**Needs:** GRP-003. Owner, 2026-10-27.
+- Members may set `replyTo` on a message, using the `reply_to` column `@aaru` already uses.
+- `replyTo` must be in the same channel.
+- The DTO carries a preview: the author and the first ~100 characters, or "deleted".
+- Tapping the preview jumps to the original. That uses a new `around=` page parameter, and the
+  page reports `hasMore`. No threads.
+
+**Done when:** a reply shows its quote on both clients, a reply into another channel is
+refused, and tapping the quote loads and highlights the original even when it is far back.
+
+### GRP-016 · Images in groups · L
+**Needs:** GRP-003. Owner, 2026-10-27.
+- **Storage:** Aaru's own MinIO in `horus`, copied from Loci's: its own instance and
+  credentials, prune disabled, CORS pinned to aaruapp.com, a 20 Gi volume.
+- **Flow:**
+  1. The client asks for an upload. The server checks membership, type and size, then returns
+     a presigned PUT signed over length and type.
+  2. The client uploads the file itself.
+  3. A message carries up to 4 attachment ids.
+  4. Members get presigned GETs that expire after 5 minutes. The server never streams bytes.
+- **Limits:** JPEG, PNG, WebP, GIF, HEIC; 10 MB each.
+- **Location data:** clients strip EXIF and GPS before upload, and the server refuses a JPEG
+  that still carries them.
+- **Deletion:** uploads left unattached for an hour are swept. Deleting a message, a group or
+  an account deletes its images.
+- **Reports:** a group message can be reported.
+
+**Done when:**
+- an image shows to members on web and iPhone
+- a non-member's calls never return its link, and an expired link fails
+- a message delete removes the object
+- an orphan upload is swept
+
+### GRP-017 · Who's online in a group · M
+**Needs:** GRP-006. Owner, 2026-10-27. The groups part of RT-001's presence.
+- A `presence` event goes to people who share a group with the user.
+- Member rows show a dot, and the group header says "N online". Online only, never which
+  channel.
+- "Show when I'm online" is asked once, when someone joins or creates their first group.
+  `show_online` is null until then, and the user stays hidden until they answer.
+- Friend presence and DM delivery stay in RT-001.
+
+**Done when:** a co-member's dot appears and clears within 2 s, nobody outside a shared group
+receives it, an unanswered or "no" user never shows, and the answer can be changed in Settings.
 
 ## P4 · Boards (pulled forward 2026-10-22)
 

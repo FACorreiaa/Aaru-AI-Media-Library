@@ -288,7 +288,9 @@ profile stats without badges (GAM-006b) and the whole show marked watched (PROG-
 the points ledger, levels, streaks, badges, the friends leaderboard and the streak widget
 (GAM-001…005, WID-007) and Boards, 2026-10-22; manga as a sixth kind with MAL and AniList manga
 imports (MNG-001…002) and profile favorites (FAV-001), 2026-10-23; the Sports tab (SPT-001…005),
-2026-10-24).
+2026-10-24; faster friend finding (opt-in email, Trakt and AniList discovery, suggestions), a
+Friends tab, and group reactions, replies, images and presence (SOC-008…011, NAV-004,
+GRP-013…017), 2026-10-27).
 
 ## Out of scope (do not add unless asked)
 
@@ -298,6 +300,8 @@ imports (MNG-001…002) and profile favorites (FAV-001), 2026-10-23; the Sports 
   (trending, this season, DISC-001) are allowed; anything personalised is not
 - A global or public activity feed; public profile pages indexed by search engines
 - Serializd / SIMKL integrations
+- Phone-number matching (deferred 2026-10-27: verifying a number needs paid SMS) and
+  friends-of-friends suggestions
 - Comics and games before the P2 gate (they are planned after it; see `BACKLOG.md`
   decisions 2026-10-15). Music albums (MUS-001…003, 2026-10-21) and manga (MNG-001…002,
   2026-10-23) were pulled forward by the owner
