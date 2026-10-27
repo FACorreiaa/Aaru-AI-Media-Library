@@ -12,6 +12,8 @@ struct SocialSettings: Sendable, Equatable {
     var showAchievementsToFriends = true
     /// You appear on friends' weekly board, and see it (GAM-005). Off until you join.
     var leaderboardOptIn = false
+    /// Friends see your email on your profile (SOC-001b). Off until you turn it on; groups never.
+    var shareEmailWithFriends = false
 }
 
 /// One title on a friend's shelf, without anything private to them (notes, owned).

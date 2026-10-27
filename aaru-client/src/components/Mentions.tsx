@@ -164,7 +164,11 @@ export function MentionList(props: {
               >
                 {(member) => (
                   <>
-                    <Monogram text={monogram(member().user)} size="sm" />
+                    <Monogram
+                      text={monogram(member().user)}
+                      avatarUrl={member().user.avatarUrl}
+                      size="sm"
+                    />
                     <span class="font-medium">
                       {member().user.displayName ?? `@${member().user.handle}`}
                     </span>

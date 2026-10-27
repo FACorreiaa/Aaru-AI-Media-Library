@@ -37,6 +37,7 @@ struct PostgresGroupStore: GroupStore {
         let userId: UUID
         let handle: String
         let displayName: String?
+        let avatarVersion: Int64?
         let role: String
         let joinedAt: Date
         let shareProgress: Bool
@@ -50,15 +51,27 @@ struct PostgresGroupStore: GroupStore {
         let inviterId: UUID
         let inviterHandle: String
         let inviterDisplayName: String?
+        let inviterAvatarVersion: Int64?
         let inviteeId: UUID
         let inviteeHandle: String
         let inviteeDisplayName: String?
+        let inviteeAvatarVersion: Int64?
 
         var invite: GroupInvite {
             GroupInvite(
                 id: id, groupID: groupId, groupName: groupName,
-                inviter: SocialUser(id: UserID(inviterId), handle: inviterHandle, displayName: inviterDisplayName),
-                invitee: SocialUser(id: UserID(inviteeId), handle: inviteeHandle, displayName: inviteeDisplayName),
+                inviter: SocialUser(
+                    id: UserID(inviterId),
+                    handle: inviterHandle,
+                    displayName: inviterDisplayName,
+                    avatarVersion: inviterAvatarVersion
+                ),
+                invitee: SocialUser(
+                    id: UserID(inviteeId),
+                    handle: inviteeHandle,
+                    displayName: inviteeDisplayName,
+                    avatarVersion: inviteeAvatarVersion
+                ),
                 createdAt: createdAt
             )
         }
@@ -133,13 +146,18 @@ struct PostgresGroupStore: GroupStore {
 
     func members(_ group: UUID) async throws -> [GroupMember] {
         try await sql.raw("""
-        SELECT gm.user_id, p.handle, u.display_name, gm.role, gm.joined_at, gm.share_progress
+        SELECT gm.user_id, p.handle, u.display_name, u.avatar_version, gm.role, gm.joined_at, gm.share_progress
         FROM group_members gm JOIN profiles p ON p.user_id = gm.user_id JOIN users u ON u.id = gm.user_id
         WHERE gm.group_id = \(bind: group)
         ORDER BY gm.joined_at, p.handle
         """).all(decoding: MemberRow.self, keyDecodingStrategy: .convertFromSnakeCase).map {
             GroupMember(
-                user: SocialUser(id: UserID($0.userId), handle: $0.handle, displayName: $0.displayName),
+                user: SocialUser(
+                    id: UserID($0.userId),
+                    handle: $0.handle,
+                    displayName: $0.displayName,
+                    avatarVersion: $0.avatarVersion
+                ),
                 role: GroupRole(rawValue: $0.role) ?? .member,
                 joinedAt: $0.joinedAt,
                 shareProgress: $0.shareProgress
@@ -210,7 +228,9 @@ struct PostgresGroupStore: GroupStore {
         try await sql.raw("""
         SELECT i.id, i.group_id, g.name AS group_name, i.created_at,
                i.inviter_id, ip.handle AS inviter_handle, iu.display_name AS inviter_display_name,
-               i.invitee_id, tp.handle AS invitee_handle, tu.display_name AS invitee_display_name
+               iu.avatar_version AS inviter_avatar_version,
+               i.invitee_id, tp.handle AS invitee_handle, tu.display_name AS invitee_display_name,
+               tu.avatar_version AS invitee_avatar_version
         FROM group_invites i JOIN groups g ON g.id = i.group_id
         JOIN profiles ip ON ip.user_id = i.inviter_id JOIN users iu ON iu.id = i.inviter_id
         JOIN profiles tp ON tp.user_id = i.invitee_id JOIN users tu ON tu.id = i.invitee_id

@@ -50,6 +50,15 @@ library layer stay separate, external IDs stored whenever known, no second backe
   auto-generated `… - Topic` channel (the artist is the channel's name without the suffix, the
   track is the video's title). The extension may also use the song and artist YouTube itself
   shows on the watch page. Every other video stays a play, as SCR-009 said, and is never stored.
+- **One profile editor, with names, a photo and the email (owner, 2026-10-27, SOC-001b).** Pulled
+  forward from SOC-001's "avatar URL". The username stays the handle. First and last name, both
+  optional, replace the display name; others see them joined, and saved names split at the first
+  space. A photo is optional: the device makes a 512px square JPEG, Aaru keeps it in Postgres and
+  serves it only to signed-in accounts, everywhere a monogram shows, never signed out or across a
+  block. The email is shown to its owner and reaches friends only while "Friends can see my
+  email" is on (off by default; group members never). Favourite shows and films are FAV-001, edited
+  from the same screen. Favourite sports are the Sports tab's follows, linked from it: nothing new
+  is stored and sport follows stay off the profile and away from friends.
 
 ## Decisions recorded 2026-10-25
 
@@ -3093,6 +3102,28 @@ SOC-003.
 
 **Done when:** a fresh account is invisible to every other account until it changes a setting,
 and no route exposes a profile to an unauthenticated caller.
+
+### SOC-001b · Edit profile: names, photo and email · M · owner, 2026-10-27
+**Needs:** SOC-001, FAV-001, SPT-003.
+`users.first_name`, `users.last_name` (the joined pair stays `display_name`, so every reader is
+unchanged; existing names split at the first space) and `users.avatar_version` (null without a
+photo; a new value on every upload). `avatars (user_id, image bytea ≤ 1 MB)`.
+`social_settings.share_email_with_friends` (off). `PUT /v1/me/profile` takes optional `handle`,
+`firstName` and `lastName` and returns `Me`; an older app's `displayName` equal to the saved names
+is no change. `PUT /v1/me/avatar` takes one JPEG (415 otherwise, 413 over 1 MB), `DELETE` removes
+it, and `GET /v1/users/{userId}/avatar?v=` serves it to any signed-in account except across a block
+(the same 404 as none), cached a week. `avatarUrl` rides on `Me` and every `SocialUser`, never on
+the public invite preview. `Me.email` is the email sign-in's address, else Google's, else Apple's;
+an Apple relay address is never shared. `FriendProfile.email` only while shared. The export
+carries the names and the photo. Web: Settings → Account's profile section (photo, first and last
+name, handle, email and its switch, a link to Sports' Favorites), the avatar in the sidebar's
+account row and the top bar. iPhone and Mac: Edit profile with the same fields, links to Favorites
+and Sports, the avatar on Home's profile button.
+
+**Done when:** on iPhone, Mac and web a user sets a first and last name and a photo; the photo
+shows in their navbar at once, and on a friend's view of them, in a group and on a Board comment;
+signed out, the invite preview shows initials; a block turns the photo into a 404 for the blocked
+side; and a friend sees the email only while the switch is on.
 
 ### SOC-002 · Friends, requests, blocks, invites · L
 **Needs:** SOC-001.

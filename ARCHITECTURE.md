@@ -332,7 +332,12 @@ with GAM-006a and grew with GAM-006c, 2026-10-20), `/v1/ws`,
 `/v1/keys/*`, `/v1/conversations/*` (6). Pulled forward with groups (2026-10-20):
 `/v1/me/profile`, `/v1/social/*` (friends, requests, blocks, reports, invite links), the public
 invite preview `/v1/invites/{code}`, `/v1/groups/*`,
-`/v1/group-invites/*`, `/v1/me/group-invites`, `/v1/realtime/ticket` and `/v1/ws`.
+`/v1/group-invites/*`, `/v1/me/group-invites`, `/v1/realtime/ticket` and `/v1/ws`. With the
+profile editor (SOC-001b, 2026-10-27): `/v1/me/avatar` and `GET /v1/users/{userId}/avatar`. The
+avatar route is authenticated like every other; the web reads it through a same-origin Worker
+route that forwards the session cookie, and the Apple apps through the generated client, so no
+avatar is ever behind a public URL. Its `Cache-Control` is set by `AvatarCacheMiddleware` because
+the generated server percent-encodes header values.
 
 ### Recap stats (GAM-006a)
 
@@ -1226,7 +1231,7 @@ Modelled on Norviq's `social_*` design (`norviq-backend/.../Social`, `CreateSoci
 | `social_invites` | code (12 random base62), inviter, optional title, expiry (14 days), redeemed_by, revoked_at |
 | `social_reactions` | user, owner, title, UTC day, one of six emoji; one per user and row (SOC-007) |
 | `social_recommendations` | from, to, title, note (140), created, added_at, dismissed_at; one waiting per pair and title (SOC-006) |
-| `social_settings` | `share_library_with_friends` (default on, 2026-10-21); `show_achievements_to_friends` (default on) and `leaderboard_opt_in` (default off), 2026-10-22 |
+| `social_settings` | `share_library_with_friends` (default on, 2026-10-21); `show_achievements_to_friends` (default on) and `leaderboard_opt_in` (default off), 2026-10-22; `share_email_with_friends` (default off, SOC-001b, 2026-10-27) |
 | `favorites` | user, kind (`film` / `show` / `anime` / `manga` / `book` / `album`), position 0…9, title; key (user, kind, position), unique (user, kind, title) (FAV-001, 2026-10-23) |
 
 Rules:
@@ -1260,7 +1265,8 @@ GRP-001…GRP-012.
 
 | Table | Shape |
 | --- | --- |
-| `profiles` | `user_id`, `handle` (unique, `^[a-z0-9_]{3,20}$`), display name |
+| `profiles` | `user_id`, `handle` (unique, `^[a-z0-9_]{3,20}$`). The names live on `users` (SOC-001b): `first_name`, `last_name`, and `display_name`, their join, which every social read uses; `avatar_version` is null without a photo and new on each upload |
+| `avatars` | user, `image` (one JPEG ≤ 1 MB the device made, 512px square). Served by `GET /v1/users/{userId}/avatar` to signed-in accounts only, never across a block; `?v=` is `avatar_version`, so a week's private cache is never stale (SOC-001b) |
 | `groups` | name. Ownership is the one `owner` member row (unique partial index); delete is hard and cascades |
 | `group_members` | group, user, role `owner` / `admin` / `member`, `joined_at`; `muted` (GRP-012), `share_progress` (GRP-007, default off) |
 | `group_invites` | group, inviter, invitee. Pending only: accepted becomes a member row, declined or cancelled is deleted |

@@ -10,7 +10,8 @@ what Aaru does, this page changes first.
 
 - Your library is **private**. There is no public profile and no feed, and your library is
   never shared with other users. If you choose a handle, people who know it can send you a
-  friend request; friends see your handle and name, nothing else.
+  friend request; friends see your handle, your name and your photo if you add one, and your
+  email only if you choose to share it. Nothing else.
 - **Group chats are not end-to-end encrypted.** Messages in a group are stored readable on
   Aaru's server so the group works across your devices; the apps say so in every group.
 - **No ads, no tracking.** Aaru does not sell or rent data, has no advertising code, and does
@@ -22,7 +23,8 @@ what Aaru does, this page changes first.
 ## What Aaru stores
 
 **Your account.** How you sign in (Apple, Google or email), the identifier that service gives
-Aaru, your email address when the service shares it, and a display name if you have one.
+Aaru, your email address when the service shares it, and your first and last name if you give
+them. Your email is shown to you in your profile; nobody else sees it unless you share it (below).
 Sign-in sessions are stored only as one-way hashes; on the web the session lives in a secure,
 HttpOnly cookie. Email sign-in codes are stored hashed and expire after 15 minutes.
 
@@ -76,8 +78,19 @@ channel), played past half its length or 4 minutes, is added to your listens as 
 track, once.
 
 **Profile and friends.** If you choose a handle, Aaru stores it. Anyone who types your exact
-handle can see it with your name and send you a friend request; nobody can search or browse for
-you. Aaru stores pending requests, who your friends are, who you blocked, and any report you
+handle can see it with your name and photo and send you a friend request; nobody can search or
+browse for you.
+
+**Your photo.** If you add a profile photo, your device makes a small square copy and Aaru keeps
+that copy in its own database; the original stays on your device. It shows wherever your name
+shows to someone signed in to Aaru: your friends, the people in your groups, Boards, and anyone
+who types your exact handle. It is never shown to anyone signed out (an invite link shows only
+your initials) or to someone either of you blocked. Removing it, or deleting your account,
+deletes it.
+
+**Your email.** Friends see your email only while "Friends can see my email" is on in your
+profile, and it is off until you turn it on. Group members never see it. An Apple "Hide My Email"
+address cannot be shared, because it takes mail only from Aaru. Aaru stores pending requests, who your friends are, who you blocked, and any report you
 send about another user (the reason and your note). The person you block or report is not
 told. Deleting your account removes all of it; a report someone sent about you keeps its reason
 but no longer points to you.
@@ -85,7 +98,8 @@ but no longer points to you.
 **What your friends see.** Your friends, and only your friends, see what you are watching, what
 you finished and when, your ratings, the last episode you ticked, and which titles you both have.
 They never see your notes. Episodes you imported or restored don't show up as activity. Turn off
-"Show my library to friends" in Settings and they see only your name and handle.
+"Show my library to friends" in Settings and they see only your name, handle and photo (and your
+email, if you share it).
 
 **Points, streaks and badges.** Aaru keeps a record of the points you earn (what earned them,
 which title, and the day in your time zone), the days you kept a streak, and the badges you

@@ -6,11 +6,11 @@ import OpenAPIRuntime
 extension APIImplementation {
     func updateProfile(_ input: Operations.UpdateProfile.Input) async throws -> Operations.UpdateProfile.Output {
         guard case let .json(body) = input.body else { throw AppError.badRequest() }
-        // Absent leaves the name alone; present (even empty) replaces it.
-        let user = try await services.social.saveProfile(
-            currentUser(), handle: body.handle, displayName: body.displayName.map { Optional($0) }
-        )
-        return .ok(.init(body: .json(.init(user))))
+        // Absent keeps a field; an empty name clears it.
+        let profile = try await services.social.saveProfile(currentUser(), .init(
+            handle: body.handle, firstName: body.firstName, lastName: body.lastName, displayName: body.displayName
+        ))
+        return .ok(.init(body: .json(.init(profile))))
     }
 
     func getSocialUser(_ input: Operations.GetSocialUser.Input) async throws -> Operations.GetSocialUser.Output {
@@ -96,7 +96,12 @@ extension APIImplementation {
 
 extension Components.Schemas.SocialUser {
     init(_ user: SocialUser) {
-        self.init(userId: user.id.description, handle: user.handle, displayName: user.displayName)
+        self.init(
+            userId: user.id.description,
+            handle: user.handle,
+            displayName: user.displayName,
+            avatarUrl: user.avatarVersion.map { SocialService.avatarPath(user.id, version: $0) }
+        )
     }
 }
 

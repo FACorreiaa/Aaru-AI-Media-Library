@@ -182,6 +182,9 @@ Use these words in code, APIs, and UI:
 - **Sport event** — one match, game or card from the sports provider. Catalog data for the Sports
   tab, kept no longer than the cache: never a Title, never a library item, never journaled
 - **Owned** — separate `isOwned` flag; do not overload status
+- **Avatar** — a user's own photo, one square JPEG the device made (SOC-001b). It shows wherever
+  their name shows to a signed-in account, with the monogram as the fallback; never on a route a
+  signed-out caller reads, never across a block. Profile data: not journaled
 - **Favorite** — one title in a user's ordered top 10 for a kind (film, show, anime, manga,
   book, album), any catalog title. Profile data shown on the profile: not a library write, not
   journaled, not a List

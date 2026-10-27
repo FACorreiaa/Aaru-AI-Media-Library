@@ -67,7 +67,10 @@ export function PostCard(props: {
         when={!props.post.mine}
         fallback={
           <span class="shrink-0 self-start">
-            <Monogram text={monogram(props.post.author)} />
+            <Monogram
+              text={monogram(props.post.author)}
+              avatarUrl={props.post.author.avatarUrl}
+            />
           </span>
         }
       >
@@ -77,7 +80,10 @@ export function PostCard(props: {
           aria-label={inviterName(props.post.author)}
           class="shrink-0 self-start rounded-full"
         >
-          <Monogram text={monogram(props.post.author)} />
+          <Monogram
+            text={monogram(props.post.author)}
+            avatarUrl={props.post.author.avatarUrl}
+          />
         </Link>
       </Show>
       <div class="min-w-0 flex-1">

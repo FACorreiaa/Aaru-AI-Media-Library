@@ -13,9 +13,13 @@ import {
 } from 'solid-js'
 import type { JSX } from 'solid-js'
 import { requestMALPull } from '../../lib/mal/server'
+import { avatarSrc } from '../../lib/profile/avatar-src'
 import { Wordmark } from '../Brand'
 import type { Scope } from '../SearchPanel'
 import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
   Button,
   Collapsible,
   CollapsibleContent,
@@ -114,7 +118,11 @@ function labelOf(title: string): string {
   return first && first !== 'Aaru' ? first : 'Back'
 }
 
-export type ShellSession = { displayName: string | null; handle: string | null }
+export type ShellSession = {
+  displayName: string | null
+  handle: string | null
+  avatarUrl?: string | null
+}
 
 /**
  * The signed-in web app's one shell (DESIGN.md §18, UX-002): the sidebar, persistent and
@@ -248,7 +256,10 @@ export function AppShell(props: {
           onSearch={(from) => openSearch(undefined, from)}
         />
         <SidebarInset class="min-w-0">
-          <TopBar onSearch={(from) => openSearch(undefined, from)} />
+          <TopBar
+            session={props.session}
+            onSearch={(from) => openSearch(undefined, from)}
+          />
           <div
             id="content"
             tabIndex={-1}
@@ -494,12 +505,7 @@ function AppSidebar(props: {
               size="lg"
               class="h-12 gap-3 rounded-full px-1.5 hover:bg-stone/70 group-data-[collapsible=icon]:size-10! group-data-[collapsible=icon]:p-1!"
             >
-              <span
-                aria-hidden="true"
-                class="grid size-8 shrink-0 place-items-center rounded-full bg-ink font-display text-sm text-paper"
-              >
-                {initial()}
-              </span>
+              <AccountAvatar session={props.session} initial={initial()} />
               <span class="flex min-w-0 flex-col leading-tight">
                 <span class="truncate text-sm font-semibold text-ink">
                   {name()}
@@ -519,9 +525,31 @@ function AppSidebar(props: {
   )
 }
 
-/** Below 1024px: the wordmark, Search and the menu that opens the sidebar as a sheet. */
-function TopBar(props: { onSearch: (from: Element) => void }) {
+/** Your photo on the account row and the top bar (SOC-001b), else your initial on ink. */
+function AccountAvatar(props: { session: ShellSession; initial: string }) {
+  return (
+    <Avatar aria-hidden="true" class="size-8 bg-ink">
+      <Show when={avatarSrc(props.session.avatarUrl)}>
+        {(src) => <AvatarImage src={src()} alt="" />}
+      </Show>
+      <AvatarFallback class="font-display text-sm text-paper">
+        {props.initial}
+      </AvatarFallback>
+    </Avatar>
+  )
+}
+
+/** Below 1024px: the wordmark, Search, your avatar to Account, and the menu that opens the
+ * sidebar as a sheet. */
+function TopBar(props: {
+  session: ShellSession
+  onSearch: (from: Element) => void
+}) {
   const sidebar = useSidebar()
+  const initial = () =>
+    (props.session.displayName ?? props.session.handle ?? 'A')
+      .charAt(0)
+      .toUpperCase()
   return (
     <header class="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-line bg-paper/95 px-4 backdrop-blur-sm lg:hidden">
       <Wordmark to="/app" class="h-7 w-auto" />
@@ -535,6 +563,13 @@ function TopBar(props: { onSearch: (from: Element) => void }) {
         >
           <SearchIcon class="size-5" />
         </Button>
+        <Link
+          to="/app/settings/account"
+          aria-label="Account"
+          class="grid size-10 place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        >
+          <AccountAvatar session={props.session} initial={initial()} />
+        </Link>
         <Button
           variant="ghost"
           size="icon"

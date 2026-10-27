@@ -218,7 +218,9 @@ paths:
   /v1/me/profile:
     put:
       operationId: updateProfile
-      summary: Claim or change your handle, and optionally your display name. Handles are how friends find you.
+      summary: >-
+        Claim or change your handle, and your first and last name (SOC-001b). Handles are how friends
+        find you; others see the two names joined. Every field is optional: one left out keeps its value.
       requestBody:
         required: true
         content:
@@ -226,10 +228,68 @@ paths:
             schema: {$ref: '#/components/schemas/ProfileUpdate'}
       responses:
         '200':
-          description: Your social identity.
+          description: >-
+            Your account. It carries every field `SocialUser` did, so apps from before SOC-001b read it
+            unchanged.
           content:
             application/json:
-              schema: {$ref: '#/components/schemas/SocialUser'}
+              schema: {$ref: '#/components/schemas/Me'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/me/avatar:
+    put:
+      operationId: uploadAvatar
+      summary: >-
+        Replace your avatar (SOC-001b) with one square JPEG of at most 1 MB; apps send 512px. Anything
+        that is not a JPEG is refused with 415 `avatar_image_type`, a larger file with 413 `file_too_large`.
+        It is seen by signed-in accounts wherever your name is, never signed out and never across a block.
+      requestBody:
+        required: true
+        content:
+          image/jpeg:
+            schema: {type: string, format: binary}
+      responses:
+        '200':
+          description: Your account, with the new `avatarUrl`.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Me'}
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: deleteAvatar
+      summary: Remove your avatar. Your monogram shows again everywhere.
+      responses:
+        '200':
+          description: Your account, without `avatarUrl`.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Me'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/users/{userId}/avatar:
+    get:
+      operationId: getUserAvatar
+      summary: >-
+        Someone's avatar (SOC-001b), for any signed-in account. A block either way, an unknown user and no
+        avatar are the same 404. Use the `avatarUrl` a response gave you: its `v` changes with every upload,
+        so a cached image is never stale.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+        - name: v
+          in: query
+          required: false
+          description: The avatar's version, for caches only.
+          schema: {type: integer, format: int64}
+      responses:
+        '200':
+          description: The JPEG, with `Cache-Control` for a week in a private cache.
+          content:
+            image/jpeg:
+              schema: {type: string, format: binary}
         default:
           $ref: '#/components/responses/Error'
   /v1/me/favorites:
@@ -3768,6 +3828,11 @@ components:
           format: uuid
         displayName:
           type: string
+          description: The first and last name joined; what friends and groups see.
+        firstName:
+          type: string
+        lastName:
+          type: string
         handle:
           type: string
           description: Absent until the user claims one in PUT /v1/me/profile.
@@ -3776,6 +3841,19 @@ components:
           items:
             type: string
             enum: [apple, email, google]
+        email:
+          type: string
+          description: >-
+            The address friends may see when you share it: the email sign-in's, else Google's, else
+            Apple's. Absent when no sign-in has one.
+        emailShareable:
+          type: boolean
+          description: >-
+            False without an email, or for an Apple private relay address, which friends cannot write to.
+            Always sent since SOC-001b; optional so apps built before the server ships still read `Me`.
+        avatarUrl:
+          type: string
+          description: Path to `GET /v1/users/{userId}/avatar` with its version. Absent without an avatar.
     Entitlement:
       type: object
       required: [plus, appAccountToken, capture]
@@ -3812,10 +3890,16 @@ components:
               format: date-time
     ProfileUpdate:
       type: object
-      required: [handle]
+      description: A field left out keeps its saved value.
       properties:
         handle: {type: string, description: '3–20 of a–z, 0–9 and _. Stored lowercase.'}
-        displayName: {type: string, description: Absent leaves it unchanged; empty clears it.}
+        firstName: {type: string, maxLength: 50, description: Empty clears it.}
+        lastName: {type: string, maxLength: 50, description: Empty clears it.}
+        displayName:
+          type: string
+          description: >-
+            Deprecated: what apps before SOC-001b send in place of the two names. Ignored when either name is sent;
+            the saved names joined is no change, anything else splits at the first space. Empty clears both.
     SocialUser:
       type: object
       required: [userId, handle]
@@ -3823,6 +3907,11 @@ components:
         userId: {type: string, format: uuid}
         handle: {type: string}
         displayName: {type: string}
+        avatarUrl:
+          type: string
+          description: >-
+            Path to `GET /v1/users/{userId}/avatar` with its version (SOC-001b). Absent without an avatar,
+            and never on a route a signed-out caller can read.
     SocialUserView:
       type: object
       required: [user, relationship]
@@ -3854,6 +3943,10 @@ components:
         leaderboardOptIn:
           type: boolean
           description: You join the weekly friends board, and see it. Off by default.
+        shareEmailWithFriends:
+          type: boolean
+          description: >-
+            Friends see your email on your profile (SOC-001b). Off by default; group members never see it.
     FriendItem:
       type: object
       required: [title, status, updatedAt]
@@ -3912,6 +4005,9 @@ components:
         favorites:
           $ref: '#/components/schemas/Favorites'
           description: Their top 10s (FAV-001). Sent only while they share their library.
+        email:
+          type: string
+          description: Their email, sent only while they share it (SOC-001b), whether or not they share their library.
     FavoriteKind:
       type: string
       enum: [film, show, anime, manga, book, album]
@@ -5335,6 +5431,10 @@ components:
       properties:
         exportedAt: {type: string, format: date-time}
         account: {$ref: '#/components/schemas/Me'}
+        avatarJpeg:
+          type: string
+          format: byte
+          description: Your avatar (SOC-001b) as base64 JPEG. Absent without one.
         library:
           type: array
           description: Every library item; shows carry `watchedEpisodes`.

@@ -182,6 +182,7 @@ function Home() {
   const session = () => ({
     displayName: context().session.displayName,
     handle: context().session.handle,
+    avatarUrl: context().session.avatarUrl,
   })
   /** Up next again, past the cache: after a write the rows must show it. */
   const freshUpNext = () => queryClient.query({ ...upNextQuery, staleTime: 0 })

@@ -13,6 +13,7 @@ import { REACTIONS, loadActivity, reactTo } from '../lib/social/server'
 import type { ActivityItem, ActivityPage, Reaction } from '../lib/social/server'
 import { Poster } from './Poster'
 import { Button } from '~/components/ui'
+import { Monogram } from './groups/Monogram'
 
 // SOC-003 (minimal): what you and your friends watched and finished in the last two weeks,
 // newest first. Only dated ticks and finishes; imports never show. A room you visit, not a feed
@@ -88,9 +89,13 @@ export function FriendActivity(props: { page: ActivityPage; me?: string }) {
                   to="/app/friends/$handle"
                   params={{ handle: item.user.handle }}
                   aria-label={inviterName(item.user)}
-                  class="grid size-9 shrink-0 place-items-center rounded-full bg-medallion/20 font-display text-sm font-medium"
+                  class="shrink-0 rounded-full"
                 >
-                  {monogram(item.user)}
+                  <Monogram
+                    text={monogram(item.user)}
+                    avatarUrl={item.user.avatarUrl}
+                    class="size-9"
+                  />
                 </Link>
                 <div class="min-w-0 flex-1 text-sm leading-snug">
                   <p>

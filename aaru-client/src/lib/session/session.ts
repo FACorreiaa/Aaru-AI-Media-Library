@@ -15,7 +15,13 @@ import { SESSION_COOKIE, sessionCookieOptions } from './cookie'
 
 export type Session =
   | { signedIn: false }
-  | { signedIn: true; displayName: string | null; handle: string | null }
+  | {
+      signedIn: true
+      displayName: string | null
+      handle: string | null
+      /** The API's path to your photo (SOC-001b), for `avatarSrc`. */
+      avatarUrl?: string | null
+    }
 
 export const getSession = createServerFn({ method: 'GET' }).handler(
   async (): Promise<Session> => {
@@ -32,6 +38,7 @@ export const getSession = createServerFn({ method: 'GET' }).handler(
         signedIn: true,
         displayName: data?.displayName ?? null,
         handle: data?.handle ?? null,
+        avatarUrl: data?.avatarUrl ?? null,
       }
     } catch {
       // An unreachable API keeps the session; only a 401 ends it (as in the Apple apps).

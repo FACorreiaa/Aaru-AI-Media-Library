@@ -481,7 +481,11 @@ export function InviteDialog(props: {
                 {(friend) => (
                   <li class="flex items-center justify-between gap-3 py-2.5">
                     <span class="flex min-w-0 items-center gap-3">
-                      <Monogram text={monogram(friend)} size="sm" />
+                      <Monogram
+                        text={monogram(friend)}
+                        avatarUrl={friend.avatarUrl}
+                        size="sm"
+                      />
                       <span class="truncate text-sm font-medium">
                         {personLabel(friend)}
                       </span>

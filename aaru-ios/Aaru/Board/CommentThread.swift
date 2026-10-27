@@ -150,7 +150,7 @@ private struct CommentRow: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         } else {
             HStack(alignment: .top, spacing: AaruSpace.medium) {
-                Monogram(text: comment.author?.monogram ?? "A", size: Self.side)
+                Monogram(text: comment.author?.monogram ?? "A", avatarUrl: comment.author?.avatarUrl, size: Self.side)
                 VStack(alignment: .leading, spacing: AaruSpace.xsmall) {
                     header
                     Text(MentionText.attributed(comment.body, myHandle: myHandle))

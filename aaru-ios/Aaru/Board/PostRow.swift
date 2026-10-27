@@ -33,7 +33,7 @@ struct PostRow<Editor: View>: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: AaruSpace.medium) {
-            Monogram(text: post.author.monogram)
+            Monogram(text: post.author.monogram, avatarUrl: post.author.avatarUrl)
             VStack(alignment: .leading, spacing: AaruSpace.small) {
                 header
                 if let title = post.title {

@@ -42,8 +42,11 @@ extension APIImplementation {
         let preview = try await services.invites.preview(
             code: input.path.code, viewer: context.userID, clientAddress: context.clientAddressForRateLimit
         )
+        // The preview is public: the inviter's avatar stays behind sign-in (SOC-001b).
+        var inviter = Components.Schemas.SocialUser(preview.inviter)
+        inviter.avatarUrl = nil
         return .ok(.init(body: .json(.init(
-            inviter: .init(preview.inviter),
+            inviter: inviter,
             title: preview.title.map { .init($0) },
             expiresAt: preview.invite.expiresAt,
             relationship: preview.relationship.flatMap { .init(rawValue: $0.rawValue) }
