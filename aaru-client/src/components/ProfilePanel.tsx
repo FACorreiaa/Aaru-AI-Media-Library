@@ -18,7 +18,7 @@ import { cn } from '~/lib/utils'
 import { FavoritesRow } from './FavoritesRow'
 import { Poster } from './Poster'
 import { RatingsHistogram } from './StatsPanel'
-import { cardClass } from '~/components/ui'
+import { buttonVariants, cardClass } from '~/components/ui'
 import { Medallion } from './Medallion'
 import type { Person } from './Medallion'
 
@@ -79,6 +79,15 @@ export function ProfilePanel(props: {
               .join(' · ')}
           </p>
         </div>
+        <Link
+          to="/app/settings/account"
+          class={cn(
+            buttonVariants({ variant: 'outline', size: 'sm' }),
+            'ml-auto',
+          )}
+        >
+          Edit profile
+        </Link>
       </header>
 
       <Show

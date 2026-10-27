@@ -58,11 +58,13 @@ private struct BoardRow: View {
                 .monospacedDigit()
                 .foregroundStyle(Color(.muted))
                 .frame(minWidth: 20, alignment: .trailing)
-            Text(entry.user.monogram)
-                .font(.footnote.weight(.medium))
-                .frame(width: side, height: side)
-                .background(Color(.medallion).opacity(AaruAlpha.ghost), in: .circle)
-                .accessibilityHidden(true)
+            AvatarView(path: entry.user.avatarUrl, size: side) {
+                Text(entry.user.monogram)
+                    .font(.footnote.weight(.medium))
+                    .frame(width: side, height: side)
+                    .background(Color(.medallion).opacity(AaruAlpha.ghost), in: .circle)
+            }
+            .accessibilityHidden(true)
             Text(entry.you ? "You" : entry.user.inviteName)
                 .fontWeight(entry.you ? .semibold : .regular)
                 .lineLimit(1)

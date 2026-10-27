@@ -8,25 +8,36 @@ import Foundation
 extension PostgresUserStore {
     func profile(_ id: UserID) async throws -> UserProfile? {
         struct UserRow: Decodable {
-            let displayName: String?
+            let firstName: String?
+            let lastName: String?
             let handle: String?
+            let avatarVersion: Int64?
         }
-        struct IdentityRow: Decodable { let provider: String }
+        struct IdentityRow: Decodable {
+            let provider: String
+            let email: String?
+        }
         let sql = try sqlDatabase(database)
         guard let user = try await sql.raw("""
-        SELECT u.display_name, p.handle FROM users u LEFT JOIN profiles p ON p.user_id = u.id
+        SELECT u.first_name, u.last_name, p.handle, u.avatar_version
+        FROM users u LEFT JOIN profiles p ON p.user_id = u.id
         WHERE u.id = \(bind: id.rawValue)
         """).first(decoding: UserRow.self, keyDecodingStrategy: .convertFromSnakeCase)
         else { return nil }
-        let identities = try await sql.select().column("provider").from("auth_identities")
+        let identities = try await sql.select().column("provider").column("email").from("auth_identities")
             .where("user_id", .equal, id.rawValue)
             .orderBy("provider")
             .all(decoding: IdentityRow.self)
+            .compactMap { row in
+                AuthIdentity.Provider(rawValue: row.provider).map { (provider: $0, email: row.email) }
+            }
         return UserProfile(
             id: id,
-            displayName: user.displayName,
+            name: PersonName(first: user.firstName, last: user.lastName),
             handle: user.handle,
-            providers: identities.compactMap { AuthIdentity.Provider(rawValue: $0.provider) }
+            providers: identities.map(\.provider),
+            email: UserProfile.contactEmail(identities),
+            avatarVersion: user.avatarVersion
         )
     }
 

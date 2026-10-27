@@ -26,6 +26,8 @@ final class AppServices {
     #endif
     /// `nil` only when the build has no API host configured.
     let api: Client?
+    /// Everyone's photos (SOC-001b), read through `api` and kept by URL.
+    let avatars: AvatarLoader
 
     init() {
         let session = SessionStore()
@@ -39,6 +41,7 @@ final class AppServices {
                 )
             )
         }
+        avatars = AvatarLoader(api: api)
         lists = ListsModel(api: api)
         imports = ImportsModel(api: api)
         settings = SettingsServices(api: api)

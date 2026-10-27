@@ -240,7 +240,12 @@ export function PostComposer(props: {
       class={`rounded-card bg-surface px-3 py-3 transition-shadow sm:px-4 ${tooLong() ? 'ring-2 ring-danger' : 'focus-within:ring-2 focus-within:ring-accent/60'}`}
     >
       <div class="flex gap-3">
-        <Monogram text={monogram(props.me)} size="sm" class="mt-0.5" />
+        <Monogram
+          text={monogram(props.me)}
+          avatarUrl={props.me.avatarUrl}
+          size="sm"
+          class="mt-0.5"
+        />
         <div class="min-w-0 flex-1">
           <TextField value={text()} onChange={setText} class="relative flex">
             <TextFieldLabel class="sr-only">Write a post</TextFieldLabel>

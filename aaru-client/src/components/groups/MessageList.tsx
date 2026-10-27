@@ -551,7 +551,12 @@ export function MessageList(props: {
                           >
                             <Show
                               when={m().fromAgent}
-                              fallback={<Monogram text={authorMonogram(m())} />}
+                              fallback={
+                                <Monogram
+                                  text={authorMonogram(m())}
+                                  avatarUrl={m().author?.avatarUrl}
+                                />
+                              }
                             >
                               <AaruAvatar />
                             </Show>
@@ -713,6 +718,7 @@ export function MessageList(props: {
                                     })
                                   : '·'
                               }
+                              avatarUrl={shell.me().avatarUrl}
                             />
                           </Show>
                         </div>

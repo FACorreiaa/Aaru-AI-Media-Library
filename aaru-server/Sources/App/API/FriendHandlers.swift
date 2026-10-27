@@ -24,6 +24,7 @@ extension APIImplementation {
         settings.shareLibraryWithFriends = body.shareLibraryWithFriends
         settings.showAchievementsToFriends = body.showAchievementsToFriends ?? settings.showAchievementsToFriends
         settings.leaderboardOptIn = body.leaderboardOptIn ?? settings.leaderboardOptIn
+        settings.shareEmailWithFriends = body.shareEmailWithFriends ?? settings.shareEmailWithFriends
         let saved = try await friendViews.save(settings, viewer: viewer)
         return .ok(.init(body: .json(.init(saved))))
     }
@@ -100,7 +101,8 @@ extension Components.Schemas.FriendProfile {
                     badges: $0.badges.compactMap { Components.Schemas.BadgeAward($0, reveal: false) }
                 )
             },
-            favorites: profile.favorites.map(Components.Schemas.Favorites.init)
+            favorites: profile.favorites.map(Components.Schemas.Favorites.init),
+            email: profile.email
         )
     }
 }
@@ -110,7 +112,8 @@ extension Components.Schemas.SocialSettings {
         self.init(
             shareLibraryWithFriends: settings.shareLibraryWithFriends,
             showAchievementsToFriends: settings.showAchievementsToFriends,
-            leaderboardOptIn: settings.leaderboardOptIn
+            leaderboardOptIn: settings.leaderboardOptIn,
+            shareEmailWithFriends: settings.shareEmailWithFriends
         )
     }
 }

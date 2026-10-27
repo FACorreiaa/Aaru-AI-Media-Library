@@ -12,6 +12,7 @@ import type { components } from '../api/schema'
 // the Apple apps.
 
 export type SocialUser = components['schemas']['SocialUser']
+export type Me = components['schemas']['Me']
 export type SocialUserView = components['schemas']['SocialUserView']
 export type FriendRequest = components['schemas']['FriendRequest']
 
@@ -60,16 +61,55 @@ export const loadSocial = createServerFn({ method: 'GET' }).handler(
   },
 )
 
+/** Handle and names (SOC-001b); a field left out keeps its value, an empty name clears it. */
 export const saveProfile = createServerFn({ method: 'POST' })
   .validator(
-    z.object({ handle: z.string(), displayName: z.string().optional() }),
+    z.object({
+      handle: z.string().optional(),
+      firstName: z.string().max(50).optional(),
+      lastName: z.string().max(50).optional(),
+    }),
   )
-  .handler(async ({ data }): Promise<SocialUser> =>
+  .handler(async ({ data }): Promise<Me> =>
     check(
       await api(sessionToken()).PUT('/v1/me/profile', { body: data }),
-      'Your handle was not saved.',
+      'Your profile was not saved.',
     ),
   )
+
+/** 1 MB of JPEG, as base64. The browser sends a 512 px square, far under it. */
+const MAX_AVATAR_BASE64 = Math.ceil((1024 * 1024 * 4) / 3) + 4
+
+/** Replaces the avatar with a JPEG the browser made (`lib/profile/avatar-image.ts`). */
+export const uploadAvatar = createServerFn({ method: 'POST' })
+  .validator(
+    z.object({
+      image: z
+        .string()
+        .min(1)
+        .max(MAX_AVATAR_BASE64, 'That photo is larger than 1 MB.'),
+    }),
+  )
+  .handler(async ({ data }): Promise<Me> =>
+    check(
+      await api(sessionToken()).PUT('/v1/me/avatar', {
+        body: Uint8Array.from(atob(data.image), (c) =>
+          c.charCodeAt(0),
+        ) as never,
+        bodySerializer: (body: unknown) => body as Uint8Array,
+        headers: { 'Content-Type': 'image/jpeg' },
+      }),
+      'Your photo was not saved.',
+    ),
+  )
+
+export const removeAvatar = createServerFn({ method: 'POST' }).handler(
+  async (): Promise<Me> =>
+    check(
+      await api(sessionToken()).DELETE('/v1/me/avatar'),
+      'Your photo was not removed.',
+    ),
+)
 
 export const sendFriendRequest = createServerFn({ method: 'POST' })
   .validator(z.object({ handle: z.string() }))
@@ -288,6 +328,7 @@ export const saveSocialSettings = createServerFn({ method: 'POST' })
       shareLibraryWithFriends: z.boolean().optional(),
       showAchievementsToFriends: z.boolean().optional(),
       leaderboardOptIn: z.boolean().optional(),
+      shareEmailWithFriends: z.boolean().optional(),
     }),
   )
   .handler(async ({ data }): Promise<SocialSettings> => {

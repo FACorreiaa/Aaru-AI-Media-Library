@@ -26,7 +26,7 @@ struct InviteFriendsSheet: View {
                 }
                 ForEach(groups.friends, id: \.userId) { friend in
                     HStack(spacing: 12) {
-                        Monogram(text: friend.monogram)
+                        Monogram(text: friend.monogram, avatarUrl: friend.avatarUrl)
                         Text(friend.label).lineLimit(1)
                         Spacer(minLength: 8)
                         if detail?.members.contains(where: { $0.user.userId == friend.userId }) == true {

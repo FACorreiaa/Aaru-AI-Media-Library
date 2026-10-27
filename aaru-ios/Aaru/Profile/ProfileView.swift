@@ -16,6 +16,8 @@ struct ProfileView: View {
     @State private var model: ProfileModel
     @State private var recap: RecapPeriod?
     @Environment(\.dismiss) private var dismiss
+    /// The app's one account (SOC-001b): the header shows an edit at once.
+    @Environment(SocialModel.self) private var social: SocialModel?
 
     init(
         api: Client?,
@@ -60,7 +62,13 @@ struct ProfileView: View {
         if let stats = model.stats {
             ScrollView {
                 VStack(alignment: .leading, spacing: 32) {
-                    ProfileHeader(account: model.account, memberSince: stats.memberSince)
+                    VStack(alignment: .leading, spacing: 12) {
+                        ProfileHeader(account: social?.account ?? model.account, memberSince: stats.memberSince)
+                        if let social {
+                            NavigationLink("Edit profile") { ProfileEditor(model: social) }
+                                .buttonStyle(.bordered)
+                        }
+                    }
                     if model.isEmpty {
                         Label(
                             "Your stats fill in as you watch. Mark a show you've finished to start.",
@@ -140,44 +148,49 @@ struct ProfileView: View {
 
 // MARK: Header
 
-/// The user's initials on the medallion tint. Aaru has no avatar uploads; with no name or handle
+/// The user's photo (SOC-001b), else their initials on the medallion tint; with no name or handle
 /// yet, a person symbol.
 struct ProfileMedallion: View {
     let account: Components.Schemas.Me?
     var size: CGFloat = 30
 
     var body: some View {
-        Group {
-            if let initials = ProfileModel.initials(account) {
-                Text(initials)
-                    .font(size > 40 ? .aaruDisplay(size: size * 0.4) : .system(size: size * 0.4, weight: .semibold))
-            } else {
-                Image(systemName: "person.fill")
-                    .font(.system(size: size * 0.42))
+        AvatarView(path: account?.avatarUrl, size: size) {
+            Group {
+                if let initials = ProfileModel.initials(account) {
+                    Text(initials)
+                        .font(size > 40 ? .aaruDisplay(size: size * 0.4) : .system(size: size * 0.4, weight: .semibold))
+                } else {
+                    Image(systemName: "person.fill")
+                        .font(.system(size: size * 0.42))
+                }
             }
+            .foregroundStyle(Color(.ink))
+            .frame(width: size, height: size)
+            .background(Color(.medallion).opacity(AaruAlpha.ghost), in: .circle)
         }
-        .foregroundStyle(Color(.ink))
-        .frame(width: size, height: size)
-        .background(Color(.medallion).opacity(AaruAlpha.ghost), in: .circle)
         .overlay { Circle().strokeBorder(Color(.medallion).opacity(AaruAlpha.half), lineWidth: 1) }
     }
 }
 
-/// Home's way to the profile: the medallion with the user's initials. "Your profile" to VoiceOver.
+/// Home's way to the profile: the medallion with the user's photo or initials. "Your profile" to
+/// VoiceOver. It reads the app's one account, so an edit shows here at once; until that has
+/// loaded, its own read of `/v1/me`.
 struct ProfileButton: View {
     let api: Client?
     let action: () -> Void
 
+    @Environment(SocialModel.self) private var social: SocialModel?
     @State private var account: Components.Schemas.Me?
 
     var body: some View {
         Button(action: action) {
-            ProfileMedallion(account: account, size: 30)
+            ProfileMedallion(account: social?.account ?? account, size: 30)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Your profile")
         .task {
-            guard let api, case let .ok(response)? = try? await api.getMe() else { return }
+            guard social?.account == nil, let api, case let .ok(response)? = try? await api.getMe() else { return }
             account = (try? response.body.json) ?? account
         }
     }
@@ -200,9 +213,12 @@ private struct ProfileEntry: ViewModifier {
     let onShowKind: (MediaKind) -> Void
 
     @State private var showsProfile = false
+    @Environment(AppRouter.self) private var router: AppRouter?
 
     func body(content: Content) -> some View {
         content
+            // Edit profile's "Sports you follow" changes the destination: the sheet makes way.
+            .onChange(of: router?.tab) { showsProfile = false }
             .toolbar {
                 ToolbarItem(placement: .profile) {
                     ProfileButton(api: api) { showsProfile = true }

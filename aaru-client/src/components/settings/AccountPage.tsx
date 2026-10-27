@@ -19,8 +19,8 @@ const providerNames = {
   google: 'Google',
 } as const
 
-/** Settings → Account (DESIGN.md §18): name and handle, favorites (FAV-001), how you sign in,
- * this device's appearance, and Sign out, which lives here only (UX-009). */
+/** Settings → Account (DESIGN.md §18): your profile (SOC-001b), favorites (FAV-001), how you
+ * sign in, this device's appearance, and Sign out, which lives here only (UX-009). */
 export function AccountPage(props: { data: AccountPageData }) {
   const router = useRouter()
   const navigate = useNavigate()
@@ -56,15 +56,13 @@ export function AccountPage(props: { data: AccountPageData }) {
       </Show>
 
       <ProfileEditor
-        handle={account().handle}
-        displayName={account().displayName}
-        onSaved={(user) => {
-          setAccount({
-            ...account(),
-            handle: user.handle,
-            displayName: user.displayName,
-          })
-          // The sidebar's account row reads the session, which the tab keeps cached.
+        account={account()}
+        sharing={props.data.sharing}
+        sports={props.data.sports}
+        onSaved={(saved) => {
+          setAccount(saved)
+          // The sidebar's account row and the top bar read the session, which the tab keeps
+          // cached: a new name, handle or photo shows there at once.
           forgetSession(router.options.context.queryClient)
           void router.invalidate()
         }}

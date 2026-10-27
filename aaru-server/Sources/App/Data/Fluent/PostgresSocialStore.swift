@@ -14,9 +14,10 @@ struct PostgresSocialStore: SocialStore {
         let userId: UUID
         let handle: String
         let displayName: String?
+        let avatarVersion: Int64?
 
         var user: SocialUser {
-            SocialUser(id: UserID(userId), handle: handle, displayName: displayName)
+            SocialUser(id: UserID(userId), handle: handle, displayName: displayName, avatarVersion: avatarVersion)
         }
     }
 
@@ -26,15 +27,22 @@ struct PostgresSocialStore: SocialStore {
         let fromUserId: UUID
         let fromHandle: String
         let fromDisplayName: String?
+        let fromAvatarVersion: Int64?
         let toUserId: UUID
         let toHandle: String
         let toDisplayName: String?
+        let toAvatarVersion: Int64?
 
         var request: FriendRequest {
             FriendRequest(
                 id: id,
-                sender: SocialUser(id: UserID(fromUserId), handle: fromHandle, displayName: fromDisplayName),
-                recipient: SocialUser(id: UserID(toUserId), handle: toHandle, displayName: toDisplayName),
+                sender: SocialUser(
+                    id: UserID(fromUserId), handle: fromHandle, displayName: fromDisplayName,
+                    avatarVersion: fromAvatarVersion
+                ),
+                recipient: SocialUser(
+                    id: UserID(toUserId), handle: toHandle, displayName: toDisplayName, avatarVersion: toAvatarVersion
+                ),
                 createdAt: createdAt
             )
         }
@@ -44,29 +52,32 @@ struct PostgresSocialStore: SocialStore {
 
     func socialUser(_ id: UserID) async throws -> SocialUser? {
         try await sql.raw("""
-        SELECT p.user_id, p.handle, u.display_name FROM profiles p JOIN users u ON u.id = p.user_id
+        SELECT p.user_id, p.handle, u.display_name, u.avatar_version FROM profiles p JOIN users u ON u.id = p.user_id
         WHERE p.user_id = \(bind: id.rawValue)
         """).first(decoding: UserRow.self, keyDecodingStrategy: .convertFromSnakeCase)?.user
     }
 
     func socialUser(handle: String) async throws -> SocialUser? {
         try await sql.raw("""
-        SELECT p.user_id, p.handle, u.display_name FROM profiles p JOIN users u ON u.id = p.user_id
+        SELECT p.user_id, p.handle, u.display_name, u.avatar_version FROM profiles p JOIN users u ON u.id = p.user_id
         WHERE p.handle = \(bind: handle)
         """).first(decoding: UserRow.self, keyDecodingStrategy: .convertFromSnakeCase)?.user
     }
 
-    func saveProfile(_ id: UserID, handle: String, displayName: String??) async throws {
+    func saveProfile(_ id: UserID, handle: String?, name: PersonName?) async throws {
         try await mappingConflicts("That handle is taken.") {
             try await database.transaction { database in
                 let sql = try sqlDatabase(database)
-                try await sql.raw("""
-                INSERT INTO profiles (user_id, handle) VALUES (\(bind: id.rawValue), \(bind: handle))
-                ON CONFLICT (user_id) DO UPDATE SET handle = EXCLUDED.handle, updated_at = now()
-                """).run()
-                if let displayName {
+                if let handle {
                     try await sql.raw("""
-                    UPDATE users SET display_name = \(bind: displayName), updated_at = now()
+                    INSERT INTO profiles (user_id, handle) VALUES (\(bind: id.rawValue), \(bind: handle))
+                    ON CONFLICT (user_id) DO UPDATE SET handle = EXCLUDED.handle, updated_at = now()
+                    """).run()
+                }
+                if let name {
+                    try await sql.raw("""
+                    UPDATE users SET first_name = \(bind: name.first), last_name = \(bind: name.last),
+                        display_name = \(bind: name.displayName), updated_at = now()
                     WHERE id = \(bind: id.rawValue)
                     """).run()
                 }
@@ -122,7 +133,9 @@ struct PostgresSocialStore: SocialStore {
         try await sql.raw("""
         SELECT r.id, r.created_at,
                r.from_user_id, fp.handle AS from_handle, fu.display_name AS from_display_name,
-               r.to_user_id, tp.handle AS to_handle, tu.display_name AS to_display_name
+               fu.avatar_version AS from_avatar_version,
+               r.to_user_id, tp.handle AS to_handle, tu.display_name AS to_display_name,
+               tu.avatar_version AS to_avatar_version
         FROM social_friend_requests r
         JOIN profiles fp ON fp.user_id = r.from_user_id JOIN users fu ON fu.id = r.from_user_id
         JOIN profiles tp ON tp.user_id = r.to_user_id JOIN users tu ON tu.id = r.to_user_id
@@ -167,7 +180,7 @@ struct PostgresSocialStore: SocialStore {
 
     func friends(_ id: UserID) async throws -> [SocialUser] {
         try await sql.raw("""
-        SELECT p.user_id, p.handle, u.display_name
+        SELECT p.user_id, p.handle, u.display_name, u.avatar_version
         FROM social_friendships f
         JOIN profiles p ON p.user_id = CASE WHEN f.user_low = \(bind: id.rawValue) THEN f.user_high ELSE f.user_low END
         JOIN users u ON u.id = p.user_id
@@ -234,7 +247,7 @@ struct PostgresSocialStore: SocialStore {
 
     func blocked(by id: UserID) async throws -> [SocialUser] {
         try await sql.raw("""
-        SELECT p.user_id, p.handle, u.display_name
+        SELECT p.user_id, p.handle, u.display_name, u.avatar_version
         FROM social_blocks b JOIN profiles p ON p.user_id = b.blocked_id JOIN users u ON u.id = p.user_id
         WHERE b.blocker_id = \(bind: id.rawValue)
         ORDER BY p.handle
@@ -254,5 +267,42 @@ struct PostgresSocialStore: SocialStore {
         VALUES (\(bind: report.id), \(bind: report.reporter.rawValue), \(bind: report.target.rawValue),
                 \(bind: report.reason.rawValue), \(bind: report.note), \(bind: report.createdAt))
         """).run()
+    }
+}
+
+// MARK: Avatars (SOC-001b)
+
+extension PostgresSocialStore {
+    func saveAvatar(_ id: UserID, image: Data) async throws {
+        try await database.transaction { database in
+            let sql = try sqlDatabase(database)
+            try await sql.raw("""
+            INSERT INTO avatars (user_id, image) VALUES (\(bind: id.rawValue), \(bind: image))
+            ON CONFLICT (user_id) DO UPDATE SET image = EXCLUDED.image, updated_at = now()
+            """).run()
+            // Milliseconds, not a counter: a removed avatar's version is never handed out again.
+            try await sql.raw("""
+            UPDATE users SET avatar_version = GREATEST(
+                (extract(epoch FROM clock_timestamp()) * 1000)::bigint, coalesce(avatar_version, 0) + 1
+            ), updated_at = now()
+            WHERE id = \(bind: id.rawValue)
+            """).run()
+        }
+    }
+
+    func deleteAvatar(_ id: UserID) async throws {
+        try await database.transaction { database in
+            let sql = try sqlDatabase(database)
+            try await sql.raw("DELETE FROM avatars WHERE user_id = \(bind: id.rawValue)").run()
+            try await sql.raw("""
+            UPDATE users SET avatar_version = NULL, updated_at = now() WHERE id = \(bind: id.rawValue)
+            """).run()
+        }
+    }
+
+    func avatar(_ id: UserID) async throws -> Data? {
+        struct Row: Decodable { let image: Data }
+        return try await sql.raw("SELECT image FROM avatars WHERE user_id = \(bind: id.rawValue)")
+            .first(decoding: Row.self)?.image
     }
 }

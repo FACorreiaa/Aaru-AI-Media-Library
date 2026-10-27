@@ -14,6 +14,8 @@ struct FriendProfile: Sendable {
     var achievements: (level: Int, badges: [EarnedBadge])?
     /// Their top 10s (FAV-001); nil when they hide their library.
     var favorites: Favorites?
+    /// Their email, only while they share it (SOC-001b). Independent of `sharing`.
+    var email: String?
 }
 
 /// One activity row with the people and titles it names.
@@ -51,9 +53,12 @@ struct FriendService: Sendable {
               let user = try await stores.social.socialUser(friend)
         else { throw SocialService.noSuchUser }
         let achievements = try await GamificationService(stores: stores, now: now).friendAchievements(friend)
-        guard try await stores.friendViews.socialSettings(friend).shareLibraryWithFriends else {
+        let settings = try await stores.friendViews.socialSettings(friend)
+        let email = try await sharedEmail(friend, settings: settings)
+        guard settings.shareLibraryWithFriends else {
             return FriendProfile(
-                user: user, friendsSince: since, sharing: false, shelf: nil, titles: [:], achievements: achievements
+                user: user, friendsSince: since, sharing: false, shelf: nil, titles: [:], achievements: achievements,
+                email: email
             )
         }
         async let shelf = stores.friendViews.shelf(of: friend, viewer: viewer, limit: Self.shelfLimit)
@@ -62,8 +67,16 @@ struct FriendService: Sendable {
         let ids = shown.watching.map(\.titleID) + shown.finished.map(\.titleID) + shown.bothWant + shown.theyLoved
         return try await FriendProfile(
             user: user, friendsSince: since, sharing: true, shelf: shown, titles: titles(ids),
-            achievements: achievements, favorites: favorites
+            achievements: achievements, favorites: favorites, email: email
         )
+    }
+
+    /// A friend's email while they share it; never an Apple relay address, which friends cannot write to.
+    private func sharedEmail(_ friend: UserID, settings: SocialSettings) async throws -> String? {
+        guard settings.shareEmailWithFriends,
+              let profile = try await stores.users.profile(friend), profile.emailShareable
+        else { return nil }
+        return profile.email
     }
 
     /// Your and your friends' last two weeks, newest first, one page at a time.

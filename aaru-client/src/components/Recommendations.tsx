@@ -30,6 +30,7 @@ import {
   TextFieldInput,
   TextFieldLabel,
 } from '~/components/ui'
+import { Monogram } from './groups/Monogram'
 
 // SOC-006: titles friends sent you, at the top of Friends. One tap puts it on Plan to watch,
 // the same write as Add; Dismiss lets it go. Neither side is told.
@@ -367,12 +368,11 @@ export function RecommendDialog(props: {
                             <CheckboxInput />
                             <CheckboxControl />
                             <CheckboxLabel class="flex cursor-pointer items-center gap-3 font-normal">
-                              <span
-                                aria-hidden="true"
-                                class="grid size-8 place-items-center rounded-full bg-medallion/20 font-display text-xs font-medium"
-                              >
-                                {monogram(friend)}
-                              </span>
+                              <Monogram
+                                text={monogram(friend)}
+                                avatarUrl={friend.avatarUrl}
+                                size="sm"
+                              />
                               {inviterName(friend)}
                             </CheckboxLabel>
                           </Checkbox>

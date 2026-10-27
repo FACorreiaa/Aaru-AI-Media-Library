@@ -48,17 +48,42 @@ struct SocialService: Sendable {
 
     // MARK: Profile
 
-    func saveProfile(_ userID: UserID, handle: String, displayName: String??) async throws -> SocialUser {
-        let handle = try Self.validHandle(handle)
-        let displayName = try displayName.map(Self.validDisplayName)
+    /// One edit of the profile. A field left nil keeps its saved value; an empty name clears it.
+    struct ProfileChange: Sendable {
+        var handle: String?
+        var firstName: String?
+        var lastName: String?
+        /// What apps before SOC-001b send, every time, in place of the two names.
+        var displayName: String?
+    }
+
+    func saveProfile(_ userID: UserID, _ change: ProfileChange) async throws -> UserProfile {
+        let handle = try change.handle.map(Self.validHandle)
+        guard let saved = try await stores.users.profile(userID) else { throw AppError.unauthorized() }
         // A change counts before the store says "taken", which would otherwise answer who holds a
         // handle as fast as anyone asks. Resaving the current handle is free.
-        if try await stores.social.socialUser(userID)?.handle != handle {
+        if let handle, handle != saved.handle {
             guard await Self.handleChangeLimiter.allow(userID.description, now: now()) else { throw Self.rateLimited }
         }
-        try await stores.social.saveProfile(userID, handle: handle, displayName: displayName)
-        guard let user = try await stores.social.socialUser(userID) else { throw AppError.unauthorized() }
-        return user
+        let name = try Self.name(change, saved: saved.name)
+        try await stores.social.saveProfile(userID, handle: handle, name: name == saved.name ? nil : name)
+        guard let profile = try await stores.users.profile(userID) else { throw AppError.unauthorized() }
+        return profile
+    }
+
+    /// The names after a change. An older app sends its one name on every save, even when only
+    /// the handle changed: the saved names joined is no change, anything else splits at the
+    /// first space.
+    static func name(_ change: ProfileChange, saved: PersonName) throws -> PersonName {
+        if change.firstName != nil || change.lastName != nil {
+            return try PersonName(
+                first: change.firstName.map { try validName($0, field: "firstName") } ?? saved.first,
+                last: change.lastName.map { try validName($0, field: "lastName") } ?? saved.last
+            )
+        }
+        guard let displayName = change.displayName else { return saved }
+        let name = try validDisplayName(displayName)
+        return name == saved.displayName ? saved : PersonName(splitting: name)
     }
 
     /// A friend or yourself costs nothing: the web opens a friend's profile through this lookup on
@@ -230,9 +255,14 @@ struct SocialService: Sendable {
 
     /// Trimmed; empty clears the name.
     static func validDisplayName(_ raw: String?) throws -> String? {
+        try validName(raw, field: "displayName")
+    }
+
+    /// A first or last name: trimmed, and empty clears it.
+    static func validName(_ raw: String?, field: String) throws -> String? {
         guard let name = raw?.trimmingCharacters(in: .whitespacesAndNewlines), !name.isEmpty else { return nil }
         guard name.count <= maxDisplayNameLength else {
-            throw invalid("displayName", "Keep your name under \(maxDisplayNameLength) characters.")
+            throw invalid(field, "Keep your name under \(maxDisplayNameLength) characters.")
         }
         return name
     }

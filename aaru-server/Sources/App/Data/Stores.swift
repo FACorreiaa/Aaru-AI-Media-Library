@@ -44,9 +44,32 @@ protocol UserStore: Sendable {
 
 struct UserProfile: Sendable, Equatable {
     var id: UserID
-    var displayName: String?
+    var name = PersonName(first: nil, last: nil)
     var handle: String?
     var providers: [AuthIdentity.Provider]
+    /// The address friends may see: the email sign-in's, else Google's, else Apple's.
+    var email: String?
+    /// Changes on every upload; nil without an avatar (SOC-001b).
+    var avatarVersion: Int64?
+
+    /// The two names joined: what friends and groups see.
+    var displayName: String? {
+        name.displayName
+    }
+
+    /// Apple's private relay takes mail only from Aaru, so sharing it with friends is pointless.
+    var emailShareable: Bool {
+        guard let email else { return false }
+        return !email.lowercased().hasSuffix("@privaterelay.appleid.com")
+    }
+
+    /// The email shown and shared: one per account, by sign-in in this order.
+    static func contactEmail(_ identities: [(provider: AuthIdentity.Provider, email: String?)]) -> String? {
+        let order: [AuthIdentity.Provider] = [.email, .google, .apple]
+        return order.lazy.compactMap { provider in
+            identities.first { $0.provider == provider && $0.email?.isEmpty == false }?.email
+        }.first
+    }
 }
 
 protocol SessionStore: Sendable {

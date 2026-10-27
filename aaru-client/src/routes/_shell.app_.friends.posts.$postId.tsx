@@ -292,7 +292,11 @@ function Upvoters(props: { people: SocialUser[]; me: SocialUser }) {
                         when={person.userId !== props.me.userId}
                         fallback={
                           <span class="flex items-center gap-3 px-3 py-2">
-                            <Monogram text={monogram(person)} size="sm" />
+                            <Monogram
+                              text={monogram(person)}
+                              avatarUrl={person.avatarUrl}
+                              size="sm"
+                            />
                             <span class="font-medium">You</span>
                           </span>
                         }
@@ -302,7 +306,11 @@ function Upvoters(props: { people: SocialUser[]; me: SocialUser }) {
                           params={{ handle: person.handle }}
                           class="flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-surface"
                         >
-                          <Monogram text={monogram(person)} size="sm" />
+                          <Monogram
+                            text={monogram(person)}
+                            avatarUrl={person.avatarUrl}
+                            size="sm"
+                          />
                           <span class="min-w-0 truncate font-medium">
                             {inviterName(person)}
                           </span>

@@ -71,11 +71,26 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/billing/apple/notifications`.
     /// - Remark: Generated from `#/paths//v1/billing/apple/notifications/post(receiveAppleNotification)`.
     func receiveAppleNotification(_ input: Operations.ReceiveAppleNotification.Input) async throws -> Operations.ReceiveAppleNotification.Output
-    /// Claim or change your handle, and optionally your display name. Handles are how friends find you. At most 10 handle changes a user per hour, a taken handle included (429).
+    /// Claim or change your handle, and your first and last name (SOC-001b). Handles are how friends find you; others see the two names joined. Every field is optional: one left out keeps its value. At most 10 handle changes a user per hour, a taken handle included (429).
     ///
     /// - Remark: HTTP `PUT /v1/me/profile`.
     /// - Remark: Generated from `#/paths//v1/me/profile/put(updateProfile)`.
     func updateProfile(_ input: Operations.UpdateProfile.Input) async throws -> Operations.UpdateProfile.Output
+    /// Replace your avatar (SOC-001b) with one square JPEG of at most 1 MB; apps send 512px. Anything that is not a JPEG is refused with 415 `avatar_image_type`, a larger file with 413 `file_too_large`. It is seen by signed-in accounts wherever your name is, never signed out and never across a block.
+    ///
+    /// - Remark: HTTP `PUT /v1/me/avatar`.
+    /// - Remark: Generated from `#/paths//v1/me/avatar/put(uploadAvatar)`.
+    func uploadAvatar(_ input: Operations.UploadAvatar.Input) async throws -> Operations.UploadAvatar.Output
+    /// Remove your avatar. Your monogram shows again everywhere.
+    ///
+    /// - Remark: HTTP `DELETE /v1/me/avatar`.
+    /// - Remark: Generated from `#/paths//v1/me/avatar/delete(deleteAvatar)`.
+    func deleteAvatar(_ input: Operations.DeleteAvatar.Input) async throws -> Operations.DeleteAvatar.Output
+    /// Someone's avatar (SOC-001b), for any signed-in account. A block either way, an unknown user and no avatar are the same 404. Use the `avatarUrl` a response gave you: its `v` changes with every upload, so a cached image is never stale.
+    ///
+    /// - Remark: HTTP `GET /v1/users/{userId}/avatar`.
+    /// - Remark: Generated from `#/paths//v1/users/{userId}/avatar/get(getUserAvatar)`.
+    func getUserAvatar(_ input: Operations.GetUserAvatar.Input) async throws -> Operations.GetUserAvatar.Output
     /// Your favorites, an ordered top 10 per kind (FAV-001). Profile data, not your library.
     ///
     /// - Remark: HTTP `GET /v1/me/favorites`.
@@ -1069,7 +1084,7 @@ extension APIProtocol {
             body: body
         ))
     }
-    /// Claim or change your handle, and optionally your display name. Handles are how friends find you. At most 10 handle changes a user per hour, a taken handle included (429).
+    /// Claim or change your handle, and your first and last name (SOC-001b). Handles are how friends find you; others see the two names joined. Every field is optional: one left out keeps its value. At most 10 handle changes a user per hour, a taken handle included (429).
     ///
     /// - Remark: HTTP `PUT /v1/me/profile`.
     /// - Remark: Generated from `#/paths//v1/me/profile/put(updateProfile)`.
@@ -1080,6 +1095,41 @@ extension APIProtocol {
         try await updateProfile(Operations.UpdateProfile.Input(
             headers: headers,
             body: body
+        ))
+    }
+    /// Replace your avatar (SOC-001b) with one square JPEG of at most 1 MB; apps send 512px. Anything that is not a JPEG is refused with 415 `avatar_image_type`, a larger file with 413 `file_too_large`. It is seen by signed-in accounts wherever your name is, never signed out and never across a block.
+    ///
+    /// - Remark: HTTP `PUT /v1/me/avatar`.
+    /// - Remark: Generated from `#/paths//v1/me/avatar/put(uploadAvatar)`.
+    public func uploadAvatar(
+        headers: Operations.UploadAvatar.Input.Headers = .init(),
+        body: Operations.UploadAvatar.Input.Body
+    ) async throws -> Operations.UploadAvatar.Output {
+        try await uploadAvatar(Operations.UploadAvatar.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Remove your avatar. Your monogram shows again everywhere.
+    ///
+    /// - Remark: HTTP `DELETE /v1/me/avatar`.
+    /// - Remark: Generated from `#/paths//v1/me/avatar/delete(deleteAvatar)`.
+    public func deleteAvatar(headers: Operations.DeleteAvatar.Input.Headers = .init()) async throws -> Operations.DeleteAvatar.Output {
+        try await deleteAvatar(Operations.DeleteAvatar.Input(headers: headers))
+    }
+    /// Someone's avatar (SOC-001b), for any signed-in account. A block either way, an unknown user and no avatar are the same 404. Use the `avatarUrl` a response gave you: its `v` changes with every upload, so a cached image is never stale.
+    ///
+    /// - Remark: HTTP `GET /v1/users/{userId}/avatar`.
+    /// - Remark: Generated from `#/paths//v1/users/{userId}/avatar/get(getUserAvatar)`.
+    public func getUserAvatar(
+        path: Operations.GetUserAvatar.Input.Path,
+        query: Operations.GetUserAvatar.Input.Query = .init(),
+        headers: Operations.GetUserAvatar.Input.Headers = .init()
+    ) async throws -> Operations.GetUserAvatar.Output {
+        try await getUserAvatar(Operations.GetUserAvatar.Input(
+            path: path,
+            query: query,
+            headers: headers
         ))
     }
     /// Your favorites, an ordered top 10 per kind (FAV-001). Profile data, not your library.
@@ -5180,8 +5230,14 @@ public enum Components {
         public struct Me: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/Me/userId`.
             public var userId: Swift.String
+            /// The first and last name joined; what friends and groups see.
+            ///
             /// - Remark: Generated from `#/components/schemas/Me/displayName`.
             public var displayName: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/Me/firstName`.
+            public var firstName: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/Me/lastName`.
+            public var lastName: Swift.String?
             /// Absent until the user claims one in PUT /v1/me/profile.
             ///
             /// - Remark: Generated from `#/components/schemas/Me/handle`.
@@ -5196,29 +5252,61 @@ public enum Components {
             public typealias ProvidersPayload = [Components.Schemas.Me.ProvidersPayloadPayload]
             /// - Remark: Generated from `#/components/schemas/Me/providers`.
             public var providers: Components.Schemas.Me.ProvidersPayload
+            /// The address friends may see when you share it: the email sign-in's, else Google's, else Apple's. Absent when no sign-in has one.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Me/email`.
+            public var email: Swift.String?
+            /// False without an email, or for an Apple private relay address, which friends cannot write to. Always sent since SOC-001b; optional so apps built before the server ships still read `Me`.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Me/emailShareable`.
+            public var emailShareable: Swift.Bool?
+            /// Path to `GET /v1/users/{userId}/avatar` with its version. Absent without an avatar.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Me/avatarUrl`.
+            public var avatarUrl: Swift.String?
             /// Creates a new `Me`.
             ///
             /// - Parameters:
             ///   - userId:
-            ///   - displayName:
+            ///   - displayName: The first and last name joined; what friends and groups see.
+            ///   - firstName:
+            ///   - lastName:
             ///   - handle: Absent until the user claims one in PUT /v1/me/profile.
             ///   - providers:
+            ///   - email: The address friends may see when you share it: the email sign-in's, else Google's, else Apple's. Absent when no sign-in has one.
+            ///   - emailShareable: False without an email, or for an Apple private relay address, which friends cannot write to. Always sent since SOC-001b; optional so apps built before the server ships still read `Me`.
+            ///   - avatarUrl: Path to `GET /v1/users/{userId}/avatar` with its version. Absent without an avatar.
             public init(
                 userId: Swift.String,
                 displayName: Swift.String? = nil,
+                firstName: Swift.String? = nil,
+                lastName: Swift.String? = nil,
                 handle: Swift.String? = nil,
-                providers: Components.Schemas.Me.ProvidersPayload
+                providers: Components.Schemas.Me.ProvidersPayload,
+                email: Swift.String? = nil,
+                emailShareable: Swift.Bool? = nil,
+                avatarUrl: Swift.String? = nil
             ) {
                 self.userId = userId
                 self.displayName = displayName
+                self.firstName = firstName
+                self.lastName = lastName
                 self.handle = handle
                 self.providers = providers
+                self.email = email
+                self.emailShareable = emailShareable
+                self.avatarUrl = avatarUrl
             }
             public enum CodingKeys: String, CodingKey {
                 case userId
                 case displayName
+                case firstName
+                case lastName
                 case handle
                 case providers
+                case email
+                case emailShareable
+                case avatarUrl
             }
         }
         /// - Remark: Generated from `#/components/schemas/Entitlement`.
@@ -5311,13 +5399,23 @@ public enum Components {
                 case capture
             }
         }
+        /// A field left out keeps its saved value.
+        ///
         /// - Remark: Generated from `#/components/schemas/ProfileUpdate`.
         public struct ProfileUpdate: Codable, Hashable, Sendable {
             /// 3–20 of a–z, 0–9 and _. Stored lowercase.
             ///
             /// - Remark: Generated from `#/components/schemas/ProfileUpdate/handle`.
-            public var handle: Swift.String
-            /// Absent leaves it unchanged; empty clears it.
+            public var handle: Swift.String?
+            /// Empty clears it.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ProfileUpdate/firstName`.
+            public var firstName: Swift.String?
+            /// Empty clears it.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ProfileUpdate/lastName`.
+            public var lastName: Swift.String?
+            /// Deprecated: what apps before SOC-001b send in place of the two names. Ignored when either name is sent; the saved names joined is no change, anything else splits at the first space. Empty clears both.
             ///
             /// - Remark: Generated from `#/components/schemas/ProfileUpdate/displayName`.
             public var displayName: Swift.String?
@@ -5325,16 +5423,24 @@ public enum Components {
             ///
             /// - Parameters:
             ///   - handle: 3–20 of a–z, 0–9 and _. Stored lowercase.
-            ///   - displayName: Absent leaves it unchanged; empty clears it.
+            ///   - firstName: Empty clears it.
+            ///   - lastName: Empty clears it.
+            ///   - displayName: Deprecated: what apps before SOC-001b send in place of the two names. Ignored when either name is sent; the saved names joined is no change, anything else splits at the first space. Empty clears both.
             public init(
-                handle: Swift.String,
+                handle: Swift.String? = nil,
+                firstName: Swift.String? = nil,
+                lastName: Swift.String? = nil,
                 displayName: Swift.String? = nil
             ) {
                 self.handle = handle
+                self.firstName = firstName
+                self.lastName = lastName
                 self.displayName = displayName
             }
             public enum CodingKeys: String, CodingKey {
                 case handle
+                case firstName
+                case lastName
                 case displayName
             }
         }
@@ -5346,25 +5452,33 @@ public enum Components {
             public var handle: Swift.String
             /// - Remark: Generated from `#/components/schemas/SocialUser/displayName`.
             public var displayName: Swift.String?
+            /// Path to `GET /v1/users/{userId}/avatar` with its version (SOC-001b). Absent without an avatar, and never on a route a signed-out caller can read.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SocialUser/avatarUrl`.
+            public var avatarUrl: Swift.String?
             /// Creates a new `SocialUser`.
             ///
             /// - Parameters:
             ///   - userId:
             ///   - handle:
             ///   - displayName:
+            ///   - avatarUrl: Path to `GET /v1/users/{userId}/avatar` with its version (SOC-001b). Absent without an avatar, and never on a route a signed-out caller can read.
             public init(
                 userId: Swift.String,
                 handle: Swift.String,
-                displayName: Swift.String? = nil
+                displayName: Swift.String? = nil,
+                avatarUrl: Swift.String? = nil
             ) {
                 self.userId = userId
                 self.handle = handle
                 self.displayName = displayName
+                self.avatarUrl = avatarUrl
             }
             public enum CodingKeys: String, CodingKey {
                 case userId
                 case handle
                 case displayName
+                case avatarUrl
             }
         }
         /// - Remark: Generated from `#/components/schemas/SocialUserView`.
@@ -5429,25 +5543,33 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/SocialSettings/leaderboardOptIn`.
             public var leaderboardOptIn: Swift.Bool?
+            /// Friends see your email on your profile (SOC-001b). Off by default; group members never see it.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SocialSettings/shareEmailWithFriends`.
+            public var shareEmailWithFriends: Swift.Bool?
             /// Creates a new `SocialSettings`.
             ///
             /// - Parameters:
             ///   - shareLibraryWithFriends: Friends see your shelves, activity and what you share. On by default.
             ///   - showAchievementsToFriends: Friends see your level and badges (never ones about notes or owned items). On by default.
             ///   - leaderboardOptIn: You join the weekly friends board, and see it. Off by default.
+            ///   - shareEmailWithFriends: Friends see your email on your profile (SOC-001b). Off by default; group members never see it.
             public init(
                 shareLibraryWithFriends: Swift.Bool,
                 showAchievementsToFriends: Swift.Bool? = nil,
-                leaderboardOptIn: Swift.Bool? = nil
+                leaderboardOptIn: Swift.Bool? = nil,
+                shareEmailWithFriends: Swift.Bool? = nil
             ) {
                 self.shareLibraryWithFriends = shareLibraryWithFriends
                 self.showAchievementsToFriends = showAchievementsToFriends
                 self.leaderboardOptIn = leaderboardOptIn
+                self.shareEmailWithFriends = shareEmailWithFriends
             }
             public enum CodingKeys: String, CodingKey {
                 case shareLibraryWithFriends
                 case showAchievementsToFriends
                 case leaderboardOptIn
+                case shareEmailWithFriends
             }
         }
         /// One title on a friend's shelf. Never their notes.
@@ -5627,6 +5749,10 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/FriendProfile/favorites`.
             public var favorites: Components.Schemas.Favorites?
+            /// Their email, sent only while they share it (SOC-001b), whether or not they share their library.
+            ///
+            /// - Remark: Generated from `#/components/schemas/FriendProfile/email`.
+            public var email: Swift.String?
             /// Creates a new `FriendProfile`.
             ///
             /// - Parameters:
@@ -5639,6 +5765,7 @@ public enum Components {
             ///   - compare:
             ///   - achievements:
             ///   - favorites: Their top 10s (FAV-001). Sent only while they share their library.
+            ///   - email: Their email, sent only while they share it (SOC-001b), whether or not they share their library.
             public init(
                 user: Components.Schemas.SocialUser,
                 friendsSince: Foundation.Date,
@@ -5648,7 +5775,8 @@ public enum Components {
                 recentlyFinished: [Components.Schemas.FriendItem]? = nil,
                 compare: Components.Schemas.FriendCompare? = nil,
                 achievements: Components.Schemas.FriendAchievements? = nil,
-                favorites: Components.Schemas.Favorites? = nil
+                favorites: Components.Schemas.Favorites? = nil,
+                email: Swift.String? = nil
             ) {
                 self.user = user
                 self.friendsSince = friendsSince
@@ -5659,6 +5787,7 @@ public enum Components {
                 self.compare = compare
                 self.achievements = achievements
                 self.favorites = favorites
+                self.email = email
             }
             public enum CodingKeys: String, CodingKey {
                 case user
@@ -5670,6 +5799,7 @@ public enum Components {
                 case compare
                 case achievements
                 case favorites
+                case email
             }
         }
         /// A favorites kind. Anime is any anime, film or series.
@@ -10760,6 +10890,10 @@ public enum Components {
             public var exportedAt: Foundation.Date
             /// - Remark: Generated from `#/components/schemas/AccountExport/account`.
             public var account: Components.Schemas.Me
+            /// Your avatar (SOC-001b) as base64 JPEG. Absent without one.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AccountExport/avatarJpeg`.
+            public var avatarJpeg: Swift.String?
             /// Every library item; shows carry `watchedEpisodes`.
             ///
             /// - Remark: Generated from `#/components/schemas/AccountExport/library`.
@@ -10886,6 +11020,7 @@ public enum Components {
             /// - Parameters:
             ///   - exportedAt:
             ///   - account:
+            ///   - avatarJpeg: Your avatar (SOC-001b) as base64 JPEG. Absent without one.
             ///   - library: Every library item; shows carry `watchedEpisodes`.
             ///   - lists:
             ///   - shelves:
@@ -10899,6 +11034,7 @@ public enum Components {
             public init(
                 exportedAt: Foundation.Date,
                 account: Components.Schemas.Me,
+                avatarJpeg: Swift.String? = nil,
                 library: [Components.Schemas.LibraryEntry],
                 lists: Components.Schemas.AccountExport.ListsPayload,
                 shelves: [Components.Schemas.Shelf],
@@ -10912,6 +11048,7 @@ public enum Components {
             ) {
                 self.exportedAt = exportedAt
                 self.account = account
+                self.avatarJpeg = avatarJpeg
                 self.library = library
                 self.lists = lists
                 self.shelves = shelves
@@ -10926,6 +11063,7 @@ public enum Components {
             public enum CodingKeys: String, CodingKey {
                 case exportedAt
                 case account
+                case avatarJpeg
                 case library
                 case lists
                 case shelves
@@ -14752,7 +14890,7 @@ public enum Operations {
             }
         }
     }
-    /// Claim or change your handle, and optionally your display name. Handles are how friends find you. At most 10 handle changes a user per hour, a taken handle included (429).
+    /// Claim or change your handle, and your first and last name (SOC-001b). Handles are how friends find you; others see the two names joined. Every field is optional: one left out keeps its value. At most 10 handle changes a user per hour, a taken handle included (429).
     ///
     /// - Remark: HTTP `PUT /v1/me/profile`.
     /// - Remark: Generated from `#/paths//v1/me/profile/put(updateProfile)`.
@@ -14795,12 +14933,12 @@ public enum Operations {
                 /// - Remark: Generated from `#/paths/v1/me/profile/PUT/responses/200/content`.
                 @frozen public enum Body: Sendable, Hashable {
                     /// - Remark: Generated from `#/paths/v1/me/profile/PUT/responses/200/content/application\/json`.
-                    case json(Components.Schemas.SocialUser)
+                    case json(Components.Schemas.Me)
                     /// The associated value of the enum case if `self` is `.json`.
                     ///
                     /// - Throws: An error if `self` is not `.json`.
                     /// - SeeAlso: `.json`.
-                    public var json: Components.Schemas.SocialUser {
+                    public var json: Components.Schemas.Me {
                         get throws {
                             switch self {
                             case let .json(body):
@@ -14819,7 +14957,7 @@ public enum Operations {
                     self.body = body
                 }
             }
-            /// Your social identity.
+            /// Your account. It carries every field `SocialUser` did, so apps from before SOC-001b read it unchanged.
             ///
             /// - Remark: Generated from `#/paths//v1/me/profile/put(updateProfile)/responses/200`.
             ///
@@ -14887,6 +15025,446 @@ public enum Operations {
             }
             public static var allCases: [Self] {
                 [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Replace your avatar (SOC-001b) with one square JPEG of at most 1 MB; apps send 512px. Anything that is not a JPEG is refused with 415 `avatar_image_type`, a larger file with 413 `file_too_large`. It is seen by signed-in accounts wherever your name is, never signed out and never across a block.
+    ///
+    /// - Remark: HTTP `PUT /v1/me/avatar`.
+    /// - Remark: Generated from `#/paths//v1/me/avatar/put(uploadAvatar)`.
+    public enum UploadAvatar {
+        public static let id: Swift.String = "uploadAvatar"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/avatar/PUT/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UploadAvatar.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UploadAvatar.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.UploadAvatar.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/me/avatar/PUT/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/avatar/PUT/requestBody/content/image\/jpeg`.
+                case jpeg(OpenAPIRuntime.HTTPBody)
+            }
+            public var body: Operations.UploadAvatar.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.UploadAvatar.Input.Headers = .init(),
+                body: Operations.UploadAvatar.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/avatar/PUT/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/me/avatar/PUT/responses/200/content/application\/json`.
+                    case json(Components.Schemas.Me)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.Me {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.UploadAvatar.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.UploadAvatar.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Your account, with the new `avatarUrl`.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/avatar/put(uploadAvatar)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.UploadAvatar.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.UploadAvatar.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/avatar/put(uploadAvatar)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Remove your avatar. Your monogram shows again everywhere.
+    ///
+    /// - Remark: HTTP `DELETE /v1/me/avatar`.
+    /// - Remark: Generated from `#/paths//v1/me/avatar/delete(deleteAvatar)`.
+    public enum DeleteAvatar {
+        public static let id: Swift.String = "deleteAvatar"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/avatar/DELETE/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DeleteAvatar.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DeleteAvatar.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.DeleteAvatar.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.DeleteAvatar.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/avatar/DELETE/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/me/avatar/DELETE/responses/200/content/application\/json`.
+                    case json(Components.Schemas.Me)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.Me {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.DeleteAvatar.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.DeleteAvatar.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Your account, without `avatarUrl`.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/avatar/delete(deleteAvatar)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.DeleteAvatar.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.DeleteAvatar.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/avatar/delete(deleteAvatar)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Someone's avatar (SOC-001b), for any signed-in account. A block either way, an unknown user and no avatar are the same 404. Use the `avatarUrl` a response gave you: its `v` changes with every upload, so a cached image is never stale.
+    ///
+    /// - Remark: HTTP `GET /v1/users/{userId}/avatar`.
+    /// - Remark: Generated from `#/paths//v1/users/{userId}/avatar/get(getUserAvatar)`.
+    public enum GetUserAvatar {
+        public static let id: Swift.String = "getUserAvatar"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/users/{userId}/avatar/GET/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/users/{userId}/avatar/GET/path/userId`.
+                public var userId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - userId:
+                public init(userId: Swift.String) {
+                    self.userId = userId
+                }
+            }
+            public var path: Operations.GetUserAvatar.Input.Path
+            /// - Remark: Generated from `#/paths/v1/users/{userId}/avatar/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// The avatar's version, for caches only.
+                ///
+                /// - Remark: Generated from `#/paths/v1/users/{userId}/avatar/GET/query/v`.
+                public var v: Swift.Int64?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - v: The avatar's version, for caches only.
+                public init(v: Swift.Int64? = nil) {
+                    self.v = v
+                }
+            }
+            public var query: Operations.GetUserAvatar.Input.Query
+            /// - Remark: Generated from `#/paths/v1/users/{userId}/avatar/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetUserAvatar.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetUserAvatar.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetUserAvatar.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - query:
+            ///   - headers:
+            public init(
+                path: Operations.GetUserAvatar.Input.Path,
+                query: Operations.GetUserAvatar.Input.Query = .init(),
+                headers: Operations.GetUserAvatar.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/users/{userId}/avatar/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/users/{userId}/avatar/GET/responses/200/content/image\/jpeg`.
+                    case jpeg(OpenAPIRuntime.HTTPBody)
+                    /// The associated value of the enum case if `self` is `.jpeg`.
+                    ///
+                    /// - Throws: An error if `self` is not `.jpeg`.
+                    /// - SeeAlso: `.jpeg`.
+                    public var jpeg: OpenAPIRuntime.HTTPBody {
+                        get throws {
+                            switch self {
+                            case let .jpeg(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetUserAvatar.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetUserAvatar.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The JPEG, with `Cache-Control` for a week in a private cache.
+            ///
+            /// - Remark: Generated from `#/paths//v1/users/{userId}/avatar/get(getUserAvatar)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetUserAvatar.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetUserAvatar.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/users/{userId}/avatar/get(getUserAvatar)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case jpeg
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "image/jpeg":
+                    self = .jpeg
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .jpeg:
+                    return "image/jpeg"
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .jpeg,
                     .json
                 ]
             }

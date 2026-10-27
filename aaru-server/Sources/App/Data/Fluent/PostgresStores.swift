@@ -84,8 +84,11 @@ struct PostgresUserStore: UserStore {
         try await mappingConflicts("That sign-in is already linked to an account.") {
             try await database.transaction { database in
                 let sql = try sqlDatabase(database)
-                try await sql.insert(into: "users").columns("id", "display_name")
-                    .values(SQLBind(userID.rawValue), SQLBind(displayName)).run()
+                let name = PersonName(splitting: displayName)
+                try await sql.insert(into: "users").columns("id", "first_name", "last_name", "display_name")
+                    .values(
+                        SQLBind(userID.rawValue), SQLBind(name.first), SQLBind(name.last), SQLBind(name.displayName)
+                    ).run()
                 try await sql.insert(into: "auth_identities")
                     .columns("id", "user_id", "provider", "provider_subject", "email")
                     .values(
