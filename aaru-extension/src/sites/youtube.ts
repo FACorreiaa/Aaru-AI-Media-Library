@@ -2,12 +2,15 @@ import type { Playing } from '../lib/types'
 import { text } from './dom'
 
 const VIDEO_ID = /^[A-Za-z0-9_-]{11}$/
+const TOPIC = ' - Topic'
 
 // SCR-009: YouTube's watch page, `www.youtube.com/watch?v={id}`, only. Not Shorts, not
 // music.youtube.com (Web Scrobbler already sends that through ListenBrainz), not a live stream,
 // and nothing while an ad plays in the player. The title is `ytd-watch-metadata h1`, the channel
 // its `ytd-channel-name` link. YouTube moves between videos without a reload: the page's
 // `ytd-watch-flexy[video-id]` must name the URL's video, or the title may still be the last one's.
+// SCR-011: a video from an auto-generated "… - Topic" channel is music, nothing guessed: the
+// channel is the artist and the video is named for the track.
 export function readYouTube(doc: Document, url: URL): Playing | null {
   if (url.hostname !== 'www.youtube.com' || url.pathname !== '/watch')
     return null
@@ -28,11 +31,13 @@ export function readYouTube(doc: Document, url: URL): Playing | null {
   const channel =
     text(doc.querySelector('ytd-watch-metadata ytd-channel-name a')) ||
     text(doc.querySelector('ytd-video-owner-renderer ytd-channel-name a'))
+  const artist = channel.endsWith(TOPIC) ? channel.slice(0, -TOPIC.length) : ''
   return {
     source: 'youtube',
     ref: id,
     type: 'video',
     title,
     channel: channel || undefined,
+    ...(artist ? { music: { artist, track: title } } : {}),
   }
 }

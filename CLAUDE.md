@@ -212,8 +212,9 @@ Use these words in code, APIs, and UI:
 - **Watch event** — one scrobble (start/pause/stop with progress) from a player. It may tick
   progress; it is never library truth on its own
 - **Play** — a track (a scrobbler's `playing_now`) or a YouTube video a player reports that is
-  not a Title (SCR-009). It lives only while it plays, is never a listen or a watch event, and
-  never ticks anything. It exists for Now playing
+  not a Title (SCR-009). It lives only while it plays, is never a watch event, and never ticks
+  anything. It exists for Now playing. A music video (a `- Topic` channel's) heard past half or
+  4 minutes also makes one listen (SCR-011); the play itself is still never stored
 - **Listen** — one play of a track a music scrobbler sent (MUS-005) or a history import brought
   in (MUS-004). Append-only and never a library write; the same play sent twice is kept once. An
   imported listen counts on its own day in Insights and the Recap, earns no points, and counts

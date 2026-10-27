@@ -1132,9 +1132,15 @@ SvelteKit scaffold). Same screens as the Apple apps, in the same order they ship
   movies and videos newest first, then tracks, three at most; a track whose `origin_url` is a
   video already shown is dropped. `nowPlaying` (the newest session) stays for older clients.
 - **Plays (SCR-009):** a ListenBrainz `playing_now` and a `/v1/scrobble/*` body with
-  `source: youtube` + `video {id, title, channel}` become `live_plays` rows, never listens or
-  watch events. The video thumbnail is built from the id (`i.ytimg.com`); the server fetches
-  nothing from YouTube.
+  `source: youtube` + `video {id, title, channel}` become `live_plays` rows, never watch events.
+  The video thumbnail is built from the id (`i.ytimg.com`); the server fetches nothing from
+  YouTube.
+- **Music videos (SCR-011):** the extension adds `video.music {artist, track}` for a `- Topic`
+  channel's video. Once a report puts it past half its length or 4 minutes (at least 30 s long),
+  `ScrobbleBody.videoListen` makes a live listen dated from when it began, through
+  `ListenService`. Every later report sends it again; `PostgresListenStore.insert` drops a listen
+  whose YouTube video id (from `origin_url`) a stored listen shares within the video's length, so
+  the extension and Web Scrobbler on one play keep one row, whichever came first.
 - **Next episode:** a `start` for a different item from the same source closes the user's other
   open sessions from it (Stremio's next episode may never send the last one's `stop`). A closed
   session ticks only when the player last *reported* it at ≥ 80%, never on an extrapolated

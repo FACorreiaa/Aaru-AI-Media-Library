@@ -73,7 +73,9 @@ appear in your history like any other. Revoking the link in Settings stops all o
 Home and on your iPhone's Lock Screen: the episode or film, or the track a music scrobbler says
 is playing, or the YouTube video the browser extension sees (its id, name and channel). A track
 or video is kept only while it plays and deleted minutes after it stops; it is never added to
-your listens or your library.
+your library. One exception: a video from an artist's own music channel on YouTube (a "Topic"
+channel), played past half its length or 4 minutes, is added to your listens as that artist and
+track, once.
 
 **Profile and friends.** If you choose a handle, Aaru stores it. Anyone who types your exact
 handle can see it with your name and photo and send you a friend request; nobody can search or

@@ -29,6 +29,8 @@ struct PostgresListenStore: ListenStore {
         struct Inserted: Decodable { let id: UUID }
         let key = listen.trackKey
         let window = listen.duplicateWindow
+        let video = listen.youTubeVideoID
+        let videoWindow = listen.videoWindow
         // A track MusicBrainz already identified (MUS-006) gets its ids now, not on the next pass.
         let cached: SQLQueryString = """
         FROM music_lookups WHERE track_key = \(bind: key)
@@ -55,6 +57,14 @@ struct PostgresListenStore: ListenStore {
               AND listened_at BETWEEN \(bind: listen.listenedAt) - make_interval(secs => \(bind: window))
                                   AND \(bind: listen.listenedAt) + make_interval(secs => \(bind: window))
         )
+        -- SCR-011: the same YouTube video heard inside its own length is the same play.
+        AND (\(bind: video)::text IS NULL OR NOT EXISTS (
+            SELECT 1 FROM listens
+            WHERE user_id = \(bind: userID.rawValue)
+              AND listened_at BETWEEN \(bind: listen.listenedAt) - make_interval(secs => \(bind: videoWindow))
+                                  AND \(bind: listen.listenedAt) + make_interval(secs => \(bind: videoWindow))
+              AND substring(origin_url from \(bind: Listen.youTubeVideoPattern)) = \(bind: video)
+        ))
         ON CONFLICT (user_id, track_key, listened_at) DO NOTHING
         RETURNING id
         """).first(decoding: Inserted.self) != nil

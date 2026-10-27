@@ -114,9 +114,11 @@ describe('YouTube', () => {
     id = 'dQw4w9WgXcQ',
     player = 'html5-video-player',
     duration = 213,
+    title = 'Never Gonna Give You Up',
+    channel = 'Rick Astley',
   } = {}) => {
     const doc = page(
-      `<ytd-watch-flexy video-id="${id}"><div id="movie_player" class="${player}"><video class="html5-main-video"></video></div><ytd-watch-metadata><h1><yt-formatted-string>Never Gonna Give You Up</yt-formatted-string></h1><ytd-video-owner-renderer><ytd-channel-name><a href="/@RickAstleyYT">Rick Astley</a></ytd-channel-name></ytd-video-owner-renderer></ytd-watch-metadata></ytd-watch-flexy>`,
+      `<ytd-watch-flexy video-id="${id}"><div id="movie_player" class="${player}"><video class="html5-main-video"></video></div><ytd-watch-metadata><h1><yt-formatted-string>${title}</yt-formatted-string></h1><ytd-video-owner-renderer><ytd-channel-name><a href="/@RickAstleyYT">${channel}</a></ytd-channel-name></ytd-video-owner-renderer></ytd-watch-metadata></ytd-watch-flexy>`,
     )
     const video = doc.querySelector('video')!
     Object.defineProperty(video, 'duration', { value: duration })
@@ -151,6 +153,18 @@ describe('YouTube', () => {
       readYouTube(doc, new URL('https://www.youtube.com/watch?v=short')),
     ).toBeNull()
     expect(readYouTube(watch({ id: 'oHg5SJYRHA0' }), url)).toBeNull()
+  })
+
+  it('says a Topic channel’s video is music: the channel is the artist (SCR-011)', () => {
+    const topic = watch({
+      title: 'Teardrop',
+      channel: 'Massive Attack - Topic',
+    })
+    expect(readYouTube(topic, url)).toMatchObject({
+      title: 'Teardrop',
+      music: { artist: 'Massive Attack', track: 'Teardrop' },
+    })
+    expect(readYouTube(watch(), url)).not.toHaveProperty('music')
   })
 
   it('reads nothing while an ad plays, or on a live stream', () => {

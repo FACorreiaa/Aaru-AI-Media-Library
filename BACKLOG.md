@@ -777,8 +777,7 @@ account or a stranger that has not happened yet.
 | SCR-008 | Built, unverified | NowPlaying.swift, LiveActivityPush.swift, NowPlayingTests; `NowPlayingCard` (web, iOS); `/v1/me/now-playing` | Live Activity pushes not yet seen on a device; the activity became SCR-009's |
 | SCR-009 | Built, unverified | LivePlays.swift, LiveSetNotifier.swift, LiveActivitySweepService.swift, `live_plays`, `live_activity_states`; NowPlayingTests(+Plays); `NowPlayingActivityAttributes`, NowPlayingLiveActivity; `aaru-extension/src/sites/youtube.ts` | Not seen on a device; YouTube selectors not checked on the live site |
 | SCR-010 | Built, unverified | MALPuller, `MALSyncService`, `AddMALPull`, `POST /v1/connections/mal/pull`, `removed` on `GET /v1/connections/mal`; MALPullTests | Clients ask on open and list removals; MAL's written OK before anyone but the owner connects |
-| SCR-011 | Not started | — | Follows MUS-004 |
-| SOC-001b | Built, unverified | `feat/edit-profile`; `users.first_name`/`last_name`/`avatar_version`, `avatars`, `share_email_with_friends`, `PUT/DELETE /v1/me/avatar`, `GET /v1/users/{userId}/avatar`; ProfileTests | Not run on a device or in a browser |
+| SCR-011 | Built, unverified | VideoListenTests; extension sites/api tests | Not deployed; not tried in Chrome on a real `- Topic` video; YouTube's own song credit not read (see the item) |
 | SOC-001 | Built, unverified | `profiles`, `PUT /v1/me/profile`, `social_settings` (`share_library_with_friends`), `/v1/me/social-settings`, `/v1/social/friends/{userId}/profile`; SocialTests, FriendTests | Points, streaks and leaderboard settings wait for P5 |
 | SOC-002 | Built, unverified | requests, friends, blocks, reports; invite links (`social_invites`, `/v1/social/invites`, `/v1/invites/{code}`, web `/i/{code}`, AASA); SocialTests, InviteTests | Seed signing ran on the branch 2026-10-21; universal links not tried on a device; contact email hash not built |
 | SOC-003 | Partial | `GET /v1/activity` (dated ticks and finishes, 14 days); FriendTests; web `/app/friends`, iOS Friends tab | No `FriendStories` on Home, no scrobbles, no save-to-wishlist yet |
@@ -3075,12 +3074,17 @@ tests use a stub MAL server only.
 ### SCR-011 · YouTube music plays as listens · M · owner, 2026-10-27
 **Needs:** SCR-009, MUS-005.
 A YouTube video the extension reports is written as one live listen when it is music (decisions
-2026-10-27): its channel is an auto-generated `… - Topic` one, or the watch page shows YouTube's
-own song and artist for it. It is written once per play, when the play reaches half the video or
-4 minutes, dated from the play's start, with the client "Aaru extension" and the service
-"YouTube", and earns a live listen's points. A listen from another scrobbler naming the same
-video inside the duplicate window is the same play, whichever arrives first. Every other video
-stays a play and is never stored.
+2026-10-27): its channel is an auto-generated `… - Topic` one, whose name is the artist's and whose
+video is named for the track. It is written once per play, when the play reaches half the video
+or 4 minutes (at least 30 s long), dated from the play's start, with the client "Aaru extension"
+and the service "YouTube", and earns a live listen's points. A listen naming the same video id
+inside the video's length is the same play, whichever arrives first (Web Scrobbler's). Every
+other video stays a play and is never stored.
+
+**Not built: YouTube's own song credit.** The watch page's "Music" section is a
+`videoAttributeViewModel` (title = song, subtitle = artist, secondarySubtitle = album), but the
+only thing saying it is music is its localized header, and nothing on the card is
+locale-free. It waits for a check of the live DOM in a browser before the extension reads it.
 
 **Done when:** a `- Topic` video played past half in Chrome shows once in the log, Web Scrobbler
 on the same video adds nothing, and a video that is not music adds nothing.

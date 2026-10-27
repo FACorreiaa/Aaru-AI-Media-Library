@@ -32,6 +32,8 @@ export interface Video {
   type: 'video'
   title: string
   channel?: string
+  /** SCR-011: the track, when the video is music. Aaru logs it as a listen once heard. */
+  music?: { artist: string; track: string }
 }
 
 /** One look at the page: what plays, where the main video is, and whether it is running. */
