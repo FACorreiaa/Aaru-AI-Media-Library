@@ -26,12 +26,7 @@ extension APIImplementation {
         let userID = try currentUser()
         try await auth.linkGoogle(userID: userID, idToken: body.idToken, nonce: body.nonce)
         guard let profile = try await stores.users.profile(userID) else { throw AppError.unauthorized() }
-        return .ok(.init(body: .json(.init(
-            userId: profile.id.description,
-            displayName: profile.displayName,
-            handle: profile.handle,
-            providers: profile.providers.compactMap { .init(rawValue: $0.rawValue) }
-        ))))
+        return .ok(.init(body: .json(.init(profile))))
     }
 
     func requestMagicLink(_ input: Operations.RequestMagicLink.Input) async throws -> Operations.RequestMagicLink
@@ -70,12 +65,7 @@ extension APIImplementation {
     func getMe(_: Operations.GetMe.Input) async throws -> Operations.GetMe.Output {
         let userID = try currentUser()
         guard let profile = try await stores.users.profile(userID) else { throw AppError.unauthorized() }
-        return .ok(.init(body: .json(.init(
-            userId: profile.id.description,
-            displayName: profile.displayName,
-            handle: profile.handle,
-            providers: profile.providers.compactMap { .init(rawValue: $0.rawValue) }
-        ))))
+        return .ok(.init(body: .json(.init(profile))))
     }
 
     func deleteAccount(_: Operations.DeleteAccount.Input) async throws -> Operations.DeleteAccount.Output {

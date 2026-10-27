@@ -257,6 +257,7 @@ func buildRouter(stores: Stores, services: Services, metricsSecret: String = "")
         ErrorMiddleware(sentry: services.sentry)
         AuthMiddleware(sessions: stores.sessions)
         ClientTimeZoneMiddleware()
+        AvatarCacheMiddleware()
         // store request context in TaskLocal; must be last
         OpenAPIRequestContextMiddleware()
     }

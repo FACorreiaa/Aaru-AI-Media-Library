@@ -48,28 +48,33 @@ struct PostgresFriendViewStore: FriendViewStore {
             let shareLibraryWithFriends: Bool
             let showAchievementsToFriends: Bool
             let leaderboardOptIn: Bool
+            let shareEmailWithFriends: Bool
         }
         guard let row = try await sql.raw("""
-        SELECT share_library_with_friends, show_achievements_to_friends, leaderboard_opt_in
+        SELECT share_library_with_friends, show_achievements_to_friends, leaderboard_opt_in,
+            share_email_with_friends
         FROM social_settings WHERE user_id = \(bind: id.rawValue)
         """).first(decoding: Row.self, keyDecodingStrategy: .convertFromSnakeCase)
         else { return SocialSettings() }
         return SocialSettings(
             shareLibraryWithFriends: row.shareLibraryWithFriends,
-            showAchievementsToFriends: row.showAchievementsToFriends, leaderboardOptIn: row.leaderboardOptIn
+            showAchievementsToFriends: row.showAchievementsToFriends, leaderboardOptIn: row.leaderboardOptIn,
+            shareEmailWithFriends: row.shareEmailWithFriends
         )
     }
 
     func saveSocialSettings(_ settings: SocialSettings, for id: UserID) async throws {
         try await sql.raw("""
         INSERT INTO social_settings (user_id, share_library_with_friends, show_achievements_to_friends,
-            leaderboard_opt_in)
+            leaderboard_opt_in, share_email_with_friends)
         VALUES (\(bind: id.rawValue), \(bind: settings.shareLibraryWithFriends),
-            \(bind: settings.showAchievementsToFriends), \(bind: settings.leaderboardOptIn))
+            \(bind: settings.showAchievementsToFriends), \(bind: settings.leaderboardOptIn),
+            \(bind: settings.shareEmailWithFriends))
         ON CONFLICT (user_id) DO UPDATE
         SET share_library_with_friends = EXCLUDED.share_library_with_friends,
             show_achievements_to_friends = EXCLUDED.show_achievements_to_friends,
-            leaderboard_opt_in = EXCLUDED.leaderboard_opt_in, updated_at = now()
+            leaderboard_opt_in = EXCLUDED.leaderboard_opt_in,
+            share_email_with_friends = EXCLUDED.share_email_with_friends, updated_at = now()
         """).run()
     }
 

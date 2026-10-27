@@ -120,7 +120,7 @@ private struct SharedProgressRow: View {
                 HStack(spacing: 8) {
                     ForEach(members, id: \.user.userId) { member in
                         HStack(spacing: 6) {
-                            Monogram(text: member.user.monogram, size: 22)
+                            Monogram(text: member.user.monogram, avatarUrl: member.user.avatarUrl, size: 22)
                             Text(member.user.label).font(.caption.weight(.medium)).lineLimit(1)
                             Text(member.summary(for: kind)).font(.caption).foregroundStyle(Color(.muted))
                         }

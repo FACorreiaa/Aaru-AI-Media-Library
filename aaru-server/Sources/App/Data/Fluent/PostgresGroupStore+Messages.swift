@@ -34,6 +34,7 @@ extension PostgresGroupStore {
         let authorId: UUID?
         let authorHandle: String?
         let authorDisplayName: String?
+        let authorAvatarVersion: Int64?
         let body: String
         let mentions: [UUID]
         let mentionsAgent: Bool
@@ -50,7 +51,12 @@ extension PostgresGroupStore {
 
         var message: GroupMessage {
             let author = authorId.flatMap { id in
-                authorHandle.map { SocialUser(id: UserID(id), handle: $0, displayName: authorDisplayName) }
+                authorHandle.map { SocialUser(
+                    id: UserID(id),
+                    handle: $0,
+                    displayName: authorDisplayName,
+                    avatarVersion: authorAvatarVersion
+                ) }
             }
             return GroupMessage(
                 id: id, channelID: channelId, author: author, body: body, mentions: mentions.map(UserID.init),
@@ -68,6 +74,7 @@ extension PostgresGroupStore {
 
     private static let messageColumns: SQLQueryString = """
     SELECT m.id, m.channel_id, m.author_id, p.handle AS author_handle, u.display_name AS author_display_name,
+        u.avatar_version AS author_avatar_version,
         m.body, m.mentions, m.mentions_agent, m.created_at, m.edited_at, m.deleted_at, m.client_nonce,
         m.spoiler_season, m.spoiler_episode, m.spoiler_ending, m.author_kind, m.reply_to, m.components::text
     FROM group_messages m

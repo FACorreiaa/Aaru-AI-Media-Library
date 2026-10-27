@@ -46,12 +46,14 @@ extension PostgresGroupStore: GroupKindStore {
             let addedBy: UUID?
             let handle: String?
             let displayName: String?
+            let avatarVersion: Int64?
             let addedAt: Date
             let position: Int
             let myStatus: String?
         }
         return try await sql.raw("""
-        SELECT i.title_id, i.added_by, p.handle, u.display_name, i.added_at, i.position, li.status AS my_status
+        SELECT i.title_id, i.added_by, p.handle, u.display_name, u.avatar_version, i.added_at, i.position,
+            li.status AS my_status
         FROM group_channel_items i
         LEFT JOIN profiles p ON p.user_id = i.added_by LEFT JOIN users u ON u.id = i.added_by
         LEFT JOIN library_items li ON li.title_id = i.title_id AND li.user_id = \(bind: viewer.rawValue)
@@ -61,7 +63,12 @@ extension PostgresGroupStore: GroupKindStore {
             ShelfItem(
                 titleID: TitleID(row.titleId),
                 addedBy: row.addedBy.flatMap { id in
-                    row.handle.map { SocialUser(id: UserID(id), handle: $0, displayName: row.displayName) }
+                    row.handle.map { SocialUser(
+                        id: UserID(id),
+                        handle: $0,
+                        displayName: row.displayName,
+                        avatarVersion: row.avatarVersion
+                    ) }
                 },
                 addedAt: row.addedAt,
                 position: row.position,
@@ -102,36 +109,35 @@ extension PostgresGroupStore: GroupKindStore {
             let createdBy: UUID?
             let handle: String?
             let displayName: String?
+            let avatarVersion: Int64?
             let startsAt: Date?
             let endedAt: Date?
             let createdAt: Date
         }
-        struct ReadyRow: Decodable {
-            let userId: UUID
-            let handle: String
-            let displayName: String?
-        }
         guard let row = try await sql.raw("""
         SELECT s.id, s.channel_id, s.title_id, s.season, s.episode, s.created_by, p.handle, u.display_name,
-               s.starts_at, s.ended_at, s.created_at
+               u.avatar_version, s.starts_at, s.ended_at, s.created_at
         FROM watch_sessions s
         LEFT JOIN profiles p ON p.user_id = s.created_by LEFT JOIN users u ON u.id = s.created_by
         WHERE s.channel_id = \(bind: channel)
         ORDER BY s.created_at DESC LIMIT 1
         """).first(decoding: Row.self, keyDecodingStrategy: .convertFromSnakeCase) else { return nil }
         let ready = try await sql.raw("""
-        SELECT r.user_id, p.handle, u.display_name
+        SELECT r.user_id, p.handle, u.display_name, u.avatar_version
         FROM watch_ready r JOIN profiles p ON p.user_id = r.user_id JOIN users u ON u.id = r.user_id
         WHERE r.session_id = \(bind: row.id)
         ORDER BY p.handle
-        """).all(decoding: ReadyRow.self, keyDecodingStrategy: .convertFromSnakeCase).map {
-            SocialUser(id: UserID($0.userId), handle: $0.handle, displayName: $0.displayName)
-        }
+        """).all(decoding: WatchReadyRow.self, keyDecodingStrategy: .convertFromSnakeCase).map(\.user)
         return WatchParty(
             id: row.id, channelID: row.channelId, titleID: TitleID(row.titleId),
             episode: row.season.flatMap { season in row.episode.map { EpisodePoint(season: season, episode: $0) } },
             createdBy: row.createdBy.flatMap { id in
-                row.handle.map { SocialUser(id: UserID(id), handle: $0, displayName: row.displayName) }
+                row.handle.map { SocialUser(
+                    id: UserID(id),
+                    handle: $0,
+                    displayName: row.displayName,
+                    avatarVersion: row.avatarVersion
+                ) }
             },
             startsAt: row.startsAt, endedAt: row.endedAt, createdAt: row.createdAt, ready: ready
         )
@@ -171,5 +177,17 @@ extension PostgresGroupStore: GroupKindStore {
         try await sql.raw("""
         UPDATE watch_sessions SET ended_at = \(bind: now) WHERE id = \(bind: session) AND ended_at IS NULL
         """).run()
+    }
+}
+
+/// Someone ready in a watch party.
+private struct WatchReadyRow: Decodable {
+    let userId: UUID
+    let handle: String
+    let displayName: String?
+    let avatarVersion: Int64?
+
+    var user: SocialUser {
+        SocialUser(id: UserID(userId), handle: handle, displayName: displayName, avatarVersion: avatarVersion)
     }
 }

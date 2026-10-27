@@ -5,6 +5,7 @@ import { cn } from '~/lib/utils'
 import { weekRange } from '../../lib/achievements/model'
 import type { Leaderboard as Board } from '../../lib/achievements/model'
 import { inviterName, monogram } from '../../lib/social/model'
+import { Monogram } from '../groups/Monogram'
 
 // GAM-005 on Friends, "This week" (DESIGN.md §17 "The board"): you and the friends who joined,
 // ranked by this week's points, your row marked. Before you join, one card explains it. No
@@ -82,12 +83,11 @@ export function Leaderboard(props: {
                 <span class="w-5 text-right text-sm text-muted tabular-nums">
                   {entry.rank}
                 </span>
-                <span
-                  aria-hidden="true"
-                  class="grid size-8 shrink-0 place-items-center rounded-full bg-medallion/60 font-display text-sm"
-                >
-                  {monogram(entry.user)}
-                </span>
+                <Monogram
+                  text={monogram(entry.user)}
+                  avatarUrl={entry.user.avatarUrl}
+                  class="size-8 bg-medallion/60 font-normal"
+                />
                 <span class="min-w-0 flex-1 truncate text-sm font-medium">
                   <Show when={!entry.you} fallback={<span>You</span>}>
                     <Link

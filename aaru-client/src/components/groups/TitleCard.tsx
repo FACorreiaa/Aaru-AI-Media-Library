@@ -21,6 +21,7 @@ import { useRealtime } from '../../lib/realtime/socket'
 import { monogram } from '../../lib/social/model'
 import { Poster } from '../Poster'
 import { useGroup, useShell } from './shell'
+import { Monogram } from './Monogram'
 
 /**
  * TitleCard (GRP-007): the head of a title channel. The title, where I am in it, where the
@@ -115,12 +116,11 @@ export function TitleCard(props: { channel: Channel }) {
                 <For each={progress()?.members}>
                   {(member) => (
                     <li class="flex items-center gap-1.5 rounded-full bg-paper py-0.5 pr-2.5 pl-0.5 text-xs">
-                      <span
-                        aria-hidden="true"
-                        class="grid size-5 place-items-center rounded-full bg-medallion/20 font-display text-2xs font-medium"
-                      >
-                        {monogram(member.user)}
-                      </span>
+                      <Monogram
+                        text={monogram(member.user)}
+                        avatarUrl={member.user.avatarUrl}
+                        class="size-5 text-2xs"
+                      />
                       <span class="font-medium">
                         {member.user.displayName ?? `@${member.user.handle}`}
                       </span>

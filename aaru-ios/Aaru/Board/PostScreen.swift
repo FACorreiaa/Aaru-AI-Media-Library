@@ -323,7 +323,7 @@ private struct UpvotersSheet: View {
         NavigationStack {
             List(people, id: \.userId) { person in
                 HStack(spacing: AaruSpace.medium) {
-                    Monogram(text: person.monogram, size: 32)
+                    Monogram(text: person.monogram, avatarUrl: person.avatarUrl, size: 32)
                     VStack(alignment: .leading, spacing: 0) {
                         Text(person.handle == myHandle ? "You" : person.inviteName)
                             .fontWeight(.medium)

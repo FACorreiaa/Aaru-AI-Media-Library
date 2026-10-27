@@ -342,7 +342,11 @@ function CommentRow(props: {
               when={!props.comment.mine}
               fallback={
                 <span class="shrink-0 self-start">
-                  <Monogram text={monogram(author())} size="sm" />
+                  <Monogram
+                    text={monogram(author())}
+                    avatarUrl={author().avatarUrl}
+                    size="sm"
+                  />
                 </span>
               }
             >
@@ -352,7 +356,11 @@ function CommentRow(props: {
                 aria-label={inviterName(author())}
                 class="shrink-0 self-start rounded-full"
               >
-                <Monogram text={monogram(author())} size="sm" />
+                <Monogram
+                  text={monogram(author())}
+                  avatarUrl={author().avatarUrl}
+                  size="sm"
+                />
               </Link>
             </Show>
           )}

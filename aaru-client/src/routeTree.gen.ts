@@ -35,6 +35,7 @@ import { Route as ShellAppRecapRouteImport } from './routes/_shell.app_.recap'
 import { Route as ShellAppSettingsRouteImport } from './routes/_shell.app_.settings'
 import { Route as ShellAppSportsRouteImport } from './routes/_shell.app_.sports'
 import { Route as ShellAppWeekRouteImport } from './routes/_shell.app_.week'
+import { Route as AppAvatarsUserIdRouteImport } from './routes/app_.avatars.$userId'
 import { Route as ShellAppFriendsIndexRouteImport } from './routes/_shell.app_.friends.index'
 import { Route as ShellAppFriendsHandleRouteImport } from './routes/_shell.app_.friends.$handle'
 import { Route as ShellAppGroupsIndexRouteImport } from './routes/_shell.app_.groups.index'
@@ -191,6 +192,11 @@ const ShellAppWeekRoute = ShellAppWeekRouteImport.update({
   id: '/app_/week',
   path: '/app/week',
   getParentRoute: () => ShellRoute,
+} as any)
+const AppAvatarsUserIdRoute = AppAvatarsUserIdRouteImport.update({
+  id: '/app_/avatars/$userId',
+  path: '/app/avatars/$userId',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ShellAppFriendsIndexRoute = ShellAppFriendsIndexRouteImport.update({
   id: '/app_/friends/',
@@ -356,6 +362,7 @@ export interface FileRoutesByFullPath {
   '/app/settings': typeof ShellAppSettingsRouteWithChildren
   '/app/sports': typeof ShellAppSportsRoute
   '/app/week': typeof ShellAppWeekRoute
+  '/app/avatars/$userId': typeof AppAvatarsUserIdRoute
   '/app/friends/$handle': typeof ShellAppFriendsHandleRoute
   '/app/groups/$groupId': typeof ShellAppGroupsGroupIdRouteWithChildren
   '/app/imports/$id': typeof ShellAppImportsIdRoute
@@ -407,6 +414,7 @@ export interface FileRoutesByTo {
   '/app/recap': typeof ShellAppRecapRoute
   '/app/sports': typeof ShellAppSportsRoute
   '/app/week': typeof ShellAppWeekRoute
+  '/app/avatars/$userId': typeof AppAvatarsUserIdRoute
   '/app/friends/$handle': typeof ShellAppFriendsHandleRoute
   '/app/imports/$id': typeof ShellAppImportsIdRoute
   '/app/lists/$id': typeof ShellAppListsIdRoute
@@ -461,6 +469,7 @@ export interface FileRoutesById {
   '/_shell/app_/settings': typeof ShellAppSettingsRouteWithChildren
   '/_shell/app_/sports': typeof ShellAppSportsRoute
   '/_shell/app_/week': typeof ShellAppWeekRoute
+  '/app_/avatars/$userId': typeof AppAvatarsUserIdRoute
   '/_shell/app_/friends/$handle': typeof ShellAppFriendsHandleRoute
   '/_shell/app_/groups/$groupId': typeof ShellAppGroupsGroupIdRouteWithChildren
   '/_shell/app_/imports/$id': typeof ShellAppImportsIdRoute
@@ -516,6 +525,7 @@ export interface FileRouteTypes {
     | '/app/settings'
     | '/app/sports'
     | '/app/week'
+    | '/app/avatars/$userId'
     | '/app/friends/$handle'
     | '/app/groups/$groupId'
     | '/app/imports/$id'
@@ -567,6 +577,7 @@ export interface FileRouteTypes {
     | '/app/recap'
     | '/app/sports'
     | '/app/week'
+    | '/app/avatars/$userId'
     | '/app/friends/$handle'
     | '/app/imports/$id'
     | '/app/lists/$id'
@@ -620,6 +631,7 @@ export interface FileRouteTypes {
     | '/_shell/app_/settings'
     | '/_shell/app_/sports'
     | '/_shell/app_/week'
+    | '/app_/avatars/$userId'
     | '/_shell/app_/friends/$handle'
     | '/_shell/app_/groups/$groupId'
     | '/_shell/app_/imports/$id'
@@ -660,6 +672,7 @@ export interface RootRouteChildren {
   ConnectExtensionRoute: typeof ConnectExtensionRoute
   ICodeRoute: typeof ICodeRoute
   OauthConsentRoute: typeof OauthConsentRoute
+  AppAvatarsUserIdRoute: typeof AppAvatarsUserIdRoute
 }
 
 declare module '@tanstack/solid-router' {
@@ -845,6 +858,13 @@ declare module '@tanstack/solid-router' {
       fullPath: '/app/week'
       preLoaderRoute: typeof ShellAppWeekRouteImport
       parentRoute: typeof ShellRoute
+    }
+    '/app_/avatars/$userId': {
+      id: '/app_/avatars/$userId'
+      path: '/app/avatars/$userId'
+      fullPath: '/app/avatars/$userId'
+      preLoaderRoute: typeof AppAvatarsUserIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_shell/app_/friends/': {
       id: '/_shell/app_/friends/'
@@ -1164,6 +1184,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConnectExtensionRoute: ConnectExtensionRoute,
   ICodeRoute: ICodeRoute,
   OauthConsentRoute: OauthConsentRoute,
+  AppAvatarsUserIdRoute: AppAvatarsUserIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

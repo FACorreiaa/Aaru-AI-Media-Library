@@ -181,7 +181,7 @@ struct WatchPanel: View {
         } else {
             HStack(spacing: 4) {
                 ForEach(party.ready.prefix(8), id: \.userId) { user in
-                    Monogram(text: user.monogram, size: 24)
+                    Monogram(text: user.monogram, avatarUrl: user.avatarUrl, size: 24)
                 }
                 Text("\(party.ready.count) ready").font(.caption).foregroundStyle(Color(.muted))
             }

@@ -65,6 +65,7 @@ let allMigrations: [any Migration] = [
     CreateSports(),
     AddOnHold(),
     AddListenImports(),
+    AddProfileDetails(),
 ]
 
 struct MigrationNeedsSQL: Error, CustomStringConvertible {

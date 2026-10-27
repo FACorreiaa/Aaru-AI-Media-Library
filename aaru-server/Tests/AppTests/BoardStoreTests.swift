@@ -9,7 +9,7 @@ struct BoardStoreTests {
     private func author(_ stores: Stores) async throws -> SocialUser {
         let (id, _) = try await signedInUser(stores)
         let handle = "b" + UUID().uuidString.replacingOccurrences(of: "-", with: "").prefix(12).lowercased()
-        try await stores.social.saveProfile(id, handle: handle, displayName: .some(nil))
+        try await stores.social.saveProfile(id, handle: handle, name: nil)
         return SocialUser(id: id, handle: handle, displayName: nil)
     }
 

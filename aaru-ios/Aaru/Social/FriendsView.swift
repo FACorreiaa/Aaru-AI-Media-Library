@@ -335,11 +335,13 @@ private struct PersonRow<Actions: View>: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Text(user.monogram)
-                .font(.subheadline.weight(.medium))
-                .frame(width: side, height: side)
-                .background(Color(.medallion).opacity(AaruAlpha.ghost), in: .circle)
-                .accessibilityHidden(true)
+            AvatarView(path: user.avatarUrl, size: side) {
+                Text(user.monogram)
+                    .font(.subheadline.weight(.medium))
+                    .frame(width: side, height: side)
+                    .background(Color(.medallion).opacity(AaruAlpha.ghost), in: .circle)
+            }
+            .accessibilityHidden(true)
             Text(user.label).lineLimit(2)
             Spacer(minLength: 8)
             actions()

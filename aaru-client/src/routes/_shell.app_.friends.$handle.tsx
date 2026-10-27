@@ -24,6 +24,7 @@ import {
 import { loadFriendProfile } from '../lib/social/server'
 import type { FriendItem } from '../lib/social/server'
 import type { components } from '../lib/api/schema'
+import { Monogram } from '../components/groups/Monogram'
 
 type TitleSummary = components['schemas']['TitleSummary']
 
@@ -77,12 +78,11 @@ function Profile() {
             return (
               <>
                 <header class="mt-4 flex items-center gap-4">
-                  <span
-                    aria-hidden="true"
-                    class="grid size-16 shrink-0 place-items-center rounded-full bg-medallion/20 font-display text-2xl font-medium"
-                  >
-                    {monogram(friend().user)}
-                  </span>
+                  <Monogram
+                    text={monogram(friend().user)}
+                    avatarUrl={friend().user.avatarUrl}
+                    class="size-16 text-2xl"
+                  />
                   <div class="min-w-0">
                     <h1 class="font-display text-4xl font-medium tracking-tight">
                       {name()}
@@ -93,6 +93,18 @@ function Profile() {
                     </p>
                     <Show when={countsLine(friend().counts)}>
                       {(line) => <p class="text-sm text-muted">{line()}</p>}
+                    </Show>
+                    <Show when={friend().email}>
+                      {(email) => (
+                        <p class="text-sm break-all">
+                          <a
+                            href={`mailto:${email()}`}
+                            class="underline-offset-4 hover:underline"
+                          >
+                            {email()}
+                          </a>
+                        </p>
+                      )}
                     </Show>
                   </div>
                 </header>
