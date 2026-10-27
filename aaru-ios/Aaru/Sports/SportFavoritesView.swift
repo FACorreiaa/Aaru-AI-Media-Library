@@ -18,6 +18,10 @@ struct SportFavoritesView: View {
                         ForEach(favorites.items, id: \.entity.followKey) { item in
                             FavoriteCard(item: item, model: model, onOpen: onOpen)
                         }
+                        // The picks leave with the first follow; more are found from here.
+                        Button("Find leagues and teams", systemImage: "plus", action: onFind)
+                            .buttonStyle(.bordered)
+                            .frame(maxWidth: .infinity)
                         SportsCredit()
                             .padding(.top, 8)
                     }

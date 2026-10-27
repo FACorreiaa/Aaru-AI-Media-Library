@@ -532,7 +532,8 @@ colour. A segmented control switches **Favorites** and **Schedule**.
   game first (both sides, the score large in the display face, the clock beside a live dot),
   else the next fixture (local day and time), then the last result in muted. A UFC or WWE card
   has no sides: its name and poster. A follow still being fetched shows a placeholder at the real
-  size, then fills in on its own.
+  size, then fills in on its own. After the last card, "Find leagues and teams" opens Follow, so
+  adding more never depends on the toolbar.
 - **Schedule.** A date strip, three days back to a week ahead, Today marked. The day's events
   grouped by league under the league badge; leagues with a followed team first. A row is time or
   clock, the two sides with badges, the score; a followed team's row carries the amber accent.
