@@ -1,8 +1,8 @@
 import AaruAPI
 import SwiftUI
 
-/// The Sports destination (SPT-004): a sidebar tab on iPad and Mac. iPhone's tab bar is full,
-/// so there Discover pushes `SportsView` from its toolbar.
+/// The Sports destination (SPT-004): a sidebar tab on iPad and Mac. On iPhone it sits under
+/// More (NAV-002), whose navigation controller already holds `SportsView`, so it skips this stack.
 struct SportsScreen: View {
     let api: Client?
 
@@ -61,11 +61,14 @@ struct SportsView: View {
         }
         .navigationTitle("Sports")
         #if os(iOS)
+            // Inline, as Calendar: a large title lands under the picker, and a `.bar` background
+            // runs up behind the navigation bar and covers it.
+            .navigationBarTitleDisplayMode(.inline)
             .safeAreaInset(edge: .top, spacing: 0) {
                 sectionPicker
                     .padding(.horizontal, 16)
-                    .padding(.bottom, 8)
-                    .background(.bar)
+                    .padding(.vertical, 8)
+                    .background(Color(.paper), ignoresSafeAreaEdges: [])
             }
         #endif
             .toolbar {

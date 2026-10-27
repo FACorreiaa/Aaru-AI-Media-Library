@@ -77,11 +77,14 @@ struct DiscoverScreen: View {
             }
             .navigationTitle("Discover")
             #if os(iOS)
+                // Inline, as Calendar: a large title and the filter drawer land under the picker,
+                // and a `.bar` background runs up behind the navigation bar and covers them.
+                .navigationBarTitleDisplayMode(.inline)
                 .safeAreaInset(edge: .top, spacing: 0) {
                     sectionPicker
                         .padding(.horizontal, 16)
-                        .padding(.bottom, 8)
-                        .background(.bar)
+                        .padding(.vertical, 8)
+                        .background(Color(.paper), ignoresSafeAreaEdges: [])
                 }
             #endif
                 .toolbar {

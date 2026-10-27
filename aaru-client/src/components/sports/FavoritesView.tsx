@@ -144,6 +144,14 @@ export function FavoritesView(props: {
               )}
             </For>
           </ul>
+          {/* The picks leave with the first follow; more are found from here. */}
+          <Button
+            variant="outline"
+            class="mt-6"
+            onClick={() => props.onSearch()}
+          >
+            Find leagues and teams
+          </Button>
         </Match>
       </Switch>
     </div>
