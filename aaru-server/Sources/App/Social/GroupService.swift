@@ -179,6 +179,12 @@ struct GroupService: Sendable {
         guard let pending = try await stores.groups.invites(to: viewer).first(where: { $0.id == invite }) else {
             throw Self.noSuchInvite
         }
+        // GRP-013: an invite is only as good as the friendship behind it. A lapsed one goes, and
+        // reads like an invite that never was.
+        guard try await stores.social.areFriends(pending.inviter.id, viewer) else {
+            _ = try await stores.groups.deleteInvite(id: invite, party: viewer)
+            throw Self.noSuchInvite
+        }
         guard try await stores.groups.members(pending.groupID).count < Self.maxMembers else {
             throw Self.invalid("id", "That group is full.")
         }

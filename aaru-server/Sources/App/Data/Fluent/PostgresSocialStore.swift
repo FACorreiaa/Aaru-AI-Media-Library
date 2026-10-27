@@ -178,12 +178,27 @@ struct PostgresSocialStore: SocialStore {
 
     func unfriend(_ first: UserID, _ second: UserID) async throws -> Bool {
         struct Row: Decodable { let userLow: UUID }
-        return try await sql.raw("""
-        DELETE FROM social_friendships
-        WHERE user_low = LEAST(\(bind: first.rawValue), \(bind: second.rawValue))
-          AND user_high = GREATEST(\(bind: first.rawValue), \(bind: second.rawValue))
-        RETURNING user_low
-        """).first(decoding: Row.self, keyDecodingStrategy: .convertFromSnakeCase) != nil
+        return try await database.transaction { database in
+            let sql = try sqlDatabase(database)
+            let ended = try await sql.raw("""
+            DELETE FROM social_friendships
+            WHERE user_low = LEAST(\(bind: first.rawValue), \(bind: second.rawValue))
+              AND user_high = GREATEST(\(bind: first.rawValue), \(bind: second.rawValue))
+            RETURNING user_low
+            """).first(decoding: Row.self, keyDecodingStrategy: .convertFromSnakeCase) != nil
+            try await Self.dropGroupInvites(between: first, second, sql)
+            return ended
+        }
+    }
+
+    /// GRP-013: group invites are friends-only, so they end with the friendship. Only the pair's
+    /// own invites go; another member's invite to either of them stays.
+    private static func dropGroupInvites(between first: UserID, _ second: UserID, _ sql: any SQLDatabase) async throws {
+        try await sql.raw("""
+        DELETE FROM group_invites
+        WHERE (inviter_id = \(bind: first.rawValue) AND invitee_id = \(bind: second.rawValue))
+           OR (inviter_id = \(bind: second.rawValue) AND invitee_id = \(bind: first.rawValue))
+        """).run()
     }
 
     func block(_ blocker: UserID, _ blocked: UserID, now: Date) async throws {
@@ -204,6 +219,7 @@ struct PostgresSocialStore: SocialStore {
             WHERE (from_user_id = \(bind: blocker.rawValue) AND to_user_id = \(bind: blocked.rawValue))
                OR (from_user_id = \(bind: blocked.rawValue) AND to_user_id = \(bind: blocker.rawValue))
             """).run()
+            try await Self.dropGroupInvites(between: blocker, blocked, sql)
         }
     }
 
