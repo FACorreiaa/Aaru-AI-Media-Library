@@ -11437,6 +11437,11 @@ public struct Client: APIProtocol {
             deserializer: { response, responseBody in
                 switch response.status.code {
                 case 200:
+                    let headers: Operations.UpdateLibraryItem.Output.Ok.Headers = .init(aaruAction: try converter.getOptionalHeaderFieldAsURI(
+                        in: response.headerFields,
+                        name: "Aaru-Action",
+                        as: Swift.String.self
+                    ))
                     let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
                     let body: Operations.UpdateLibraryItem.Output.Ok.Body
                     let chosenContentType = try converter.bestContentType(
@@ -11457,7 +11462,10 @@ public struct Client: APIProtocol {
                     default:
                         preconditionFailure("bestContentType chose an invalid content type.")
                     }
-                    return .ok(.init(body: body))
+                    return .ok(.init(
+                        headers: headers,
+                        body: body
+                    ))
                 default:
                     let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
                     let body: Components.Responses._Error.Body

@@ -52,6 +52,7 @@ import {
   countChips,
   listening,
   markOnShelf,
+  isReading,
   setAsideMessage,
   tickedMessage,
   weekStrip,
@@ -117,6 +118,7 @@ import type { QueryClient } from '@tanstack/solid-query'
 
 // The Now playing card loads on its own the first time something plays. It is never in the
 // first paint: Home asks what plays only once it has mounted.
+const ReadingRow = lazy(() => import('../components/ReadingRow'))
 const NowPlayingCard = lazy(() =>
   import('../components/NowPlayingCard').then((m) => ({
     default: m.NowPlayingCard,
@@ -559,6 +561,17 @@ function Home() {
   const chips = createMemo(() => countChips(counts()))
   /** MUS-001: albums in progress, from the library Home already loads for Search. */
   const listeningNow = createMemo(() => listening(entries()))
+  /** Books and manga in progress (owner, 2026-10-25): the Reading row loads only then. */
+  const hasReading = createMemo(() => entries().some(isReading))
+
+  /** The library again, past the cache: after an Undo on a Reading card. */
+  async function reloadLibrary() {
+    try {
+      setEntries(await queryClient.query({ ...libraryQuery, staleTime: 0 }))
+    } catch {
+      // The undo landed; the row catches up on the next visit.
+    }
+  }
 
   const empty = () =>
     continuing().length === 0 &&
@@ -875,6 +888,16 @@ function Home() {
                   )}
                 </For>
               </Row>
+            </Show>
+
+            <Show when={hasReading()}>
+              <ReadingRow
+                entries={entries()}
+                onEntry={(entry) =>
+                  setEntries((current) => upsert(current, entry))
+                }
+                onUndone={() => void reloadLibrary()}
+              />
             </Show>
 
             <Show when={listeningNow().length > 0}>

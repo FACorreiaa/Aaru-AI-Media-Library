@@ -224,7 +224,7 @@ describe('last 7 days strip', () => {
 
   it('leaves out zeros, and keeps seven empty days for a quiet week', () => {
     expect(
-      weekStrip(weekStats({ booksFinished: 1, activeDays: 1 })).parts,
+      weekStrip(weekStats({ moviesFinished: 1, activeDays: 1 })).parts,
     ).toEqual(['1 finished', '1 active day'])
     const quiet = weekStrip(weekStats())
     expect(quiet.parts).toEqual([])
@@ -451,5 +451,27 @@ describe('Home undo toasts', () => {
     expect(setAsideMessage('Blue Box', 'rejected')).toBe(
       'Blue Box ranked lower for 14 days',
     )
+  })
+})
+
+describe('weekStrip for a reading week', () => {
+  it('counts manga among the finished', () => {
+    expect(
+      weekStrip(
+        weekStats({ episodesWatched: 3, minutesWatched: 90, mangaFinished: 1 }),
+      ).parts,
+    ).toEqual(['3 episodes', '2 hours', '1 finished'])
+  })
+
+  it('says what was read and drops the video figures when nothing was watched', () => {
+    const week = weekStrip(
+      weekStats({ booksFinished: 1, mangaFinished: 2, activeDays: 3 }),
+    )
+    expect(week.parts).toEqual(['1 book read', '2 manga read', '3 active days'])
+    expect(week.figures).toEqual([
+      { value: '1', label: 'book read' },
+      { value: '2', label: 'manga read' },
+      { value: '3', label: 'active days' },
+    ])
   })
 })

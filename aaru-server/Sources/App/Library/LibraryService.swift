@@ -138,17 +138,7 @@ struct LibraryService: Sendable {
         patch: ItemPatch,
         by caller: Caller = .user
     ) async throws -> LibraryEntry {
-        let current = try await entry(id, userID: userID)
-        if current.title.type == .show, patch.status == .finished, current.fields.status != .finished {
-            // PROG-005: a show set to watched by hand is the whole show watched.
-            let show = try await showContext(id, userID: userID)
-            guard let write = try await prepareShowWatched(show, patch: patch, caller: caller) else { return current }
-            try await commit(write, userID: userID, caller: caller)
-            return try await entry(id, userID: userID)
-        }
-        guard let write = try preparePatch(current, patch: patch, caller: caller) else { return current }
-        try await commit(write, userID: userID, caller: caller)
-        return try await entry(id, userID: userID)
+        try await patchWrite(id, userID: userID, patch: patch, by: caller).entry
     }
 
     /// PROG-005: every aired episode of a show watched, as one undoable action. The action is nil

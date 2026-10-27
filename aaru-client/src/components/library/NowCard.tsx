@@ -20,6 +20,8 @@ import { cn } from '~/lib/utils'
 export function NowCard(props: {
   item: NowItem
   pending: boolean
+  /** In a Home row: the same width at every size (the Library's grid lets it stretch). */
+  inRow?: boolean
   /** Facts under the progress bar, one line each (the Watching page, APP-018). */
   lines?: string[]
   onTickNext: (next: { season: number; number: number }) => void
@@ -41,7 +43,8 @@ export function NowCard(props: {
     <li
       class={cn(
         cardClass,
-        'flex w-[18rem] shrink-0 snap-start flex-col overflow-hidden md:w-auto',
+        'flex w-[18rem] shrink-0 snap-start flex-col overflow-hidden',
+        !props.inRow && 'md:w-auto',
       )}
     >
       <Show
