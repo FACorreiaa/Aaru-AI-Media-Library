@@ -27,15 +27,15 @@ extension GroupTests {
 
             // Block: the blocked pair's invite goes, but a third member's invite to them stays.
             let bob = try await friend(env, of: mine)
-            let cy = try await friend(env, of: mine)
-            try await join(env, cy, group: group)
-            _ = try await env.send(.post, "/v1/social/friend-requests", json: ["handle": bob.handle], token: cy.token)
-            _ = try await env.send(.post, "/v1/social/friend-requests", json: ["handle": cy.handle], token: bob.token)
+            let cara = try await friend(env, of: mine)
+            try await join(env, cara, group: group)
+            _ = try await env.send(.post, "/v1/social/friend-requests", json: ["handle": bob.handle], token: cara.token)
+            _ = try await env.send(.post, "/v1/social/friend-requests", json: ["handle": cara.handle], token: bob.token)
             _ = try await env.send(.post, "/v1/groups/\(group)/invites", json: ["userId": bob.id])
             #expect(try await inbox(bob).count == 1)
             _ = try await env.send(.put, "/v1/social/blocks/\(env.userID)", token: bob.token)
             #expect(try await inbox(bob).isEmpty)
-            _ = try await env.send(.post, "/v1/groups/\(group)/invites", json: ["userId": bob.id], token: cy.token)
+            _ = try await env.send(.post, "/v1/groups/\(group)/invites", json: ["userId": bob.id], token: cara.token)
             #expect(try await inbox(bob).count == 1)
 
             // A friendship gone behind the store's back: accept answers like a missing invite and removes it.

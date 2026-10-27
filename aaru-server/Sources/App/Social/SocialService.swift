@@ -59,7 +59,10 @@ struct SocialService: Sendable {
         return try await resolve(handle: handle, viewer: viewer)
     }
 
-    private func resolve(handle: String, viewer: UserID) async throws -> (user: SocialUser, relationship: Relationship) {
+    private func resolve(
+        handle: String,
+        viewer: UserID
+    ) async throws -> (user: SocialUser, relationship: Relationship) {
         let handle = handle.trimmingCharacters(in: .whitespaces).lowercased()
         guard let user = try await stores.social.socialUser(handle: handle) else { throw Self.noSuchUser }
         return try await (user, relationship(viewer, user.id))
