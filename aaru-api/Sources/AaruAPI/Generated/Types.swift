@@ -34146,6 +34146,22 @@ public enum Operations {
         }
         @frozen public enum Output: Sendable, Hashable {
             public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/library/items/{id}/PATCH/responses/200/headers`.
+                public struct Headers: Sendable, Hashable {
+                    /// The journaled action this write made, for `POST /v1/actions/{id}/undo`. Absent when the patch changed nothing.
+                    ///
+                    /// - Remark: Generated from `#/paths/v1/library/items/{id}/PATCH/responses/200/headers/Aaru-Action`.
+                    public var aaruAction: Swift.String?
+                    /// Creates a new `Headers`.
+                    ///
+                    /// - Parameters:
+                    ///   - aaruAction: The journaled action this write made, for `POST /v1/actions/{id}/undo`. Absent when the patch changed nothing.
+                    public init(aaruAction: Swift.String? = nil) {
+                        self.aaruAction = aaruAction
+                    }
+                }
+                /// Received HTTP response headers
+                public var headers: Operations.UpdateLibraryItem.Output.Ok.Headers
                 /// - Remark: Generated from `#/paths/v1/library/items/{id}/PATCH/responses/200/content`.
                 @frozen public enum Body: Sendable, Hashable {
                     /// - Remark: Generated from `#/paths/v1/library/items/{id}/PATCH/responses/200/content/application\/json`.
@@ -34168,8 +34184,13 @@ public enum Operations {
                 /// Creates a new `Ok`.
                 ///
                 /// - Parameters:
+                ///   - headers: Received HTTP response headers
                 ///   - body: Received HTTP response body
-                public init(body: Operations.UpdateLibraryItem.Output.Ok.Body) {
+                public init(
+                    headers: Operations.UpdateLibraryItem.Output.Ok.Headers = .init(),
+                    body: Operations.UpdateLibraryItem.Output.Ok.Body
+                ) {
+                    self.headers = headers
                     self.body = body
                 }
             }

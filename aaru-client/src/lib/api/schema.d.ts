@@ -8526,6 +8526,8 @@ export interface operations {
       /** @description The updated item. */
       200: {
         headers: {
+          /** @description The journaled action this write made, for `POST /v1/actions/{id}/undo`. Absent when the patch changed nothing. */
+          'Aaru-Action'?: string
           [name: string]: unknown
         }
         content: {

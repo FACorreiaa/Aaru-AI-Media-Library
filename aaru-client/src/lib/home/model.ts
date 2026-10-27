@@ -161,16 +161,41 @@ function shortHours(minutes: number): string {
  */
 export function weekStrip(stats: Stats, locale?: string): WeekStrip {
   const t = stats.totals
+  const manga = t.mangaFinished ?? 0
+  const read = t.booksFinished + manga
   const finished =
-    t.moviesFinished +
-    t.showsFinished +
-    t.animeFinished +
-    t.booksFinished +
-    t.albumsFinished
+    t.moviesFinished + t.showsFinished + t.animeFinished + t.albumsFinished
+  const days = {
+    value: String(t.activeDays),
+    label: t.activeDays === 1 ? 'active day' : 'active days',
+  }
+  const watched = t.episodesWatched > 0 || t.minutesWatched > 0
+  // A week of reading and nothing watched says what was read, not "0 episodes".
+  if (!watched && read > 0) {
+    const figures = [
+      {
+        count: t.booksFinished,
+        label: t.booksFinished === 1 ? 'book read' : 'books read',
+      },
+      { count: manga, label: 'manga read' },
+      { count: finished, label: 'finished' },
+    ]
+      .filter((figure) => figure.count > 0)
+      .map((figure) => ({ value: String(figure.count), label: figure.label }))
+    return {
+      ...weekBars(stats, locale),
+      parts: [
+        ...figures.map((figure) => `${figure.value} ${figure.label}`),
+        ...(t.activeDays > 0 ? [plural(t.activeDays, 'active day')] : []),
+      ],
+      figures: [...figures, days],
+    }
+  }
+  const all = finished + read
   const parts: string[] = []
   if (t.episodesWatched > 0) parts.push(plural(t.episodesWatched, 'episode'))
   if (t.minutesWatched > 0) parts.push(hoursLabel(t.minutesWatched))
-  if (finished > 0) parts.push(`${finished} finished`)
+  if (all > 0) parts.push(`${all} finished`)
   if (t.activeDays > 0) parts.push(plural(t.activeDays, 'active day'))
   const figures = [
     {
@@ -178,20 +203,23 @@ export function weekStrip(stats: Stats, locale?: string): WeekStrip {
       label: t.episodesWatched === 1 ? 'episode' : 'episodes',
     },
     { value: shortHours(t.minutesWatched), label: 'watched' },
-    { value: String(finished), label: 'finished' },
-    {
-      value: String(t.activeDays),
-      label: t.activeDays === 1 ? 'active day' : 'active days',
-    },
+    { value: String(all), label: 'finished' },
+    days,
   ]
+  return { ...weekBars(stats, locale), parts, figures }
+}
+
+/** The week's seven bars, by time, and their day letters. */
+function weekBars(
+  stats: Stats,
+  locale?: string,
+): Pick<WeekStrip, 'days' | 'dayLabels'> {
   const tallest = Math.max(1, ...stats.buckets.map((b) => b.minutes))
   const weekday = new Intl.DateTimeFormat(locale, {
     timeZone: 'UTC',
     weekday: 'narrow',
   })
   return {
-    parts,
-    figures,
     days: stats.buckets.map((b) => b.minutes / tallest),
     dayLabels: stats.buckets.map((b) =>
       weekday.format(new Date(`${b.start}T12:00:00Z`)),
@@ -299,4 +327,13 @@ export function setAsideMessage(
   return verdict === 'not_tonight'
     ? `${name} set aside for today`
     : `${name} ranked lower for 14 days`
+}
+
+/** A book or manga in progress: what the Reading row holds (owner, 2026-10-25). On hold stays
+ * out, as it does from Now. Cheap, so Home can tell whether to load the row at all. */
+export function isReading(entry: LibraryEntry): boolean {
+  return (
+    entry.status === 'in_progress' &&
+    (entry.title.type === 'book' || entry.title.type === 'manga')
+  )
 }

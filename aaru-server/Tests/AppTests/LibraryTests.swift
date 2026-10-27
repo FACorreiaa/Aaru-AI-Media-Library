@@ -111,6 +111,24 @@ struct LibraryTests {
         }
     }
 
+    @Test("A PATCH that writes names its action in Aaru-Action; one that changes nothing has none")
+    func patchNamesAction() async throws {
+        try await LibraryHarness.run { env in
+            let id = try await env.add("show", tmdb: env.stubShow("Andor", status: .returning))
+            let action = try #require(HTTPField.Name("Aaru-Action"))
+
+            let rated = try await env.send(.patch, "/v1/library/items/\(id)", json: ["rating": 8])
+            let ratedAction = try #require(rated.headers[action])
+            let same = try await env.send(.patch, "/v1/library/items/\(id)", json: ["rating": 8])
+            #expect(same.status == .ok)
+            #expect(same.headers[action] == nil)
+
+            #expect(try await env.send(.post, "/v1/actions/\(ratedAction)/undo").status == .ok)
+            let undone = try await env.send(.get, "/v1/library/items/\(id)").json()
+            #expect(undone["rating"] == nil)
+        }
+    }
+
     @Test("An episode or season tick names its action in Aaru-Action, so Home can offer Undo")
     func tickNamesAction() async throws {
         try await LibraryHarness.run { env in

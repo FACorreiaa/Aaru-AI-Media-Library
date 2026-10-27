@@ -2394,6 +2394,12 @@ paths:
       responses:
         '200':
           description: The updated item.
+          headers:
+            Aaru-Action:
+              description: >-
+                The journaled action this write made, for `POST /v1/actions/{id}/undo`. Absent when
+                the patch changed nothing.
+              schema: {type: string, format: uuid}
           content:
             application/json:
               schema: {$ref: '#/components/schemas/LibraryEntry'}

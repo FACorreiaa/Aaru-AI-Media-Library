@@ -1,6 +1,7 @@
 import { createServerFn } from '@tanstack/solid-start'
 import { z } from 'zod'
 import { api } from '../api/client'
+import type { components } from '../api/schema'
 import { errorMessage } from '../api/errors'
 import { sessionRejected, sessionToken } from '../session/guard'
 import type { LibraryEntry } from '../library/model'
@@ -127,6 +128,22 @@ export const markShowWatched = createServerFn({ method: 'POST' })
     return result
   })
 
+type ItemPatchBody = components['schemas']['LibraryItemPatch']
+
+async function patchItem(id: string, patch: ItemPatchBody): Promise<Ticked> {
+  const {
+    data: entry,
+    error,
+    response,
+  } = await api(sessionToken()).PATCH('/v1/library/items/{id}', {
+    params: { path: { id } },
+    body: patch,
+  })
+  if (response.status === 401) sessionRejected()
+  if (!entry) throw new Error(errorMessage(error, 'That change was not saved.'))
+  return { entry, actionId: tickedAction(response) }
+}
+
 export const updateItem = createServerFn({ method: 'POST' })
   .validator(
     z.object({
@@ -153,20 +170,25 @@ export const updateItem = createServerFn({ method: 'POST' })
         .partial(),
     }),
   )
-  .handler(async ({ data }): Promise<LibraryEntry> => {
-    const {
-      data: entry,
-      error,
-      response,
-    } = await api(sessionToken()).PATCH('/v1/library/items/{id}', {
-      params: { path: { id: data.id } },
-      body: data.patch,
-    })
-    if (response.status === 401) sessionRejected()
-    if (!entry)
-      throw new Error(errorMessage(error, 'That change was not saved.'))
-    return entry
-  })
+  .handler(
+    async ({ data }): Promise<LibraryEntry> =>
+      (await patchItem(data.id, data.patch)).entry,
+  )
+
+/** One step on a Reading card (a page, a chapter, or read), with the action it made for the
+ * Undo toast. Narrower than `updateItem` on purpose. */
+export const stepItem = createServerFn({ method: 'POST' })
+  .validator(
+    z.object({
+      id: itemId,
+      patch: z.union([
+        z.object({ bookPage: z.number().int().min(0) }).strict(),
+        z.object({ mangaChapter: z.number().int().min(0) }).strict(),
+        z.object({ status: z.literal('finished') }).strict(),
+      ]),
+    }),
+  )
+  .handler(async ({ data }): Promise<Ticked> => patchItem(data.id, data.patch))
 
 /** UX-061: takes the title out of the library. The server journals it, so History can undo it. */
 export const removeItem = createServerFn({ method: 'POST' })

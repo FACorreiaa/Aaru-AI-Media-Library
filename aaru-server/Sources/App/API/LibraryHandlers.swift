@@ -42,8 +42,12 @@ extension APIImplementation {
         .Output
     {
         guard case let .json(body) = input.body else { throw AppError.badRequest() }
-        let entry = try await library.patch(itemID(input.path.id), userID: currentUser(), patch: ItemPatch(body))
-        return .ok(.init(body: .json(.init(entry))))
+        let write = try await library.patchWrite(
+            itemID(input.path.id), userID: currentUser(), patch: ItemPatch(body)
+        )
+        return .ok(.init(
+            headers: .init(aaruAction: write.action?.id.uuidString), body: .json(.init(write.entry))
+        ))
     }
 
     func deleteLibraryItem(_ input: Operations.DeleteLibraryItem.Input) async throws -> Operations.DeleteLibraryItem
