@@ -809,7 +809,7 @@ account or a stranger that has not happened yet.
 | SOC-005 | Partial | #17, #42, #45; Push.swift, `/v1/devices`, `/v1/me/notifications` | Airing push only; no friend-request category |
 | SOC-006 | Built, unverified | `social_recommendations`, `/v1/social/recommendations`, `/v1/me/recommendations*`; InteractionTests; web Recommend (title page, profile) and inbox, iOS RecommendSheet and inbox | No push to the recipient yet (needs a notification category) |
 | SOC-007 | Built, unverified | `social_reactions`, `PUT/DELETE /v1/activity/{id}/reaction`, reactions on `ActivityItem`; InteractionTests; web and iOS Lately rows | |
-| SOC-008 | Open | none | |
+| SOC-008 | Built, unverified | `SocialService.lookupLimiter`/`requestLimiter` (60 and 30 a user per hour, 429 `rate_limited`); SocialTests.rateLimits | In-process: one replica |
 | SOC-009 | Open | none | |
 | SOC-010 | Open | none | |
 | SOC-011 | Open | none | |
@@ -837,7 +837,7 @@ account or a stranger that has not happened yet.
 | GRP-010 | Built, unverified | #72; `Agent/ModelProviding.swift`; AgentTests | Off without `ANTHROPIC_API_KEY` |
 | GRP-011 | Built, unverified | #72; `agent_replies`, `AgentReplyWorker`; AgentTests | Off without `ANTHROPIC_API_KEY` |
 | GRP-012 | Built 2026-10-21 | #74; `group_mentions`/`group_invites` switches, per-group mute; GroupPushTests | |
-| GRP-013 | Open | none | |
+| GRP-013 | Built, unverified | `PostgresSocialStore.unfriend`/`block` drop the pair's `group_invites`; `GroupService.accept` re-checks friendship; GroupTests.invitesEndWithFriendship | |
 | GRP-014 | Open | none | |
 | GRP-015 | Open | none | |
 | GRP-016 | Open | none | |
