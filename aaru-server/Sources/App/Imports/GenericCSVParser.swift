@@ -190,6 +190,11 @@ enum ImportFormatDetector {
                 message: "This is a .zip file. Unzip it and upload the CSV files inside, one at a time."
             )
         }
+        if start.hasPrefix("[") || start.hasPrefix("{") {
+            throw ImportFormatError(
+                message: "This is a JSON file. Spotify and YouTube history go in as listening history, not as a CSV."
+            )
+        }
         if start.hasPrefix("<") {
             guard text.contains("<myanimelist") else {
                 throw ImportFormatError(

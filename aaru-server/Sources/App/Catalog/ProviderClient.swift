@@ -28,6 +28,8 @@ struct ProviderError: Error, Equatable {
         case "tvmaze": "TVmaze"
         case "pogdesign": "Pogdesign CAT"
         case "thesportsdb": "TheSportsDB"
+        case "lastfm": "Last.fm"
+        case "listenbrainz": "ListenBrainz"
         default: provider
         }
     }

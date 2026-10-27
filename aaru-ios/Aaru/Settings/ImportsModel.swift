@@ -60,9 +60,7 @@ final class ImportsModel {
         problem = nil
         do {
             let output = try await api.createCSVImport(
-                query: .init(source: source, filename: filename),
-                // `auto` is sniffed by the server; the type only says which body this is.
-                body: source == .mal || data.first == UInt8(ascii: "<") ? .xml(HTTPBody(data)) : .csv(HTTPBody(data))
+                query: .init(source: source, filename: filename), body: Self.body(data, source: source)
             )
             switch output {
             case let .accepted(response):
@@ -301,6 +299,9 @@ extension ImportsModel {
             return nil
         }
         var filename = url.lastPathComponent
+        if source.isListening {
+            return await uploadListening(data, filename: filename, source: source)
+        }
         if Gunzip.isGzip(data) {
             do {
                 data = try Gunzip.decompress(data, limit: Self.maxUploadBytes)

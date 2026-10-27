@@ -73,7 +73,8 @@ struct Services: Sendable {
                 anilistLists: catalogs.anilist as? any AniListListReading,
                 stremio: stremio,
                 catFeed: catFeed,
-                model: model
+                model: model,
+                listenHistory: catalogs.listenHistory
             ),
             traktConnect: traktConnect(stores, trakt),
             malConnect: MALConnectService(stores: stores, settings: mal?.settings, api: mal),

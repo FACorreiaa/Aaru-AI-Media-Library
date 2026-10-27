@@ -53,3 +53,22 @@ export async function readImportFile(file: Blob): Promise<string> {
   }
   return new TextDecoder().decode(bytes)
 }
+
+/** MUS-004: a listening history file is bigger than an export; the server takes up to 24 MB. */
+export const MAX_LISTEN_BYTES = 24 * 1024 * 1024
+
+/** A Spotify or YouTube history file as text. A .zip is refused: its files go in one at a time. */
+export async function readListenFile(file: Blob): Promise<string> {
+  if (file.size > MAX_LISTEN_BYTES) {
+    throw new Error(
+      'That file is larger than 24 MB. Spotify splits its history into smaller files; add them one at a time.',
+    )
+  }
+  const bytes = new Uint8Array(await file.arrayBuffer())
+  if (bytes[0] === 0x50 && bytes[1] === 0x4b) {
+    throw new Error(
+      'This is a .zip file. Unzip it and add the .json files inside, one at a time.',
+    )
+  }
+  return new TextDecoder().decode(bytes)
+}

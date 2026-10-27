@@ -22,6 +22,9 @@ struct ImportService: Sendable {
     var catFeed: CATCalendarFeed?
     /// Reads text and image captures (AG-006). Nil when no model is configured: links still work.
     var model: (any ModelProviding)?
+    /// Listening history by username (MUS-004): Last.fm, without which its import answers 503, and
+    /// ListenBrainz.
+    var listenHistory: [ImportSource: any ListenHistoryReading] = [:]
     /// Says a capture's plan is ready (`UserPush.send`). Nil in tests and when no push is
     /// configured.
     var push: (@Sendable (PushMessage, UserID) async -> Void)?
@@ -95,6 +98,9 @@ struct ImportService: Sendable {
         else { return false }
         var job = claimed.job
         do {
+            guard !job.source.isListens else {
+                return try await planListens(&job)
+            }
             guard let stored = try await rowsToPlan(&job) else {
                 Self.count(job)
                 return true
@@ -124,7 +130,7 @@ struct ImportService: Sendable {
                 try? await stores.importJobs.release(job.id, now: now())
                 throw CancellationError()
             }
-            let summary = Self.summary(of: error)
+            let summary = Self.summary(of: error, listens: job.source.isListens)
             if claimed.attempts < Self.maxAttempts {
                 // Back off: 30 s, then 60 s. A provider outage usually passes.
                 let wait = TimeInterval(30 * claimed.attempts)
@@ -220,9 +226,10 @@ extension ImportService {
         source.displayName
     }
 
-    private static func summary(of error: any Error) -> String {
+    private static func summary(of error: any Error, listens: Bool) -> String {
         if let provider = error as? ProviderError {
-            return "\(provider.displayName) could not be reached while matching titles."
+            let doing = listens ? "reading listens" : "matching titles"
+            return "\(provider.displayName) could not be reached while \(doing)."
         }
         if error is ModelProviderError {
             return "Aaru could not read the capture just now. Send it again in a bit."
@@ -297,6 +304,10 @@ extension ImportSource {
         case .anilist: "AniList"
         case .genericCSV: "CSV"
         case .capture: "a capture"
+        case .lastFM: "Last.fm"
+        case .listenBrainz: "ListenBrainz"
+        case .spotifyJSON: "Spotify"
+        case .youTubeTakeout: "YouTube"
         }
     }
 }

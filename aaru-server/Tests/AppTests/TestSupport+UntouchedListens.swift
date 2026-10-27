@@ -24,4 +24,28 @@ extension UntouchedStore: ListenStore {
     func resolve(_: ListenLookup, as _: RecordingMatch, at _: Date) async throws -> Int {
         throw Touched()
     }
+
+    func stage(_: [NewListen], jobID _: ImportJobID, from _: Int) async throws {
+        throw Touched()
+    }
+
+    func clearStaged(jobID _: ImportJobID) async throws {
+        throw Touched()
+    }
+
+    func countNew(jobID _: ImportJobID, userID _: UserID) async throws -> Int {
+        throw Touched()
+    }
+
+    func applyStaged(jobID _: ImportJobID, userID _: UserID) async throws -> Int {
+        throw Touched()
+    }
+
+    func deleteImported(jobID _: ImportJobID, userID _: UserID) async throws -> Int {
+        throw Touched()
+    }
+
+    func newestImported(userID _: UserID, source _: ImportSource, account _: String) async throws -> Date? {
+        throw Touched()
+    }
 }

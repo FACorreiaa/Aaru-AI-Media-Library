@@ -2357,6 +2357,40 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/imports/lastfm': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Import a Last.fm account's scrobbles by username (MUS-004). Read in the background into the listening log, written only after approval. A second import of the same account reads only what came after the last one. 503 `lastfm_unavailable` when the server has no Last.fm key. */
+    post: operations['createLastFMImport']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/imports/listenbrainz': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Import a ListenBrainz account's listens by username (MUS-004). Read in the background into the listening log, written only after approval. A second import of the same account reads only what came after the last one. */
+    post: operations['createListenBrainzImport']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/imports/stremio/link': {
     parameters: {
       query?: never
@@ -2524,6 +2558,23 @@ export interface paths {
     put?: never
     /** Approve the plan. Writes it as one undoable action. */
     post: operations['applyImport']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/imports/{id}/undo': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Undo an applied listening-history import (MUS-004): deletes the listens it wrote and the import. 409 `import_not_listens` for a library import (undo its action instead), 409 `import_not_applied` before it is applied (delete it instead). */
+    post: operations['undoListenImport']
     delete?: never
     options?: never
     head?: never
@@ -2917,7 +2968,10 @@ export interface components {
     ImportJob: {
       /** Format: uuid */
       id: string
-      /** @enum {string} */
+      /**
+       * @description `lastfm`, `listenbrainz`, `spotify_json` and `youtube_takeout` are listening history (MUS-004): they have no rows, are applied into the listening log, and undo with POST /v1/imports/{id}/undo.
+       * @enum {string}
+       */
       source:
         | 'trakt'
         | 'stremio'
@@ -2932,6 +2986,10 @@ export interface components {
         | 'anilist'
         | 'csv'
         | 'capture'
+        | 'lastfm'
+        | 'listenbrainz'
+        | 'spotify_json'
+        | 'youtube_takeout'
       /**
        * @description `planned` waits for approval; nothing is written before it.
        * @enum {string}
@@ -2940,13 +2998,13 @@ export interface components {
         'queued' | 'running' | 'planned' | 'succeeded' | 'failed' | 'partial'
       stats: components['schemas']['ImportStats']
       errorSummary?: string
-      /** @description The uploaded file's name, or the AniList username for an `anilist` import. */
+      /** @description The uploaded file's name, or the username for an `anilist`, `lastfm` or `listenbrainz` import. */
       filename?: string
       /** Format: date-time */
       createdAt: string
       /** Format: date-time */
       updatedAt: string
-      /** @description Rows read from the file or provider. 0 for a Trakt or AniList import until the worker has read the account. */
+      /** @description Rows read from the file or provider. 0 for a Trakt, AniList, Last.fm or ListenBrainz import until the worker has read the account. For listening history, the plays read that are music. */
       rowsTotal: number
       /** @description Rows matched so far while `running` (IMP-017); back to 0 when a failed attempt is retried. With `rowsTotal` it is the import's progress. */
       rowsMatched: number
@@ -2961,6 +3019,12 @@ export interface components {
       updated: number
       skipped: number
       unmatched: number
+      /** @description Listening history only (MUS-004): plays left out by rule (podcasts, plays under 30 s, videos that are not music). */
+      ignored?: number
+    }
+    ListenAccount: {
+      /** @description The account's username, 1–64 characters. */
+      username: string
     }
     ImportList: {
       items: components['schemas']['ImportJob'][]
@@ -8732,7 +8796,7 @@ export interface operations {
   createCSVImport: {
     parameters: {
       query: {
-        /** @description `auto` detects the format: MyAnimeList-format XML, anime or manga (also exported by Kitsu and AniList), an IMDb, Letterboxd, Netflix viewing activity, TV Time or Goodreads CSV, or any other CSV read by its column names (`csv`). `tvtime` takes one CSV from TV Time's export at a time: `tvtime-series-episodes.csv`, `tvtime-series.csv` or `tvtime-movies.csv` (Export my data), or `tracking-prod-records-v2.csv`, `tracking-prod-records.csv`, `followed_tv_show.csv` or `seen_episode.csv` (GDPR export). */
+        /** @description `auto` detects the format: MyAnimeList-format XML, anime or manga (also exported by Kitsu and AniList), an IMDb, Letterboxd, Netflix viewing activity, TV Time or Goodreads CSV, or any other CSV read by its column names (`csv`); for an `application/octet-stream` body, Spotify's extended streaming history or Google Takeout's YouTube watch history. `spotify` and `youtube` are listening history (MUS-004): their plays go to the listening log, never the library, and the job's stats count new listens (`created`), listens already in the log (`skipped`) and plays left out (`ignored`). `tvtime` takes one CSV from TV Time's export at a time: `tvtime-series-episodes.csv`, `tvtime-series.csv` or `tvtime-movies.csv` (Export my data), or `tracking-prod-records-v2.csv`, `tracking-prod-records.csv`, `followed_tv_show.csv` or `seen_episode.csv` (GDPR export). */
         source:
           | 'auto'
           | 'imdb'
@@ -8742,6 +8806,8 @@ export interface operations {
           | 'goodreads'
           | 'mal'
           | 'csv'
+          | 'spotify'
+          | 'youtube'
         /** @description The file's name. Letterboxd's watchlist export is told apart by it. */
         filename?: string
       }
@@ -8753,6 +8819,7 @@ export interface operations {
       content: {
         'text/csv': string
         'application/xml': string
+        'application/octet-stream': string
       }
     }
     responses: {
@@ -8867,6 +8934,56 @@ export interface operations {
           /** @description AniList username: 2–20 letters, digits or underscores. */
           username: string
         }
+      }
+    }
+    responses: {
+      /** @description Queued. */
+      202: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ImportJob']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  createLastFMImport: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ListenAccount']
+      }
+    }
+    responses: {
+      /** @description Queued. */
+      202: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ImportJob']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  createListenBrainzImport: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ListenAccount']
       }
     }
     responses: {
@@ -9166,6 +9283,27 @@ export interface operations {
         content: {
           'application/json': components['schemas']['ImportJob']
         }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  undoListenImport: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Undone. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
       }
       default: components['responses']['Error']
     }

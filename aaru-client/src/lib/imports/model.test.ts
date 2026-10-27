@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import {
   appliedMessage,
   importSteps,
+  isListens,
   isWorking,
+  listensAppliedMessage,
   sourceLabel,
   stateLabel,
   traktResult,
@@ -116,5 +118,61 @@ describe('applied import toast', () => {
     expect(appliedMessage({ ...stats, created: 1, updated: 3 })).toBe(
       'Imported 1 title · filled in 3',
     )
+  })
+})
+
+describe('listening history imports (MUS-004)', () => {
+  const lastfm = (state: Job['state'], extra: Partial<Job> = {}) =>
+    job(state, { source: 'lastfm', filename: 'rj', ...extra })
+
+  it('tells a listening import from a library one', () => {
+    expect(isListens(lastfm('queued'))).toBe(true)
+    expect(isListens(job('queued', { source: 'spotify_json' }))).toBe(true)
+    expect(isListens(job('queued'))).toBe(false)
+    expect(sourceLabel(job('planned', { source: 'youtube_takeout' }))).toBe(
+      'YouTube',
+    )
+  })
+
+  it('reads an account page by page, then checks the log', () => {
+    const reading = importSteps(lastfm('running', { rowsTotal: 400 }))
+    expect(reading[0]).toMatchObject({
+      label: 'Read your Last.fm listens',
+      detail: '400 plays so far',
+      state: 'current',
+    })
+    expect(reading[2]).toMatchObject({
+      label: 'Check against your listening log',
+      state: 'todo',
+    })
+    expect(stateLabel(lastfm('running'))).toBe('Reading listens…')
+    expect(importSteps(lastfm('queued'))[0]?.state).toBe('todo')
+  })
+
+  it('has read a file before it is in line', () => {
+    const steps = importSteps(
+      job('running', { source: 'spotify_json', rowsTotal: 1 }),
+    )
+    expect(steps[0]).toMatchObject({ detail: '1 play', state: 'done' })
+    expect(steps[2]?.state).toBe('current')
+  })
+
+  it('says how many listens were added', () => {
+    expect(
+      listensAppliedMessage({
+        created: 1204,
+        updated: 0,
+        skipped: 3,
+        unmatched: 0,
+      }),
+    ).toBe('Added 1,204 listens')
+    expect(
+      listensAppliedMessage({
+        created: 1,
+        updated: 0,
+        skipped: 0,
+        unmatched: 0,
+      }),
+    ).toBe('Added 1 listen')
   })
 })

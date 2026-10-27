@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 @testable import AaruCore
 
@@ -26,8 +27,21 @@ struct WireContractTests {
             ImportSource.allCases.map(\.rawValue) == [
                 "trakt", "stremio", "imdb_csv", "letterboxd_csv", "goodreads_csv", "cat_list", "cat_ics",
                 "netflix_csv", "tvtime_csv", "mal_xml", "anilist", "csv", "capture",
+                "lastfm", "listenbrainz", "spotify_json", "youtube_takeout",
             ]
         )
+    }
+
+    @Test
+    func onlyListeningHistoryImportsBringListens() {
+        #expect(ImportSource.allCases.filter(\.isListens) == [.lastFM, .listenBrainz, .spotifyJSON, .youTubeTakeout])
+    }
+
+    @Test
+    func statsStoredBeforeIgnoredDecodeWithNone() throws {
+        let old = Data(#"{"created":1,"updated":2,"skipped":3,"unmatched":4}"#.utf8)
+        let stats = try JSONDecoder().decode(ImportStats.self, from: old)
+        #expect(stats == ImportStats(created: 1, updated: 2, skipped: 3, unmatched: 4, ignored: 0))
     }
 
     @Test

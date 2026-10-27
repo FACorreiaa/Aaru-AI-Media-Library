@@ -356,3 +356,29 @@ struct GamificationService: Sendable {
         }
     }
 }
+
+// MARK: Listening history (MUS-004)
+
+extension GamificationService {
+    /// A listening-history import was applied (MUS-004): no points, however recent its listens (a
+    /// backlog is not a day's listening). Its music badges arrive as one summary.
+    func listensImported(_ user: UserID) async {
+        await bestEffort(user) {
+            _ = try await evaluate(user, origin: .batch, actionID: nil)
+        }
+    }
+
+    /// A listening-history import was undone: the music tiers whose rule no longer holds go. The
+    /// import is not a journaled action, so its tiers are found by rule rather than by action.
+    func listensUndone(_ user: UserID) async {
+        await bestEffort(user) {
+            let facts = try await store.facts(userID: user)
+            let lost = try await store.badges(userID: user).filter { badge in
+                BadgeCatalog.byID[badge.badge].map { $0.family == .music && badge.tier > $0.tier(for: facts) } ?? false
+            }
+            if !lost.isEmpty {
+                try await store.deleteBadges(ids: lost.map(\.id), userID: user)
+            }
+        }
+    }
+}

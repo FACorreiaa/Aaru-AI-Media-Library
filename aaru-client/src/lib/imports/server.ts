@@ -18,7 +18,7 @@ export type Account = components['schemas']['Me']
 const MAX_BYTES = 5 * 1024 * 1024
 const id = z.string().uuid()
 
-function check<T>(
+export function check<T>(
   result: { data?: T; error?: unknown; response: Response },
   fallback: string,
 ): T {
