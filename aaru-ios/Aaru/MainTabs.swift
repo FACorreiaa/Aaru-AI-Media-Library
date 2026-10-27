@@ -270,7 +270,12 @@ struct MainTabs: View {
                 KindScreen(kind: kind, api: api, library: library, lists: lists, discover: discover)
             }
         case .sports:
-            SportsScreen(api: api)
+            // Under iPhone's More, More's navigation bar is the stack: a second one stacks two bars.
+            if compactTabBar {
+                SportsView(api: api)
+            } else {
+                SportsScreen(api: api)
+            }
         case .insights:
             NavigationStack {
                 InsightsView(api: api, library: library)
