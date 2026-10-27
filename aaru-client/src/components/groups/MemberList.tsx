@@ -105,7 +105,11 @@ export function MemberList(props: { class?: string }) {
               <For each={section.members}>
                 {(member) => (
                   <li class="group/member relative flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-surface">
-                    <Monogram text={monogram(member.user)} size="sm" />
+                    <Monogram
+                      text={monogram(member.user)}
+                      avatarUrl={member.user.avatarUrl}
+                      size="sm"
+                    />
                     <span class="min-w-0 flex-1">
                       <span class="block truncate text-sm font-medium">
                         {member.user.displayName ?? `@${member.user.handle}`}
@@ -178,7 +182,11 @@ export function MemberList(props: { class?: string }) {
             <For each={scope.detail().invited}>
               {(user) => (
                 <li class="flex items-center gap-3 px-2 py-1.5 opacity-60">
-                  <Monogram text={monogram(user)} size="sm" />
+                  <Monogram
+                    text={monogram(user)}
+                    avatarUrl={user.avatarUrl}
+                    size="sm"
+                  />
                   <span class="truncate text-sm">@{user.handle}</span>
                 </li>
               )}

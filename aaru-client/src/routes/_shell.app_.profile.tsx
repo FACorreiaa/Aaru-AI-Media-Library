@@ -21,7 +21,11 @@ export const Route = createFileRoute('/_shell/app_/profile')({
     return {
       stats,
       favorites,
-      person: { displayName: session.displayName, handle: session.handle },
+      person: {
+        displayName: session.displayName,
+        handle: session.handle,
+        avatarUrl: session.avatarUrl,
+      },
       items: Object.fromEntries(
         stats.mostWatched.flatMap((top) => {
           const id = items.get(top.title.id)

@@ -709,7 +709,20 @@ ship before the Phase 2 gate.
   anime, films, one stacked bar); the top eight genres; the three titles with the most time;
   networks; mean score and the ratings histogram; Favorites; then Insights and Recap. It counts
   the library as it is, undated ticks included, and says so ("Includes episodes without a watch
-  date"). Static, like §13b. Badges (`BadgeShelf`) live on Achievements (below).
+  date"). Static, like §13b. Badges (`BadgeShelf`) live on Achievements (below). An "Edit
+  profile" button under the name opens the editor.
+- **Edit profile** (`ProfileEditor`, SOC-001b, owner 2026-10-27) — one screen for who you are, in
+  order: Photo (a round preview with Change and Remove; the device crops it square), First name
+  and Last name (both optional; others see them joined), Handle, Email (read-only, with "Friends
+  can see my email", off until you turn it on; an Apple "Hide My Email" address says it cannot be
+  shared), then rows to Favorites (FAV-001) and to "Sports you follow" (the Sports tab's
+  Favorites; follows never show on the profile). On the web it is Settings → Account's profile
+  section; on iPhone and Mac a screen pushed from the profile and from Settings → Account.
+- **Avatars** (SOC-001b) — your photo, on the medallion disc, wherever your monogram showed: the
+  web's sidebar account row and top bar, Home's profile button, the profile, a friend's view of
+  you, group members and messages, Board posts and comments, Friends, requests and the
+  leaderboard. The monogram stays the fallback while it loads, without a photo, and on the public
+  invite page, which never shows one.
 - **Favorites** (`FavoritesRow`, FAV-001, owner 2026-10-23) — a top 10 per kind (Films, Shows,
   Anime, Manga, Books, Music), any title from the catalog, first is the favorite. Picked in
   Settings → Account; on the profile, one numbered row of covers per kind with something in it,
@@ -967,9 +980,9 @@ bottom, Insights and Settings (owner, 2026-10-25).
   destinations (Friends is its own page since SOC-003, owner 2026-10-21; it opens on Board, and
   Lately is its second view), a collapsible More group (open while you are on one of its pages,
   else as you last left it; flat when the sidebar is icons), a gap, Insights, Settings, and last
-  the account row (name and @handle, opens Settings → Account). Groups carries the mention count,
+  the account row (avatar, name and @handle, opens Settings → Account). Groups carries the mention count,
   and a closed More shows a dot when there are mentions. Below 1024px a top bar (wordmark,
-  Search, menu) opens the same sidebar as a sheet. No page draws its own header or nav. Detail
+  Search, your avatar to Settings → Account, menu) opens the same sidebar as a sheet. No page draws its own header or nav. Detail
   pages (a title, a list, an import, a channel) sit inside the shell with a back link that
   names where you came from. Sign out lives on Account only.
 - **iPad.** The `sidebarAdaptable` sidebar: the six, a More section, then a bottom section with

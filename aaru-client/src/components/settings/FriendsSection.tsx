@@ -30,6 +30,7 @@ import {
 import type { SocialState, SocialUser } from '../../lib/social/server'
 import { InviteFriends } from '../InviteFriends'
 import { SettingsSection } from './SettingsSection'
+import { Monogram } from '../groups/Monogram'
 
 // SOC-001 / SOC-002 on the Friends page: invite links, friends by exact handle, requests both ways, and
 // blocks. Nobody can browse or search for anyone; you add a friend by typing their handle.
@@ -345,12 +346,11 @@ function Person(props: {
 }) {
   const who = (
     <>
-      <span
-        aria-hidden="true"
-        class="grid size-9 shrink-0 place-items-center rounded-full bg-medallion/20 font-display text-sm font-medium"
-      >
-        {monogram(props.user)}
-      </span>
+      <Monogram
+        text={monogram(props.user)}
+        avatarUrl={props.user.avatarUrl}
+        class="size-9"
+      />
       <span class="truncate text-sm font-medium">
         {personLabel(props.user)}
       </span>

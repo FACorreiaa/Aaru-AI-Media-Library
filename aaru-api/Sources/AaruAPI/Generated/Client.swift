@@ -969,7 +969,7 @@ public struct Client: APIProtocol {
             }
         )
     }
-    /// Claim or change your handle, and optionally your display name. Handles are how friends find you.
+    /// Claim or change your handle, and your first and last name (SOC-001b). Handles are how friends find you; others see the two names joined. Every field is optional: one left out keeps its value.
     ///
     /// - Remark: HTTP `PUT /v1/me/profile`.
     /// - Remark: Generated from `#/paths//v1/me/profile/put(updateProfile)`.
@@ -1016,10 +1016,259 @@ public struct Client: APIProtocol {
                     switch chosenContentType {
                     case "application/json":
                         body = try await converter.getResponseBodyAsJSON(
-                            Components.Schemas.SocialUser.self,
+                            Components.Schemas.Me.self,
                             from: responseBody,
                             transforming: { value in
                                 .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                default:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(body: body)
+                    )
+                }
+            }
+        )
+    }
+    /// Replace your avatar (SOC-001b) with one square JPEG of at most 1 MB; apps send 512px. Anything that is not a JPEG is refused with 415 `avatar_image_type`, a larger file with 413 `file_too_large`. It is seen by signed-in accounts wherever your name is, never signed out and never across a block.
+    ///
+    /// - Remark: HTTP `PUT /v1/me/avatar`.
+    /// - Remark: Generated from `#/paths//v1/me/avatar/put(uploadAvatar)`.
+    public func uploadAvatar(_ input: Operations.UploadAvatar.Input) async throws -> Operations.UploadAvatar.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.UploadAvatar.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/me/avatar",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .put
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                let body: OpenAPIRuntime.HTTPBody?
+                switch input.body {
+                case let .jpeg(value):
+                    body = try converter.setRequiredRequestBodyAsBinary(
+                        value,
+                        headerFields: &request.headerFields,
+                        contentType: "image/jpeg"
+                    )
+                }
+                return (request, body)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.UploadAvatar.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.Me.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                default:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(body: body)
+                    )
+                }
+            }
+        )
+    }
+    /// Remove your avatar. Your monogram shows again everywhere.
+    ///
+    /// - Remark: HTTP `DELETE /v1/me/avatar`.
+    /// - Remark: Generated from `#/paths//v1/me/avatar/delete(deleteAvatar)`.
+    public func deleteAvatar(_ input: Operations.DeleteAvatar.Input) async throws -> Operations.DeleteAvatar.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.DeleteAvatar.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/me/avatar",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .delete
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.DeleteAvatar.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.Me.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                default:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(body: body)
+                    )
+                }
+            }
+        )
+    }
+    /// Someone's avatar (SOC-001b), for any signed-in account. A block either way, an unknown user and no avatar are the same 404. Use the `avatarUrl` a response gave you: its `v` changes with every upload, so a cached image is never stale.
+    ///
+    /// - Remark: HTTP `GET /v1/users/{userId}/avatar`.
+    /// - Remark: Generated from `#/paths//v1/users/{userId}/avatar/get(getUserAvatar)`.
+    public func getUserAvatar(_ input: Operations.GetUserAvatar.Input) async throws -> Operations.GetUserAvatar.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.GetUserAvatar.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/users/{}/avatar",
+                    parameters: [
+                        input.path.userId
+                    ]
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .get
+                )
+                suppressMutabilityWarning(&request)
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "v",
+                    value: input.query.v
+                )
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.GetUserAvatar.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "image/jpeg"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "image/jpeg":
+                        body = try converter.getResponseBodyAsBinary(
+                            OpenAPIRuntime.HTTPBody.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .jpeg(value)
                             }
                         )
                     default:

@@ -160,7 +160,19 @@ extension UntouchedStore: SocialStore {
         throw Touched()
     }
 
-    func saveProfile(_: UserID, handle _: String, displayName _: String??) async throws {
+    func saveProfile(_: UserID, handle _: String?, name _: PersonName?) async throws {
+        throw Touched()
+    }
+
+    func saveAvatar(_: UserID, image _: Data) async throws {
+        throw Touched()
+    }
+
+    func deleteAvatar(_: UserID) async throws {
+        throw Touched()
+    }
+
+    func avatar(_: UserID) async throws -> Data? {
         throw Touched()
     }
 

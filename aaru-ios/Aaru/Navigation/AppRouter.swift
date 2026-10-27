@@ -197,6 +197,13 @@ final class AppRouter {
         tab = .friends
     }
 
+    /// Sports' Favorites, which Edit profile links to (SOC-001b): follows stay in Sports. From the
+    /// Settings sheet, the sheet closes first.
+    func showSportsFollows() {
+        showsSettingsSheet = false
+        select(.sports)
+    }
+
     func select(_ destination: AppTab) {
         switch destination {
         case .lists: showLists()

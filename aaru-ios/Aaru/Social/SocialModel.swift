@@ -13,8 +13,19 @@ typealias RecommendationItem = Components.Schemas.RecommendationItem
 @MainActor
 @Observable
 final class SocialModel {
-    private(set) var handle: String?
-    private(set) var displayName: String?
+    /// Who you are (SOC-001b): handle, names, email and photo. One copy for the whole app, so
+    /// Home's profile button follows an edit at once.
+    private(set) var account: Components.Schemas.Me?
+    var handle: String? {
+        account?.handle
+    }
+
+    var displayName: String? {
+        account?.displayName
+    }
+
+    /// Friends see your email (SOC-001b). Off unless you turn it on.
+    var shareEmail = false
     private(set) var friends: [SocialUser] = []
     private(set) var incoming: [FriendRequest] = []
     private(set) var outgoing: [FriendRequest] = []
@@ -77,8 +88,7 @@ final class SocialModel {
             async let settingsCall = api.getSocialSettings()
             async let recommendationsCall = api.listRecommendations()
             if case let .ok(response) = try await meCall, let account = try? response.body.json {
-                handle = account.handle
-                displayName = account.displayName
+                self.account = account
             }
             if case let .ok(response) = try await friendsCall {
                 friends = try response.body.json.items
@@ -104,6 +114,7 @@ final class SocialModel {
                 shareLibrary = settings.shareLibraryWithFriends
                 showAchievements = settings.showAchievementsToFriends ?? true
                 leaderboardOptIn = settings.leaderboardOptIn ?? false
+                shareEmail = settings.shareEmailWithFriends ?? false
             }
             if case let .ok(response) = try await recommendationsCall {
                 recommendations = try response.body.json.items
@@ -115,23 +126,9 @@ final class SocialModel {
         }
     }
 
-    /// Claims or changes the handle; an empty name clears it. True when saved.
-    func saveProfile(handle: String, displayName: String) async -> Bool {
-        if let invalid = Self.handleProblem(handle) {
-            problem = invalid
-            return false
-        }
-        guard let api else { return false }
-        let body = Components.Schemas.ProfileUpdate(handle: Self.normalized(handle), displayName: displayName)
-        return await run("Your handle was not saved.") {
-            switch try await api.updateProfile(body: .json(body)) {
-            case let .ok(response):
-                let user = try response.body.json
-                self.handle = user.handle
-                self.displayName = user.displayName
-            case let .default(_, error): throw Failure(try? error.body.json.message)
-            }
-        }
+    /// The account as the server last answered it, from a write in another file.
+    func adopt(_ account: Components.Schemas.Me) {
+        self.account = account
     }
 
     /// Asks someone by handle. Asking someone who already asked you makes you friends.
@@ -212,8 +209,8 @@ final class SocialModel {
     }
 
     func reset() {
-        handle = nil
-        displayName = nil
+        account = nil
+        shareEmail = false
         friends = []
         incoming = []
         outgoing = []
@@ -231,7 +228,7 @@ final class SocialModel {
         notice = nil
     }
 
-    private struct Failure: Error {
+    struct Failure: Error {
         let message: String?
         init(_ message: String?) {
             self.message = message
@@ -249,7 +246,7 @@ final class SocialModel {
 
     /// Runs one write and turns any failure into one visible message. True when it succeeded.
     @discardableResult
-    private func run(_ fallback: String, _ call: () async throws -> Void) async -> Bool {
+    func run(_ fallback: String, _ call: () async throws -> Void) async -> Bool {
         problem = nil
         notice = nil
         do {

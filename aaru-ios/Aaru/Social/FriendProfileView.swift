@@ -165,11 +165,13 @@ private struct ProfileHeader: View {
             ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
             : AnyLayout(HStackLayout(spacing: 16))
         layout {
-            Text(profile.user.monogram)
-                .font(.aaruDisplay(.title))
-                .frame(width: side, height: side)
-                .background(Color(.medallion).opacity(AaruAlpha.ghost), in: .circle)
-                .accessibilityHidden(true)
+            AvatarView(path: profile.user.avatarUrl, size: side) {
+                Text(profile.user.monogram)
+                    .font(.aaruDisplay(.title))
+                    .frame(width: side, height: side)
+                    .background(Color(.medallion).opacity(AaruAlpha.ghost), in: .circle)
+            }
+            .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 4) {
                 Text(profile.user.inviteName)
                     .font(.aaruDisplay(.largeTitle))
@@ -178,6 +180,10 @@ private struct ProfileHeader: View {
                     .foregroundStyle(Color(.muted))
                 if let counts = profile.counts.flatMap(Self.countsLine) {
                     Text(counts).font(.subheadline).foregroundStyle(Color(.muted))
+                }
+                // Only while they share it (SOC-001b).
+                if let email = profile.email, let url = URL(string: "mailto:\(email)") {
+                    Link(email, destination: url).font(.subheadline)
                 }
             }
         }

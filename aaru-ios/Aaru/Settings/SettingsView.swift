@@ -122,11 +122,7 @@ private struct AccountSummary: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: "person.crop.circle.fill")
-                .resizable()
-                .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(Color(.accent))
-                .frame(width: avatar, height: avatar)
+            ProfileMedallion(account: social.account ?? account.profile, size: avatar)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text(social.displayName ?? account.profile?.displayName ?? social.handle.map { "@\($0)" } ?? "Account")

@@ -1,6 +1,12 @@
-/** A round monogram: groups in the rail, people in rows. */
+import { Show } from 'solid-js'
+import { avatarSrc } from '../../lib/profile/avatar-src'
+import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui'
+
+/** A round monogram: groups in the rail, people in rows. A person with a photo shows it
+ * (SOC-001b), the monogram staying underneath until it loads. */
 export function Monogram(props: {
   text: string
+  avatarUrl?: string | null
   size?: 'sm' | 'md' | 'lg'
   class?: string
 }) {
@@ -11,11 +17,14 @@ export function Monogram(props: {
         ? 'size-8 text-xs'
         : 'size-10 text-sm'
   return (
-    <span
+    <Avatar
       aria-hidden="true"
-      class={`grid shrink-0 place-items-center rounded-full bg-medallion/20 font-display font-medium ${size()} ${props.class ?? ''}`}
+      class={`bg-medallion/20 font-display font-medium ${size()} ${props.class ?? ''}`}
     >
-      {props.text}
-    </span>
+      <Show when={avatarSrc(props.avatarUrl)}>
+        {(src) => <AvatarImage src={src()} alt="" />}
+      </Show>
+      <AvatarFallback>{props.text}</AvatarFallback>
+    </Avatar>
   )
 }

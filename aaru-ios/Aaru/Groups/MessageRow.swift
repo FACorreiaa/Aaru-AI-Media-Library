@@ -60,6 +60,7 @@ struct MessageRow: View {
     var body: some View {
         MessageScaffold(
             monogram: line.startsRun ? (message.author?.monogram ?? "?") : nil,
+            avatarUrl: message.author?.avatarUrl,
             name: line.startsRun ? authorName : nil,
             time: message.createdAt,
             highlighted: mentionsMe
@@ -122,6 +123,7 @@ struct OutgoingRow: View {
     var body: some View {
         MessageScaffold(
             monogram: startsRun ? (sender?.monogram ?? "?") : nil,
+            avatarUrl: sender?.avatarUrl,
             name: startsRun ? (sender.map { $0.displayName ?? "@\($0.handle)" } ?? "You") : nil,
             time: outgoing.createdAt,
             highlighted: false
@@ -147,6 +149,7 @@ struct OutgoingRow: View {
 /// The shared row shape: a 36-point gutter for the monogram, then name, time and text.
 private struct MessageScaffold<Content: View>: View {
     let monogram: String?
+    let avatarUrl: String?
     let name: String?
     let time: Date
     let highlighted: Bool
@@ -155,7 +158,7 @@ private struct MessageScaffold<Content: View>: View {
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             if let monogram {
-                Monogram(text: monogram, size: 36)
+                Monogram(text: monogram, avatarUrl: avatarUrl, size: 36)
             } else {
                 // The monogram's gutter, as wide as the monogram at this text size.
                 Monogram(text: "", size: 36).hidden().frame(height: 1)
@@ -223,22 +226,25 @@ struct NewDivider: View {
     }
 }
 
-/// A generated monogram on the medallion tint. Aaru has no avatar uploads. Decorative: the name
-/// beside it is what VoiceOver reads. It grows with Dynamic Type, to a point, so the letters stay
-/// inside the circle.
+/// A person's photo (SOC-001b), else a generated monogram on the medallion tint. Decorative: the
+/// name beside it is what VoiceOver reads. It grows with Dynamic Type, to a point, so the letters
+/// stay inside the circle.
 struct Monogram: View {
     let text: String
+    var avatarUrl: String?
     var size: CGFloat = 36
     @ScaledMetric(relativeTo: .subheadline) private var scale: CGFloat = 1
 
     var body: some View {
         let side = size * min(scale, 1.6)
-        Text(text)
-            .font(size > 40 ? .headline : .subheadline.weight(.medium))
-            .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
-            .frame(width: side, height: side)
-            .background(Color(.medallion).opacity(AaruAlpha.ghost), in: .circle)
-            .accessibilityHidden(true)
+        AvatarView(path: avatarUrl, size: side) {
+            Text(text)
+                .font(size > 40 ? .headline : .subheadline.weight(.medium))
+                .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+                .frame(width: side, height: side)
+                .background(Color(.medallion).opacity(AaruAlpha.ghost), in: .circle)
+        }
+        .accessibilityHidden(true)
     }
 }
 

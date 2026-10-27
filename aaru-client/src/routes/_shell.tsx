@@ -15,6 +15,7 @@ export const Route = createFileRoute('/_shell')({
     session: {
       displayName: context.session.displayName,
       handle: context.session.handle,
+      avatarUrl: context.session.avatarUrl ?? null,
     },
     sidebarOpen: readSidebarOpen(),
   }),

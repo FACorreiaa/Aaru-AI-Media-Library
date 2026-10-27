@@ -35,7 +35,7 @@ struct MemberList: View {
                 Section("Invited") {
                     ForEach(invited, id: \.userId) { user in
                         HStack(spacing: 12) {
-                            Monogram(text: user.monogram, size: 32)
+                            Monogram(text: user.monogram, avatarUrl: user.avatarUrl, size: 32)
                             Text(user.label).lineLimit(1).foregroundStyle(Color(.muted))
                         }
                     }
@@ -85,7 +85,7 @@ struct MemberList: View {
             Section(title) {
                 ForEach(members, id: \.user.userId) { member in
                     HStack(spacing: 12) {
-                        Monogram(text: member.user.monogram, size: 32)
+                        Monogram(text: member.user.monogram, avatarUrl: member.user.avatarUrl, size: 32)
                         Text(member.user.label).lineLimit(1)
                         if member.user.userId == groups.myUserID {
                             Text("You").font(.caption).foregroundStyle(Color(.muted))

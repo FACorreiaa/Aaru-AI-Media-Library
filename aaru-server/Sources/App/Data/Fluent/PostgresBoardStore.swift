@@ -15,6 +15,7 @@ struct PostgresBoardStore: BoardStore {
         let userId: UUID
         let handle: String
         let displayName: String?
+        let avatarVersion: Int64?
         let titleId: UUID?
         let rating: Double?
         let body: String
@@ -30,7 +31,12 @@ struct PostgresBoardStore: BoardStore {
         var post: BoardPost {
             BoardPost(
                 id: id,
-                author: SocialUser(id: UserID(userId), handle: handle, displayName: displayName),
+                author: SocialUser(
+                    id: UserID(userId),
+                    handle: handle,
+                    displayName: displayName,
+                    avatarVersion: avatarVersion
+                ),
                 titleID: titleId.map(TitleID.init),
                 rating: rating,
                 body: body,
@@ -52,6 +58,7 @@ struct PostgresBoardStore: BoardStore {
         let userId: UUID?
         let handle: String?
         let displayName: String?
+        let avatarVersion: Int64?
         let authorKind: String
         let replyTo: UUID?
         let body: String
@@ -62,7 +69,12 @@ struct PostgresBoardStore: BoardStore {
 
         var comment: BoardComment {
             let author = userId.flatMap { id in
-                handle.map { SocialUser(id: UserID(id), handle: $0, displayName: displayName) }
+                handle.map { SocialUser(
+                    id: UserID(id),
+                    handle: $0,
+                    displayName: displayName,
+                    avatarVersion: avatarVersion
+                ) }
             }
             return BoardComment(
                 id: id, postID: postId, author: author, fromAgent: authorKind == "agent", replyTo: replyTo,
@@ -76,12 +88,14 @@ struct PostgresBoardStore: BoardStore {
         let userId: UUID
         let handle: String
         let displayName: String?
+        let avatarVersion: Int64?
     }
 
     /// Shared SELECT + FROM for every post read. Deleted posts are filtered by each caller's WHERE.
     private static func postColumns(viewer: UserID) -> SQLQueryString {
         """
-        SELECT b.id, b.user_id, p.handle, u.display_name, b.title_id, b.rating::float8 AS rating, b.body,
+        SELECT b.id, b.user_id, p.handle, u.display_name, u.avatar_version, b.title_id, b.rating::float8 AS rating,
+            b.body,
             b.spoiler_season, b.spoiler_episode, b.spoiler_ending, b.created_at, b.edited_at,
             (SELECT count(*)::int FROM board_upvotes v WHERE v.post_id = b.id) AS upvotes,
             EXISTS (SELECT 1 FROM board_upvotes v WHERE v.post_id = b.id AND v.user_id = \(bind: viewer.rawValue))
@@ -94,7 +108,7 @@ struct PostgresBoardStore: BoardStore {
     }
 
     private static let commentColumns: SQLQueryString = """
-    SELECT c.id, c.post_id, c.user_id, p.handle, u.display_name, c.author_kind, c.reply_to, c.body,
+    SELECT c.id, c.post_id, c.user_id, p.handle, u.display_name, u.avatar_version, c.author_kind, c.reply_to, c.body,
         c.mentions, c.mentions_agent, c.created_at, c.deleted_at
     FROM board_comments c
     LEFT JOIN profiles p ON p.user_id = c.user_id LEFT JOIN users u ON u.id = c.user_id
@@ -184,11 +198,16 @@ struct PostgresBoardStore: BoardStore {
 
     func upvoters(post: UUID) async throws -> [SocialUser] {
         try await sql.raw("""
-        SELECT v.user_id, p.handle, u.display_name
+        SELECT v.user_id, p.handle, u.display_name, u.avatar_version
         FROM board_upvotes v JOIN profiles p ON p.user_id = v.user_id JOIN users u ON u.id = v.user_id
         WHERE v.post_id = \(bind: post) ORDER BY v.created_at, v.user_id
         """).all(decoding: UserRow.self, keyDecodingStrategy: .convertFromSnakeCase).map {
-            SocialUser(id: UserID($0.userId), handle: $0.handle, displayName: $0.displayName)
+            SocialUser(
+                id: UserID($0.userId),
+                handle: $0.handle,
+                displayName: $0.displayName,
+                avatarVersion: $0.avatarVersion
+            )
         }
     }
 

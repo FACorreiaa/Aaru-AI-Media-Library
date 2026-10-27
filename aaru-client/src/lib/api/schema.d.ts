@@ -200,8 +200,43 @@ export interface paths {
       cookie?: never
     }
     get?: never
-    /** Claim or change your handle, and optionally your display name. Handles are how friends find you. */
+    /** Claim or change your handle, and your first and last name (SOC-001b). Handles are how friends find you; others see the two names joined. Every field is optional: one left out keeps its value. */
     put: operations['updateProfile']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/me/avatar': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /** Replace your avatar (SOC-001b) with one square JPEG of at most 1 MB; apps send 512px. Anything that is not a JPEG is refused with 415 `avatar_image_type`, a larger file with 413 `file_too_large`. It is seen by signed-in accounts wherever your name is, never signed out and never across a block. */
+    put: operations['uploadAvatar']
+    post?: never
+    /** Remove your avatar. Your monogram shows again everywhere. */
+    delete: operations['deleteAvatar']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/users/{userId}/avatar': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Someone's avatar (SOC-001b), for any signed-in account. A block either way, an unknown user and no avatar are the same 404. Use the `avatarUrl` a response gave you: its `v` changes with every upload, so a cached image is never stale. */
+    get: operations['getUserAvatar']
+    put?: never
     post?: never
     delete?: never
     options?: never
@@ -3198,10 +3233,19 @@ export interface components {
     Me: {
       /** Format: uuid */
       userId: string
+      /** @description The first and last name joined; what friends and groups see. */
       displayName?: string
+      firstName?: string
+      lastName?: string
       /** @description Absent until the user claims one in PUT /v1/me/profile. */
       handle?: string
       providers: ('apple' | 'email' | 'google')[]
+      /** @description The address friends may see when you share it: the email sign-in's, else Google's, else Apple's. Absent when no sign-in has one. */
+      email?: string
+      /** @description False without an email, or for an Apple private relay address, which friends cannot write to. Always sent since SOC-001b; optional so apps built before the server ships still read `Me`. */
+      emailShareable?: boolean
+      /** @description Path to `GET /v1/users/{userId}/avatar` with its version. Absent without an avatar. */
+      avatarUrl?: string
     }
     Entitlement: {
       /** @description Aaru Plus is active. */
@@ -3229,10 +3273,15 @@ export interface components {
         resetsAt: string
       }
     }
+    /** @description A field left out keeps its saved value. */
     ProfileUpdate: {
       /** @description 3–20 of a–z, 0–9 and _. Stored lowercase. */
-      handle: string
-      /** @description Absent leaves it unchanged; empty clears it. */
+      handle?: string
+      /** @description Empty clears it. */
+      firstName?: string
+      /** @description Empty clears it. */
+      lastName?: string
+      /** @description Deprecated: what apps before SOC-001b send in place of the two names. Ignored when either name is sent; the saved names joined is no change, anything else splits at the first space. Empty clears both. */
       displayName?: string
     }
     SocialUser: {
@@ -3240,6 +3289,8 @@ export interface components {
       userId: string
       handle: string
       displayName?: string
+      /** @description Path to `GET /v1/users/{userId}/avatar` with its version (SOC-001b). Absent without an avatar, and never on a route a signed-out caller can read. */
+      avatarUrl?: string
     }
     SocialUserView: {
       user: components['schemas']['SocialUser']
@@ -3257,6 +3308,8 @@ export interface components {
       showAchievementsToFriends?: boolean
       /** @description You join the weekly friends board, and see it. Off by default. */
       leaderboardOptIn?: boolean
+      /** @description Friends see your email on your profile (SOC-001b). Off by default; group members never see it. */
+      shareEmailWithFriends?: boolean
     }
     /** @description One title on a friend's shelf. Never their notes. */
     FriendItem: {
@@ -3303,6 +3356,8 @@ export interface components {
       achievements?: components['schemas']['FriendAchievements']
       /** @description Their top 10s (FAV-001). Sent only while they share their library. */
       favorites?: components['schemas']['Favorites']
+      /** @description Their email, sent only while they share it (SOC-001b), whether or not they share their library. */
+      email?: string
     }
     /**
      * @description A favorites kind. Anime is any anime, film or series.
@@ -4461,6 +4516,11 @@ export interface components {
       /** Format: date-time */
       exportedAt: string
       account: components['schemas']['Me']
+      /**
+       * Format: byte
+       * @description Your avatar (SOC-001b) as base64 JPEG. Absent without one.
+       */
+      avatarJpeg?: string
       /** @description Every library item; shows carry `watchedEpisodes`. */
       library: components['schemas']['LibraryEntry'][]
       lists: {
@@ -5263,13 +5323,85 @@ export interface operations {
       }
     }
     responses: {
-      /** @description Your social identity. */
+      /** @description Your account. It carries every field `SocialUser` did, so apps from before SOC-001b read it unchanged. */
       200: {
         headers: {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['SocialUser']
+          'application/json': components['schemas']['Me']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  uploadAvatar: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'image/jpeg': string
+      }
+    }
+    responses: {
+      /** @description Your account, with the new `avatarUrl`. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Me']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  deleteAvatar: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Your account, without `avatarUrl`. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Me']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getUserAvatar: {
+    parameters: {
+      query?: {
+        /** @description The avatar's version, for caches only. */
+        v?: number
+      }
+      header?: never
+      path: {
+        userId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The JPEG, with `Cache-Control` for a week in a private cache. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'image/jpeg': string
         }
       }
       default: components['responses']['Error']

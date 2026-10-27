@@ -27,16 +27,13 @@ extension APIImplementation {
         async let listens = services.listens.all(userID: userID)
         async let favorites = FavoriteService.favorites(of: userID, stores: stores)
         async let sports = sportsExport(userID)
+        async let avatar = stores.social.avatar(userID)
         return try await .ok(.init(
             headers: .init(contentDisposition: "attachment; filename=\"aaru-export-\(stamp).json\""),
             body: .json(.init(
                 exportedAt: Date(),
-                account: .init(
-                    userId: profile.id.description,
-                    displayName: profile.displayName,
-                    handle: profile.handle,
-                    providers: profile.providers.compactMap { .init(rawValue: $0.rawValue) }
-                ),
+                account: .init(profile),
+                avatarJpeg: avatar.map { $0.base64EncodedString() },
                 library: library,
                 lists: export.lists.map { .init(
                     name: $0.list.name,

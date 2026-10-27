@@ -136,7 +136,12 @@ export function CommentComposer(props: {
         </p>
       </Show>
       <div class="flex gap-3">
-        <Monogram text={monogram(props.me)} size="sm" class="mt-0.5" />
+        <Monogram
+          text={monogram(props.me)}
+          avatarUrl={props.me.avatarUrl}
+          size="sm"
+          class="mt-0.5"
+        />
         <div class="min-w-0 flex-1">
           <TextField value={text()} onChange={setText} class="relative flex">
             <TextFieldLabel class="sr-only">

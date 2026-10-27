@@ -9,6 +9,34 @@ struct SocialUser: Sendable, Equatable {
     var id: UserID
     var handle: String
     var displayName: String?
+    /// Changes on every upload; nil without an avatar (SOC-001b).
+    var avatarVersion: Int64?
+}
+
+/// A first and a last name, both optional (SOC-001b). Others see them joined.
+struct PersonName: Sendable, Equatable {
+    var first: String?
+    var last: String?
+
+    /// The two names joined, or nil with neither.
+    var displayName: String? {
+        let joined = [first, last].compactMap { $0 }.joined(separator: " ")
+        return joined.isEmpty ? nil : joined
+    }
+}
+
+extension PersonName {
+    /// One name as an older app or a sign-in sends it: the first word, then the rest. The
+    /// migration splits saved names the same way.
+    init(splitting raw: String?) {
+        let name = raw?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard let space = name.firstIndex(where: \.isWhitespace) else {
+            self.init(first: name.isEmpty ? nil : name, last: nil)
+            return
+        }
+        let last = name[space...].trimmingCharacters(in: .whitespacesAndNewlines)
+        self.init(first: String(name[..<space]), last: last.isEmpty ? nil : last)
+    }
 }
 
 /// A pending friend request. It stops existing once accepted, declined or cancelled.
@@ -59,9 +87,14 @@ protocol SocialStore: Sendable {
     /// The user's social identity; nil until they claim a handle.
     func socialUser(_ id: UserID) async throws -> SocialUser?
     func socialUser(handle: String) async throws -> SocialUser?
-    /// Claims or changes the handle, and sets the display name when one is given.
+    /// Claims or changes the handle when one is given, and replaces both names when they are.
     /// `StoreConflict` when another user holds the handle.
-    func saveProfile(_ id: UserID, handle: String, displayName: String??) async throws
+    func saveProfile(_ id: UserID, handle: String?, name: PersonName?) async throws
+    /// Replaces the avatar and gives it a new version (SOC-001b).
+    func saveAvatar(_ id: UserID, image: Data) async throws
+    func deleteAvatar(_ id: UserID) async throws
+    /// The avatar's JPEG bytes, if the user has one.
+    func avatar(_ id: UserID) async throws -> Data?
     /// True when either user blocked the other.
     func isBlocked(_ first: UserID, _ second: UserID) async throws -> Bool
     func areFriends(_ first: UserID, _ second: UserID) async throws -> Bool

@@ -127,11 +127,13 @@ struct ActivityRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Text(item.user.monogram)
-                .font(.subheadline.weight(.medium))
-                .frame(width: side, height: side)
-                .background(Color(.medallion).opacity(AaruAlpha.ghost), in: .circle)
-                .accessibilityHidden(true)
+            AvatarView(path: item.user.avatarUrl, size: side) {
+                Text(item.user.monogram)
+                    .font(.subheadline.weight(.medium))
+                    .frame(width: side, height: side)
+                    .background(Color(.medallion).opacity(AaruAlpha.ghost), in: .circle)
+            }
+            .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 4) {
                 Text(sentence).lineLimit(3)
                 Text(ActivityWords.day(item.day))
