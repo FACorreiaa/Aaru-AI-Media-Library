@@ -21,6 +21,7 @@ import { Route as AuthVerifyRouteImport } from './routes/auth.verify'
 import { Route as ConnectExtensionRouteImport } from './routes/connect.extension'
 import { Route as ICodeRouteImport } from './routes/i.$code'
 import { Route as OauthConsentRouteImport } from './routes/oauth.consent'
+import { Route as SCodeRouteImport } from './routes/s.$code'
 import { Route as ShellAppAchievementsRouteImport } from './routes/_shell.app_.achievements'
 import { Route as ShellAppBooksRouteImport } from './routes/_shell.app_.books'
 import { Route as ShellAppCalendarRouteImport } from './routes/_shell.app_.calendar'
@@ -121,6 +122,11 @@ const ICodeRoute = ICodeRouteImport.update({
 const OauthConsentRoute = OauthConsentRouteImport.update({
   id: '/oauth/consent',
   path: '/oauth/consent',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SCodeRoute = SCodeRouteImport.update({
+  id: '/s/$code',
+  path: '/s/$code',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ShellAppAchievementsRoute = ShellAppAchievementsRouteImport.update({
@@ -348,6 +354,7 @@ export interface FileRoutesByFullPath {
   '/connect/extension': typeof ConnectExtensionRoute
   '/i/$code': typeof ICodeRoute
   '/oauth/consent': typeof OauthConsentRoute
+  '/s/$code': typeof SCodeRoute
   '/app/achievements': typeof ShellAppAchievementsRoute
   '/app/books': typeof ShellAppBooksRoute
   '/app/calendar': typeof ShellAppCalendarRoute
@@ -402,6 +409,7 @@ export interface FileRoutesByTo {
   '/connect/extension': typeof ConnectExtensionRoute
   '/i/$code': typeof ICodeRoute
   '/oauth/consent': typeof OauthConsentRoute
+  '/s/$code': typeof SCodeRoute
   '/app/achievements': typeof ShellAppAchievementsRoute
   '/app/books': typeof ShellAppBooksRoute
   '/app/calendar': typeof ShellAppCalendarRoute
@@ -455,6 +463,7 @@ export interface FileRoutesById {
   '/connect/extension': typeof ConnectExtensionRoute
   '/i/$code': typeof ICodeRoute
   '/oauth/consent': typeof OauthConsentRoute
+  '/s/$code': typeof SCodeRoute
   '/_shell/app_/achievements': typeof ShellAppAchievementsRoute
   '/_shell/app_/books': typeof ShellAppBooksRoute
   '/_shell/app_/calendar': typeof ShellAppCalendarRoute
@@ -511,6 +520,7 @@ export interface FileRouteTypes {
     | '/connect/extension'
     | '/i/$code'
     | '/oauth/consent'
+    | '/s/$code'
     | '/app/achievements'
     | '/app/books'
     | '/app/calendar'
@@ -565,6 +575,7 @@ export interface FileRouteTypes {
     | '/connect/extension'
     | '/i/$code'
     | '/oauth/consent'
+    | '/s/$code'
     | '/app/achievements'
     | '/app/books'
     | '/app/calendar'
@@ -617,6 +628,7 @@ export interface FileRouteTypes {
     | '/connect/extension'
     | '/i/$code'
     | '/oauth/consent'
+    | '/s/$code'
     | '/_shell/app_/achievements'
     | '/_shell/app_/books'
     | '/_shell/app_/calendar'
@@ -672,6 +684,7 @@ export interface RootRouteChildren {
   ConnectExtensionRoute: typeof ConnectExtensionRoute
   ICodeRoute: typeof ICodeRoute
   OauthConsentRoute: typeof OauthConsentRoute
+  SCodeRoute: typeof SCodeRoute
   AppAvatarsUserIdRoute: typeof AppAvatarsUserIdRoute
 }
 
@@ -759,6 +772,13 @@ declare module '@tanstack/solid-router' {
       path: '/oauth/consent'
       fullPath: '/oauth/consent'
       preLoaderRoute: typeof OauthConsentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/s/$code': {
+      id: '/s/$code'
+      path: '/s/$code'
+      fullPath: '/s/$code'
+      preLoaderRoute: typeof SCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_shell/app_/achievements': {
@@ -1184,6 +1204,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConnectExtensionRoute: ConnectExtensionRoute,
   ICodeRoute: ICodeRoute,
   OauthConsentRoute: OauthConsentRoute,
+  SCodeRoute: SCodeRoute,
   AppAvatarsUserIdRoute: AppAvatarsUserIdRoute,
 }
 export const routeTree = rootRouteImport
