@@ -40,4 +40,8 @@ extension AppRequestContext {
 extension HTTPField.Name {
     // swiftlint:disable:next force_unwrapping
     static let xForwardedFor = Self("X-Forwarded-For")!
+    // swiftlint:disable:next force_unwrapping
+    static let aaruVisitor = Self("X-Aaru-Visitor")! // trusted only with `aaruWebSecret`
+    // swiftlint:disable:next force_unwrapping
+    static let aaruWebSecret = Self("X-Aaru-Web-Secret")!
 }

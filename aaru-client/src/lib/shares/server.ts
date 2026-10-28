@@ -45,7 +45,7 @@ export const loadShare = createServerFn({ method: 'GET' })
   .validator(z.object({ code: z.string().min(1).max(32) }))
   .handler(async ({ data }): Promise<SharePage> => {
     const token = getCookie(SESSION_COOKIE)
-    const client = api(token)
+    const client = api(token, { visitor: true })
     const [preview, me] = await Promise.all([
       client.GET('/v1/shares/{code}', {
         params: { path: { code: data.code } },

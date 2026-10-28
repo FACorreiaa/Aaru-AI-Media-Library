@@ -109,6 +109,9 @@ struct AppConfig: Sendable {
     /// `METRICS_SECRET`: the bearer facorreia.com/apps sends to `/internal/metrics`. Empty turns
     /// the route off.
     var metricsSecret: String
+    /// `WEB_CLIENT_SECRET`: shared with the web Worker, which sends it with the visitor's address so
+    /// per-address limits count visitors, not Cloudflare. Empty trusts no visitor header.
+    var webClientSecret: String
     /// `METRICS_PORT`: where `GET /metrics` (Prometheus) listens, apart from the API port so the
     /// Ingress never routes to it. 0 turns it off.
     var metricsPort: Int
@@ -153,6 +156,7 @@ struct AppConfig: Sendable {
             sportsAPIKey: reader.string(forKey: "thesportsdb.api.key").flatMap(\.nilIfBlank),
             lastFMAPIKey: reader.string(forKey: "lastfm.api.key").flatMap(\.nilIfBlank),
             metricsSecret: reader.string(forKey: "metrics.secret", default: ""),
+            webClientSecret: reader.string(forKey: "web.client.secret", default: ""),
             metricsPort: reader.int(forKey: "metrics.port", default: 9090),
             sentry: reader.string(forKey: "sentry.dsn").flatMap(\.nilIfBlank).map {
                 SentrySettings(

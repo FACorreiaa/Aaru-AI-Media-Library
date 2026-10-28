@@ -238,7 +238,7 @@ export const loadInvite = createServerFn({ method: 'GET' })
   .validator(z.object({ code: z.string().min(1).max(32) }))
   .handler(async ({ data }): Promise<InvitePage> => {
     const token = getCookie(SESSION_COOKIE)
-    const client = api(token)
+    const client = api(token, { visitor: true })
     const [preview, me] = await Promise.all([
       client.GET('/v1/invites/{code}', {
         params: { path: { code: data.code } },
