@@ -310,7 +310,9 @@ Continue watching card or Tonight ("Marked S1 · E3 of Blue Box · Undo"), Tonig
 ("Marked season 2 of Blue Box"), and Tonight's verdicts, which also say what they do ("Blue Box
 set aside for today", "Blue Box ranked lower for 14 days"). Ticks undo their journaled action
 (the API names it in the `Aaru-Action` header); a verdict is not journaled, and Undo clears it
-(`DELETE /v1/tonight/{id}/feedback`). The Apple apps have not followed yet.
+(`DELETE /v1/tonight/{id}/feedback`). The Reading row's steps say what they did ("On page 140
+of Dune", "Read to chapter 112 of Frieren", "Marked Dune read") and undo the same way. The Apple
+apps offer the Reading row's toast; their ticks and verdicts have not followed yet.
 
 **Mark show watched.** A long press on a show's card (iOS: Library, Home's rows) or its card
 menu on the web (⋯, right-click, long press) offers "Mark show watched"; a film offers "Mark
@@ -426,8 +428,12 @@ rows of wide cards, one job per row.
   anything in progress untouched for 30 days, "Dropped" or "Paused 6 weeks", with "Resume at
   S2 · E3" for a show. Never a title already in Continue watching.
 - **Lists** — chips for the user's lists plus "New list".
+- **Reading** (owner, 2026-10-25) — books and manga in progress as Now cards, last touched
+  first, after Continue watching: the page, the chapter or "Read" in one tap, with Undo in the
+  toast. The newest 12, then "All N" to the Reading page (APP-018); absent when there are none.
+  Web and Apple.
 - **Listening** (MUS-001, 2026-10-21) — square album covers for albums in progress, after
-  Continue watching; absent when there are none.
+  Reading; absent when there are none.
 
 Album covers are **square everywhere** (Apple Music style), the same width as a poster in the
 same row, with the artist in muted under the title and the year as the badge.

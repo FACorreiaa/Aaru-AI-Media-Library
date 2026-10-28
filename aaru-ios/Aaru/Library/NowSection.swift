@@ -79,7 +79,7 @@ struct NowSection: View {
         ForEach(group.items.prefix(Self.cap)) { item in
             NowCard(item: item, isPending: library.nowPending.contains(item.id)) { action in
                 Task {
-                    if let problem = await library.perform(action, on: item, api: api) {
+                    if let problem = await library.perform(action, on: item, api: api).problem {
                         onProblem(problem)
                     }
                 }

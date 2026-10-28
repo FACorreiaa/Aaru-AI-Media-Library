@@ -114,7 +114,7 @@ final class HomeModel {
     /// Nothing of the user's own: no rows from the library. Discover's rows may still be there.
     var isEmpty: Bool {
         continueWatching.isEmpty && startWatching.isEmpty && upcoming.isEmpty && unfinished.isEmpty
-            && listening.isEmpty
+            && listening.isEmpty && reading.isEmpty
     }
 
     /// MUS-001: albums marked Listening, most recently touched first. Read from the shelf, so an

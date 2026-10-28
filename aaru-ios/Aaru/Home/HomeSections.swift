@@ -117,6 +117,17 @@ extension HomeScreen {
                 }
             }
         }
+        let reading = model.reading
+        if !reading.isEmpty {
+            ReadingRow(
+                items: reading,
+                library: library,
+                api: api,
+                width: cardWidth(.wide),
+                onShowAll: { showsReading = true },
+                onProblem: { model.problem = $0 }
+            )
+        }
         if !model.listening.isEmpty {
             HomeRow(title: "Listening") {
                 ForEach(model.listening) { row in
