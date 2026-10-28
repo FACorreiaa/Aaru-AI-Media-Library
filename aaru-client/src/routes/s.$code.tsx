@@ -14,6 +14,7 @@ import type { LibraryStatus } from '../lib/library/model'
 import { addToLibrary } from '../lib/library/server'
 import { addNext, shareDate, shouldAutoAdd } from '../lib/shares/model'
 import type { SharePreview } from '../lib/shares/model'
+import { rememberAdd, takeAdd } from '../lib/shares/pending-add'
 import { loadShare } from '../lib/shares/server'
 import { inviterName } from '../lib/social/model'
 import {
@@ -32,7 +33,8 @@ type TitleDetail = NonNullable<SharePreview['title']>
 // SHR-002: a share link, aaruapp.com/s/{code}. Anyone who opens it sees the title, match or
 // concert it points to; the sender and their note show only when the API sends `from`, which
 // it does for the sender's friends alone. Signed in, one tap saves a title; signed out, "Add to
-// my Aaru" goes through sign-in and back here with `?add=1`, which saves it once.
+// my Aaru" goes through sign-in and back here with `?add=1`, which saves it once, and only in
+// the browser that asked (`pending-add`).
 export const Route = createFileRoute('/s/$code')({
   // `1`, not `true`: the router writes the value back into the address, and it must stay
   // `?add=1`, the one form `safeNext` lets sign-in return to.
@@ -189,7 +191,7 @@ function TitleCard(props: {
     if (!search().add) return
     if (
       shouldAutoAdd({
-        add: search().add === 1,
+        add: search().add === 1 && takeAdd(params().code),
         signedIn: props.signedIn,
         preview: props.preview,
       })
@@ -204,8 +206,10 @@ function TitleCard(props: {
     })
   })
 
-  const join = () =>
+  const join = () => {
+    rememberAdd(params().code)
     void navigate({ to: '/sign-in', search: { next: addNext(params().code) } })
+  }
 
   return (
     <>
