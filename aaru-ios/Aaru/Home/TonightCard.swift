@@ -5,7 +5,8 @@ typealias TonightVerdict = Components.Schemas.TonightFeedback.VerdictPayload
 
 /// The Field's focal card (VIEWS.md `TonightStrip`): the one thing to watch now, over its
 /// backdrop, with why it is here and the next step. "Also tonight" names one more under it.
-/// Either can be set aside: "Not tonight" for today, "Not for me" for longer (AG-005).
+/// Two actions show, Mark watched and Open; the season tick and the verdicts wait in "More",
+/// each saying what it does: "Not tonight" for today, "Not for me" for 14 days (AG-005).
 struct TonightCard: View {
     let tonight: Tonight
     let isPending: Bool
@@ -86,25 +87,21 @@ struct TonightCard: View {
         .padding(wide ? 24 : 16)
     }
 
-    /// The full phrasing on one row where it fits, then the ticks drop to the bare code. On a
-    /// narrow iPhone with the season tick too, Open and More move to a second row, and at the
-    /// largest text sizes each tick takes its own row. A label never wraps inside its button.
+    /// The full phrasing on one row where it fits, then the tick drops to the bare code, and at
+    /// the largest text sizes Open and More move to a second row. A label never wraps inside its
+    /// button.
     private var actions: some View {
         ViewThatFits(in: .horizontal) {
             HStack(spacing: 12) {
-                ticks(short: false)
+                tick(short: false)
                 navigation
             }
             HStack(spacing: 12) {
-                ticks(short: true)
+                tick(short: true)
                 navigation
             }
             VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 12) { ticks(short: true) }
-                HStack(spacing: 12) { navigation }
-            }
-            VStack(alignment: .leading, spacing: 12) {
-                ticks(short: true)
+                tick(short: true)
                 HStack(spacing: 12) { navigation }
             }
         }
@@ -112,7 +109,7 @@ struct TonightCard: View {
         .controlSize(.large)
     }
 
-    @ViewBuilder private func ticks(short: Bool) -> some View {
+    @ViewBuilder private func tick(short: Bool) -> some View {
         if let entry = tonight.primary.markable {
             let code = EpisodeCode.short(season: entry.next.season, number: entry.next.number)
             Button {
@@ -127,21 +124,6 @@ struct TonightCard: View {
             .disabled(isPending)
             .accessibilityLabel("Mark \(entry.title.title) \(code) watched")
         }
-        if let entry = tonight.primary.seasonMarkable {
-            Button {
-                onMarkSeasonWatched(entry)
-            } label: {
-                Label(
-                    short ? "Season \(entry.next.season)" : "Season \(entry.next.season) watched",
-                    systemImage: "checkmark.circle"
-                )
-                .frame(minHeight: 32)
-            }
-            .buttonStyle(.bordered)
-            .fixedSize()
-            .disabled(isPending)
-            .accessibilityLabel("Mark \(entry.title.title) season \(entry.next.season) watched")
-        }
     }
 
     @ViewBuilder private var navigation: some View {
@@ -151,6 +133,15 @@ struct TonightCard: View {
         .buttonStyle(.bordered)
         .fixedSize()
         Menu {
+            if let entry = tonight.primary.seasonMarkable {
+                Button {
+                    onMarkSeasonWatched(entry)
+                } label: {
+                    Label("Mark season \(entry.next.season) watched", systemImage: "checkmark.circle")
+                }
+                .disabled(isPending)
+                Divider()
+            }
             setAsideButtons(tonight.primary)
         } label: {
             Label("More", systemImage: "ellipsis")
@@ -159,7 +150,7 @@ struct TonightCard: View {
         }
         .buttonStyle(.bordered)
         .fixedSize()
-        .accessibilityLabel("Set \(tonight.primary.title.title) aside")
+        .accessibilityLabel("More for \(tonight.primary.title.title)")
     }
 
     @ViewBuilder private func setAsideButtons(_ pick: TonightPick) -> some View {
@@ -167,11 +158,13 @@ struct TonightCard: View {
             onSetAside(pick, .notTonight)
         } label: {
             Label("Not tonight", systemImage: "moon.zzz")
+            Text("Set aside for today")
         }
         Button {
             onSetAside(pick, .rejected)
         } label: {
             Label("Not for me", systemImage: "hand.thumbsdown")
+            Text("Ranked lower for 14 days")
         }
     }
 
