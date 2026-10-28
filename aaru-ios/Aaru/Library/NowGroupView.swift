@@ -255,7 +255,7 @@ struct NowGroupView: View {
 
     private func run(_ action: NowAction, on item: NowItem) {
         Task {
-            problem = await library.perform(action, on: item, api: api)
+            problem = await library.perform(action, on: item, api: api).problem
             await loadFacts()
         }
     }

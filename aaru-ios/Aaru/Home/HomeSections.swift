@@ -99,8 +99,12 @@ extension HomeScreen {
             return entry.libraryItemId != lead.libraryItemId
         }
         if !continuing.isEmpty {
-            HomeRow(title: "Continue watching") {
-                ForEach(continuing, id: \.libraryItemId) { entry in
+            HomeRow(
+                title: "Continue watching",
+                trailing: continuing.count > HomeModel.continueLimit
+                    ? ("All \(continuing.count)", { nowPage = .watching }) : nil
+            ) {
+                ForEach(continuing.prefix(HomeModel.continueLimit), id: \.libraryItemId) { entry in
                     ContinueCard(
                         entry: entry,
                         width: cardWidth(.wide),
@@ -116,6 +120,17 @@ extension HomeScreen {
                         }
                 }
             }
+        }
+        let reading = model.reading
+        if !reading.isEmpty {
+            ReadingRow(
+                items: reading,
+                library: library,
+                api: api,
+                width: cardWidth(.wide),
+                onShowAll: { nowPage = .reading },
+                onProblem: { model.problem = $0 }
+            )
         }
         if !model.listening.isEmpty {
             HomeRow(title: "Listening") {
@@ -225,27 +240,47 @@ extension HomeScreen {
         imports?.jobs.filter { !$0.isCapture }.max { $0.createdAt < $1.createdAt }
     }
 
-    /// DISC-001: the public rows, after the user's own. The first one leads to the Discover tab.
-    var discoverRows: some View {
-        let rows = model.discover.filter { !$0.items.isEmpty }
-        return ForEach(rows, id: \.id) { row in
-            HomeRow(
-                title: row.title,
-                note: row.note,
-                trailing: row.id == rows.first?.id ? ("See Discover", { onSelectTab(.discover) }) : nil
-            ) {
-                ForEach(row.items) { hit in
-                    DiscoverCard(
-                        hit: hit,
-                        libraryItemID: model.libraryItemID(hit),
-                        badge: DiscoverCard.releaseBadge(hit.releaseDate, row: row.id),
-                        width: cardWidth(.poster),
-                        isAdding: model.adding.contains(hit.id)
-                    ) { status in
-                        Task { await model.add(hit, status: status) }
-                    } onAddToList: {
-                        listTarget = hit
+    /// DISC-001 on Home: a break from the user's own rows, then three public rows by the kinds
+    /// the user keeps (2026-10-28). "More on Discover" leads to the rest.
+    @ViewBuilder var discoverRows: some View {
+        let rows = model.discoverHere
+        if !rows.isEmpty {
+            VStack(alignment: .leading, spacing: AaruSpace.section) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Divider().padding(.bottom, AaruSpace.medium)
+                    HStack(alignment: .firstTextBaseline) {
+                        Text("Discover").eyebrow()
+                            .accessibilityAddTraits(.isHeader)
+                        Spacer()
+                        Button("More on Discover") { onSelectTab(.discover) }
+                            .font(.subheadline.weight(.medium))
+                            .buttonStyle(.borderless)
                     }
+                    Text("What is out there, the same for everyone.")
+                        .font(.footnote)
+                        .foregroundStyle(Color(.muted))
+                }
+                .padding(.horizontal, 20)
+                ForEach(rows, id: \.id) { row in
+                    discoverRow(row)
+                }
+            }
+        }
+    }
+
+    private func discoverRow(_ row: DiscoverRow) -> some View {
+        HomeRow(title: row.title, note: row.note) {
+            ForEach(row.items) { hit in
+                DiscoverCard(
+                    hit: hit,
+                    libraryItemID: model.libraryItemID(hit),
+                    badge: DiscoverCard.releaseBadge(hit.releaseDate, row: row.id),
+                    width: cardWidth(.poster),
+                    isAdding: model.adding.contains(hit.id)
+                ) { status in
+                    Task { await model.add(hit, status: status) }
+                } onAddToList: {
+                    listTarget = hit
                 }
             }
         }

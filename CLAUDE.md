@@ -204,7 +204,8 @@ Use these words in code, APIs, and UI:
   same for every user, plus the On air view (DISC-003): the week's airings by channel. Each row
   says its kind (DISC-004): the Discover page shows shows, films and anime; the Books, Manga and
   Music pages show their own rows under the user's shelf, and Music holds Concerts. Home shows
-  every row. Catalog data like search, never a recommendation
+  three rows, picked by the kinds the user keeps (2026-10-28). Catalog data like search, never a
+  recommendation
 - **Agent token** — a per-user, scoped, revocable credential an outside agent uses to reach
   Aaru's tool layer. Not an API key for a third-party developer
 - **Approval** — the user's yes to a plan an agent proposed. Approval happens inside Aaru; no

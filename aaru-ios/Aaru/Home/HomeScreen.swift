@@ -3,11 +3,12 @@ import SwiftUI
 
 /// Home, drawn as the Field (APP-009, APP-013, DESIGN.md §1 and §13): what a player is playing
 /// now (SCR-008, §15) sits under the heading when there is something; Tonight leads, then
-/// Continue watching, the albums being listened to (MUS-001), what airs next, Start watching and
-/// Unfinished as Trakt-style rows of cards, then Discover's public rows (DISC-001). Requests
-/// waiting for the user, the last import, the week, the library's counts, the recap and the user's
-/// lists sit in a side column on wide screens and after the rows on a phone. Renders from the
-/// cache first, then refreshes. The sections are in `HomeSections.swift`.
+/// Continue watching, the books and manga being read, the albums being listened to (MUS-001),
+/// what airs next, Start watching and Unfinished as Trakt-style rows of cards, then Discover's
+/// public rows (DISC-001). Requests waiting for the user, the last import, the week, the library's
+/// counts, the recap and the user's lists sit in a side column on wide screens and after the rows
+/// on a phone. Renders from the cache first, then refreshes. The sections are in
+/// `HomeSections.swift`.
 struct HomeScreen: View {
     let api: Client?
     let library: LibraryModel
@@ -24,6 +25,8 @@ struct HomeScreen: View {
     @State var listTarget: CatalogHit?
     /// A capture just sent from the composer (AG-006): its review opens over Home.
     @State var openedCapture: ImportJob?
+    /// A Now page (APP-018), from Continue watching's or the Reading row's "All N".
+    @State var nowPage: NowGroupID?
     /// Home's stack: a title opened from a card or from an airing's sheet.
     @State var path: [String] = []
     /// Home's own width: a narrow regular window (iPad at 2/3, a small Mac window) takes the
@@ -114,6 +117,9 @@ struct HomeScreen: View {
                     LibraryEntryDestination(id: id, api: api, library: library, lists: lists)
                 }
                 .catalogDestination(api: api, library: library, lists: lists)
+                .navigationDestination(item: $nowPage) { group in
+                    NowGroupView(route: NowGroupRoute(group: group), library: library, api: api)
+                }
                 .navigationDestination(item: $openedCapture) { job in
                     if let imports {
                         ImportDetailView(id: job.id, imports: imports, library: library, lists: lists, api: api)

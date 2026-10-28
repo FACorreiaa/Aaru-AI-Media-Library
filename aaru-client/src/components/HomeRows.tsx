@@ -30,7 +30,8 @@ import { TitleLink } from './TitleLink'
 import { Badge, badgeVariants, Button } from '~/components/ui'
 
 // APP-009: Home's rows (DESIGN.md §13). Each row scrolls sideways and snaps; it takes focus so
-// the arrow keys scroll it, and on desktop it has its own back / forward buttons. A card that
+// the arrow keys scroll it, and on desktop it has its own back / forward buttons. A keyboard
+// user can skip a row's cards: the first Tab in a row shows "Skip <row>". A card that
 // holds a library item has its menu (CardMenu): mark it watched, or open it.
 
 /** A horizontal row: a heading, an optional action, and cards that snap as they scroll. */
@@ -43,6 +44,7 @@ export function Row(props: {
 }) {
   const id = createUniqueId()
   let scroller: HTMLDivElement | undefined
+  let end: HTMLSpanElement | undefined
   const scroll = (direction: 1 | -1) =>
     scroller?.scrollBy({
       left: direction * scroller.clientWidth * 0.85,
@@ -50,6 +52,14 @@ export function Row(props: {
     })
   return (
     <section class="mt-10" aria-labelledby={id}>
+      <Button
+        variant="quiet"
+        size="sm"
+        class="sr-only focus-visible:not-sr-only focus-visible:mb-2"
+        onClick={() => end?.focus()}
+      >
+        Skip {props.title}
+      </Button>
       <div class="flex items-end justify-between gap-4">
         <div>
           <h2 id={id} class="font-display text-2xl font-medium tracking-tight">
@@ -90,6 +100,7 @@ export function Row(props: {
       >
         {props.children}
       </div>
+      <span ref={end} tabindex="-1" class="outline-none" />
     </section>
   )
 }
