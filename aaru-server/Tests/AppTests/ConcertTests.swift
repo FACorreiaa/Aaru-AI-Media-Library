@@ -24,12 +24,14 @@ final class FakeConcerts: ConcertListing, AlbumArtistListing, @unchecked Sendabl
     private var searchCalls: [SearchCall] = []
     private var performingCalls: [[String]] = []
     private var attractionCalls: [String] = []
+    private var eventLookups: [String] = []
     private var failing = false
     var nearConcerts: [Concert] = []
     var searchConcerts: [Concert] = []
     var byAttraction: [String: [Concert]] = [:]
     var attractionsByName: [String: [ConcertAttraction]] = [:]
     var artistsByAlbum: [String: [MusicArtist]] = [:]
+    var events: [String: Concert] = [:]
 
     var asked: [NearCall] {
         lock.withLock { nearCalls }
@@ -45,6 +47,10 @@ final class FakeConcerts: ConcertListing, AlbumArtistListing, @unchecked Sendabl
 
     var lookedUp: [String] {
         lock.withLock { attractionCalls }
+    }
+
+    var eventCalls: [String] {
+        lock.withLock { eventLookups }
     }
 
     func fail(_ fails: Bool) {
@@ -83,6 +89,12 @@ final class FakeConcerts: ConcertListing, AlbumArtistListing, @unchecked Sendabl
         lock.withLock { attractionCalls.append(name) }
         try check()
         return attractionsByName[name] ?? []
+    }
+
+    func event(id: String) async throws -> Concert? {
+        lock.withLock { eventLookups.append(id) }
+        try check()
+        return events[id]
     }
 
     func artists(releaseGroup mbid: String) async throws -> [MusicArtist]? {

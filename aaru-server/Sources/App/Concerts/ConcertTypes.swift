@@ -175,6 +175,8 @@ protocol ConcertListing: Sendable {
     func performing(_ attractionIDs: [String], from: Date) async throws -> [Concert]
     /// Performers whose name matches, with their MusicBrainz links.
     func attractions(named name: String) async throws -> [ConcertAttraction]
+    /// One event by provider id; nil when the provider has no such event (SHR-002).
+    func event(id: String) async throws -> Concert?
 }
 
 /// Turns a typed city into places (Open-Meteo today).
