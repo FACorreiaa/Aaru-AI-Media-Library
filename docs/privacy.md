@@ -119,6 +119,13 @@ any), when it expires, and, once used, who opened it. Anyone holding the link se
 your handle and that title, and nothing from your library. A link works once, for two weeks,
 and you can revoke it. Deleting your account removes your links.
 
+**Share links.** When you share a title, a sports match or a concert, Aaru stores the link with
+what it points to and the note you wrote, if any. Anyone holding the link sees only that title,
+match or concert: never your name, your handle, your note or anything from your library. Only a
+signed-in friend of yours (and you) also sees that you sent it and your note; someone you blocked,
+or who blocked you, never does. A link keeps working until you delete your account, which removes
+your name and note from it and leaves only what it points to.
+
 **Groups.** If you create or join a group, Aaru stores the group's name, its channels, who is in
 it and with what role, invites waiting for an answer, and where you last read in each channel.
 Every message you send in a group is stored as you wrote it, with who you tagged, and the other
@@ -192,8 +199,9 @@ where, a title was added or changed and by whom (you, an agent, an import or a p
 group was created, a friend was added, an agent's request was approved or declined, the Tonight
 strip showed something today, one of its picks was started within six hours, or you answered a
 pick with "not tonight" or "not for me", a capture was sent (as text, a link or a picture) and its
-plan approved or discarded, the monthly capture limit was reached, or Aaru Plus was bought
-(and which plan). Each event
+plan approved or discarded, the monthly capture limit was reached, Aaru Plus was bought
+(and which plan), or a share link was made or opened (and whether it points to a title, a match or
+a concert). A share link's events carry the sender's random id, never the id of whoever opened it. Each event
 carries only those words and your account's random id, never a title, a name, an email, text or
 your IP address, and no profile is built from them. They go to PostHog. The apps and the website
 send nothing of this kind themselves.

@@ -331,7 +331,8 @@ and `/v1/devices` (airing push, pulled into 2 on 2026-10-15), `/v1/me/points|bad
 with GAM-006a and grew with GAM-006c, 2026-10-20), `/v1/ws`,
 `/v1/keys/*`, `/v1/conversations/*` (6). Pulled forward with groups (2026-10-20):
 `/v1/me/profile`, `/v1/social/*` (friends, requests, blocks, reports, invite links), the public
-invite preview `/v1/invites/{code}`, `/v1/groups/*`,
+invite preview `/v1/invites/{code}`, `/v1/groups/*`, share links (SHR-002, 2026-10-28:
+`POST /v1/shares` and the public `GET /v1/shares/{code}`),
 `/v1/group-invites/*`, `/v1/me/group-invites`, `/v1/realtime/ticket` and `/v1/ws`. With the
 profile editor (SOC-001b, 2026-10-27): `/v1/me/avatar` and `GET /v1/users/{userId}/avatar`. The
 avatar route is authenticated like every other; the web reads it through a same-origin Worker
@@ -1248,10 +1249,17 @@ Rules:
 - **Invite links (SOC-002, 2026-10-21).** `https://aaruapp.com/i/{code}`, one use. Redeeming
   makes the pair friends in one transaction (the conditional update on the invite is the lock)
   and drops pending requests between them. The preview `GET /v1/invites/{code}` is the only
-  public social route and shows only the inviter's name, handle and chosen title; every dead
+  public social route besides a share link's preview (below), and shows only the inviter's name, handle and chosen title; every dead
   end is one 404. The web Worker serves `/.well-known/apple-app-site-association` claiming
   `/i/*` for the App Store and Beta app ids, so the apps open the same URL. Android will claim
   it through `assetlinks.json` when there is an Android app.
+- **Share links (SHR-002, 2026-10-28).** `https://aaruapp.com/s/{code}`, reusable, no expiry.
+  A `shares` row points at exactly one title (resolved when the link is made), TheSportsDB event
+  or Ticketmaster event; nothing about an event is stored. `GET /v1/shares/{code}` is public with
+  an optional session: it shows the content to anyone, and the sender and note only to the
+  sender and their friends (never across a block). Titles come from the catalog row; events go
+  through the shared sports and concert caches, so a busy link costs about one provider call.
+
 - **A block is invisible.** A blocked user gets `404` for everything about the blocker, the
   same response as for a user who does not exist. Blocks apply both ways in feeds,
   leaderboards, rooms, and DMs.
