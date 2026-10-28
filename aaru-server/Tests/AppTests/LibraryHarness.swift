@@ -56,6 +56,10 @@ struct LibraryHarness {
             services.webPush = webPush
             services.concerts = ConcertService(stores: stores, listing: concerts, places: nil)
             services.sports = SportsService(stores: stores, listing: sports)
+            // Shares read sports and concerts through the same services, so they see the fakes too.
+            services.shares = ShareService(
+                stores: stores, library: services.library, sports: services.sports, concerts: services.concerts
+            )
             services.billing = BillingService(stores: stores, apple: apple)
             if push != nil || webPush != nil {
                 services.groups.push = UserPush(stores: stores, sender: push, webPush: webPush)

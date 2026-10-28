@@ -51,6 +51,8 @@ extension PostgresUserStore {
             )
             """).run()
             try await Self.leaveGroups(id, sql: sql)
+            // A share link outlives its sender (SHR-002): the FK nulls the sender, and the note goes too.
+            try await sql.raw("UPDATE shares SET note = NULL WHERE sender_id = \(bind: id.rawValue)").run()
             try await sql.delete(from: "users").where("id", .equal, id.rawValue).run()
         }
     }

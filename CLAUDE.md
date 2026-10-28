@@ -224,6 +224,9 @@ Use these words in code, APIs, and UI:
 - **Invite** — a one-use link (`aaruapp.com/i/{code}`, 14 days) that makes whoever opens it the
   sender's friend, optionally carrying one title to watch together. Friend invites only: groups
   have no invite links
+- **Share link** — a public, reusable link (`aaruapp.com/s/{code}`) to one title, sport event or
+  concert (SHR-002). Anyone can open it; only the sender's friends see who sent it and the note.
+  Not an Invite (no friendship) and not a Recommendation (no inbox)
 - **Recommendation** — one title a user sends friends, with an optional note; it waits until the
   friend adds it to Plan to watch or dismisses it
 - **Reaction** — one of six emoji a friend leaves on an activity row (a person's title on one day)

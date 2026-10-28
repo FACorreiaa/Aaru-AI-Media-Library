@@ -32,6 +32,10 @@ enum ProductEvent: String, Sendable {
     case paywallShown = "paywall_shown"
     /// `product`: the App Store product id. The first time a subscription is seen active.
     case plusPurchased = "plus_purchased"
+    /// `kind` (title, sport_event, concert). Keyed by the sender, never the opener (SHR-002).
+    case shareCreated = "share_created"
+    /// `kind`. Keyed by the sender, never the opener; none once the sender's account is gone.
+    case shareOpened = "share_opened"
 }
 
 /// Where product events go. `PostHogClient` in production; nothing until one is installed.

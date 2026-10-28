@@ -26,16 +26,19 @@ struct AuthMiddleware: RouterMiddleware {
         "/v1/billing/apple/notifications",
     ]
 
-    /// Whether a path answers without a session: the fixed public routes, and an invite link's
-    /// preview (`/v1/invites/{code}`), which a signed-out friend opens before signing up.
+    /// Whether a path answers without a session: the fixed public routes, an invite link's
+    /// preview (`/v1/invites/{code}`), which a signed-out friend opens before signing up, and a
+    /// share link's preview (`/v1/shares/{code}`, SHR-002), which anyone opens. Only GET is ever
+    /// served at either.
     static func isPublic(_ path: String) -> Bool {
         if publicPaths.contains(path) {
             return true
         }
-        let invitePrefix = "/v1/invites/"
-        guard path.hasPrefix(invitePrefix) else { return false }
-        let code = path.dropFirst(invitePrefix.count)
-        return !code.isEmpty && !code.contains("/")
+        return ["/v1/invites/", "/v1/shares/"].contains { prefix in
+            guard path.hasPrefix(prefix) else { return false }
+            let code = path.dropFirst(prefix.count)
+            return !code.isEmpty && !code.contains("/")
+        }
     }
 
     let sessions: any SessionStore

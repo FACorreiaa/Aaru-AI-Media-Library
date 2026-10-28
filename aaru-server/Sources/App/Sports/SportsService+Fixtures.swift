@@ -181,4 +181,21 @@ extension SportsService {
             watchCountryCode: code
         )
     }
+
+    /// One event with its live line, for anyone (SHR-002): no watch country, no follows, no user.
+    /// It shares `event(id:userID:)`'s cache entry, so a busy share link costs one provider call.
+    func publicEvent(id: String) async throws -> SportEvent? {
+        guard let listing else { throw SportsOff() }
+        let now = now()
+        await primeLive(listing, now: now)
+        let found = await cache.value("event:\(id)", ttl: TTL.event, now: now) { [shareLookups] in
+            guard await shareLookups.allow("share", now: now) else {
+                throw ProviderError(provider: "thesportsdb", kind: .unavailable)
+            }
+            return try await listing.event(id: id)
+        }
+        guard let event = found ?? nil else { return nil }
+        await cache.settle([liveKey], timeout: patience)
+        return await Self.normalized(event, live: liveByID(), now: now)
+    }
 }

@@ -21,6 +21,7 @@ struct Services: Sendable {
     var oauth: OAuthService
     var social: SocialService
     var invites: InviteService
+    var shares: ShareService
     var groups: GroupService
     var board: BoardService
     var concerts: ConcertService
@@ -54,6 +55,8 @@ struct Services: Sendable {
         let resolver = TitleResolver(stores: stores, catalogs: catalogs)
         let library = LibraryService(stores: stores, resolver: resolver, catalog: catalog)
         let realtime = RealtimeHub()
+        let sports = SportsService(stores: stores, listing: catalogs.sports)
+        let concerts = ConcertService(stores: stores, listing: catalogs.concerts, places: catalogs.places)
         let groups = GroupService(
             stores: stores, events: realtime, resolver: resolver, library: library, agentAvailable: model != nil
         )
@@ -85,10 +88,11 @@ struct Services: Sendable {
             oauth: oauthService(stores, publicBaseURL: publicBaseURL, oauth),
             social: SocialService(stores: stores),
             invites: InviteService(stores: stores, library: library, webBaseURL: oauth.webBaseURL),
+            shares: shares(stores, library, sports, concerts, oauth.webBaseURL),
             groups: groups,
             board: BoardService(stores: stores, resolver: resolver, library: library),
-            concerts: ConcertService(stores: stores, listing: catalogs.concerts, places: catalogs.places),
-            sports: SportsService(stores: stores, listing: catalogs.sports),
+            concerts: concerts,
+            sports: sports,
             billing: BillingService(stores: stores, apple: nil),
             realtime: realtime,
             agentReplies: model.map {
@@ -96,6 +100,19 @@ struct Services: Sendable {
                     stores: stores, groups: groups, catalog: catalog, resolver: resolver, library: library, model: $0
                 )
             }
+        )
+    }
+
+    /// Shares read sports and concerts through the same services, so they share their caches.
+    private static func shares(
+        _ stores: Stores,
+        _ library: LibraryService,
+        _ sports: SportsService,
+        _ concerts: ConcertService,
+        _ webBaseURL: URL
+    ) -> ShareService {
+        ShareService(
+            stores: stores, library: library, sports: sports, concerts: concerts, webBaseURL: webBaseURL
         )
     }
 

@@ -34,6 +34,23 @@ library layer stay separate, external IDs stored whenever known, no second backe
 - **Anime is first-class from P1** (AniList catalog, `anilist`/`mal`/`anidb` external IDs).
 - DMs are **Signal-grade (libsignal)**. Licence and web support are OPEN — see DM-003, DM-004.
 
+## Decisions recorded 2026-10-28
+
+- **Share links: share anything, anyone can open it (owner, 2026-10-25, SHR-002).** Design:
+  `docs/superpowers/specs/2026-10-28-share-links-design.md`.
+  - The opener just sees the content. The link makes no friendship, works for many people and
+    does not expire. "Add to my Aaru" is offered and never required.
+  - The sender's name shows only to friends. Strangers, signed-out viewers, non-friends and
+    anyone blocked either way see the content only. A signed-in friend of the sender (no block)
+    also sees "from {name}" and the optional note.
+  - Sports show the score up front. A finished match shows the result. A live match shows the
+    live score.
+  - The web is the app. There is no install push and no TestFlight link. With the app
+    installed, the iPhone opens the link in the app (universal link). Everyone else gets the web
+    page, and sign-up returns them to it.
+  - Scope: titles of all six kinds, sport events and concerts. Not lists, shelves, Board posts,
+    profiles or a user's own rating: those stay friends-only.
+
 ## Decisions recorded 2026-10-27
 
 - **Imported listens count in Insights and the Recap, on the day they were played (owner,
@@ -842,6 +859,7 @@ account or a stranger that has not happened yet.
 | SOC-011 | Open | none | |
 | NAV-004 | Open | none | |
 | SHR-001 | Open | none | |
+| SHR-002 | In progress | server plan `docs/superpowers/plans/2026-10-28-share-links-01-server.md` | Web and iOS plans follow the server |
 | GAM-001 | Built, unverified | `points_events`, `PointsRules`, award/revoke in the library transaction, friend/room/listen/import hooks; GamificationTests; web `/app/achievements` + iOS `Achievements/` | owner judges design; TestFlight |
 | GAM-002 | Built, unverified | `Levels`, `GET /v1/me/progress`, `GET /v1/me/points`; GamificationTests; web `/app/achievements` + iOS `Achievements/` | owner judges design; TestFlight |
 | GAM-003 | Built, unverified | AaruCore `Streak` (travel grace), `check_ins`, `X-Timezone` (server + AaruAPI), milestone bonuses; StreakTests, GamificationTests; web + iOS streak strip | owner judges design; TestFlight |
@@ -3367,6 +3385,19 @@ gains `friends`). Collaborative editing moved to `shelf` channels (GRP-008) on 2
 
 **Done when:** a friend can open a shared list and add its titles to their own library, and a
 non-friend gets 404.
+
+### SHR-002 · Share links · M
+**Pulled forward 2026-10-25 (owner).** A public, reusable link (`aaruapp.com/s/{code}`) to one
+title, sport event or concert. `shares` (code, sender, kind, one of title / sport event /
+concert id, note up to 140 characters). `POST /v1/shares`; the public `GET /v1/shares/{code}`
+shows the content to anyone and the sender and note only to the sender's friends, never across
+a block. Web `/s/{code}` with "Add to my Aaru" through sign-in and back; the Apple apps claim
+`/s/*` and open a preview sheet signed in or out. Product events `share_created` and
+`share_opened`, keyed by the sender.
+
+**Done when:** a signed-out browser opens a shared film, match and concert and sees each; a
+friend sees who sent it and a stranger does not; signing up from the page lands the title in
+Plan to watch.
 
 ## P4 · Groups (pulled forward 2026-10-20)
 

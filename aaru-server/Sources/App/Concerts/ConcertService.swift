@@ -56,10 +56,26 @@ struct ConcertService: Sendable {
     let places: (any PlaceSearching)?
     let cache = ConcertCache<ConcertResults>()
     let performerCache = ConcertCache<[ConcertAttraction]>()
+    /// One concert by id for share links (SHR-002); nil inside means the provider has no such event.
+    let eventCache = ConcertCache<Concert?>()
     var now: @Sendable () -> Date = { Date() }
+    /// Share links' own slice of the Ticketmaster day (SHR-002), so share traffic never takes it all.
+    var shareLookups = CallBudget(limit: Self.shareCallsPerDay)
+    static let shareCallsPerDay = 1000
 
     var isAvailable: Bool {
         listing != nil
+    }
+
+    /// One concert by provider id through the shared cache (SHR-002). Nil when concerts are off,
+    /// the provider fails or is over budget with nothing cached, or the event is gone. Never throws.
+    func concert(id: String) async -> Concert? {
+        guard let listing else { return nil }
+        let found = await eventCache.value("event:\(id)", now: now()) { [shareLookups] in
+            guard await shareLookups.take() else { throw ProviderError(provider: "ticketmaster", kind: .unavailable) }
+            return try await listing.event(id: id)
+        }
+        return found ?? nil
     }
 
     /// Concerts around `point` (already rounded), or around the saved city when it is nil.

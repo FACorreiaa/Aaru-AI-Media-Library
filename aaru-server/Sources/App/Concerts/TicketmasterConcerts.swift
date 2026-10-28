@@ -88,6 +88,14 @@ struct TicketmasterConcerts: ConcertListing {
         }
     }
 
+    func event(id: String) async throws -> Concert? {
+        do {
+            return try await get(Event.self, "events/\(id).json", [:]).concert
+        } catch let error as ProviderError where error.kind == .notFound {
+            return nil
+        }
+    }
+
     /// One page of music events from `from` on, soonest first, narrowed by `query`.
     private func musicEvents(page: Int, from: Date, _ query: [String: String]) async throws -> ConcertResults {
         let response = try await get(EventPage.self, "events.json", query.merging([

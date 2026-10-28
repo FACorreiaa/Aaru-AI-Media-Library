@@ -44,7 +44,8 @@ extension Stores {
             entitlements: PostgresEntitlementStore(sql: sql),
             boards: PostgresBoardStore(database: database),
             favorites: PostgresFavoriteStore(database: database),
-            sports: PostgresSportsStore(database: database)
+            sports: PostgresSportsStore(database: database),
+            shares: PostgresShareStore(database: database)
         )
     }
 }
