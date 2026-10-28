@@ -22,11 +22,14 @@ struct ShareTests {
         (from?["user"] as? [String: Any])?["handle"] as? String
     }
 
-    /// The default user with a handle, sharing Arrival with a note. Returns the handle, the code
-    /// and the TMDB id.
-    func shareArrival(_ env: LibraryHarness, note: String? = "watch this") async throws
-        -> (handle: String, code: String, tmdb: String)
-    {
+    struct Shared {
+        let handle: String
+        let code: String
+        let tmdb: String
+    }
+
+    /// The default user with a handle, sharing Arrival with a note.
+    func shareArrival(_ env: LibraryHarness, note: String? = "watch this") async throws -> Shared {
         let mine = social.freshHandle()
         _ = try await env.send(.put, "/v1/me/profile", json: ["handle": mine, "displayName": "Fern"])
         let tmdb = env.stubMovie("Arrival")
@@ -36,7 +39,7 @@ struct ShareTests {
         }
         let created = try await env.send(.post, "/v1/shares", json: body)
         #expect(created.status == .ok)
-        return try (mine, code(created), tmdb)
+        return try Shared(handle: mine, code: code(created), tmdb: tmdb)
     }
 
     /// Two people who asked each other are friends.
@@ -48,7 +51,7 @@ struct ShareTests {
     @Test("a share makes a reusable link that shows its title signed out, with nobody's name")
     func createAndOpenSignedOut() async throws {
         try await LibraryHarness.run { env in
-            let (_, code, _) = try await shareArrival(env)
+            let code = try await shareArrival(env).code
             #expect(code.count == ShareService.codeLength)
             let again = try await env.send(.get, "/v1/shares/\(code)", token: signedOut)
             #expect(again.status == .ok)
@@ -90,7 +93,8 @@ struct ShareTests {
     @Test("a friend sees who sent it and the note; a stranger does not")
     func friendSeesSender() async throws {
         try await LibraryHarness.run { env in
-            let (mine, code, _) = try await shareArrival(env)
+            let shared = try await shareArrival(env)
+            let (mine, code) = (shared.handle, shared.code)
             let ana = try await social.friendlyUser(env)
             try await befriend(env, mine, ana)
             let seen = try await from(env.send(.get, "/v1/shares/\(code)", token: ana.token))
@@ -105,7 +109,8 @@ struct ShareTests {
     @Test("the sender sees their own name on their link")
     func senderSeesSelf() async throws {
         try await LibraryHarness.run { env in
-            let (mine, code, _) = try await shareArrival(env)
+            let shared = try await shareArrival(env)
+            let (mine, code) = (shared.handle, shared.code)
             let own = try await env.send(.get, "/v1/shares/\(code)")
             #expect(try handle(from(own)) == mine)
         }
@@ -114,13 +119,14 @@ struct ShareTests {
     @Test("a block either way shows the content and hides the sender")
     func blockHidesSender() async throws {
         try await LibraryHarness.run { env in
-            let (mine, code, _) = try await shareArrival(env)
+            let shared = try await shareArrival(env)
+            let (mine, code) = (shared.handle, shared.code)
             let ana = try await social.friendlyUser(env)
             try await befriend(env, mine, ana)
             #expect(try await env.send(.put, "/v1/social/blocks/\(env.userID)", token: ana.token).status == .noContent)
             let blocked = try await env.send(.get, "/v1/shares/\(code)", token: ana.token)
             #expect(blocked.status == .ok)
-            #expect((try blocked.json()["title"] as? [String: Any])?["title"] as? String == "Arrival")
+            #expect(try (blocked.json()["title"] as? [String: Any])?["title"] as? String == "Arrival")
             #expect(try from(blocked) == nil)
         }
     }
@@ -128,7 +134,8 @@ struct ShareTests {
     @Test("a signed-in opener who has the title gets their item and status")
     func viewerItem() async throws {
         try await LibraryHarness.run { env in
-            let (_, code, tmdb) = try await shareArrival(env)
+            let shared = try await shareArrival(env)
+            let (code, tmdb) = (shared.code, shared.tmdb)
             let ana = try await social.friendlyUser(env)
             let added = try await env.send(
                 .post, "/v1/library/items",
@@ -136,7 +143,7 @@ struct ShareTests {
             )
             #expect(added.status == .ok || added.status == .created)
             let preview = try await env.send(.get, "/v1/shares/\(code)", token: ana.token).json()
-            #expect(preview["libraryItemId"] as? String != nil)
+            #expect(preview["libraryItemId"] is String)
             #expect(preview["status"] as? String == "wishlist")
         }
     }
@@ -148,7 +155,11 @@ struct ShareTests {
             "42", home: "133604", away: "133615", at: "2026-10-18T14:00:00Z", homeScore: 2, awayScore: 1
         )
         try await LibraryHarness.run(sports: sports) { env in
-            let code = try await code(env.send(.post, "/v1/shares", json: ["target": ["kind": "sport_event", "id": "42"]]))
+            let code = try await code(env.send(
+                .post,
+                "/v1/shares",
+                json: ["target": ["kind": "sport_event", "id": "42"]]
+            ))
             let preview = try await env.send(.get, "/v1/shares/\(code)", token: signedOut).json()
             #expect(preview["kind"] as? String == "sport_event")
             let event = try #require(preview["sportEvent"] as? [String: Any])
@@ -163,13 +174,17 @@ struct ShareTests {
         let concerts = FakeConcerts()
         concerts.events["Z1"] = sampleConcert("Z1", "2026-11-02")
         try await LibraryHarness.run(concerts: concerts) { env in
-            let z1 = try await code(env.send(.post, "/v1/shares", json: ["target": ["kind": "concert", "id": "Z1"]]))
-            let shown = try await env.send(.get, "/v1/shares/\(z1)", token: signedOut).json()
+            let first = try await code(env.send(.post, "/v1/shares", json: ["target": ["kind": "concert", "id": "Z1"]]))
+            let shown = try await env.send(.get, "/v1/shares/\(first)", token: signedOut).json()
             #expect((shown["concert"] as? [String: Any])?["name"] as? String == "Show Z1")
 
             concerts.fail(true)
-            let z2 = try await code(env.send(.post, "/v1/shares", json: ["target": ["kind": "concert", "id": "Z2"]]))
-            let gone = try await env.send(.get, "/v1/shares/\(z2)", token: signedOut)
+            let second = try await code(env.send(
+                .post,
+                "/v1/shares",
+                json: ["target": ["kind": "concert", "id": "Z2"]]
+            ))
+            let gone = try await env.send(.get, "/v1/shares/\(second)", token: signedOut)
             #expect(gone.status == .ok)
             #expect(try gone.json()["unavailable"] as? Bool == true)
             #expect(try gone.json()["concert"] == nil)
@@ -210,7 +225,11 @@ struct ShareTests {
     func rateLimits() async throws {
         try await LibraryHarness.run { env in
             for id in 1 ... ShareService.createsPerHour {
-                let reply = try await env.send(.post, "/v1/shares", json: ["target": ["kind": "sport_event", "id": "\(id)"]])
+                let reply = try await env.send(
+                    .post,
+                    "/v1/shares",
+                    json: ["target": ["kind": "sport_event", "id": "\(id)"]]
+                )
                 #expect(reply.status == .ok)
             }
             let over = try await env.send(.post, "/v1/shares", json: ["target": ["kind": "sport_event", "id": "999"]])

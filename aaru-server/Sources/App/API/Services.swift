@@ -88,10 +88,7 @@ struct Services: Sendable {
             oauth: oauthService(stores, publicBaseURL: publicBaseURL, oauth),
             social: SocialService(stores: stores),
             invites: InviteService(stores: stores, library: library, webBaseURL: oauth.webBaseURL),
-            shares: ShareService(
-                stores: stores, resolver: resolver, catalog: catalog, sports: sports, concerts: concerts,
-                webBaseURL: oauth.webBaseURL
-            ),
+            shares: shares(stores, library, sports, concerts, oauth.webBaseURL),
             groups: groups,
             board: BoardService(stores: stores, resolver: resolver, library: library),
             concerts: concerts,
@@ -103,6 +100,19 @@ struct Services: Sendable {
                     stores: stores, groups: groups, catalog: catalog, resolver: resolver, library: library, model: $0
                 )
             }
+        )
+    }
+
+    /// Shares read sports and concerts through the same services, so they share their caches.
+    private static func shares(
+        _ stores: Stores,
+        _ library: LibraryService,
+        _ sports: SportsService,
+        _ concerts: ConcertService,
+        _ webBaseURL: URL
+    ) -> ShareService {
+        ShareService(
+            stores: stores, library: library, sports: sports, concerts: concerts, webBaseURL: webBaseURL
         )
     }
 

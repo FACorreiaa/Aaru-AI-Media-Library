@@ -49,7 +49,8 @@ struct ShareStoreTests {
             let bare = share(sender, .title(titleID))
             try await stores.shares.createShare(withNote)
             try await stores.shares.createShare(bare)
-            #expect(try await stores.shares.existingShare(sender: sender, target: .title(titleID), note: "hi") == withNote)
+            #expect(try await stores.shares
+                .existingShare(sender: sender, target: .title(titleID), note: "hi") == withNote)
             #expect(try await stores.shares.existingShare(sender: sender, target: .title(titleID), note: nil) == bare)
             #expect(try await stores.shares.existingShare(sender: sender, target: .title(titleID), note: "yo") == nil)
             #expect(try await stores.shares.existingShare(sender: other, target: .title(titleID), note: nil) == nil)

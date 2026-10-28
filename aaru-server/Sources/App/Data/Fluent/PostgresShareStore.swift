@@ -33,16 +33,23 @@ struct PostgresShareStore: ShareStore {
 
     private static let columns = "code, sender_id, kind, title_id, sport_event_id, concert_id, note, created_at"
 
-    private static func ids(_ target: ShareTarget) -> (title: UUID?, sport: String?, concert: String?) {
-        switch target {
-        case let .title(id): (id.rawValue, nil, nil)
-        case let .sportEvent(id): (nil, id, nil)
-        case let .concert(id): (nil, nil, id)
+    /// The target's one filled column; the other two stay null.
+    private struct TargetColumns {
+        var title: UUID?
+        var sport: String?
+        var concert: String?
+
+        init(_ target: ShareTarget) {
+            switch target {
+            case let .title(id): title = id.rawValue
+            case let .sportEvent(id): sport = id
+            case let .concert(id): concert = id
+            }
         }
     }
 
     func createShare(_ share: Share) async throws {
-        let ids = Self.ids(share.target)
+        let ids = TargetColumns(share.target)
         try await mappingConflicts("That share code is taken.") {
             try await sqlDatabase(database).raw("""
             INSERT INTO shares (\(unsafeRaw: Self.columns))
@@ -60,7 +67,7 @@ struct PostgresShareStore: ShareStore {
     }
 
     func existingShare(sender: UserID, target: ShareTarget, note: String?) async throws -> Share? {
-        let ids = Self.ids(target)
+        let ids = TargetColumns(target)
         return try await sqlDatabase(database).raw("""
         SELECT \(unsafeRaw: Self.columns) FROM shares
         WHERE sender_id = \(bind: sender.rawValue) AND kind = \(bind: target.kind)

@@ -28,8 +28,8 @@ struct SharePreview: Sendable {
 /// go through the shared sports and concert caches. Nothing about an event is stored.
 struct ShareService: Sendable {
     let stores: Stores
-    let resolver: TitleResolver
-    let catalog: CatalogService
+    /// Its resolver turns a shared ref into a catalog title; its catalog reads the title back.
+    let library: LibraryService
     let sports: SportsService
     let concerts: ConcertService
     /// The web origin a link opens on; the apps claim the same paths as universal links.
@@ -63,7 +63,7 @@ struct ShareService: Sendable {
         guard await createLimiter.allow(viewer.description, now: now()) else { throw Self.rateLimited }
         let note = try Self.validNote(note)
         let target: ShareTarget = switch request {
-        case let .title(ref): try await .title(resolver.resolve(ref).id)
+        case let .title(ref): try await .title(library.resolver.resolve(ref).id)
         case let .sportEvent(id): try .sportEvent(Self.validSportID(id))
         case let .concert(id): try .concert(Self.validConcertID(id))
         }
@@ -94,7 +94,7 @@ struct ShareService: Sendable {
         var preview = SharePreview(share: share, unavailable: false)
         switch share.target {
         case let .title(id):
-            preview.title = try await catalog.detail(id)
+            preview.title = try await library.catalog.detail(id)
             if let viewer {
                 preview.viewerItem = try await stores.library.item(userID: viewer, titleID: id)
             }
