@@ -29,6 +29,7 @@ import type {
   SportSide,
 } from '../../lib/sports/model'
 import { getSportEvent } from '../../lib/sports/server'
+import { ShareDialog } from '../ShareDialog'
 import { SportBadge } from './SportBadge'
 
 /**
@@ -81,6 +82,13 @@ export function EventSheet(props: {
   }
   const live = () => event().status === 'live'
   const place = () => placeLine(event())
+  const [sharing, setSharing] = createSignal(false)
+  // Mounted on first open, then kept, so closing plays the exit (WEB-011).
+  const [sharedOnce, setSharedOnce] = createSignal(false)
+  const share = () => {
+    setSharedOnce(true)
+    setSharing(true)
+  }
 
   return (
     <Dialog
@@ -111,14 +119,24 @@ export function EventSheet(props: {
                 )}
               </Show>
             </div>
-            <Button
-              variant="ghost"
-              size="bare"
-              class="text-sm"
-              onClick={() => props.onClose()}
-            >
-              Done
-            </Button>
+            <div class="flex shrink-0 items-center gap-4">
+              <Button
+                variant="ghost"
+                size="bare"
+                class="text-sm"
+                onClick={share}
+              >
+                Share
+              </Button>
+              <Button
+                variant="ghost"
+                size="bare"
+                class="text-sm"
+                onClick={() => props.onClose()}
+              >
+                Done
+              </Button>
+            </div>
           </div>
 
           <h2 id="sport-event-title" class="sr-only">
@@ -242,6 +260,14 @@ export function EventSheet(props: {
               {(found) => <WhereToWatch detail={found()} />}
             </Show>
           </section>
+          <Show when={sharedOnce()}>
+            <ShareDialog
+              open={sharing()}
+              target={{ kind: 'sport_event', id: event().id }}
+              name={eventTitle(event())}
+              onClose={() => setSharing(false)}
+            />
+          </Show>
         </DialogContent>
       </DialogPortal>
     </Dialog>

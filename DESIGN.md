@@ -796,6 +796,27 @@ The sender invites from Friends: "Invite a friend", or "Invite to watch somethin
 through the title picker. The link opens the share sheet (copied to the clipboard on desktop
 web), and open invites list what they say, the days left, and Revoke.
 
+### Share links (SHR-002, owner 2026-10-25)
+
+A share link is a postcard, not a letter: it shows what was shared first and asks nothing of
+whoever opens it. The web page (`/s/{code}`) is the wordmark, then one card per kind: a title's
+poster, name, kind, year and synopsis; a match with the score up front in the display face
+(accent while live, the kick-off when it has not started) over its status and venue; a concert's
+image, bill, day and place. "From {Name}" and the note in quotes sit above the card only when the
+API sends them, which it does for the sender's friends alone. One ink action per kind: Add to Plan
+to watch (or "In your library · Watching · Open" when it is already theirs), Open in Sports, or
+Tickets on Ticketmaster. Signed out, the title's action is "Add to my Aaru", which goes through
+sign-in and comes back to save it once. A quiet "What is Aaru?" closes every page. A match or
+concert the provider cannot give right now says so in one line; an unknown code says the link
+doesn't work. No install push, no store badge: the web is the app.
+
+Share sits beside Add to list and Recommend on a title (and in an album's header), on the
+catalog preview, in a sports event sheet's header and on each concert row. It opens a sheet in
+two steps: an optional note of up to 140 characters, labelled "Only your friends see this note",
+and Create link; then the link with Share (the device's share sheet) and Copy link, and one line
+that anyone with the link sees the title and only friends see who sent it. The same sender,
+target and note give the same link.
+
 ### Board (BOARD-002, 2026-10-23)
 
 The Board lives on Friends, not in a Social tab (owner, 2026-10-23; the spec's tab is dropped).

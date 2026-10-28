@@ -859,7 +859,7 @@ account or a stranger that has not happened yet.
 | SOC-011 | Open | none | |
 | NAV-004 | Open | none | |
 | SHR-001 | Open | none | |
-| SHR-002 | In progress | server plan `docs/superpowers/plans/2026-10-28-share-links-01-server.md` | Web and iOS plans follow the server |
+| SHR-002 | In progress | server #215 (promoted, infra #482); web plan `docs/superpowers/plans/2026-10-28-share-links-02-web.md` | iOS plan 03 (with the `/s/*` universal link) |
 | GAM-001 | Built, unverified | `points_events`, `PointsRules`, award/revoke in the library transaction, friend/room/listen/import hooks; GamificationTests; web `/app/achievements` + iOS `Achievements/` | owner judges design; TestFlight |
 | GAM-002 | Built, unverified | `Levels`, `GET /v1/me/progress`, `GET /v1/me/points`; GamificationTests; web `/app/achievements` + iOS `Achievements/` | owner judges design; TestFlight |
 | GAM-003 | Built, unverified | AaruCore `Streak` (travel grace), `check_ins`, `X-Timezone` (server + AaruAPI), milestone bonuses; StreakTests, GamificationTests; web + iOS streak strip | owner judges design; TestFlight |

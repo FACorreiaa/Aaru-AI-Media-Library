@@ -11,6 +11,8 @@ describe('safeNext', () => {
       '/connect/extension?name=Chrome',
     )
     expect(safeNext('/i/k7Q2xPa9Lm3Z')).toBe('/i/k7Q2xPa9Lm3Z')
+    expect(safeNext('/s/k7Q2xPa9Lm3Z')).toBe('/s/k7Q2xPa9Lm3Z')
+    expect(safeNext('/s/k7Q2xPa9Lm3Z?add=1')).toBe('/s/k7Q2xPa9Lm3Z?add=1')
   })
 
   it('refuses anything that could leave Aaru', () => {
@@ -25,6 +27,11 @@ describe('safeNext', () => {
       '/i/abc/def',
       '/i/abc?next=//evil.example',
       '/connect/extensionx',
+      '/s/',
+      '/s/abc/def',
+      '/s/abc?add=2',
+      '/s/abc?add=1&next=//evil.example',
+      '/s/../app',
       undefined,
       42,
     ])
