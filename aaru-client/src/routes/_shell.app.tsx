@@ -49,7 +49,9 @@ import {
   AIRING_DAYS,
   advance,
   airingBadge,
+  CONTINUE_LIMIT,
   countChips,
+  homeDiscover,
   listening,
   markOnShelf,
   isReading,
@@ -558,6 +560,9 @@ function Home() {
     )
   })
 
+  /** Home's few Discover rows, by the kinds the user keeps; the rest wait on Discover. */
+  const discoverHere = createMemo(() => homeDiscover(discover(), entries()))
+
   const chips = createMemo(() => countChips(counts()))
   /** MUS-001: albums in progress, from the library Home already loads for Search. */
   const listeningNow = createMemo(() => listening(entries()))
@@ -876,8 +881,21 @@ function Home() {
 
           <div class="order-3 min-w-0 lg:col-start-1 lg:row-start-2">
             <Show when={continuingRow().length > 0}>
-              <Row title="Continue watching">
-                <For each={continuingRow()}>
+              <Row
+                title="Continue watching"
+                action={
+                  <Show when={continuingRow().length > CONTINUE_LIMIT}>
+                    <Link
+                      to="/app/library/now/$group"
+                      params={{ group: 'watching' }}
+                      class="text-sm font-medium text-accent hover:underline"
+                    >
+                      All {continuingRow().length}
+                    </Link>
+                  </Show>
+                }
+              >
+                <For each={continuingRow().slice(0, CONTINUE_LIMIT)}>
                   {(entry) => (
                     <ContinueCard
                       entry={entry}
@@ -988,13 +1006,44 @@ function Home() {
               </div>
             </Show>
 
-            <DiscoverRows
-              rows={discover()}
-              onRowsChange={setDiscover}
-              today={now() ? localDayKey(now() as Date) : null}
-              onAdded={(entry) => void added(entry)}
-              onProblem={setProblem}
-            />
+            {/* DISC-001 on Home: a break from the user's own rows, then a few public rows by
+ the kinds they keep. The rest wait on Discover. */}
+            <Show when={discoverHere().length > 0}>
+              <section
+                class="mt-16 border-t border-line pt-8"
+                aria-labelledby="home-discover"
+              >
+                <div class="flex items-baseline justify-between gap-4">
+                  <div>
+                    <h2 id="home-discover" class="eyebrow">
+                      Discover
+                    </h2>
+                    <p class="mt-1 text-sm text-muted">
+                      What is out there, the same for everyone.
+                    </p>
+                  </div>
+                  <Link
+                    to="/app/discover"
+                    class="shrink-0 text-sm font-medium text-accent hover:underline"
+                  >
+                    More on Discover
+                  </Link>
+                </div>
+                <DiscoverRows
+                  rows={discoverHere()}
+                  onRowsChange={(changed) =>
+                    setDiscover((all) =>
+                      all.map(
+                        (row) => changed.find((c) => c.id === row.id) ?? row,
+                      ),
+                    )
+                  }
+                  today={now() ? localDayKey(now() as Date) : null}
+                  onAdded={(entry) => void added(entry)}
+                  onProblem={setProblem}
+                />
+              </section>
+            </Show>
 
             <Show when={empty() && discoverReady() && discover().length === 0}>
               <div class="mx-auto mt-16 max-w-sm text-center">

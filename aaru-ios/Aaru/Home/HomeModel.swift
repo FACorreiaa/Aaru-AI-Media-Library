@@ -68,6 +68,8 @@ final class HomeModel {
 
     /// Cards in the Calendar row; the full list is one tap away.
     nonisolated static let upcomingLimit = 12
+    /// Cards in Continue watching; "All N" opens the Watching page past it.
+    nonisolated static let continueLimit = 12
 
     init(
         api: Client?,

@@ -5,6 +5,7 @@ import {
   advance,
   airingBadge,
   countChips,
+  homeDiscover,
   hoursLabel,
   listening,
   markAdded,
@@ -472,6 +473,78 @@ describe('weekStrip for a reading week', () => {
       { value: '1', label: 'book read' },
       { value: '2', label: 'manga read' },
       { value: '3', label: 'active days' },
+    ])
+  })
+})
+
+describe('homeDiscover', () => {
+  const row = (id: string, kind: DiscoverRow['kind'], empty = false) => ({
+    id,
+    kind,
+    title: id,
+    items: empty
+      ? []
+      : [{ type: 'movie' as const, title: id, isAnime: false, ids: {} }],
+  })
+  const rows: DiscoverRow[] = [
+    row('tv_trending', 'show'),
+    row('anime_season', 'anime'),
+    row('movies_trending', 'film'),
+    row('tv_on_air', 'show'),
+    row('books_trending', 'book'),
+    row('manga_trending', 'manga', true),
+    row('music_new', 'album'),
+  ]
+  const entry = (
+    id: string,
+    type: LibraryEntry['title']['type'],
+    isAnime = false,
+  ): LibraryEntry => ({
+    id,
+    status: 'in_progress',
+    isOwned: false,
+    inBacklog: false,
+    addedAt: '2026-10-01T00:00:00Z',
+    updatedAt: '2026-10-01T00:00:00Z',
+    title: { id: `t-${id}`, type, title: id, isAnime, ids: {} },
+  })
+  const ids = (picked: DiscoverRow[]) => picked.map((r) => r.id)
+
+  it('leads with the kind the user keeps most, one row per kind', () => {
+    const library = [
+      entry('a', 'book'),
+      entry('b', 'book'),
+      entry('c', 'show', true),
+      entry('d', 'album'),
+    ]
+    expect(ids(homeDiscover(rows, library))).toEqual([
+      'books_trending',
+      'anime_season',
+      'music_new',
+    ])
+  })
+
+  it('fills from the same kinds before reaching for others', () => {
+    expect(ids(homeDiscover(rows, [entry('a', 'show')]))).toEqual([
+      'tv_trending',
+      'tv_on_air',
+      'anime_season',
+    ])
+  })
+
+  it('skips empty rows', () => {
+    expect(ids(homeDiscover(rows, [entry('a', 'manga')]))).toEqual([
+      'tv_trending',
+      'anime_season',
+      'movies_trending',
+    ])
+  })
+
+  it('takes the first rows for an empty library', () => {
+    expect(ids(homeDiscover(rows, []))).toEqual([
+      'tv_trending',
+      'anime_season',
+      'movies_trending',
     ])
   })
 })

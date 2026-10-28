@@ -193,11 +193,13 @@ until the agent composes it. Same rule on the web (`lib/home/tonight.ts`) and Ap
 progress and wishlist films, ranked on the server with template reasons. The last answer is
 kept (Home's cache on Apple, `localStorage` on the web, cleared on sign-out), so Tonight opens
 offline. The device composes it as above only when no answer for today exists. Each pick has
-"Not tonight" (gone for the day) and "Not for me" (ranked lower for 14 days): buttons on the
-web, a "…" menu and a context menu on Apple. The card moves on at once, then Tonight loads
-again. Mark watched shows only when the pick is a show's next episode; beside it, "Season N
-watched" (PROG-006, owner 2026-10-23) ticks every aired episode of that season, shown only while
-episodes after the next one remain in it.
+"Not tonight" (gone for the day) and "Not for me" (ranked lower for 14 days), each saying so
+in a "…" menu (and a context menu on Apple). The card moves on at once, then Tonight loads
+again. Mark watched shows only when the pick is a show's next episode. "Season N watched"
+(PROG-006, owner 2026-10-23) ticks every aired episode of that season, shown only while
+episodes after the next one remain in it; since 2026-10-28 it sits in the "…" menu too, so the
+card shows two actions, Mark watched and Open. The art sits above the words until the screen is
+wide enough for both side by side (1280 px on the web).
 
 ## 6. The shelf (library as query, not as app section)
 
@@ -400,7 +402,8 @@ rows of wide cards, one job per row.
 - **Continue watching** (`ContinueRow`) — backdrop card per in-progress show or movie. Overlay
   carries runtime or time left ("1h 27m left"), a "Finale" dot when the next episode ends a
   season, and "N left · Xh" for what remains. Title, `S1 · E8 · Episode name` under it, a check
-  to mark the next episode watched.
+  to mark the next episode watched. The newest 12, then "All N" to the Watching page (APP-018).
+  On the web each row opens with "Skip <row>" for the keyboard, shown on focus.
 - **Start watching** (`StartRow`) — poster cards for wishlist titles with runtime, so the row
   answers "what can I start in two hours."
 - **Calendar** (`CalendarRow`) — the next few airings of tracked shows and anime, badged
@@ -452,7 +455,10 @@ carries a kind badge and a date badge; a card the user already has (`libraryItem
 your shelf" and opens the item, anything else offers Add (with a status) and Add to list. TMDB
 and AniList credits sit in the footer. Since 2026-10-25 (DISC-004, NAV-001…002) Discover holds
 shows, films and anime only: the book, manga and album rows live on their own pages (§13d), and
-Concerts on Music. Home still shows every row.
+Concerts on Music. Home shows three rows (2026-10-28, from the Field's critique) after a break
+from the user's own: the first row of each kind the user keeps most, then more of those kinds,
+then any; the user's main kind leads, and an empty library takes the first three. It changes
+which public rows show, never what is in them. "More on Discover" leads to the rest.
 
 It is catalog data, the same lists for everyone. It is **not** recommendations: no "because you
 watched", no taste profile, nothing read from other users. A tab on iPhone, a sidebar

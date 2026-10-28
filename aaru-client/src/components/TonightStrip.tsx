@@ -9,14 +9,25 @@ import {
   pickSeasonMarkable,
 } from '../lib/home/tonight'
 import type { Tonight, TonightPick, TonightVerdict } from '../lib/home/tonight'
+import { dots } from './CardMenu'
 import { Art } from './HomeRows'
-import { Button, buttonVariants } from '~/components/ui'
+import {
+  Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuPortal,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  buttonVariants,
+} from '~/components/ui'
 
 // VIEWS.md `TonightStrip`: the Field's focal piece. One thing to watch now, lit and large, and
 // one more on a line under it. Ranked by the server, composed in the browser when there is no
 // answer for today (lib/home/tonight.ts); a mark-watched here is the same write as Continue
-// watching's check, and the season tick the title page's. "Not tonight" sets the pick aside for
-// the day, "Not for me" for longer.
+// watching's check, and the season tick the title page's. Two actions show, Mark watched and
+// Open; the season tick and the two verdicts wait in "⋯", each saying what it does: "Not
+// tonight" sets the pick aside for the day, "Not for me" ranks it lower for 14 days.
 export function TonightStrip(props: {
   tonight: Tonight
   busy: boolean
@@ -34,13 +45,14 @@ export function TonightStrip(props: {
       <h2 id="tonight" class="eyebrow">
         Tonight
       </h2>
-      <article class="edge-lit fringe mt-3 overflow-hidden rounded-card bg-surface md:grid md:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+      {/* Art above the words until the screen is wide enough for both side by side. */}
+      <article class="edge-lit fringe mt-3 overflow-hidden rounded-card bg-surface xl:grid xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
         <Link
           to="/app/title/$id"
           params={{ id: primary().entry.libraryItemId }}
           tabindex="-1"
           aria-hidden="true"
-          class="relative block aspect-video md:aspect-auto md:min-h-72"
+          class="relative block aspect-video xl:aspect-auto xl:min-h-72"
         >
           {/* Out of the flow on a wide screen: the text sets the card's height, not the art. */}
           <span class="absolute inset-0">
@@ -49,9 +61,9 @@ export function TonightStrip(props: {
               title={title().title}
             />
           </span>
-          <span class="veil absolute inset-x-0 bottom-0 h-1/3 md:hidden" />
+          <span class="veil absolute inset-x-0 bottom-0 h-1/3 xl:hidden" />
         </Link>
-        <div class="flex min-w-0 flex-col p-5 md:p-6">
+        <div class="flex min-w-0 flex-col p-5 xl:p-6">
           <h3 class="line-clamp-2 font-display text-3xl leading-tight font-medium text-balance">
             <Link
               to="/app/title/$id"
@@ -82,18 +94,6 @@ export function TonightStrip(props: {
                 </Button>
               )}
             </Show>
-            <Show when={season()}>
-              {(entry) => (
-                <Button
-                  variant="outline"
-                  disabled={props.busy}
-                  onClick={() => props.onSeasonWatched(entry())}
-                  aria-label={`Mark ${entry().title.title} season ${entry().next.season} watched`}
-                >
-                  Season {entry().next.season} watched
-                </Button>
-              )}
-            </Show>
             <Link
               to="/app/title/$id"
               params={{ id: primary().entry.libraryItemId }}
@@ -101,20 +101,49 @@ export function TonightStrip(props: {
             >
               Open
             </Link>
-            <Button
-              variant="ghost"
-              disabled={props.busy}
-              onClick={() => props.onSetAside(primary(), 'not_tonight')}
-            >
-              Not tonight
-            </Button>
-            <Button
-              variant="ghost"
-              disabled={props.busy}
-              onClick={() => props.onSetAside(primary(), 'rejected')}
-            >
-              Not for me
-            </Button>
+            <DropdownMenu placement="bottom-end">
+              <DropdownMenuTrigger
+                as={Button}
+                variant="ghost"
+                size="icon"
+                disabled={props.busy}
+                aria-label={`More for ${title().title}`}
+              >
+                {dots()}
+              </DropdownMenuTrigger>
+              <DropdownMenuPortal>
+                <DropdownMenuContent class="min-w-60 rounded-panel border-line bg-paper p-1">
+                  <Show when={season()}>
+                    {(entry) => (
+                      <>
+                        <DropdownMenuItem
+                          class="min-h-10 rounded-field px-3"
+                          onSelect={() => props.onSeasonWatched(entry())}
+                        >
+                          Mark season {entry().next.season} watched
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                      </>
+                    )}
+                  </Show>
+                  <DropdownMenuItem
+                    class="min-h-10 rounded-field px-3 py-2"
+                    onSelect={() => props.onSetAside(primary(), 'not_tonight')}
+                  >
+                    <Verdict label="Not tonight" effect="Set aside for today" />
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    class="min-h-10 rounded-field px-3 py-2"
+                    onSelect={() => props.onSetAside(primary(), 'rejected')}
+                  >
+                    <Verdict
+                      label="Not for me"
+                      effect="Ranked lower for 14 days"
+                    />
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenuPortal>
+            </DropdownMenu>
           </div>
           <Show when={props.tonight.also}>
             {(also) => <AlsoLine pick={also()} timeZone={props.timeZone} />}
@@ -122,6 +151,16 @@ export function TonightStrip(props: {
         </div>
       </article>
     </section>
+  )
+}
+
+/** A verdict in the menu, with what it does under it. */
+function Verdict(props: { label: string; effect: string }) {
+  return (
+    <span class="flex flex-col">
+      <span>{props.label}</span>
+      <span class="text-xs text-muted">{props.effect}</span>
+    </span>
   )
 }
 

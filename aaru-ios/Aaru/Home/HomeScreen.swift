@@ -25,8 +25,8 @@ struct HomeScreen: View {
     @State var listTarget: CatalogHit?
     /// A capture just sent from the composer (AG-006): its review opens over Home.
     @State var openedCapture: ImportJob?
-    /// The Reading page, from the Reading row's "All N" (APP-018).
-    @State var showsReading = false
+    /// A Now page (APP-018), from Continue watching's or the Reading row's "All N".
+    @State var nowPage: NowGroupID?
     /// Home's stack: a title opened from a card or from an airing's sheet.
     @State var path: [String] = []
     /// Home's own width: a narrow regular window (iPad at 2/3, a small Mac window) takes the
@@ -117,8 +117,8 @@ struct HomeScreen: View {
                     LibraryEntryDestination(id: id, api: api, library: library, lists: lists)
                 }
                 .catalogDestination(api: api, library: library, lists: lists)
-                .navigationDestination(isPresented: $showsReading) {
-                    NowGroupView(route: NowGroupRoute(group: .reading), library: library, api: api)
+                .navigationDestination(item: $nowPage) { group in
+                    NowGroupView(route: NowGroupRoute(group: group), library: library, api: api)
                 }
                 .navigationDestination(item: $openedCapture) { job in
                     if let imports {

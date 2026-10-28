@@ -1,7 +1,7 @@
 import type { components } from '../api/schema'
 import { entryDay, localDayKey } from '../calendar/model'
 import type { CalendarEntry } from '../calendar/model'
-import { hitKey, idKeys, statusLabel } from '../library/model'
+import { hitKey, idKeys, kindOf, statusLabel } from '../library/model'
 import type { LibraryEntry, LibraryStatus } from '../library/model'
 import type { Stats } from '../recap/model'
 import { episodeCode } from '../title/model'
@@ -24,6 +24,10 @@ const HOURS_HORIZON = 12
 export const AIRING_LIMIT = 12
 /** Days of airings the row asks for. */
 export const AIRING_DAYS = 14
+/** How many Continue watching cards Home shows before "All N". */
+export const CONTINUE_LIMIT = 12
+/** How many Discover rows Home shows; the rest wait on Discover. */
+export const HOME_DISCOVER_ROWS = 3
 
 /** "57m", "1h 27m", "2h". Empty for an unknown or zero runtime. */
 export function runtimeLabel(minutes?: number | null): string {
@@ -269,6 +273,35 @@ export function resumeLine(entry: UnfinishedEntry): string | null {
   return entry.next
     ? `Resume at S${entry.next.season} · E${entry.next.number}`
     : null
+}
+
+/**
+ * Home's few Discover rows: the first row of each kind the user keeps most, then more of those
+ * kinds, then any row, up to `HOME_DISCOVER_ROWS`. The user's main kind leads. An empty library
+ * takes the server's first rows.
+ */
+export function homeDiscover(
+  rows: DiscoverRow[],
+  entries: LibraryEntry[],
+): DiscoverRow[] {
+  const counts = new Map<string, number>()
+  for (const entry of entries) {
+    const kind = kindOf(entry.title.type, entry.title.isAnime)
+    counts.set(kind, (counts.get(kind) ?? 0) + 1)
+  }
+  const kinds = [...counts.keys()].sort(
+    (a, b) => (counts.get(b) ?? 0) - (counts.get(a) ?? 0),
+  )
+  const shown = rows.filter((row) => row.items.length > 0)
+  const picked: DiscoverRow[] = []
+  const pick = (row: DiscoverRow | undefined) => {
+    if (row && picked.length < HOME_DISCOVER_ROWS && !picked.includes(row))
+      picked.push(row)
+  }
+  for (const kind of kinds) pick(shown.find((row) => row.kind === kind))
+  for (const row of shown) if (counts.has(row.kind)) pick(row)
+  for (const row of shown) pick(row)
+  return picked
 }
 
 /** DISC-001: after an add, every card for that title links to the new item. No refetch. */
