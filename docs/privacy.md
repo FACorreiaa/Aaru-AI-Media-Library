@@ -125,6 +125,9 @@ match or concert: never your name, your handle, your note or anything from your 
 signed-in friend of yours (and you) also sees that you sent it and your note; someone you blocked,
 or who blocked you, never does. A link keeps working after you delete your account: deleting it
 removes your name and note from every link you made and leaves only what each one points to.
+To stop one address from opening links without limit, the website passes your IP address to
+Aaru's server with each request; the server counts it in memory for up to an hour and never
+stores it.
 
 **Groups.** If you create or join a group, Aaru stores the group's name, its channels, who is in
 it and with what role, invites waiting for an answer, and where you last read in each channel.
