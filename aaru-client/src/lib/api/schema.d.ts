@@ -712,6 +712,40 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/shares': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Make a share link to one title, sport event or concert (SHR-002). Public and reusable, it never expires. The same target with the same note gives back the same link; a different note makes a new one. At most 60 an hour. */
+    post: operations['createShare']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/shares/{code}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** What a share link shows, signed in or not. Unauthenticated. The content shows to anyone; who sent it and the note show only to the sender and their friends, never across a block. 404 for an unknown code. */
+    get: operations['getSharePreview']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/social/reports': {
     parameters: {
       query?: never
@@ -3599,6 +3633,42 @@ export interface components {
        */
       relationship?: 'none' | 'friend' | 'outgoing' | 'incoming' | 'self'
     }
+    /** @enum {string} */
+    ShareKind: 'title' | 'sport_event' | 'concert'
+    ShareTargetInput: {
+      kind: components['schemas']['ShareKind']
+      ref?: components['schemas']['MediaRef']
+      /** @description The provider's event id, for `sport_event` (TheSportsDB, digits) and `concert` (Ticketmaster). */
+      id?: string
+    }
+    ShareCreate: {
+      target: components['schemas']['ShareTargetInput']
+      /** @description Up to 140 characters, trimmed; blank is none. Only the sender's friends see it. */
+      note?: string
+    }
+    ShareLink: {
+      code: string
+      url: string
+    }
+    ShareSender: {
+      user: components['schemas']['SocialUser']
+      note?: string
+    }
+    SharePreview: {
+      kind: components['schemas']['ShareKind']
+      /** @description The provider could not give the event right now (sports or concerts off, over budget, or the event is gone). The content field is then absent. */
+      unavailable: boolean
+      title?: components['schemas']['TitleDetail']
+      sportEvent?: components['schemas']['SportEvent']
+      concert?: components['schemas']['Concert']
+      from?: components['schemas']['ShareSender']
+      /**
+       * Format: uuid
+       * @description The signed-in viewer's own item for a shared title, when they have it.
+       */
+      libraryItemId?: string
+      status?: components['schemas']['LibraryStatus']
+    }
     InviteRedeem: {
       /** @description Also put the invite's title on your Plan to watch. A title you already have is left alone. */
       addTitle: boolean
@@ -6128,6 +6198,54 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['InvitePreview']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  createShare: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ShareCreate']
+      }
+    }
+    responses: {
+      /** @description The link. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ShareLink']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getSharePreview: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        code: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The shared content. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SharePreview']
         }
       }
       default: components['responses']['Error']

@@ -241,6 +241,16 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /v1/invites/{code}`.
     /// - Remark: Generated from `#/paths//v1/invites/{code}/get(getInvitePreview)`.
     func getInvitePreview(_ input: Operations.GetInvitePreview.Input) async throws -> Operations.GetInvitePreview.Output
+    /// Make a share link to one title, sport event or concert (SHR-002). Public and reusable, it never expires. The same target with the same note gives back the same link; a different note makes a new one. At most 60 an hour.
+    ///
+    /// - Remark: HTTP `POST /v1/shares`.
+    /// - Remark: Generated from `#/paths//v1/shares/post(createShare)`.
+    func createShare(_ input: Operations.CreateShare.Input) async throws -> Operations.CreateShare.Output
+    /// What a share link shows, signed in or not. Unauthenticated. The content shows to anyone; who sent it and the note show only to the sender and their friends, never across a block. 404 for an unknown code.
+    ///
+    /// - Remark: HTTP `GET /v1/shares/{code}`.
+    /// - Remark: Generated from `#/paths//v1/shares/{code}/get(getSharePreview)`.
+    func getSharePreview(_ input: Operations.GetSharePreview.Input) async throws -> Operations.GetSharePreview.Output
     /// Report a user to Aaru. The user is not told.
     ///
     /// - Remark: HTTP `POST /v1/social/reports`.
@@ -1486,6 +1496,32 @@ extension APIProtocol {
         headers: Operations.GetInvitePreview.Input.Headers = .init()
     ) async throws -> Operations.GetInvitePreview.Output {
         try await getInvitePreview(Operations.GetInvitePreview.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Make a share link to one title, sport event or concert (SHR-002). Public and reusable, it never expires. The same target with the same note gives back the same link; a different note makes a new one. At most 60 an hour.
+    ///
+    /// - Remark: HTTP `POST /v1/shares`.
+    /// - Remark: Generated from `#/paths//v1/shares/post(createShare)`.
+    public func createShare(
+        headers: Operations.CreateShare.Input.Headers = .init(),
+        body: Operations.CreateShare.Input.Body
+    ) async throws -> Operations.CreateShare.Output {
+        try await createShare(Operations.CreateShare.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// What a share link shows, signed in or not. Unauthenticated. The content shows to anyone; who sent it and the note show only to the sender and their friends, never across a block. 404 for an unknown code.
+    ///
+    /// - Remark: HTTP `GET /v1/shares/{code}`.
+    /// - Remark: Generated from `#/paths//v1/shares/{code}/get(getSharePreview)`.
+    public func getSharePreview(
+        path: Operations.GetSharePreview.Input.Path,
+        headers: Operations.GetSharePreview.Input.Headers = .init()
+    ) async throws -> Operations.GetSharePreview.Output {
+        try await getSharePreview(Operations.GetSharePreview.Input(
             path: path,
             headers: headers
         ))
@@ -6841,6 +6877,177 @@ public enum Components {
                 case title
                 case expiresAt
                 case relationship
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ShareKind`.
+        @frozen public enum ShareKind: String, Codable, Hashable, Sendable, CaseIterable {
+            case title = "title"
+            case sportEvent = "sport_event"
+            case concert = "concert"
+        }
+        /// - Remark: Generated from `#/components/schemas/ShareTargetInput`.
+        public struct ShareTargetInput: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ShareTargetInput/kind`.
+            public var kind: Components.Schemas.ShareKind
+            /// - Remark: Generated from `#/components/schemas/ShareTargetInput/ref`.
+            public var ref: Components.Schemas.MediaRef?
+            /// The provider's event id, for `sport_event` (TheSportsDB, digits) and `concert` (Ticketmaster).
+            ///
+            /// - Remark: Generated from `#/components/schemas/ShareTargetInput/id`.
+            public var id: Swift.String?
+            /// Creates a new `ShareTargetInput`.
+            ///
+            /// - Parameters:
+            ///   - kind:
+            ///   - ref:
+            ///   - id: The provider's event id, for `sport_event` (TheSportsDB, digits) and `concert` (Ticketmaster).
+            public init(
+                kind: Components.Schemas.ShareKind,
+                ref: Components.Schemas.MediaRef? = nil,
+                id: Swift.String? = nil
+            ) {
+                self.kind = kind
+                self.ref = ref
+                self.id = id
+            }
+            public enum CodingKeys: String, CodingKey {
+                case kind
+                case ref
+                case id
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ShareCreate`.
+        public struct ShareCreate: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ShareCreate/target`.
+            public var target: Components.Schemas.ShareTargetInput
+            /// Up to 140 characters, trimmed; blank is none. Only the sender's friends see it.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ShareCreate/note`.
+            public var note: Swift.String?
+            /// Creates a new `ShareCreate`.
+            ///
+            /// - Parameters:
+            ///   - target:
+            ///   - note: Up to 140 characters, trimmed; blank is none. Only the sender's friends see it.
+            public init(
+                target: Components.Schemas.ShareTargetInput,
+                note: Swift.String? = nil
+            ) {
+                self.target = target
+                self.note = note
+            }
+            public enum CodingKeys: String, CodingKey {
+                case target
+                case note
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ShareLink`.
+        public struct ShareLink: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ShareLink/code`.
+            public var code: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ShareLink/url`.
+            public var url: Swift.String
+            /// Creates a new `ShareLink`.
+            ///
+            /// - Parameters:
+            ///   - code:
+            ///   - url:
+            public init(
+                code: Swift.String,
+                url: Swift.String
+            ) {
+                self.code = code
+                self.url = url
+            }
+            public enum CodingKeys: String, CodingKey {
+                case code
+                case url
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ShareSender`.
+        public struct ShareSender: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ShareSender/user`.
+            public var user: Components.Schemas.SocialUser
+            /// - Remark: Generated from `#/components/schemas/ShareSender/note`.
+            public var note: Swift.String?
+            /// Creates a new `ShareSender`.
+            ///
+            /// - Parameters:
+            ///   - user:
+            ///   - note:
+            public init(
+                user: Components.Schemas.SocialUser,
+                note: Swift.String? = nil
+            ) {
+                self.user = user
+                self.note = note
+            }
+            public enum CodingKeys: String, CodingKey {
+                case user
+                case note
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/SharePreview`.
+        public struct SharePreview: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/SharePreview/kind`.
+            public var kind: Components.Schemas.ShareKind
+            /// The provider could not give the event right now (sports or concerts off, over budget, or the event is gone). The content field is then absent.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SharePreview/unavailable`.
+            public var unavailable: Swift.Bool
+            /// - Remark: Generated from `#/components/schemas/SharePreview/title`.
+            public var title: Components.Schemas.TitleDetail?
+            /// - Remark: Generated from `#/components/schemas/SharePreview/sportEvent`.
+            public var sportEvent: Components.Schemas.SportEvent?
+            /// - Remark: Generated from `#/components/schemas/SharePreview/concert`.
+            public var concert: Components.Schemas.Concert?
+            /// - Remark: Generated from `#/components/schemas/SharePreview/from`.
+            public var from: Components.Schemas.ShareSender?
+            /// The signed-in viewer's own item for a shared title, when they have it.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SharePreview/libraryItemId`.
+            public var libraryItemId: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/SharePreview/status`.
+            public var status: Components.Schemas.LibraryStatus?
+            /// Creates a new `SharePreview`.
+            ///
+            /// - Parameters:
+            ///   - kind:
+            ///   - unavailable: The provider could not give the event right now (sports or concerts off, over budget, or the event is gone). The content field is then absent.
+            ///   - title:
+            ///   - sportEvent:
+            ///   - concert:
+            ///   - from:
+            ///   - libraryItemId: The signed-in viewer's own item for a shared title, when they have it.
+            ///   - status:
+            public init(
+                kind: Components.Schemas.ShareKind,
+                unavailable: Swift.Bool,
+                title: Components.Schemas.TitleDetail? = nil,
+                sportEvent: Components.Schemas.SportEvent? = nil,
+                concert: Components.Schemas.Concert? = nil,
+                from: Components.Schemas.ShareSender? = nil,
+                libraryItemId: Swift.String? = nil,
+                status: Components.Schemas.LibraryStatus? = nil
+            ) {
+                self.kind = kind
+                self.unavailable = unavailable
+                self.title = title
+                self.sportEvent = sportEvent
+                self.concert = concert
+                self.from = from
+                self.libraryItemId = libraryItemId
+                self.status = status
+            }
+            public enum CodingKeys: String, CodingKey {
+                case kind
+                case unavailable
+                case title
+                case sportEvent
+                case concert
+                case from
+                case libraryItemId
+                case status
             }
         }
         /// - Remark: Generated from `#/components/schemas/InviteRedeem`.
@@ -19803,6 +20010,293 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/invites/{code}/get(getInvitePreview)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Make a share link to one title, sport event or concert (SHR-002). Public and reusable, it never expires. The same target with the same note gives back the same link; a different note makes a new one. At most 60 an hour.
+    ///
+    /// - Remark: HTTP `POST /v1/shares`.
+    /// - Remark: Generated from `#/paths//v1/shares/post(createShare)`.
+    public enum CreateShare {
+        public static let id: Swift.String = "createShare"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/shares/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateShare.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateShare.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.CreateShare.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/shares/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/shares/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.ShareCreate)
+            }
+            public var body: Operations.CreateShare.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.CreateShare.Input.Headers = .init(),
+                body: Operations.CreateShare.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/shares/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/shares/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.ShareLink)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ShareLink {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.CreateShare.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.CreateShare.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The link.
+            ///
+            /// - Remark: Generated from `#/paths//v1/shares/post(createShare)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.CreateShare.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.CreateShare.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/shares/post(createShare)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// What a share link shows, signed in or not. Unauthenticated. The content shows to anyone; who sent it and the note show only to the sender and their friends, never across a block. 404 for an unknown code.
+    ///
+    /// - Remark: HTTP `GET /v1/shares/{code}`.
+    /// - Remark: Generated from `#/paths//v1/shares/{code}/get(getSharePreview)`.
+    public enum GetSharePreview {
+        public static let id: Swift.String = "getSharePreview"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/shares/{code}/GET/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/shares/{code}/GET/path/code`.
+                public var code: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - code:
+                public init(code: Swift.String) {
+                    self.code = code
+                }
+            }
+            public var path: Operations.GetSharePreview.Input.Path
+            /// - Remark: Generated from `#/paths/v1/shares/{code}/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetSharePreview.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetSharePreview.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetSharePreview.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.GetSharePreview.Input.Path,
+                headers: Operations.GetSharePreview.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/shares/{code}/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/shares/{code}/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.SharePreview)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.SharePreview {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetSharePreview.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetSharePreview.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The shared content.
+            ///
+            /// - Remark: Generated from `#/paths//v1/shares/{code}/get(getSharePreview)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetSharePreview.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetSharePreview.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/shares/{code}/get(getSharePreview)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)
