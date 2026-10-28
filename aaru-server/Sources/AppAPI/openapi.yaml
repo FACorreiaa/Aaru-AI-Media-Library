@@ -733,6 +733,38 @@ paths:
               schema: {$ref: '#/components/schemas/InvitePreview'}
         default:
           $ref: '#/components/responses/Error'
+  /v1/shares:
+    post:
+      operationId: createShare
+      summary: Make a share link to one title, sport event or concert (SHR-002). Public and reusable, it never expires. The same target with the same note gives back the same link; a different note makes a new one. At most 60 an hour.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ShareCreate'}
+      responses:
+        '200':
+          description: The link.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ShareLink'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/shares/{code}:
+    get:
+      operationId: getSharePreview
+      summary: What a share link shows, signed in or not. Unauthenticated. The content shows to anyone; who sent it and the note show only to the sender and their friends, never across a block. 404 for an unknown code.
+      security: []
+      parameters:
+        - {name: code, in: path, required: true, schema: {type: string}}
+      responses:
+        '200':
+          description: The shared content.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SharePreview'}
+        default:
+          $ref: '#/components/responses/Error'
   /v1/social/reports:
     post:
       operationId: reportUser
@@ -4286,6 +4318,57 @@ components:
           type: string
           description: Where you stand with the inviter. Absent when signed out.
           enum: [none, friend, outgoing, incoming, self]
+    ShareKind:
+      type: string
+      enum: [title, sport_event, concert]
+    ShareTargetInput:
+      type: object
+      required: [kind]
+      properties:
+        kind: {$ref: '#/components/schemas/ShareKind'}
+        ref:
+          $ref: '#/components/schemas/MediaRef'
+        id:
+          type: string
+          description: The provider's event id, for `sport_event` (TheSportsDB, digits) and `concert` (Ticketmaster).
+    ShareCreate:
+      type: object
+      required: [target]
+      properties:
+        target: {$ref: '#/components/schemas/ShareTargetInput'}
+        note:
+          type: string
+          description: Up to 140 characters, trimmed; blank is none. Only the sender's friends see it.
+    ShareLink:
+      type: object
+      required: [code, url]
+      properties:
+        code: {type: string}
+        url: {type: string}
+    ShareSender:
+      type: object
+      required: [user]
+      properties:
+        user: {$ref: '#/components/schemas/SocialUser'}
+        note: {type: string}
+    SharePreview:
+      type: object
+      required: [kind, unavailable]
+      properties:
+        kind: {$ref: '#/components/schemas/ShareKind'}
+        unavailable:
+          type: boolean
+          description: The provider could not give the event right now (sports or concerts off, over budget, or the event is gone). The content field is then absent.
+        title: {$ref: '#/components/schemas/TitleDetail'}
+        sportEvent: {$ref: '#/components/schemas/SportEvent'}
+        concert: {$ref: '#/components/schemas/Concert'}
+        from:
+          $ref: '#/components/schemas/ShareSender'
+        libraryItemId:
+          type: string
+          format: uuid
+          description: The signed-in viewer's own item for a shared title, when they have it.
+        status: {$ref: '#/components/schemas/LibraryStatus'}
     InviteRedeem:
       type: object
       required: [addTitle]

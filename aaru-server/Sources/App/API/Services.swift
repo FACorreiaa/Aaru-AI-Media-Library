@@ -21,6 +21,7 @@ struct Services: Sendable {
     var oauth: OAuthService
     var social: SocialService
     var invites: InviteService
+    var shares: ShareService
     var groups: GroupService
     var board: BoardService
     var concerts: ConcertService
@@ -54,6 +55,8 @@ struct Services: Sendable {
         let resolver = TitleResolver(stores: stores, catalogs: catalogs)
         let library = LibraryService(stores: stores, resolver: resolver, catalog: catalog)
         let realtime = RealtimeHub()
+        let sports = SportsService(stores: stores, listing: catalogs.sports)
+        let concerts = ConcertService(stores: stores, listing: catalogs.concerts, places: catalogs.places)
         let groups = GroupService(
             stores: stores, events: realtime, resolver: resolver, library: library, agentAvailable: model != nil
         )
@@ -85,10 +88,14 @@ struct Services: Sendable {
             oauth: oauthService(stores, publicBaseURL: publicBaseURL, oauth),
             social: SocialService(stores: stores),
             invites: InviteService(stores: stores, library: library, webBaseURL: oauth.webBaseURL),
+            shares: ShareService(
+                stores: stores, resolver: resolver, catalog: catalog, sports: sports, concerts: concerts,
+                webBaseURL: oauth.webBaseURL
+            ),
             groups: groups,
             board: BoardService(stores: stores, resolver: resolver, library: library),
-            concerts: ConcertService(stores: stores, listing: catalogs.concerts, places: catalogs.places),
-            sports: SportsService(stores: stores, listing: catalogs.sports),
+            concerts: concerts,
+            sports: sports,
             billing: BillingService(stores: stores, apple: nil),
             realtime: realtime,
             agentReplies: model.map {
