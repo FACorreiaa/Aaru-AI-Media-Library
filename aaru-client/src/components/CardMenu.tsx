@@ -25,7 +25,8 @@ const LONG_PRESS_MS = 500
 /** A finger that moves this far is scrolling, not pressing. */
 const PRESS_SLOP_PX = 10
 
-const dots = () => (
+/** The "⋯" every More menu wears. */
+export const dots = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 24 24"
