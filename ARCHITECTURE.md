@@ -1259,6 +1259,10 @@ Rules:
   an optional session: it shows the content to anyone, and the sender and note only to the
   sender and their friends (never across a block). Titles come from the catalog row; events go
   through the shared sports and concert caches, so a busy link costs about one provider call.
+  The web serves `/s/{code}` outside the shell and builds its link preview in the page's server
+  function. The Worker forwards `CF-Connecting-IP` as `X-Forwarded-For` on every `/v1` call, so
+  per-address limits (invite and share previews) count visitors, not the Worker. The Apple apps
+  claim `/s/*` as a universal link with the iOS work, once they can open one.
 
 - **A block is invisible.** A blocked user gets `404` for everything about the blocker, the
   same response as for a user who does not exist. Blocks apply both ways in feeds,
