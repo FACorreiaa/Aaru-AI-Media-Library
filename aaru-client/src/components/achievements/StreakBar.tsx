@@ -30,7 +30,7 @@ export function StreakBar(props: { streak: StreakState; compact?: boolean }) {
               ? dayCount(props.streak.current)
               : 'No streak'}
           </p>
-          <p class="mt-1 truncate text-sm text-muted">
+          <p class="mt-1 text-sm text-pretty text-muted">
             {props.streak.current > 0
               ? (streakHint(props.streak) ?? streakLine(props.streak))
               : streakLine(props.streak)}

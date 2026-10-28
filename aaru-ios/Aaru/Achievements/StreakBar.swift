@@ -117,7 +117,7 @@ enum StreakWords {
     /// Today done, today still open, or the longest so far.
     static func note(_ streak: Components.Schemas.StreakState) -> String {
         if streak.current > 0, !streak.today {
-            return "Tick something today to keep it"
+            return "Today is still open"
         }
         if streak.longest > streak.current {
             return "Longest: \(streak.longest.formatted()) days"

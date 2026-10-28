@@ -109,7 +109,7 @@ export function streakLine(streak: StreakState): string {
 /** Whether today still needs a tick to keep the streak going. */
 export function streakHint(streak: StreakState): string | null {
   if (streak.current === 0) return null
-  return streak.today ? 'Today counts' : 'Tick something today to keep it'
+  return streak.today ? 'Today counts' : 'Today is still open'
 }
 
 export function dayCount(days: number): string {
