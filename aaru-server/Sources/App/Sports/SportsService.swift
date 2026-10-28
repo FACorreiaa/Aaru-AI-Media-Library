@@ -97,6 +97,9 @@ struct SportsService: Sendable {
     var now: @Sendable () -> Date = { Date() }
     /// How long a request waits for cold answers before returning what it has, `pending`.
     var patience: Duration = .seconds(3)
+    /// Share links' own slice of TheSportsDB's 100 calls a minute (SHR-002), for cache misses only.
+    var shareLookups = FixedWindowRateLimiter(limit: Self.shareCallsPerMinute, window: 60)
+    static let shareCallsPerMinute = 20
 
     var isAvailable: Bool {
         listing != nil

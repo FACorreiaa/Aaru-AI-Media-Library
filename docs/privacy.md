@@ -123,8 +123,8 @@ and you can revoke it. Deleting your account removes your links.
 what it points to and the note you wrote, if any. Anyone holding the link sees only that title,
 match or concert: never your name, your handle, your note or anything from your library. Only a
 signed-in friend of yours (and you) also sees that you sent it and your note; someone you blocked,
-or who blocked you, never does. A link keeps working until you delete your account, which removes
-your name and note from it and leaves only what it points to.
+or who blocked you, never does. A link keeps working after you delete your account: deleting it
+removes your name and note from every link you made and leaves only what each one points to.
 
 **Groups.** If you create or join a group, Aaru stores the group's name, its channels, who is in
 it and with what role, invites waiting for an answer, and where you last read in each channel.

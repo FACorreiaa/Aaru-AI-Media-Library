@@ -68,7 +68,7 @@ struct ShareTests {
 
     @Test("the link's url is the web page")
     func url() async throws {
-        try await LibraryHarness.run { env in
+        try await LibraryHarness.run(sports: sportsWith(["42"])) { env in
             let created = try await env.send(.post, "/v1/shares", json: ["target": ["kind": "sport_event", "id": "42"]])
             let code = try code(created)
             #expect(try created.json()["url"] as? String == "https://aaruapp.com/s/\(code)")
@@ -77,7 +77,7 @@ struct ShareTests {
 
     @Test("the same target and note reuse one link; another note makes another")
     func dedupeByNote() async throws {
-        try await LibraryHarness.run { env in
+        try await LibraryHarness.run(sports: sportsWith(["42"])) { env in
             let target: [String: Any] = ["kind": "sport_event", "id": "42"]
             let first = try await code(env.send(.post, "/v1/shares", json: ["target": target, "note": "hi"]))
             let same = try await code(env.send(.post, "/v1/shares", json: ["target": target, "note": "  hi "]))
@@ -178,12 +178,12 @@ struct ShareTests {
             let shown = try await env.send(.get, "/v1/shares/\(first)", token: signedOut).json()
             #expect((shown["concert"] as? [String: Any])?["name"] as? String == "Show Z1")
 
-            concerts.fail(true)
-            let second = try await code(env.send(
-                .post,
-                "/v1/shares",
-                json: ["target": ["kind": "concert", "id": "Z2"]]
+            // A link made while the concert existed; by the time it opens, Ticketmaster has none.
+            let second = InviteService.newCode()
+            try await env.stores.shares.createShare(Share(
+                code: second, senderID: env.userID, target: .concert("Z2"), note: nil, createdAt: Date()
             ))
+            concerts.fail(true)
             let gone = try await env.send(.get, "/v1/shares/\(second)", token: signedOut)
             #expect(gone.status == .ok)
             #expect(try gone.json()["unavailable"] as? Bool == true)
@@ -193,7 +193,7 @@ struct ShareTests {
 
     @Test("bad targets and notes are refused; signed out cannot share")
     func badTargets() async throws {
-        try await LibraryHarness.run { env in
+        try await LibraryHarness.run(sports: sportsWith(["42"])) { env in
             let refused: [[String: Any]] = [
                 ["target": ["kind": "sport_event", "id": "abc"]],
                 ["target": ["kind": "concert", "id": "../x"]],
@@ -223,16 +223,20 @@ struct ShareTests {
 
     @Test("making links is limited per user; opening them per address")
     func rateLimits() async throws {
-        try await LibraryHarness.run { env in
+        let concerts = FakeConcerts()
+        for id in 1 ... ShareService.createsPerHour {
+            concerts.events["C\(id)"] = sampleConcert("C\(id)", "2026-11-02")
+        }
+        try await LibraryHarness.run(concerts: concerts) { env in
             for id in 1 ... ShareService.createsPerHour {
                 let reply = try await env.send(
                     .post,
                     "/v1/shares",
-                    json: ["target": ["kind": "sport_event", "id": "\(id)"]]
+                    json: ["target": ["kind": "concert", "id": "C\(id)"]]
                 )
                 #expect(reply.status == .ok)
             }
-            let over = try await env.send(.post, "/v1/shares", json: ["target": ["kind": "sport_event", "id": "999"]])
+            let over = try await env.send(.post, "/v1/shares", json: ["target": ["kind": "concert", "id": "C1"]])
             #expect(over.status == .tooManyRequests)
         }
         #expect(ShareService.createsPerHour == 60)

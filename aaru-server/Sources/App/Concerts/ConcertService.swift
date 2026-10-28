@@ -59,6 +59,9 @@ struct ConcertService: Sendable {
     /// One concert by id for share links (SHR-002); nil inside means the provider has no such event.
     let eventCache = ConcertCache<Concert?>()
     var now: @Sendable () -> Date = { Date() }
+    /// Share links' own slice of the Ticketmaster day (SHR-002), so share traffic never takes it all.
+    var shareLookups = CallBudget(limit: Self.shareCallsPerDay)
+    static let shareCallsPerDay = 1000
 
     var isAvailable: Bool {
         listing != nil
@@ -68,7 +71,10 @@ struct ConcertService: Sendable {
     /// the provider fails or is over budget with nothing cached, or the event is gone. Never throws.
     func concert(id: String) async -> Concert? {
         guard let listing else { return nil }
-        let found = await eventCache.value("event:\(id)", now: now()) { try await listing.event(id: id) }
+        let found = await eventCache.value("event:\(id)", now: now()) { [shareLookups] in
+            guard await shareLookups.take() else { throw ProviderError(provider: "ticketmaster", kind: .unavailable) }
+            return try await listing.event(id: id)
+        }
         return found ?? nil
     }
 

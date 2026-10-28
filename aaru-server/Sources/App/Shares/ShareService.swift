@@ -64,8 +64,8 @@ struct ShareService: Sendable {
         let note = try Self.validNote(note)
         let target: ShareTarget = switch request {
         case let .title(ref): try await .title(library.resolver.resolve(ref).id)
-        case let .sportEvent(id): try .sportEvent(Self.validSportID(id))
-        case let .concert(id): try .concert(Self.validConcertID(id))
+        case let .sportEvent(id): try await .sportEvent(knownSportEvent(id))
+        case let .concert(id): try await .concert(knownConcert(id))
         }
         if let existing = try await stores.shares.existingShare(sender: viewer, target: target, note: note) {
             return existing
@@ -94,7 +94,14 @@ struct ShareService: Sendable {
         var preview = SharePreview(share: share, unavailable: false)
         switch share.target {
         case let .title(id):
-            preview.title = try await library.catalog.detail(id)
+            // The catalog row only: a public page never hydrates episodes or tracks (SHR-002), so
+            // a provider outage or a burst of opens costs nothing and fails nothing.
+            guard let title = try await stores.titles.title(id: id),
+                  let state = try await stores.titles.catalogState(id)
+            else { throw Self.noSuchShare }
+            preview.title = TitleDetail(
+                title: title, status: state.status, runtimeMinutes: state.runtimeMinutes, episodes: nil
+            )
             if let viewer {
                 preview.viewerItem = try await stores.library.item(userID: viewer, titleID: id)
             }
@@ -131,11 +138,29 @@ struct ShareService: Sendable {
         }
     }
 
+    /// A match the provider knows; validating here keeps junk ids from costing calls later.
+    private func knownSportEvent(_ id: String) async throws -> String {
+        let id = try Self.validSportID(id)
+        guard (try? await sports.publicEvent(id: id)) ?? nil != nil else {
+            throw Self.invalid("That match isn't available to share.")
+        }
+        return id
+    }
+
+    /// A concert the provider knows, for the same reason.
+    private func knownConcert(_ id: String) async throws -> String {
+        let id = try Self.validConcertID(id)
+        guard await concerts.concert(id: id) != nil
+        else { throw Self.invalid("That concert isn't available to share.") }
+        return id
+    }
+
     static func validNote(_ note: String?) throws -> String? {
         guard let trimmed = note?.trimmingCharacters(in: .whitespacesAndNewlines), !trimmed.isEmpty else {
             return nil
         }
-        guard trimmed.count <= maxNote else { throw invalid("A note is at most \(maxNote) characters.") }
+        // Unicode scalars, as Postgres's char_length counts them: an emoji with a skin tone is two.
+        guard trimmed.unicodeScalars.count <= maxNote else { throw invalid("A note is at most \(maxNote) characters.") }
         return trimmed
     }
 

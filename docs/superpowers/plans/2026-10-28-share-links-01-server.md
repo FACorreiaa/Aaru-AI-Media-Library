@@ -247,7 +247,7 @@
 - [ ] **Step 4: Implement `ShareService`:**
   - **create:** first the create limiter. Then validate. Resolve a title ref to a `TitleID` with `resolver.resolve`. Then `stores.shares.existingShare` and return it if found. Otherwise insert with `newCode()`, retrying 3 times on `StoreConflict` (copy `InviteService.create`'s loop). Capture `.shareCreated` with `["kind": target.kind]`.
   - **preview:** first the preview limiter. Look up the share by code, or throw a 404.
-    - Content by kind: `.title` reads `catalog.detail`. `.sportEvent` calls `publicEvent`, and `SportsOff` or nil becomes `unavailable`. `.concert` calls `concert(id:)`, and nil becomes `unavailable`.
+    - Content by kind: `.title` reads the catalog row (`stores.titles.title` + `catalogState`), never `catalog.detail`, which hydrates episodes and tracks (corrected after review, 2026-10-28). `.sportEvent` calls `publicEvent`, and `SportsOff` or nil becomes `unavailable`. `.concert` calls `concert(id:)`, and nil becomes `unavailable`.
     - When `viewer` and `senderID` are both set, call `relationship(viewer, sender)`. A thrown `AppError` (a block) gives no `from`. `.friend` and `.self` give `from = (socialUser(sender), note)`. Anything else gives no `from`.
     - When the viewer is signed in and the target is a title, read `stores.library.item`.
     - When `senderID != nil`, capture `.shareOpened` for the sender.
