@@ -1260,11 +1260,15 @@ Rules:
   sender and their friends (never across a block). Titles come from the catalog row; events go
   through the shared sports and concert caches, so a busy link costs about one provider call.
   The web serves `/s/{code}` outside the shell and builds its link preview in the page's server
-  function. Per-address limits (invite and share previews, magic links) see a web visitor as the
-  Worker's egress address: Traefik replaces an `X-Forwarded-For` from an untrusted peer, and
-  trusting Cloudflare's ranges would let any Worker spoof one. Counting web visitors needs a
-  header the server trusts only with a secret the Worker holds (open). The Apple apps claim `/s/*`
-  as a universal link with the iOS work, once they can open one.
+  function. The Apple apps claim `/s/*` as a universal link with the iOS work, once they can open
+  one.
+- **Per-address limits behind the web Worker.** Invite and share previews and sign-in emails are
+  limited per address. The Worker reaches the API from Cloudflare's addresses, and Traefik
+  replaces an `X-Forwarded-For` from an untrusted peer (trusting Cloudflare's ranges would let any
+  Worker spoof one). So on those three calls the Worker names the visitor in `X-Aaru-Visitor`
+  and proves itself with `X-Aaru-Web-Secret` (`WEB_CLIENT_SECRET`, a Worker secret and a key in
+  `aaru-env`). `AuthMiddleware` uses the visitor only when the secret matches, compared in
+  constant time; otherwise, and with no secret configured, the forwarded hop counts as before.
 
 - **A block is invisible.** A blocked user gets `404` for everything about the blocker, the
   same response as for a user who does not exist. Blocks apply both ways in feeds,

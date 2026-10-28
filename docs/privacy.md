@@ -126,6 +126,10 @@ signed-in friend of yours (and you) also sees that you sent it and your note; so
 or who blocked you, never does. A link keeps working after you delete your account: deleting it
 removes your name and note from every link you made and leaves only what each one points to.
 
+**Limits on the website.** When you open a share or invite link, or ask for a sign-in email, on the
+website, it passes your IP address to Aaru's server, so the server can limit how often one address
+does that. The server counts it in memory for up to an hour and never stores it.
+
 **Groups.** If you create or join a group, Aaru stores the group's name, its channels, who is in
 it and with what role, invites waiting for an answer, and where you last read in each channel.
 Every message you send in a group is stored as you wrote it, with who you tagged, and the other

@@ -42,6 +42,9 @@ struct AuthMiddleware: RouterMiddleware {
     }
 
     let sessions: any SessionStore
+    /// `WEB_CLIENT_SECRET`: what the web Worker sends in `X-Aaru-Web-Secret` to name the visitor
+    /// behind it. Empty: no visitor header is trusted.
+    var webClientSecret = ""
 
     func handle(
         _ request: Request,
@@ -49,7 +52,12 @@ struct AuthMiddleware: RouterMiddleware {
         next: (Request, Context) async throws -> Response
     ) async throws -> Response {
         var context = context
-        context.clientAddressForRateLimit = context.clientAddress(for: request)
+        context.clientAddressForRateLimit = Self.rateLimitAddress(
+            visitor: request.headers[.aaruVisitor],
+            presentedSecret: request.headers[.aaruWebSecret],
+            secret: webClientSecret,
+            fallback: context.clientAddress(for: request)
+        )
         if let token = Self.bearerToken(request) {
             let hash = OpaqueToken.hash(token)
             if let userID = try await sessions.userID(forTokenHash: hash, now: .now) {

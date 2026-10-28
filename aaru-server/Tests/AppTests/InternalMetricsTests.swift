@@ -16,7 +16,11 @@ struct InternalMetricsTests {
         try await withMigratedStores { stores in
             let auth = AuthService(stores: stores, apple: UntouchedAppleVerifier(), magicLinks: nil)
             let services = Services.make(stores: stores, catalogs: FakeCatalog.providers(FakeCatalog()), auth: auth)
-            let app = try Application(router: buildRouter(stores: stores, services: services, metricsSecret: secret))
+            let app = try Application(router: buildRouter(
+                stores: stores,
+                services: services,
+                secrets: .init(metrics: secret)
+            ))
             try await app.test(.router) { client in
                 try await body(client, stores)
             }

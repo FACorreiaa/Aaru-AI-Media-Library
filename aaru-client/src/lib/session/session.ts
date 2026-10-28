@@ -57,9 +57,12 @@ export const getSignInConfig = createServerFn({ method: 'GET' }).handler(
 export const sendCode = createServerFn({ method: 'POST' })
   .validator(z.object({ email: z.string().trim().min(3) }))
   .handler(async ({ data }) => {
-    const { error } = await api().POST('/v1/auth/email/link', {
-      body: { email: data.email },
-    })
+    const { error } = await api(undefined, { visitor: true }).POST(
+      '/v1/auth/email/link',
+      {
+        body: { email: data.email },
+      },
+    )
     if (error)
       throw new Error(errorMessage(error, 'The code could not be sent.'))
   })

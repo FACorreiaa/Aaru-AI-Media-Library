@@ -51,7 +51,7 @@ func buildApplication(reader: ConfigReader) async throws -> some ApplicationProt
     services.sentry = makeSentryReporter(config.sentry, transport: transport, logger: logger)
     let productEvents = makePostHogClient(config.posthog, transport: transport, logger: logger)
     ProductEvents.install(productEvents)
-    let router = try buildRouter(stores: stores, services: services, metricsSecret: config.metricsSecret)
+    let router = try buildRouter(stores: stores, services: services, secrets: config.routerSecrets)
     return Application(
         router: router,
         server: realtimeServer(
@@ -249,13 +249,17 @@ func makeFluent(_ settings: PostgresSettings, logger: Logger) async throws -> Fl
 }
 
 /// Builds the router: logging, metrics, the shared error shape, auth, then the generated `/v1` handlers.
-func buildRouter(stores: Stores, services: Services, metricsSecret: String = "") throws -> Router<AppRequestContext> {
+func buildRouter(
+    stores: Stores,
+    services: Services,
+    secrets: RouterSecrets = .init()
+) throws -> Router<AppRequestContext> {
     let router = Router(context: AppRequestContext.self)
     router.addMiddleware {
         RedactedLogRequestsMiddleware(.info)
         HTTPMetricsMiddleware()
         ErrorMiddleware(sentry: services.sentry)
-        AuthMiddleware(sessions: stores.sessions)
+        AuthMiddleware(sessions: stores.sessions, webClientSecret: secrets.webClient)
         ClientTimeZoneMiddleware()
         AvatarCacheMiddleware()
         // store request context in TaskLocal; must be last
@@ -280,7 +284,7 @@ func buildRouter(stores: Stores, services: Services, metricsSecret: String = "")
     ListenBrainzRoutes(listens: services.listens, scrobble: services.scrobble, tokens: services.agentTokens)
         .register(on: router)
     OAuthRoutes(service: services.oauth).register(on: router)
-    InternalMetricsRoutes(users: stores.users, secret: metricsSecret).register(on: router)
+    InternalMetricsRoutes(users: stores.users, secret: secrets.metrics).register(on: router)
     return router
 }
 
