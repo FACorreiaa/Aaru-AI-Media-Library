@@ -48,6 +48,13 @@ struct NowItem: Identifiable {
     }
 }
 
+/// What one Now write came back with: a problem to show, or the journaled action
+/// (`/v1/actions/{id}/undo`) an Undo takes back. Both nil when nothing was sent or nothing changed.
+struct NowWrite {
+    var problem: String?
+    var action: String?
+}
+
 /// One of Now's groups, and the page "Show all" opens (APP-018).
 enum NowGroupID: String, CaseIterable, Hashable {
     case watching, reading, listening
@@ -131,8 +138,8 @@ extension LibraryModel {
         return (all.filter { !$0.entry.inBacklog }, all.filter(\.entry.inBacklog))
     }
 
-    /// Runs a card's or row's next step. Returns a problem to show, or nil.
-    func perform(_ action: NowAction, on item: NowItem, api: Client?) async -> String? {
+    /// Runs a card's or row's next step: a problem to show, or the action Undo takes back.
+    func perform(_ action: NowAction, on item: NowItem, api: Client?) async -> NowWrite {
         switch action {
         case .tickNext: await tickNext(item, api: api)
         case let .page(page): await setPage(page, of: item, api: api)
@@ -141,15 +148,15 @@ extension LibraryModel {
         }
     }
 
-    /// Ticks the next episode. Returns a problem to show, or nil.
-    func tickNext(_ item: NowItem, api: Client?) async -> String? {
-        guard let next = item.next else { return nil }
+    /// Ticks the next episode.
+    func tickNext(_ item: NowItem, api: Client?) async -> NowWrite {
+        guard let next = item.next else { return NowWrite() }
         return await write(item, api: api) { client in
             switch try await client.setEpisodeWatched(
                 path: .init(id: item.entry.id, season: next.season, episode: next.number),
                 body: .json(.init(watched: true))
             ) {
-            case let .ok(response): return try .success(response.body.json)
+            case let .ok(response): return try .success(response.body.json, action: response.headers.aaruAction)
             case let .default(
                 _,
                 error
@@ -158,15 +165,15 @@ extension LibraryModel {
         }
     }
 
-    func setPage(_ page: Int, of item: NowItem, api: Client?) async -> String? {
+    func setPage(_ page: Int, of item: NowItem, api: Client?) async -> NowWrite {
         await patch(item, .init(bookPage: page), api: api)
     }
 
-    func setChapter(_ chapter: Int, of item: NowItem, api: Client?) async -> String? {
+    func setChapter(_ chapter: Int, of item: NowItem, api: Client?) async -> NowWrite {
         await patch(item, .init(mangaChapter: chapter), api: api)
     }
 
-    func finish(_ item: NowItem, api: Client?) async -> String? {
+    func finish(_ item: NowItem, api: Client?) async -> NowWrite {
         await patch(item, .init(status: .finished), api: api)
     }
 
@@ -174,17 +181,17 @@ extension LibraryModel {
         _ item: NowItem,
         _ body: Components.Schemas.LibraryItemPatch,
         api: Client?
-    ) async -> String? {
+    ) async -> NowWrite {
         await write(item, api: api) { client in
             switch try await client.updateLibraryItem(path: .init(id: item.entry.id), body: .json(body)) {
-            case let .ok(response): return try .success(response.body.json)
+            case let .ok(response): return try .success(response.body.json, action: response.headers.aaruAction)
             case let .default(_, error): return .failure((try? error.body.json.message) ?? "That change was not saved.")
             }
         }
     }
 
     private enum Outcome {
-        case success(LibraryEntry)
+        case success(LibraryEntry, action: String?)
         case failure(String)
     }
 
@@ -193,22 +200,22 @@ extension LibraryModel {
         _ item: NowItem,
         api: Client?,
         _ send: (Client) async throws -> Outcome
-    ) async -> String? {
-        guard let api else { return "Aaru could not reach the server." }
-        guard !nowPending.contains(item.id) else { return nil }
+    ) async -> NowWrite {
+        guard let api else { return NowWrite(problem: "Aaru could not reach the server.") }
+        guard !nowPending.contains(item.id) else { return NowWrite() }
         nowPending.insert(item.id)
         defer { nowPending.remove(item.id) }
         do {
             switch try await send(api) {
-            case var .success(entry):
+            case .success(var entry, let action):
                 entry.watchedEpisodes = nil
                 upsert(entry)
-                return nil
+                return NowWrite(action: action)
             case let .failure(message):
-                return message
+                return NowWrite(problem: message)
             }
         } catch {
-            return "Aaru could not reach the server."
+            return NowWrite(problem: "Aaru could not reach the server.")
         }
     }
 }
