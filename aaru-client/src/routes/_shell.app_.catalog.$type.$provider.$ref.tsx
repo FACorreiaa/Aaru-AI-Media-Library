@@ -4,6 +4,7 @@ import { AddControl } from '../components/AddControl'
 import { AddToListDialog } from '../components/AddToListDialog'
 import { AlbumHeader, Tracklist } from '../components/AlbumParts'
 import { Poster } from '../components/Poster'
+import { ShareDialog } from '../components/ShareDialog'
 import { BackLink } from '../components/shell/BackLink'
 import { Button } from '~/components/ui'
 import { KINDS, kindOf } from '../lib/library/model'
@@ -54,6 +55,13 @@ function TitlePreview() {
   const [problem, setProblem] = createSignal<string | null>(null)
   const [listing, setListing] = createSignal(false)
   const listShown = lastShown(() => (listing() ? title() : null))
+  const [sharing, setSharing] = createSignal(false)
+  // Mounted on first open, then kept, so closing plays the exit (WEB-011).
+  const [sharedOnce, setSharedOnce] = createSignal(false)
+  const share = () => {
+    setSharedOnce(true)
+    setSharing(true)
+  }
   const kind = () => kindOf(title().type, title().isAnime)
   const hit = (): CatalogHit => ({
     type: title().type,
@@ -117,6 +125,9 @@ function TitlePreview() {
       <AddControl hit={hit()} adding={adding()} onAdd={(s) => void add(s)} />
       <Button variant="outline" size="sm" onClick={() => setListing(true)}>
         Add to list
+      </Button>
+      <Button variant="outline" size="sm" onClick={share}>
+        Share
       </Button>
     </div>
   )
@@ -184,6 +195,22 @@ function TitlePreview() {
               onClose={() => setListing(false)}
             />
           )}
+        </Show>
+        <Show when={sharedOnce()}>
+          <ShareDialog
+            open={sharing()}
+            target={{
+              kind: 'title',
+              ref: {
+                type: title().type,
+                ids: title().ids,
+                title: title().title,
+                year: title().year,
+              },
+            }}
+            name={title().title}
+            onClose={() => setSharing(false)}
+          />
         </Show>
       </div>
     </div>

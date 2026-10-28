@@ -40,6 +40,7 @@ import {
   searchConcerts,
 } from '../lib/concerts/server'
 import { play } from '../lib/motion'
+import { lastShown } from '../lib/presence'
 import { CityPicker } from './CityPicker'
 import {
   Alert,
@@ -50,6 +51,7 @@ import {
   buttonVariants,
 } from '~/components/ui'
 import { Segmented } from './Segmented'
+import { ShareDialog } from './ShareDialog'
 import { SearchIcon } from './shell/icons'
 
 const TICKETMASTER = CREDITS.find((c) => c.name === 'Ticketmaster')?.href
@@ -115,6 +117,9 @@ export function ConcertList(props: {
   const [query, setQuery] = createSignal<Searched | null>(null)
   const [choices, setChoices] = createSignal<Choices | null>(null)
   const [scope, setScope] = createSignal<SearchScope>('near')
+  // SHR-002: one Share sheet for the list, kept on its last concert while the exit plays.
+  const [sharing, setSharing] = createSignal<Concert | null>(null)
+  const shared = lastShown(sharing)
   let latestChoices = 0
   let list: HTMLUListElement | undefined
   let latest = 0
@@ -337,7 +342,11 @@ export function ConcertList(props: {
                 <ul class="mt-3 divide-y divide-line">
                   <For each={shownArtists()}>
                     {(concert) => (
-                      <ConcertRow concert={concert} today={props.today} />
+                      <ConcertRow
+                        concert={concert}
+                        today={props.today}
+                        onShare={() => setSharing(concert)}
+                      />
                     )}
                   </For>
                 </ul>
@@ -604,7 +613,11 @@ export function ConcertList(props: {
                   >
                     <For each={current().items}>
                       {(concert) => (
-                        <ConcertRow concert={concert} today={props.today} />
+                        <ConcertRow
+                          concert={concert}
+                          today={props.today}
+                          onShare={() => setSharing(concert)}
+                        />
                       )}
                     </For>
                   </ul>
@@ -657,12 +670,26 @@ export function ConcertList(props: {
           onClose={() => setPicking(false)}
         />
       </Show>
+      <Show when={shared()}>
+        {(concert) => (
+          <ShareDialog
+            open={sharing() !== null}
+            target={{ kind: 'concert', id: concert().id }}
+            name={concert().name}
+            onClose={() => setSharing(null)}
+          />
+        )}
+      </Show>
     </div>
   )
 }
 
 /** One concert: a ticket stub with the venue's date, what and where, and the way to tickets. */
-function ConcertRow(props: { concert: Concert; today: string }) {
+function ConcertRow(props: {
+  concert: Concert
+  today: string
+  onShare: () => void
+}) {
   const block = () => dateBlock(props.concert.localDate, props.today)
   const where = () => placeLine(props.concert)
   const detail = () => detailLine(props.concert)
@@ -715,19 +742,25 @@ function ConcertRow(props: { concert: Concert; today: string }) {
           {(line) => <p class="text-sm text-muted tabular-nums">{line()}</p>}
         </Show>
       </div>
-      <a
-        href={props.concert.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label={`Tickets for ${props.concert.name} on Ticketmaster (opens a new tab)`}
-        class={buttonVariants({
-          variant: 'quiet',
-          size: 'sm',
-          class: 'w-fit self-start sm:self-center',
-        })}
-      >
-        Tickets <span aria-hidden="true">↗</span>
-      </a>
+      <div class="flex w-fit items-center gap-1 self-start sm:self-center">
+        <a
+          href={props.concert.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`Tickets for ${props.concert.name} on Ticketmaster (opens a new tab)`}
+          class={buttonVariants({ variant: 'quiet', size: 'sm' })}
+        >
+          Tickets <span aria-hidden="true">↗</span>
+        </a>
+        <Button
+          variant="ghost"
+          size="sm"
+          aria-label={`Share ${props.concert.name}`}
+          onClick={() => props.onShare()}
+        >
+          Share
+        </Button>
+      </div>
     </li>
   )
 }

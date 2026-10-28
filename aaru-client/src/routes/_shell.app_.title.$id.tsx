@@ -21,6 +21,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog'
 import { AlbumHeader, Tracklist } from '../components/AlbumParts'
 import { DiscussButton } from '../components/groups/DiscussButton'
 import { RecommendDialog } from '../components/Recommendations'
+import { ShareDialog } from '../components/ShareDialog'
 import { EpisodeSheet } from '../components/EpisodeSheet'
 import { PostCard } from '../components/board/PostCard'
 import { Poster } from '../components/Poster'
@@ -136,6 +137,13 @@ function TitleRoom() {
   const recommendTitle = () => {
     setRecommendedOnce(true)
     setRecommending(true)
+  }
+  const [sharing, setSharing] = createSignal(false)
+  // Mounted on first open, then kept, so closing plays the exit (WEB-011).
+  const [sharedOnce, setSharedOnce] = createSignal(false)
+  const shareTitle = () => {
+    setSharedOnce(true)
+    setSharing(true)
   }
   const [notes, setNotes] = createSignal(page().entry.notes ?? '')
   const [pageNumber, setPageNumber] = createSignal(
@@ -455,6 +463,14 @@ function TitleRoom() {
             <Button variant="outline" size="sm" class="mt-4" onClick={pick}>
               Add to list
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              class="mt-4"
+              onClick={shareTitle}
+            >
+              Share
+            </Button>
             <DiscussButton
               titleId={entry().title.id}
               type={entry().title.type}
@@ -512,6 +528,9 @@ function TitleRoom() {
             />
             <Button variant="quiet" onClick={recommendTitle}>
               Recommend
+            </Button>
+            <Button variant="quiet" onClick={shareTitle}>
+              Share
             </Button>
           </Show>
           <DropdownMenu placement="bottom-end">
@@ -892,6 +911,17 @@ function TitleRoom() {
               kind: kindOf(entry().title.type, entry().title.isAnime),
             }}
             onClose={() => setRecommending(false)}
+          />
+        </Show>
+        <Show when={sharedOnce()}>
+          <ShareDialog
+            open={sharing()}
+            target={{
+              kind: 'title',
+              ref: { titleId: entry().title.id, type: entry().title.type },
+            }}
+            name={entry().title.title}
+            onClose={() => setSharing(false)}
           />
         </Show>
         <Show when={pickedOnce()}>
