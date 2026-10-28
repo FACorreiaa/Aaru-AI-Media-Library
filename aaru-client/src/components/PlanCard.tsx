@@ -11,10 +11,14 @@ import type { AgentPlan } from '../lib/plans/server'
 export function PlanCard(props: {
   plan: AgentPlan
   onDecided?: (plan: AgentPlan) => void
+  /** Changes listed before "and N more" (Home's narrow column); every change when absent. */
+  changeLimit?: number
 }) {
   const [plan, setPlan] = createSignal(props.plan)
   const [busy, setBusy] = createSignal(false)
   const [problem, setProblem] = createSignal<string | null>(null)
+  const listed = () => plan().changes.slice(0, props.changeLimit)
+  const unlisted = () => plan().changes.length - listed().length
 
   async function decide(approve: boolean) {
     setBusy(true)
@@ -53,9 +57,21 @@ export function PlanCard(props: {
       </p>
       <Show when={plan().changes.length > 1}>
         <ul class="mt-3 flex flex-col gap-1 text-sm">
-          <For each={plan().changes}>
+          <For each={listed()}>
             {(change) => <li class="truncate">{change.text}</li>}
           </For>
+          <Show when={unlisted() > 0}>
+            <li class="text-muted">
+              and {unlisted()} more ·{' '}
+              <Link
+                to="/app/plans/$id"
+                params={{ id: plan().id }}
+                class="text-accent hover:underline"
+              >
+                See all
+              </Link>
+            </li>
+          </Show>
         </ul>
       </Show>
       <Show

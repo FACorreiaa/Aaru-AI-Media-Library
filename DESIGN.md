@@ -431,6 +431,14 @@ rows of wide cards, one job per row.
   anything in progress untouched for 30 days, "Dropped" or "Paused 6 weeks", with "Resume at
   S2 · E3" for a show. Never a title already in Continue watching.
 - **Lists** — chips for the user's lists plus "New list".
+
+The side column (web, 2026-10-28) has one recipe: an uppercase label above, then the plain card
+or a wrap of chips, 32 px between blocks. Achievements, Last import, Your library (the status
+counts) and Lists follow it; the agent's lit cards under "Waiting for you" and the recap callout
+are the two deliberate exceptions. One chip everywhere (`chipClass`, the look of `Segmented`'s
+`chip`), 44 px tall under a finger. The last import names its source ("From MyAnimeList"), never
+the file; an agent request lists five changes, then "and N more · See all". The streak says
+"Today is still open", never asks for a tick, and the Achievements link reads the streak aloud.
 - **Reading** (owner, 2026-10-25) — books and manga in progress as Now cards, last touched
   first, after Continue watching: the page, the chapter or "Read" in one tap, with Undo in the
   toast. The newest 12, then "All N" to the Reading page (APP-018); absent when there are none.

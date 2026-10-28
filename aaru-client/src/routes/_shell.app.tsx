@@ -24,6 +24,7 @@ import {
   Button,
   buttonVariants,
   cardClass,
+  chipClass,
 } from '~/components/ui'
 import { cn } from '~/lib/utils'
 import { WeekStripCard } from '../components/WeekStripCard'
@@ -764,7 +765,7 @@ function Home() {
 
           {/* On a phone these join the column in order; on a wide screen they are the side
  column, held in view while the rows scroll. */}
-          <div class="contents lg:sticky lg:top-6 lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:mt-8 lg:flex lg:flex-col lg:gap-4 lg:self-start">
+          <div class="contents lg:sticky lg:top-6 lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:mt-8 lg:flex lg:flex-col lg:gap-8 lg:self-start">
             <Show when={plans().length > 0 || captures().length > 0}>
               <section
                 class="order-2 mt-8 lg:mt-0"
@@ -781,6 +782,7 @@ function Home() {
                     {(plan) => (
                       <PlanCard
                         plan={plan}
+                        changeLimit={5}
                         onDecided={(decided) => {
                           if (decided.status === 'applied')
                             void freshUpNext().then(showUpNext, () => {})
@@ -791,7 +793,7 @@ function Home() {
                 </div>
               </section>
             </Show>
-            <div class="order-4 mt-10 flex flex-col gap-4 lg:mt-0">
+            <div class="order-4 mt-10 flex flex-col gap-8 lg:mt-0">
               <Show when={progress()}>
                 {(current) => <ProgressStrip progress={current()} />}
               </Show>
@@ -799,24 +801,26 @@ function Home() {
                 {(job) => <LastImportCard job={job()} />}
               </Show>
               <Show when={chips().length > 0}>
-                <nav
-                  aria-label="Your library by status"
-                  class="flex flex-wrap gap-2"
-                >
-                  <For each={chips()}>
-                    {(chip) => (
-                      <Link
-                        to="/app/library"
-                        search={{ status: chip.status }}
-                        class="rounded-full border border-line px-4 py-1.5 text-sm font-medium hover:bg-surface"
-                      >
-                        {chip.label}{' '}
-                        <span class="text-muted tabular-nums">
-                          {chip.count}
-                        </span>
-                      </Link>
-                    )}
-                  </For>
+                <nav aria-labelledby="home-library">
+                  <h2 id="home-library" class="eyebrow">
+                    Your library
+                  </h2>
+                  <div class="mt-3 flex flex-wrap gap-2">
+                    <For each={chips()}>
+                      {(chip) => (
+                        <Link
+                          to="/app/library"
+                          search={{ status: chip.status }}
+                          class={chipClass}
+                        >
+                          {chip.label}
+                          <span class="text-muted tabular-nums">
+                            {chip.count}
+                          </span>
+                        </Link>
+                      )}
+                    </For>
+                  </div>
                 </nav>
               </Show>
 
@@ -856,9 +860,9 @@ function Home() {
                           <Link
                             to="/app/lists/$id"
                             params={{ id: list.id }}
-                            class="rounded-full bg-surface px-4 py-2 text-sm font-medium hover:text-accent"
+                            class={cn(chipClass, 'max-w-full')}
                           >
-                            {list.name}{' '}
+                            <span class="truncate">{list.name}</span>
                             <span class="text-muted tabular-nums">
                               {list.itemCount}
                             </span>
@@ -868,7 +872,7 @@ function Home() {
                       <Link
                         to="/app/lists"
                         search={{ new: '1' }}
-                        class="rounded-full border border-dashed border-line px-4 py-2 text-sm font-medium text-accent hover:bg-surface"
+                        class={cn(chipClass, 'text-accent')}
                       >
                         New list
                       </Link>

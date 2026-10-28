@@ -128,7 +128,7 @@ describe('achievements model', () => {
       '1 day in a row',
     )
     expect(streakHint({ current: 3, longest: 3, today: false, days: [] })).toBe(
-      'Tick something today to keep it',
+      'Today is still open',
     )
     expect(
       streakHint({ current: 0, longest: 3, today: false, days: [] }),

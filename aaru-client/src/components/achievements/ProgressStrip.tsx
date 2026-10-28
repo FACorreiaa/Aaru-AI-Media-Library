@@ -1,12 +1,16 @@
 import { Link } from '@tanstack/solid-router'
 import { cardClass } from '~/components/ui'
 import { cn } from '~/lib/utils'
-import { levelFraction, nextLevelLine } from '../../lib/achievements/model'
+import {
+  dayCount,
+  levelFraction,
+  nextLevelLine,
+} from '../../lib/achievements/model'
 import type { Progress } from '../../lib/achievements/model'
 import { StreakBar } from './StreakBar'
 
 // The Home strip (DESIGN.md §17 "Where it lives"): `StreakBar` with the level beside it, and
-// the way into Achievements. The whole card is the link.
+// the way into Achievements. The whole card is the link; its name says the streak too.
 export function ProgressStrip(props: { progress: Progress }) {
   return (
     <section aria-labelledby="home-progress">
@@ -15,8 +19,8 @@ export function ProgressStrip(props: { progress: Progress }) {
       </h2>
       <Link
         to="/app/achievements"
-        aria-label={`Level ${props.progress.level}, ${nextLevelLine(props.progress)}. Open Achievements.`}
-        class={cn(cardClass, 'mt-3 block px-5 py-4 hover:bg-surface')}
+        aria-label={`${streakName(props.progress)}. Level ${props.progress.level}, ${nextLevelLine(props.progress)}. Open Achievements.`}
+        class={cn(cardClass, 'mt-3 block px-5 py-4 hover:border-line-strong')}
       >
         <StreakBar streak={props.progress.streak} compact />
         <div class="mt-4 flex items-center gap-3">
@@ -34,4 +38,11 @@ export function ProgressStrip(props: { progress: Progress }) {
       </Link>
     </section>
   )
+}
+
+/** The streak as the link reads it: "Streak of 4 days, today counts". */
+function streakName(progress: Progress): string {
+  const { streak } = progress
+  if (streak.current === 0) return 'No streak'
+  return `Streak of ${dayCount(streak.current)}, ${streak.today ? 'today counts' : 'today is still open'}`
 }
