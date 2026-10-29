@@ -203,8 +203,8 @@ struct MainTabs: View {
     }
 
     private func open(_ url: URL) {
-        // RootView opens friend invites, signed in or out.
-        if InviteLink(url) != nil {
+        // RootView opens friend invites and share links, signed in or out.
+        if InviteLink(url) != nil || SharedLink(url) != nil {
             return
         }
         if let id = WidgetLink.libraryItemId(in: url) {

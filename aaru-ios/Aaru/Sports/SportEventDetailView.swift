@@ -95,7 +95,7 @@ struct SportEventDetailView: View {
 
 /// The score line, large: home and away with badges either side of the score or the kick-off,
 /// or a card's poster and name.
-private struct EventHeader: View {
+struct EventHeader: View {
     let event: SportEvent
 
     var body: some View {
