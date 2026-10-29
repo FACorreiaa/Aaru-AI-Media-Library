@@ -1,3 +1,4 @@
+import AaruAPI
 import SwiftUI
 
 /// A concert's day and time as the venue announces them. Both are read as text in a fixed zone
@@ -67,8 +68,11 @@ struct ConcertDay {
 struct ConcertRow: View {
     let concert: Concert
     var compact = false
+    /// Set where the row can be shared (SHR-002); nil for placeholders and previews.
+    var api: Client?
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @State private var shares = false
 
     var body: some View {
         let day = ConcertDay(concert)
@@ -118,8 +122,16 @@ struct ConcertRow: View {
                 .accessibilityLabel("Tickets for \(concert.name)")
                 .accessibilityHint("Opens Ticketmaster.")
             }
+            if api != nil {
+                Button("Share \(concert.name)", systemImage: "square.and.arrow.up") { shares = true }
+                    .labelStyle(.iconOnly)
+                    .buttonStyle(.bordered)
+            }
         }
         .padding(.vertical, 4)
+        .sheet(isPresented: $shares) {
+            ShareComposerSheet(api: api, target: .concert(id: concert.id), name: concert.name)
+        }
     }
 
     /// "MEO Arena · Lisboa".

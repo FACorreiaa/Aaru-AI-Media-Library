@@ -119,6 +119,9 @@ final class AppRouter {
     var showsHistoryPane = false
     /// Mac: bumped to ask the main window to open the Settings scene.
     private(set) var settingsWindowRequest = 0
+    /// Bumped when a share link opens (SHR-002): the sheets the app shows from the top close, so
+    /// the share sheet can take their place. One sheet can't be shown over another from here.
+    private(set) var closeSheetsRequest = 0
 
     /// Bumped by ⌘R; the selected destination reloads (`refreshesOnCommand`).
     private(set) var refreshTick = 0
@@ -243,6 +246,13 @@ final class AppRouter {
         // Trakt's sign-in returns to `aaru://settings/trakt`: that is Import.
         openSettings(slug == "trakt" ? .imports : slug.flatMap(SettingsPage.init(rawValue:)))
         return true
+    }
+
+    /// Closes Search, the Settings sheet and the linked sheets MainTabs shows (`closeSheetsRequest`).
+    func closeSheets() {
+        showsSearch = false
+        showsSettingsSheet = false
+        closeSheetsRequest += 1
     }
 
     /// Signed out: back to Home with nothing of the last user's place.

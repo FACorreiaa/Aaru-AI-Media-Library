@@ -12,6 +12,7 @@ struct SportEventDetailView: View {
     @State private var failed = false
     @State private var settings: SportSettingsModel?
     @State private var choosesCountry = false
+    @State private var shares = false
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
 
@@ -47,6 +48,20 @@ struct SportEventDetailView: View {
                     ToolbarItem(placement: .confirmationAction) {
                         Button("Done") { dismiss() }
                     }
+                    if detail != nil {
+                        ToolbarItem(placement: .primaryAction) {
+                            Button("Share", systemImage: "square.and.arrow.up") { shares = true }
+                        }
+                    }
+                }
+                // A share link opened while this sheet is up: give way to the share sheet.
+                .onOpenURL { url in
+                    if SharedLink(url) != nil {
+                        dismiss()
+                    }
+                }
+                .sheet(isPresented: $shares) {
+                    ShareComposerSheet(api: model.api, target: .sportEvent(id: id), name: detail?.event.name ?? "Match")
                 }
                 .task(id: scenePhase == .active) {
                     guard scenePhase == .active else { return }
@@ -95,7 +110,7 @@ struct SportEventDetailView: View {
 
 /// The score line, large: home and away with badges either side of the score or the kick-off,
 /// or a card's poster and name.
-private struct EventHeader: View {
+struct EventHeader: View {
     let event: SportEvent
 
     var body: some View {

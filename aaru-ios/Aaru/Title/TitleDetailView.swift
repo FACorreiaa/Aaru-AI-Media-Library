@@ -14,6 +14,7 @@ struct TitleDetailView: View {
     @State private var showsListPicker = false
     @State private var discusses = false
     @State private var recommends = false
+    @State private var shares = false
     @State private var confirmsRemoval = false
     /// Nil in previews and outside the signed-in app.
     @Environment(GroupsModel.self) private var groups: GroupsModel?
@@ -111,6 +112,13 @@ struct TitleDetailView: View {
                 title: (MediaRef(titleId: entry.title.id, _type: entry.title._type), entry.title.title)
             )
         }
+        .sheet(isPresented: $shares) {
+            ShareComposerSheet(
+                api: model.api,
+                target: .title(MediaRef(titleId: entry.title.id, _type: entry.title._type)),
+                name: entry.title.title
+            )
+        }
         .sheet(isPresented: $discusses) {
             if let groups {
                 DiscussInGroupSheet(groups: groups, title: entry.title)
@@ -164,6 +172,7 @@ extension TitleDetailView {
                 Button("Discuss in a group…", systemImage: "bubble.left.and.bubble.right") { discusses = true }
             }
             Button("Recommend to friends…", systemImage: "hand.thumbsup") { recommends = true }
+            Button("Share…", systemImage: "square.and.arrow.up") { shares = true }
             Button("Remove from library…", systemImage: "trash", role: .destructive) { confirmsRemoval = true }
         }
     }

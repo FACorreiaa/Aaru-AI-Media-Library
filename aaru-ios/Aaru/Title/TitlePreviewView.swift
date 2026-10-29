@@ -31,6 +31,7 @@ struct TitlePreviewView: View {
     @State private var adding = false
     @State private var problem: String?
     @State private var showsLists = false
+    @State private var shares = false
 
     private var kind: MediaKind {
         MediaKind(type: hit._type, isAnime: hit.isAnime)
@@ -43,6 +44,18 @@ struct TitlePreviewView: View {
             LibraryEntryDestination(id: itemID, api: api, library: library, lists: lists)
         } else if let title {
             page(title)
+                .toolbar {
+                    ToolbarItem(placement: .primaryAction) {
+                        Button("Share", systemImage: "square.and.arrow.up") { shares = true }
+                    }
+                }
+                .sheet(isPresented: $shares) {
+                    ShareComposerSheet(
+                        api: api,
+                        target: .title(MediaRef(_type: hit._type, ids: hit.ids, title: hit.title, year: hit.year)),
+                        name: hit.title
+                    )
+                }
         } else if loadFailed {
             LoadFailedView(title: "This title didn't load", message: "Aaru could not reach the server.") {
                 await load()

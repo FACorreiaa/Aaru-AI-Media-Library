@@ -62,7 +62,7 @@ final class ConcertsModel {
     private(set) var performerChoices: PerformerChoices?
     var scope: ConcertSearchScope = .near
 
-    @ObservationIgnored private let api: Client?
+    @ObservationIgnored let api: Client?
     @ObservationIgnored private var loadedQuery: Query?
 
     init(api: Client?) {

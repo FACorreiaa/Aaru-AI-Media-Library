@@ -817,6 +817,12 @@ and Create link; then the link with Share (the device's share sheet) and Copy li
 that anyone with the link sees the title and only friends see who sent it. The same sender,
 target and note give the same link.
 
+In the Apple apps a share link opens as a sheet over whatever is on screen, signed in or out, with
+the same card and the same one action as the web page. Signed out, "Add to my Aaru" closes onto
+Welcome and the sheet comes back after sign-in to save the title once. "Open in Sports" opens the
+event sheet on top. On a title Share is in More, after Recommend; on the catalog preview and a
+sports event sheet it is a toolbar button; a concert row has a share button beside Tickets.
+
 ### Board (BOARD-002, 2026-10-23)
 
 The Board lives on Friends, not in a Social tab (owner, 2026-10-23; the spec's tab is dropped).
