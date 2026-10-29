@@ -74,7 +74,7 @@ final class SportsModel {
 
     /// A follow or unfollow made here, ahead of the next search or reload.
     @ObservationIgnored private var followOverrides: [String: Bool] = [:]
-    @ObservationIgnored private let api: Client?
+    @ObservationIgnored let api: Client?
 
     init(api: Client?, now: Date = .now) {
         self.api = api

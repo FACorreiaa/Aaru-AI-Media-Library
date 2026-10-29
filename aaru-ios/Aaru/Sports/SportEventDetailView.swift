@@ -12,6 +12,7 @@ struct SportEventDetailView: View {
     @State private var failed = false
     @State private var settings: SportSettingsModel?
     @State private var choosesCountry = false
+    @State private var shares = false
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
 
@@ -47,6 +48,14 @@ struct SportEventDetailView: View {
                     ToolbarItem(placement: .confirmationAction) {
                         Button("Done") { dismiss() }
                     }
+                    if detail != nil {
+                        ToolbarItem(placement: .primaryAction) {
+                            Button("Share", systemImage: "square.and.arrow.up") { shares = true }
+                        }
+                    }
+                }
+                .sheet(isPresented: $shares) {
+                    ShareComposerSheet(api: model.api, target: .sportEvent(id: id), name: detail?.event.name ?? "Match")
                 }
                 .task(id: scenePhase == .active) {
                     guard scenePhase == .active else { return }

@@ -61,7 +61,7 @@ private struct ArtistsOnTourSection: View {
                 } else {
                     let items = showsAll ? artists.items : Array(artists.items.prefix(Self.firstCount))
                     ForEach(items, id: \.id) { concert in
-                        ConcertRow(concert: concert)
+                        ConcertRow(concert: concert, api: model.api)
                     }
                     if artists.items.count > Self.firstCount {
                         Button(showsAll ? "Show fewer" : "Show all \(artists.items.count)") {
@@ -226,7 +226,9 @@ private struct NearResults: View {
                 EmptyNear(model: model)
             } else {
                 ForEach(items, id: \.id) { concert in
-                    ConcertRow(concert: concert, compact: model.layout == .map && !model.searchesAnywhere)
+                    ConcertRow(
+                        concert: concert, compact: model.layout == .map && !model.searchesAnywhere, api: model.api
+                    )
                 }
                 if model.hasMore {
                     Button(model.isLoadingMore ? "Loading…" : "Show more", action: loadMore)
