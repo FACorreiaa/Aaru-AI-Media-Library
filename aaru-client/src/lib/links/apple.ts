@@ -1,5 +1,6 @@
-// Universal links (SOC-002): the Apple apps claim aaruapp.com/i/* so a friend invite opens
-// Aaru when it is installed, and the web page when it is not. Apple's CDN fetches this file
+// Universal links: the Apple apps claim aaruapp.com/i/* (friend invites, SOC-002) and /s/*
+// (share links, SHR-002), so either opens Aaru when it is installed, and the web page when it
+// is not. Apple's CDN fetches this file
 // from /.well-known/apple-app-site-association; it must be JSON with no redirect.
 const TEAM_ID = '84X9WYBF36'
 const APP_IDS = ['com.fernandocorreia.aaru', 'com.fernandocorreia.aaru.beta']
@@ -9,7 +10,10 @@ export const APPLE_APP_SITE_ASSOCIATION = {
     details: [
       {
         appIDs: APP_IDS.map((id) => `${TEAM_ID}.${id}`),
-        components: [{ '/': '/i/*', comment: 'Friend invite links' }],
+        components: [
+          { '/': '/i/*', comment: 'Friend invite links' },
+          { '/': '/s/*', comment: 'Share links' },
+        ],
       },
     ],
   },

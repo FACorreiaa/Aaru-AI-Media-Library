@@ -1260,8 +1260,9 @@ Rules:
   sender and their friends (never across a block). Titles come from the catalog row; events go
   through the shared sports and concert caches, so a busy link costs about one provider call.
   The web serves `/s/{code}` outside the shell and builds its link preview in the page's server
-  function. The Apple apps claim `/s/*` as a universal link with the iOS work, once they can open
-  one.
+  function. The Apple apps claim `/s/*` as a universal link (the AASA in `lib/links/apple.ts`)
+  and open it in `SharePreviewView`, signed in or out; `ShareLinkCode` in `AaruCore` decides
+  which links are share links.
 - **Per-address limits behind the web Worker.** Invite and share previews and sign-in emails are
   limited per address. The Worker reaches the API from Cloudflare's addresses, and Traefik
   replaces an `X-Forwarded-For` from an untrusted peer (trusting Cloudflare's ranges would let any
