@@ -1,0 +1,27 @@
+version: "2"
+run:
+  timeout: 5m
+linters:
+  default: standard
+  enable:
+    - errorlint
+    - gosec
+    - misspell
+    - nilnil
+    - revive
+    - unconvert
+  exclusions:
+    paths:
+      - internal/api/api.gen.go
+      - internal/db/sqlc
+    rules:
+      - path: _test\.go
+        linters: [gosec, errcheck]
+      # Handlers implement the generated interface; its docs live in openapi.yaml.
+      - path: internal/httpapi/
+        linters: [revive]
+        text: "exported method Server\\."
+
+formatters:
+  enable:
+    - gofumpt

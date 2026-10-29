@@ -1,0 +1,69 @@
+# Go CI for aaru-server-v2, the Go port of aaru-server. Its API is generated from the
+# same openapi.yaml as the clients, so a spec change re-checks it.
+name: Go CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "aaru-server-v2/**"
+      - "aaru-server/Sources/AppAPI/openapi.yaml"
+      - ".github/workflows/ci-go.yml"
+  pull_request:
+    paths:
+      - "aaru-server-v2/**"
+      - "aaru-server/Sources/AppAPI/openapi.yaml"
+      - ".github/workflows/ci-go.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ci-go-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: aaru-server-v2
+
+jobs:
+  server:
+    name: aaru-server-v2 tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: aaru
+          POSTGRES_PASSWORD: aaru
+          POSTGRES_DB: aaru
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U aaru"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_USER: aaru
+      POSTGRES_PASSWORD: aaru
+      POSTGRES_DATABASE: aaru
+      AARU_REQUIRE_DB: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: aaru-server-v2/go.mod
+          cache-dependency-path: aaru-server-v2/go.sum
+      - name: Generated code is current
+        run: |
+          ./scripts/generate-api.sh
+          go tool sqlc generate
+          git diff --exit-code -- internal/api internal/db/sqlc
+      - name: Vet
+        run: go vet ./...
+      - name: Test
+        run: go test -race ./...
+      - name: Lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          working-directory: aaru-server-v2

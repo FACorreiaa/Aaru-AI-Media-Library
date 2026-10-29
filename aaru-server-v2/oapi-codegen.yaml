@@ -1,0 +1,27 @@
+package: api
+generate:
+  models: true
+  echo-server: true
+  strict-server: true
+  embedded-spec: true
+output: internal/api/api.gen.go
+output-options:
+  skip-prune: true
+  # Bodies offered in several binary media types make oapi-codegen's strict
+  # server emit duplicate fields. These routes are registered by hand in
+  # internal/httpapi/raw_routes.go and read the raw body themselves.
+  exclude-operation-ids:
+    - createCSVImport
+    - createCATImport
+    - createCaptureImport
+  # Whole-second UTC dates on the wire, as the Swift server sent them; see internal/apitime.
+  type-mapping:
+    string:
+      formats:
+        date-time:
+          type: apitime.Time
+          import: aaru-go-api/internal/apitime
+compatibility:
+  # Enum constants always carry their type's name (HealthStatusOk), so adding a
+  # schema never renames an existing constant.
+  always-prefix-enum-values: true
