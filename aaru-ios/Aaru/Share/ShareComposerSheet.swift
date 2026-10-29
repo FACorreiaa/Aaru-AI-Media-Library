@@ -67,6 +67,12 @@ struct ShareComposerSheet: View {
         #if os(iOS)
         .presentationDetents([.medium, .large])
         #endif
+        // A link made here is often tapped next: this sheet gives way to the share sheet.
+        .onOpenURL { url in
+            if SharedLink(url) != nil {
+                dismiss()
+            }
+        }
     }
 
     private var compose: some View {

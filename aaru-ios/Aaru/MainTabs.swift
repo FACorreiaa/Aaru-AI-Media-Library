@@ -117,6 +117,11 @@ struct MainTabs: View {
             .sheet(isPresented: $router.showsSearch) {
                 SearchView(api: api, library: library, lists: lists)
             }
+            .onChange(of: router.closeSheetsRequest) {
+                linkedPlan = nil
+                linkedImport = nil
+                linkedTitle = nil
+            }
         #if os(iOS)
             .sheet(isPresented: $router.showsSettingsSheet) {
                 settingsScreen(showsDone: true)

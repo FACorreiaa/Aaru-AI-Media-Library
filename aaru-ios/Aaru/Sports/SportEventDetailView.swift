@@ -54,6 +54,12 @@ struct SportEventDetailView: View {
                         }
                     }
                 }
+                // A share link opened while this sheet is up: give way to the share sheet.
+                .onOpenURL { url in
+                    if SharedLink(url) != nil {
+                        dismiss()
+                    }
+                }
                 .sheet(isPresented: $shares) {
                     ShareComposerSheet(api: model.api, target: .sportEvent(id: id), name: detail?.event.name ?? "Match")
                 }

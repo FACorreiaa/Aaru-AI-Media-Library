@@ -21,6 +21,7 @@ struct SharePreviewView: View {
     private enum Stage {
         case loading
         case missing
+        case failed
         case ready(ShareLinkPreview)
     }
 
@@ -68,6 +69,10 @@ struct SharePreviewView: View {
                 systemImage: "link",
                 description: Text("Ask whoever sent it for a new one.")
             )
+        case .failed:
+            LoadFailedView(title: "This link didn't load", message: "Aaru could not reach the server.") {
+                await load()
+            }
         case let .ready(preview):
             if let from = preview.from {
                 ShareSenderLine(sender: from)
@@ -162,15 +167,18 @@ struct SharePreviewView: View {
 
     private func load() async {
         guard let api else {
-            stage = .missing
+            failed(status: nil)
             return
         }
         do {
-            guard case let .ok(response) = try await api.getSharePreview(path: .init(code: link.code)) else {
-                stage = .missing
+            let preview: ShareLinkPreview
+            switch try await api.getSharePreview(path: .init(code: link.code)) {
+            case let .ok(response):
+                preview = try response.body.json
+            case let .default(status, _):
+                failed(status: status)
                 return
             }
-            let preview = try response.body.json
             stage = .ready(preview)
             if link.add, !autoAdded, let title = preview.title, ShareAutoAdd.should(
                 add: link.add, signedIn: session.isSignedIn, isTitle: preview.kind == .title,
@@ -180,7 +188,21 @@ struct SharePreviewView: View {
                 await add(title)
             }
         } catch {
-            stage = .missing
+            failed(status: nil)
+        }
+    }
+
+    /// Only an unknown code says the link doesn't work; a failed reload keeps the card on screen.
+    private func failed(status: Int?) {
+        let showing = if case .ready = stage {
+            true
+        } else {
+            false
+        }
+        switch ShareLoadFailure.after(status: status, showingContent: showing) {
+        case .missing: stage = .missing
+        case .retry: stage = .failed
+        case .keep: break
         }
     }
 

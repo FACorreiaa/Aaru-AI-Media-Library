@@ -72,7 +72,7 @@ struct RootView: View {
         // Share links and invites open signed out too; every other link waits for the app.
         .onOpenURL { url in
             if let share = SharedLink(url) {
-                openShare = share
+                open(share)
                 return
             }
             guard let invite = InviteLink(url) else { return }
@@ -124,6 +124,20 @@ struct RootView: View {
         }
         // Outermost, so the sheets above (a widget's title, a push's request) carry it too.
         .toastCenter(toasts)
+    }
+
+    /// Clears whatever sheet is up first: SwiftUI shows nothing when asked for a sheet over
+    /// another, and setting the same link again would not retry. The share sheet follows once
+    /// the others have gone.
+    private func open(_ share: SharedLink) {
+        openShare = nil
+        openInvite = nil
+        showsEmailSignIn = false
+        router.closeSheets()
+        Task {
+            try? await Task.sleep(for: .milliseconds(450))
+            openShare = share
+        }
     }
 
     private var settingsContext: SettingsContext {

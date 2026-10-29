@@ -24,3 +24,20 @@ public enum ShareAutoAdd {
         add && signedIn && isTitle && !unavailable && !alreadyInLibrary
     }
 }
+
+/// What a share link's sheet does when its preview did not load. Only an unknown code (404) says
+/// the link doesn't work; offline, rate-limited or a server error offers a retry, and a failed
+/// reload after a save keeps the card already on screen.
+public enum ShareLoadFailure: Sendable, Equatable {
+    case missing
+    case retry
+    case keep
+
+    /// `status` is the HTTP status, nil when the request never got an answer.
+    public static func after(status: Int?, showingContent: Bool) -> ShareLoadFailure {
+        if showingContent {
+            return .keep
+        }
+        return status == 404 ? .missing : .retry
+    }
+}

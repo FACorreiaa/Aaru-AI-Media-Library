@@ -22,6 +22,7 @@ struct ShareLinkCodeTests {
         "https://aaruapp.com/i/abc",
         "https://aaruapp.com/s/ab-c",
         "https://aaruapp.com/s/" + String(repeating: "a", count: 33),
+        "https://aaruapp.com/s/../x",
     ])
     func refusesAnythingElse(_ link: String) throws {
         let url = try #require(URL(string: link))
@@ -57,5 +58,21 @@ struct ShareAutoAddTests {
             add: input.add, signedIn: input.signedIn, isTitle: input.isTitle,
             unavailable: input.unavailable, alreadyInLibrary: input.alreadyInLibrary
         ))
+    }
+}
+
+struct ShareLoadFailureTests {
+    @Test func unknownCodeIsMissing() {
+        #expect(ShareLoadFailure.after(status: 404, showingContent: false) == .missing)
+    }
+
+    @Test(arguments: [nil, 429, 500, 503] as [Int?])
+    func anythingElseOffersARetry(_ status: Int?) {
+        #expect(ShareLoadFailure.after(status: status, showingContent: false) == .retry)
+    }
+
+    @Test(arguments: [nil, 404, 429, 500] as [Int?])
+    func aFailedReloadKeepsTheCard(_ status: Int?) {
+        #expect(ShareLoadFailure.after(status: status, showingContent: true) == .keep)
     }
 }
