@@ -8,6 +8,13 @@ import (
 	"time"
 )
 
+type MusicArtist struct {
+	Musicbrainz string
+	Name        string
+	PerformerID *string
+	MatchedAt   *time.Time
+}
+
 type OauthClient struct {
 	ID           string
 	Name         string
