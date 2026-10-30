@@ -21,6 +21,10 @@ output-options:
         date-time:
           type: apitime.Time
           import: aaru-go-api/internal/apitime
+        # Uppercase ids, read leniently, as the Swift server did; see internal/apiid.
+        uuid:
+          type: apiid.UUID
+          import: aaru-go-api/internal/apiid
 compatibility:
   # Enum constants always carry their type's name (HealthStatusOk), so adding a
   # schema never renames an existing constant.

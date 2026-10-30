@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"aaru-go-api/internal/api"
+	"aaru-go-api/internal/apiid"
 	"aaru-go-api/internal/apitime"
 	"aaru-go-api/internal/apperr"
 	"aaru-go-api/internal/billing"
@@ -51,7 +52,7 @@ func (s *Server) ReceiveAppleNotification(ctx context.Context, req api.ReceiveAp
 }
 
 func entitlementDTO(state billing.State, userID uuid.UUID) api.Entitlement {
-	out := api.Entitlement{Plus: state.Plus != nil, AppAccountToken: userID}
+	out := api.Entitlement{Plus: state.Plus != nil, AppAccountToken: apiid.From(userID)}
 	if p := state.Plus; p != nil {
 		out.ProductId = &p.ProductID
 		if p.ExpiresAt != nil {

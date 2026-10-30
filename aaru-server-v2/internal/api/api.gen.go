@@ -4,6 +4,7 @@
 package api
 
 import (
+	"aaru-go-api/internal/apiid"
 	"aaru-go-api/internal/apitime"
 	"bytes"
 	"compress/flate"
@@ -1778,14 +1779,14 @@ type Action struct {
 	Actor ActionActor `json:"actor"`
 
 	// AgentName The connected app that made it (an agent token's name); absent for your own writes.
-	AgentName *string              `json:"agentName,omitempty"`
-	CreatedAt apitime.Time         `json:"createdAt"`
-	Id        openapi_types.UUID   `json:"id"`
-	ItemIds   []openapi_types.UUID `json:"itemIds"`
-	Kind      string               `json:"kind"`
-	Summary   string               `json:"summary"`
-	UndoOf    *openapi_types.UUID  `json:"undoOf,omitempty"`
-	UndoneAt  *apitime.Time        `json:"undoneAt,omitempty"`
+	AgentName *string       `json:"agentName,omitempty"`
+	CreatedAt apitime.Time  `json:"createdAt"`
+	Id        apiid.UUID    `json:"id"`
+	ItemIds   []apiid.UUID  `json:"itemIds"`
+	Kind      string        `json:"kind"`
+	Summary   string        `json:"summary"`
+	UndoOf    *apiid.UUID   `json:"undoOf,omitempty"`
+	UndoneAt  *apitime.Time `json:"undoneAt,omitempty"`
 }
 
 // ActionActor defines model for Action.Actor.
@@ -1857,11 +1858,11 @@ type AgentPlan struct {
 	AgentName string `json:"agentName"`
 	Changes   []struct {
 		// LibraryItemId Absent when the change adds the title.
-		LibraryItemId *string            `json:"libraryItemId,omitempty"`
-		PosterUrl     *string            `json:"posterUrl,omitempty"`
-		Text          string             `json:"text"`
-		Title         string             `json:"title"`
-		TitleId       openapi_types.UUID `json:"titleId"`
+		LibraryItemId *string    `json:"libraryItemId,omitempty"`
+		PosterUrl     *string    `json:"posterUrl,omitempty"`
+		Text          string     `json:"text"`
+		Title         string     `json:"title"`
+		TitleId       apiid.UUID `json:"titleId"`
 
 		// Type `album` (MUS-001) is a MusicBrainz release group of type Album or EP: status, rating and notes, no progress. `manga` (MNG-001) is one AniList work of type MANGA (manga, manhwa, manhua, one-shots and light novels), read by chapter and volume.
 		Type MediaType `json:"type"`
@@ -1872,12 +1873,12 @@ type AgentPlan struct {
 		Removes  int `json:"removes"`
 		Updates  int `json:"updates"`
 	} `json:"counts"`
-	CreatedAt apitime.Time       `json:"createdAt"`
-	DecidedAt *apitime.Time      `json:"decidedAt,omitempty"`
-	ExpiresAt apitime.Time       `json:"expiresAt"`
-	Id        openapi_types.UUID `json:"id"`
-	Status    AgentPlanStatus    `json:"status"`
-	Summary   string             `json:"summary"`
+	CreatedAt apitime.Time    `json:"createdAt"`
+	DecidedAt *apitime.Time   `json:"decidedAt,omitempty"`
+	ExpiresAt apitime.Time    `json:"expiresAt"`
+	Id        apiid.UUID      `json:"id"`
+	Status    AgentPlanStatus `json:"status"`
+	Summary   string          `json:"summary"`
 }
 
 // AgentPlanStatus defines model for AgentPlan.Status.
@@ -1911,8 +1912,8 @@ type AgentSetupStepsLanguage string
 
 // AgentToken defines model for AgentToken.
 type AgentToken struct {
-	CreatedAt apitime.Time       `json:"createdAt"`
-	Id        openapi_types.UUID `json:"id"`
+	CreatedAt apitime.Time `json:"createdAt"`
+	Id        apiid.UUID   `json:"id"`
 
 	// Kind Which outside caller a token is for. The MCP kinds differ only in the setup shown; they reach the same tools. `browser` is Aaru's browser extension and `music` a music scrobbler speaking ListenBrainz's protocol (MUS-005); both can only scrobble.
 	Kind AgentTokenKind `json:"kind"`
@@ -2032,9 +2033,9 @@ type BadgeAward struct {
 	Family BadgeFamily `json:"family"`
 
 	// Id The award; send it to /v1/me/badges/seen.
-	Id      openapi_types.UUID `json:"id"`
-	MaxTier int                `json:"maxTier"`
-	Name    string             `json:"name"`
+	Id      apiid.UUID `json:"id"`
+	MaxTier int        `json:"maxTier"`
+	Name    string     `json:"name"`
 
 	// Origin A live write (toast), an import or approved plan (one summary), or the first run.
 	Origin BadgeOrigin `json:"origin"`
@@ -2075,25 +2076,25 @@ type BoardComment struct {
 	Deleted   bool         `json:"deleted"`
 
 	// FromAgent Written by @aaru. It has no author.
-	FromAgent bool               `json:"fromAgent"`
-	Id        openapi_types.UUID `json:"id"`
+	FromAgent bool       `json:"fromAgent"`
+	Id        apiid.UUID `json:"id"`
 
 	// Mentions Friends the comment tags.
-	Mentions []openapi_types.UUID `json:"mentions"`
+	Mentions []apiid.UUID `json:"mentions"`
 
 	// MentionsAgent The comment tags @aaru. Recorded only; Aaru does not answer on the Board yet.
-	MentionsAgent bool               `json:"mentionsAgent"`
-	Mine          *bool              `json:"mine,omitempty"`
-	PostId        openapi_types.UUID `json:"postId"`
+	MentionsAgent bool       `json:"mentionsAgent"`
+	Mine          *bool      `json:"mine,omitempty"`
+	PostId        apiid.UUID `json:"postId"`
 
 	// ReplyTo The top-level comment this one answers. Never a reply itself.
-	ReplyTo *openapi_types.UUID `json:"replyTo,omitempty"`
+	ReplyTo *apiid.UUID `json:"replyTo,omitempty"`
 }
 
 // BoardCommentCreate defines model for BoardCommentCreate.
 type BoardCommentCreate struct {
-	Body    string              `json:"body"`
-	ReplyTo *openapi_types.UUID `json:"replyTo,omitempty"`
+	Body    string      `json:"body"`
+	ReplyTo *apiid.UUID `json:"replyTo,omitempty"`
 }
 
 // BoardCommentPage defines model for BoardCommentPage.
@@ -2101,18 +2102,18 @@ type BoardCommentPage struct {
 	Items []BoardComment `json:"items"`
 
 	// Next Pass as `after` for the next page. Null on the last page. A page can be empty or short with a `next` still set, because deleted and blocked rows are skipped after the page is cut; keep following it.
-	Next *openapi_types.UUID `json:"next,omitempty"`
+	Next *apiid.UUID `json:"next,omitempty"`
 }
 
 // BoardPost defines model for BoardPost.
 type BoardPost struct {
-	Author       SocialUser         `json:"author"`
-	Body         string             `json:"body"`
-	CommentCount int                `json:"commentCount"`
-	CreatedAt    apitime.Time       `json:"createdAt"`
-	EditedAt     *apitime.Time      `json:"editedAt,omitempty"`
-	Id           openapi_types.UUID `json:"id"`
-	Mine         bool               `json:"mine"`
+	Author       SocialUser    `json:"author"`
+	Body         string        `json:"body"`
+	CommentCount int           `json:"commentCount"`
+	CreatedAt    apitime.Time  `json:"createdAt"`
+	EditedAt     *apitime.Time `json:"editedAt,omitempty"`
+	Id           apiid.UUID    `json:"id"`
+	Mine         bool          `json:"mine"`
 
 	// Rating Needs a title.
 	Rating *float32 `json:"rating,omitempty"`
@@ -2176,12 +2177,12 @@ type CalendarEntry struct {
 	EpisodeName  *string      `json:"episodeName,omitempty"`
 
 	// EpisodeOverview The episode's synopsis, when the catalog has one (TMDB; AniList has none).
-	EpisodeOverview *string            `json:"episodeOverview,omitempty"`
-	Kind            CalendarEntryKind  `json:"kind"`
-	LibraryItemId   openapi_types.UUID `json:"libraryItemId"`
-	Number          int                `json:"number"`
-	RuntimeMinutes  *int               `json:"runtimeMinutes,omitempty"`
-	Season          int                `json:"season"`
+	EpisodeOverview *string           `json:"episodeOverview,omitempty"`
+	Kind            CalendarEntryKind `json:"kind"`
+	LibraryItemId   apiid.UUID        `json:"libraryItemId"`
+	Number          int               `json:"number"`
+	RuntimeMinutes  *int              `json:"runtimeMinutes,omitempty"`
+	Season          int               `json:"season"`
 
 	// StillUrl The episode's still image (TMDB), when the catalog has one.
 	StillUrl *string      `json:"stillUrl,omitempty"`
@@ -2218,7 +2219,7 @@ type CatalogHit struct {
 
 // Channel defines model for Channel.
 type Channel struct {
-	Id openapi_types.UUID `json:"id"`
+	Id apiid.UUID `json:"id"`
 
 	// IsDefault The #general every group starts with. Cannot be deleted.
 	IsDefault bool `json:"isDefault"`
@@ -2451,11 +2452,11 @@ type ConcertsNearRequestRadiusKm int
 // ContinueEntry defines model for ContinueEntry.
 type ContinueEntry struct {
 	// IsFinale The next episode is the last of its season.
-	IsFinale           bool               `json:"isFinale"`
-	LibraryItemId      openapi_types.UUID `json:"libraryItemId"`
-	Next               EpisodeRef         `json:"next"`
-	NextName           *string            `json:"nextName,omitempty"`
-	NextRuntimeMinutes *int               `json:"nextRuntimeMinutes,omitempty"`
+	IsFinale           bool       `json:"isFinale"`
+	LibraryItemId      apiid.UUID `json:"libraryItemId"`
+	Next               EpisodeRef `json:"next"`
+	NextName           *string    `json:"nextName,omitempty"`
+	NextRuntimeMinutes *int       `json:"nextRuntimeMinutes,omitempty"`
 
 	// RemainingCount Aired, unwatched episodes including the next one. Specials excluded.
 	RemainingCount   int          `json:"remainingCount"`
@@ -2525,7 +2526,7 @@ type DiscoverRows struct {
 // Entitlement defines model for Entitlement.
 type Entitlement struct {
 	// AppAccountToken What the Apple app sets as a purchase's `appAccountToken`.
-	AppAccountToken openapi_types.UUID `json:"appAccountToken"`
+	AppAccountToken apiid.UUID `json:"appAccountToken"`
 	Capture         struct {
 		// Limit The month's limit. Absent on Plus.
 		Limit    *int         `json:"limit,omitempty"`
@@ -2705,9 +2706,9 @@ type FriendProfile struct {
 
 // FriendRequest defines model for FriendRequest.
 type FriendRequest struct {
-	CreatedAt apitime.Time       `json:"createdAt"`
-	Id        openapi_types.UUID `json:"id"`
-	User      SocialUser         `json:"user"`
+	CreatedAt apitime.Time `json:"createdAt"`
+	Id        apiid.UUID   `json:"id"`
+	User      SocialUser   `json:"user"`
 }
 
 // FriendRequestCreate defines model for FriendRequestCreate.
@@ -2748,11 +2749,11 @@ type GroupDetail struct {
 
 // GroupInvite defines model for GroupInvite.
 type GroupInvite struct {
-	CreatedAt apitime.Time       `json:"createdAt"`
-	GroupId   openapi_types.UUID `json:"groupId"`
-	GroupName string             `json:"groupName"`
-	Id        openapi_types.UUID `json:"id"`
-	Inviter   SocialUser         `json:"inviter"`
+	CreatedAt apitime.Time `json:"createdAt"`
+	GroupId   apiid.UUID   `json:"groupId"`
+	GroupName string       `json:"groupName"`
+	Id        apiid.UUID   `json:"id"`
+	Inviter   SocialUser   `json:"inviter"`
 }
 
 // GroupInviteList defines model for GroupInviteList.
@@ -2786,8 +2787,8 @@ type GroupMessage struct {
 	Author *SocialUser `json:"author,omitempty"`
 
 	// Body Empty when deleted.
-	Body      string             `json:"body"`
-	ChannelId openapi_types.UUID `json:"channelId"`
+	Body      string     `json:"body"`
+	ChannelId apiid.UUID `json:"channelId"`
 
 	// ClientNonce Only on your own messages: the clientNonce you posted with, to match a pending send to its echo.
 	ClientNonce *string `json:"clientNonce,omitempty"`
@@ -2802,17 +2803,17 @@ type GroupMessage struct {
 	FromAgent bool `json:"fromAgent"`
 
 	// FromBlocked You blocked the author. Show it collapsed.
-	FromBlocked bool               `json:"fromBlocked"`
-	Id          openapi_types.UUID `json:"id"`
+	FromBlocked bool       `json:"fromBlocked"`
+	Id          apiid.UUID `json:"id"`
 
 	// Mentions Members the message tags.
-	Mentions []openapi_types.UUID `json:"mentions"`
+	Mentions []apiid.UUID `json:"mentions"`
 
 	// MentionsAgent The message tags @aaru.
 	MentionsAgent bool `json:"mentionsAgent"`
 
 	// ReplyTo The mention an @aaru reply answers.
-	ReplyTo *openapi_types.UUID `json:"replyTo,omitempty"`
+	ReplyTo *apiid.UUID `json:"replyTo,omitempty"`
 
 	// Spoiler How far into the title a reader must be to read the message unveiled. An episode, or the ending.
 	Spoiler *SpoilerStamp `json:"spoiler,omitempty"`
@@ -2831,8 +2832,8 @@ type GroupRole string
 
 // GroupSummary defines model for GroupSummary.
 type GroupSummary struct {
-	DefaultChannelId openapi_types.UUID `json:"defaultChannelId"`
-	Id               openapi_types.UUID `json:"id"`
+	DefaultChannelId apiid.UUID `json:"defaultChannelId"`
+	Id               apiid.UUID `json:"id"`
 
 	// Mentions Unread messages that tag you.
 	Mentions int `json:"mentions"`
@@ -2866,13 +2867,13 @@ type ImportDetail struct {
 // ImportJob defines model for ImportJob.
 type ImportJob struct {
 	// ActionId The action that applied the plan, once approved and if it wrote anything. Undo it with POST /v1/actions/{id}/undo.
-	ActionId     *openapi_types.UUID `json:"actionId,omitempty"`
-	CreatedAt    apitime.Time        `json:"createdAt"`
-	ErrorSummary *string             `json:"errorSummary,omitempty"`
+	ActionId     *apiid.UUID  `json:"actionId,omitempty"`
+	CreatedAt    apitime.Time `json:"createdAt"`
+	ErrorSummary *string      `json:"errorSummary,omitempty"`
 
 	// Filename The uploaded file's name, or the username for an `anilist`, `lastfm` or `listenbrainz` import.
-	Filename *string            `json:"filename,omitempty"`
-	Id       openapi_types.UUID `json:"id"`
+	Filename *string    `json:"filename,omitempty"`
+	Id       apiid.UUID `json:"id"`
 
 	// RowsMatched Rows matched so far while `running` (IMP-017); back to 0 when a failed attempt is retried. With `rowsTotal` it is the import's progress.
 	RowsMatched int `json:"rowsMatched"`
@@ -2913,9 +2914,9 @@ type ImportRow struct {
 	SourceKey *string          `json:"sourceKey,omitempty"`
 
 	// Status Consumption only. `on_hold` is paused on purpose (LIB-007): it ranks with `in_progress` for imports, is left off Up Next, Tonight, the calendar and airing alerts, and a new tick moves it back to `in_progress`. Labels are per kind; `on_hold` reads "On hold" for every kind.
-	Status  *LibraryStatus      `json:"status,omitempty"`
-	Title   string              `json:"title"`
-	TitleId *openapi_types.UUID `json:"titleId,omitempty"`
+	Status  *LibraryStatus `json:"status,omitempty"`
+	Title   string         `json:"title"`
+	TitleId *apiid.UUID    `json:"titleId,omitempty"`
 
 	// Type `album` (MUS-001) is a MusicBrainz release group of type Album or EP: status, rating and notes, no progress. `manga` (MNG-001) is one AniList work of type MANGA (manga, manhwa, manhua, one-shots and light novels), read by chapter and volume.
 	Type MediaType `json:"type"`
@@ -3003,10 +3004,10 @@ type LibraryCounts struct {
 
 // LibraryEntry defines model for LibraryEntry.
 type LibraryEntry struct {
-	AddedAt      apitime.Time       `json:"addedAt"`
-	BookProgress *BookProgress      `json:"bookProgress,omitempty"`
-	FinishedAt   *apitime.Time      `json:"finishedAt,omitempty"`
-	Id           openapi_types.UUID `json:"id"`
+	AddedAt      apitime.Time  `json:"addedAt"`
+	BookProgress *BookProgress `json:"bookProgress,omitempty"`
+	FinishedAt   *apitime.Time `json:"finishedAt,omitempty"`
+	Id           apiid.UUID    `json:"id"`
 
 	// InBacklog APP-018 · an anime in progress the user never touched in Aaru: its status came from an import and it has no tick made in Aaru. Derived on every read; the status stays `in_progress`. Library's Now leaves these out of Watching.
 	InBacklog bool `json:"inBacklog"`
@@ -3073,15 +3074,15 @@ type LibraryStatus string
 
 // LibrarySync defines model for LibrarySync.
 type LibrarySync struct {
-	Deleted []openapi_types.UUID `json:"deleted"`
-	Items   []LibraryEntry       `json:"items"`
-	Token   string               `json:"token"`
+	Deleted []apiid.UUID   `json:"deleted"`
+	Items   []LibraryEntry `json:"items"`
+	Token   string         `json:"token"`
 }
 
 // ListDetail defines model for ListDetail.
 type ListDetail struct {
-	CreatedAt apitime.Time       `json:"createdAt"`
-	Id        openapi_types.UUID `json:"id"`
+	CreatedAt apitime.Time `json:"createdAt"`
+	Id        apiid.UUID   `json:"id"`
 
 	// Items The members in list order.
 	Items []ListItem `json:"items"`
@@ -3110,16 +3111,16 @@ type ListList struct {
 
 // ListOrder defines model for ListOrder.
 type ListOrder struct {
-	TitleIds []openapi_types.UUID `json:"titleIds"`
+	TitleIds []apiid.UUID `json:"titleIds"`
 }
 
 // ListSummary defines model for ListSummary.
 type ListSummary struct {
-	CreatedAt apitime.Time       `json:"createdAt"`
-	Id        openapi_types.UUID `json:"id"`
-	ItemCount int                `json:"itemCount"`
-	Name      string             `json:"name"`
-	UpdatedAt apitime.Time       `json:"updatedAt"`
+	CreatedAt apitime.Time `json:"createdAt"`
+	Id        apiid.UUID   `json:"id"`
+	ItemCount int          `json:"itemCount"`
+	Name      string       `json:"name"`
+	UpdatedAt apitime.Time `json:"updatedAt"`
 }
 
 // Listen One play of a track a scrobbler sent (MUS-005). Never a library item: listening does not change the library.
@@ -3213,7 +3214,7 @@ type LiveActivityRegistration struct {
 
 	// WatchEventId Ignored since SCR-009, when one activity shows everything playing.
 	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
-	WatchEventId *openapi_types.UUID `json:"watchEventId,omitempty"`
+	WatchEventId *apiid.UUID `json:"watchEventId,omitempty"`
 }
 
 // LiveActivityRegistrationEnvironment defines model for LiveActivityRegistration.Environment.
@@ -3291,10 +3292,10 @@ type Me struct {
 	FirstName      *string `json:"firstName,omitempty"`
 
 	// Handle Absent until the user claims one in PUT /v1/me/profile.
-	Handle    *string            `json:"handle,omitempty"`
-	LastName  *string            `json:"lastName,omitempty"`
-	Providers []MeProviders      `json:"providers"`
-	UserId    openapi_types.UUID `json:"userId"`
+	Handle    *string       `json:"handle,omitempty"`
+	LastName  *string       `json:"lastName,omitempty"`
+	Providers []MeProviders `json:"providers"`
+	UserId    apiid.UUID    `json:"userId"`
 }
 
 // MeProviders defines model for Me.Providers.
@@ -3303,9 +3304,9 @@ type MeProviders string
 // MediaRef A title by Aaru id, by provider ids, or by title + year.
 type MediaRef struct {
 	// Ids Provider identifiers known for a title. Absent means unknown.
-	Ids     *ExternalIds        `json:"ids,omitempty"`
-	Title   *string             `json:"title,omitempty"`
-	TitleId *openapi_types.UUID `json:"titleId,omitempty"`
+	Ids     *ExternalIds `json:"ids,omitempty"`
+	Title   *string      `json:"title,omitempty"`
+	TitleId *apiid.UUID  `json:"titleId,omitempty"`
 
 	// Type `album` (MUS-001) is a MusicBrainz release group of type Album or EP: status, rating and notes, no progress. `manga` (MNG-001) is one AniList work of type MANGA (manga, manhwa, manhua, one-shots and light novels), read by chapter and volume.
 	Type MediaType `json:"type"`
@@ -3417,15 +3418,15 @@ type NowPlaying struct {
 	EpisodeName *string     `json:"episodeName,omitempty"`
 
 	// LibraryItemId Absent when the title is not in the library yet.
-	LibraryItemId *openapi_types.UUID `json:"libraryItemId,omitempty"`
+	LibraryItemId *apiid.UUID `json:"libraryItemId,omitempty"`
 
 	// PositionMs Where the player was at `updatedAt`.
-	PositionMs   int64              `json:"positionMs"`
-	Source       NowPlayingSource   `json:"source"`
-	State        NowPlayingState    `json:"state"`
-	Title        TitleSummary       `json:"title"`
-	UpdatedAt    apitime.Time       `json:"updatedAt"`
-	WatchEventId openapi_types.UUID `json:"watchEventId"`
+	PositionMs   int64            `json:"positionMs"`
+	Source       NowPlayingSource `json:"source"`
+	State        NowPlayingState  `json:"state"`
+	Title        TitleSummary     `json:"title"`
+	UpdatedAt    apitime.Time     `json:"updatedAt"`
+	WatchEventId apiid.UUID       `json:"watchEventId"`
 }
 
 // NowPlayingSource defines model for NowPlaying.Source.
@@ -3448,7 +3449,7 @@ type NowPlayingItem struct {
 	Kind NowPlayingItemKind `json:"kind"`
 
 	// LibraryItemId Episodes and movies, always in the library.
-	LibraryItemId *openapi_types.UUID `json:"libraryItemId,omitempty"`
+	LibraryItemId *apiid.UUID `json:"libraryItemId,omitempty"`
 
 	// Name The show, film, track or video name.
 	Name string `json:"name"`
@@ -3489,9 +3490,9 @@ type NowPlayingReply struct {
 // OAuthConsentRequest defines model for OAuthConsentRequest.
 type OAuthConsentRequest struct {
 	// ClientName The name the app registered with. Apps name themselves; show the host too.
-	ClientName string             `json:"clientName"`
-	ExpiresAt  apitime.Time       `json:"expiresAt"`
-	Id         openapi_types.UUID `json:"id"`
+	ClientName string       `json:"clientName"`
+	ExpiresAt  apitime.Time `json:"expiresAt"`
+	Id         apiid.UUID   `json:"id"`
 
 	// Kind Which outside caller a token is for. The MCP kinds differ only in the setup shown; they reach the same tools. `browser` is Aaru's browser extension and `music` a music scrobbler speaking ListenBrainz's protocol (MUS-005); both can only scrobble.
 	Kind AgentTokenKind `json:"kind"`
@@ -3549,7 +3550,7 @@ type PageInfo struct {
 type PointsEventItem struct {
 	At  apitime.Time       `json:"at"`
 	Day openapi_types.Date `json:"day"`
-	Id  openapi_types.UUID `json:"id"`
+	Id  apiid.UUID         `json:"id"`
 
 	// Kind episode, movie_finished, book_finished, album_finished, season_bonus, scrobble_bonus, book_progress, listen, room_attended, friend_added, import_first, streak_milestone
 	Kind   string `json:"kind"`
@@ -3656,16 +3657,16 @@ type ReactionSetEmoji string
 
 // ReadMark defines model for ReadMark.
 type ReadMark struct {
-	MessageId openapi_types.UUID `json:"messageId"`
+	MessageId apiid.UUID `json:"messageId"`
 }
 
 // RealtimeCommand One frame a client sends on GET /v1/ws. At most one typing frame per channel every 3 seconds, and one reaction a second, counts.
 type RealtimeCommand struct {
-	ChannelId openapi_types.UUID `json:"channelId"`
+	ChannelId apiid.UUID `json:"channelId"`
 
 	// Emoji react only: one of 😂 😱 😭 ❤️ 👏 🔥.
 	Emoji   *string             `json:"emoji,omitempty"`
-	GroupId openapi_types.UUID  `json:"groupId"`
+	GroupId apiid.UUID          `json:"groupId"`
 	Type    RealtimeCommandType `json:"type"`
 }
 
@@ -3674,17 +3675,17 @@ type RealtimeCommandType string
 
 // RealtimeEvent One frame from GET /v1/ws (a WebSocket). The socket is never the source of truth: on `ready` (every connect and reconnect), refetch what is on screen with REST.
 type RealtimeEvent struct {
-	ChannelId *openapi_types.UUID `json:"channelId,omitempty"`
+	ChannelId *apiid.UUID `json:"channelId,omitempty"`
 
 	// Emoji watch.reaction only.
-	Emoji   *string             `json:"emoji,omitempty"`
-	GroupId *openapi_types.UUID `json:"groupId,omitempty"`
-	Message *GroupMessage       `json:"message,omitempty"`
+	Emoji   *string       `json:"emoji,omitempty"`
+	GroupId *apiid.UUID   `json:"groupId,omitempty"`
+	Message *GroupMessage `json:"message,omitempty"`
 
 	// MessageId agent.thinking: the mention being answered.
-	MessageId *openapi_types.UUID `json:"messageId,omitempty"`
-	Type      RealtimeEventType   `json:"type"`
-	User      *SocialUser         `json:"user,omitempty"`
+	MessageId *apiid.UUID       `json:"messageId,omitempty"`
+	Type      RealtimeEventType `json:"type"`
+	User      *SocialUser       `json:"user,omitempty"`
 }
 
 // RealtimeEventType defines model for RealtimeEvent.Type.
@@ -3704,17 +3705,17 @@ type RecommendationCreate struct {
 	Note *string `json:"note,omitempty"`
 
 	// Title A title by Aaru id, by provider ids, or by title + year.
-	Title MediaRef             `json:"title"`
-	To    []openapi_types.UUID `json:"to"`
+	Title MediaRef     `json:"title"`
+	To    []apiid.UUID `json:"to"`
 }
 
 // RecommendationItem defines model for RecommendationItem.
 type RecommendationItem struct {
-	CreatedAt apitime.Time       `json:"createdAt"`
-	From      SocialUser         `json:"from"`
-	Id        openapi_types.UUID `json:"id"`
-	Note      *string            `json:"note,omitempty"`
-	Title     TitleSummary       `json:"title"`
+	CreatedAt apitime.Time `json:"createdAt"`
+	From      SocialUser   `json:"from"`
+	Id        apiid.UUID   `json:"id"`
+	Note      *string      `json:"note,omitempty"`
+	Title     TitleSummary `json:"title"`
 }
 
 // RecommendationList defines model for RecommendationList.
@@ -3731,7 +3732,7 @@ type RenameList struct {
 type ReportCreate struct {
 	Note   *string            `json:"note,omitempty"`
 	Reason ReportCreateReason `json:"reason"`
-	UserId openapi_types.UUID `json:"userId"`
+	UserId apiid.UUID         `json:"userId"`
 }
 
 // ReportCreateReason defines model for ReportCreate.Reason.
@@ -3788,8 +3789,8 @@ type Session struct {
 	ExpiresAt apitime.Time `json:"expiresAt"`
 
 	// Token Bearer token, sent in the Authorization header as `Bearer <token>`.
-	Token  string             `json:"token"`
-	UserId openapi_types.UUID `json:"userId"`
+	Token  string     `json:"token"`
+	UserId apiid.UUID `json:"userId"`
 }
 
 // ShareCreate defines model for ShareCreate.
@@ -3816,7 +3817,7 @@ type SharePreview struct {
 	Kind    ShareKind    `json:"kind"`
 
 	// LibraryItemId The signed-in viewer's own item for a shared title, when they have it.
-	LibraryItemId *openapi_types.UUID `json:"libraryItemId,omitempty"`
+	LibraryItemId *apiid.UUID `json:"libraryItemId,omitempty"`
 
 	// SportEvent One match, game or card (a UFC or WWE event has no home and away). Catalog data, kept no longer than the cache.
 	SportEvent *SportEvent `json:"sportEvent,omitempty"`
@@ -3848,17 +3849,17 @@ type ShareTargetInput struct {
 // Shelf defines model for Shelf.
 type Shelf struct {
 	// Filter The same filters GET /v1/library/items accepts.
-	Filter   ShelfFilter        `json:"filter"`
-	Id       openapi_types.UUID `json:"id"`
-	IsPinned bool               `json:"isPinned"`
-	Name     string             `json:"name"`
+	Filter   ShelfFilter `json:"filter"`
+	Id       apiid.UUID  `json:"id"`
+	IsPinned bool        `json:"isPinned"`
+	Name     string      `json:"name"`
 }
 
 // ShelfFilter The same filters GET /v1/library/items accepts.
 type ShelfFilter struct {
-	Anime *bool               `json:"anime,omitempty"`
-	List  *openapi_types.UUID `json:"list,omitempty"`
-	Owned *bool               `json:"owned,omitempty"`
+	Anime *bool       `json:"anime,omitempty"`
+	List  *apiid.UUID `json:"list,omitempty"`
+	Owned *bool       `json:"owned,omitempty"`
 
 	// Status Consumption only. `on_hold` is paused on purpose (LIB-007): it ranks with `in_progress` for imports, is left off Up Next, Tonight, the calendar and airing alerts, and a new tick moves it back to `in_progress`. Labels are per kind; `on_hold` reads "On hold" for every kind.
 	Status *LibraryStatus `json:"status,omitempty"`
@@ -3906,10 +3907,10 @@ type SocialSettings struct {
 // SocialUser defines model for SocialUser.
 type SocialUser struct {
 	// AvatarUrl Path to `GET /v1/users/{userId}/avatar` with its version (SOC-001b). Absent without an avatar, and never on a route a signed-out caller can read.
-	AvatarUrl   *string            `json:"avatarUrl,omitempty"`
-	DisplayName *string            `json:"displayName,omitempty"`
-	Handle      string             `json:"handle"`
-	UserId      openapi_types.UUID `json:"userId"`
+	AvatarUrl   *string    `json:"avatarUrl,omitempty"`
+	DisplayName *string    `json:"displayName,omitempty"`
+	Handle      string     `json:"handle"`
+	UserId      apiid.UUID `json:"userId"`
 }
 
 // SocialUserList defines model for SocialUserList.
@@ -4097,9 +4098,9 @@ type SportsExport struct {
 
 // StartEntry defines model for StartEntry.
 type StartEntry struct {
-	LibraryItemId  openapi_types.UUID `json:"libraryItemId"`
-	RuntimeMinutes *int               `json:"runtimeMinutes,omitempty"`
-	Title          TitleSummary       `json:"title"`
+	LibraryItemId  apiid.UUID   `json:"libraryItemId"`
+	RuntimeMinutes *int         `json:"runtimeMinutes,omitempty"`
+	Title          TitleSummary `json:"title"`
 }
 
 // Stats `busiest` is the bucket with the most time (minutes, then episodes, then finishes). `mostEpisodes` is the bucket with the most episodes; it is absent when no episodes were watched or the top count is shared, so a tie names no winner. `prior` is the totals of the equal-length window just before a rolling span, for deltas; it is absent for calendar spans. `biggestDay` is the single local day with the most time (then episodes), the earliest on a tie.
@@ -4304,8 +4305,8 @@ type TitleDetail struct {
 	Byline *string `json:"byline,omitempty"`
 
 	// Genres Albums only (MUS-001), at most five, most tagged first.
-	Genres *[]string          `json:"genres,omitempty"`
-	Id     openapi_types.UUID `json:"id"`
+	Genres *[]string  `json:"genres,omitempty"`
+	Id     apiid.UUID `json:"id"`
 
 	// Ids Provider identifiers known for a title. Absent means unknown.
 	Ids            ExternalIds `json:"ids"`
@@ -4334,8 +4335,8 @@ type TitleDetailStatus string
 // TitlePreview defines model for TitlePreview.
 type TitlePreview struct {
 	// LibraryItemId Set when the title is in the caller's library; its title page is then the one to open.
-	LibraryItemId *openapi_types.UUID `json:"libraryItemId,omitempty"`
-	Title         TitleDetail         `json:"title"`
+	LibraryItemId *apiid.UUID `json:"libraryItemId,omitempty"`
+	Title         TitleDetail `json:"title"`
 }
 
 // TitleSummary defines model for TitleSummary.
@@ -4347,8 +4348,8 @@ type TitleSummary struct {
 	Byline *string `json:"byline,omitempty"`
 
 	// ChapterCount Manga only, once AniList knows it (absent while a series runs).
-	ChapterCount *int               `json:"chapterCount,omitempty"`
-	Id           openapi_types.UUID `json:"id"`
+	ChapterCount *int       `json:"chapterCount,omitempty"`
+	Id           apiid.UUID `json:"id"`
 
 	// Ids Provider identifiers known for a title. Absent means unknown.
 	Ids     ExternalIds `json:"ids"`
@@ -4394,9 +4395,9 @@ type TonightPick struct {
 	EpisodeName  *string       `json:"episodeName,omitempty"`
 
 	// Kind continue: the next aired episode of a show in progress. airing: an episode airing today. reading: a book in progress. start: a wishlist film.
-	Kind          TonightPickKind    `json:"kind"`
-	LibraryItemId openapi_types.UUID `json:"libraryItemId"`
-	Minutes       *int               `json:"minutes,omitempty"`
+	Kind          TonightPickKind `json:"kind"`
+	LibraryItemId apiid.UUID      `json:"libraryItemId"`
+	Minutes       *int            `json:"minutes,omitempty"`
 
 	// Reason Why it is here, e.g. "52 min · 3 left" or "Airs 21:00 · 44 min".
 	Reason string       `json:"reason"`
@@ -4426,8 +4427,8 @@ type TraktConnection struct {
 
 // UnfinishedEntry defines model for UnfinishedEntry.
 type UnfinishedEntry struct {
-	LibraryItemId openapi_types.UUID `json:"libraryItemId"`
-	Next          *EpisodeRef        `json:"next,omitempty"`
+	LibraryItemId apiid.UUID  `json:"libraryItemId"`
+	Next          *EpisodeRef `json:"next,omitempty"`
 
 	// Reason `dropped` is the status; `stalled` is in progress and untouched for 30 days.
 	Reason UnfinishedEntryReason `json:"reason"`
@@ -4472,20 +4473,20 @@ type UpdateShelf struct {
 
 // UserRef defines model for UserRef.
 type UserRef struct {
-	UserId openapi_types.UUID `json:"userId"`
+	UserId apiid.UUID `json:"userId"`
 }
 
 // WatchParty defines model for WatchParty.
 type WatchParty struct {
-	EndedAt  *apitime.Time      `json:"endedAt,omitempty"`
-	Episode  *int               `json:"episode,omitempty"`
-	Host     *SocialUser        `json:"host,omitempty"`
-	Id       openapi_types.UUID `json:"id"`
-	Ready    []SocialUser       `json:"ready"`
-	Season   *int               `json:"season,omitempty"`
-	StartsAt *apitime.Time      `json:"startsAt,omitempty"`
-	State    WatchPartyState    `json:"state"`
-	Title    TitleSummary       `json:"title"`
+	EndedAt  *apitime.Time   `json:"endedAt,omitempty"`
+	Episode  *int            `json:"episode,omitempty"`
+	Host     *SocialUser     `json:"host,omitempty"`
+	Id       apiid.UUID      `json:"id"`
+	Ready    []SocialUser    `json:"ready"`
+	Season   *int            `json:"season,omitempty"`
+	StartsAt *apitime.Time   `json:"startsAt,omitempty"`
+	State    WatchPartyState `json:"state"`
+	Title    TitleSummary    `json:"title"`
 }
 
 // WatchPartyState defines model for WatchParty.State.
@@ -4604,7 +4605,7 @@ type ListBoardParams struct {
 	Sort *ListBoardParamsSort `form:"sort,omitempty" json:"sort,omitempty"`
 
 	// Before Posts older than this one. Ignored by `top`.
-	Before *openapi_types.UUID `form:"before,omitempty" json:"before,omitempty"`
+	Before *apiid.UUID `form:"before,omitempty" json:"before,omitempty"`
 
 	// Limit 1–50, default 20.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
@@ -4616,8 +4617,8 @@ type ListBoardParamsSort string
 // ListBoardCommentsParams defines parameters for ListBoardComments.
 type ListBoardCommentsParams struct {
 	// After The id of the last comment seen.
-	After *openapi_types.UUID `form:"after,omitempty" json:"after,omitempty"`
-	Limit *int                `form:"limit,omitempty" json:"limit,omitempty"`
+	After *apiid.UUID `form:"after,omitempty" json:"after,omitempty"`
+	Limit *int        `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // GetCalendarParams defines parameters for GetCalendar.
@@ -4659,10 +4660,10 @@ type GetDiscoverSeasonParamsSeason string
 // ListMessagesParams defines parameters for ListMessages.
 type ListMessagesParams struct {
 	// Before Messages older than this one.
-	Before *openapi_types.UUID `form:"before,omitempty" json:"before,omitempty"`
+	Before *apiid.UUID `form:"before,omitempty" json:"before,omitempty"`
 
 	// After Messages newer than this one.
-	After *openapi_types.UUID `form:"after,omitempty" json:"after,omitempty"`
+	After *apiid.UUID `form:"after,omitempty" json:"after,omitempty"`
 
 	// Limit 1–100, default 50.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
@@ -4688,11 +4689,11 @@ type ResolveImportRowJSONBody struct {
 
 // ListLibraryItemsParams defines parameters for ListLibraryItems.
 type ListLibraryItemsParams struct {
-	Type   *MediaType          `form:"type,omitempty" json:"type,omitempty"`
-	Anime  *bool               `form:"anime,omitempty" json:"anime,omitempty"`
-	Status *LibraryStatus      `form:"status,omitempty" json:"status,omitempty"`
-	Owned  *bool               `form:"owned,omitempty" json:"owned,omitempty"`
-	List   *openapi_types.UUID `form:"list,omitempty" json:"list,omitempty"`
+	Type   *MediaType     `form:"type,omitempty" json:"type,omitempty"`
+	Anime  *bool          `form:"anime,omitempty" json:"anime,omitempty"`
+	Status *LibraryStatus `form:"status,omitempty" json:"status,omitempty"`
+	Owned  *bool          `form:"owned,omitempty" json:"owned,omitempty"`
+	List   *apiid.UUID    `form:"list,omitempty" json:"list,omitempty"`
 
 	// Cursor Opaque cursor from a previous page's `page.nextCursor`.
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
@@ -4706,7 +4707,7 @@ type SyncLibraryParams struct {
 
 // MarkBadgesSeenJSONBody defines parameters for MarkBadgesSeen.
 type MarkBadgesSeenJSONBody struct {
-	Ids []openapi_types.UUID `json:"ids"`
+	Ids []apiid.UUID `json:"ids"`
 }
 
 // ExportAccountParams defines parameters for ExportAccount.
@@ -5082,7 +5083,7 @@ type ServerInterface interface {
 	ListActions(ctx echo.Context, params ListActionsParams) error
 	// UndoAction Apply an action's inverse. Journaled as its own action; undoing twice is 409.
 	// (POST /v1/actions/{id}/undo)
-	UndoAction(ctx echo.Context, id openapi_types.UUID) error
+	UndoAction(ctx echo.Context, id apiid.UUID) error
 	// ListFriendActivity Your friends' last two weeks, newest first, one row per friend, title and day. Only dated episode ticks and finishes; imports never show. Friends who hide their library are left out.
 	// (GET /v1/activity)
 	ListFriendActivity(ctx echo.Context, params ListFriendActivityParams) error
@@ -5103,7 +5104,7 @@ type ServerInterface interface {
 	CreateAgentToken(ctx echo.Context) error
 	// RevokeAgentToken Revoke a token. Its addon stops answering at once.
 	// (DELETE /v1/agent/tokens/{id})
-	RevokeAgentToken(ctx echo.Context, id openapi_types.UUID) error
+	RevokeAgentToken(ctx echo.Context, id apiid.UUID) error
 	// SignInWithApple Exchange a Sign in with Apple identity token for a session.
 	// (POST /v1/auth/apple)
 	SignInWithApple(ctx echo.Context) error
@@ -5133,31 +5134,31 @@ type ServerInterface interface {
 	CreateBoardPost(ctx echo.Context) error
 	// DeleteBoardPost Delete your own post.
 	// (DELETE /v1/board/posts/{postId})
-	DeleteBoardPost(ctx echo.Context, postId openapi_types.UUID) error
+	DeleteBoardPost(ctx echo.Context, postId apiid.UUID) error
 	// GetBoardPost One post. 404 unless it is yours or a friend's.
 	// (GET /v1/board/posts/{postId})
-	GetBoardPost(ctx echo.Context, postId openapi_types.UUID) error
+	GetBoardPost(ctx echo.Context, postId apiid.UUID) error
 	// EditBoardPost Edit your own post.
 	// (PATCH /v1/board/posts/{postId})
-	EditBoardPost(ctx echo.Context, postId openapi_types.UUID) error
+	EditBoardPost(ctx echo.Context, postId apiid.UUID) error
 	// ListBoardComments Comments on a post, oldest first, minus anyone blocked either way with you. A deleted comment with replies stays as an empty row; one without is dropped. A page can come back shorter than the limit.
 	// (GET /v1/board/posts/{postId}/comments)
-	ListBoardComments(ctx echo.Context, postId openapi_types.UUID, params ListBoardCommentsParams) error
+	ListBoardComments(ctx echo.Context, postId apiid.UUID, params ListBoardCommentsParams) error
 	// CreateBoardComment Comment on a post. A reply to a reply hangs off the top-level comment. 404 unless the post is yours or a friend's.
 	// (POST /v1/board/posts/{postId}/comments)
-	CreateBoardComment(ctx echo.Context, postId openapi_types.UUID) error
+	CreateBoardComment(ctx echo.Context, postId apiid.UUID) error
 	// DeleteBoardComment Delete a comment. Its author or the post's author can.
 	// (DELETE /v1/board/posts/{postId}/comments/{commentId})
-	DeleteBoardComment(ctx echo.Context, postId openapi_types.UUID, commentId openapi_types.UUID) error
+	DeleteBoardComment(ctx echo.Context, postId apiid.UUID, commentId apiid.UUID) error
 	// RemoveBoardPostUpvote Take your upvote back. Fine if you never gave one.
 	// (DELETE /v1/board/posts/{postId}/upvote)
-	RemoveBoardPostUpvote(ctx echo.Context, postId openapi_types.UUID) error
+	RemoveBoardPostUpvote(ctx echo.Context, postId apiid.UUID) error
 	// UpvoteBoardPost Upvote a post. Upvoting twice counts once. 404 unless the post is yours or a friend's.
 	// (PUT /v1/board/posts/{postId}/upvote)
-	UpvoteBoardPost(ctx echo.Context, postId openapi_types.UUID) error
+	UpvoteBoardPost(ctx echo.Context, postId apiid.UUID) error
 	// ListBoardPostUpvoters Who upvoted a post, minus anyone blocked either way with you.
 	// (GET /v1/board/posts/{postId}/upvotes)
-	ListBoardPostUpvoters(ctx echo.Context, postId openapi_types.UUID) error
+	ListBoardPostUpvoters(ctx echo.Context, postId apiid.UUID) error
 	// GetCalendar Episodes of tracked shows airing in [from, to), at most 42 days (a month grid). Times are UTC.
 	// (GET /v1/calendar)
 	GetCalendar(ctx echo.Context, params GetCalendarParams) error
@@ -5208,10 +5209,10 @@ type ServerInterface interface {
 	GetDiscoverSeason(ctx echo.Context, params GetDiscoverSeasonParams) error
 	// DeclineGroupInvite Decline an invite to you, or cancel one you sent.
 	// (DELETE /v1/group-invites/{id})
-	DeclineGroupInvite(ctx echo.Context, id openapi_types.UUID) error
+	DeclineGroupInvite(ctx echo.Context, id apiid.UUID) error
 	// AcceptGroupInvite Join the group.
 	// (POST /v1/group-invites/{id}/accept)
-	AcceptGroupInvite(ctx echo.Context, id openapi_types.UUID) error
+	AcceptGroupInvite(ctx echo.Context, id apiid.UUID) error
 	// ListGroups Your groups, in the order you joined them, with unread and mention counts.
 	// (GET /v1/groups)
 	ListGroups(ctx echo.Context) error
@@ -5220,82 +5221,82 @@ type ServerInterface interface {
 	CreateGroup(ctx echo.Context) error
 	// DeleteGroup Delete the group, its channels and every message. Owner only.
 	// (DELETE /v1/groups/{groupId})
-	DeleteGroup(ctx echo.Context, groupId openapi_types.UUID) error
+	DeleteGroup(ctx echo.Context, groupId apiid.UUID) error
 	// GetGroup A group you are in, with its channels, members and pending invites. 404 to anyone else.
 	// (GET /v1/groups/{groupId})
-	GetGroup(ctx echo.Context, groupId openapi_types.UUID) error
+	GetGroup(ctx echo.Context, groupId apiid.UUID) error
 	// UpdateGroup Rename the group. Owner and admins.
 	// (PATCH /v1/groups/{groupId})
-	UpdateGroup(ctx echo.Context, groupId openapi_types.UUID) error
+	UpdateGroup(ctx echo.Context, groupId apiid.UUID) error
 	// CreateChannel Add a text channel. Owner and admins.
 	// (POST /v1/groups/{groupId}/channels)
-	CreateChannel(ctx echo.Context, groupId openapi_types.UUID) error
+	CreateChannel(ctx echo.Context, groupId apiid.UUID) error
 	// DeleteChannel Delete a channel and its messages. The first channel stays. Owner and admins.
 	// (DELETE /v1/groups/{groupId}/channels/{channelId})
-	DeleteChannel(ctx echo.Context, groupId openapi_types.UUID, channelId openapi_types.UUID) error
+	DeleteChannel(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
 	// UpdateChannel Rename a channel or set its topic. Owner and admins.
 	// (PATCH /v1/groups/{groupId}/channels/{channelId})
-	UpdateChannel(ctx echo.Context, groupId openapi_types.UUID, channelId openapi_types.UUID) error
+	UpdateChannel(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
 	// ListChannelItems A shelf channel's titles, with your own library status for each.
 	// (GET /v1/groups/{groupId}/channels/{channelId}/items)
-	ListChannelItems(ctx echo.Context, groupId openapi_types.UUID, channelId openapi_types.UUID) error
+	ListChannelItems(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
 	// AddChannelItem Add a title to a shelf channel. Any member can; adding one already there changes nothing.
 	// (POST /v1/groups/{groupId}/channels/{channelId}/items)
-	AddChannelItem(ctx echo.Context, groupId openapi_types.UUID, channelId openapi_types.UUID) error
+	AddChannelItem(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
 	// RemoveChannelItem Take a title off a shelf channel. Any member can.
 	// (DELETE /v1/groups/{groupId}/channels/{channelId}/items/{titleId})
-	RemoveChannelItem(ctx echo.Context, groupId openapi_types.UUID, channelId openapi_types.UUID, titleId openapi_types.UUID) error
+	RemoveChannelItem(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID, titleId apiid.UUID) error
 	// ListMessages Messages oldest first. Without a cursor, the latest page.
 	// (GET /v1/groups/{groupId}/channels/{channelId}/messages)
-	ListMessages(ctx echo.Context, groupId openapi_types.UUID, channelId openapi_types.UUID, params ListMessagesParams) error
+	ListMessages(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID, params ListMessagesParams) error
 	// PostMessage Post a message. A retry with the same clientNonce returns the first message.
 	// (POST /v1/groups/{groupId}/channels/{channelId}/messages)
-	PostMessage(ctx echo.Context, groupId openapi_types.UUID, channelId openapi_types.UUID) error
+	PostMessage(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
 	// DeleteMessage Delete your message, or any message as owner or admin. The row stays, empty.
 	// (DELETE /v1/groups/{groupId}/channels/{channelId}/messages/{messageId})
-	DeleteMessage(ctx echo.Context, groupId openapi_types.UUID, channelId openapi_types.UUID, messageId openapi_types.UUID) error
+	DeleteMessage(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID, messageId apiid.UUID) error
 	// EditMessage Edit your own message.
 	// (PATCH /v1/groups/{groupId}/channels/{channelId}/messages/{messageId})
-	EditMessage(ctx echo.Context, groupId openapi_types.UUID, channelId openapi_types.UUID, messageId openapi_types.UUID) error
+	EditMessage(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID, messageId apiid.UUID) error
 	// GetWatchParty A watch channel's newest party, ended or not, and the server's clock for the countdown.
 	// (GET /v1/groups/{groupId}/channels/{channelId}/party)
-	GetWatchParty(ctx echo.Context, groupId openapi_types.UUID, channelId openapi_types.UUID) error
+	GetWatchParty(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
 	// OpenWatchParty Open a party in the lobby. A show needs the episode. One open party per channel (409).
 	// (POST /v1/groups/{groupId}/channels/{channelId}/party)
-	OpenWatchParty(ctx echo.Context, groupId openapi_types.UUID, channelId openapi_types.UUID) error
+	OpenWatchParty(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
 	// EndWatchParty End the party. The host or an admin.
 	// (POST /v1/groups/{groupId}/channels/{channelId}/party/end)
-	EndWatchParty(ctx echo.Context, groupId openapi_types.UUID, channelId openapi_types.UUID) error
+	EndWatchParty(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
 	// SetWatchPartyReady Say you are ready, or not.
 	// (POST /v1/groups/{groupId}/channels/{channelId}/party/ready)
-	SetWatchPartyReady(ctx echo.Context, groupId openapi_types.UUID, channelId openapi_types.UUID) error
+	SetWatchPartyReady(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
 	// StartWatchParty Start the countdown. The host or an admin.
 	// (POST /v1/groups/{groupId}/channels/{channelId}/party/start)
-	StartWatchParty(ctx echo.Context, groupId openapi_types.UUID, channelId openapi_types.UUID) error
+	StartWatchParty(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
 	// MarkWatchPartyWatched Mark the party's episode, film or book watched in your own library. Nobody else's.
 	// (POST /v1/groups/{groupId}/channels/{channelId}/party/watched)
-	MarkWatchPartyWatched(ctx echo.Context, groupId openapi_types.UUID, channelId openapi_types.UUID) error
+	MarkWatchPartyWatched(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
 	// GetChannelProgress A title channel's title, your progress, and the progress of members who share theirs in this group.
 	// (GET /v1/groups/{groupId}/channels/{channelId}/progress)
-	GetChannelProgress(ctx echo.Context, groupId openapi_types.UUID, channelId openapi_types.UUID) error
+	GetChannelProgress(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
 	// MarkChannelRead Mark the channel read up to a message. The read point never moves back.
 	// (POST /v1/groups/{groupId}/channels/{channelId}/read)
-	MarkChannelRead(ctx echo.Context, groupId openapi_types.UUID, channelId openapi_types.UUID) error
+	MarkChannelRead(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
 	// InviteToGroup Invite a friend. Inviting again, or someone already in, changes nothing.
 	// (POST /v1/groups/{groupId}/invites)
-	InviteToGroup(ctx echo.Context, groupId openapi_types.UUID) error
+	InviteToGroup(ctx echo.Context, groupId apiid.UUID) error
 	// UpdateMyMembership Your own settings in a group. shareProgress shows your progress in its title channels; muted stops its mention alerts. Both are off by default.
 	// (PUT /v1/groups/{groupId}/me)
-	UpdateMyMembership(ctx echo.Context, groupId openapi_types.UUID) error
+	UpdateMyMembership(ctx echo.Context, groupId apiid.UUID) error
 	// RemoveGroupMember Remove a member, or yourself to leave. Admins remove members; the owner removes anyone and cannot leave.
 	// (DELETE /v1/groups/{groupId}/members/{userId})
-	RemoveGroupMember(ctx echo.Context, groupId openapi_types.UUID, userId openapi_types.UUID) error
+	RemoveGroupMember(ctx echo.Context, groupId apiid.UUID, userId apiid.UUID) error
 	// UpdateGroupMember Make a member an admin, or an admin a member. Owner only.
 	// (PATCH /v1/groups/{groupId}/members/{userId})
-	UpdateGroupMember(ctx echo.Context, groupId openapi_types.UUID, userId openapi_types.UUID) error
+	UpdateGroupMember(ctx echo.Context, groupId apiid.UUID, userId apiid.UUID) error
 	// TransferGroup Make another member the owner. You become an admin.
 	// (POST /v1/groups/{groupId}/transfer)
-	TransferGroup(ctx echo.Context, groupId openapi_types.UUID) error
+	TransferGroup(ctx echo.Context, groupId apiid.UUID) error
 	// GetHealth Liveness and database reachability. Unauthenticated.
 	// (GET /v1/health)
 	GetHealth(ctx echo.Context) error
@@ -5334,19 +5335,19 @@ type ServerInterface interface {
 	GetTraktConnection(ctx echo.Context) error
 	// DeleteImport Discard an import. Library items it already created stay; undo the import action for those.
 	// (DELETE /v1/imports/{id})
-	DeleteImport(ctx echo.Context, id openapi_types.UUID) error
+	DeleteImport(ctx echo.Context, id apiid.UUID) error
 	// GetImport One import with every row and what its plan does with it.
 	// (GET /v1/imports/{id})
-	GetImport(ctx echo.Context, id openapi_types.UUID) error
+	GetImport(ctx echo.Context, id apiid.UUID) error
 	// ApplyImport Approve the plan. Writes it as one undoable action.
 	// (POST /v1/imports/{id}/apply)
-	ApplyImport(ctx echo.Context, id openapi_types.UUID) error
+	ApplyImport(ctx echo.Context, id apiid.UUID) error
 	// ResolveImportRow Match one unmatched row by hand (IMP-011), with a title the person picked from a search. Before the plan is approved the pick joins the plan; after it, the row is written at once as its own undoable action. The source's status, rating and ticks come with it, merged like any import row.
 	// (POST /v1/imports/{id}/rows/{index}/resolve)
-	ResolveImportRow(ctx echo.Context, id openapi_types.UUID, index int) error
+	ResolveImportRow(ctx echo.Context, id apiid.UUID, index int) error
 	// UndoListenImport Undo an applied listening-history import (MUS-004): deletes the listens it wrote and the import. 409 `import_not_listens` for a library import (undo its action instead), 409 `import_not_applied` before it is applied (delete it instead).
 	// (POST /v1/imports/{id}/undo)
-	UndoListenImport(ctx echo.Context, id openapi_types.UUID) error
+	UndoListenImport(ctx echo.Context, id apiid.UUID) error
 	// GetInvitePreview What an invite link shows, signed in or not. Unauthenticated. 404 for any code that is unknown, spent, revoked, expired, or from someone who blocked you or whom you blocked.
 	// (GET /v1/invites/{code})
 	GetInvitePreview(ctx echo.Context, code string) error
@@ -5358,22 +5359,22 @@ type ServerInterface interface {
 	AddLibraryItem(ctx echo.Context) error
 
 	// (DELETE /v1/library/items/{id})
-	DeleteLibraryItem(ctx echo.Context, id openapi_types.UUID) error
+	DeleteLibraryItem(ctx echo.Context, id apiid.UUID) error
 
 	// (GET /v1/library/items/{id})
-	GetLibraryItem(ctx echo.Context, id openapi_types.UUID) error
+	GetLibraryItem(ctx echo.Context, id apiid.UUID) error
 
 	// (PATCH /v1/library/items/{id})
-	UpdateLibraryItem(ctx echo.Context, id openapi_types.UUID) error
+	UpdateLibraryItem(ctx echo.Context, id apiid.UUID) error
 
 	// (PUT /v1/library/items/{id}/episodes/{season}/{episode})
-	SetEpisodeWatched(ctx echo.Context, id openapi_types.UUID, season int, episode int) error
+	SetEpisodeWatched(ctx echo.Context, id apiid.UUID, season int, episode int) error
 	// MarkSeasonWatched Mark every aired episode of a season watched, as one undoable action.
 	// (POST /v1/library/items/{id}/seasons/{season}/watched)
-	MarkSeasonWatched(ctx echo.Context, id openapi_types.UUID, season int) error
+	MarkSeasonWatched(ctx echo.Context, id apiid.UUID, season int) error
 	// MarkShowWatched Mark a whole show watched (PROG-005): every aired regular episode, as one undoable action with the watch dates unknown, so the Recap and Insights do not count them as today. An ended or canceled show becomes finished; a running one stays in progress, caught up. 422 for anything but a show.
 	// (POST /v1/library/items/{id}/watched)
-	MarkShowWatched(ctx echo.Context, id openapi_types.UUID) error
+	MarkShowWatched(ctx echo.Context, id apiid.UUID) error
 	// SyncLibrary Items changed and ids deleted since a previous sync token (all items when absent).
 	// (GET /v1/library/sync)
 	SyncLibrary(ctx echo.Context, params SyncLibraryParams) error
@@ -5388,22 +5389,22 @@ type ServerInterface interface {
 	CreateList(ctx echo.Context) error
 
 	// (DELETE /v1/lists/{id})
-	DeleteList(ctx echo.Context, id openapi_types.UUID) error
+	DeleteList(ctx echo.Context, id apiid.UUID) error
 
 	// (GET /v1/lists/{id})
-	GetList(ctx echo.Context, id openapi_types.UUID) error
+	GetList(ctx echo.Context, id apiid.UUID) error
 
 	// (PATCH /v1/lists/{id})
-	RenameList(ctx echo.Context, id openapi_types.UUID) error
+	RenameList(ctx echo.Context, id apiid.UUID) error
 	// AddListItem Add a title to a list. It need not be in the library.
 	// (POST /v1/lists/{id}/items)
-	AddListItem(ctx echo.Context, id openapi_types.UUID) error
+	AddListItem(ctx echo.Context, id apiid.UUID) error
 
 	// (DELETE /v1/lists/{id}/items/{titleId})
-	RemoveListItem(ctx echo.Context, id openapi_types.UUID, titleId openapi_types.UUID) error
+	RemoveListItem(ctx echo.Context, id apiid.UUID, titleId apiid.UUID) error
 
 	// (PUT /v1/lists/{id}/order)
-	ReorderList(ctx echo.Context, id openapi_types.UUID) error
+	ReorderList(ctx echo.Context, id apiid.UUID) error
 	// DeleteAccount Delete the account and everything that belongs to it.
 	// (DELETE /v1/me)
 	DeleteAccount(ctx echo.Context) error
@@ -5481,10 +5482,10 @@ type ServerInterface interface {
 	ListRecommendations(ctx echo.Context) error
 
 	// (DELETE /v1/me/recommendations/{id})
-	DismissRecommendation(ctx echo.Context, id openapi_types.UUID) error
+	DismissRecommendation(ctx echo.Context, id apiid.UUID) error
 	// AddRecommendation Put the title on your Plan to watch, as a tap would. A title you already have keeps its status. Either way it leaves your recommendations.
 	// (POST /v1/me/recommendations/{id}/add)
-	AddRecommendation(ctx echo.Context, id openapi_types.UUID) error
+	AddRecommendation(ctx echo.Context, id apiid.UUID) error
 	// GetSocialSettings What your friends may see. Strangers never see anything, whatever is set here.
 	// (GET /v1/me/social-settings)
 	GetSocialSettings(ctx echo.Context) error
@@ -5511,25 +5512,25 @@ type ServerInterface interface {
 	GetStats(ctx echo.Context, params GetStatsParams) error
 	// GetOAuthRequest A connection an app asked for over OAuth (Claude's custom connector), for the consent page. Expires ten minutes after the app asked.
 	// (GET /v1/oauth/requests/{id})
-	GetOAuthRequest(ctx echo.Context, id openapi_types.UUID) error
+	GetOAuthRequest(ctx echo.Context, id apiid.UUID) error
 	// ApproveOAuthRequest Allow the app. Only the browser that started the request holds its binding (the `aaru_oauth` cookie the API set); the answer is where to send the browser next.
 	// (POST /v1/oauth/requests/{id}/approve)
-	ApproveOAuthRequest(ctx echo.Context, id openapi_types.UUID) error
+	ApproveOAuthRequest(ctx echo.Context, id apiid.UUID) error
 
 	// (POST /v1/oauth/requests/{id}/deny)
-	DenyOAuthRequest(ctx echo.Context, id openapi_types.UUID) error
+	DenyOAuthRequest(ctx echo.Context, id apiid.UUID) error
 	// ListPlans Changes outside agents asked for that wait for the user (OUT-004), newest first. Only a signed-in session reaches the plan routes; an agent token never does.
 	// (GET /v1/plans)
 	ListPlans(ctx echo.Context, params ListPlansParams) error
 
 	// (GET /v1/plans/{id})
-	GetPlan(ctx echo.Context, id openapi_types.UUID) error
+	GetPlan(ctx echo.Context, id apiid.UUID) error
 	// ApprovePlan Apply the plan as one undoable action named after its agent. 409 `plan_stale` when the library changed since it was made (nothing is written), `plan_expired`, or `plan_decided`.
 	// (POST /v1/plans/{id}/approve)
-	ApprovePlan(ctx echo.Context, id openapi_types.UUID) error
+	ApprovePlan(ctx echo.Context, id apiid.UUID) error
 	// DenyPlan Refuse the plan. Nothing is written; the plan stays as the record of what was asked.
 	// (POST /v1/plans/{id}/deny)
-	DenyPlan(ctx echo.Context, id openapi_types.UUID) error
+	DenyPlan(ctx echo.Context, id apiid.UUID) error
 	// CreateRealtimeTicket A single-use ticket, valid 60 seconds, for opening the realtime socket from a browser, which cannot send an Authorization header on a WebSocket. Apps send their bearer token on the upgrade instead.
 	// (POST /v1/realtime/ticket)
 	CreateRealtimeTicket(ctx echo.Context) error
@@ -5550,22 +5551,22 @@ type ServerInterface interface {
 	CreateShelf(ctx echo.Context) error
 
 	// (DELETE /v1/shelves/{id})
-	DeleteShelf(ctx echo.Context, id openapi_types.UUID) error
+	DeleteShelf(ctx echo.Context, id apiid.UUID) error
 
 	// (PATCH /v1/shelves/{id})
-	UpdateShelf(ctx echo.Context, id openapi_types.UUID) error
+	UpdateShelf(ctx echo.Context, id apiid.UUID) error
 	// ListShelfItems The shelf's query, resolved now. Same DTO as GET /v1/library/items.
 	// (GET /v1/shelves/{id}/items)
-	ListShelfItems(ctx echo.Context, id openapi_types.UUID, params ListShelfItemsParams) error
+	ListShelfItems(ctx echo.Context, id apiid.UUID, params ListShelfItemsParams) error
 	// ListBlocks People you blocked.
 	// (GET /v1/social/blocks)
 	ListBlocks(ctx echo.Context) error
 
 	// (DELETE /v1/social/blocks/{userId})
-	UnblockUser(ctx echo.Context, userId openapi_types.UUID) error
+	UnblockUser(ctx echo.Context, userId apiid.UUID) error
 	// BlockUser Block. Ends any friendship and pending requests both ways; from then on each of you is a 404 to the other.
 	// (PUT /v1/social/blocks/{userId})
-	BlockUser(ctx echo.Context, userId openapi_types.UUID) error
+	BlockUser(ctx echo.Context, userId apiid.UUID) error
 	// ListFriendRequests Pending requests to you and from you, newest first.
 	// (GET /v1/social/friend-requests)
 	ListFriendRequests(ctx echo.Context) error
@@ -5574,19 +5575,19 @@ type ServerInterface interface {
 	SendFriendRequest(ctx echo.Context) error
 	// WithdrawFriendRequest Decline a request to you, or cancel one you sent. The other side is not told.
 	// (DELETE /v1/social/friend-requests/{id})
-	WithdrawFriendRequest(ctx echo.Context, id openapi_types.UUID) error
+	WithdrawFriendRequest(ctx echo.Context, id apiid.UUID) error
 
 	// (POST /v1/social/friend-requests/{id}/accept)
-	AcceptFriendRequest(ctx echo.Context, id openapi_types.UUID) error
+	AcceptFriendRequest(ctx echo.Context, id apiid.UUID) error
 	// ListFriends Your friends, by handle.
 	// (GET /v1/social/friends)
 	ListFriends(ctx echo.Context) error
 	// RemoveFriend Unfriend. Silent; the other side is not told.
 	// (DELETE /v1/social/friends/{userId})
-	RemoveFriend(ctx echo.Context, userId openapi_types.UUID) error
+	RemoveFriend(ctx echo.Context, userId apiid.UUID) error
 	// GetFriendProfile A friend's shelves and what you share. 404 for anyone who is not your friend. A friend who hides their library shows only their name (`sharing` false).
 	// (GET /v1/social/friends/{userId}/profile)
-	GetFriendProfile(ctx echo.Context, userId openapi_types.UUID) error
+	GetFriendProfile(ctx echo.Context, userId apiid.UUID) error
 	// ListFriendInvites Your invite links that are still open, newest first.
 	// (GET /v1/social/invites)
 	ListFriendInvites(ctx echo.Context) error
@@ -5631,25 +5632,25 @@ type ServerInterface interface {
 	ResolveTitle(ctx echo.Context) error
 	// GetTitle A title from the catalog. Shows include their seasons and episodes.
 	// (GET /v1/titles/{id})
-	GetTitle(ctx echo.Context, id openapi_types.UUID) error
+	GetTitle(ctx echo.Context, id apiid.UUID) error
 	// ListTitlePosts Posts about this title by you and your friends, newest first.
 	// (GET /v1/titles/{id}/posts)
-	ListTitlePosts(ctx echo.Context, id openapi_types.UUID, params ListTitlePostsParams) error
+	ListTitlePosts(ctx echo.Context, id apiid.UUID, params ListTitlePostsParams) error
 	// GetTonight One to three things to start tonight (AG-005), ranked from the user's own library: the next episode of shows in progress, today's airings, books in progress, wishlist films. Reasons are templates; no model is called.
 	// (GET /v1/tonight)
 	GetTonight(ctx echo.Context, params GetTonightParams) error
 	// ClearTonightFeedback Takes back today's "Not tonight" or "Not for me" on the item (the Undo after either). Nothing to take back is still 204.
 	// (DELETE /v1/tonight/{id}/feedback)
-	ClearTonightFeedback(ctx echo.Context, id openapi_types.UUID, params ClearTonightFeedbackParams) error
+	ClearTonightFeedback(ctx echo.Context, id apiid.UUID, params ClearTonightFeedbackParams) error
 	// SendTonightFeedback "Not tonight" hides the item until the local day ends; "rejected" (not for me) weighs against it for 14 days.
 	// (POST /v1/tonight/{id}/feedback)
-	SendTonightFeedback(ctx echo.Context, id openapi_types.UUID, params SendTonightFeedbackParams) error
+	SendTonightFeedback(ctx echo.Context, id apiid.UUID, params SendTonightFeedbackParams) error
 	// GetUpNext Continue Watching, Start Watching, status counts and Unfinished business for the home screen, in one call.
 	// (GET /v1/up-next)
 	GetUpNext(ctx echo.Context) error
 	// GetUserAvatar Someone's avatar (SOC-001b), for any signed-in account. A block either way, an unknown user and no avatar are the same 404. Use the `avatarUrl` a response gave you: its `v` changes with every upload, so a cached image is never stale.
 	// (GET /v1/users/{userId}/avatar)
-	GetUserAvatar(ctx echo.Context, userId openapi_types.UUID, params GetUserAvatarParams) error
+	GetUserAvatar(ctx echo.Context, userId apiid.UUID, params GetUserAvatarParams) error
 	// GetWebPushKey The VAPID public key a browser subscribes with. 503 `push_unavailable` when web push is off.
 	// (GET /v1/web-push/key)
 	GetWebPushKey(ctx echo.Context) error
@@ -5688,7 +5689,7 @@ func (w *ServerInterfaceWrapper) ListActions(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) UndoAction(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -5797,7 +5798,7 @@ func (w *ServerInterfaceWrapper) CreateAgentToken(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) RevokeAgentToken(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -5917,7 +5918,7 @@ func (w *ServerInterfaceWrapper) CreateBoardPost(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) DeleteBoardPost(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "postId" -------------
-	var postId openapi_types.UUID
+	var postId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "postId", ctx.Param("postId"), &postId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -5933,7 +5934,7 @@ func (w *ServerInterfaceWrapper) DeleteBoardPost(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) GetBoardPost(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "postId" -------------
-	var postId openapi_types.UUID
+	var postId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "postId", ctx.Param("postId"), &postId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -5949,7 +5950,7 @@ func (w *ServerInterfaceWrapper) GetBoardPost(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) EditBoardPost(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "postId" -------------
-	var postId openapi_types.UUID
+	var postId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "postId", ctx.Param("postId"), &postId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -5965,7 +5966,7 @@ func (w *ServerInterfaceWrapper) EditBoardPost(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) ListBoardComments(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "postId" -------------
-	var postId openapi_types.UUID
+	var postId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "postId", ctx.Param("postId"), &postId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -5997,7 +5998,7 @@ func (w *ServerInterfaceWrapper) ListBoardComments(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) CreateBoardComment(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "postId" -------------
-	var postId openapi_types.UUID
+	var postId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "postId", ctx.Param("postId"), &postId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6013,7 +6014,7 @@ func (w *ServerInterfaceWrapper) CreateBoardComment(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) DeleteBoardComment(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "postId" -------------
-	var postId openapi_types.UUID
+	var postId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "postId", ctx.Param("postId"), &postId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6021,7 +6022,7 @@ func (w *ServerInterfaceWrapper) DeleteBoardComment(ctx echo.Context) error {
 	}
 
 	// ------------- Path parameter "commentId" -------------
-	var commentId openapi_types.UUID
+	var commentId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "commentId", ctx.Param("commentId"), &commentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6037,7 +6038,7 @@ func (w *ServerInterfaceWrapper) DeleteBoardComment(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) RemoveBoardPostUpvote(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "postId" -------------
-	var postId openapi_types.UUID
+	var postId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "postId", ctx.Param("postId"), &postId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6053,7 +6054,7 @@ func (w *ServerInterfaceWrapper) RemoveBoardPostUpvote(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) UpvoteBoardPost(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "postId" -------------
-	var postId openapi_types.UUID
+	var postId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "postId", ctx.Param("postId"), &postId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6069,7 +6070,7 @@ func (w *ServerInterfaceWrapper) UpvoteBoardPost(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) ListBoardPostUpvoters(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "postId" -------------
-	var postId openapi_types.UUID
+	var postId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "postId", ctx.Param("postId"), &postId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6300,7 +6301,7 @@ func (w *ServerInterfaceWrapper) GetDiscoverSeason(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) DeclineGroupInvite(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6316,7 +6317,7 @@ func (w *ServerInterfaceWrapper) DeclineGroupInvite(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) AcceptGroupInvite(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6350,7 +6351,7 @@ func (w *ServerInterfaceWrapper) CreateGroup(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) DeleteGroup(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
-	var groupId openapi_types.UUID
+	var groupId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "groupId", ctx.Param("groupId"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6366,7 +6367,7 @@ func (w *ServerInterfaceWrapper) DeleteGroup(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) GetGroup(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
-	var groupId openapi_types.UUID
+	var groupId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "groupId", ctx.Param("groupId"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6382,7 +6383,7 @@ func (w *ServerInterfaceWrapper) GetGroup(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) UpdateGroup(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
-	var groupId openapi_types.UUID
+	var groupId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "groupId", ctx.Param("groupId"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6398,7 +6399,7 @@ func (w *ServerInterfaceWrapper) UpdateGroup(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) CreateChannel(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
-	var groupId openapi_types.UUID
+	var groupId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "groupId", ctx.Param("groupId"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6414,7 +6415,7 @@ func (w *ServerInterfaceWrapper) CreateChannel(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) DeleteChannel(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
-	var groupId openapi_types.UUID
+	var groupId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "groupId", ctx.Param("groupId"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6422,7 +6423,7 @@ func (w *ServerInterfaceWrapper) DeleteChannel(ctx echo.Context) error {
 	}
 
 	// ------------- Path parameter "channelId" -------------
-	var channelId openapi_types.UUID
+	var channelId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "channelId", ctx.Param("channelId"), &channelId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6438,7 +6439,7 @@ func (w *ServerInterfaceWrapper) DeleteChannel(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) UpdateChannel(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
-	var groupId openapi_types.UUID
+	var groupId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "groupId", ctx.Param("groupId"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6446,7 +6447,7 @@ func (w *ServerInterfaceWrapper) UpdateChannel(ctx echo.Context) error {
 	}
 
 	// ------------- Path parameter "channelId" -------------
-	var channelId openapi_types.UUID
+	var channelId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "channelId", ctx.Param("channelId"), &channelId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6462,7 +6463,7 @@ func (w *ServerInterfaceWrapper) UpdateChannel(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) ListChannelItems(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
-	var groupId openapi_types.UUID
+	var groupId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "groupId", ctx.Param("groupId"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6470,7 +6471,7 @@ func (w *ServerInterfaceWrapper) ListChannelItems(ctx echo.Context) error {
 	}
 
 	// ------------- Path parameter "channelId" -------------
-	var channelId openapi_types.UUID
+	var channelId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "channelId", ctx.Param("channelId"), &channelId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6486,7 +6487,7 @@ func (w *ServerInterfaceWrapper) ListChannelItems(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) AddChannelItem(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
-	var groupId openapi_types.UUID
+	var groupId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "groupId", ctx.Param("groupId"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6494,7 +6495,7 @@ func (w *ServerInterfaceWrapper) AddChannelItem(ctx echo.Context) error {
 	}
 
 	// ------------- Path parameter "channelId" -------------
-	var channelId openapi_types.UUID
+	var channelId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "channelId", ctx.Param("channelId"), &channelId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6510,7 +6511,7 @@ func (w *ServerInterfaceWrapper) AddChannelItem(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) RemoveChannelItem(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
-	var groupId openapi_types.UUID
+	var groupId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "groupId", ctx.Param("groupId"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6518,7 +6519,7 @@ func (w *ServerInterfaceWrapper) RemoveChannelItem(ctx echo.Context) error {
 	}
 
 	// ------------- Path parameter "channelId" -------------
-	var channelId openapi_types.UUID
+	var channelId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "channelId", ctx.Param("channelId"), &channelId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6526,7 +6527,7 @@ func (w *ServerInterfaceWrapper) RemoveChannelItem(ctx echo.Context) error {
 	}
 
 	// ------------- Path parameter "titleId" -------------
-	var titleId openapi_types.UUID
+	var titleId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "titleId", ctx.Param("titleId"), &titleId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6542,7 +6543,7 @@ func (w *ServerInterfaceWrapper) RemoveChannelItem(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) ListMessages(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
-	var groupId openapi_types.UUID
+	var groupId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "groupId", ctx.Param("groupId"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6550,7 +6551,7 @@ func (w *ServerInterfaceWrapper) ListMessages(ctx echo.Context) error {
 	}
 
 	// ------------- Path parameter "channelId" -------------
-	var channelId openapi_types.UUID
+	var channelId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "channelId", ctx.Param("channelId"), &channelId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6589,7 +6590,7 @@ func (w *ServerInterfaceWrapper) ListMessages(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) PostMessage(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
-	var groupId openapi_types.UUID
+	var groupId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "groupId", ctx.Param("groupId"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6597,7 +6598,7 @@ func (w *ServerInterfaceWrapper) PostMessage(ctx echo.Context) error {
 	}
 
 	// ------------- Path parameter "channelId" -------------
-	var channelId openapi_types.UUID
+	var channelId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "channelId", ctx.Param("channelId"), &channelId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6613,7 +6614,7 @@ func (w *ServerInterfaceWrapper) PostMessage(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) DeleteMessage(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
-	var groupId openapi_types.UUID
+	var groupId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "groupId", ctx.Param("groupId"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6621,7 +6622,7 @@ func (w *ServerInterfaceWrapper) DeleteMessage(ctx echo.Context) error {
 	}
 
 	// ------------- Path parameter "channelId" -------------
-	var channelId openapi_types.UUID
+	var channelId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "channelId", ctx.Param("channelId"), &channelId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6629,7 +6630,7 @@ func (w *ServerInterfaceWrapper) DeleteMessage(ctx echo.Context) error {
 	}
 
 	// ------------- Path parameter "messageId" -------------
-	var messageId openapi_types.UUID
+	var messageId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "messageId", ctx.Param("messageId"), &messageId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6645,7 +6646,7 @@ func (w *ServerInterfaceWrapper) DeleteMessage(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) EditMessage(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
-	var groupId openapi_types.UUID
+	var groupId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "groupId", ctx.Param("groupId"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6653,7 +6654,7 @@ func (w *ServerInterfaceWrapper) EditMessage(ctx echo.Context) error {
 	}
 
 	// ------------- Path parameter "channelId" -------------
-	var channelId openapi_types.UUID
+	var channelId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "channelId", ctx.Param("channelId"), &channelId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6661,7 +6662,7 @@ func (w *ServerInterfaceWrapper) EditMessage(ctx echo.Context) error {
 	}
 
 	// ------------- Path parameter "messageId" -------------
-	var messageId openapi_types.UUID
+	var messageId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "messageId", ctx.Param("messageId"), &messageId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6677,7 +6678,7 @@ func (w *ServerInterfaceWrapper) EditMessage(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) GetWatchParty(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
-	var groupId openapi_types.UUID
+	var groupId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "groupId", ctx.Param("groupId"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6685,7 +6686,7 @@ func (w *ServerInterfaceWrapper) GetWatchParty(ctx echo.Context) error {
 	}
 
 	// ------------- Path parameter "channelId" -------------
-	var channelId openapi_types.UUID
+	var channelId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "channelId", ctx.Param("channelId"), &channelId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6701,7 +6702,7 @@ func (w *ServerInterfaceWrapper) GetWatchParty(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) OpenWatchParty(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
-	var groupId openapi_types.UUID
+	var groupId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "groupId", ctx.Param("groupId"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6709,7 +6710,7 @@ func (w *ServerInterfaceWrapper) OpenWatchParty(ctx echo.Context) error {
 	}
 
 	// ------------- Path parameter "channelId" -------------
-	var channelId openapi_types.UUID
+	var channelId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "channelId", ctx.Param("channelId"), &channelId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6725,7 +6726,7 @@ func (w *ServerInterfaceWrapper) OpenWatchParty(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) EndWatchParty(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
-	var groupId openapi_types.UUID
+	var groupId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "groupId", ctx.Param("groupId"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6733,7 +6734,7 @@ func (w *ServerInterfaceWrapper) EndWatchParty(ctx echo.Context) error {
 	}
 
 	// ------------- Path parameter "channelId" -------------
-	var channelId openapi_types.UUID
+	var channelId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "channelId", ctx.Param("channelId"), &channelId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6749,7 +6750,7 @@ func (w *ServerInterfaceWrapper) EndWatchParty(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) SetWatchPartyReady(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
-	var groupId openapi_types.UUID
+	var groupId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "groupId", ctx.Param("groupId"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6757,7 +6758,7 @@ func (w *ServerInterfaceWrapper) SetWatchPartyReady(ctx echo.Context) error {
 	}
 
 	// ------------- Path parameter "channelId" -------------
-	var channelId openapi_types.UUID
+	var channelId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "channelId", ctx.Param("channelId"), &channelId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6773,7 +6774,7 @@ func (w *ServerInterfaceWrapper) SetWatchPartyReady(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) StartWatchParty(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
-	var groupId openapi_types.UUID
+	var groupId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "groupId", ctx.Param("groupId"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6781,7 +6782,7 @@ func (w *ServerInterfaceWrapper) StartWatchParty(ctx echo.Context) error {
 	}
 
 	// ------------- Path parameter "channelId" -------------
-	var channelId openapi_types.UUID
+	var channelId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "channelId", ctx.Param("channelId"), &channelId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6797,7 +6798,7 @@ func (w *ServerInterfaceWrapper) StartWatchParty(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) MarkWatchPartyWatched(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
-	var groupId openapi_types.UUID
+	var groupId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "groupId", ctx.Param("groupId"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6805,7 +6806,7 @@ func (w *ServerInterfaceWrapper) MarkWatchPartyWatched(ctx echo.Context) error {
 	}
 
 	// ------------- Path parameter "channelId" -------------
-	var channelId openapi_types.UUID
+	var channelId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "channelId", ctx.Param("channelId"), &channelId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6821,7 +6822,7 @@ func (w *ServerInterfaceWrapper) MarkWatchPartyWatched(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) GetChannelProgress(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
-	var groupId openapi_types.UUID
+	var groupId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "groupId", ctx.Param("groupId"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6829,7 +6830,7 @@ func (w *ServerInterfaceWrapper) GetChannelProgress(ctx echo.Context) error {
 	}
 
 	// ------------- Path parameter "channelId" -------------
-	var channelId openapi_types.UUID
+	var channelId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "channelId", ctx.Param("channelId"), &channelId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6845,7 +6846,7 @@ func (w *ServerInterfaceWrapper) GetChannelProgress(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) MarkChannelRead(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
-	var groupId openapi_types.UUID
+	var groupId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "groupId", ctx.Param("groupId"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6853,7 +6854,7 @@ func (w *ServerInterfaceWrapper) MarkChannelRead(ctx echo.Context) error {
 	}
 
 	// ------------- Path parameter "channelId" -------------
-	var channelId openapi_types.UUID
+	var channelId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "channelId", ctx.Param("channelId"), &channelId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6869,7 +6870,7 @@ func (w *ServerInterfaceWrapper) MarkChannelRead(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) InviteToGroup(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
-	var groupId openapi_types.UUID
+	var groupId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "groupId", ctx.Param("groupId"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6885,7 +6886,7 @@ func (w *ServerInterfaceWrapper) InviteToGroup(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) UpdateMyMembership(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
-	var groupId openapi_types.UUID
+	var groupId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "groupId", ctx.Param("groupId"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6901,7 +6902,7 @@ func (w *ServerInterfaceWrapper) UpdateMyMembership(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) RemoveGroupMember(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
-	var groupId openapi_types.UUID
+	var groupId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "groupId", ctx.Param("groupId"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6909,7 +6910,7 @@ func (w *ServerInterfaceWrapper) RemoveGroupMember(ctx echo.Context) error {
 	}
 
 	// ------------- Path parameter "userId" -------------
-	var userId openapi_types.UUID
+	var userId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "userId", ctx.Param("userId"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6925,7 +6926,7 @@ func (w *ServerInterfaceWrapper) RemoveGroupMember(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) UpdateGroupMember(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
-	var groupId openapi_types.UUID
+	var groupId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "groupId", ctx.Param("groupId"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6933,7 +6934,7 @@ func (w *ServerInterfaceWrapper) UpdateGroupMember(ctx echo.Context) error {
 	}
 
 	// ------------- Path parameter "userId" -------------
-	var userId openapi_types.UUID
+	var userId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "userId", ctx.Param("userId"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -6949,7 +6950,7 @@ func (w *ServerInterfaceWrapper) UpdateGroupMember(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) TransferGroup(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
-	var groupId openapi_types.UUID
+	var groupId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "groupId", ctx.Param("groupId"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -7080,7 +7081,7 @@ func (w *ServerInterfaceWrapper) GetTraktConnection(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) DeleteImport(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -7096,7 +7097,7 @@ func (w *ServerInterfaceWrapper) DeleteImport(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) GetImport(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -7112,7 +7113,7 @@ func (w *ServerInterfaceWrapper) GetImport(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) ApplyImport(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -7128,7 +7129,7 @@ func (w *ServerInterfaceWrapper) ApplyImport(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) ResolveImportRow(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -7152,7 +7153,7 @@ func (w *ServerInterfaceWrapper) ResolveImportRow(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) UndoListenImport(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -7253,7 +7254,7 @@ func (w *ServerInterfaceWrapper) AddLibraryItem(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) DeleteLibraryItem(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -7269,7 +7270,7 @@ func (w *ServerInterfaceWrapper) DeleteLibraryItem(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) GetLibraryItem(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -7285,7 +7286,7 @@ func (w *ServerInterfaceWrapper) GetLibraryItem(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) UpdateLibraryItem(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -7301,7 +7302,7 @@ func (w *ServerInterfaceWrapper) UpdateLibraryItem(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) SetEpisodeWatched(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -7333,7 +7334,7 @@ func (w *ServerInterfaceWrapper) SetEpisodeWatched(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) MarkSeasonWatched(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -7357,7 +7358,7 @@ func (w *ServerInterfaceWrapper) MarkSeasonWatched(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) MarkShowWatched(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -7418,7 +7419,7 @@ func (w *ServerInterfaceWrapper) CreateList(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) DeleteList(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -7434,7 +7435,7 @@ func (w *ServerInterfaceWrapper) DeleteList(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) GetList(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -7450,7 +7451,7 @@ func (w *ServerInterfaceWrapper) GetList(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) RenameList(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -7466,7 +7467,7 @@ func (w *ServerInterfaceWrapper) RenameList(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) AddListItem(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -7482,7 +7483,7 @@ func (w *ServerInterfaceWrapper) AddListItem(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) RemoveListItem(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -7490,7 +7491,7 @@ func (w *ServerInterfaceWrapper) RemoveListItem(ctx echo.Context) error {
 	}
 
 	// ------------- Path parameter "titleId" -------------
-	var titleId openapi_types.UUID
+	var titleId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "titleId", ctx.Param("titleId"), &titleId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -7506,7 +7507,7 @@ func (w *ServerInterfaceWrapper) RemoveListItem(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) ReorderList(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -7846,7 +7847,7 @@ func (w *ServerInterfaceWrapper) ListRecommendations(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) DismissRecommendation(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -7862,7 +7863,7 @@ func (w *ServerInterfaceWrapper) DismissRecommendation(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) AddRecommendation(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -8010,7 +8011,7 @@ func (w *ServerInterfaceWrapper) GetStats(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) GetOAuthRequest(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -8026,7 +8027,7 @@ func (w *ServerInterfaceWrapper) GetOAuthRequest(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) ApproveOAuthRequest(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -8042,7 +8043,7 @@ func (w *ServerInterfaceWrapper) ApproveOAuthRequest(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) DenyOAuthRequest(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -8076,7 +8077,7 @@ func (w *ServerInterfaceWrapper) ListPlans(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) GetPlan(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -8092,7 +8093,7 @@ func (w *ServerInterfaceWrapper) GetPlan(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) ApprovePlan(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -8108,7 +8109,7 @@ func (w *ServerInterfaceWrapper) ApprovePlan(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) DenyPlan(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -8201,7 +8202,7 @@ func (w *ServerInterfaceWrapper) CreateShelf(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) DeleteShelf(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -8217,7 +8218,7 @@ func (w *ServerInterfaceWrapper) DeleteShelf(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) UpdateShelf(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -8233,7 +8234,7 @@ func (w *ServerInterfaceWrapper) UpdateShelf(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) ListShelfItems(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -8274,7 +8275,7 @@ func (w *ServerInterfaceWrapper) ListBlocks(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) UnblockUser(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "userId" -------------
-	var userId openapi_types.UUID
+	var userId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "userId", ctx.Param("userId"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -8290,7 +8291,7 @@ func (w *ServerInterfaceWrapper) UnblockUser(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) BlockUser(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "userId" -------------
-	var userId openapi_types.UUID
+	var userId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "userId", ctx.Param("userId"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -8324,7 +8325,7 @@ func (w *ServerInterfaceWrapper) SendFriendRequest(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) WithdrawFriendRequest(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -8340,7 +8341,7 @@ func (w *ServerInterfaceWrapper) WithdrawFriendRequest(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) AcceptFriendRequest(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -8365,7 +8366,7 @@ func (w *ServerInterfaceWrapper) ListFriends(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) RemoveFriend(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "userId" -------------
-	var userId openapi_types.UUID
+	var userId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "userId", ctx.Param("userId"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -8381,7 +8382,7 @@ func (w *ServerInterfaceWrapper) RemoveFriend(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) GetFriendProfile(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "userId" -------------
-	var userId openapi_types.UUID
+	var userId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "userId", ctx.Param("userId"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -8592,7 +8593,7 @@ func (w *ServerInterfaceWrapper) ResolveTitle(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) GetTitle(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -8608,7 +8609,7 @@ func (w *ServerInterfaceWrapper) GetTitle(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) ListTitlePosts(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -8651,7 +8652,7 @@ func (w *ServerInterfaceWrapper) GetTonight(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) ClearTonightFeedback(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -8676,7 +8677,7 @@ func (w *ServerInterfaceWrapper) ClearTonightFeedback(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) SendTonightFeedback(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -8710,7 +8711,7 @@ func (w *ServerInterfaceWrapper) GetUpNext(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) GetUserAvatar(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "userId" -------------
-	var userId openapi_types.UUID
+	var userId apiid.UUID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "userId", ctx.Param("userId"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: ctx.Request().URL.RawPath == ""})
 	if err != nil {
@@ -9053,7 +9054,7 @@ func (response ListActionsdefaultJSONResponse) VisitListActionsResponse(w http.R
 }
 
 type UndoActionRequestObject struct {
-	Id openapi_types.UUID `json:"id"`
+	Id apiid.UUID `json:"id"`
 }
 
 type UndoActionResponseObject interface {
@@ -9317,7 +9318,7 @@ func (response CreateAgentTokendefaultJSONResponse) VisitCreateAgentTokenRespons
 }
 
 type RevokeAgentTokenRequestObject struct {
-	Id openapi_types.UUID `json:"id"`
+	Id apiid.UUID `json:"id"`
 }
 
 type RevokeAgentTokenResponseObject interface {
@@ -9682,7 +9683,7 @@ func (response CreateBoardPostdefaultJSONResponse) VisitCreateBoardPostResponse(
 }
 
 type DeleteBoardPostRequestObject struct {
-	PostId openapi_types.UUID `json:"postId"`
+	PostId apiid.UUID `json:"postId"`
 }
 
 type DeleteBoardPostResponseObject interface {
@@ -9715,7 +9716,7 @@ func (response DeleteBoardPostdefaultJSONResponse) VisitDeleteBoardPostResponse(
 }
 
 type GetBoardPostRequestObject struct {
-	PostId openapi_types.UUID `json:"postId"`
+	PostId apiid.UUID `json:"postId"`
 }
 
 type GetBoardPostResponseObject interface {
@@ -9754,7 +9755,7 @@ func (response GetBoardPostdefaultJSONResponse) VisitGetBoardPostResponse(w http
 }
 
 type EditBoardPostRequestObject struct {
-	PostId openapi_types.UUID `json:"postId"`
+	PostId apiid.UUID `json:"postId"`
 	Body   *EditBoardPostJSONRequestBody
 }
 
@@ -9794,7 +9795,7 @@ func (response EditBoardPostdefaultJSONResponse) VisitEditBoardPostResponse(w ht
 }
 
 type ListBoardCommentsRequestObject struct {
-	PostId openapi_types.UUID `json:"postId"`
+	PostId apiid.UUID `json:"postId"`
 	Params ListBoardCommentsParams
 }
 
@@ -9834,7 +9835,7 @@ func (response ListBoardCommentsdefaultJSONResponse) VisitListBoardCommentsRespo
 }
 
 type CreateBoardCommentRequestObject struct {
-	PostId openapi_types.UUID `json:"postId"`
+	PostId apiid.UUID `json:"postId"`
 	Body   *CreateBoardCommentJSONRequestBody
 }
 
@@ -9874,8 +9875,8 @@ func (response CreateBoardCommentdefaultJSONResponse) VisitCreateBoardCommentRes
 }
 
 type DeleteBoardCommentRequestObject struct {
-	PostId    openapi_types.UUID `json:"postId"`
-	CommentId openapi_types.UUID `json:"commentId"`
+	PostId    apiid.UUID `json:"postId"`
+	CommentId apiid.UUID `json:"commentId"`
 }
 
 type DeleteBoardCommentResponseObject interface {
@@ -9908,7 +9909,7 @@ func (response DeleteBoardCommentdefaultJSONResponse) VisitDeleteBoardCommentRes
 }
 
 type RemoveBoardPostUpvoteRequestObject struct {
-	PostId openapi_types.UUID `json:"postId"`
+	PostId apiid.UUID `json:"postId"`
 }
 
 type RemoveBoardPostUpvoteResponseObject interface {
@@ -9941,7 +9942,7 @@ func (response RemoveBoardPostUpvotedefaultJSONResponse) VisitRemoveBoardPostUpv
 }
 
 type UpvoteBoardPostRequestObject struct {
-	PostId openapi_types.UUID `json:"postId"`
+	PostId apiid.UUID `json:"postId"`
 }
 
 type UpvoteBoardPostResponseObject interface {
@@ -9974,7 +9975,7 @@ func (response UpvoteBoardPostdefaultJSONResponse) VisitUpvoteBoardPostResponse(
 }
 
 type ListBoardPostUpvotersRequestObject struct {
-	PostId openapi_types.UUID `json:"postId"`
+	PostId apiid.UUID `json:"postId"`
 }
 
 type ListBoardPostUpvotersResponseObject interface {
@@ -10602,7 +10603,7 @@ func (response GetDiscoverSeasondefaultJSONResponse) VisitGetDiscoverSeasonRespo
 }
 
 type DeclineGroupInviteRequestObject struct {
-	Id openapi_types.UUID `json:"id"`
+	Id apiid.UUID `json:"id"`
 }
 
 type DeclineGroupInviteResponseObject interface {
@@ -10635,7 +10636,7 @@ func (response DeclineGroupInvitedefaultJSONResponse) VisitDeclineGroupInviteRes
 }
 
 type AcceptGroupInviteRequestObject struct {
-	Id openapi_types.UUID `json:"id"`
+	Id apiid.UUID `json:"id"`
 }
 
 type AcceptGroupInviteResponseObject interface {
@@ -10751,7 +10752,7 @@ func (response CreateGroupdefaultJSONResponse) VisitCreateGroupResponse(w http.R
 }
 
 type DeleteGroupRequestObject struct {
-	GroupId openapi_types.UUID `json:"groupId"`
+	GroupId apiid.UUID `json:"groupId"`
 }
 
 type DeleteGroupResponseObject interface {
@@ -10784,7 +10785,7 @@ func (response DeleteGroupdefaultJSONResponse) VisitDeleteGroupResponse(w http.R
 }
 
 type GetGroupRequestObject struct {
-	GroupId openapi_types.UUID `json:"groupId"`
+	GroupId apiid.UUID `json:"groupId"`
 }
 
 type GetGroupResponseObject interface {
@@ -10823,7 +10824,7 @@ func (response GetGroupdefaultJSONResponse) VisitGetGroupResponse(w http.Respons
 }
 
 type UpdateGroupRequestObject struct {
-	GroupId openapi_types.UUID `json:"groupId"`
+	GroupId apiid.UUID `json:"groupId"`
 	Body    *UpdateGroupJSONRequestBody
 }
 
@@ -10863,7 +10864,7 @@ func (response UpdateGroupdefaultJSONResponse) VisitUpdateGroupResponse(w http.R
 }
 
 type CreateChannelRequestObject struct {
-	GroupId openapi_types.UUID `json:"groupId"`
+	GroupId apiid.UUID `json:"groupId"`
 	Body    *CreateChannelJSONRequestBody
 }
 
@@ -10903,8 +10904,8 @@ func (response CreateChanneldefaultJSONResponse) VisitCreateChannelResponse(w ht
 }
 
 type DeleteChannelRequestObject struct {
-	GroupId   openapi_types.UUID `json:"groupId"`
-	ChannelId openapi_types.UUID `json:"channelId"`
+	GroupId   apiid.UUID `json:"groupId"`
+	ChannelId apiid.UUID `json:"channelId"`
 }
 
 type DeleteChannelResponseObject interface {
@@ -10937,8 +10938,8 @@ func (response DeleteChanneldefaultJSONResponse) VisitDeleteChannelResponse(w ht
 }
 
 type UpdateChannelRequestObject struct {
-	GroupId   openapi_types.UUID `json:"groupId"`
-	ChannelId openapi_types.UUID `json:"channelId"`
+	GroupId   apiid.UUID `json:"groupId"`
+	ChannelId apiid.UUID `json:"channelId"`
 	Body      *UpdateChannelJSONRequestBody
 }
 
@@ -10978,8 +10979,8 @@ func (response UpdateChanneldefaultJSONResponse) VisitUpdateChannelResponse(w ht
 }
 
 type ListChannelItemsRequestObject struct {
-	GroupId   openapi_types.UUID `json:"groupId"`
-	ChannelId openapi_types.UUID `json:"channelId"`
+	GroupId   apiid.UUID `json:"groupId"`
+	ChannelId apiid.UUID `json:"channelId"`
 }
 
 type ListChannelItemsResponseObject interface {
@@ -11018,8 +11019,8 @@ func (response ListChannelItemsdefaultJSONResponse) VisitListChannelItemsRespons
 }
 
 type AddChannelItemRequestObject struct {
-	GroupId   openapi_types.UUID `json:"groupId"`
-	ChannelId openapi_types.UUID `json:"channelId"`
+	GroupId   apiid.UUID `json:"groupId"`
+	ChannelId apiid.UUID `json:"channelId"`
 	Body      *AddChannelItemJSONRequestBody
 }
 
@@ -11059,9 +11060,9 @@ func (response AddChannelItemdefaultJSONResponse) VisitAddChannelItemResponse(w 
 }
 
 type RemoveChannelItemRequestObject struct {
-	GroupId   openapi_types.UUID `json:"groupId"`
-	ChannelId openapi_types.UUID `json:"channelId"`
-	TitleId   openapi_types.UUID `json:"titleId"`
+	GroupId   apiid.UUID `json:"groupId"`
+	ChannelId apiid.UUID `json:"channelId"`
+	TitleId   apiid.UUID `json:"titleId"`
 }
 
 type RemoveChannelItemResponseObject interface {
@@ -11094,8 +11095,8 @@ func (response RemoveChannelItemdefaultJSONResponse) VisitRemoveChannelItemRespo
 }
 
 type ListMessagesRequestObject struct {
-	GroupId   openapi_types.UUID `json:"groupId"`
-	ChannelId openapi_types.UUID `json:"channelId"`
+	GroupId   apiid.UUID `json:"groupId"`
+	ChannelId apiid.UUID `json:"channelId"`
 	Params    ListMessagesParams
 }
 
@@ -11135,8 +11136,8 @@ func (response ListMessagesdefaultJSONResponse) VisitListMessagesResponse(w http
 }
 
 type PostMessageRequestObject struct {
-	GroupId   openapi_types.UUID `json:"groupId"`
-	ChannelId openapi_types.UUID `json:"channelId"`
+	GroupId   apiid.UUID `json:"groupId"`
+	ChannelId apiid.UUID `json:"channelId"`
 	Body      *PostMessageJSONRequestBody
 }
 
@@ -11176,9 +11177,9 @@ func (response PostMessagedefaultJSONResponse) VisitPostMessageResponse(w http.R
 }
 
 type DeleteMessageRequestObject struct {
-	GroupId   openapi_types.UUID `json:"groupId"`
-	ChannelId openapi_types.UUID `json:"channelId"`
-	MessageId openapi_types.UUID `json:"messageId"`
+	GroupId   apiid.UUID `json:"groupId"`
+	ChannelId apiid.UUID `json:"channelId"`
+	MessageId apiid.UUID `json:"messageId"`
 }
 
 type DeleteMessageResponseObject interface {
@@ -11211,9 +11212,9 @@ func (response DeleteMessagedefaultJSONResponse) VisitDeleteMessageResponse(w ht
 }
 
 type EditMessageRequestObject struct {
-	GroupId   openapi_types.UUID `json:"groupId"`
-	ChannelId openapi_types.UUID `json:"channelId"`
-	MessageId openapi_types.UUID `json:"messageId"`
+	GroupId   apiid.UUID `json:"groupId"`
+	ChannelId apiid.UUID `json:"channelId"`
+	MessageId apiid.UUID `json:"messageId"`
 	Body      *EditMessageJSONRequestBody
 }
 
@@ -11253,8 +11254,8 @@ func (response EditMessagedefaultJSONResponse) VisitEditMessageResponse(w http.R
 }
 
 type GetWatchPartyRequestObject struct {
-	GroupId   openapi_types.UUID `json:"groupId"`
-	ChannelId openapi_types.UUID `json:"channelId"`
+	GroupId   apiid.UUID `json:"groupId"`
+	ChannelId apiid.UUID `json:"channelId"`
 }
 
 type GetWatchPartyResponseObject interface {
@@ -11293,8 +11294,8 @@ func (response GetWatchPartydefaultJSONResponse) VisitGetWatchPartyResponse(w ht
 }
 
 type OpenWatchPartyRequestObject struct {
-	GroupId   openapi_types.UUID `json:"groupId"`
-	ChannelId openapi_types.UUID `json:"channelId"`
+	GroupId   apiid.UUID `json:"groupId"`
+	ChannelId apiid.UUID `json:"channelId"`
 	Body      *OpenWatchPartyJSONRequestBody
 }
 
@@ -11334,8 +11335,8 @@ func (response OpenWatchPartydefaultJSONResponse) VisitOpenWatchPartyResponse(w 
 }
 
 type EndWatchPartyRequestObject struct {
-	GroupId   openapi_types.UUID `json:"groupId"`
-	ChannelId openapi_types.UUID `json:"channelId"`
+	GroupId   apiid.UUID `json:"groupId"`
+	ChannelId apiid.UUID `json:"channelId"`
 }
 
 type EndWatchPartyResponseObject interface {
@@ -11374,8 +11375,8 @@ func (response EndWatchPartydefaultJSONResponse) VisitEndWatchPartyResponse(w ht
 }
 
 type SetWatchPartyReadyRequestObject struct {
-	GroupId   openapi_types.UUID `json:"groupId"`
-	ChannelId openapi_types.UUID `json:"channelId"`
+	GroupId   apiid.UUID `json:"groupId"`
+	ChannelId apiid.UUID `json:"channelId"`
 	Body      *SetWatchPartyReadyJSONRequestBody
 }
 
@@ -11415,8 +11416,8 @@ func (response SetWatchPartyReadydefaultJSONResponse) VisitSetWatchPartyReadyRes
 }
 
 type StartWatchPartyRequestObject struct {
-	GroupId   openapi_types.UUID `json:"groupId"`
-	ChannelId openapi_types.UUID `json:"channelId"`
+	GroupId   apiid.UUID `json:"groupId"`
+	ChannelId apiid.UUID `json:"channelId"`
 	Body      *StartWatchPartyJSONRequestBody
 }
 
@@ -11456,8 +11457,8 @@ func (response StartWatchPartydefaultJSONResponse) VisitStartWatchPartyResponse(
 }
 
 type MarkWatchPartyWatchedRequestObject struct {
-	GroupId   openapi_types.UUID `json:"groupId"`
-	ChannelId openapi_types.UUID `json:"channelId"`
+	GroupId   apiid.UUID `json:"groupId"`
+	ChannelId apiid.UUID `json:"channelId"`
 }
 
 type MarkWatchPartyWatchedResponseObject interface {
@@ -11490,8 +11491,8 @@ func (response MarkWatchPartyWatcheddefaultJSONResponse) VisitMarkWatchPartyWatc
 }
 
 type GetChannelProgressRequestObject struct {
-	GroupId   openapi_types.UUID `json:"groupId"`
-	ChannelId openapi_types.UUID `json:"channelId"`
+	GroupId   apiid.UUID `json:"groupId"`
+	ChannelId apiid.UUID `json:"channelId"`
 }
 
 type GetChannelProgressResponseObject interface {
@@ -11530,8 +11531,8 @@ func (response GetChannelProgressdefaultJSONResponse) VisitGetChannelProgressRes
 }
 
 type MarkChannelReadRequestObject struct {
-	GroupId   openapi_types.UUID `json:"groupId"`
-	ChannelId openapi_types.UUID `json:"channelId"`
+	GroupId   apiid.UUID `json:"groupId"`
+	ChannelId apiid.UUID `json:"channelId"`
 	Body      *MarkChannelReadJSONRequestBody
 }
 
@@ -11565,7 +11566,7 @@ func (response MarkChannelReaddefaultJSONResponse) VisitMarkChannelReadResponse(
 }
 
 type InviteToGroupRequestObject struct {
-	GroupId openapi_types.UUID `json:"groupId"`
+	GroupId apiid.UUID `json:"groupId"`
 	Body    *InviteToGroupJSONRequestBody
 }
 
@@ -11599,7 +11600,7 @@ func (response InviteToGroupdefaultJSONResponse) VisitInviteToGroupResponse(w ht
 }
 
 type UpdateMyMembershipRequestObject struct {
-	GroupId openapi_types.UUID `json:"groupId"`
+	GroupId apiid.UUID `json:"groupId"`
 	Body    *UpdateMyMembershipJSONRequestBody
 }
 
@@ -11639,8 +11640,8 @@ func (response UpdateMyMembershipdefaultJSONResponse) VisitUpdateMyMembershipRes
 }
 
 type RemoveGroupMemberRequestObject struct {
-	GroupId openapi_types.UUID `json:"groupId"`
-	UserId  openapi_types.UUID `json:"userId"`
+	GroupId apiid.UUID `json:"groupId"`
+	UserId  apiid.UUID `json:"userId"`
 }
 
 type RemoveGroupMemberResponseObject interface {
@@ -11673,8 +11674,8 @@ func (response RemoveGroupMemberdefaultJSONResponse) VisitRemoveGroupMemberRespo
 }
 
 type UpdateGroupMemberRequestObject struct {
-	GroupId openapi_types.UUID `json:"groupId"`
-	UserId  openapi_types.UUID `json:"userId"`
+	GroupId apiid.UUID `json:"groupId"`
+	UserId  apiid.UUID `json:"userId"`
 	Body    *UpdateGroupMemberJSONRequestBody
 }
 
@@ -11708,7 +11709,7 @@ func (response UpdateGroupMemberdefaultJSONResponse) VisitUpdateGroupMemberRespo
 }
 
 type TransferGroupRequestObject struct {
-	GroupId openapi_types.UUID `json:"groupId"`
+	GroupId apiid.UUID `json:"groupId"`
 	Body    *TransferGroupJSONRequestBody
 }
 
@@ -12220,7 +12221,7 @@ func (response GetTraktConnectiondefaultJSONResponse) VisitGetTraktConnectionRes
 }
 
 type DeleteImportRequestObject struct {
-	Id openapi_types.UUID `json:"id"`
+	Id apiid.UUID `json:"id"`
 }
 
 type DeleteImportResponseObject interface {
@@ -12253,7 +12254,7 @@ func (response DeleteImportdefaultJSONResponse) VisitDeleteImportResponse(w http
 }
 
 type GetImportRequestObject struct {
-	Id openapi_types.UUID `json:"id"`
+	Id apiid.UUID `json:"id"`
 }
 
 type GetImportResponseObject interface {
@@ -12292,7 +12293,7 @@ func (response GetImportdefaultJSONResponse) VisitGetImportResponse(w http.Respo
 }
 
 type ApplyImportRequestObject struct {
-	Id openapi_types.UUID `json:"id"`
+	Id apiid.UUID `json:"id"`
 }
 
 type ApplyImportResponseObject interface {
@@ -12331,8 +12332,8 @@ func (response ApplyImportdefaultJSONResponse) VisitApplyImportResponse(w http.R
 }
 
 type ResolveImportRowRequestObject struct {
-	Id    openapi_types.UUID `json:"id"`
-	Index int                `json:"index"`
+	Id    apiid.UUID `json:"id"`
+	Index int        `json:"index"`
 	Body  *ResolveImportRowJSONRequestBody
 }
 
@@ -12375,7 +12376,7 @@ func (response ResolveImportRowdefaultJSONResponse) VisitResolveImportRowRespons
 }
 
 type UndoListenImportRequestObject struct {
-	Id openapi_types.UUID `json:"id"`
+	Id apiid.UUID `json:"id"`
 }
 
 type UndoListenImportResponseObject interface {
@@ -12525,7 +12526,7 @@ func (response AddLibraryItemdefaultJSONResponse) VisitAddLibraryItemResponse(w 
 }
 
 type DeleteLibraryItemRequestObject struct {
-	Id openapi_types.UUID `json:"id"`
+	Id apiid.UUID `json:"id"`
 }
 
 type DeleteLibraryItemResponseObject interface {
@@ -12558,7 +12559,7 @@ func (response DeleteLibraryItemdefaultJSONResponse) VisitDeleteLibraryItemRespo
 }
 
 type GetLibraryItemRequestObject struct {
-	Id openapi_types.UUID `json:"id"`
+	Id apiid.UUID `json:"id"`
 }
 
 type GetLibraryItemResponseObject interface {
@@ -12597,7 +12598,7 @@ func (response GetLibraryItemdefaultJSONResponse) VisitGetLibraryItemResponse(w 
 }
 
 type UpdateLibraryItemRequestObject struct {
-	Id   openapi_types.UUID `json:"id"`
+	Id   apiid.UUID `json:"id"`
 	Body *UpdateLibraryItemJSONRequestBody
 }
 
@@ -12606,7 +12607,7 @@ type UpdateLibraryItemResponseObject interface {
 }
 
 type UpdateLibraryItem200ResponseHeaders struct {
-	AaruAction *openapi_types.UUID
+	AaruAction *apiid.UUID
 }
 
 type UpdateLibraryItem200JSONResponse struct {
@@ -12647,9 +12648,9 @@ func (response UpdateLibraryItemdefaultJSONResponse) VisitUpdateLibraryItemRespo
 }
 
 type SetEpisodeWatchedRequestObject struct {
-	Id      openapi_types.UUID `json:"id"`
-	Season  int                `json:"season"`
-	Episode int                `json:"episode"`
+	Id      apiid.UUID `json:"id"`
+	Season  int        `json:"season"`
+	Episode int        `json:"episode"`
 	Body    *SetEpisodeWatchedJSONRequestBody
 }
 
@@ -12658,7 +12659,7 @@ type SetEpisodeWatchedResponseObject interface {
 }
 
 type SetEpisodeWatched200ResponseHeaders struct {
-	AaruAction *openapi_types.UUID
+	AaruAction *apiid.UUID
 }
 
 type SetEpisodeWatched200JSONResponse struct {
@@ -12699,8 +12700,8 @@ func (response SetEpisodeWatcheddefaultJSONResponse) VisitSetEpisodeWatchedRespo
 }
 
 type MarkSeasonWatchedRequestObject struct {
-	Id     openapi_types.UUID `json:"id"`
-	Season int                `json:"season"`
+	Id     apiid.UUID `json:"id"`
+	Season int        `json:"season"`
 }
 
 type MarkSeasonWatchedResponseObject interface {
@@ -12708,7 +12709,7 @@ type MarkSeasonWatchedResponseObject interface {
 }
 
 type MarkSeasonWatched200ResponseHeaders struct {
-	AaruAction *openapi_types.UUID
+	AaruAction *apiid.UUID
 }
 
 type MarkSeasonWatched200JSONResponse struct {
@@ -12749,7 +12750,7 @@ func (response MarkSeasonWatcheddefaultJSONResponse) VisitMarkSeasonWatchedRespo
 }
 
 type MarkShowWatchedRequestObject struct {
-	Id openapi_types.UUID `json:"id"`
+	Id apiid.UUID `json:"id"`
 }
 
 type MarkShowWatchedResponseObject interface {
@@ -12942,7 +12943,7 @@ func (response CreateListdefaultJSONResponse) VisitCreateListResponse(w http.Res
 }
 
 type DeleteListRequestObject struct {
-	Id openapi_types.UUID `json:"id"`
+	Id apiid.UUID `json:"id"`
 }
 
 type DeleteListResponseObject interface {
@@ -12975,7 +12976,7 @@ func (response DeleteListdefaultJSONResponse) VisitDeleteListResponse(w http.Res
 }
 
 type GetListRequestObject struct {
-	Id openapi_types.UUID `json:"id"`
+	Id apiid.UUID `json:"id"`
 }
 
 type GetListResponseObject interface {
@@ -13014,7 +13015,7 @@ func (response GetListdefaultJSONResponse) VisitGetListResponse(w http.ResponseW
 }
 
 type RenameListRequestObject struct {
-	Id   openapi_types.UUID `json:"id"`
+	Id   apiid.UUID `json:"id"`
 	Body *RenameListJSONRequestBody
 }
 
@@ -13054,7 +13055,7 @@ func (response RenameListdefaultJSONResponse) VisitRenameListResponse(w http.Res
 }
 
 type AddListItemRequestObject struct {
-	Id   openapi_types.UUID `json:"id"`
+	Id   apiid.UUID `json:"id"`
 	Body *AddListItemJSONRequestBody
 }
 
@@ -13094,8 +13095,8 @@ func (response AddListItemdefaultJSONResponse) VisitAddListItemResponse(w http.R
 }
 
 type RemoveListItemRequestObject struct {
-	Id      openapi_types.UUID `json:"id"`
-	TitleId openapi_types.UUID `json:"titleId"`
+	Id      apiid.UUID `json:"id"`
+	TitleId apiid.UUID `json:"titleId"`
 }
 
 type RemoveListItemResponseObject interface {
@@ -13134,7 +13135,7 @@ func (response RemoveListItemdefaultJSONResponse) VisitRemoveListItemResponse(w 
 }
 
 type ReorderListRequestObject struct {
-	Id   openapi_types.UUID `json:"id"`
+	Id   apiid.UUID `json:"id"`
 	Body *ReorderListJSONRequestBody
 }
 
@@ -14152,7 +14153,7 @@ func (response ListRecommendationsdefaultJSONResponse) VisitListRecommendationsR
 }
 
 type DismissRecommendationRequestObject struct {
-	Id openapi_types.UUID `json:"id"`
+	Id apiid.UUID `json:"id"`
 }
 
 type DismissRecommendationResponseObject interface {
@@ -14185,7 +14186,7 @@ func (response DismissRecommendationdefaultJSONResponse) VisitDismissRecommendat
 }
 
 type AddRecommendationRequestObject struct {
-	Id openapi_types.UUID `json:"id"`
+	Id apiid.UUID `json:"id"`
 }
 
 type AddRecommendationResponseObject interface {
@@ -14523,7 +14524,7 @@ func (response GetStatsdefaultJSONResponse) VisitGetStatsResponse(w http.Respons
 }
 
 type GetOAuthRequestRequestObject struct {
-	Id openapi_types.UUID `json:"id"`
+	Id apiid.UUID `json:"id"`
 }
 
 type GetOAuthRequestResponseObject interface {
@@ -14562,7 +14563,7 @@ func (response GetOAuthRequestdefaultJSONResponse) VisitGetOAuthRequestResponse(
 }
 
 type ApproveOAuthRequestRequestObject struct {
-	Id   openapi_types.UUID `json:"id"`
+	Id   apiid.UUID `json:"id"`
 	Body *ApproveOAuthRequestJSONRequestBody
 }
 
@@ -14602,7 +14603,7 @@ func (response ApproveOAuthRequestdefaultJSONResponse) VisitApproveOAuthRequestR
 }
 
 type DenyOAuthRequestRequestObject struct {
-	Id   openapi_types.UUID `json:"id"`
+	Id   apiid.UUID `json:"id"`
 	Body *DenyOAuthRequestJSONRequestBody
 }
 
@@ -14683,7 +14684,7 @@ func (response ListPlansdefaultJSONResponse) VisitListPlansResponse(w http.Respo
 }
 
 type GetPlanRequestObject struct {
-	Id openapi_types.UUID `json:"id"`
+	Id apiid.UUID `json:"id"`
 }
 
 type GetPlanResponseObject interface {
@@ -14722,7 +14723,7 @@ func (response GetPlandefaultJSONResponse) VisitGetPlanResponse(w http.ResponseW
 }
 
 type ApprovePlanRequestObject struct {
-	Id openapi_types.UUID `json:"id"`
+	Id apiid.UUID `json:"id"`
 }
 
 type ApprovePlanResponseObject interface {
@@ -14764,7 +14765,7 @@ func (response ApprovePlandefaultJSONResponse) VisitApprovePlanResponse(w http.R
 }
 
 type DenyPlanRequestObject struct {
-	Id openapi_types.UUID `json:"id"`
+	Id apiid.UUID `json:"id"`
 }
 
 type DenyPlanResponseObject interface {
@@ -15035,7 +15036,7 @@ func (response CreateShelfdefaultJSONResponse) VisitCreateShelfResponse(w http.R
 }
 
 type DeleteShelfRequestObject struct {
-	Id openapi_types.UUID `json:"id"`
+	Id apiid.UUID `json:"id"`
 }
 
 type DeleteShelfResponseObject interface {
@@ -15068,7 +15069,7 @@ func (response DeleteShelfdefaultJSONResponse) VisitDeleteShelfResponse(w http.R
 }
 
 type UpdateShelfRequestObject struct {
-	Id   openapi_types.UUID `json:"id"`
+	Id   apiid.UUID `json:"id"`
 	Body *UpdateShelfJSONRequestBody
 }
 
@@ -15108,7 +15109,7 @@ func (response UpdateShelfdefaultJSONResponse) VisitUpdateShelfResponse(w http.R
 }
 
 type ListShelfItemsRequestObject struct {
-	Id     openapi_types.UUID `json:"id"`
+	Id     apiid.UUID `json:"id"`
 	Params ListShelfItemsParams
 }
 
@@ -15186,7 +15187,7 @@ func (response ListBlocksdefaultJSONResponse) VisitListBlocksResponse(w http.Res
 }
 
 type UnblockUserRequestObject struct {
-	UserId openapi_types.UUID `json:"userId"`
+	UserId apiid.UUID `json:"userId"`
 }
 
 type UnblockUserResponseObject interface {
@@ -15219,7 +15220,7 @@ func (response UnblockUserdefaultJSONResponse) VisitUnblockUserResponse(w http.R
 }
 
 type BlockUserRequestObject struct {
-	UserId openapi_types.UUID `json:"userId"`
+	UserId apiid.UUID `json:"userId"`
 }
 
 type BlockUserResponseObject interface {
@@ -15329,7 +15330,7 @@ func (response SendFriendRequestdefaultJSONResponse) VisitSendFriendRequestRespo
 }
 
 type WithdrawFriendRequestRequestObject struct {
-	Id openapi_types.UUID `json:"id"`
+	Id apiid.UUID `json:"id"`
 }
 
 type WithdrawFriendRequestResponseObject interface {
@@ -15362,7 +15363,7 @@ func (response WithdrawFriendRequestdefaultJSONResponse) VisitWithdrawFriendRequ
 }
 
 type AcceptFriendRequestRequestObject struct {
-	Id openapi_types.UUID `json:"id"`
+	Id apiid.UUID `json:"id"`
 }
 
 type AcceptFriendRequestResponseObject interface {
@@ -15439,7 +15440,7 @@ func (response ListFriendsdefaultJSONResponse) VisitListFriendsResponse(w http.R
 }
 
 type RemoveFriendRequestObject struct {
-	UserId openapi_types.UUID `json:"userId"`
+	UserId apiid.UUID `json:"userId"`
 }
 
 type RemoveFriendResponseObject interface {
@@ -15472,7 +15473,7 @@ func (response RemoveFrienddefaultJSONResponse) VisitRemoveFriendResponse(w http
 }
 
 type GetFriendProfileRequestObject struct {
-	UserId openapi_types.UUID `json:"userId"`
+	UserId apiid.UUID `json:"userId"`
 }
 
 type GetFriendProfileResponseObject interface {
@@ -16037,7 +16038,7 @@ func (response ResolveTitledefaultJSONResponse) VisitResolveTitleResponse(w http
 }
 
 type GetTitleRequestObject struct {
-	Id openapi_types.UUID `json:"id"`
+	Id apiid.UUID `json:"id"`
 }
 
 type GetTitleResponseObject interface {
@@ -16076,7 +16077,7 @@ func (response GetTitledefaultJSONResponse) VisitGetTitleResponse(w http.Respons
 }
 
 type ListTitlePostsRequestObject struct {
-	Id     openapi_types.UUID `json:"id"`
+	Id     apiid.UUID `json:"id"`
 	Params ListTitlePostsParams
 }
 
@@ -16155,7 +16156,7 @@ func (response GetTonightdefaultJSONResponse) VisitGetTonightResponse(w http.Res
 }
 
 type ClearTonightFeedbackRequestObject struct {
-	Id     openapi_types.UUID `json:"id"`
+	Id     apiid.UUID `json:"id"`
 	Params ClearTonightFeedbackParams
 }
 
@@ -16189,7 +16190,7 @@ func (response ClearTonightFeedbackdefaultJSONResponse) VisitClearTonightFeedbac
 }
 
 type SendTonightFeedbackRequestObject struct {
-	Id     openapi_types.UUID `json:"id"`
+	Id     apiid.UUID `json:"id"`
 	Params SendTonightFeedbackParams
 	Body   *SendTonightFeedbackJSONRequestBody
 }
@@ -16262,7 +16263,7 @@ func (response GetUpNextdefaultJSONResponse) VisitGetUpNextResponse(w http.Respo
 }
 
 type GetUserAvatarRequestObject struct {
-	UserId openapi_types.UUID `json:"userId"`
+	UserId apiid.UUID `json:"userId"`
 	Params GetUserAvatarParams
 }
 
@@ -17035,7 +17036,7 @@ func (sh *strictHandler) ListActions(ctx echo.Context, params ListActionsParams)
 }
 
 // UndoAction operation middleware
-func (sh *strictHandler) UndoAction(ctx echo.Context, id openapi_types.UUID) error {
+func (sh *strictHandler) UndoAction(ctx echo.Context, id apiid.UUID) error {
 	var request UndoActionRequestObject
 
 	request.Id = id
@@ -17240,7 +17241,7 @@ func (sh *strictHandler) CreateAgentToken(ctx echo.Context) error {
 }
 
 // RevokeAgentToken operation middleware
-func (sh *strictHandler) RevokeAgentToken(ctx echo.Context, id openapi_types.UUID) error {
+func (sh *strictHandler) RevokeAgentToken(ctx echo.Context, id apiid.UUID) error {
 	var request RevokeAgentTokenRequestObject
 
 	request.Id = id
@@ -17586,7 +17587,7 @@ func (sh *strictHandler) CreateBoardPost(ctx echo.Context) error {
 }
 
 // DeleteBoardPost operation middleware
-func (sh *strictHandler) DeleteBoardPost(ctx echo.Context, postId openapi_types.UUID) error {
+func (sh *strictHandler) DeleteBoardPost(ctx echo.Context, postId apiid.UUID) error {
 	var request DeleteBoardPostRequestObject
 
 	request.PostId = postId
@@ -17611,7 +17612,7 @@ func (sh *strictHandler) DeleteBoardPost(ctx echo.Context, postId openapi_types.
 }
 
 // GetBoardPost operation middleware
-func (sh *strictHandler) GetBoardPost(ctx echo.Context, postId openapi_types.UUID) error {
+func (sh *strictHandler) GetBoardPost(ctx echo.Context, postId apiid.UUID) error {
 	var request GetBoardPostRequestObject
 
 	request.PostId = postId
@@ -17636,7 +17637,7 @@ func (sh *strictHandler) GetBoardPost(ctx echo.Context, postId openapi_types.UUI
 }
 
 // EditBoardPost operation middleware
-func (sh *strictHandler) EditBoardPost(ctx echo.Context, postId openapi_types.UUID) error {
+func (sh *strictHandler) EditBoardPost(ctx echo.Context, postId apiid.UUID) error {
 	var request EditBoardPostRequestObject
 
 	request.PostId = postId
@@ -17677,7 +17678,7 @@ func (sh *strictHandler) EditBoardPost(ctx echo.Context, postId openapi_types.UU
 }
 
 // ListBoardComments operation middleware
-func (sh *strictHandler) ListBoardComments(ctx echo.Context, postId openapi_types.UUID, params ListBoardCommentsParams) error {
+func (sh *strictHandler) ListBoardComments(ctx echo.Context, postId apiid.UUID, params ListBoardCommentsParams) error {
 	var request ListBoardCommentsRequestObject
 
 	request.PostId = postId
@@ -17703,7 +17704,7 @@ func (sh *strictHandler) ListBoardComments(ctx echo.Context, postId openapi_type
 }
 
 // CreateBoardComment operation middleware
-func (sh *strictHandler) CreateBoardComment(ctx echo.Context, postId openapi_types.UUID) error {
+func (sh *strictHandler) CreateBoardComment(ctx echo.Context, postId apiid.UUID) error {
 	var request CreateBoardCommentRequestObject
 
 	request.PostId = postId
@@ -17744,7 +17745,7 @@ func (sh *strictHandler) CreateBoardComment(ctx echo.Context, postId openapi_typ
 }
 
 // DeleteBoardComment operation middleware
-func (sh *strictHandler) DeleteBoardComment(ctx echo.Context, postId openapi_types.UUID, commentId openapi_types.UUID) error {
+func (sh *strictHandler) DeleteBoardComment(ctx echo.Context, postId apiid.UUID, commentId apiid.UUID) error {
 	var request DeleteBoardCommentRequestObject
 
 	request.PostId = postId
@@ -17770,7 +17771,7 @@ func (sh *strictHandler) DeleteBoardComment(ctx echo.Context, postId openapi_typ
 }
 
 // RemoveBoardPostUpvote operation middleware
-func (sh *strictHandler) RemoveBoardPostUpvote(ctx echo.Context, postId openapi_types.UUID) error {
+func (sh *strictHandler) RemoveBoardPostUpvote(ctx echo.Context, postId apiid.UUID) error {
 	var request RemoveBoardPostUpvoteRequestObject
 
 	request.PostId = postId
@@ -17795,7 +17796,7 @@ func (sh *strictHandler) RemoveBoardPostUpvote(ctx echo.Context, postId openapi_
 }
 
 // UpvoteBoardPost operation middleware
-func (sh *strictHandler) UpvoteBoardPost(ctx echo.Context, postId openapi_types.UUID) error {
+func (sh *strictHandler) UpvoteBoardPost(ctx echo.Context, postId apiid.UUID) error {
 	var request UpvoteBoardPostRequestObject
 
 	request.PostId = postId
@@ -17820,7 +17821,7 @@ func (sh *strictHandler) UpvoteBoardPost(ctx echo.Context, postId openapi_types.
 }
 
 // ListBoardPostUpvoters operation middleware
-func (sh *strictHandler) ListBoardPostUpvoters(ctx echo.Context, postId openapi_types.UUID) error {
+func (sh *strictHandler) ListBoardPostUpvoters(ctx echo.Context, postId apiid.UUID) error {
 	var request ListBoardPostUpvotersRequestObject
 
 	request.PostId = postId
@@ -18319,7 +18320,7 @@ func (sh *strictHandler) GetDiscoverSeason(ctx echo.Context, params GetDiscoverS
 }
 
 // DeclineGroupInvite operation middleware
-func (sh *strictHandler) DeclineGroupInvite(ctx echo.Context, id openapi_types.UUID) error {
+func (sh *strictHandler) DeclineGroupInvite(ctx echo.Context, id apiid.UUID) error {
 	var request DeclineGroupInviteRequestObject
 
 	request.Id = id
@@ -18344,7 +18345,7 @@ func (sh *strictHandler) DeclineGroupInvite(ctx echo.Context, id openapi_types.U
 }
 
 // AcceptGroupInvite operation middleware
-func (sh *strictHandler) AcceptGroupInvite(ctx echo.Context, id openapi_types.UUID) error {
+func (sh *strictHandler) AcceptGroupInvite(ctx echo.Context, id apiid.UUID) error {
 	var request AcceptGroupInviteRequestObject
 
 	request.Id = id
@@ -18431,7 +18432,7 @@ func (sh *strictHandler) CreateGroup(ctx echo.Context) error {
 }
 
 // DeleteGroup operation middleware
-func (sh *strictHandler) DeleteGroup(ctx echo.Context, groupId openapi_types.UUID) error {
+func (sh *strictHandler) DeleteGroup(ctx echo.Context, groupId apiid.UUID) error {
 	var request DeleteGroupRequestObject
 
 	request.GroupId = groupId
@@ -18456,7 +18457,7 @@ func (sh *strictHandler) DeleteGroup(ctx echo.Context, groupId openapi_types.UUI
 }
 
 // GetGroup operation middleware
-func (sh *strictHandler) GetGroup(ctx echo.Context, groupId openapi_types.UUID) error {
+func (sh *strictHandler) GetGroup(ctx echo.Context, groupId apiid.UUID) error {
 	var request GetGroupRequestObject
 
 	request.GroupId = groupId
@@ -18481,7 +18482,7 @@ func (sh *strictHandler) GetGroup(ctx echo.Context, groupId openapi_types.UUID) 
 }
 
 // UpdateGroup operation middleware
-func (sh *strictHandler) UpdateGroup(ctx echo.Context, groupId openapi_types.UUID) error {
+func (sh *strictHandler) UpdateGroup(ctx echo.Context, groupId apiid.UUID) error {
 	var request UpdateGroupRequestObject
 
 	request.GroupId = groupId
@@ -18522,7 +18523,7 @@ func (sh *strictHandler) UpdateGroup(ctx echo.Context, groupId openapi_types.UUI
 }
 
 // CreateChannel operation middleware
-func (sh *strictHandler) CreateChannel(ctx echo.Context, groupId openapi_types.UUID) error {
+func (sh *strictHandler) CreateChannel(ctx echo.Context, groupId apiid.UUID) error {
 	var request CreateChannelRequestObject
 
 	request.GroupId = groupId
@@ -18563,7 +18564,7 @@ func (sh *strictHandler) CreateChannel(ctx echo.Context, groupId openapi_types.U
 }
 
 // DeleteChannel operation middleware
-func (sh *strictHandler) DeleteChannel(ctx echo.Context, groupId openapi_types.UUID, channelId openapi_types.UUID) error {
+func (sh *strictHandler) DeleteChannel(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error {
 	var request DeleteChannelRequestObject
 
 	request.GroupId = groupId
@@ -18589,7 +18590,7 @@ func (sh *strictHandler) DeleteChannel(ctx echo.Context, groupId openapi_types.U
 }
 
 // UpdateChannel operation middleware
-func (sh *strictHandler) UpdateChannel(ctx echo.Context, groupId openapi_types.UUID, channelId openapi_types.UUID) error {
+func (sh *strictHandler) UpdateChannel(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error {
 	var request UpdateChannelRequestObject
 
 	request.GroupId = groupId
@@ -18631,7 +18632,7 @@ func (sh *strictHandler) UpdateChannel(ctx echo.Context, groupId openapi_types.U
 }
 
 // ListChannelItems operation middleware
-func (sh *strictHandler) ListChannelItems(ctx echo.Context, groupId openapi_types.UUID, channelId openapi_types.UUID) error {
+func (sh *strictHandler) ListChannelItems(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error {
 	var request ListChannelItemsRequestObject
 
 	request.GroupId = groupId
@@ -18657,7 +18658,7 @@ func (sh *strictHandler) ListChannelItems(ctx echo.Context, groupId openapi_type
 }
 
 // AddChannelItem operation middleware
-func (sh *strictHandler) AddChannelItem(ctx echo.Context, groupId openapi_types.UUID, channelId openapi_types.UUID) error {
+func (sh *strictHandler) AddChannelItem(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error {
 	var request AddChannelItemRequestObject
 
 	request.GroupId = groupId
@@ -18699,7 +18700,7 @@ func (sh *strictHandler) AddChannelItem(ctx echo.Context, groupId openapi_types.
 }
 
 // RemoveChannelItem operation middleware
-func (sh *strictHandler) RemoveChannelItem(ctx echo.Context, groupId openapi_types.UUID, channelId openapi_types.UUID, titleId openapi_types.UUID) error {
+func (sh *strictHandler) RemoveChannelItem(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID, titleId apiid.UUID) error {
 	var request RemoveChannelItemRequestObject
 
 	request.GroupId = groupId
@@ -18726,7 +18727,7 @@ func (sh *strictHandler) RemoveChannelItem(ctx echo.Context, groupId openapi_typ
 }
 
 // ListMessages operation middleware
-func (sh *strictHandler) ListMessages(ctx echo.Context, groupId openapi_types.UUID, channelId openapi_types.UUID, params ListMessagesParams) error {
+func (sh *strictHandler) ListMessages(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID, params ListMessagesParams) error {
 	var request ListMessagesRequestObject
 
 	request.GroupId = groupId
@@ -18753,7 +18754,7 @@ func (sh *strictHandler) ListMessages(ctx echo.Context, groupId openapi_types.UU
 }
 
 // PostMessage operation middleware
-func (sh *strictHandler) PostMessage(ctx echo.Context, groupId openapi_types.UUID, channelId openapi_types.UUID) error {
+func (sh *strictHandler) PostMessage(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error {
 	var request PostMessageRequestObject
 
 	request.GroupId = groupId
@@ -18795,7 +18796,7 @@ func (sh *strictHandler) PostMessage(ctx echo.Context, groupId openapi_types.UUI
 }
 
 // DeleteMessage operation middleware
-func (sh *strictHandler) DeleteMessage(ctx echo.Context, groupId openapi_types.UUID, channelId openapi_types.UUID, messageId openapi_types.UUID) error {
+func (sh *strictHandler) DeleteMessage(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID, messageId apiid.UUID) error {
 	var request DeleteMessageRequestObject
 
 	request.GroupId = groupId
@@ -18822,7 +18823,7 @@ func (sh *strictHandler) DeleteMessage(ctx echo.Context, groupId openapi_types.U
 }
 
 // EditMessage operation middleware
-func (sh *strictHandler) EditMessage(ctx echo.Context, groupId openapi_types.UUID, channelId openapi_types.UUID, messageId openapi_types.UUID) error {
+func (sh *strictHandler) EditMessage(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID, messageId apiid.UUID) error {
 	var request EditMessageRequestObject
 
 	request.GroupId = groupId
@@ -18865,7 +18866,7 @@ func (sh *strictHandler) EditMessage(ctx echo.Context, groupId openapi_types.UUI
 }
 
 // GetWatchParty operation middleware
-func (sh *strictHandler) GetWatchParty(ctx echo.Context, groupId openapi_types.UUID, channelId openapi_types.UUID) error {
+func (sh *strictHandler) GetWatchParty(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error {
 	var request GetWatchPartyRequestObject
 
 	request.GroupId = groupId
@@ -18891,7 +18892,7 @@ func (sh *strictHandler) GetWatchParty(ctx echo.Context, groupId openapi_types.U
 }
 
 // OpenWatchParty operation middleware
-func (sh *strictHandler) OpenWatchParty(ctx echo.Context, groupId openapi_types.UUID, channelId openapi_types.UUID) error {
+func (sh *strictHandler) OpenWatchParty(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error {
 	var request OpenWatchPartyRequestObject
 
 	request.GroupId = groupId
@@ -18933,7 +18934,7 @@ func (sh *strictHandler) OpenWatchParty(ctx echo.Context, groupId openapi_types.
 }
 
 // EndWatchParty operation middleware
-func (sh *strictHandler) EndWatchParty(ctx echo.Context, groupId openapi_types.UUID, channelId openapi_types.UUID) error {
+func (sh *strictHandler) EndWatchParty(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error {
 	var request EndWatchPartyRequestObject
 
 	request.GroupId = groupId
@@ -18959,7 +18960,7 @@ func (sh *strictHandler) EndWatchParty(ctx echo.Context, groupId openapi_types.U
 }
 
 // SetWatchPartyReady operation middleware
-func (sh *strictHandler) SetWatchPartyReady(ctx echo.Context, groupId openapi_types.UUID, channelId openapi_types.UUID) error {
+func (sh *strictHandler) SetWatchPartyReady(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error {
 	var request SetWatchPartyReadyRequestObject
 
 	request.GroupId = groupId
@@ -19001,7 +19002,7 @@ func (sh *strictHandler) SetWatchPartyReady(ctx echo.Context, groupId openapi_ty
 }
 
 // StartWatchParty operation middleware
-func (sh *strictHandler) StartWatchParty(ctx echo.Context, groupId openapi_types.UUID, channelId openapi_types.UUID) error {
+func (sh *strictHandler) StartWatchParty(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error {
 	var request StartWatchPartyRequestObject
 
 	request.GroupId = groupId
@@ -19046,7 +19047,7 @@ func (sh *strictHandler) StartWatchParty(ctx echo.Context, groupId openapi_types
 }
 
 // MarkWatchPartyWatched operation middleware
-func (sh *strictHandler) MarkWatchPartyWatched(ctx echo.Context, groupId openapi_types.UUID, channelId openapi_types.UUID) error {
+func (sh *strictHandler) MarkWatchPartyWatched(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error {
 	var request MarkWatchPartyWatchedRequestObject
 
 	request.GroupId = groupId
@@ -19072,7 +19073,7 @@ func (sh *strictHandler) MarkWatchPartyWatched(ctx echo.Context, groupId openapi
 }
 
 // GetChannelProgress operation middleware
-func (sh *strictHandler) GetChannelProgress(ctx echo.Context, groupId openapi_types.UUID, channelId openapi_types.UUID) error {
+func (sh *strictHandler) GetChannelProgress(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error {
 	var request GetChannelProgressRequestObject
 
 	request.GroupId = groupId
@@ -19098,7 +19099,7 @@ func (sh *strictHandler) GetChannelProgress(ctx echo.Context, groupId openapi_ty
 }
 
 // MarkChannelRead operation middleware
-func (sh *strictHandler) MarkChannelRead(ctx echo.Context, groupId openapi_types.UUID, channelId openapi_types.UUID) error {
+func (sh *strictHandler) MarkChannelRead(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error {
 	var request MarkChannelReadRequestObject
 
 	request.GroupId = groupId
@@ -19140,7 +19141,7 @@ func (sh *strictHandler) MarkChannelRead(ctx echo.Context, groupId openapi_types
 }
 
 // InviteToGroup operation middleware
-func (sh *strictHandler) InviteToGroup(ctx echo.Context, groupId openapi_types.UUID) error {
+func (sh *strictHandler) InviteToGroup(ctx echo.Context, groupId apiid.UUID) error {
 	var request InviteToGroupRequestObject
 
 	request.GroupId = groupId
@@ -19181,7 +19182,7 @@ func (sh *strictHandler) InviteToGroup(ctx echo.Context, groupId openapi_types.U
 }
 
 // UpdateMyMembership operation middleware
-func (sh *strictHandler) UpdateMyMembership(ctx echo.Context, groupId openapi_types.UUID) error {
+func (sh *strictHandler) UpdateMyMembership(ctx echo.Context, groupId apiid.UUID) error {
 	var request UpdateMyMembershipRequestObject
 
 	request.GroupId = groupId
@@ -19222,7 +19223,7 @@ func (sh *strictHandler) UpdateMyMembership(ctx echo.Context, groupId openapi_ty
 }
 
 // RemoveGroupMember operation middleware
-func (sh *strictHandler) RemoveGroupMember(ctx echo.Context, groupId openapi_types.UUID, userId openapi_types.UUID) error {
+func (sh *strictHandler) RemoveGroupMember(ctx echo.Context, groupId apiid.UUID, userId apiid.UUID) error {
 	var request RemoveGroupMemberRequestObject
 
 	request.GroupId = groupId
@@ -19248,7 +19249,7 @@ func (sh *strictHandler) RemoveGroupMember(ctx echo.Context, groupId openapi_typ
 }
 
 // UpdateGroupMember operation middleware
-func (sh *strictHandler) UpdateGroupMember(ctx echo.Context, groupId openapi_types.UUID, userId openapi_types.UUID) error {
+func (sh *strictHandler) UpdateGroupMember(ctx echo.Context, groupId apiid.UUID, userId apiid.UUID) error {
 	var request UpdateGroupMemberRequestObject
 
 	request.GroupId = groupId
@@ -19290,7 +19291,7 @@ func (sh *strictHandler) UpdateGroupMember(ctx echo.Context, groupId openapi_typ
 }
 
 // TransferGroup operation middleware
-func (sh *strictHandler) TransferGroup(ctx echo.Context, groupId openapi_types.UUID) error {
+func (sh *strictHandler) TransferGroup(ctx echo.Context, groupId apiid.UUID) error {
 	var request TransferGroupRequestObject
 
 	request.GroupId = groupId
@@ -19689,7 +19690,7 @@ func (sh *strictHandler) GetTraktConnection(ctx echo.Context) error {
 }
 
 // DeleteImport operation middleware
-func (sh *strictHandler) DeleteImport(ctx echo.Context, id openapi_types.UUID) error {
+func (sh *strictHandler) DeleteImport(ctx echo.Context, id apiid.UUID) error {
 	var request DeleteImportRequestObject
 
 	request.Id = id
@@ -19714,7 +19715,7 @@ func (sh *strictHandler) DeleteImport(ctx echo.Context, id openapi_types.UUID) e
 }
 
 // GetImport operation middleware
-func (sh *strictHandler) GetImport(ctx echo.Context, id openapi_types.UUID) error {
+func (sh *strictHandler) GetImport(ctx echo.Context, id apiid.UUID) error {
 	var request GetImportRequestObject
 
 	request.Id = id
@@ -19739,7 +19740,7 @@ func (sh *strictHandler) GetImport(ctx echo.Context, id openapi_types.UUID) erro
 }
 
 // ApplyImport operation middleware
-func (sh *strictHandler) ApplyImport(ctx echo.Context, id openapi_types.UUID) error {
+func (sh *strictHandler) ApplyImport(ctx echo.Context, id apiid.UUID) error {
 	var request ApplyImportRequestObject
 
 	request.Id = id
@@ -19764,7 +19765,7 @@ func (sh *strictHandler) ApplyImport(ctx echo.Context, id openapi_types.UUID) er
 }
 
 // ResolveImportRow operation middleware
-func (sh *strictHandler) ResolveImportRow(ctx echo.Context, id openapi_types.UUID, index int) error {
+func (sh *strictHandler) ResolveImportRow(ctx echo.Context, id apiid.UUID, index int) error {
 	var request ResolveImportRowRequestObject
 
 	request.Id = id
@@ -19806,7 +19807,7 @@ func (sh *strictHandler) ResolveImportRow(ctx echo.Context, id openapi_types.UUI
 }
 
 // UndoListenImport operation middleware
-func (sh *strictHandler) UndoListenImport(ctx echo.Context, id openapi_types.UUID) error {
+func (sh *strictHandler) UndoListenImport(ctx echo.Context, id apiid.UUID) error {
 	var request UndoListenImportRequestObject
 
 	request.Id = id
@@ -19920,7 +19921,7 @@ func (sh *strictHandler) AddLibraryItem(ctx echo.Context) error {
 }
 
 // DeleteLibraryItem operation middleware
-func (sh *strictHandler) DeleteLibraryItem(ctx echo.Context, id openapi_types.UUID) error {
+func (sh *strictHandler) DeleteLibraryItem(ctx echo.Context, id apiid.UUID) error {
 	var request DeleteLibraryItemRequestObject
 
 	request.Id = id
@@ -19945,7 +19946,7 @@ func (sh *strictHandler) DeleteLibraryItem(ctx echo.Context, id openapi_types.UU
 }
 
 // GetLibraryItem operation middleware
-func (sh *strictHandler) GetLibraryItem(ctx echo.Context, id openapi_types.UUID) error {
+func (sh *strictHandler) GetLibraryItem(ctx echo.Context, id apiid.UUID) error {
 	var request GetLibraryItemRequestObject
 
 	request.Id = id
@@ -19970,7 +19971,7 @@ func (sh *strictHandler) GetLibraryItem(ctx echo.Context, id openapi_types.UUID)
 }
 
 // UpdateLibraryItem operation middleware
-func (sh *strictHandler) UpdateLibraryItem(ctx echo.Context, id openapi_types.UUID) error {
+func (sh *strictHandler) UpdateLibraryItem(ctx echo.Context, id apiid.UUID) error {
 	var request UpdateLibraryItemRequestObject
 
 	request.Id = id
@@ -20011,7 +20012,7 @@ func (sh *strictHandler) UpdateLibraryItem(ctx echo.Context, id openapi_types.UU
 }
 
 // SetEpisodeWatched operation middleware
-func (sh *strictHandler) SetEpisodeWatched(ctx echo.Context, id openapi_types.UUID, season int, episode int) error {
+func (sh *strictHandler) SetEpisodeWatched(ctx echo.Context, id apiid.UUID, season int, episode int) error {
 	var request SetEpisodeWatchedRequestObject
 
 	request.Id = id
@@ -20054,7 +20055,7 @@ func (sh *strictHandler) SetEpisodeWatched(ctx echo.Context, id openapi_types.UU
 }
 
 // MarkSeasonWatched operation middleware
-func (sh *strictHandler) MarkSeasonWatched(ctx echo.Context, id openapi_types.UUID, season int) error {
+func (sh *strictHandler) MarkSeasonWatched(ctx echo.Context, id apiid.UUID, season int) error {
 	var request MarkSeasonWatchedRequestObject
 
 	request.Id = id
@@ -20080,7 +20081,7 @@ func (sh *strictHandler) MarkSeasonWatched(ctx echo.Context, id openapi_types.UU
 }
 
 // MarkShowWatched operation middleware
-func (sh *strictHandler) MarkShowWatched(ctx echo.Context, id openapi_types.UUID) error {
+func (sh *strictHandler) MarkShowWatched(ctx echo.Context, id apiid.UUID) error {
 	var request MarkShowWatchedRequestObject
 
 	request.Id = id
@@ -20215,7 +20216,7 @@ func (sh *strictHandler) CreateList(ctx echo.Context) error {
 }
 
 // DeleteList operation middleware
-func (sh *strictHandler) DeleteList(ctx echo.Context, id openapi_types.UUID) error {
+func (sh *strictHandler) DeleteList(ctx echo.Context, id apiid.UUID) error {
 	var request DeleteListRequestObject
 
 	request.Id = id
@@ -20240,7 +20241,7 @@ func (sh *strictHandler) DeleteList(ctx echo.Context, id openapi_types.UUID) err
 }
 
 // GetList operation middleware
-func (sh *strictHandler) GetList(ctx echo.Context, id openapi_types.UUID) error {
+func (sh *strictHandler) GetList(ctx echo.Context, id apiid.UUID) error {
 	var request GetListRequestObject
 
 	request.Id = id
@@ -20265,7 +20266,7 @@ func (sh *strictHandler) GetList(ctx echo.Context, id openapi_types.UUID) error 
 }
 
 // RenameList operation middleware
-func (sh *strictHandler) RenameList(ctx echo.Context, id openapi_types.UUID) error {
+func (sh *strictHandler) RenameList(ctx echo.Context, id apiid.UUID) error {
 	var request RenameListRequestObject
 
 	request.Id = id
@@ -20306,7 +20307,7 @@ func (sh *strictHandler) RenameList(ctx echo.Context, id openapi_types.UUID) err
 }
 
 // AddListItem operation middleware
-func (sh *strictHandler) AddListItem(ctx echo.Context, id openapi_types.UUID) error {
+func (sh *strictHandler) AddListItem(ctx echo.Context, id apiid.UUID) error {
 	var request AddListItemRequestObject
 
 	request.Id = id
@@ -20347,7 +20348,7 @@ func (sh *strictHandler) AddListItem(ctx echo.Context, id openapi_types.UUID) er
 }
 
 // RemoveListItem operation middleware
-func (sh *strictHandler) RemoveListItem(ctx echo.Context, id openapi_types.UUID, titleId openapi_types.UUID) error {
+func (sh *strictHandler) RemoveListItem(ctx echo.Context, id apiid.UUID, titleId apiid.UUID) error {
 	var request RemoveListItemRequestObject
 
 	request.Id = id
@@ -20373,7 +20374,7 @@ func (sh *strictHandler) RemoveListItem(ctx echo.Context, id openapi_types.UUID,
 }
 
 // ReorderList operation middleware
-func (sh *strictHandler) ReorderList(ctx echo.Context, id openapi_types.UUID) error {
+func (sh *strictHandler) ReorderList(ctx echo.Context, id apiid.UUID) error {
 	var request ReorderListRequestObject
 
 	request.Id = id
@@ -21097,7 +21098,7 @@ func (sh *strictHandler) ListRecommendations(ctx echo.Context) error {
 }
 
 // DismissRecommendation operation middleware
-func (sh *strictHandler) DismissRecommendation(ctx echo.Context, id openapi_types.UUID) error {
+func (sh *strictHandler) DismissRecommendation(ctx echo.Context, id apiid.UUID) error {
 	var request DismissRecommendationRequestObject
 
 	request.Id = id
@@ -21122,7 +21123,7 @@ func (sh *strictHandler) DismissRecommendation(ctx echo.Context, id openapi_type
 }
 
 // AddRecommendation operation middleware
-func (sh *strictHandler) AddRecommendation(ctx echo.Context, id openapi_types.UUID) error {
+func (sh *strictHandler) AddRecommendation(ctx echo.Context, id apiid.UUID) error {
 	var request AddRecommendationRequestObject
 
 	request.Id = id
@@ -21371,7 +21372,7 @@ func (sh *strictHandler) GetStats(ctx echo.Context, params GetStatsParams) error
 }
 
 // GetOAuthRequest operation middleware
-func (sh *strictHandler) GetOAuthRequest(ctx echo.Context, id openapi_types.UUID) error {
+func (sh *strictHandler) GetOAuthRequest(ctx echo.Context, id apiid.UUID) error {
 	var request GetOAuthRequestRequestObject
 
 	request.Id = id
@@ -21396,7 +21397,7 @@ func (sh *strictHandler) GetOAuthRequest(ctx echo.Context, id openapi_types.UUID
 }
 
 // ApproveOAuthRequest operation middleware
-func (sh *strictHandler) ApproveOAuthRequest(ctx echo.Context, id openapi_types.UUID) error {
+func (sh *strictHandler) ApproveOAuthRequest(ctx echo.Context, id apiid.UUID) error {
 	var request ApproveOAuthRequestRequestObject
 
 	request.Id = id
@@ -21437,7 +21438,7 @@ func (sh *strictHandler) ApproveOAuthRequest(ctx echo.Context, id openapi_types.
 }
 
 // DenyOAuthRequest operation middleware
-func (sh *strictHandler) DenyOAuthRequest(ctx echo.Context, id openapi_types.UUID) error {
+func (sh *strictHandler) DenyOAuthRequest(ctx echo.Context, id apiid.UUID) error {
 	var request DenyOAuthRequestRequestObject
 
 	request.Id = id
@@ -21503,7 +21504,7 @@ func (sh *strictHandler) ListPlans(ctx echo.Context, params ListPlansParams) err
 }
 
 // GetPlan operation middleware
-func (sh *strictHandler) GetPlan(ctx echo.Context, id openapi_types.UUID) error {
+func (sh *strictHandler) GetPlan(ctx echo.Context, id apiid.UUID) error {
 	var request GetPlanRequestObject
 
 	request.Id = id
@@ -21528,7 +21529,7 @@ func (sh *strictHandler) GetPlan(ctx echo.Context, id openapi_types.UUID) error 
 }
 
 // ApprovePlan operation middleware
-func (sh *strictHandler) ApprovePlan(ctx echo.Context, id openapi_types.UUID) error {
+func (sh *strictHandler) ApprovePlan(ctx echo.Context, id apiid.UUID) error {
 	var request ApprovePlanRequestObject
 
 	request.Id = id
@@ -21553,7 +21554,7 @@ func (sh *strictHandler) ApprovePlan(ctx echo.Context, id openapi_types.UUID) er
 }
 
 // DenyPlan operation middleware
-func (sh *strictHandler) DenyPlan(ctx echo.Context, id openapi_types.UUID) error {
+func (sh *strictHandler) DenyPlan(ctx echo.Context, id apiid.UUID) error {
 	var request DenyPlanRequestObject
 
 	request.Id = id
@@ -21752,7 +21753,7 @@ func (sh *strictHandler) CreateShelf(ctx echo.Context) error {
 }
 
 // DeleteShelf operation middleware
-func (sh *strictHandler) DeleteShelf(ctx echo.Context, id openapi_types.UUID) error {
+func (sh *strictHandler) DeleteShelf(ctx echo.Context, id apiid.UUID) error {
 	var request DeleteShelfRequestObject
 
 	request.Id = id
@@ -21777,7 +21778,7 @@ func (sh *strictHandler) DeleteShelf(ctx echo.Context, id openapi_types.UUID) er
 }
 
 // UpdateShelf operation middleware
-func (sh *strictHandler) UpdateShelf(ctx echo.Context, id openapi_types.UUID) error {
+func (sh *strictHandler) UpdateShelf(ctx echo.Context, id apiid.UUID) error {
 	var request UpdateShelfRequestObject
 
 	request.Id = id
@@ -21818,7 +21819,7 @@ func (sh *strictHandler) UpdateShelf(ctx echo.Context, id openapi_types.UUID) er
 }
 
 // ListShelfItems operation middleware
-func (sh *strictHandler) ListShelfItems(ctx echo.Context, id openapi_types.UUID, params ListShelfItemsParams) error {
+func (sh *strictHandler) ListShelfItems(ctx echo.Context, id apiid.UUID, params ListShelfItemsParams) error {
 	var request ListShelfItemsRequestObject
 
 	request.Id = id
@@ -21867,7 +21868,7 @@ func (sh *strictHandler) ListBlocks(ctx echo.Context) error {
 }
 
 // UnblockUser operation middleware
-func (sh *strictHandler) UnblockUser(ctx echo.Context, userId openapi_types.UUID) error {
+func (sh *strictHandler) UnblockUser(ctx echo.Context, userId apiid.UUID) error {
 	var request UnblockUserRequestObject
 
 	request.UserId = userId
@@ -21892,7 +21893,7 @@ func (sh *strictHandler) UnblockUser(ctx echo.Context, userId openapi_types.UUID
 }
 
 // BlockUser operation middleware
-func (sh *strictHandler) BlockUser(ctx echo.Context, userId openapi_types.UUID) error {
+func (sh *strictHandler) BlockUser(ctx echo.Context, userId apiid.UUID) error {
 	var request BlockUserRequestObject
 
 	request.UserId = userId
@@ -21979,7 +21980,7 @@ func (sh *strictHandler) SendFriendRequest(ctx echo.Context) error {
 }
 
 // WithdrawFriendRequest operation middleware
-func (sh *strictHandler) WithdrawFriendRequest(ctx echo.Context, id openapi_types.UUID) error {
+func (sh *strictHandler) WithdrawFriendRequest(ctx echo.Context, id apiid.UUID) error {
 	var request WithdrawFriendRequestRequestObject
 
 	request.Id = id
@@ -22004,7 +22005,7 @@ func (sh *strictHandler) WithdrawFriendRequest(ctx echo.Context, id openapi_type
 }
 
 // AcceptFriendRequest operation middleware
-func (sh *strictHandler) AcceptFriendRequest(ctx echo.Context, id openapi_types.UUID) error {
+func (sh *strictHandler) AcceptFriendRequest(ctx echo.Context, id apiid.UUID) error {
 	var request AcceptFriendRequestRequestObject
 
 	request.Id = id
@@ -22052,7 +22053,7 @@ func (sh *strictHandler) ListFriends(ctx echo.Context) error {
 }
 
 // RemoveFriend operation middleware
-func (sh *strictHandler) RemoveFriend(ctx echo.Context, userId openapi_types.UUID) error {
+func (sh *strictHandler) RemoveFriend(ctx echo.Context, userId apiid.UUID) error {
 	var request RemoveFriendRequestObject
 
 	request.UserId = userId
@@ -22077,7 +22078,7 @@ func (sh *strictHandler) RemoveFriend(ctx echo.Context, userId openapi_types.UUI
 }
 
 // GetFriendProfile operation middleware
-func (sh *strictHandler) GetFriendProfile(ctx echo.Context, userId openapi_types.UUID) error {
+func (sh *strictHandler) GetFriendProfile(ctx echo.Context, userId apiid.UUID) error {
 	var request GetFriendProfileRequestObject
 
 	request.UserId = userId
@@ -22518,7 +22519,7 @@ func (sh *strictHandler) ResolveTitle(ctx echo.Context) error {
 }
 
 // GetTitle operation middleware
-func (sh *strictHandler) GetTitle(ctx echo.Context, id openapi_types.UUID) error {
+func (sh *strictHandler) GetTitle(ctx echo.Context, id apiid.UUID) error {
 	var request GetTitleRequestObject
 
 	request.Id = id
@@ -22543,7 +22544,7 @@ func (sh *strictHandler) GetTitle(ctx echo.Context, id openapi_types.UUID) error
 }
 
 // ListTitlePosts operation middleware
-func (sh *strictHandler) ListTitlePosts(ctx echo.Context, id openapi_types.UUID, params ListTitlePostsParams) error {
+func (sh *strictHandler) ListTitlePosts(ctx echo.Context, id apiid.UUID, params ListTitlePostsParams) error {
 	var request ListTitlePostsRequestObject
 
 	request.Id = id
@@ -22594,7 +22595,7 @@ func (sh *strictHandler) GetTonight(ctx echo.Context, params GetTonightParams) e
 }
 
 // ClearTonightFeedback operation middleware
-func (sh *strictHandler) ClearTonightFeedback(ctx echo.Context, id openapi_types.UUID, params ClearTonightFeedbackParams) error {
+func (sh *strictHandler) ClearTonightFeedback(ctx echo.Context, id apiid.UUID, params ClearTonightFeedbackParams) error {
 	var request ClearTonightFeedbackRequestObject
 
 	request.Id = id
@@ -22620,7 +22621,7 @@ func (sh *strictHandler) ClearTonightFeedback(ctx echo.Context, id openapi_types
 }
 
 // SendTonightFeedback operation middleware
-func (sh *strictHandler) SendTonightFeedback(ctx echo.Context, id openapi_types.UUID, params SendTonightFeedbackParams) error {
+func (sh *strictHandler) SendTonightFeedback(ctx echo.Context, id apiid.UUID, params SendTonightFeedbackParams) error {
 	var request SendTonightFeedbackRequestObject
 
 	request.Id = id
@@ -22685,7 +22686,7 @@ func (sh *strictHandler) GetUpNext(ctx echo.Context) error {
 }
 
 // GetUserAvatar operation middleware
-func (sh *strictHandler) GetUserAvatar(ctx echo.Context, userId openapi_types.UUID, params GetUserAvatarParams) error {
+func (sh *strictHandler) GetUserAvatar(ctx echo.Context, userId apiid.UUID, params GetUserAvatarParams) error {
 	var request GetUserAvatarRequestObject
 
 	request.UserId = userId
