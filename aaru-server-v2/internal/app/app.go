@@ -8,6 +8,7 @@ import (
 	"aaru-go-api/internal/config"
 	"aaru-go-api/internal/db"
 	"aaru-go-api/internal/db/sqlc"
+	"aaru-go-api/internal/gamification"
 	"aaru-go-api/internal/httpapi"
 	"aaru-go-api/internal/metrics"
 	"aaru-go-api/internal/middleware"
@@ -93,6 +94,7 @@ func serve(ctx context.Context, reader *config.Reader, log *slog.Logger) error {
 	outbound := &http.Client{Timeout: 15 * time.Second}
 	deps.Auth, deps.AgentTokens = auth.FromConfig(cfg, pool, outbound)
 	deps.OAuth = oauth.FromConfig(cfg, pool)
+	deps.Gamification = gamification.New(pool, log)
 	server := httpapi.New(deps)
 	router := server.Router(reporter)
 
