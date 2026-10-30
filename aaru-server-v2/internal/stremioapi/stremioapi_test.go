@@ -14,7 +14,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func key(season, episode int) core.EpisodeKey { return core.EpisodeKey{Season: season, Episode: episode} }
+func key(season, episode int) core.EpisodeKey {
+	return core.EpisodeKey{Season: season, Episode: episode}
+}
 
 // StremioImportTests.bitfield
 func TestWatchedBitfieldMarksTheRightEpisodesAndLeavesSpecialsOut(t *testing.T) {

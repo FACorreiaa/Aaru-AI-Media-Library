@@ -339,8 +339,11 @@ func (e *libEnv) stremioStubSplitShow(own, part string, tvdb int) string {
 		ids      core.ExternalIDs
 		episodes []ep
 	}{
-		{tmdb, "Split Show", core.ExternalIDs{TMDB: tmdb, IMDB: own, TVDB: fmt.Sprint(tvdb)},
-			[]ep{{1, 1, -39}, {1, 2, -38}, {2, 1, 1}, {2, 2, 2}, {2, 3, 3}, {2, 4, 4}}},
+		{
+			tmdb, "Split Show",
+			core.ExternalIDs{TMDB: tmdb, IMDB: own, TVDB: fmt.Sprint(tvdb)},
+			[]ep{{1, 1, -39}, {1, 2, -38}, {2, 1, 1}, {2, 2, 2}, {2, 3, 3}, {2, 4, 4}},
+		},
 		{duplicate, "Split Show: Part", core.ExternalIDs{TMDB: duplicate, IMDB: part}, []ep{{1, 13, -30}}},
 	} {
 		e.fake.stubTitle(catalog.Record{
