@@ -11,6 +11,7 @@ import (
 	"aaru-go-api/internal/mcp"
 	"context"
 	"encoding/json"
+	jsonv2 "encoding/json/v2"
 	"fmt"
 	"math"
 	"strings"
@@ -65,8 +66,10 @@ func (m mcpTools) Call(ctx context.Context, name string, args json.RawMessage, c
 
 // MARK: Decoding
 
+// decodeArgs reads a tool's arguments as Swift's JSONDecoder did: keys match exactly, at every
+// depth ("Status" is not "status"). encoding/json would match them case-insensitively.
 func decodeArgs(args json.RawMessage, v any) error {
-	if err := json.Unmarshal(args, v); err != nil {
+	if err := jsonv2.Unmarshal(args, v); err != nil {
 		return fmt.Errorf("%w: %w", mcp.ErrArguments, err)
 	}
 	return nil
