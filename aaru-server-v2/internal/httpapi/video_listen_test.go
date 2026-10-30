@@ -104,8 +104,8 @@ func TestVideoListenAndAScrobblersListenOfTheSameVideoAreOnePlay(t *testing.T) {
 	env := newLibEnv(t)
 	store := env.server.Listens.Store
 	// Web Scrobbler spelled it its own way, on YouTube Music's link for the video.
-	started := math.Floor(float64(time.Now().Add(-198 * time.Second).Unix()))
-	at := func(offset float64) time.Time { return time.Unix(int64(started+offset), 0) }
+	started := time.Now().Add(-198 * time.Second).Unix() // whole seconds, rounded down
+	at := func(offset int64) time.Time { return time.Unix(started+offset, 0) }
 	_, err := store.Insert(context.Background(), []music.NewListen{{
 		ListenedAt: at(20), Artist: "Massive Attack", Track: "Teardrop (2006 Remaster)", DurationMs: ptr(330_000),
 		OriginURL: ptr("https://music.youtube.com/watch?v=u7K72X4eo_s"), Client: ptr("Web Scrobbler"),
