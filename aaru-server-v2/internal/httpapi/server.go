@@ -13,6 +13,7 @@ import (
 	"aaru-go-api/internal/apperr"
 	"aaru-go-api/internal/auth"
 	"aaru-go-api/internal/billing"
+	"aaru-go-api/internal/boards"
 	"aaru-go-api/internal/catalog"
 	"aaru-go-api/internal/concerts"
 	"aaru-go-api/internal/config"
@@ -95,6 +96,8 @@ type Deps struct {
 	Schedule *schedule.Service
 	// Tonight is the Tonight strip (AG-005). New builds one over Schedule when unset.
 	Tonight *tonight.Service
+	// Boards is the friends-only Board (BOARD-001). New builds one over Pool, Catalog and Library.
+	Boards *boards.Service
 	// Model is the agent's language model; nil when ANTHROPIC_API_KEY is unset (`@aaru` and
 	// capture reading stay off).
 	Model model.Provider
@@ -142,6 +145,9 @@ func New(deps Deps) *Server {
 				return tonight.AcceptPicks(ctx, q, user, items)
 			}
 		}
+	}
+	if deps.Boards == nil && deps.Pool != nil && deps.Library != nil && deps.Catalog != nil {
+		deps.Boards = boards.New(q, deps.Catalog.Resolver(), deps.Library)
 	}
 	if deps.Schedule == nil && deps.Pool != nil {
 		deps.Schedule = schedule.New(deps.Pool)
