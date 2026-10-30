@@ -217,10 +217,10 @@ func (s *Service) PrepareSeason(ctx context.Context, show ShowContext, season in
 }
 
 // PrepareShowWatched (PROG-005) is the whole show watched, as one action. Every aired regular
-// episode is ticked, undated (the journal kind "show"), and the status follows PrepareProgress: an
-// ended or canceled show finishes, a running one stays in progress, caught up. patch carries any
-// other fields of the same tap (its status is the reason for this write and is not applied as
-// such). Nil when nothing would change.
+// episode is ticked, undated (the journal kind "show"), and the show finishes, running or not
+// (owner, 2026-10-30): a running one moves back to in progress when its next episode airs
+// (ReopenAired). patch carries any other fields of the same tap (its status is the reason for this
+// write and is not applied as such). Nil when nothing would change.
 func (s *Service) PrepareShowWatched(ctx context.Context, show ShowContext, patch ItemPatch, caller Caller) (*PreparedWrite, error) {
 	rest := patch
 	rest.Status = nil
@@ -243,10 +243,14 @@ func (s *Service) PrepareShowWatched(ctx context.Context, show ShowContext, patc
 			unwatched = append(unwatched, k)
 		}
 	}
-	finishes := airedRegular > 0 && endedOrCanceled(show.Status)
-	if finishes && fields.Status != core.StatusFinished && caller.Actor == ActorUser {
-		byHand := true
-		fields.StatusByHand = &byHand
+	if airedRegular > 0 && fields.Status != core.StatusFinished {
+		fields.Status = core.StatusFinished
+		now := s.now()
+		fields.FinishedAt = &now
+		if caller.Actor == ActorUser {
+			byHand := true
+			fields.StatusByHand = &byHand
+		}
 	}
 	summary := "Marked " + show.Entry.Title.Title + " watched (" + strconv.Itoa(len(unwatched)) + " episodes)"
 	w, err := s.PrepareProgress(ctx, unwatched, nil, show, &fields, "show", summary)

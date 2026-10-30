@@ -143,12 +143,9 @@ func (s *Service) Add(ctx context.Context, ref core.MediaRef, status *core.Libra
 				}
 			}
 		}
-		if len(snapshot.Watched) == 0 || !endedOrCanceled(detail.Status) {
-			if len(snapshot.Watched) == 0 {
-				snapshot.Fields.Status = core.StatusWishlist
-			} else {
-				snapshot.Fields.Status = core.StatusInProgress
-			}
+		// Running or not, it is finished (owner, 2026-10-30); nothing aired yet is still planned.
+		if len(snapshot.Watched) == 0 {
+			snapshot.Fields.Status = core.StatusWishlist
 			snapshot.Fields.FinishedAt = nil
 			byHand := false
 			snapshot.Fields.StatusByHand = &byHand

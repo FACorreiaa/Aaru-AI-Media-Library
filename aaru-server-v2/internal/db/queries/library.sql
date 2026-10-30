@@ -104,3 +104,18 @@ WHERE user_id = @user_id AND title_id = ANY(@title_ids::uuid[]);
 
 -- name: LibraryStatusByHand :many
 SELECT status_by_hand FROM library_items WHERE id = @id;
+
+-- name: LibraryReopenAired :execrows
+-- A finished show goes back to in progress once a regular episode it has not ticked airs after it
+-- was finished: a new season, or the next episode of a running show (owner, 2026-10-30). Only
+-- airings since `since` count, so an old gap in an imported show never reopens it.
+UPDATE library_items li
+SET status = 'in_progress', finished_at = NULL, updated_at = sqlc.arg(now)
+WHERE li.status = 'finished' AND li.finished_at IS NOT NULL
+  AND EXISTS (
+    SELECT 1 FROM show_episodes se
+    WHERE se.title_id = li.title_id AND se.season > 0
+      AND se.airs_at > li.finished_at
+      AND se.airs_at > sqlc.arg(since) AND se.airs_at <= sqlc.arg(now)
+      AND NOT EXISTS (SELECT 1 FROM episode_progress ep WHERE ep.library_item_id = li.id
+                      AND ep.season = se.season AND ep.episode = se.episode));

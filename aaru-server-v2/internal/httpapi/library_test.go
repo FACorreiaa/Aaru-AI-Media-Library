@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -394,11 +395,11 @@ func TestSeasonMarkIsUndated(t *testing.T) {
 	assert.Equal(t, 4, env.watchedCount(id))
 }
 
-func TestRunningShowWatchedStaysInProgressAndAgainIsANoOp(t *testing.T) { // PROG-005
+func TestRunningShowWatchedFinishesAndAgainIsANoOp(t *testing.T) { // PROG-005, owner 2026-10-30
 	env := newLibEnv(t)
 	id := env.add("show", env.stubShow("Airing", catalog.StatusReturning, 2, 3, true))
 	entry := env.json(http.MethodPost, patchPath(id)+"/watched", nil)["entry"].(map[string]any)
-	assert.Equal(t, "in_progress", entry["status"])
+	assert.Equal(t, "finished", entry["status"])
 	watched, aired := progressOf(entry)
 	assert.InDelta(t, 5, watched, 0)
 	assert.InDelta(t, 5, aired, 0)
@@ -422,9 +423,60 @@ func TestPatchFinishedOnAShowIsTheWholeShow(t *testing.T) { // PROG-005
 
 	running := env.add("show", env.stubShow("Running", catalog.StatusReturning, 2, 3, false))
 	caughtUp := env.json(http.MethodPatch, patchPath(running), map[string]any{"status": "finished"})
-	assert.Equal(t, "in_progress", caughtUp["status"])
+	assert.Equal(t, "finished", caughtUp["status"])
 	watched, _ = progressOf(caughtUp)
 	assert.InDelta(t, 6, watched, 0)
+}
+
+func TestCaughtUpRunningShowWatchedFinishes(t *testing.T) { // PROG-005, owner 2026-10-30
+	env := newLibEnv(t)
+	id := env.add("show", env.stubShow("Airing", catalog.StatusReturning, 1, 3, true))
+	env.json(http.MethodPost, patchPath(id)+"/seasons/1/watched", nil)
+	before := env.actionCount()
+	reply := env.json(http.MethodPatch, patchPath(id), map[string]any{"status": "finished"})
+	assert.Equal(t, "finished", reply["status"], "every aired episode already ticked: Watched still moves it")
+	assert.Equal(t, before+1, env.actionCount())
+}
+
+func TestFinishedShowReopensWhenANewEpisodeAirs(t *testing.T) { // owner 2026-10-30
+	env := newLibEnv(t)
+	ctx := context.Background()
+	store := env.server.Library.Store
+	running := env.add("show", env.stubShow("Airing", catalog.StatusReturning, 2, 3, true))
+	env.json(http.MethodPost, patchPath(running)+"/watched", nil)
+	ended := env.add("show", env.stubShow("Ended", catalog.StatusEnded, 2, 3, false), "finished")
+	_, err := env.pool.Exec(ctx, `DELETE FROM episode_progress WHERE library_item_id = $1 AND season = 1 AND episode = 1`,
+		uuid.MustParse(ended))
+	require.NoError(t, err)
+	status := func(id string) string { return env.json(http.MethodGet, patchPath(id), nil)["status"].(string) }
+
+	// S2E3 airs in seven days: nothing new has aired yet, and one aired long ago stays in the past.
+	n, err := store.ReopenAired(ctx, time.Now())
+	require.NoError(t, err)
+	assert.Zero(t, n)
+	n, err = store.ReopenAired(ctx, time.Now().Add(30*24*time.Hour))
+	require.NoError(t, err)
+	assert.Zero(t, n, "an airing older than the window is not news")
+	assert.Equal(t, "finished", status(running))
+
+	before := env.actionCount()
+	n, err = store.ReopenAired(ctx, time.Now().Add(8*24*time.Hour))
+	require.NoError(t, err)
+	assert.Equal(t, 1, n)
+	reopened := env.json(http.MethodGet, patchPath(running), nil)
+	assert.Equal(t, "in_progress", reopened["status"])
+	assert.NotContains(t, reopened, "finishedAt")
+	assert.Equal(t, "finished", status(ended), "an episode unticked before it was finished is not new")
+	assert.Equal(t, before, env.actionCount(), "not a user's write: nothing to undo")
+
+	_, err = env.pool.Exec(ctx, `UPDATE show_episodes SET airs_at = now() - interval '1 hour'
+		WHERE season = 2 AND episode = 3 AND airs_at > now()`)
+	require.NoError(t, err)
+	again := env.json(http.MethodPatch, patchPath(running), map[string]any{"status": "finished"})
+	assert.Equal(t, "finished", again["status"])
+	n, err = store.ReopenAired(ctx, time.Now())
+	require.NoError(t, err)
+	assert.Zero(t, n, "watched again with the new episode ticked")
 }
 
 func TestAddAShowAsWatched(t *testing.T) { // PROG-005
@@ -436,7 +488,7 @@ func TestAddAShowAsWatched(t *testing.T) { // PROG-005
 	assert.InDelta(t, 6, watched, 0)
 
 	running := env.add("show", env.stubShow("Running", catalog.StatusReturning, 2, 3, false), "finished")
-	assert.Equal(t, "in_progress", env.json(http.MethodGet, patchPath(running), nil)["status"])
+	assert.Equal(t, "finished", env.json(http.MethodGet, patchPath(running), nil)["status"])
 
 	movie := env.add("movie", env.stubMovie("Heat"))
 	assert.Equal(t, http.StatusUnprocessableEntity, env.send(http.MethodPost, patchPath(movie)+"/watched", nil).Code)

@@ -198,15 +198,17 @@ final class TitleDetailModel {
     }
 
     /// PROG-005: Watched on a show ticks every aired episode as one action, which the toast can
-    /// undo. The server decides the status: an ended or canceled show becomes Watched, a running
-    /// one stays Watching, caught up, and the picker settles on whichever it says.
+    /// undo. Any show with an aired episode becomes Watched; the server moves a running one back to
+    /// Watching when its next episode airs (owner, 2026-10-30). The picker settles on its answer.
     func markShowWatched() async {
         let before = (entry, watched)
         let aired = Set(orderedSeasons.filter { $0.number > 0 }.flatMap(\.episodes).filter(hasAired)
             .map(EpisodeKey.init))
         problem = nil
         watched.formUnion(aired)
-        entry.status = endsAtFinale ? .finished : .inProgress
+        if !aired.isEmpty {
+            entry.status = .finished
+        }
         pending.formUnion(aired)
         isSaving = true
         defer {
@@ -228,13 +230,6 @@ final class TitleDetailModel {
             (entry, watched) = before
             problem = failure.message
         }
-    }
-
-    /// An ended or canceled show finishes when every episode is ticked; a running one, or one
-    /// whose detail has not loaded, is the server's call. Optimistic only.
-    private var endsAtFinale: Bool {
-        guard let status = title?.status else { return true }
-        return status == .ended || status == .canceled
     }
 
     /// "Caught up · next Oct 30": a running show with every aired episode watched, and its next

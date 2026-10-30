@@ -12,8 +12,8 @@ struct WriteFailure: Error {
 
 extension LibraryModel {
     /// PROG-005: every aired episode of a show, ticked as one action the toast can undo. The
-    /// server decides the status: an ended show becomes Watched, a running one stays Watching,
-    /// caught up. The shelf takes the answer at once.
+    /// show becomes Watched; the server moves a running one back to Watching when its next episode
+    /// airs. The shelf takes the answer at once.
     func markShowWatched(_ id: String, api: Client?) async -> Result<ShowWatched, WriteFailure> {
         let name = entry(id)?.title.title ?? "The show"
         guard let api else { return .failure(WriteFailure(message: "Aaru could not reach the server.")) }

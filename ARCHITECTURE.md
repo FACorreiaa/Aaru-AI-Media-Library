@@ -1345,8 +1345,8 @@ is a query, not a table.
   Pages come from the data layer already filtered, so the cursor is keyset on `(created_at, id)`.
 - **A review writes the library through `LibraryService`.** A rating on a post adds a new title
   as finished, then rates it (two journal rows); an existing title only gets the rating. A
-  still-airing show lands as `in_progress` with its aired episodes ticked (PROG-005), so BOARD-002's
-  composer preview must say so. The post keeps its own copy of the rating, so undoing the library action never deletes the post.
+  show lands as finished with its aired episodes ticked (PROG-005); a running one moves back to
+  `in_progress` when its next episode airs. The post keeps its own copy of the rating, so undoing the library action never deletes the post.
 - **Spoiler veil** reuses the title-channel stamp: only the author sees the stamp, a reader who
   is behind gets `veiled`.
 - Reports reuse `reportUser` on the author, with the note prefixed `post:<id>`.
