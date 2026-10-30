@@ -18,6 +18,7 @@ import (
 	"aaru-go-api/internal/provider"
 	"aaru-go-api/internal/push"
 	"aaru-go-api/internal/sports"
+	"aaru-go-api/internal/stats"
 	"aaru-go-api/internal/telemetry"
 	"context"
 	"errors"
@@ -139,6 +140,7 @@ func serve(ctx context.Context, reader *config.Reader, log *slog.Logger) error {
 		deps.ConcertArtists = concertArtists{deps.Catalog.MusicBrainz}
 	}
 	deps.Gamification = gamification.New(pool, log)
+	deps.Stats = stats.New(pool)
 	deps.Concerts, deps.Sports = buildConcertsAndSports(cfg, pool, provider.NewHTTPTransport())
 	server := httpapi.New(deps)
 	router := server.Router(reporter)
