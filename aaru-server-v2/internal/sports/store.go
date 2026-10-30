@@ -94,7 +94,7 @@ func (s *Store) Unfollow(ctx context.Context, kind EntityKind, id string, userID
 func (s *Store) WatchCountry(ctx context.Context, userID uuid.UUID) (*string, error) {
 	code, err := s.Q.SportWatchCountry(ctx, userID)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
+		return nil, nil //nolint:nilnil // none, as Swift's optional
 	}
 	if err != nil {
 		return nil, fmt.Errorf("sport watch country: %w", err)

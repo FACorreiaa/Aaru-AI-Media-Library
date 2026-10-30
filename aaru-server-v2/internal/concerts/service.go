@@ -37,10 +37,11 @@ type Service struct {
 }
 
 const (
-	// ArtistsPerCall: Ticketmaster takes many performer ids in one call; 20 keeps the URL short.
+	// ArtistsPerCall is performer ids per call: Ticketmaster takes many; 20 keeps the URL short.
 	ArtistsPerCall = 20
 	// MaxArtists is the most matched artists asked about per request, most-shelved first.
-	MaxArtists        = 60
+	MaxArtists = 60
+	// MaxArtistConcerts is the most concerts "Your artists on tour" lists.
 	MaxArtistConcerts = 50
 	// MaxPerformers is the performers offered for one typed name.
 	MaxPerformers = 8

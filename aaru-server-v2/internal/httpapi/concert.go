@@ -256,7 +256,7 @@ func wireNumber(f float32) float64 {
 func oneOffPoint(latitude, longitude *float32) (*concerts.GeoPoint, error) {
 	switch {
 	case latitude == nil && longitude == nil:
-		return nil, nil
+		return nil, nil //nolint:nilnil // none
 	case latitude != nil && longitude != nil:
 		point, ok := concerts.NewGeoPoint(wireNumber(*latitude), wireNumber(*longitude))
 		if !ok {

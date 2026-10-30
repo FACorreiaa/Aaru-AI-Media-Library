@@ -20,21 +20,21 @@ import (
 
 // fakeConcerts is a concert provider that records what it was asked. Test-only.
 type fakeConcerts struct {
-	mu               sync.Mutex
-	failing          bool
-	nearCalls        []concerts.GeoPoint
-	nearRadii        []int
-	searchCalls      []concerts.Match
-	searchAreas      []*concerts.Area
-	performingCalls  [][]string
-	attractionCalls  []string
-	eventCalls       []string
-	nearConcerts     []concerts.Concert
-	searchConcerts   []concerts.Concert
-	byAttraction     map[string][]concerts.Concert
-	attractionsBy    map[string][]concerts.Attraction
-	artistsByAlbum   map[string][]concerts.MusicArtist
-	eventsByID       map[string]concerts.Concert
+	mu              sync.Mutex
+	failing         bool
+	nearCalls       []concerts.GeoPoint
+	nearRadii       []int
+	searchCalls     []concerts.Match
+	searchAreas     []*concerts.Area
+	performingCalls [][]string
+	attractionCalls []string
+	eventCalls      []string
+	nearConcerts    []concerts.Concert
+	searchConcerts  []concerts.Concert
+	byAttraction    map[string][]concerts.Concert
+	attractionsBy   map[string][]concerts.Attraction
+	artistsByAlbum  map[string][]concerts.MusicArtist
+	eventsByID      map[string]concerts.Concert
 }
 
 func newFakeConcerts() *fakeConcerts {
@@ -97,7 +97,7 @@ func (f *fakeConcerts) Event(_ context.Context, id string) (*concerts.Concert, e
 	if c, ok := f.eventsByID[id]; ok {
 		return &c, nil
 	}
-	return nil, nil
+	return nil, nil //nolint:nilnil // none
 }
 
 func (f *fakeConcerts) AlbumArtists(_ context.Context, mbid string) ([]concerts.MusicArtist, error) {

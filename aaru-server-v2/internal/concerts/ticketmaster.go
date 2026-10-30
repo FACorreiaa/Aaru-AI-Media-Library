@@ -60,7 +60,7 @@ const (
 	TicketmasterBaseURL = "https://app.ticketmaster.com/discovery/v2"
 	// PageSize is 50 a page.
 	PageSize = 50
-	// MaxPage: Ticketmaster refuses to page past 1,000 results.
+	// MaxPage is the last page: Ticketmaster refuses to page past 1,000 results.
 	MaxPage = 10
 	// DailyCalls is where Aaru stops for the day (Ticketmaster's cap is 5,000).
 	DailyCalls = 4500
@@ -152,7 +152,7 @@ func (t *Ticketmaster) Event(ctx context.Context, id string) (*Concert, error) {
 	var event tmEvent
 	if err := t.get(ctx, "events/"+url.PathEscape(id)+".json", nil, &event); err != nil {
 		if provider.IsNotFound(err) {
-			return nil, nil
+			return nil, nil //nolint:nilnil // none, as Swift's optional
 		}
 		return nil, err
 	}

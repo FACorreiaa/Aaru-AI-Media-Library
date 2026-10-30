@@ -22,14 +22,14 @@ type Store struct {
 func (s *Store) Place(ctx context.Context, userID uuid.UUID) (*Place, error) {
 	row, err := s.Q.ConcertPlace(ctx, userID)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
+		return nil, nil //nolint:nilnil // none, as Swift's optional
 	}
 	if err != nil {
 		return nil, fmt.Errorf("concert place: %w", err)
 	}
 	point, ok := NewGeoPoint(row.Latitude, row.Longitude)
 	if !ok {
-		return nil, nil
+		return nil, nil //nolint:nilnil // none, as Swift's optional
 	}
 	return &Place{Name: row.Name, Region: row.Region, Country: row.Country, CountryCode: row.CountryCode, Point: point}, nil
 }

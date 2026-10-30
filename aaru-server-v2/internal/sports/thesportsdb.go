@@ -60,14 +60,14 @@ func (t *TheSportsDB) Search(ctx context.Context, kind EntityKind, query string)
 func (t *TheSportsDB) Lookup(ctx context.Context, kind EntityKind, id string) (*Entity, error) {
 	rows, err := t.v2(ctx, "lookup/"+string(kind)+"/"+id)
 	if provider.IsNotFound(err) {
-		return nil, nil
+		return nil, nil //nolint:nilnil // none, as Swift's optional
 	}
 	if err != nil {
 		return nil, err
 	}
 	found := rows.rows("lookup")
 	if len(found) == 0 {
-		return nil, nil
+		return nil, nil //nolint:nilnil // none, as Swift's optional
 	}
 	return wireEntity(found[0], kind), nil
 }
@@ -97,14 +97,14 @@ func (t *TheSportsDB) Events(ctx context.Context, day, leagueID string) ([]Event
 func (t *TheSportsDB) Event(ctx context.Context, id string) (*Event, error) {
 	rows, err := t.v2(ctx, "lookup/event/"+id)
 	if provider.IsNotFound(err) {
-		return nil, nil
+		return nil, nil //nolint:nilnil // none, as Swift's optional
 	}
 	if err != nil {
 		return nil, err
 	}
 	found := rows.rows("lookup")
 	if len(found) == 0 {
-		return nil, nil
+		return nil, nil //nolint:nilnil // none, as Swift's optional
 	}
 	return wireEvent(found[0]), nil
 }

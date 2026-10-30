@@ -74,7 +74,7 @@ func (f *fakeSports) Lookup(_ context.Context, kind sports.EntityKind, id string
 	if e, ok := f.entities[string(kind)+":"+id]; ok {
 		return &e, nil
 	}
-	return nil, nil
+	return nil, nil //nolint:nilnil // none
 }
 
 func (f *fakeSports) Schedule(_ context.Context, direction sports.ScheduleDirection, kind sports.EntityKind, id string) ([]sports.Event, error) {
@@ -99,7 +99,7 @@ func (f *fakeSports) Event(_ context.Context, id string) (*sports.Event, error) 
 	if e, ok := f.events[id]; ok {
 		return &e, nil
 	}
-	return nil, nil
+	return nil, nil //nolint:nilnil // none
 }
 
 func (f *fakeSports) Live(context.Context) ([]sports.Event, error) {

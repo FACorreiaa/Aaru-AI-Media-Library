@@ -316,7 +316,7 @@ func (s *Service) Event(ctx context.Context, id string, userID uuid.UUID) (*Even
 		return s.Listing.Event(ctx, id)
 	})
 	if found == nil {
-		return nil, nil
+		return nil, nil //nolint:nilnil // none, as Swift's optional
 	}
 	code, err := s.Store.WatchCountry(ctx, userID)
 	if err != nil {
@@ -391,7 +391,7 @@ func (s *Service) PublicEvent(ctx context.Context, id string) (*Event, error) {
 		return s.Listing.Event(ctx, id)
 	})
 	if found == nil {
-		return nil, nil
+		return nil, nil //nolint:nilnil // none, as Swift's optional
 	}
 	s.cache.Settle(ctx, []string{liveKey}, s.Patience)
 	event := Normalized(*found, s.liveByID(), now)

@@ -42,7 +42,7 @@ func (o *OpenMeteo) Places(ctx context.Context, query string) ([]Place, error) {
 		base = OpenMeteoBaseURL
 	}
 	request := provider.Request{
-		URL: base + "?name=" + url.QueryEscape(query) + "&count=8&language=en&format=json",
+		URL:     base + "?name=" + url.QueryEscape(query) + "&count=8&language=en&format=json",
 		Headers: [][2]string{{"Accept", "application/json"}},
 	}
 	// Results is absent, not empty, when nothing matches.
