@@ -227,8 +227,8 @@ func TestScrobbleRouteBrowserTokenOnlyScrobblesAndIsListedOnItsOwnSurface(t *tes
 	assert.Equal(t, "browser", first["kind"])
 	assert.Equal(t, []any{"scrobble:write"}, first["scopes"])
 	assert.Empty(t, env.json(http.MethodGet, "/v1/agent/tokens", nil)["items"])
-	// Swift also checked `POST /v1/mcp` refuses it (401); MCP is ported in another area, so that
-	// assertion belongs with the MCP tests once the route exists here.
+	mcp := env.do(http.MethodPost, "/v1/mcp", secret, map[string]any{"jsonrpc": "2.0", "id": 1, "method": "tools/list"})
+	assert.Equal(t, http.StatusUnauthorized, mcp.Code, "a browser token opens no MCP")
 }
 
 func TestScrobbleRouteRefusesABodyThatIsNotAScrobble(t *testing.T) {
