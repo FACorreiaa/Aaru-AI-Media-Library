@@ -53,13 +53,6 @@ func (f *traktFake) route(path, body string, status ...int) {
 	f.routes[path] = traktAnswer{status: code, body: body}
 }
 
-// routePages is a paged list, as Trakt sends it: one body per `page`, with `X-Pagination-Page-Count`.
-func (f *traktFake) routePages(path string, bodies ...string) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	f.pages[path] = bodies
-}
-
 func (f *traktFake) send(_ context.Context, req provider.Request) (*provider.Response, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -105,11 +98,6 @@ func (f *traktFake) all() []provider.Request {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return append([]provider.Request{}, f.requests...)
-}
-
-func traktQuery(req provider.Request, name string) string {
-	u, _ := url.Parse(req.URL)
-	return u.Query().Get(name)
 }
 
 func testCipher(t *testing.T) *crypto.TokenCipher {
