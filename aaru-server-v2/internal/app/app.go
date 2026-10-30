@@ -152,6 +152,7 @@ func serve(ctx context.Context, reader *config.Reader, log *slog.Logger) error {
 	deps.Stats = stats.New(pool)
 	deps.Concerts, deps.Sports = buildConcertsAndSports(cfg, pool, provider.NewHTTPTransport())
 	deps.Model = makeModel(cfg.Anthropic, log)
+	buildImports(cfg, pool, log, &deps)
 	server := httpapi.New(deps)
 	router := server.Router(reporter)
 
