@@ -5,6 +5,7 @@ package app
 import (
 	"aaru-go-api/internal/auth"
 	"aaru-go-api/internal/billing"
+	"aaru-go-api/internal/concerts"
 	"aaru-go-api/internal/config"
 	"aaru-go-api/internal/db"
 	"aaru-go-api/internal/db/sqlc"
@@ -12,7 +13,9 @@ import (
 	"aaru-go-api/internal/metrics"
 	"aaru-go-api/internal/middleware"
 	"aaru-go-api/internal/oauth"
+	"aaru-go-api/internal/provider"
 	"aaru-go-api/internal/push"
+	"aaru-go-api/internal/sports"
 	"aaru-go-api/internal/telemetry"
 	"context"
 	"errors"
@@ -93,6 +96,7 @@ func serve(ctx context.Context, reader *config.Reader, log *slog.Logger) error {
 	outbound := &http.Client{Timeout: 15 * time.Second}
 	deps.Auth, deps.AgentTokens = auth.FromConfig(cfg, pool, outbound)
 	deps.OAuth = oauth.FromConfig(cfg, pool)
+	deps.Concerts, deps.Sports = buildConcertsAndSports(cfg, pool, provider.NewHTTPTransport())
 	server := httpapi.New(deps)
 	router := server.Router(reporter)
 
@@ -177,6 +181,23 @@ func buildPushAndBilling(cfg *config.App, pool *pgxpool.Pool, log *slog.Logger, 
 	}
 	deps.Apple = apple
 	return nil
+}
+
+// buildConcertsAndSports makes MUS-003's concerts (Ticketmaster with TICKETMASTER_API_KEY, the
+// Open-Meteo city search always) and SPT-001's sports (TheSportsDB with THESPORTSDB_API_KEY).
+// Without a key the area is off and answers unavailable.
+func buildConcertsAndSports(cfg *config.App, pool *pgxpool.Pool, transport provider.Transport) (*concerts.Service, *sports.Service) {
+	q := sqlc.New(pool)
+	var listing concerts.Listing
+	if cfg.TicketmasterAPIKey != nil {
+		listing = concerts.NewTicketmaster(*cfg.TicketmasterAPIKey, transport)
+	}
+	concertService := concerts.NewService(&concerts.Store{Q: q, Pool: pool}, listing, concerts.NewOpenMeteo(transport))
+	var sportsListing sports.Listing
+	if cfg.TheSportsDBAPIKey != nil {
+		sportsListing = sports.NewTheSportsDB(*cfg.TheSportsDBAPIKey, transport)
+	}
+	return concertService, sports.NewService(&sports.Store{Q: q, Pool: pool}, sportsListing)
 }
 
 // makeSentry is the error reporter, or nil (with a notice) when SENTRY_DSN is unset or not a DSN.

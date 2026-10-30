@@ -13,11 +13,13 @@ import (
 	"aaru-go-api/internal/apperr"
 	"aaru-go-api/internal/auth"
 	"aaru-go-api/internal/billing"
+	"aaru-go-api/internal/concerts"
 	"aaru-go-api/internal/config"
 	"aaru-go-api/internal/db/sqlc"
 	"aaru-go-api/internal/oauth"
 	"aaru-go-api/internal/push"
 	"aaru-go-api/internal/reqctx"
+	"aaru-go-api/internal/sports"
 	"aaru-go-api/internal/telemetry"
 	"context"
 	"log/slog"
@@ -55,6 +57,15 @@ type Deps struct {
 	AgentTokens *auth.AgentTokenService
 	// OAuth is the front door for Claude's connector (oauth.FromConfig).
 	OAuth *oauth.Service
+	// Concerts is MUS-003/MUS-010 (concerts off when its Listing is nil). New builds one with
+	// concerts off when it is nil.
+	Concerts *concerts.Service
+	// ConcertArtists is the music catalog's album artists (MusicBrainz) for the concert
+	// refresher; nil leaves albums waiting.
+	ConcertArtists concerts.ArtistSource
+	// Sports is SPT-001…002 (sports off when its Listing is nil). New builds one with sports
+	// off when it is nil.
+	Sports *sports.Service
 }
 
 // Server implements api.StrictServerInterface.
@@ -65,7 +76,14 @@ type Server struct {
 
 // New builds the handlers.
 func New(deps Deps) *Server {
-	return &Server{Deps: deps, q: sqlc.New(deps.Pool)}
+	q := sqlc.New(deps.Pool)
+	if deps.Concerts == nil {
+		deps.Concerts = concerts.NewService(&concerts.Store{Q: q, Pool: deps.Pool}, nil, nil)
+	}
+	if deps.Sports == nil {
+		deps.Sports = sports.NewService(&sports.Store{Q: q, Pool: deps.Pool}, nil)
+	}
+	return &Server{Deps: deps, q: q}
 }
 
 // currentUser is the signed-in user. The auth middleware already refused
