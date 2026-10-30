@@ -15,7 +15,9 @@ type AgentImporter struct {
 }
 
 // DetectSource is ImportFormatDetector.detect; a *FormatError's message is what the user sees.
-func (a AgentImporter) DetectSource(text string) (core.ImportSource, error) { return DetectFormat(text) }
+func (a AgentImporter) DetectSource(text string) (core.ImportSource, error) {
+	return DetectFormat(text)
+}
 
 // IsCATCalendar is CATCalendarParser.isCalendar: the text is an iCal file.
 func (a AgentImporter) IsCATCalendar(text string) bool { return IsCATCalendar(text) }

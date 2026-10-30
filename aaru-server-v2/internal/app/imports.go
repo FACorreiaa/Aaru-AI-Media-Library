@@ -1,6 +1,7 @@
 package app
 
 import (
+	"aaru-go-api/internal/catalog"
 	"aaru-go-api/internal/config"
 	"aaru-go-api/internal/httpapi"
 	"aaru-go-api/internal/imports"
@@ -19,8 +20,11 @@ func buildImports(cfg *config.App, pool *pgxpool.Pool, log *slog.Logger, deps *h
 	if deps.Push != nil {
 		svc.Push = deps.Push
 	}
-	_ = cfg
 	// Parsers: CAT feed, AniList lists.
+	svc.CATFeed = imports.NewCATCalendarFeed(provider.NewHTTPTransport())
+	if anilist, ok := deps.Catalog.Providers.AniList.(*catalog.AniList); ok {
+		svc.AniListLists = imports.AniListRows{AniList: anilist}
+	}
 
 	// Trakt (IMP-002/003) and MyAnimeList (SCR-005/SCR-010): off without their client ids.
 	buildConnections(cfg, pool, log, deps, svc)
