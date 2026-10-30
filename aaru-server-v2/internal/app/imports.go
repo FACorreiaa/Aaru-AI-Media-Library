@@ -1,9 +1,11 @@
 package app
 
 import (
+	"aaru-go-api/internal/catalog"
 	"aaru-go-api/internal/config"
 	"aaru-go-api/internal/httpapi"
 	"aaru-go-api/internal/imports"
+	"aaru-go-api/internal/provider"
 	"log/slog"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -19,6 +21,10 @@ func buildImports(cfg *config.App, pool *pgxpool.Pool, log *slog.Logger, deps *h
 	}
 	_ = cfg
 	// Parsers: CAT feed, AniList lists.
+	svc.CATFeed = imports.NewCATCalendarFeed(provider.NewHTTPTransport())
+	if anilist, ok := deps.Catalog.Providers.AniList.(*catalog.AniList); ok {
+		svc.AniListLists = imports.AniListRows{AniList: anilist}
+	}
 
 	// Trakt.
 

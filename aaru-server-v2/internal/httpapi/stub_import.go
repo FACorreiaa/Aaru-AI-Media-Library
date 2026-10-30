@@ -7,10 +7,6 @@ import (
 	"context"
 )
 
-func (s *Server) CreateCATFeedImport(context.Context, api.CreateCATFeedImportRequestObject) (api.CreateCATFeedImportResponseObject, error) {
-	return nil, errNotImplemented
-}
-
 func (s *Server) CreateLastFMImport(context.Context, api.CreateLastFMImportRequestObject) (api.CreateLastFMImportResponseObject, error) {
 	return nil, errNotImplemented
 }
