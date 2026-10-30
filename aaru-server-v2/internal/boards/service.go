@@ -25,7 +25,7 @@ const (
 	TopWindow       = 7 * 24 * time.Hour
 )
 
-// ErrNoSuchPost: missing, deleted, someone else's: all read the same.
+// ErrNoSuchPost is the one 404 for a post: missing, deleted, someone else's all read the same.
 var ErrNoSuchPost = apperr.NotFound("That post isn't here.")
 
 var errOnlyAuthor = groups.Forbidden("Only the author can change this post.")

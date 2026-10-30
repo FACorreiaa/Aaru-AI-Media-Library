@@ -14,10 +14,10 @@ const (
 	MaxCommentPageSize     = 100
 )
 
-// ErrNoSuchComment: missing, deleted, or by someone blocked either way.
+// ErrNoSuchComment is a comment that is missing, deleted, or by someone blocked either way.
 var ErrNoSuchComment = apperr.NotFound("That comment isn't here.")
 
-// ErrNoReplyTarget: a reply to a comment that is not there (or not for this viewer).
+// ErrNoReplyTarget is a reply to a comment that is not there (or not for this viewer).
 var ErrNoReplyTarget = groups.Invalid("replyTo", "That comment isn't here.")
 
 // CommentPage is a page of comments and the cursor for the next one.
