@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -187,5 +186,3 @@ func names(value any) []string {
 	}
 	return out
 }
-
-var _ = assert.Equal
