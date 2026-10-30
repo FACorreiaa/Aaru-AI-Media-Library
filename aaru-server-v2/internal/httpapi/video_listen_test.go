@@ -5,7 +5,6 @@ import (
 	"aaru-go-api/internal/scrobble"
 	"context"
 	"fmt"
-	"math"
 	"net/http"
 	"testing"
 	"time"
@@ -105,7 +104,7 @@ func TestVideoListenAndAScrobblersListenOfTheSameVideoAreOnePlay(t *testing.T) {
 	env := newLibEnv(t)
 	store := env.server.Listens.Store
 	// Web Scrobbler spelled it its own way, on YouTube Music's link for the video.
-	started := math.Floor(float64(time.Now().Add(-198*time.Second).Unix()))
+	started := math.Floor(float64(time.Now().Add(-198 * time.Second).Unix()))
 	at := func(offset float64) time.Time { return time.Unix(int64(started+offset), 0) }
 	_, err := store.Insert(context.Background(), []music.NewListen{{
 		ListenedAt: at(20), Artist: "Massive Attack", Track: "Teardrop (2006 Remaster)", DurationMs: ptr(330_000),

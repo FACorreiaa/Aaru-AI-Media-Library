@@ -122,4 +122,6 @@ func (e *libEnv) actions(limit int) []map[string]any {
 	return out
 }
 
-func key(season, episode int) core.EpisodeKey { return core.EpisodeKey{Season: season, Episode: episode} }
+func key(season, episode int) core.EpisodeKey {
+	return core.EpisodeKey{Season: season, Episode: episode}
+}

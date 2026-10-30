@@ -32,7 +32,9 @@ func aired(season, episode int, airsAt *time.Time) catalog.Episode {
 	return catalog.Episode{Season: season, Episode: episode, AirsAt: airsAt, RuntimeMinutes: &runtime}
 }
 
-func k(season, episode int) *core.EpisodeKey { return &core.EpisodeKey{Season: season, Episode: episode} }
+func k(season, episode int) *core.EpisodeKey {
+	return &core.EpisodeKey{Season: season, Episode: episode}
+}
 
 func TestMatchIsTheTMDBEpisodeOutTheSameDayAFewHoursEitherWay(t *testing.T) {
 	listed := []Video{video(1, 1, week(10, 0)), video(2, 1, week(11, 0))}
