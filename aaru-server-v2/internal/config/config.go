@@ -249,6 +249,14 @@ type PostHog struct {
 	Host         *url.URL
 }
 
+// Pprof is Go's profiler on the internal port (PPROF_ENABLED, on unless "false";
+// PPROF_BLOCK_RATE and PPROF_MUTEX_FRACTION sample block and mutex contention, off at 0).
+type Pprof struct {
+	Enabled       bool
+	BlockRate     int
+	MutexFraction int
+}
+
 // App is everything serving needs.
 type App struct {
 	Postgres           Postgres
@@ -273,6 +281,7 @@ type App struct {
 	MetricsSecret      string
 	WebClientSecret    string
 	MetricsPort        int
+	Pprof              Pprof
 	Sentry             *Sentry
 	PostHog            *PostHog
 	Workers            Workers
@@ -313,7 +322,12 @@ func Load(r *Reader) (*App, error) {
 		MetricsSecret:      r.String("metrics.secret", ""),
 		WebClientSecret:    r.String("web.client.secret", ""),
 		MetricsPort:        r.Int("metrics.port", 9090),
-		LogLevel:           r.String("log.level", "info"),
+		Pprof: Pprof{
+			Enabled:       r.String("pprof.enabled", "true") != "false",
+			BlockRate:     max(0, r.Int("pprof.block.rate", 0)),
+			MutexFraction: max(0, r.Int("pprof.mutex.fraction", 0)),
+		},
+		LogLevel: r.String("log.level", "info"),
 		Workers: Workers{
 			Imports:      min(8, max(1, r.Int("imports.workers", 1))),
 			AgentReplies: min(8, max(1, r.Int("agent.reply.workers", 1))),

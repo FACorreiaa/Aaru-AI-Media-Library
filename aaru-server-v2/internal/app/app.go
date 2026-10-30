@@ -13,7 +13,6 @@ import (
 	"aaru-go-api/internal/gamification"
 	"aaru-go-api/internal/httpapi"
 	"aaru-go-api/internal/library"
-	"aaru-go-api/internal/metrics"
 	"aaru-go-api/internal/middleware"
 	"aaru-go-api/internal/model"
 	"aaru-go-api/internal/oauth"
@@ -170,9 +169,11 @@ func serve(ctx context.Context, reader *config.Reader, log *slog.Logger) error {
 	})
 	var metricsServer *http.Server
 	if cfg.MetricsPort > 0 {
-		mux := http.NewServeMux()
-		mux.Handle("GET /metrics", metrics.Handler())
-		metricsServer = &http.Server{Addr: net.JoinHostPort("0.0.0.0", strconv.Itoa(cfg.MetricsPort)), Handler: mux, ReadHeaderTimeout: 5 * time.Second}
+		metricsServer = &http.Server{
+			Addr: net.JoinHostPort("0.0.0.0", strconv.Itoa(cfg.MetricsPort)), Handler: internalMux(cfg),
+			// A CPU profile or trace streams for its `seconds`; give it room past the 30 s default.
+			ReadHeaderTimeout: 5 * time.Second, WriteTimeout: 2 * time.Minute,
+		}
 		group.Go(func() error {
 			if err := metricsServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 				return fmt.Errorf("metrics server: %w", err)
