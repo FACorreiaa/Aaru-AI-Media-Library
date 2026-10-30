@@ -2,8 +2,10 @@ package middleware
 
 import (
 	"aaru-go-api/internal/apperr"
+	"aaru-go-api/internal/provider"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -22,6 +24,10 @@ type Failure struct {
 	Status    int
 	Method    string
 	Route     string
+	// Operation is the openapi operation id, when a generated handler failed.
+	Operation string
+	// Provider names the outside service whose failure this was.
+	Provider string
 }
 
 // Errors turns every error into the shared ErrorResponse JSON. Unknown errors
@@ -43,9 +49,22 @@ func Errors(log *slog.Logger, reporter Reporter) echo.MiddlewareFunc {
 				if route == "" {
 					route = "unmatched"
 				}
-				log.Error("Request failed", "code", appErr.Code, "errorType", errorType(err), "error", err.Error(), "route", route)
+				f := Failure{
+					ErrorType: errorType(err), Code: appErr.Code, Status: appErr.Status,
+					Method: c.Request().Method, Route: route, Operation: operation(c),
+				}
+				attrs := []any{"code", appErr.Code, "errorType", f.ErrorType, "error", err.Error(), "route", route}
+				if f.Operation != "" {
+					attrs = append(attrs, "operation", f.Operation)
+				}
+				var providerErr *provider.Error
+				if errors.As(err, &providerErr) {
+					f.Provider = providerErr.Provider
+					attrs = append(attrs, "provider", providerErr.Provider, "providerFailure", providerFailure(providerErr))
+				}
+				log.Error("Request failed", attrs...)
 				if reporter != nil {
-					reporter.Report(Failure{ErrorType: errorType(err), Code: appErr.Code, Status: appErr.Status, Method: c.Request().Method, Route: route})
+					reporter.Report(f)
 				}
 			}
 			if appErr.Status == http.StatusNotFound && c.Path() == "" {
@@ -103,4 +122,12 @@ func errorType(err error) string {
 		t = typeName(err)
 	}
 	return t
+}
+
+// providerFailure is Swift's "\(provider.kind)": refused carries its status.
+func providerFailure(e *provider.Error) string {
+	if e.Kind == provider.KindRefused {
+		return fmt.Sprintf("refused(%d)", e.Status)
+	}
+	return e.Kind.String()
 }

@@ -28,6 +28,24 @@ const (
 	KindRefused
 )
 
+// String is the Swift case as logged: notFound, unavailable, refused(420)…
+func (k ErrorKind) String() string {
+	switch k {
+	case KindNotFound:
+		return "notFound"
+	case KindUnavailable:
+		return "unavailable"
+	case KindMalformed:
+		return "malformed"
+	case KindUnauthorized:
+		return "unauthorized"
+	case KindRefused:
+		return "refused"
+	default:
+		return "unknown"
+	}
+}
+
 // Error is a provider failure. Surfaces as 502 `provider_unavailable` — never as a
 // 500, and never with the provider's own message.
 type Error struct {

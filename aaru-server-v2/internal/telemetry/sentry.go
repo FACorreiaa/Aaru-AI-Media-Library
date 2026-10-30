@@ -110,6 +110,12 @@ func (s *Sentry) Request(ctx context.Context, f middleware.Failure, now time.Tim
 		"http.status_code": strconv.Itoa(f.Status),
 		"code":             f.Code,
 	}
+	if f.Operation != "" {
+		tags["operation"] = f.Operation
+	}
+	if f.Provider != "" {
+		tags["provider"] = f.Provider
+	}
 	event := map[string]any{
 		"event_id":    eventID,
 		"timestamp":   timestamp,

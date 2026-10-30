@@ -52,7 +52,7 @@ func (s *Server) Router(reporter middleware.Reporter) *echo.Echo {
 	)
 	// Body and parameter decode failures surface as echo 400s, which the error
 	// middleware maps to `bad_request` like the Swift server did.
-	strict := api.NewStrictHandler(s, nil)
+	strict := api.NewStrictHandler(s, []api.StrictMiddlewareFunc{middleware.Operation})
 	api.RegisterHandlers(e, strict)
 	s.registerRawRoutes(e)
 	return e
