@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"aaru-go-api/internal/capture"
 	"aaru-go-api/internal/catalog"
 	"aaru-go-api/internal/concerts"
 	"aaru-go-api/internal/gamification"
@@ -35,6 +36,8 @@ func (s *Server) Workers() []Worker {
 	if s.Imports != nil {
 		// Leases import jobs and plans them (JOB-001), IMPORTS_WORKERS loops.
 		workers = append(workers, &imports.Worker{Imports: s.Imports, Log: s.Log, Loops: s.Config.Workers.Imports})
+		// Deletes capture inputs the worker never read, an hour on (CaptureSweeper, AG-006).
+		workers = append(workers, &capture.Sweeper{Store: s.Imports.CaptureStore(), Log: s.Log})
 	}
 	// Looks up album artists and matches them to Ticketmaster every half hour (MUS-003).
 	workers = append(workers, &concerts.Worker{

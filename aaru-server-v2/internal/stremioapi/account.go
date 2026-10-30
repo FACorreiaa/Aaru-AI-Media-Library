@@ -99,7 +99,7 @@ func (a *Account) ReadLink(ctx context.Context, code string) (*string, error) {
 	}
 	err := call(ctx, a.Link, get(a.LinkBase, "api/v2/read", url.Values{"type": {"Read"}, "code": {code}}), &approved)
 	if apiErr, ok := err.(*APIError); ok && apiErr.Code == 101 { //nolint:errorlint // call returns it unwrapped
-		return nil, nil
+		return nil, nil //nolint:nilnil // nil is "not approved yet"
 	}
 	if err != nil {
 		return nil, err

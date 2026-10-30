@@ -82,7 +82,7 @@ func (s *Service) PollStremioLink(ctx context.Context, code string, user uuid.UU
 		return nil, stremioError(err)
 	}
 	if authKey == nil {
-		return nil, nil
+		return nil, nil //nolint:nilnil // nil is "not approved yet"
 	}
 	// Logging out is best effort and must happen even when the caller has gone.
 	logout := func() { stremio.Logout(context.WithoutCancel(ctx), *authKey) }
