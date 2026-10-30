@@ -119,9 +119,9 @@ func (s *Store) shelfItems(ctx context.Context, owner uuid.UUID, status, order s
 	out := []FriendItem{}
 	for rows.Next() {
 		var (
-			item                                       FriendItem
-			status                                     string
-			season, episode, bookPage, mangaChapter    *int32
+			item                                    FriendItem
+			status                                  string
+			season, episode, bookPage, mangaChapter *int32
 		)
 		if err := rows.Scan(&item.TitleID, &status, &item.Rating, &season, &episode, &bookPage, &mangaChapter,
 			&item.FinishedAt, &item.UpdatedAt); err != nil {

@@ -315,11 +315,11 @@ func (s *Service) knownConcert(ctx context.Context, id string) (string, error) {
 // char_length counts them: an emoji with a skin tone is two.
 func ValidNote(note *string) (*string, error) {
 	if note == nil {
-		return nil, nil
+		return nil, nil //nolint:nilnil // no note
 	}
 	trimmed := strings.TrimSpace(*note)
 	if trimmed == "" {
-		return nil, nil
+		return nil, nil //nolint:nilnil // blank is none
 	}
 	if utf8.RuneCountInString(trimmed) > MaxNote {
 		return nil, Invalid(fmt.Sprintf("A note is at most %d characters.", MaxNote))

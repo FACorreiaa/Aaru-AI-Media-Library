@@ -169,7 +169,7 @@ func (s *Store) AreFriends(ctx context.Context, first, second uuid.UUID) (bool, 
 func (s *Store) FriendsSince(ctx context.Context, first, second uuid.UUID) (*time.Time, error) {
 	since, err := s.Q.SocialFriendsSince(ctx, sqlc.SocialFriendsSinceParams{First: first, Second: second})
 	if db.IsNoRows(err) {
-		return nil, nil
+		return nil, nil //nolint:nilnil // not friends
 	}
 	if err != nil {
 		return nil, fmt.Errorf("friends since: %w", err)
@@ -181,7 +181,7 @@ func (s *Store) FriendsSince(ctx context.Context, first, second uuid.UUID) (*tim
 func (s *Store) PendingRequest(ctx context.Context, sender, recipient uuid.UUID) (*uuid.UUID, error) {
 	id, err := s.Q.SocialPendingRequest(ctx, sqlc.SocialPendingRequestParams{FromUserID: sender, ToUserID: recipient})
 	if db.IsNoRows(err) {
-		return nil, nil
+		return nil, nil //nolint:nilnil // none pending
 	}
 	if err != nil {
 		return nil, fmt.Errorf("pending request: %w", err)

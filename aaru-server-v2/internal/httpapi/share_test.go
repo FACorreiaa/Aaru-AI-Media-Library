@@ -248,7 +248,8 @@ func TestEachShareTargetRoundTripsAndATakenCodeConflicts(t *testing.T) {
 	note := "watch this"
 	sender := e.user
 	for _, target := range []shares.Target{
-		{Kind: shares.KindTitle, TitleID: titleID}, {Kind: shares.KindSportEvent, EventID: "2052711"},
+		{Kind: shares.KindTitle, TitleID: titleID},
+		{Kind: shares.KindSportEvent, EventID: "2052711"},
 		{Kind: shares.KindConcert, EventID: "Z7r9jZ1A7jx"},
 	} {
 		made := shares.Share{Code: social.NewCode(), Sender: &sender, Target: target, Note: &note, CreatedAt: time.Unix(1_800_000_000, 0).UTC()}

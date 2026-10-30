@@ -225,11 +225,11 @@ func ValidHandle(raw string) (string, error) {
 // ValidName is a first or last name trimmed; empty clears it.
 func ValidName(raw *string, field string) (*string, error) {
 	if raw == nil {
-		return nil, nil
+		return nil, nil //nolint:nilnil // no name
 	}
 	name := strings.TrimSpace(*raw)
 	if name == "" {
-		return nil, nil
+		return nil, nil //nolint:nilnil // no name
 	}
 	if utf8.RuneCountInString(name) > MaxDisplayNameLength {
 		return nil, invalid(field, fmt.Sprintf("Keep your name under %d characters.", MaxDisplayNameLength))
@@ -519,12 +519,6 @@ func (s *Service) Relationship(ctx context.Context, viewer, other uuid.UUID) (Re
 	return RelationshipNone, nil
 }
 
-// isNotFound reports a route 404 (what a block reads as).
-func isNotFound(err error) bool {
-	e := apperr.From(err)
-	return e != nil && e.Status == http.StatusNotFound
-}
-
 // isAppError reports an error a client would see (Swift's `catch is AppError`).
 func isAppError(err error) bool {
 	return apperr.From(err) != nil
@@ -607,7 +601,7 @@ func (s *Service) titles(ctx context.Context, ids []uuid.UUID) (map[uuid.UUID]co
 
 func (s *Service) title(ctx context.Context, id uuid.UUID) (*core.Title, error) {
 	if s.Catalog == nil {
-		return nil, nil
+		return nil, nil //nolint:nilnil // no catalog
 	}
 	return s.Catalog.Store.Title(ctx, id)
 }

@@ -33,7 +33,7 @@ func TestAnInviteIsAOneUseLinkThatPreviewsSignedOutAndBefriends(t *testing.T) {
 	assert.Equal(t, mine, inviter["handle"])
 	assert.Equal(t, "Fern", inviter["displayName"])
 	assert.Nil(t, body["relationship"])
-	assert.Equal(t, "self", e.get("/v1/invites/"+invite)["relationship"])
+	assert.Equal(t, "self", e.get("/v1/invites/" + invite)["relationship"])
 
 	// The invitee needs a handle too, and redeeming your own link is refused.
 	_, newcomer := e.signIn()

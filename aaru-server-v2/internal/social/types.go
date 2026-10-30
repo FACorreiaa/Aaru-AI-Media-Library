@@ -46,7 +46,7 @@ type Relationship string
 
 // The relationships.
 const (
-	RelationshipNone Relationship = "none"
+	RelationshipNone   Relationship = "none"
 	RelationshipFriend Relationship = "friend"
 	// RelationshipOutgoing: the viewer asked them.
 	RelationshipOutgoing Relationship = "outgoing"
