@@ -256,7 +256,7 @@ func StatusLabel(status core.LibraryStatus, mediaType core.MediaType) string {
 	return string(status)
 }
 
-// HasAired: an episode with an air time has aired once it passed; an undated one has aired when
+// HasAired reports whether an episode aired. One with an air time has aired once it passed; an undated one has aired when
 // the show ended or was canceled.
 func HasAired(ep catalog.Episode, titleStatus *catalog.TitleStatus, now time.Time) bool {
 	if ep.AirsAt != nil {

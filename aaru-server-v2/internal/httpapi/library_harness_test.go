@@ -201,4 +201,3 @@ func progressOf(entry map[string]any) (watched, aired float64) {
 	a, _ := p["airedCount"].(float64)
 	return w, a
 }
-

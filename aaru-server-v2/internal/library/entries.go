@@ -33,30 +33,30 @@ func (q *entryQuery) add(clause string, args ...any) {
 
 // entryRow is one row of entryQuery, scanned in column order.
 type entryRow struct {
-	id, titleID                                           uuid.UUID
-	status                                                string
-	rating                                                *float64
-	notes                                                 *string
-	isOwned                                               bool
-	addedAt, updatedAt                                    time.Time
-	finishedAt                                            *time.Time
-	bookPage                                              *int32
-	bookPercent                                           *float64
-	mangaChapter, mangaVolume                             *int32
-	statusByHand                                          bool
-	updatedMicros                                         int64
-	typ, title                                            string
-	originalTitle                                         *string
-	year                                                  *int32
-	synopsis, posterURL, backdropURL, network             *string
-	isAnime                                               bool
-	byline                                                *string
-	pageCount, chapterCount, volumeCount                  *int32
-	tmdb, imdb, trakt, tvdb, isbn, openLibrary, anilist   *string
-	mal, anidb, musicbrainz                               *string
-	watchedCount, airedCount                              int32
-	nextSeason, nextEpisode                               *int32
-	lastWatchedAt                                         *time.Time
+	id, titleID                                         uuid.UUID
+	status                                              string
+	rating                                              *float64
+	notes                                               *string
+	isOwned                                             bool
+	addedAt, updatedAt                                  time.Time
+	finishedAt                                          *time.Time
+	bookPage                                            *int32
+	bookPercent                                         *float64
+	mangaChapter, mangaVolume                           *int32
+	statusByHand                                        bool
+	updatedMicros                                       int64
+	typ, title                                          string
+	originalTitle                                       *string
+	year                                                *int32
+	synopsis, posterURL, backdropURL, network           *string
+	isAnime                                             bool
+	byline                                              *string
+	pageCount, chapterCount, volumeCount                *int32
+	tmdb, imdb, trakt, tvdb, isbn, openLibrary, anilist *string
+	mal, anidb, musicbrainz                             *string
+	watchedCount, airedCount                            int32
+	nextSeason, nextEpisode                             *int32
+	lastWatchedAt                                       *time.Time
 }
 
 func (s *Store) entryRows(ctx context.Context, user uuid.UUID, now time.Time, q entryQuery, limit int) ([]entryRow, error) {

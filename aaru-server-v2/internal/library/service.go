@@ -16,7 +16,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// SyncOverlap: a sync token lags the server clock by this much, so a write whose transaction
+// SyncOverlap is how far a sync token lags the server clock, so a write whose transaction
 // started before the sync and committed after it is still delivered next time.
 const SyncOverlap = 5 * time.Second
 
