@@ -22,8 +22,11 @@ import (
 	"aaru-go-api/internal/oauth"
 	"aaru-go-api/internal/push"
 	"aaru-go-api/internal/reqctx"
+	"aaru-go-api/internal/schedule"
 	"aaru-go-api/internal/sports"
+	"aaru-go-api/internal/stats"
 	"aaru-go-api/internal/telemetry"
+	"aaru-go-api/internal/tonight"
 	"context"
 	"log/slog"
 
@@ -66,6 +69,9 @@ type Deps struct {
 	// Gamification is points, streaks, badges and the board (GAM-001…005). New builds one over
 	// Pool when unset. Library, social, listens, imports and plans call its hooks.
 	Gamification *gamification.Service
+	// Stats is Insights, the Recap and the profile's numbers (GAM-006a…e, MUS-008). New builds one
+	// over Pool when unset.
+	Stats *stats.Service
 	// Concerts is MUS-003/MUS-010 (concerts off when its Listing is nil). New builds one with
 	// concerts off when it is nil.
 	Concerts *concerts.Service
@@ -81,6 +87,11 @@ type Deps struct {
 	Library *library.Service
 	Lists   *library.Lists
 	Shelves *library.Shelves
+	// Schedule is the calendar, Up Next and Watching (CAL-001, UPN-001/002, APP-018). New builds
+	// one over Pool when unset.
+	Schedule *schedule.Service
+	// Tonight is the Tonight strip (AG-005). New builds one over Schedule when unset.
+	Tonight *tonight.Service
 }
 
 // Server implements api.StrictServerInterface.
@@ -94,6 +105,9 @@ func New(deps Deps) *Server {
 	q := sqlc.New(deps.Pool)
 	if deps.Gamification == nil && deps.Pool != nil {
 		deps.Gamification = gamification.New(deps.Pool, deps.Log)
+	}
+	if deps.Stats == nil && deps.Pool != nil {
+		deps.Stats = stats.New(deps.Pool)
 	}
 	if deps.Concerts == nil {
 		deps.Concerts = concerts.NewService(&concerts.Store{Q: q, Pool: deps.Pool}, nil, nil)
@@ -111,6 +125,18 @@ func New(deps Deps) *Server {
 		if deps.Shelves == nil {
 			deps.Shelves = &library.Shelves{Library: deps.Library}
 		}
+		if deps.Library.Store.OnProgress == nil {
+			// A progress write takes a Tonight pick shown in the last six hours (AG-005).
+			deps.Library.Store.OnProgress = func(ctx context.Context, user uuid.UUID, items []uuid.UUID) error {
+				return tonight.AcceptPicks(ctx, q, user, items)
+			}
+		}
+	}
+	if deps.Schedule == nil && deps.Pool != nil {
+		deps.Schedule = schedule.New(deps.Pool)
+	}
+	if deps.Tonight == nil && deps.Schedule != nil {
+		deps.Tonight = tonight.New(sqlc.New(deps.Pool), deps.Schedule)
 	}
 	return &Server{Deps: deps, q: q}
 }

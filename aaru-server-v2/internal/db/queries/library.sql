@@ -104,18 +104,3 @@ WHERE user_id = @user_id AND title_id = ANY(@title_ids::uuid[]);
 
 -- name: LibraryStatusByHand :many
 SELECT status_by_hand FROM library_items WHERE id = @id;
-
--- name: LibraryAcceptTonightPicks :many
--- After a progress write: marks picks shown in the last six hours as taken, and returns the days on
--- which this is the first pick taken (AG-005). The outer SELECT reads the snapshot before the UPDATE.
-WITH taken AS (
-    UPDATE tonight_picks SET accepted_at = now()
-    WHERE user_id = @user_id AND library_item_id = ANY(@item_ids::uuid[])
-      AND accepted_at IS NULL AND served_at > now() - interval '6 hours'
-    RETURNING day
-)
-SELECT DISTINCT taken.day::text AS day FROM taken
-WHERE NOT EXISTS (
-    SELECT 1 FROM tonight_picks p
-    WHERE p.user_id = @user_id AND p.day = taken.day AND p.accepted_at IS NOT NULL
-);

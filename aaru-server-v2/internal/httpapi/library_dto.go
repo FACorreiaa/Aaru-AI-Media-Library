@@ -68,10 +68,7 @@ func LibraryEntryWithWatchedDTO(ctx context.Context, store *library.Store, e lib
 		if err != nil {
 			return api.LibraryEntry{}, err
 		}
-		refs := make([]api.EpisodeRef, len(keys))
-		for i, k := range keys {
-			refs[i] = api.EpisodeRef{Season: k.Season, Number: k.Episode}
-		}
+		refs := EpisodeRefsDTO(keys)
 		out.WatchedEpisodes = &refs
 	}
 	return out, nil

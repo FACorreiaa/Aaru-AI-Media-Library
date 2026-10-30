@@ -29,6 +29,10 @@ type Store struct {
 	q    *sqlc.Queries
 	// Now stamps points written with a write; defaults to time.Now.
 	Now func() time.Time
+	// OnProgress runs after a committed progress write (ProgressKinds) on these items: Tonight's
+	// pick acceptance (tonight.AcceptPicks, AG-005). Its error is dropped: counting never fails
+	// the write it follows. Wired by httpapi.New / app; nil does nothing.
+	OnProgress func(ctx context.Context, user uuid.UUID, items []uuid.UUID) error
 }
 
 // NewStore builds the store over a pool.
@@ -106,16 +110,10 @@ func (s *Store) Apply(ctx context.Context, op Op, user uuid.UUID, caller Caller,
 // follows, so errors are dropped.
 func (s *Store) countWrite(ctx context.Context, ids []uuid.UUID, kind string, actor Actor, user uuid.UUID) {
 	telemetry.Capture(telemetry.LibraryAction, user, map[string]string{"kind": kind, "actor": string(actor)})
-	if !ProgressKinds[kind] || len(ids) == 0 {
+	if !ProgressKinds[kind] || len(ids) == 0 || s.OnProgress == nil {
 		return
 	}
-	days, err := s.q.LibraryAcceptTonightPicks(ctx, sqlc.LibraryAcceptTonightPicksParams{UserID: user, ItemIds: ids})
-	if err != nil {
-		return
-	}
-	for range days {
-		telemetry.Capture(telemetry.TonightAccepted, user, nil)
-	}
+	_ = s.OnProgress(ctx, user, ids)
 }
 
 // Undo applies the action's inverse and journals that as a new `undo` action. An action already
@@ -327,7 +325,7 @@ func deleteItem(ctx context.Context, q *sqlc.Queries, id, user uuid.UUID) (ItemS
 	if err != nil {
 		return ItemSnapshot{}, err
 	}
-	watched := sortedKeys(current)
+	watched := SortedKeys(current)
 	if err := q.LibraryDeleteItem(ctx, id); err != nil {
 		return ItemSnapshot{}, fmt.Errorf("delete item: %w", err)
 	}
@@ -459,7 +457,7 @@ func (s *Store) WatchedSorted(ctx context.Context, item uuid.UUID) ([]core.Episo
 	if err != nil {
 		return nil, err
 	}
-	return sortedKeys(keys), nil
+	return SortedKeys(keys), nil
 }
 
 // WatchedOf is the ticks of many items in one query, keyed by item.
@@ -557,7 +555,8 @@ func splitKeys(keys []core.EpisodeKey) (seasons, episodes []int32) {
 	return seasons, episodes
 }
 
-func sortedKeys(set map[core.EpisodeKey]bool) []core.EpisodeKey {
+// SortedKeys is a set of ticks in season, then episode order.
+func SortedKeys(set map[core.EpisodeKey]bool) []core.EpisodeKey {
 	out := make([]core.EpisodeKey, 0, len(set))
 	for k := range set {
 		out = append(out, k)

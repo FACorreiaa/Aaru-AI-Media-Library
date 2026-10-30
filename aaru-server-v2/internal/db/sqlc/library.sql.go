@@ -13,47 +13,6 @@ import (
 	"github.com/google/uuid"
 )
 
-const libraryAcceptTonightPicks = `-- name: LibraryAcceptTonightPicks :many
-WITH taken AS (
-    UPDATE tonight_picks SET accepted_at = now()
-    WHERE user_id = $1 AND library_item_id = ANY($2::uuid[])
-      AND accepted_at IS NULL AND served_at > now() - interval '6 hours'
-    RETURNING day
-)
-SELECT DISTINCT taken.day::text AS day FROM taken
-WHERE NOT EXISTS (
-    SELECT 1 FROM tonight_picks p
-    WHERE p.user_id = $1 AND p.day = taken.day AND p.accepted_at IS NOT NULL
-)
-`
-
-type LibraryAcceptTonightPicksParams struct {
-	UserID  uuid.UUID
-	ItemIds []uuid.UUID
-}
-
-// After a progress write: marks picks shown in the last six hours as taken, and returns the days on
-// which this is the first pick taken (AG-005). The outer SELECT reads the snapshot before the UPDATE.
-func (q *Queries) LibraryAcceptTonightPicks(ctx context.Context, arg LibraryAcceptTonightPicksParams) ([]string, error) {
-	rows, err := q.db.Query(ctx, libraryAcceptTonightPicks, arg.UserID, arg.ItemIds)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []string{}
-	for rows.Next() {
-		var day string
-		if err := rows.Scan(&day); err != nil {
-			return nil, err
-		}
-		items = append(items, day)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const libraryActions = `-- name: LibraryActions :many
 SELECT a.id, a.actor, a.kind, a.summary, a.item_ids, a.created_at, a.undone_at, a.undo_of,
        t.name AS agent_name
