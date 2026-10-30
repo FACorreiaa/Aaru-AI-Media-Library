@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"strings"
 	"time"
+	"unicode"
 	"unicode/utf8"
 
 	"github.com/google/uuid"
@@ -92,9 +93,22 @@ func TrackKey(artist, track string) string {
 	return Fold(artist) + "\u001F" + Fold(track)
 }
 
-// Fold is case-, width- and space-folded, so two spellings of one name compare equal.
+// Fold is case-, width- and space-folded, so two spellings of one name compare equal (Listen.fold):
+// NFKC, lowercased, whitespace runs joined by one space. Swift's lowercased() maps each scalar fully
+// and without context: per rune here, with U+0130's two-scalar mapping, so the keys match the rows
+// Swift stored. Greek final sigma is not special-cased, as in Swift.
 func Fold(text string) string {
-	return strings.Join(strings.Fields(strings.ToLower(norm.NFKC.String(text))), " ")
+	composed := norm.NFKC.String(text)
+	var b strings.Builder
+	b.Grow(len(composed))
+	for _, r := range composed {
+		if r == '\u0130' {
+			b.WriteString("i\u0307")
+			continue
+		}
+		b.WriteRune(unicode.ToLower(r))
+	}
+	return strings.Join(strings.Fields(b.String()), " ")
 }
 
 // YouTubeVideoPattern finds a video id in a YouTube URL, here and in SQL.

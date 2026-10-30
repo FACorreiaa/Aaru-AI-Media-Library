@@ -7,6 +7,7 @@ package httpapi
 import (
 	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/imports"
+	"aaru-go-api/internal/music"
 	"aaru-go-api/internal/provider"
 	"context"
 	"encoding/json"
@@ -312,7 +313,7 @@ func TestListenImportBigApply(t *testing.T) {
 		CreatedAt: now, UpdatedAt: now, RowsTotal: len(plays),
 	}
 	require.NoError(t, e.server.Imports.Store.Insert(ctx, job, nil))
-	store := imports.NewListenStore(e.pool)
+	store := music.NewStore(e.pool)
 	require.NoError(t, store.Stage(ctx, plays, job.ID, 0))
 	planned := listenImpPlan(e, job.ID.String())
 	assert.InDelta(t, 20000, listenImpStats(t, planned)["created"], 0)

@@ -10,12 +10,14 @@ package imports
 import (
 	"aaru-go-api/internal/apperr"
 	"aaru-go-api/internal/core"
+	"aaru-go-api/internal/music"
 	"aaru-go-api/internal/provider"
 	"context"
 	"errors"
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 	"unicode"
 
 	"github.com/google/uuid"
@@ -29,12 +31,34 @@ const MaxListenUploadBytes = 24 * 1024 * 1024
 // server's memory.
 var listenFileGate sync.Mutex
 
-// listenLog is the store listening imports use: the one set, else Postgres beside the job store.
+// ListenLog is what listening imports need of the listening log (ListenStore's MUS-004 part).
+type ListenLog interface {
+	// Stage adds plays to a job's staging, numbered from index.
+	Stage(ctx context.Context, listens []NewListen, jobID uuid.UUID, index int) error
+	// ClearStaged empties a job's staging, so a retried fetch starts over.
+	ClearStaged(ctx context.Context, jobID uuid.UUID) error
+	// CountNew is how many staged plays applying would keep: those outside every stored listen's
+	// duplicate window and outside the window of the play before them of the same track.
+	CountNew(ctx context.Context, jobID, user uuid.UUID) (int, error)
+	// ApplyStaged writes the plays CountNew counts as the job's `import` listens, then empties its
+	// staging. It returns how many were written.
+	ApplyStaged(ctx context.Context, jobID, user uuid.UUID) (int, error)
+	// DeleteImported deletes the listens a job wrote and returns how many.
+	DeleteImported(ctx context.Context, jobID, user uuid.UUID) (int, error)
+	// NewestImported is the newest listen an applied import of this source and account wrote, so
+	// the next import of it reads only what came after.
+	NewestImported(ctx context.Context, user uuid.UUID, source core.ImportSource, account string) (*time.Time, error)
+}
+
+var _ ListenLog = (*music.Store)(nil)
+
+// listenLog is the store listening imports use: the one set, else the listening log over the job
+// store's pool.
 func (s *Service) listenLog() ListenLog {
 	if s.Listens != nil {
 		return s.Listens
 	}
-	return &ListenStore{Pool: s.Store.Pool, Q: s.Store.Q}
+	return music.NewStore(s.Store.Pool)
 }
 
 // CreateListenFileImport parses the file now and stages its plays; the worker counts which are new.
