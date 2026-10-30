@@ -11,14 +11,6 @@ func (s *Server) CreateCATFeedImport(context.Context, api.CreateCATFeedImportReq
 	return nil, errNotImplemented
 }
 
-func (s *Server) CreateLastFMImport(context.Context, api.CreateLastFMImportRequestObject) (api.CreateLastFMImportResponseObject, error) {
-	return nil, errNotImplemented
-}
-
-func (s *Server) CreateListenBrainzImport(context.Context, api.CreateListenBrainzImportRequestObject) (api.CreateListenBrainzImportResponseObject, error) {
-	return nil, errNotImplemented
-}
-
 func (s *Server) StartStremioLink(context.Context, api.StartStremioLinkRequestObject) (api.StartStremioLinkResponseObject, error) {
 	return nil, errNotImplemented
 }
@@ -36,9 +28,5 @@ func (s *Server) DisconnectTrakt(context.Context, api.DisconnectTraktRequestObje
 }
 
 func (s *Server) GetTraktConnection(context.Context, api.GetTraktConnectionRequestObject) (api.GetTraktConnectionResponseObject, error) {
-	return nil, errNotImplemented
-}
-
-func (s *Server) UndoListenImport(context.Context, api.UndoListenImportRequestObject) (api.UndoListenImportResponseObject, error) {
 	return nil, errNotImplemented
 }
