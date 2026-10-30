@@ -23,6 +23,7 @@ import (
 	"aaru-go-api/internal/reqctx"
 	"aaru-go-api/internal/schedule"
 	"aaru-go-api/internal/sports"
+	"aaru-go-api/internal/stats"
 	"aaru-go-api/internal/telemetry"
 	"aaru-go-api/internal/tonight"
 	"context"
@@ -67,6 +68,9 @@ type Deps struct {
 	// Gamification is points, streaks, badges and the board (GAM-001…005). New builds one over
 	// Pool when unset. Library, social, listens, imports and plans call its hooks.
 	Gamification *gamification.Service
+	// Stats is Insights, the Recap and the profile's numbers (GAM-006a…e, MUS-008). New builds one
+	// over Pool when unset.
+	Stats *stats.Service
 	// Concerts is MUS-003/MUS-010 (concerts off when its Listing is nil). New builds one with
 	// concerts off when it is nil.
 	Concerts *concerts.Service
@@ -94,6 +98,9 @@ func New(deps Deps) *Server {
 	q := sqlc.New(deps.Pool)
 	if deps.Gamification == nil && deps.Pool != nil {
 		deps.Gamification = gamification.New(deps.Pool, deps.Log)
+	}
+	if deps.Stats == nil && deps.Pool != nil {
+		deps.Stats = stats.New(deps.Pool)
 	}
 	if deps.Concerts == nil {
 		deps.Concerts = concerts.NewService(&concerts.Store{Q: q, Pool: deps.Pool}, nil, nil)

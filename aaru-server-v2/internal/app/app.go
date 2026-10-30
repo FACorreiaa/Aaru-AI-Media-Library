@@ -19,6 +19,7 @@ import (
 	"aaru-go-api/internal/push"
 	"aaru-go-api/internal/schedule"
 	"aaru-go-api/internal/sports"
+	"aaru-go-api/internal/stats"
 	"aaru-go-api/internal/telemetry"
 	"aaru-go-api/internal/tonight"
 	"context"
@@ -143,6 +144,7 @@ func serve(ctx context.Context, reader *config.Reader, log *slog.Logger) error {
 	deps.Gamification = gamification.New(pool, log)
 	deps.Schedule = schedule.New(pool)
 	deps.Tonight = tonight.New(sqlc.New(pool), deps.Schedule)
+	deps.Stats = stats.New(pool)
 	deps.Concerts, deps.Sports = buildConcertsAndSports(cfg, pool, provider.NewHTTPTransport())
 	server := httpapi.New(deps)
 	router := server.Router(reporter)
