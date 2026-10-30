@@ -10,6 +10,11 @@
 //   - Service.RunNext: the worker's step (Worker runs it in IMPORTS_WORKERS loops).
 //   - Service.ApplyFromMAL: SCR-010's read-back, merged and written at once.
 //   - Decide / Merged: the merge rules (CLAUDE.md "Merging sources").
+//
+// The agent's `plan_import` tool (AgentTools+Import.swift) needs only: MaxUploadBytes (text is at
+// most 5 MB), DetectFormat for `auto` (a *FormatError's Message is the tool error), IsCATCalendar
+// for `cat` (SourceCATICS vs SourceCATList), and Service.CreateCSVImport. The job is queued, never
+// applied: the user approves it in Aaru.
 package imports
 
 import (
