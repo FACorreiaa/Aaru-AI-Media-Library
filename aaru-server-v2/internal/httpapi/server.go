@@ -24,6 +24,7 @@ import (
 	"aaru-go-api/internal/schedule"
 	"aaru-go-api/internal/sports"
 	"aaru-go-api/internal/telemetry"
+	"aaru-go-api/internal/tonight"
 	"context"
 	"log/slog"
 
@@ -78,6 +79,8 @@ type Deps struct {
 	// Schedule is the calendar, Up Next and Watching (CAL-001, UPN-001/002, APP-018). New builds
 	// one over Pool when unset.
 	Schedule *schedule.Service
+	// Tonight is the Tonight strip (AG-005). New builds one over Schedule when unset.
+	Tonight *tonight.Service
 }
 
 // Server implements api.StrictServerInterface.
@@ -100,6 +103,9 @@ func New(deps Deps) *Server {
 	}
 	if deps.Schedule == nil && deps.Pool != nil {
 		deps.Schedule = schedule.New(deps.Pool)
+	}
+	if deps.Tonight == nil && deps.Schedule != nil {
+		deps.Tonight = tonight.New(sqlc.New(deps.Pool), deps.Schedule)
 	}
 	return &Server{Deps: deps, q: q}
 }

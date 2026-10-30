@@ -58,13 +58,18 @@ func (s *Service) Calendar(ctx context.Context, userID uuid.UUID, from, until ti
 		return nil, apperr.New(http.StatusUnprocessableEntity, "validation_failed", message).
 			WithDetails(map[string]string{"to": message})
 	}
+	return s.CalendarBetween(ctx, userID, from, until)
+}
+
+// CalendarBetween is Calendar without the range check: the store read Tonight shares.
+func (s *Service) CalendarBetween(ctx context.Context, userID uuid.UUID, from, until time.Time) ([]CalendarEntry, error) {
 	rows, err := s.q.ScheduleCalendar(ctx, sqlc.ScheduleCalendarParams{UserID: userID, FromTime: &from, UntilTime: &until})
 	if err != nil {
 		return nil, fmt.Errorf("calendar: %w", err)
 	}
 	out := make([]CalendarEntry, 0, len(rows))
 	for _, row := range rows {
-		title, ok := scheduleTitle(row.Title)
+		title, ok := TitleFromRow(row.Title)
 		key, err := core.NewEpisodeKey(int(row.Season), int(row.Episode))
 		if !ok || err != nil || row.AirsAt == nil {
 			continue
@@ -101,11 +106,11 @@ func (s *Service) UpNext(ctx context.Context, userID uuid.UUID) (UpNext, error) 
 	var out UpNext
 	g, ctx := errgroup.WithContext(ctx)
 	g.Go(func() (err error) {
-		out.ContinueWatching, err = s.continueWatching(ctx, userID, now, 50)
+		out.ContinueWatching, err = s.ContinueWatching(ctx, userID, now, 50)
 		return err
 	})
 	g.Go(func() (err error) {
-		out.StartWatching, err = s.startWatching(ctx, userID, 20)
+		out.StartWatching, err = s.StartWatching(ctx, userID, 20)
 		return err
 	})
 	g.Go(func() (err error) {
@@ -152,7 +157,7 @@ func (s *Service) Watching(ctx context.Context, userID uuid.UUID) ([]WatchingRow
 		return err
 	})
 	g.Go(func() (err error) {
-		continuing, err = s.continueWatching(gctx, userID, now, max(len(shows), 1))
+		continuing, err = s.ContinueWatching(gctx, userID, now, max(len(shows), 1))
 		return err
 	})
 	if err := g.Wait(); err != nil {
@@ -178,7 +183,8 @@ func (s *Service) Watching(ctx context.Context, userID uuid.UUID) ([]WatchingRow
 	return out, nil
 }
 
-func (s *Service) continueWatching(ctx context.Context, userID uuid.UUID, now time.Time, limit int) ([]ContinueEntry, error) {
+// ContinueWatching is UPN-001's row: in-progress shows with an aired, unwatched episode, newest change first.
+func (s *Service) ContinueWatching(ctx context.Context, userID uuid.UUID, now time.Time, limit int) ([]ContinueEntry, error) {
 	rows, err := s.q.ScheduleContinueWatching(ctx, sqlc.ScheduleContinueWatchingParams{
 		Now: &now, UserID: userID, MaxRows: int32(min(limit, WatchingLimit)), //nolint:gosec // bounded above
 	})
@@ -187,7 +193,7 @@ func (s *Service) continueWatching(ctx context.Context, userID uuid.UUID, now ti
 	}
 	out := make([]ContinueEntry, 0, len(rows))
 	for _, row := range rows {
-		title, ok := scheduleTitle(row.Title)
+		title, ok := TitleFromRow(row.Title)
 		next, err := core.NewEpisodeKey(int(row.NextSeason), int(row.NextEpisode))
 		if !ok || err != nil {
 			continue
@@ -201,14 +207,15 @@ func (s *Service) continueWatching(ctx context.Context, userID uuid.UUID, now ti
 	return out, nil
 }
 
-func (s *Service) startWatching(ctx context.Context, userID uuid.UUID, limit int32) ([]StartEntry, error) {
+// StartWatching is wishlist titles, newest added first.
+func (s *Service) StartWatching(ctx context.Context, userID uuid.UUID, limit int32) ([]StartEntry, error) {
 	rows, err := s.q.ScheduleStartWatching(ctx, sqlc.ScheduleStartWatchingParams{UserID: userID, MaxRows: limit})
 	if err != nil {
 		return nil, fmt.Errorf("start watching: %w", err)
 	}
 	out := make([]StartEntry, 0, len(rows))
 	for _, row := range rows {
-		if title, ok := scheduleTitle(row.Title); ok {
+		if title, ok := TitleFromRow(row.Title); ok {
 			out = append(out, StartEntry{LibraryItemID: row.ItemID, Title: title, RuntimeMinutes: intPtr(row.Title.RuntimeMinutes)})
 		}
 	}
@@ -239,9 +246,9 @@ func (s *Service) libraryCounts(ctx context.Context, userID uuid.UUID) (LibraryC
 	return c, nil
 }
 
-// scheduleTitle is the title as PostgresScheduleStore's TitleColumns read it: no byline, length
+// TitleFromRow is the title as PostgresScheduleStore's TitleColumns read it: no byline, length
 // counts or MusicBrainz id. Schedule rows are shows and films, and Swift left those out.
-func scheduleTitle(row sqlc.Title) (core.Title, bool) {
+func TitleFromRow(row sqlc.Title) (core.Title, bool) {
 	t, ok := catalog.TitleFromRow(row)
 	if !ok {
 		return core.Title{}, false
