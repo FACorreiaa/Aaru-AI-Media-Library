@@ -20,7 +20,7 @@ type Social struct {
 func (s Social) User(ctx context.Context, id uuid.UUID) (*User, error) {
 	row, err := s.Q.GroupSocialUser(ctx, id)
 	if db.IsNoRows(err) {
-		return nil, nil
+		return nil, nil //nolint:nilnil // no handle, as Swift's optional
 	}
 	if err != nil {
 		return nil, fmt.Errorf("social user: %w", err)

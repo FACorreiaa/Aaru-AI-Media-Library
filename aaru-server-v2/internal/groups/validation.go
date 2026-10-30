@@ -41,7 +41,7 @@ func Forbidden(message string) error { return apperr.Forbidden(message) }
 // Invalid is a 422 `validation_failed` on one field.
 func Invalid(field, message string) error { return apperr.Validation(field, message) }
 
-// ErrHandleRequired: posting, inviting and hosting need a handle, so friends see who it is.
+// ErrHandleRequired is returned when posting, inviting or hosting without a handle, so friends see who it is.
 var ErrHandleRequired = apperr.New(422, "handle_required", "Choose a handle first, so friends can see who you are.")
 
 var handlePattern = regexp.MustCompile(`@([A-Za-z0-9_]{3,20})`)
@@ -141,11 +141,11 @@ func ValidName(raw string) (string, error) {
 // ValidTopic is trimmed; empty clears it (nil).
 func ValidTopic(raw *string) (*string, error) {
 	if raw == nil {
-		return nil, nil
+		return nil, nil //nolint:nilnil // no stamp, as Swift's optional
 	}
 	topic := trim(*raw)
 	if topic == "" {
-		return nil, nil
+		return nil, nil //nolint:nilnil // no stamp, as Swift's optional
 	}
 	if length(topic) > MaxTopicLength {
 		return nil, Invalid("topic", fmt.Sprintf("Keep the topic under %d characters.", MaxTopicLength))

@@ -148,7 +148,7 @@ func (s *Service) Shelf(ctx context.Context, group, channel, viewer uuid.UUID) (
 	return out, nil
 }
 
-// AddToShelf: any member adds a title. Adding one already there changes nothing.
+// AddToShelf lets any member add a title. Adding one already there changes nothing.
 func (s *Service) AddToShelf(ctx context.Context, group, channel uuid.UUID, ref core.MediaRef, viewer uuid.UUID) (core.Title, error) {
 	if _, err := s.Role(ctx, group, viewer); err != nil {
 		return core.Title{}, err
@@ -177,7 +177,7 @@ func (s *Service) AddToShelf(ctx context.Context, group, channel uuid.UUID, ref 
 	return title, nil
 }
 
-// RemoveFromShelf: any member removes a title.
+// RemoveFromShelf lets any member remove a title.
 func (s *Service) RemoveFromShelf(ctx context.Context, group, channel, title, viewer uuid.UUID) error {
 	if _, err := s.Role(ctx, group, viewer); err != nil {
 		return err

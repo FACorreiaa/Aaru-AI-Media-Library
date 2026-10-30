@@ -224,7 +224,7 @@ func (s *Service) Delete(ctx context.Context, group, viewer uuid.UUID) error {
 
 // MARK: Members
 
-// SetRole: the owner makes a member an admin or back. Ownership moves only through Transfer.
+// SetRole lets the owner make a member an admin or back. Ownership moves only through Transfer.
 func (s *Service) SetRole(ctx context.Context, group, user uuid.UUID, role Role, viewer uuid.UUID) error {
 	mine, err := s.Role(ctx, group, viewer)
 	if err != nil {

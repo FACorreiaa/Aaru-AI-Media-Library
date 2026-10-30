@@ -295,7 +295,7 @@ func (s *Service) Edit(ctx context.Context, group, channel, message uuid.UUID, b
 	return edited, nil
 }
 
-// DeleteMessage: the author, an admin or the owner deletes a message. Deleting twice changes nothing.
+// DeleteMessage lets the author, an admin or the owner delete a message. Deleting twice changes nothing.
 func (s *Service) DeleteMessage(ctx context.Context, group, channel, message, viewer uuid.UUID) error {
 	mine, err := s.Role(ctx, group, viewer)
 	if err != nil {
@@ -305,7 +305,7 @@ func (s *Service) DeleteMessage(ctx context.Context, group, channel, message, vi
 	if err != nil {
 		return err
 	}
-	if !(original.Author != nil && original.Author.ID == viewer) && !mine.Manages() {
+	if (original.Author == nil || original.Author.ID != viewer) && !mine.Manages() {
 		return Forbidden("You can only delete your own messages.")
 	}
 	if err := s.Store.DeleteMessage(ctx, message, s.now()); err != nil {

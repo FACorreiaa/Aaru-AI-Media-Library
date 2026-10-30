@@ -42,7 +42,7 @@ func parseRole(s string) Role {
 	}
 }
 
-// Manages: owner and admins manage channels and members.
+// Manages is true for the owner and admins, who manage channels and members.
 func (r Role) Manages() bool { return r != RoleMember }
 
 func (r Role) rank() int {
@@ -240,7 +240,7 @@ type WatchParty struct {
 	Ready     []User
 }
 
-// PartyState is a party's state at a moment.
+// State is the party's state at a moment.
 func (p WatchParty) State(now time.Time) string {
 	switch {
 	case p.EndedAt != nil:

@@ -91,7 +91,7 @@ func (g *Gateway) Handle(c echo.Context) error {
 	if err != nil {
 		return nil //nolint:nilerr // Accept already answered the failed upgrade
 	}
-	defer conn.CloseNow()
+	defer func() { _ = conn.CloseNow() }()
 	conn.SetReadLimit(MaxInboundBytes)
 	ctx, cancel := context.WithCancel(context.WithoutCancel(c.Request().Context()))
 	defer cancel()
@@ -106,7 +106,7 @@ func (g *Gateway) Handle(c echo.Context) error {
 	}
 	go g.keepAlive(ctx, conn, cancel)
 	g.read(ctx, conn, user)
-	conn.Close(websocket.StatusNormalClosure, "")
+	_ = conn.Close(websocket.StatusNormalClosure, "")
 	return nil
 }
 
