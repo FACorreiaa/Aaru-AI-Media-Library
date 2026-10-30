@@ -81,7 +81,7 @@ func (q *Queries) ConsumeOAuthRequest(ctx context.Context, arg ConsumeOAuthReque
 const createOAuthAgentToken = `-- name: CreateOAuthAgentToken :exec
 INSERT INTO agent_tokens (id, user_id, name, kind, token_hash, scopes, created_at, expires_at, issuance,
     oauth_client_id)
-VALUES ($1, $2, $3, $4, $5, $6::text[], $7, @@expires_at::pg_catalog.timestamptz, 'oauth', $8::text)
+VALUES ($1, $2, $3, $4, $5, $6::text[], $7, $8::pg_catalog.timestamptz, 'oauth', $9::text)
 `
 
 type CreateOAuthAgentTokenParams struct {
@@ -92,6 +92,7 @@ type CreateOAuthAgentTokenParams struct {
 	TokenHash string
 	Scopes    []string
 	CreatedAt time.Time
+	ExpiresAt time.Time
 	ClientID  string
 }
 
@@ -104,6 +105,7 @@ func (q *Queries) CreateOAuthAgentToken(ctx context.Context, arg CreateOAuthAgen
 		arg.TokenHash,
 		arg.Scopes,
 		arg.CreatedAt,
+		arg.ExpiresAt,
 		arg.ClientID,
 	)
 	return err

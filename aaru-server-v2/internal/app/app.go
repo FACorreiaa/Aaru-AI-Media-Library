@@ -3,10 +3,12 @@
 package app
 
 import (
+	"aaru-go-api/internal/auth"
 	"aaru-go-api/internal/config"
 	"aaru-go-api/internal/db"
 	"aaru-go-api/internal/httpapi"
 	"aaru-go-api/internal/metrics"
+	"aaru-go-api/internal/oauth"
 	"context"
 	"errors"
 	"fmt"
@@ -70,6 +72,9 @@ func serve(ctx context.Context, reader *config.Reader, log *slog.Logger) error {
 	defer pool.Close()
 
 	deps := httpapi.Deps{Config: cfg, Pool: pool, Log: log}
+	outbound := &http.Client{Timeout: 15 * time.Second}
+	deps.Auth, deps.AgentTokens = auth.FromConfig(cfg, pool, outbound)
+	deps.OAuth = oauth.FromConfig(cfg, pool)
 	server := httpapi.New(deps)
 	router := server.Router(nil)
 

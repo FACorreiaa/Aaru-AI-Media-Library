@@ -39,7 +39,7 @@ UPDATE oauth_codes SET consumed_at = @now::pg_catalog.timestamptz WHERE code_has
 -- name: CreateOAuthAgentToken :exec
 INSERT INTO agent_tokens (id, user_id, name, kind, token_hash, scopes, created_at, expires_at, issuance,
     oauth_client_id)
-VALUES (@id, @user_id, @name, @kind, @token_hash, @scopes::text[], @created_at, @@expires_at::pg_catalog.timestamptz, 'oauth', @client_id::text);
+VALUES (@id, @user_id, @name, @kind, @token_hash, @scopes::text[], @created_at, @expires_at::pg_catalog.timestamptz, 'oauth', @client_id::text);
 
 -- name: CreateOAuthRefreshToken :exec
 INSERT INTO oauth_refresh_tokens (token_hash, agent_token_id, client_id, expires_at)

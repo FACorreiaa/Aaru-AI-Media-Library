@@ -11,8 +11,10 @@ package httpapi
 import (
 	"aaru-go-api/internal/api"
 	"aaru-go-api/internal/apperr"
+	"aaru-go-api/internal/auth"
 	"aaru-go-api/internal/config"
 	"aaru-go-api/internal/db/sqlc"
+	"aaru-go-api/internal/oauth"
 	"aaru-go-api/internal/reqctx"
 	"context"
 	"log/slog"
@@ -31,6 +33,14 @@ type Deps struct {
 	Config *config.App
 	Pool   *pgxpool.Pool
 	Log    *slog.Logger
+
+	// Auth is sign-in, sign-out and account deletion (auth.FromConfig).
+	Auth *auth.Service
+	// AgentTokens mints agent, scrobble and music tokens and authenticates them
+	// for the MCP, Stremio, scrobble and ListenBrainz transports.
+	AgentTokens *auth.AgentTokenService
+	// OAuth is the front door for Claude's connector (oauth.FromConfig).
+	OAuth *oauth.Service
 }
 
 // Server implements api.StrictServerInterface.
@@ -46,8 +56,6 @@ func New(deps Deps) *Server {
 
 // currentUser is the signed-in user. The auth middleware already refused
 // anonymous requests to non-public routes; this guards a route that forgot to be listed.
-//
-//nolint:unused // every signed-in handler calls it once ported
 func currentUser(ctx context.Context) (uuid.UUID, error) {
 	id, ok := reqctx.UserID(ctx)
 	if !ok {
