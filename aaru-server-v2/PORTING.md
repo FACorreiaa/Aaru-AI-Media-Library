@@ -58,6 +58,13 @@ here**.
   for anything a client should see; wrap everything else with
   `fmt.Errorf("...: %w", err)`. Never swallow an error.
 - **Dates** in DTOs are `apitime.Time` (generated). Use `apitime.From(t)`.
+- **Ids** in DTOs are `apiid.UUID` (generated): written uppercase like Swift's
+  `uuidString`, read leniently (malformed → `uuid.Nil` → the route's 404). Use
+  `apiid.From`, `.ID()`, `apiid.Slice`/`IDs`/`PtrOrNil`. Never hand an
+  `apiid.UUID` to pgx. An id you format into a string (a path, a URL) is uppercase.
+- **Request shape** is checked by `middleware.Validate` before handlers run
+  (required fields, types, enums → 400 `bad_request`); length/range limits are
+  not, so handlers enforce those with the Swift messages.
 - **The signed-in user**: `currentUser(ctx)` in handlers; services take a
   `uuid.UUID` user id. Client time zone: `reqctx.TimeZone(ctx)`.
 - **Outbound HTTP** (catalogs, Trakt, MAL, Anthropic, APNs, …) goes through the
