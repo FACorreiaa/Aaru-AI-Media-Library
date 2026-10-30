@@ -559,3 +559,20 @@ func intPtr(v *int32) *int {
 	n := int(*v)
 	return &n
 }
+
+// AcceptPicks is the library's hook after a progress write (episode, season or show ticks, field
+// edits) on these items: picks shown in the last six hours become taken, and tonight_accepted is
+// counted once per local day. Counting never fails the write it follows, so the caller drops errors.
+func AcceptPicks(ctx context.Context, q *sqlc.Queries, userID uuid.UUID, ids []uuid.UUID) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	days, err := q.TonightAcceptPicks(ctx, sqlc.TonightAcceptPicksParams{UserID: userID, Ids: ids})
+	if err != nil {
+		return fmt.Errorf("accept tonight picks: %w", err)
+	}
+	for range days {
+		telemetry.Capture(telemetry.TonightAccepted, userID, nil)
+	}
+	return nil
+}

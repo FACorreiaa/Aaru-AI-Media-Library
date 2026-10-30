@@ -13,6 +13,48 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const tonightAcceptPicks = `-- name: TonightAcceptPicks :many
+WITH taken AS (
+    UPDATE tonight_picks SET accepted_at = now()
+    WHERE tonight_picks.user_id = $1 AND library_item_id = ANY($2::uuid[])
+      AND accepted_at IS NULL AND served_at > now() - interval '6 hours'
+    RETURNING day
+)
+SELECT DISTINCT taken.day::text AS day FROM taken
+WHERE NOT EXISTS (
+    SELECT 1 FROM tonight_picks p
+    WHERE p.user_id = $1 AND p.day = taken.day AND p.accepted_at IS NOT NULL
+)
+`
+
+type TonightAcceptPicksParams struct {
+	UserID uuid.UUID
+	Ids    []uuid.UUID
+}
+
+// After a progress write on these items: marks picks shown in the last six hours as taken, and
+// returns the days on which this is the first pick taken (what tonight_accepted counts). The outer
+// SELECT reads the snapshot before the UPDATE: "already taken" means taken earlier.
+func (q *Queries) TonightAcceptPicks(ctx context.Context, arg TonightAcceptPicksParams) ([]string, error) {
+	rows, err := q.db.Query(ctx, tonightAcceptPicks, arg.UserID, arg.Ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var day string
+		if err := rows.Scan(&day); err != nil {
+			return nil, err
+		}
+		items = append(items, day)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const tonightClearFeedback = `-- name: TonightClearFeedback :exec
 DELETE FROM tonight_feedback
 WHERE user_id = $1 AND library_item_id = $2

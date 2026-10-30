@@ -41,3 +41,19 @@ VALUES (sqlc.arg(user_id), sqlc.arg(day)::text::date, sqlc.arg(library_item_id),
     sqlc.arg(served_at))
 ON CONFLICT (user_id, day, library_item_id)
     DO UPDATE SET rank = EXCLUDED.rank, served_at = EXCLUDED.served_at;
+
+-- name: TonightAcceptPicks :many
+-- After a progress write on these items: marks picks shown in the last six hours as taken, and
+-- returns the days on which this is the first pick taken (what tonight_accepted counts). The outer
+-- SELECT reads the snapshot before the UPDATE: "already taken" means taken earlier.
+WITH taken AS (
+    UPDATE tonight_picks SET accepted_at = now()
+    WHERE tonight_picks.user_id = sqlc.arg(user_id) AND library_item_id = ANY(sqlc.arg(ids)::uuid[])
+      AND accepted_at IS NULL AND served_at > now() - interval '6 hours'
+    RETURNING day
+)
+SELECT DISTINCT taken.day::text AS day FROM taken
+WHERE NOT EXISTS (
+    SELECT 1 FROM tonight_picks p
+    WHERE p.user_id = sqlc.arg(user_id) AND p.day = taken.day AND p.accepted_at IS NOT NULL
+);
