@@ -1,6 +1,15 @@
 // Package auth is sign-in, sign-out and account deletion (M2): Sign in with
 // Apple, Google, the email magic link and its 6-digit code, sessions; plus the
 // agent tokens outside callers use (OUT-001). Handlers call it; it owns the rules.
+//
+// For other areas: transports that take an agent token (MCP, Stremio, scrobble,
+// ListenBrainz) call `Deps.AgentTokens.Authenticate(ctx, secret, auth.GroupMCP |
+// GroupStremio | GroupScrobble | GroupMusic)` → AgentCaller{UserID, Token{ID,
+// Kind, Scopes}}, check `caller.Has(auth.ScopeLibraryWrite)` etc., and
+// `Deps.AgentTokens.Allow(caller)` for the 120-a-minute budget. MCP's
+// `WWW-Authenticate` points at `Deps.OAuth.ResourceMetadataURL()`. Account
+// deletion's group hand-over is `auth.LeaveGroups`; `httpapi.MeDTO` maps a profile
+// to `Me`. Provider tokens are sealed with `crypto.TokenCipher`.
 package auth
 
 import (
