@@ -39,7 +39,7 @@ func (s *Service) CreateChannel(ctx context.Context, group uuid.UUID, kind Chann
 	case name != nil:
 		raw = *name
 	case title != nil:
-		raw = string([]rune(title.Title)[:min(len([]rune(title.Title)), MaxChannelNameLength)])
+		raw = core.Prefix(title.Title, MaxChannelNameLength)
 	default:
 		return Channel{}, Invalid("name", "Name the channel.")
 	}

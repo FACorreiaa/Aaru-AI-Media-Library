@@ -2,6 +2,7 @@ package groups
 
 import (
 	"aaru-go-api/internal/apperr"
+	"aaru-go-api/internal/core"
 	"fmt"
 	"regexp"
 	"strings"
@@ -104,7 +105,7 @@ func containsID(ids []uuid.UUID, id uuid.UUID) bool {
 
 func trim(s string) string { return strings.TrimFunc(s, unicode.IsSpace) }
 
-func length(s string) int { return utf8.RuneCountInString(s) }
+func length(s string) int { return core.Length(s) }
 
 // ChannelName lowercases, turns spaces into dashes and keeps letters, numbers, dashes and
 // underscores: `Movie Night` becomes `movie-night`.

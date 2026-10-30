@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"unicode/utf8"
 )
 
 // InvalidError is a scrobble body refused with a reason.
@@ -160,7 +159,7 @@ func ParseBody(data []byte) (Body, error) {
 // UnknownDurationMs is the rule — without a duration, progress is kept on a 100-second scale: only its percentage matters.
 const UnknownDurationMs int64 = 100_000
 
-func runes(s string) int { return utf8.RuneCountInString(s) }
+func runes(s string) int { return core.Length(s) }
 
 func position(progress float64, duration int64) int64 {
 	return int64(math.Round(progress / 100 * float64(duration)))
@@ -246,16 +245,7 @@ func (b Body) episodeParts() (*core.EpisodeKey, *catalog.NamedEpisode, error) {
 	return key, named, nil
 }
 
-func prefix(s string, n int) string {
-	i := 0
-	for pos := range s {
-		if i == n {
-			return s[:pos]
-		}
-		i++
-	}
-	return s
-}
+func prefix(s string, n int) string { return core.Prefix(s, n) }
 
 // VideoPlay is the video play this scrobble reports: YouTube's 11-character id, its name, and a duration.
 func (b Body) VideoPlay(action Action, now time.Time) (LivePlay, error) {

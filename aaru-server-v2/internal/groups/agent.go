@@ -1,6 +1,7 @@
 package groups
 
 import (
+	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/db/sqlc"
 	"context"
 	"time"
@@ -87,9 +88,7 @@ func (s *Service) mentionAgent(ctx context.Context, m Message, group, tagger uui
 // PostAgentReply posts a message from `@aaru` and tells the members. Catalog cards only; no
 // mentions, so a reply never notifies anyone.
 func (s *Service) PostAgentReply(ctx context.Context, group, channel, replyTo uuid.UUID, body string, components []Component, spoiler *SpoilerStamp) (Message, error) {
-	if r := []rune(body); len(r) > MaxMessageLength {
-		body = string(r[:MaxMessageLength])
-	}
+	body = core.Prefix(body, MaxMessageLength)
 	reply := replyTo
 	posted, err := s.Store.PostMessage(ctx, Message{
 		ID: uuid.New(), ChannelID: channel, Body: body, Mentions: []uuid.UUID{}, CreatedAt: s.now(),

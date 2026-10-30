@@ -334,12 +334,7 @@ func DescribeProgress(p *groups.TitleProgress) string {
 	}
 }
 
-func truncate(s string, n int) string {
-	if r := []rune(s); len(r) > n {
-		return string(r[:n])
-	}
-	return s
-}
+func truncate(s string, n int) string { return core.Prefix(s, n) }
 
 func ptr[T any](v T) *T { return &v }
 

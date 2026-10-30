@@ -8,7 +8,6 @@ import (
 	"sort"
 	"strings"
 	"time"
-	"unicode/utf8"
 
 	"github.com/google/uuid"
 )
@@ -77,17 +76,7 @@ const (
 
 // Cut is text cut to MaxText characters.
 func Cut(text string) string {
-	if utf8.RuneCountInString(text) <= MaxText {
-		return text
-	}
-	i := 0
-	for pos := range text {
-		if i == MaxText {
-			return text[:pos]
-		}
-		i++
-	}
-	return text
+	return core.Prefix(text, MaxText)
 }
 
 func cutPtr(p *string) *string {

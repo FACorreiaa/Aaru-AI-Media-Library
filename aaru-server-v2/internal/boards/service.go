@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 	"unicode"
-	"unicode/utf8"
 
 	"github.com/google/uuid"
 )
@@ -358,7 +357,7 @@ func ValidBody(raw string) (string, error) {
 	if body == "" {
 		return "", groups.Invalid("body", "Write something first.")
 	}
-	if utf8.RuneCountInString(body) > MaxBodyLength {
+	if core.Length(body) > MaxBodyLength {
 		return "", groups.Invalid("body", fmt.Sprintf("Keep posts under %d characters.", MaxBodyLength))
 	}
 	return body, nil
