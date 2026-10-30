@@ -19,6 +19,7 @@ import (
 	"aaru-go-api/internal/db/sqlc"
 	"aaru-go-api/internal/gamification"
 	"aaru-go-api/internal/library"
+	"aaru-go-api/internal/model"
 	"aaru-go-api/internal/oauth"
 	"aaru-go-api/internal/push"
 	"aaru-go-api/internal/reqctx"
@@ -92,6 +93,9 @@ type Deps struct {
 	Schedule *schedule.Service
 	// Tonight is the Tonight strip (AG-005). New builds one over Schedule when unset.
 	Tonight *tonight.Service
+	// Model is the agent's language model; nil when ANTHROPIC_API_KEY is unset (`@aaru` and
+	// capture reading stay off).
+	Model model.Provider
 }
 
 // Server implements api.StrictServerInterface.

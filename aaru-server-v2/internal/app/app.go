@@ -15,6 +15,7 @@ import (
 	"aaru-go-api/internal/library"
 	"aaru-go-api/internal/metrics"
 	"aaru-go-api/internal/middleware"
+	"aaru-go-api/internal/model"
 	"aaru-go-api/internal/oauth"
 	"aaru-go-api/internal/provider"
 	"aaru-go-api/internal/push"
@@ -150,6 +151,7 @@ func serve(ctx context.Context, reader *config.Reader, log *slog.Logger) error {
 	deps.Tonight = tonight.New(sqlc.New(pool), deps.Schedule)
 	deps.Stats = stats.New(pool)
 	deps.Concerts, deps.Sports = buildConcertsAndSports(cfg, pool, provider.NewHTTPTransport())
+	deps.Model = makeModel(cfg.Anthropic, log)
 	server := httpapi.New(deps)
 	router := server.Router(reporter)
 
@@ -289,4 +291,24 @@ func NewLogger(level string) *slog.Logger {
 		l = slog.LevelInfo
 	}
 	return slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: l}))
+}
+
+// makeModel is the agent's model, or nil (with a notice) when ANTHROPIC_API_KEY is unset.
+func makeModel(settings *config.Anthropic, log *slog.Logger) model.Provider {
+	if settings == nil {
+		log.Info("@aaru disabled: ANTHROPIC_API_KEY is not set")
+		return nil
+	}
+	m := &model.AnthropicMessages{
+		Transport: provider.NewHTTPTransport(), APIKey: settings.APIKey, ModelName: settings.Model,
+		Price:   model.Pricing{InputPerMTok: settings.PriceInputPerMTok, OutputPerMTok: settings.PriceOutputPerMTok},
+		BaseURL: settings.BaseURL,
+	}
+	if settings.Effort != nil {
+		m.Effort = *settings.Effort
+	}
+	if settings.WorkspaceID != nil {
+		m.WorkspaceID = *settings.WorkspaceID
+	}
+	return m
 }
