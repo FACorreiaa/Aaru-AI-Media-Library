@@ -6,6 +6,7 @@ import (
 	"aaru-go-api/internal/db/sqlc"
 	"aaru-go-api/internal/middleware"
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
@@ -31,6 +32,14 @@ func (s *Server) Router(reporter middleware.Reporter) *echo.Echo {
 		}
 		_ = middleware.Write(c, middleware.Map(err))
 	}
+	spec, err := api.GetSwagger()
+	if err != nil {
+		panic(fmt.Sprintf("embedded openapi spec: %v", err))
+	}
+	validate, err := middleware.Validate(spec)
+	if err != nil {
+		panic(fmt.Sprintf("request validation: %v", err))
+	}
 	e.Use(
 		middleware.RequestLog(s.Log),
 		middleware.Metrics(),
@@ -39,6 +48,7 @@ func (s *Server) Router(reporter middleware.Reporter) *echo.Echo {
 		middleware.Auth(sessionLookup{s.q}, s.Config.WebClientSecret),
 		middleware.ClientTimeZone(),
 		middleware.AvatarCache(),
+		validate,
 	)
 	// Body and parameter decode failures surface as echo 400s, which the error
 	// middleware maps to `bad_request` like the Swift server did.

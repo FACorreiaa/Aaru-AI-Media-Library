@@ -43,6 +43,7 @@ func newHarness(t *testing.T, tweak ...func(*Deps)) *harness {
 	t.Helper()
 	pool := testdb.New(t)
 	deps := Deps{Config: testConfig(), Pool: pool, Log: slog.New(slog.NewTextHandler(io.Discard, nil))}
+	withAuthDefaults(&deps)
 	for _, f := range tweak {
 		f(&deps)
 	}

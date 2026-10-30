@@ -48,3 +48,16 @@ func TestInternalMetricsNeedsSecret(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rec.Code)
 	assert.JSONEq(t, `{"users":0}`, rec.Body.String())
 }
+
+func TestMissingRequiredFieldIsBadRequest(t *testing.T) {
+	h := newHarness(t)
+	rec := h.do(http.MethodPost, "/v1/auth/apple", "", []byte(`{"nonce":"n"}`))
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+	assert.Equal(t, "bad_request", decode[api.ErrorResponse](t, rec).Code)
+}
+
+func TestUnauthenticatedBeatsValidation(t *testing.T) {
+	h := newHarness(t)
+	rec := h.do(http.MethodPost, "/v1/library", "", []byte(`{}`))
+	assert.Equal(t, http.StatusUnauthorized, rec.Code)
+}

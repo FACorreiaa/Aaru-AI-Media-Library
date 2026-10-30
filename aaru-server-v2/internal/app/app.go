@@ -3,10 +3,17 @@
 package app
 
 import (
+	"aaru-go-api/internal/auth"
+	"aaru-go-api/internal/billing"
 	"aaru-go-api/internal/config"
 	"aaru-go-api/internal/db"
+	"aaru-go-api/internal/db/sqlc"
 	"aaru-go-api/internal/httpapi"
 	"aaru-go-api/internal/metrics"
+	"aaru-go-api/internal/middleware"
+	"aaru-go-api/internal/oauth"
+	"aaru-go-api/internal/push"
+	"aaru-go-api/internal/telemetry"
 	"context"
 	"errors"
 	"fmt"
@@ -18,6 +25,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -70,8 +78,23 @@ func serve(ctx context.Context, reader *config.Reader, log *slog.Logger) error {
 	defer pool.Close()
 
 	deps := httpapi.Deps{Config: cfg, Pool: pool, Log: log}
+	if err := buildPushAndBilling(cfg, pool, log, &deps); err != nil {
+		return err
+	}
+	sentry := makeSentry(cfg.Sentry, log)
+	var reporter middleware.Reporter
+	if sentry != nil {
+		reporter = sentry
+	}
+	deps.ProductEvents = makePostHog(cfg.PostHog, log)
+	if deps.ProductEvents != nil {
+		telemetry.Install(deps.ProductEvents)
+	}
+	outbound := &http.Client{Timeout: 15 * time.Second}
+	deps.Auth, deps.AgentTokens = auth.FromConfig(cfg, pool, outbound)
+	deps.OAuth = oauth.FromConfig(cfg, pool)
 	server := httpapi.New(deps)
-	router := server.Router(nil)
+	router := server.Router(reporter)
 
 	api := &http.Server{
 		Addr:              net.JoinHostPort(cfg.HTTP.Host, strconv.Itoa(cfg.HTTP.Port)),
@@ -115,9 +138,67 @@ func serve(ctx context.Context, reader *config.Reader, log *slog.Logger) error {
 		if metricsServer != nil {
 			errs = append(errs, metricsServer.Shutdown(shutdown))
 		}
+		sentry.Wait()
 		return errors.Join(errs...)
 	})
 	return group.Wait()
+}
+
+// buildPushAndBilling makes the APNs and web push senders (each nil, with a notice, when not
+// configured or not parseable), the fan-out, and the App Store verifier (App+build.swift).
+func buildPushAndBilling(cfg *config.App, pool *pgxpool.Pool, log *slog.Logger, deps *httpapi.Deps) error {
+	fanout := &push.UserPush{Q: sqlc.New(pool), Log: log}
+	if cfg.Push == nil {
+		log.Info("Push disabled: APNS_PRIVATE_KEY is not set")
+	} else {
+		sender, err := push.NewAPNSSender(push.APNSSettings{KeyID: cfg.Push.KeyID, TeamID: cfg.Push.TeamID, PrivateKeyPEM: cfg.Push.PrivateKeyPEM}, nil)
+		if err != nil {
+			log.Error("Push disabled: APNS_PRIVATE_KEY is not a valid .p8 key")
+		} else {
+			deps.APNs = sender
+			fanout.APNs = sender
+		}
+	}
+	if cfg.VAPIDConfigJSON == nil {
+		log.Info("Web push disabled: VAPID_CONFIG is not set")
+	} else {
+		sender, err := push.NewVAPIDSender(*cfg.VAPIDConfigJSON, nil, log)
+		if err != nil {
+			log.Error("Web push disabled: VAPID_CONFIG is not a valid VAPID configuration")
+		} else {
+			deps.WebPush = sender
+			fanout.Web = sender
+		}
+	}
+	deps.Push = fanout
+	apple, err := billing.NewAppleSignedData(cfg.AppleAudiences)
+	if err != nil {
+		return fmt.Errorf("apple root certificate: %w", err)
+	}
+	deps.Apple = apple
+	return nil
+}
+
+// makeSentry is the error reporter, or nil (with a notice) when SENTRY_DSN is unset or not a DSN.
+func makeSentry(settings *config.Sentry, log *slog.Logger) *telemetry.Sentry {
+	if settings == nil {
+		log.Info("Error reports disabled: SENTRY_DSN is not set")
+		return nil
+	}
+	reporter := telemetry.NewSentry(settings.DSN, settings.Environment, settings.Release, nil, log)
+	if reporter == nil {
+		log.Error("Error reports disabled: SENTRY_DSN is not a Sentry DSN")
+	}
+	return reporter
+}
+
+// makePostHog is the product events client, or nil (with a notice) when POSTHOG_PROJECT_TOKEN is unset.
+func makePostHog(settings *config.PostHog, log *slog.Logger) *telemetry.PostHog {
+	if settings == nil {
+		log.Info("Product events disabled: POSTHOG_PROJECT_TOKEN is not set")
+		return nil
+	}
+	return telemetry.NewPostHog(settings.ProjectToken, settings.Host, nil, log)
 }
 
 // NewLogger maps LOG_LEVEL's swift-log names onto slog.

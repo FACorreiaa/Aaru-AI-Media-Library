@@ -3,3 +3,14 @@
 //   sqlc v1.31.1
 
 package sqlc
+
+import (
+	"time"
+)
+
+type OauthClient struct {
+	ID           string
+	Name         string
+	RedirectUris []string
+	CreatedAt    time.Time
+}
