@@ -53,3 +53,5 @@ func (e *libEnv) importDetail(id string) (job map[string]any, rows []map[string]
 	}
 	return job, rows
 }
+
+func importPtr[T any](v T) *T { return &v }
