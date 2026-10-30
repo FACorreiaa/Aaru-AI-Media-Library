@@ -18,10 +18,12 @@ import (
 	"aaru-go-api/internal/config"
 	"aaru-go-api/internal/db/sqlc"
 	"aaru-go-api/internal/gamification"
+	"aaru-go-api/internal/groups"
 	"aaru-go-api/internal/library"
 	"aaru-go-api/internal/model"
 	"aaru-go-api/internal/oauth"
 	"aaru-go-api/internal/push"
+	"aaru-go-api/internal/realtime"
 	"aaru-go-api/internal/reqctx"
 	"aaru-go-api/internal/schedule"
 	"aaru-go-api/internal/sports"
@@ -96,6 +98,11 @@ type Deps struct {
 	// Model is the agent's language model; nil when ANTHROPIC_API_KEY is unset (`@aaru` and
 	// capture reading stay off).
 	Model model.Provider
+	// Realtime is the `/v1/ws` hub: open sockets and browser tickets (GRP-006). New builds one.
+	Realtime *realtime.Hub
+	// Groups is groups, channels, messages, watch parties and `@aaru` mentions (GRP-001…013). New
+	// builds one over Pool, Catalog and Library when unset, publishing to Realtime.
+	Groups *groups.Service
 }
 
 // Server implements api.StrictServerInterface.
@@ -141,6 +148,20 @@ func New(deps Deps) *Server {
 	}
 	if deps.Tonight == nil && deps.Schedule != nil {
 		deps.Tonight = tonight.New(sqlc.New(deps.Pool), deps.Schedule)
+	}
+	if deps.Realtime == nil {
+		deps.Realtime = realtime.NewHub(nil, deps.Log)
+	}
+	if deps.Realtime.Frame == nil {
+		deps.Realtime.Frame = RealtimeFrame
+	}
+	if deps.Groups == nil && deps.Pool != nil && deps.Catalog != nil && deps.Library != nil {
+		deps.Groups = groups.New(groups.NewStore(deps.Pool), deps.Catalog, deps.Library, deps.Gamification, deps.Log)
+		deps.Groups.Events = deps.Realtime
+		deps.Groups.AgentAvailable = deps.Model != nil
+		if deps.Push != nil {
+			deps.Groups.Push = deps.Push
+		}
 	}
 	return &Server{Deps: deps, q: q}
 }
