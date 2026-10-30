@@ -79,6 +79,7 @@ func (s *ListenStore) Stage(ctx context.Context, listens []NewListen, jobID uuid
 	return nil
 }
 
+// ClearStaged empties a job's staging.
 func (s *ListenStore) ClearStaged(ctx context.Context, jobID uuid.UUID) error {
 	if err := s.Q.ImportListensClear(ctx, jobID); err != nil {
 		return fmt.Errorf("clear staged listens: %w", err)
@@ -86,6 +87,7 @@ func (s *ListenStore) ClearStaged(ctx context.Context, jobID uuid.UUID) error {
 	return nil
 }
 
+// CountNew is how many staged plays applying would keep.
 func (s *ListenStore) CountNew(ctx context.Context, jobID, user uuid.UUID) (int, error) {
 	n, err := s.Q.ImportListensCountNew(ctx, sqlc.ImportListensCountNewParams{JobID: jobID, UserID: user})
 	if err != nil {
@@ -94,6 +96,7 @@ func (s *ListenStore) CountNew(ctx context.Context, jobID, user uuid.UUID) (int,
 	return int(n), nil
 }
 
+// ApplyStaged writes the kept plays as the job's `import` listens and empties its staging.
 func (s *ListenStore) ApplyStaged(ctx context.Context, jobID, user uuid.UUID) (int, error) {
 	var written int32
 	err := pgx.BeginFunc(ctx, s.Pool, func(tx pgx.Tx) error {
@@ -115,6 +118,7 @@ func (s *ListenStore) ApplyStaged(ctx context.Context, jobID, user uuid.UUID) (i
 	return int(written), nil
 }
 
+// DeleteImported deletes the listens a job wrote.
 func (s *ListenStore) DeleteImported(ctx context.Context, jobID, user uuid.UUID) (int, error) {
 	n, err := s.Q.ImportListensDeleteImported(ctx, sqlc.ImportListensDeleteImportedParams{UserID: user, JobID: &jobID})
 	if err != nil {
@@ -123,12 +127,13 @@ func (s *ListenStore) DeleteImported(ctx context.Context, jobID, user uuid.UUID)
 	return int(n), nil
 }
 
+// NewestImported is the newest listen an applied import of this source and account wrote.
 func (s *ListenStore) NewestImported(ctx context.Context, user uuid.UUID, source core.ImportSource, account string) (*time.Time, error) {
 	t, err := s.Q.ImportListensNewestImported(ctx, sqlc.ImportListensNewestImportedParams{
 		UserID: user, Source: string(source), Account: account,
 	})
 	if db.IsNoRows(err) {
-		return nil, nil
+		return nil, nil //nolint:nilnil // none imported yet
 	}
 	if err != nil {
 		return nil, fmt.Errorf("newest imported listen: %w", err)
