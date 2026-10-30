@@ -61,7 +61,7 @@ type Service struct {
 
 // New builds the service over one set of queries.
 func New(q *sqlc.Queries, resolver TitleResolver, lib *library.Service) *Service {
-	return &Service{Store: &Store{Q: q}, Social: groups.Social{Q: q}, Q: q, Resolver: resolver, Library: lib, Now: time.Now}
+	return &Service{Store: &Store{Q: q}, Social: groups.NewSocial(q), Q: q, Resolver: resolver, Library: lib, Now: time.Now}
 }
 
 func (s *Service) now() time.Time {

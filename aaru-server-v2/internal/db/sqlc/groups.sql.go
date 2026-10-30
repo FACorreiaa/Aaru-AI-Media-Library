@@ -240,6 +240,7 @@ func (q *Queries) EndWatchParty(ctx context.Context, arg EndWatchPartyParams) er
 
 const enqueueAgentReply = `-- name: EnqueueAgentReply :exec
 
+
 INSERT INTO agent_replies (id, message_id, group_id, channel_id, tagger_id, state, created_at, updated_at)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $7)
 ON CONFLICT (message_id) DO NOTHING
@@ -255,6 +256,7 @@ type EnqueueAgentReplyParams struct {
 	CreatedAt time.Time
 }
 
+// Social reads (PostgresSocialStore). Groups and the Board read friendships and blocks themselves.
 // `@aaru` replies (GRP-010 / GRP-011, PostgresAgentStore).
 func (q *Queries) EnqueueAgentReply(ctx context.Context, arg EnqueueAgentReplyParams) error {
 	_, err := q.db.Exec(ctx, enqueueAgentReply,
@@ -334,91 +336,6 @@ func (q *Queries) GroupAgentLoad(ctx context.Context, arg GroupAgentLoadParams) 
 		&i.GroupNoted,
 	)
 	return i, err
-}
-
-const groupAreFriends = `-- name: GroupAreFriends :one
-SELECT EXISTS (
-    SELECT 1 FROM social_friendships
-    WHERE user_low = LEAST($1::uuid, $2::uuid)
-      AND user_high = GREATEST($1::uuid, $2::uuid)
-) AS found
-`
-
-type GroupAreFriendsParams struct {
-	A uuid.UUID
-	B uuid.UUID
-}
-
-func (q *Queries) GroupAreFriends(ctx context.Context, arg GroupAreFriendsParams) (bool, error) {
-	row := q.db.QueryRow(ctx, groupAreFriends, arg.A, arg.B)
-	var found bool
-	err := row.Scan(&found)
-	return found, err
-}
-
-const groupBlockedBy = `-- name: GroupBlockedBy :many
-SELECT p.user_id, p.handle, u.display_name, u.avatar_version
-FROM social_blocks b JOIN profiles p ON p.user_id = b.blocked_id JOIN users u ON u.id = p.user_id
-WHERE b.blocker_id = $1
-ORDER BY p.handle
-`
-
-type GroupBlockedByRow struct {
-	UserID        uuid.UUID
-	Handle        string
-	DisplayName   *string
-	AvatarVersion *int64
-}
-
-// Everyone this user blocked.
-func (q *Queries) GroupBlockedBy(ctx context.Context, blockerID uuid.UUID) ([]GroupBlockedByRow, error) {
-	rows, err := q.db.Query(ctx, groupBlockedBy, blockerID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []GroupBlockedByRow{}
-	for rows.Next() {
-		var i GroupBlockedByRow
-		if err := rows.Scan(
-			&i.UserID,
-			&i.Handle,
-			&i.DisplayName,
-			&i.AvatarVersion,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const groupBlockers = `-- name: GroupBlockers :many
-SELECT blocker_id FROM social_blocks WHERE blocked_id = $1
-`
-
-// Everyone who blocked this user.
-func (q *Queries) GroupBlockers(ctx context.Context, blockedID uuid.UUID) ([]uuid.UUID, error) {
-	rows, err := q.db.Query(ctx, groupBlockers, blockedID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []uuid.UUID{}
-	for rows.Next() {
-		var blocker_id uuid.UUID
-		if err := rows.Scan(&blocker_id); err != nil {
-			return nil, err
-		}
-		items = append(items, blocker_id)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
 }
 
 const groupChannel = `-- name: GroupChannel :one
@@ -526,47 +443,6 @@ func (q *Queries) GroupChannels(ctx context.Context, arg GroupChannelsParams) ([
 	return items, nil
 }
 
-const groupFriends = `-- name: GroupFriends :many
-SELECT p.user_id, p.handle, u.display_name, u.avatar_version
-FROM social_friendships f
-JOIN profiles p ON p.user_id = CASE WHEN f.user_low = $1::uuid THEN f.user_high ELSE f.user_low END
-JOIN users u ON u.id = p.user_id
-WHERE f.user_low = $1::uuid OR f.user_high = $1::uuid
-ORDER BY p.handle
-`
-
-type GroupFriendsRow struct {
-	UserID        uuid.UUID
-	Handle        string
-	DisplayName   *string
-	AvatarVersion *int64
-}
-
-func (q *Queries) GroupFriends(ctx context.Context, userID uuid.UUID) ([]GroupFriendsRow, error) {
-	rows, err := q.db.Query(ctx, groupFriends, userID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []GroupFriendsRow{}
-	for rows.Next() {
-		var i GroupFriendsRow
-		if err := rows.Scan(
-			&i.UserID,
-			&i.Handle,
-			&i.DisplayName,
-			&i.AvatarVersion,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const groupInvites = `-- name: GroupInvites :many
 SELECT i.id, i.group_id, g.name AS group_name, i.created_at,
        i.inviter_id, ip.handle AS inviter_handle, iu.display_name AS inviter_display_name,
@@ -633,27 +509,6 @@ func (q *Queries) GroupInvites(ctx context.Context, arg GroupInvitesParams) ([]G
 		return nil, err
 	}
 	return items, nil
-}
-
-const groupIsBlocked = `-- name: GroupIsBlocked :one
-SELECT EXISTS (
-    SELECT 1 FROM social_blocks
-    WHERE (blocker_id = $1::uuid AND blocked_id = $2::uuid)
-       OR (blocker_id = $2::uuid AND blocked_id = $1::uuid)
-) AS found
-`
-
-type GroupIsBlockedParams struct {
-	A uuid.UUID
-	B uuid.UUID
-}
-
-// Either direction.
-func (q *Queries) GroupIsBlocked(ctx context.Context, arg GroupIsBlockedParams) (bool, error) {
-	row := q.db.QueryRow(ctx, groupIsBlocked, arg.A, arg.B)
-	var found bool
-	err := row.Scan(&found)
-	return found, err
 }
 
 const groupMembers = `-- name: GroupMembers :many
@@ -1107,32 +962,6 @@ func (q *Queries) GroupShelfItems(ctx context.Context, arg GroupShelfItemsParams
 		return nil, err
 	}
 	return items, nil
-}
-
-const groupSocialUser = `-- name: GroupSocialUser :one
-
-SELECT p.user_id, p.handle, u.display_name, u.avatar_version FROM profiles p JOIN users u ON u.id = p.user_id
-WHERE p.user_id = $1
-`
-
-type GroupSocialUserRow struct {
-	UserID        uuid.UUID
-	Handle        string
-	DisplayName   *string
-	AvatarVersion *int64
-}
-
-// Social reads (PostgresSocialStore). Groups and the Board read friendships and blocks themselves.
-func (q *Queries) GroupSocialUser(ctx context.Context, userID uuid.UUID) (GroupSocialUserRow, error) {
-	row := q.db.QueryRow(ctx, groupSocialUser, userID)
-	var i GroupSocialUserRow
-	err := row.Scan(
-		&i.UserID,
-		&i.Handle,
-		&i.DisplayName,
-		&i.AvatarVersion,
-	)
-	return i, err
 }
 
 const groupSummaries = `-- name: GroupSummaries :many

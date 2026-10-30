@@ -203,7 +203,7 @@ func (s *Server) shelf(ctx context.Context, group, channel uuid.UUID) (api.Chann
 	for i, e := range entries {
 		item := api.ChannelItem{Title: TitleSummaryDTO(e.Title), AddedAt: apitime.From(e.Item.AddedAt)}
 		if e.Item.AddedBy != nil {
-			by := groupUserDTO(*e.Item.AddedBy)
+			by := SocialUserDTO(*e.Item.AddedBy)
 			item.AddedBy = &by
 		}
 		if e.Item.MyStatus != nil {
@@ -216,7 +216,7 @@ func (s *Server) shelf(ctx context.Context, group, channel uuid.UUID) (api.Chann
 }
 
 func memberProgressDTO(m groups.MemberProgress) api.MemberProgress {
-	dto := api.MemberProgress{User: groupUserDTO(m.User)}
+	dto := api.MemberProgress{User: SocialUserDTO(m.User)}
 	if p := m.Progress; p != nil {
 		status := api.LibraryStatus(p.Status)
 		dto.Status = &status
@@ -237,14 +237,14 @@ func partyViewDTO(found *groups.Party) api.WatchPartyView {
 	p := found.Party
 	party := api.WatchParty{
 		Id: apiid.From(p.ID), Title: TitleSummaryDTO(found.Title), State: api.WatchPartyState(p.State(now)),
-		StartsAt: apitime.PtrOrNil(p.StartsAt), EndedAt: apitime.PtrOrNil(p.EndedAt), Ready: groupUsersDTO(p.Ready),
+		StartsAt: apitime.PtrOrNil(p.StartsAt), EndedAt: apitime.PtrOrNil(p.EndedAt), Ready: SocialUserDTOs(p.Ready),
 	}
 	if p.Episode != nil {
 		season, episode := p.Episode.Season, p.Episode.Episode
 		party.Season, party.Episode = &season, &episode
 	}
 	if p.CreatedBy != nil {
-		host := groupUserDTO(*p.CreatedBy)
+		host := SocialUserDTO(*p.CreatedBy)
 		party.Host = &host
 	}
 	view.Party = &party

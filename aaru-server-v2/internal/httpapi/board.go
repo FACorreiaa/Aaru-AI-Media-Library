@@ -177,7 +177,7 @@ func (s *Server) ListBoardPostUpvoters(ctx context.Context, req api.ListBoardPos
 	if err != nil {
 		return nil, err
 	}
-	return api.ListBoardPostUpvoters200JSONResponse(api.SocialUserList{Items: groupUsersDTO(users)}), nil
+	return api.ListBoardPostUpvoters200JSONResponse(api.SocialUserList{Items: SocialUserDTOs(users)}), nil
 }
 
 // ListBoardComments is GET /v1/board/posts/{postId}/comments.
@@ -270,7 +270,7 @@ func (s *Server) boardPostsDTO(ctx context.Context, posts []boards.Post, veiled 
 	out := make([]api.BoardPost, len(posts))
 	for i, p := range posts {
 		dto := api.BoardPost{
-			Id: apiid.From(p.ID), Author: groupUserDTO(p.Author), Rating: p.Rating, Body: p.Body,
+			Id: apiid.From(p.ID), Author: SocialUserDTO(p.Author), Rating: p.Rating, Body: p.Body,
 			CreatedAt: apitime.From(p.CreatedAt), EditedAt: apitime.PtrOrNil(p.EditedAt), Upvotes: p.Upvotes,
 			UpvotedByMe: p.UpvotedByViewer, CommentCount: p.CommentCount, Veiled: veiled[p.ID], Mine: p.Author.ID == viewer,
 		}
@@ -299,7 +299,7 @@ func boardCommentDTO(c boards.Comment, viewer uuid.UUID) api.BoardComment {
 		ReplyTo: apiid.PtrOrNil(c.ReplyTo), Mine: &mine,
 	}
 	if c.Author != nil && !gone {
-		author := groupUserDTO(*c.Author)
+		author := SocialUserDTO(*c.Author)
 		dto.Author = &author
 	}
 	if gone {

@@ -170,7 +170,7 @@ func (s *Server) ListGroupInvites(ctx context.Context, _ api.ListGroupInvitesReq
 	for i, inv := range invites {
 		items[i] = api.GroupInvite{
 			Id: apiid.From(inv.ID), GroupId: apiid.From(inv.GroupID), GroupName: inv.GroupName,
-			Inviter: groupUserDTO(inv.Inviter), CreatedAt: apitime.From(inv.CreatedAt),
+			Inviter: SocialUserDTO(inv.Inviter), CreatedAt: apitime.From(inv.CreatedAt),
 		}
 	}
 	return api.ListGroupInvites200JSONResponse(api.GroupInviteList{Items: items}), nil
@@ -401,12 +401,12 @@ func groupDetailDTO(d groups.Detail) api.GroupDetail {
 	members := make([]api.GroupMember, len(d.Members))
 	for i, m := range d.Members {
 		members[i] = api.GroupMember{
-			User: groupUserDTO(m.User), Role: api.GroupRole(m.Role), JoinedAt: apitime.From(m.JoinedAt),
+			User: SocialUserDTO(m.User), Role: api.GroupRole(m.Role), JoinedAt: apitime.From(m.JoinedAt),
 			ShareProgress: m.ShareProgress,
 		}
 	}
 	return api.GroupDetail{
-		Group: groupSummaryDTO(d.Summary), Channels: channels, Members: members, Invited: groupUsersDTO(d.Invited),
+		Group: groupSummaryDTO(d.Summary), Channels: channels, Members: members, Invited: SocialUserDTOs(d.Invited),
 		Agent: d.Agent,
 	}
 }
@@ -422,7 +422,7 @@ func GroupMessageDTO(m groups.Message, fromBlocked bool, viewer uuid.UUID, veile
 		CreatedAt: apitime.From(m.CreatedAt), Veiled: veiled, FromAgent: m.FromAgent, ReplyTo: apiid.PtrOrNil(m.ReplyTo),
 	}
 	if m.Author != nil {
-		author := groupUserDTO(*m.Author)
+		author := SocialUserDTO(*m.Author)
 		dto.Author = &author
 	}
 	if m.EditedAt != nil {

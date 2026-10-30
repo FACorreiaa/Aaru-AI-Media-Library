@@ -10,18 +10,14 @@ package groups
 
 import (
 	"aaru-go-api/internal/core"
+	"aaru-go-api/internal/social"
 	"time"
 
 	"github.com/google/uuid"
 )
 
 // User is someone with a handle, as groups and the Board show them (SocialUser).
-type User struct {
-	ID            uuid.UUID
-	Handle        string
-	DisplayName   *string
-	AvatarVersion *int64
-}
+type User = social.User
 
 // Role is a member's place in a group.
 type Role string

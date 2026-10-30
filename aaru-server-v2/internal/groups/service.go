@@ -46,7 +46,7 @@ type Service struct {
 // New builds the service over a pool's store; events default to none.
 func New(store *Store, kit *catalog.Kit, lib *library.Service, game *gamification.Service, log *slog.Logger) *Service {
 	return &Service{
-		Store: store, Social: Social{Q: store.Q}, Events: NoEvents{}, Catalog: kit, Library: lib,
+		Store: store, Social: NewSocial(store.Q), Events: NoEvents{}, Catalog: kit, Library: lib,
 		Gamification: game, Log: log,
 	}
 }

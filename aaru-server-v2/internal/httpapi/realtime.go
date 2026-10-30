@@ -79,7 +79,7 @@ func RealtimeEventDTO(e groups.Event, recipient uuid.UUID) api.RealtimeEvent {
 	case groups.EventTyping, groups.EventWatchReaction:
 		dto.GroupId, dto.ChannelId = &group, &channel
 		if e.User != nil {
-			u := groupUserDTO(*e.User)
+			u := SocialUserDTO(*e.User)
 			dto.User = &u
 		}
 		if e.Type == groups.EventWatchReaction {

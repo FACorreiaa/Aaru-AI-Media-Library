@@ -1,31 +1,26 @@
 package groups
 
 import (
-	"aaru-go-api/internal/db"
 	"aaru-go-api/internal/db/sqlc"
+	"aaru-go-api/internal/social"
 	"context"
 	"fmt"
 
 	"github.com/google/uuid"
 )
 
-// Social is the friendship and block reads groups and the Board make (PostgresSocialStore's
-// read half). The social area owns writes; these are its reads, kept here so groups and the
-// Board do not wait on it.
+// Social is the friendship and block reads groups and the Board make, through the social area's
+// store (PostgresSocialStore's read half): one copy of who is a friend and who blocked whom.
 type Social struct {
-	Q *sqlc.Queries
+	Store *social.Store
 }
+
+// NewSocial reads the social graph over q.
+func NewSocial(q *sqlc.Queries) Social { return Social{Store: &social.Store{Q: q}} }
 
 // User is someone with a handle, or nil without one.
 func (s Social) User(ctx context.Context, id uuid.UUID) (*User, error) {
-	row, err := s.Q.GroupSocialUser(ctx, id)
-	if db.IsNoRows(err) {
-		return nil, nil //nolint:nilnil // no handle, as Swift's optional
-	}
-	if err != nil {
-		return nil, fmt.Errorf("social user: %w", err)
-	}
-	return &User{ID: row.UserID, Handle: row.Handle, DisplayName: row.DisplayName, AvatarVersion: row.AvatarVersion}, nil
+	return s.Store.User(ctx, id) //nolint:wrapcheck // the store wraps its own errors
 }
 
 // RequireHandle is the viewer with their handle, or 422 `handle_required`.
@@ -42,59 +37,27 @@ func (s Social) RequireHandle(ctx context.Context, viewer uuid.UUID) (User, erro
 
 // AreFriends reports a mutual friendship.
 func (s Social) AreFriends(ctx context.Context, a, b uuid.UUID) (bool, error) {
-	found, err := s.Q.GroupAreFriends(ctx, sqlc.GroupAreFriendsParams{A: a, B: b})
-	if err != nil {
-		return false, fmt.Errorf("are friends: %w", err)
-	}
-	return found, nil
+	return s.Store.AreFriends(ctx, a, b) //nolint:wrapcheck // the store wraps its own errors
 }
 
 // IsBlocked reports a block in either direction.
 func (s Social) IsBlocked(ctx context.Context, a, b uuid.UUID) (bool, error) {
-	found, err := s.Q.GroupIsBlocked(ctx, sqlc.GroupIsBlockedParams{A: a, B: b})
-	if err != nil {
-		return false, fmt.Errorf("is blocked: %w", err)
-	}
-	return found, nil
+	return s.Store.IsBlocked(ctx, a, b) //nolint:wrapcheck // the store wraps its own errors
 }
 
 // Friends are the user's friends by handle.
 func (s Social) Friends(ctx context.Context, user uuid.UUID) ([]User, error) {
-	rows, err := s.Q.GroupFriends(ctx, user)
-	if err != nil {
-		return nil, fmt.Errorf("friends: %w", err)
-	}
-	users := make([]User, len(rows))
-	for i, r := range rows {
-		users[i] = User{ID: r.UserID, Handle: r.Handle, DisplayName: r.DisplayName, AvatarVersion: r.AvatarVersion}
-	}
-	return users, nil
+	return s.Store.Friends(ctx, user) //nolint:wrapcheck // the store wraps its own errors
 }
 
 // Blocked is everyone the user blocked.
 func (s Social) Blocked(ctx context.Context, user uuid.UUID) ([]User, error) {
-	rows, err := s.Q.GroupBlockedBy(ctx, user)
-	if err != nil {
-		return nil, fmt.Errorf("blocked: %w", err)
-	}
-	users := make([]User, len(rows))
-	for i, r := range rows {
-		users[i] = User{ID: r.UserID, Handle: r.Handle, DisplayName: r.DisplayName, AvatarVersion: r.AvatarVersion}
-	}
-	return users, nil
+	return s.Store.Blocked(ctx, user) //nolint:wrapcheck // the store wraps its own errors
 }
 
 // Blockers is everyone who blocked the user.
 func (s Social) Blockers(ctx context.Context, user uuid.UUID) (map[uuid.UUID]bool, error) {
-	ids, err := s.Q.GroupBlockers(ctx, user)
-	if err != nil {
-		return nil, fmt.Errorf("blockers: %w", err)
-	}
-	set := make(map[uuid.UUID]bool, len(ids))
-	for _, id := range ids {
-		set[id] = true
-	}
-	return set, nil
+	return s.Store.Blockers(ctx, user) //nolint:wrapcheck // the store wraps its own errors
 }
 
 // BlockedEitherWay is everyone the user blocked plus everyone who blocked the user.
