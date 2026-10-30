@@ -59,7 +59,7 @@ describe('board model', () => {
       'Adds Dune to Read, ★★★★☆',
     )
     expect(reviewEffect({ title: 'Severance', type: 'show' }, 9)).toBe(
-      "Adds Severance to Watched, or Watching if it's still airing, ★★★★½",
+      'Adds Severance to Watched, ★★★★½',
     )
     expect(
       reviewEffect({ title: 'Arrival', type: 'movie', libraryItemId: 'x' }, 9),

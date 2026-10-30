@@ -7,6 +7,7 @@ import (
 	"aaru-go-api/internal/concerts"
 	"aaru-go-api/internal/gamification"
 	"aaru-go-api/internal/imports"
+	"aaru-go-api/internal/library"
 	"aaru-go-api/internal/mal"
 	"aaru-go-api/internal/music"
 	"aaru-go-api/internal/push"
@@ -32,6 +33,10 @@ func (s *Server) Workers() []Worker {
 	if s.Catalog != nil {
 		// Keeps tracked shows' episodes, genres and book page counts current.
 		workers = append(workers, catalog.NewRefreshWorker(s.Catalog.Refresher, s.Log))
+	}
+	if s.Library != nil {
+		// Moves finished shows back to in progress when a new episode airs (owner, 2026-10-30).
+		workers = append(workers, library.NewReopenWorker(s.Library.Store, s.Log))
 	}
 	if s.Gamification != nil {
 		// Evaluates dirty and never-evaluated users' badges (GamificationWorker).

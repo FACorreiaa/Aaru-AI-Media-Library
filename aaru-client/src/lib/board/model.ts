@@ -54,9 +54,6 @@ export function reviewEffect(
   const done = statusLabel('finished', kindOf(hit.type, false))
   if (hit.libraryItemId)
     return `Updates your rating to ${stars}. Its status stays.`
-  if (hit.type === 'show') {
-    return `Adds ${hit.title} to ${done}, or ${statusLabel('in_progress', 'show')} if it's still airing, ${stars}`
-  }
   return `Adds ${hit.title} to ${done}, ${stars}`
 }
 

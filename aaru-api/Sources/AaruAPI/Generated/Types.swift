@@ -758,7 +758,7 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/library/items/{id}/seasons/{season}/watched`.
     /// - Remark: Generated from `#/paths//v1/library/items/{id}/seasons/{season}/watched/post(markSeasonWatched)`.
     func markSeasonWatched(_ input: Operations.MarkSeasonWatched.Input) async throws -> Operations.MarkSeasonWatched.Output
-    /// Mark a whole show watched (PROG-005): every aired regular episode, as one undoable action with the watch dates unknown, so the Recap and Insights do not count them as today. An ended or canceled show becomes finished; a running one stays in progress, caught up. 422 for anything but a show.
+    /// Mark a whole show watched (PROG-005): every aired regular episode, as one undoable action with the watch dates unknown, so the Recap and Insights do not count them as today. The show becomes finished; a running one moves back to in progress when an episode it has not ticked airs. 422 for anything but a show.
     ///
     /// - Remark: HTTP `POST /v1/library/items/{id}/watched`.
     /// - Remark: Generated from `#/paths//v1/library/items/{id}/watched/post(markShowWatched)`.
@@ -2791,7 +2791,7 @@ extension APIProtocol {
             headers: headers
         ))
     }
-    /// Mark a whole show watched (PROG-005): every aired regular episode, as one undoable action with the watch dates unknown, so the Recap and Insights do not count them as today. An ended or canceled show becomes finished; a running one stays in progress, caught up. 422 for anything but a show.
+    /// Mark a whole show watched (PROG-005): every aired regular episode, as one undoable action with the watch dates unknown, so the Recap and Insights do not count them as today. The show becomes finished; a running one moves back to in progress when an episode it has not ticked airs. 422 for anything but a show.
     ///
     /// - Remark: HTTP `POST /v1/library/items/{id}/watched`.
     /// - Remark: Generated from `#/paths//v1/library/items/{id}/watched/post(markShowWatched)`.
@@ -10674,7 +10674,7 @@ public enum Components {
         }
         /// - Remark: Generated from `#/components/schemas/LibraryItemPatch`.
         public struct LibraryItemPatch: Codable, Hashable, Sendable {
-            /// `finished` on a show marks the whole show watched, as `POST …/watched` does (PROG-005): a running show stays in progress, caught up.
+            /// `finished` on a show marks the whole show watched, as `POST …/watched` does (PROG-005): a running show moves back to in progress when an episode it has not ticked airs.
             ///
             /// - Remark: Generated from `#/components/schemas/LibraryItemPatch/status`.
             public var status: Components.Schemas.LibraryStatus?
@@ -10716,7 +10716,7 @@ public enum Components {
             /// Creates a new `LibraryItemPatch`.
             ///
             /// - Parameters:
-            ///   - status: `finished` on a show marks the whole show watched, as `POST …/watched` does (PROG-005): a running show stays in progress, caught up.
+            ///   - status: `finished` on a show marks the whole show watched, as `POST …/watched` does (PROG-005): a running show moves back to in progress when an episode it has not ticked airs.
             ///   - rating: 1–10 in 0.5 steps.
             ///   - notes:
             ///   - isOwned:
@@ -35252,7 +35252,7 @@ public enum Operations {
             }
         }
     }
-    /// Mark a whole show watched (PROG-005): every aired regular episode, as one undoable action with the watch dates unknown, so the Recap and Insights do not count them as today. An ended or canceled show becomes finished; a running one stays in progress, caught up. 422 for anything but a show.
+    /// Mark a whole show watched (PROG-005): every aired regular episode, as one undoable action with the watch dates unknown, so the Recap and Insights do not count them as today. The show becomes finished; a running one moves back to in progress when an episode it has not ticked airs. 422 for anything but a show.
     ///
     /// - Remark: HTTP `POST /v1/library/items/{id}/watched`.
     /// - Remark: Generated from `#/paths//v1/library/items/{id}/watched/post(markShowWatched)`.

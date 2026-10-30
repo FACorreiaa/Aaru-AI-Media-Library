@@ -2492,9 +2492,9 @@ paths:
       operationId: markShowWatched
       summary: >-
         Mark a whole show watched (PROG-005): every aired regular episode, as one undoable action
-        with the watch dates unknown, so the Recap and Insights do not count them as today. An
-        ended or canceled show becomes finished; a running one stays in progress, caught up.
-        422 for anything but a show.
+        with the watch dates unknown, so the Recap and Insights do not count them as today. The
+        show becomes finished; a running one moves back to in progress when an episode it has not
+        ticked airs. 422 for anything but a show.
       parameters:
         - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
       responses:
@@ -5405,7 +5405,7 @@ components:
           $ref: '#/components/schemas/LibraryStatus'
           description: >-
             `finished` on a show marks the whole show watched, as `POST …/watched` does (PROG-005):
-            a running show stays in progress, caught up.
+            a running show moves back to in progress when an episode it has not ticked airs.
         rating:
           type: number
           description: 1–10 in 0.5 steps.

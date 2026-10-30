@@ -110,8 +110,9 @@ export const markSeason = createServerFn({ method: 'POST' })
     return { entry, actionId: tickedAction(response) }
   })
 
-/** Ticks every aired episode of a show as one undoable action. An ended show comes back
- * finished; a running one stays in progress, caught up. No `action` when nothing changed. */
+/** Ticks every aired episode of a show as one undoable action. The show comes back finished;
+ * a running one moves back to in progress when its next episode airs. No `action` when nothing
+ * changed. */
 export const markShowWatched = createServerFn({ method: 'POST' })
   .validator(z.object({ id: itemId }))
   .handler(async ({ data }): Promise<ShowWatched> => {

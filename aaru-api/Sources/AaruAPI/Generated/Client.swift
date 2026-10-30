@@ -11901,7 +11901,7 @@ public struct Client: APIProtocol {
             }
         )
     }
-    /// Mark a whole show watched (PROG-005): every aired regular episode, as one undoable action with the watch dates unknown, so the Recap and Insights do not count them as today. An ended or canceled show becomes finished; a running one stays in progress, caught up. 422 for anything but a show.
+    /// Mark a whole show watched (PROG-005): every aired regular episode, as one undoable action with the watch dates unknown, so the Recap and Insights do not count them as today. The show becomes finished; a running one moves back to in progress when an episode it has not ticked airs. 422 for anything but a show.
     ///
     /// - Remark: HTTP `POST /v1/library/items/{id}/watched`.
     /// - Remark: Generated from `#/paths//v1/library/items/{id}/watched/post(markShowWatched)`.

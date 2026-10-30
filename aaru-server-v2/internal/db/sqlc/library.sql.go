@@ -394,6 +394,35 @@ func (q *Queries) LibraryMarkUndone(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
+const libraryReopenAired = `-- name: LibraryReopenAired :execrows
+UPDATE library_items li
+SET status = 'in_progress', finished_at = NULL, updated_at = $1
+WHERE li.status = 'finished' AND li.finished_at IS NOT NULL
+  AND EXISTS (
+    SELECT 1 FROM show_episodes se
+    WHERE se.title_id = li.title_id AND se.season > 0
+      AND se.airs_at > li.finished_at
+      AND se.airs_at > $2 AND se.airs_at <= $1
+      AND NOT EXISTS (SELECT 1 FROM episode_progress ep WHERE ep.library_item_id = li.id
+                      AND ep.season = se.season AND ep.episode = se.episode))
+`
+
+type LibraryReopenAiredParams struct {
+	Now   time.Time
+	Since *time.Time
+}
+
+// A finished show goes back to in progress once a regular episode it has not ticked airs after it
+// was finished: a new season, or the next episode of a running show (owner, 2026-10-30). Only
+// airings since `since` count, so an old gap in an imported show never reopens it.
+func (q *Queries) LibraryReopenAired(ctx context.Context, arg LibraryReopenAiredParams) (int64, error) {
+	result, err := q.db.Exec(ctx, libraryReopenAired, arg.Now, arg.Since)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const librarySetFields = `-- name: LibrarySetFields :exec
 UPDATE library_items SET status = $1, rating = $2, notes = $3,
     is_owned = $4, finished_at = $5, book_page = $6,

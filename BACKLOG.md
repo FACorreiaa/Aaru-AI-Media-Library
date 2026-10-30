@@ -320,7 +320,7 @@ Friends and groups (design: `docs/superpowers/specs/2026-10-27-friends-groups-de
   | Upvote | One per user per post. Count plus who upvoted. Sort: Recent (default) or Top this week |
   | Comments | Everyone who can see the post sees every comment and handle. Blocks hide both ways (X-011: 404, never 403) |
   | Board placement | The Groups tab becomes Social, with a `Board \| Groups` switch; Board is the default |
-  | Review of a title not in the library | Allowed. A rating adds the title as finished with that rating (a still-airing show lands as `in_progress` with aired episodes ticked, PROG-005, so BOARD-002's composer preview must say so); a title already there keeps its status and gets the rating |
+  | Review of a title not in the library | Allowed. A rating adds the title as finished with that rating (a show lands as finished with aired episodes ticked, PROG-005; a running one moves back to `in_progress` when its next episode airs); a title already there keeps its status and gets the rating |
   | Chat writes | Like a tap: one item applies at once, journaled and undoable; anything bigger is a `PlanCard` approved in Aaru (X-009) |
   | Web search | Media topics only (films, shows, anime, books, music, sport). Off-topic is refused before any search |
   | Suggestions | Owner exception: personal suggestions in chat only, when asked. No "because you watched" rows anywhere else |
@@ -359,8 +359,8 @@ Friends and groups (design: `docs/superpowers/specs/2026-10-27-friends-groups-de
   (iOS), or its card menu on the web, marks the whole show watched (PROG-005), and so does
   choosing Watched for a show on its page. Every aired episode is ticked in one action, applied at
   once with an Undo toast, and the ticks' watch dates are unknown: the Recap and Insights do not
-  count them as today. An ended or canceled show becomes Watched; a running one stays Watching,
-  caught up. GAM-006b's profile is pulled forward without badges or points: all-time numbers
+  count them as today. Any show becomes Watched; a running one goes back to Watching
+  when its next episode airs (owner, 2026-10-30). GAM-006b's profile is pulled forward without badges or points: all-time numbers
   from the library as it is (`GET /v1/me/profile/stats`), undated ticks included, opened from a
   medallion on Home (iOS) and in the header (web). Insights stays the dated, per-period view.
 
@@ -1623,8 +1623,11 @@ disagree silently (store one, derive the other only if total pages is known).
 **Needs:** PROG-002, PROG-003, AUD-002.
 `POST /v1/library/items/{id}/watched` ticks every aired regular episode as one action and
 returns it, so a client can offer Undo. `PATCH` with `status: finished` on a show, and adding a
-show as finished, do the same. The ticks are undated (journal kind `show`, like an import). An
-ended or canceled show finishes; a running one stays in progress, caught up. iOS: long press on
+show as finished, do the same. The ticks are undated (journal kind `show`, like an import). The
+show finishes, running or not (owner, 2026-10-30, replacing "a running one stays in progress"); a
+finished show moves back to `in_progress` when a regular episode it has not ticked airs after it
+finished (a new season, or next week's episode), checked every five minutes over the last seven
+days. Not journaled: nothing to undo. iOS: long press on
 Library and Home cards, and the status picker. Web: a card menu (⋯, right-click, long press) and
 the status select. Both show "Marked N episodes · Undo".
 
@@ -3659,9 +3662,9 @@ Tables `board_posts`, `board_upvotes`, `board_comments` (migration `CreateBoards
 `GET /v1/titles/{id}/posts`. A post is visible to its author and the author's friends unless
 either side blocked the other; anything else is the same 404 as a missing post. A rating on a
 post writes the library through `LibraryService`: a new title is added as finished, then rated,
-as two journal rows (undo is per row); an existing title keeps its status. A still-airing show
-lands as `in_progress` with its aired episodes ticked (PROG-005), so BOARD-002's composer preview
-must say so. The spoiler veil
+as two journal rows (undo is per row); an existing title keeps its status. A show lands
+as finished with its aired episodes ticked (PROG-005); a running one moves back to `in_progress`
+when its next episode airs. The spoiler veil
 reuses the title-channel stamp. Comment lists page by cursor (`next`, nullable; a page can be
 short or empty after filtering). Reports use `reportUser` with the note `post:<id>`.
 

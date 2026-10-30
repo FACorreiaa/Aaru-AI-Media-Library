@@ -2162,7 +2162,7 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Mark a whole show watched (PROG-005): every aired regular episode, as one undoable action with the watch dates unknown, so the Recap and Insights do not count them as today. An ended or canceled show becomes finished; a running one stays in progress, caught up. 422 for anything but a show. */
+    /** Mark a whole show watched (PROG-005): every aired regular episode, as one undoable action with the watch dates unknown, so the Recap and Insights do not count them as today. The show becomes finished; a running one moves back to in progress when an episode it has not ticked airs. 422 for anything but a show. */
     post: operations['markShowWatched']
     delete?: never
     options?: never
@@ -4492,7 +4492,7 @@ export interface components {
       status?: components['schemas']['LibraryStatus']
     }
     LibraryItemPatch: {
-      /** @description `finished` on a show marks the whole show watched, as `POST …/watched` does (PROG-005): a running show stays in progress, caught up. */
+      /** @description `finished` on a show marks the whole show watched, as `POST …/watched` does (PROG-005): a running show moves back to in progress when an episode it has not ticked airs. */
       status?: components['schemas']['LibraryStatus']
       /** @description 1–10 in 0.5 steps. */
       rating?: number
