@@ -7,7 +7,6 @@ import (
 	"context"
 	"strings"
 	"time"
-	"unicode/utf8"
 
 	"github.com/google/uuid"
 )
@@ -100,7 +99,7 @@ func ErrSearchLength() *apperr.Error {
 // Search finds titles in one scope.
 func (s *Service) Search(ctx context.Context, query string, scope SearchScope) (SearchResult, error) {
 	trimmed := strings.TrimSpace(query)
-	if trimmed == "" || utf8.RuneCountInString(trimmed) > 200 {
+	if trimmed == "" || core.Length(trimmed) > 200 {
 		return SearchResult{}, ErrSearchLength()
 	}
 	hits := func(h []Hit, err error) (SearchResult, error) {

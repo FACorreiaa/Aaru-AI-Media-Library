@@ -62,6 +62,8 @@ here**.
   `uuidString`, read leniently (malformed → `uuid.Nil` → the route's 404). Use
   `apiid.From`, `.ID()`, `apiid.Slice`/`IDs`/`PtrOrNil`. Never hand an
   `apiid.UUID` to pgx. An id you format into a string (a path, a URL) is uppercase.
+- **Text length** is Swift's `String.count`: grapheme clusters. Count with `core.Length`
+  and cut with `core.Prefix`, never `len`, `utf8.RuneCountInString` or `[]rune`.
 - **Request shape** is checked by `middleware.Validate` before handlers run
   (required fields, types, enums → 400 `bad_request`); length/range limits are
   not, so handlers enforce those with the Swift messages.
@@ -77,6 +79,11 @@ here**.
   appended in `internal/httpapi/workers.go`. Leasing jobs uses
   `FOR UPDATE SKIP LOCKED`, as the Swift workers did.
 - **Metrics**: `internal/metrics` counters keep the Swift names and labels.
+- **Profiling**: Go's pprof is on the internal port next to `/metrics` (`METRICS_PORT`, 9090),
+  never on the API port. Flame graph: `kubectl port-forward <pod> 9090`, then
+  `go tool pprof -http=:0 http://localhost:9090/debug/pprof/profile?seconds=30` (or `/heap`,
+  `/goroutine`, `/trace`). `PPROF_ENABLED=false` turns it off; `PPROF_BLOCK_RATE` and
+  `PPROF_MUTEX_FRACTION` sample contention.
 - **Concurrency**: `errgroup` for independent calls; respect `ctx` cancellation.
 - Format with `gofumpt`; `go vet ./...` and `golangci-lint run` must be clean.
 

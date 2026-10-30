@@ -2,6 +2,7 @@ package auth
 
 import (
 	"aaru-go-api/internal/apperr"
+	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/db"
 	"aaru-go-api/internal/db/sqlc"
 	"aaru-go-api/internal/ratelimit"
@@ -13,7 +14,6 @@ import (
 	"sort"
 	"strings"
 	"time"
-	"unicode/utf8"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -265,7 +265,7 @@ func (s *AgentTokenService) Create(ctx context.Context, userID uuid.UUID, kind T
 	if name != nil {
 		trimmed = strings.TrimSpace(*name)
 	}
-	if utf8.RuneCountInString(trimmed) > 80 {
+	if core.Length(trimmed) > 80 {
 		return MintedAgentToken{}, (&apperr.Error{
 			Status: http.StatusUnprocessableEntity, Code: "validation_failed", Message: "Names are at most 80 characters.",
 		}).WithDetails(map[string]string{"name": "At most 80 characters."})
@@ -352,7 +352,7 @@ func (s *AgentTokenService) Authenticate(ctx context.Context, secret string, gro
 			hasPrefix = true
 		}
 	}
-	if !hasPrefix || utf8.RuneCountInString(secret) >= 200 {
+	if !hasPrefix || core.Length(secret) >= 200 {
 		return AgentCaller{}, false, nil
 	}
 	now := s.now()

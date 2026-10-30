@@ -1,6 +1,7 @@
 package sports
 
 import (
+	"aaru-go-api/internal/core"
 	"context"
 	"strconv"
 	"strings"
@@ -134,7 +135,7 @@ func StartOfDay(date string, loc *time.Location) (time.Time, bool) {
 			parts = append(parts, n)
 		}
 	}
-	if len([]rune(date)) != 10 || len(parts) != 3 {
+	if core.Length(date) != 10 || len(parts) != 3 {
 		return time.Time{}, false
 	}
 	day := time.Date(parts[0], time.Month(parts[1]), parts[2], 0, 0, 0, 0, loc)

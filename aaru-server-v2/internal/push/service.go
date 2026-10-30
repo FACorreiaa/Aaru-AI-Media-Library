@@ -2,6 +2,7 @@ package push
 
 import (
 	"aaru-go-api/internal/apperr"
+	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/db/sqlc"
 	"context"
 	"errors"
@@ -154,7 +155,7 @@ func (s *Service) SaveWebPush(ctx context.Context, userID uuid.UUID, endpoint, p
 		}
 	}
 	for _, key := range []string{p256dh, auth} {
-		if n := len([]rune(key)); n < 16 || n > 200 || !isBase64URL(key) {
+		if n := core.Length(key); n < 16 || n > 200 || !isBase64URL(key) {
 			return &apperr.Error{
 				Status: http.StatusUnprocessableEntity, Code: "validation_failed",
 				Message: "Those subscription keys are not valid.",

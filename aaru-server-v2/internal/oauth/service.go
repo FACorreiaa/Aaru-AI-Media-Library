@@ -8,6 +8,7 @@ package oauth
 import (
 	"aaru-go-api/internal/apperr"
 	"aaru-go-api/internal/auth"
+	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/ratelimit"
 	"aaru-go-api/internal/token"
 	"context"
@@ -19,7 +20,6 @@ import (
 	"sort"
 	"strings"
 	"time"
-	"unicode/utf8"
 
 	"github.com/google/uuid"
 )
@@ -148,7 +148,7 @@ func (s *Service) Register(ctx context.Context, body Registration, clientAddress
 	if body.ClientName != nil {
 		name = *body.ClientName
 	}
-	name = prefixRunes(strings.Trim(name, " \t"), 80)
+	name = core.Prefix(strings.Trim(name, " \t"), 80)
 	if name == "" {
 		name = "MCP client"
 	}
@@ -218,7 +218,7 @@ func (s *Service) Authorize(ctx context.Context, query map[string]string) (Autho
 		return fail("unsupported_response_type", "Only the code flow is supported."), nil
 	}
 	challenge, hasChallenge := query["code_challenge"]
-	if n := utf8.RuneCountInString(challenge); query["code_challenge_method"] != "S256" || !hasChallenge || n < 43 || n > 128 {
+	if n := core.Length(challenge); query["code_challenge_method"] != "S256" || !hasChallenge || n < 43 || n > 128 {
 		return fail("invalid_request", "PKCE with S256 is required."), nil
 	}
 	var resource *string
@@ -285,7 +285,7 @@ func (s *Service) Approve(ctx context.Context, id, userID uuid.UUID, binding str
 	if trimmed == "" {
 		trimmed = kind.Label()
 	} else {
-		trimmed = prefixRunes(trimmed, 80)
+		trimmed = core.Prefix(trimmed, 80)
 	}
 	if err := s.store.createCode(ctx, Code{
 		ClientID: client.ID, UserID: userID, RedirectURI: request.RedirectURI, CodeChallenge: request.CodeChallenge,
@@ -549,13 +549,6 @@ func queryItemEncode(s string) string {
 		fmt.Fprintf(&b, "%%%02X", c)
 	}
 	return b.String()
-}
-
-func prefixRunes(s string, n int) string {
-	if utf8.RuneCountInString(s) <= n {
-		return s
-	}
-	return string([]rune(s)[:n])
 }
 
 func ptr(s string) *string { return &s }

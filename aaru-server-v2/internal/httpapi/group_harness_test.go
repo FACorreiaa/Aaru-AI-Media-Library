@@ -19,8 +19,8 @@ type groupEnv struct {
 	*libEnv
 }
 
-// person is another signed-in user. ID is uppercase, as the wire writes it.
-type person struct {
+// groupMember is another signed-in user. ID is uppercase, as the wire writes it.
+type groupMember struct {
 	uid    uuid.UUID
 	ID     string
 	Token  string
@@ -49,13 +49,13 @@ func (e *groupEnv) exec(sql string, args ...any) {
 	require.NoError(e.t, err)
 }
 
-func freshHandle() string {
+func groupFreshHandle() string {
 	return "u" + strings.ReplaceAll(uuid.NewString(), "-", "")[:12]
 }
 
 // setHandle gives a user a handle and returns it.
 func (e *groupEnv) setHandle(user uuid.UUID) string {
-	handle := freshHandle()
+	handle := groupFreshHandle()
 	e.exec(`INSERT INTO profiles (user_id, handle) VALUES ($1, $2)`, user, handle)
 	return handle
 }
@@ -80,13 +80,13 @@ func (e *groupEnv) block(blocker, blocked uuid.UUID) {
 }
 
 // stranger is a signed-in user with a handle and no friends.
-func (e *groupEnv) stranger() person {
+func (e *groupEnv) stranger() groupMember {
 	id, token := e.signIn()
-	return person{uid: id, ID: strings.ToUpper(id.String()), Token: token, Handle: e.setHandle(id)}
+	return groupMember{uid: id, ID: strings.ToUpper(id.String()), Token: token, Handle: e.setHandle(id)}
 }
 
 // friend is a new user with a handle, friends with of.
-func (e *groupEnv) friend(of uuid.UUID) person {
+func (e *groupEnv) friend(of uuid.UUID) groupMember {
 	p := e.stranger()
 	e.makeFriends(of, p.uid)
 	return p
@@ -104,7 +104,7 @@ func (e *groupEnv) createGroup(name string, token ...string) (group, general str
 }
 
 // join invites a friend into the harness user's group and accepts for them.
-func (e *groupEnv) join(p person, group string) {
+func (e *groupEnv) join(p groupMember, group string) {
 	e.t.Helper()
 	rec := e.send(http.MethodPost, "/v1/groups/"+group+"/invites", map[string]any{"userId": p.ID})
 	require.Equal(e.t, http.StatusNoContent, rec.Code, rec.Body.String())
@@ -119,7 +119,7 @@ func (e *groupEnv) join(p person, group string) {
 	require.Equal(e.t, http.StatusOK, rec.Code, rec.Body.String())
 }
 
-func (e *groupEnv) inbox(p person) []map[string]any {
+func (e *groupEnv) inbox(p groupMember) []map[string]any {
 	e.t.Helper()
 	return items(e.t, e.send(http.MethodGet, "/v1/me/group-invites", nil, p.Token))
 }

@@ -89,13 +89,13 @@ func TestGroupPushMentionAlertsTheTaggedMemberOnceWithoutTheMessage(t *testing.T
 	mine := env.claimHandle()
 	group, general := env.createGroup("Film club")
 	ana, ben, cai, dan := env.friend(env.user), env.friend(env.user), env.friend(env.user), env.friend(env.user)
-	for _, p := range []person{ana, ben, cai, dan} {
+	for _, p := range []groupMember{ana, ben, cai, dan} {
 		env.join(p, group)
 	}
 	names := map[string]string{env.device(ana.Token): "ana", env.device(): "me"}
 	names[env.device(ben.Token)] = "ben"
 	names[env.device(dan.Token)] = "dan"
-	for _, p := range []person{ana, ben, dan} {
+	for _, p := range []groupMember{ana, ben, dan} {
 		env.notificationSettings(map[string]bool{"groupMentions": true}, p.Token)
 	}
 	names[env.device(cai.Token)] = "cai"
@@ -141,7 +141,7 @@ func TestGroupPushInviteAlertsTheFriendOnceOnlyWithInviteAlertsOn(t *testing.T) 
 	env.device(ben.Token)
 	env.notificationSettings(map[string]bool{"groupInvites": true}, ana.Token)
 
-	for _, p := range []person{ana, ben, ana} {
+	for _, p := range []groupMember{ana, ben, ana} {
 		rec := env.send(http.MethodPost, "/v1/groups/"+group+"/invites", map[string]any{"userId": p.ID})
 		require.Equal(t, http.StatusNoContent, rec.Code, rec.Body.String())
 	}

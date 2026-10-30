@@ -4,6 +4,7 @@ import (
 	"aaru-go-api/internal/api"
 	"aaru-go-api/internal/apitime"
 	"aaru-go-api/internal/apperr"
+	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/sports"
 	"context"
 	"errors"
@@ -12,7 +13,6 @@ import (
 	"strings"
 	"time"
 	"unicode"
-	"unicode/utf8"
 
 	"github.com/google/uuid"
 )
@@ -41,7 +41,7 @@ func (s *Server) SearchSports(ctx context.Context, req api.SearchSportsRequestOb
 		return nil, err
 	}
 	query := strings.TrimSpace(req.Params.Q)
-	if n := utf8.RuneCountInString(query); n < 2 || n > 100 {
+	if n := core.Length(query); n < 2 || n > 100 {
 		return nil, apperr.Validation("q", "Type 2 to 100 characters.")
 	}
 	if !s.Sports.IsAvailable() {
@@ -252,7 +252,7 @@ func sportFollowKey(entity sports.Entity) string { return string(entity.Kind) + 
 
 // isSportsProviderID is a TheSportsDB id: 1 to 40 digits.
 func isSportsProviderID(id string) bool {
-	if n := utf8.RuneCountInString(id); n < 1 || n > 40 {
+	if n := core.Length(id); n < 1 || n > 40 {
 		return false
 	}
 	for _, r := range id {

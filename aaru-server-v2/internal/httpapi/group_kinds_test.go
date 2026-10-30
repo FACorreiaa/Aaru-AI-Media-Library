@@ -57,7 +57,7 @@ func (e *groupEnv) listen(user uuid.UUID) *frames {
 }
 
 type kindFixture struct {
-	ana     person
+	ana     groupMember
 	group   string
 	channel string
 }

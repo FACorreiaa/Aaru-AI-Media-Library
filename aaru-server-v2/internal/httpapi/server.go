@@ -9,6 +9,7 @@
 package httpapi
 
 import (
+	"aaru-go-api/internal/agent"
 	"aaru-go-api/internal/api"
 	"aaru-go-api/internal/apperr"
 	"aaru-go-api/internal/auth"
@@ -23,10 +24,13 @@ import (
 	"aaru-go-api/internal/library"
 	"aaru-go-api/internal/model"
 	"aaru-go-api/internal/oauth"
+	"aaru-go-api/internal/plans"
 	"aaru-go-api/internal/push"
 	"aaru-go-api/internal/realtime"
 	"aaru-go-api/internal/reqctx"
 	"aaru-go-api/internal/schedule"
+	"aaru-go-api/internal/shares"
+	"aaru-go-api/internal/social"
 	"aaru-go-api/internal/sports"
 	"aaru-go-api/internal/stats"
 	"aaru-go-api/internal/telemetry"
@@ -98,14 +102,26 @@ type Deps struct {
 	Tonight *tonight.Service
 	// Boards is the friends-only Board (BOARD-001). New builds one over Pool, Catalog and Library.
 	Boards *boards.Service
-	// Model is the agent's language model; nil when ANTHROPIC_API_KEY is unset (`@aaru` and
-	// capture reading stay off).
-	Model model.Provider
 	// Realtime is the `/v1/ws` hub: open sockets and browser tickets (GRP-006). New builds one.
 	Realtime *realtime.Hub
 	// Groups is groups, channels, messages, watch parties and `@aaru` mentions (GRP-001…013). New
 	// builds one over Pool, Catalog and Library when unset, publishing to Realtime.
 	Groups *groups.Service
+	// Social is handles, friends, blocks, avatars, friend profiles and activity, invites,
+	// reactions, recommendations and favorites (P4). New builds one over Pool when unset; groups
+	// and boards read the graph through Social.Store (see package social).
+	Social *social.Service
+	// Shares is SHR-002's share links. New builds one over Pool when unset.
+	Shares *shares.Service
+	// Model is the agent's language model; nil when ANTHROPIC_API_KEY is unset (`@aaru` and
+	// capture reading stay off).
+	Model model.Provider
+	// Plans is remote approval of an outside agent's larger changes (AG-003, OUT-004). New builds
+	// one over Pool and Library when unset.
+	Plans *plans.Service
+	// AgentImports is what MCP's plan_import needs from the imports area; nil until imports wires
+	// it, and plan_import answers that it could not finish.
+	AgentImports agent.Importer
 }
 
 // Server implements api.StrictServerInterface.
@@ -169,7 +185,29 @@ func New(deps Deps) *Server {
 			deps.Groups.Push = deps.Push
 		}
 	}
+	if deps.Plans == nil && deps.Pool != nil && deps.Library != nil {
+		deps.Plans = plans.NewService(deps.Pool, deps.Library, deps.Push, deps.Gamification, deps.Log)
+	}
+	if deps.Social == nil && deps.Pool != nil {
+		deps.Social = social.New(social.NewStore(deps.Pool), auth.NewStore(deps.Pool), deps.Catalog, deps.Library,
+			deps.Gamification, webBaseURL(deps.Config))
+	}
+	if deps.Shares == nil && deps.Social != nil {
+		var items *library.Store
+		if deps.Library != nil {
+			items = deps.Library.Store
+		}
+		deps.Shares = shares.New(q, deps.Social, deps.Catalog, items, deps.Sports, deps.Concerts, webBaseURL(deps.Config))
+	}
 	return &Server{Deps: deps, q: q}
+}
+
+// webBaseURL is the web origin invite and share links open on.
+func webBaseURL(cfg *config.App) string {
+	if cfg == nil || cfg.WebBaseURL == nil {
+		return "https://aaruapp.com"
+	}
+	return cfg.WebBaseURL.String()
 }
 
 // currentUser is the signed-in user. The auth middleware already refused

@@ -14,6 +14,7 @@ package auth
 
 import (
 	"aaru-go-api/internal/apperr"
+	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/ratelimit"
 	"aaru-go-api/internal/token"
 	"context"
@@ -277,7 +278,7 @@ func (s *Service) issueSession(ctx context.Context, userID uuid.UUID) (NewSessio
 func NormalizedEmail(raw string) (string, error) {
 	email := strings.ToLower(strings.TrimSpace(raw))
 	local, domain, ok := strings.Cut(email, "@")
-	if len([]rune(email)) > 254 || !ok || strings.Contains(domain, "@") || local == "" ||
+	if core.Length(email) > 254 || !ok || strings.Contains(domain, "@") || local == "" ||
 		!strings.Contains(domain, ".") || strings.ContainsFunc(email, unicode.IsSpace) {
 		return "", (&apperr.Error{
 			Status: http.StatusUnprocessableEntity, Code: "validation_failed", Message: "That email address is not valid.",

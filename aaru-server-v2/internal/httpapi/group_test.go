@@ -220,7 +220,7 @@ func TestGroupAccountDeleteEmptiesMessagesAndHandsGroupsOn(t *testing.T) {
 	shared, general := env.createGroup("Shared", ana.Token)
 	alone, _ := env.createGroup("Alone", ana.Token)
 	assert.Equal(t, http.StatusNoContent, env.send(http.MethodPost, "/v1/groups/"+shared+"/invites", map[string]any{"userId": up(env.user)}, ana.Token).Code)
-	me := person{uid: env.user, ID: up(env.user), Token: env.bearer}
+	me := groupMember{uid: env.user, ID: up(env.user), Token: env.bearer}
 	invite := env.inbox(me)[0]["id"].(string)
 	require.Equal(t, http.StatusOK, env.send(http.MethodPost, "/v1/group-invites/"+invite+"/accept", nil).Code)
 	channel := channelPath(shared, general)

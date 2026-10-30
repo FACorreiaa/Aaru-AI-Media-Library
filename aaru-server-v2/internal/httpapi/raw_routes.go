@@ -21,6 +21,7 @@ func (s *Server) registerRawRoutes(e *echo.Echo) {
 	s.registerOAuthRoutes(e)
 	// The realtime socket (GRP-006) signs itself in: a bearer token, or a browser ticket.
 	e.GET("/v1/ws", s.realtimeGateway().Handle)
+	s.registerMCPRoutes(e)
 }
 
 func notImplemented(echo.Context) error { return errNotImplemented }
