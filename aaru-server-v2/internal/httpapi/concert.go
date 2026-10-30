@@ -5,6 +5,7 @@ import (
 	"aaru-go-api/internal/apitime"
 	"aaru-go-api/internal/apperr"
 	"aaru-go-api/internal/concerts"
+	"aaru-go-api/internal/core"
 	"context"
 	"errors"
 	"math"
@@ -13,7 +14,6 @@ import (
 	"strings"
 	"time"
 	"unicode"
-	"unicode/utf8"
 )
 
 // ConcertHandlers.swift: MUS-003 · concerts near a place and for the user's artists, and the
@@ -131,7 +131,7 @@ func (s *Server) SearchConcertPlaces(ctx context.Context, req api.SearchConcertP
 		return nil, err
 	}
 	query := strings.TrimSpace(req.Params.Q)
-	if n := utf8.RuneCountInString(query); n < 2 || n > 100 {
+	if n := core.Length(query); n < 2 || n > 100 {
 		return nil, apperr.Validation("q", "Type 2 to 100 characters.")
 	}
 	places, err := s.Concerts.SearchPlaces(ctx, query)
@@ -167,7 +167,7 @@ func (s *Server) SaveConcertPlace(ctx context.Context, req api.SaveConcertPlaceR
 	}
 	body := req.Body
 	name := strings.TrimSpace(body.Name)
-	if n := utf8.RuneCountInString(name); n < 1 || n > 200 {
+	if n := core.Length(name); n < 1 || n > 200 {
 		return nil, apperr.Validation("name", "1 to 200 characters.")
 	}
 	point, ok := concerts.NewGeoPoint(wireNumber(body.Latitude), wireNumber(body.Longitude))
@@ -177,7 +177,7 @@ func (s *Server) SaveConcertPlace(ctx context.Context, req api.SaveConcertPlaceR
 	var code *string
 	if body.CountryCode != nil {
 		upper := strings.ToUpper(*body.CountryCode)
-		if utf8.RuneCountInString(upper) != 2 || strings.IndexFunc(upper, func(r rune) bool { return !unicode.IsLetter(r) }) >= 0 {
+		if core.Length(upper) != 2 || strings.IndexFunc(upper, func(r rune) bool { return !unicode.IsLetter(r) }) >= 0 {
 			return nil, apperr.Validation("countryCode", "Two letters, as ISO 3166-1.")
 		}
 		code = &upper
@@ -211,7 +211,7 @@ func (s *Server) concertPlaceSetting(place *concerts.Place) api.ConcertPlaceSett
 // artistName is an artist's name as typed: trimmed, 2 to 100 characters.
 func artistName(text string) (string, error) {
 	name := strings.TrimSpace(text)
-	if n := utf8.RuneCountInString(name); n < 2 || n > 100 {
+	if n := core.Length(name); n < 2 || n > 100 {
 		return "", apperr.Validation("q", "Type 2 to 100 characters.")
 	}
 	return name, nil
@@ -268,9 +268,7 @@ func trimmedField(text *string) *string {
 	if t == "" {
 		return nil
 	}
-	if r := []rune(t); len(r) > 200 {
-		t = string(r[:200])
-	}
+	t = core.Prefix(t, 200)
 	return &t
 }
 

@@ -1,6 +1,7 @@
 package concerts
 
 import (
+	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/provider"
 	"context"
 	"net/url"
@@ -437,7 +438,7 @@ func (e *tmEvent) concert() *Concert {
 			}
 		}
 		if start.LocalTime != nil {
-			lt := prefixRunes(*start.LocalTime, 5)
+			lt := core.Prefix(*start.LocalTime, 5)
 			c.LocalTime = &lt
 		}
 	}
@@ -524,12 +525,4 @@ func (p *tmAttractionPage) valid() bool {
 		}
 	}
 	return true
-}
-
-func prefixRunes(s string, n int) string {
-	r := []rune(s)
-	if len(r) <= n {
-		return s
-	}
-	return string(r[:n])
 }

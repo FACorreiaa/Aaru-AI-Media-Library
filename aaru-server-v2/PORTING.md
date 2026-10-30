@@ -62,6 +62,8 @@ here**.
   `uuidString`, read leniently (malformed → `uuid.Nil` → the route's 404). Use
   `apiid.From`, `.ID()`, `apiid.Slice`/`IDs`/`PtrOrNil`. Never hand an
   `apiid.UUID` to pgx. An id you format into a string (a path, a URL) is uppercase.
+- **Text length** is Swift's `String.count`: grapheme clusters. Count with `core.Length`
+  and cut with `core.Prefix`, never `len`, `utf8.RuneCountInString` or `[]rune`.
 - **Request shape** is checked by `middleware.Validate` before handlers run
   (required fields, types, enums → 400 `bad_request`); length/range limits are
   not, so handlers enforce those with the Swift messages.

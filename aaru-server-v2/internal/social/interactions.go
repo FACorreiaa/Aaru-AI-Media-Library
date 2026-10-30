@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"slices"
 	"strings"
-	"unicode/utf8"
 
 	"github.com/google/uuid"
 )
@@ -73,7 +72,7 @@ func (s *Service) Recommend(ctx context.Context, ref core.MediaRef, note *string
 	var kept *string
 	if note != nil {
 		trimmed := strings.TrimSpace(*note)
-		if utf8.RuneCountInString(trimmed) > MaxRecommendationNote {
+		if core.Length(trimmed) > MaxRecommendationNote {
 			return unprocessable(fmt.Sprintf("Keep the note under %d characters.", MaxRecommendationNote))
 		}
 		if trimmed != "" {

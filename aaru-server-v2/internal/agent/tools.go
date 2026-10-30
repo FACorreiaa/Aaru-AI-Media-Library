@@ -30,7 +30,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"unicode/utf8"
 
 	"github.com/google/uuid"
 )
@@ -154,7 +153,7 @@ func (t *Tools) SearchTitles(ctx context.Context, in SearchInput, caller auth.Ag
 	if in.Query != nil {
 		query = strings.TrimSpace(*in.Query)
 	}
-	if n := utf8.RuneCountInString(query); n < 1 || n > 200 {
+	if n := core.Length(query); n < 1 || n > 200 {
 		return SearchResult{}, toolError("query must be 1 to 200 characters.")
 	}
 	name := "all"

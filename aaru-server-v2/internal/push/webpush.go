@@ -1,6 +1,7 @@
 package push
 
 import (
+	"aaru-go-api/internal/core"
 	"bytes"
 	"context"
 	"crypto/aes"
@@ -460,7 +461,7 @@ var (
 
 // EndpointAllowed says whether a subscription endpoint is a known browser push service over https.
 func EndpointAllowed(endpoint string) bool {
-	if len([]rune(endpoint)) > 2048 {
+	if core.Length(endpoint) > 2048 {
 		return false
 	}
 	u, err := url.Parse(endpoint)

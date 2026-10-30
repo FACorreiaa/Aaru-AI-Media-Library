@@ -1,6 +1,7 @@
 package sports
 
 import (
+	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/provider"
 	"bytes"
 	"context"
@@ -11,7 +12,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"unicode/utf8"
 )
 
 // TheSportsDBBaseURL is the provider's host; v2 and v1 hang under it.
@@ -189,7 +189,7 @@ func Instant(timestamp, day, clock *string) *time.Time {
 			return &t
 		}
 	}
-	if day == nil || utf8.RuneCountInString(*day) != 10 || clock == nil || utf8.RuneCountInString(*clock) < 5 ||
+	if day == nil || core.Length(*day) != 10 || clock == nil || core.Length(*clock) < 5 ||
 		strings.HasPrefix(*clock, "00:00:00+") {
 		return nil
 	}
@@ -407,14 +407,6 @@ func events(rows []wireRow, read func(wireRow) *Event) []Event {
 	return out
 }
 
-func prefixRunes(s string, n int) string {
-	r := []rune(s)
-	if len(r) <= n {
-		return s
-	}
-	return string(r[:n])
-}
-
 func wireEvent(r wireRow) *Event {
 	id, name := r.text("idEvent"), r.text("strEvent")
 	if id == nil || name == nil {
@@ -424,7 +416,7 @@ func wireEvent(r wireRow) *Event {
 	var day string
 	switch date := r.text("dateEvent"); {
 	case date != nil:
-		day = prefixRunes(*date, 10)
+		day = core.Prefix(*date, 10)
 	case startsAt != nil:
 		day = startsAt.UTC().Format(time.DateOnly)
 	default:
@@ -457,7 +449,7 @@ func wireLiveScore(r wireRow) *Event {
 	if id == nil || home == nil || away == nil || date == nil {
 		return nil
 	}
-	day := prefixRunes(*date, 10)
+	day := core.Prefix(*date, 10)
 	e := &Event{
 		ID: *id, Name: *home + " vs " + *away, LeagueID: r.text("idLeague"), League: r.text("strLeague"),
 		Home:     &Side{ID: r.text("idHomeTeam"), Name: *home, BadgeURL: r.url("strHomeTeamBadge"), Score: r.int("intHomeScore")},

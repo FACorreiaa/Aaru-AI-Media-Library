@@ -1,6 +1,7 @@
 package sports
 
 import (
+	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/db/sqlc"
 	"context"
 	"errors"
@@ -45,7 +46,7 @@ func prefixPtr(s *string, n int) *string {
 	if s == nil {
 		return nil
 	}
-	v := prefixRunes(*s, n)
+	v := core.Prefix(*s, n)
 	return &v
 }
 
@@ -67,7 +68,7 @@ func (s *Store) Follow(ctx context.Context, entity Entity, userID uuid.UUID, lim
 		}
 		if err := q.UpsertSportFollow(ctx, sqlc.UpsertSportFollowParams{
 			UserID: userID, Kind: string(entity.Kind), ProviderID: entity.ID,
-			Name: prefixRunes(entity.Name, 300), Sport: prefixRunes(entity.Sport, 100), BadgeUrl: entity.BadgeURL,
+			Name: core.Prefix(entity.Name, 300), Sport: core.Prefix(entity.Sport, 100), BadgeUrl: entity.BadgeURL,
 			Country: prefixPtr(entity.Country, 200), LeagueID: entity.LeagueID, TeamID: entity.TeamID,
 			TeamName: prefixPtr(entity.TeamName, 300), CreatedAt: now,
 		}); err != nil {

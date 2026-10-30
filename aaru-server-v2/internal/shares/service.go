@@ -24,7 +24,6 @@ import (
 	"regexp"
 	"strings"
 	"time"
-	"unicode/utf8"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -321,7 +320,7 @@ func ValidNote(note *string) (*string, error) {
 	if trimmed == "" {
 		return nil, nil //nolint:nilnil // blank is none
 	}
-	if utf8.RuneCountInString(trimmed) > MaxNote {
+	if core.Length(trimmed) > MaxNote {
 		return nil, Invalid(fmt.Sprintf("A note is at most %d characters.", MaxNote))
 	}
 	return &trimmed, nil
@@ -329,7 +328,7 @@ func ValidNote(note *string) (*string, error) {
 
 // ValidSportID is 1–40 ASCII digits.
 func ValidSportID(id string) (string, error) {
-	n := utf8.RuneCountInString(id)
+	n := core.Length(id)
 	if n < 1 || n > 40 || strings.IndexFunc(id, func(r rune) bool { return r < '0' || r > '9' }) >= 0 {
 		return "", Invalid("That isn't a sports event.")
 	}

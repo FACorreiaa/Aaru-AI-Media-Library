@@ -16,7 +16,6 @@ import (
 	"regexp"
 	"strings"
 	"time"
-	"unicode/utf8"
 
 	"github.com/google/uuid"
 )
@@ -231,7 +230,7 @@ func ValidName(raw *string, field string) (*string, error) {
 	if name == "" {
 		return nil, nil //nolint:nilnil // no name
 	}
-	if utf8.RuneCountInString(name) > MaxDisplayNameLength {
+	if core.Length(name) > MaxDisplayNameLength {
 		return nil, invalid(field, fmt.Sprintf("Keep your name under %d characters.", MaxDisplayNameLength))
 	}
 	return &name, nil
@@ -456,7 +455,7 @@ func (s *Service) Report(ctx context.Context, target uuid.UUID, reason ReportRea
 	var kept *string
 	if note != nil {
 		trimmed := strings.TrimSpace(*note)
-		if utf8.RuneCountInString(trimmed) > 1000 {
+		if core.Length(trimmed) > 1000 {
 			return invalid("note", "Keep the note under 1,000 characters.")
 		}
 		if trimmed != "" {
