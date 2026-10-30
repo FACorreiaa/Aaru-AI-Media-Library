@@ -134,7 +134,7 @@ func scanEntry(row pgx.CollectableRow) (*LibraryEntry, error) {
 	e.Item.Status = core.LibraryStatus(status)
 	e.Title.Type = core.MediaType(mediaType)
 	if !e.Item.Status.Valid() || !e.Title.Type.Valid() {
-		return nil, nil
+		return nil, nil //nolint:nilnil // a nil row is one Swift's compactMap skipped
 	}
 	e.Title.ID = e.Item.TitleID
 	if rating != nil {
