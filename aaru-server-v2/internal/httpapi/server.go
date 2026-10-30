@@ -1,0 +1,280 @@
+// Package httpapi implements the generated `/v1` strict server (internal/api)
+// plus the routes outside openapi.yaml (Stremio, MCP, scrobble, ListenBrainz,
+// OAuth, the realtime socket, internal metrics). Handlers translate between the
+// API's DTOs and the domain services; rules live in the services.
+//
+// One file per area, named after the Swift handler file it replaces
+// (library.go for LibraryHandlers.swift). An area not yet ported still answers
+// from its stub_*.go placeholder.
+package httpapi
+
+import (
+	"aaru-go-api/internal/agent"
+	"aaru-go-api/internal/api"
+	"aaru-go-api/internal/apperr"
+	"aaru-go-api/internal/auth"
+	"aaru-go-api/internal/billing"
+	"aaru-go-api/internal/boards"
+	"aaru-go-api/internal/catalog"
+	"aaru-go-api/internal/concerts"
+	"aaru-go-api/internal/config"
+	"aaru-go-api/internal/db/sqlc"
+	"aaru-go-api/internal/gamification"
+	"aaru-go-api/internal/groups"
+	"aaru-go-api/internal/imports"
+	"aaru-go-api/internal/library"
+	"aaru-go-api/internal/mal"
+	"aaru-go-api/internal/model"
+	"aaru-go-api/internal/music"
+	"aaru-go-api/internal/oauth"
+	"aaru-go-api/internal/plans"
+	"aaru-go-api/internal/push"
+	"aaru-go-api/internal/realtime"
+	"aaru-go-api/internal/reqctx"
+	"aaru-go-api/internal/schedule"
+	"aaru-go-api/internal/scrobble"
+	"aaru-go-api/internal/shares"
+	"aaru-go-api/internal/social"
+	"aaru-go-api/internal/sports"
+	"aaru-go-api/internal/stats"
+	"aaru-go-api/internal/stremio"
+	"aaru-go-api/internal/telemetry"
+	"aaru-go-api/internal/tonight"
+	"aaru-go-api/internal/trakt"
+	"context"
+	"log/slog"
+
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+var _ api.StrictServerInterface = (*Server)(nil)
+
+// Deps is what the handlers are built from. Each area adds its services here.
+type Deps struct {
+	Config *config.App
+	Pool   *pgxpool.Pool
+	Log    *slog.Logger
+
+	// APNs is nil when APNS_PRIVATE_KEY is unset: devices register, nothing is sent. It also
+	// sends Live Activity pushes (push.LiveActivitySender).
+	APNs *push.APNSSender
+	// WebPush is nil when VAPID_CONFIG is unset: the web push routes answer 503.
+	WebPush push.WebSender
+	// Push fans one alert out to a user's devices and browsers (never nil once built by app).
+	Push *push.UserPush
+	// Apple verifies App Store signed data; nil answers billing routes with 503.
+	Apple billing.AppleVerifier
+	// ProductEvents is nil when POSTHOG_PROJECT_TOKEN is unset; it runs as a worker to flush.
+	ProductEvents *telemetry.PostHog
+	// Auth is sign-in, sign-out and account deletion (auth.FromConfig).
+	Auth *auth.Service
+	// AgentTokens mints agent, scrobble and music tokens and authenticates them
+	// for the MCP, Stremio, scrobble and ListenBrainz transports.
+	AgentTokens *auth.AgentTokenService
+	// OAuth is the front door for Claude's connector (oauth.FromConfig).
+	OAuth *oauth.Service
+	// Catalog is search, title detail, resolution, Discover and the refresh worker
+	// (catalog.NewKit). Other areas resolve refs through Catalog.Resolver().
+	Catalog *catalog.Kit
+	// Gamification is points, streaks, badges and the board (GAM-001…005). New builds one over
+	// Pool when unset. Library, social, listens, imports and plans call its hooks.
+	Gamification *gamification.Service
+	// Stats is Insights, the Recap and the profile's numbers (GAM-006a…e, MUS-008). New builds one
+	// over Pool when unset.
+	Stats *stats.Service
+	// Concerts is MUS-003/MUS-010 (concerts off when its Listing is nil). New builds one with
+	// concerts off when it is nil.
+	Concerts *concerts.Service
+	// ConcertArtists is the music catalog's album artists (MusicBrainz) for the concert
+	// refresher; nil leaves albums waiting.
+	ConcertArtists concerts.ArtistSource
+	// Sports is SPT-001…002 (sports off when its Listing is nil). New builds one with sports
+	// off when it is nil.
+	Sports *sports.Service
+	// Library is items, progress, the journal and undo (library.NewService); Lists and Shelves
+	// sit on it. New builds them over Pool and Catalog when unset. Imports, scrobbles, plans,
+	// groups, boards and invites write through Library.
+	Library *library.Service
+	Lists   *library.Lists
+	Shelves *library.Shelves
+	// Schedule is the calendar, Up Next and Watching (CAL-001, UPN-001/002, APP-018). New builds
+	// one over Pool when unset.
+	Schedule *schedule.Service
+	// Tonight is the Tonight strip (AG-005). New builds one over Schedule when unset.
+	Tonight *tonight.Service
+	// Boards is the friends-only Board (BOARD-001). New builds one over Pool, Catalog and Library.
+	Boards *boards.Service
+	// Realtime is the `/v1/ws` hub: open sockets and browser tickets (GRP-006). New builds one.
+	Realtime *realtime.Hub
+	// Groups is groups, channels, messages, watch parties and `@aaru` mentions (GRP-001…013). New
+	// builds one over Pool, Catalog and Library when unset, publishing to Realtime.
+	Groups *groups.Service
+	// Social is handles, friends, blocks, avatars, friend profiles and activity, invites,
+	// reactions, recommendations and favorites (P4). New builds one over Pool when unset; groups
+	// and boards read the graph through Social.Store (see package social).
+	Social *social.Service
+	// Shares is SHR-002's share links. New builds one over Pool when unset.
+	Shares *shares.Service
+	// Imports is file and account imports, their plans and approval (IMP-*, MUS-004, AG-006).
+	// New builds one over Pool, Catalog and Library when unset; app sets its providers (Trakt,
+	// AniList lists, Stremio, CAT feed, capture, listening history) and Push.
+	Imports *imports.Service
+	// Model is the agent's language model; nil when ANTHROPIC_API_KEY is unset (`@aaru` and
+	// capture reading stay off).
+	Model model.Provider
+	// Plans is remote approval of an outside agent's larger changes (AG-003, OUT-004). New builds
+	// one over Pool and Library when unset.
+	Plans *plans.Service
+	// AgentImports is what MCP's plan_import needs from the imports area; nil until imports wires
+	// it, and plan_import answers that it could not finish.
+	AgentImports agent.Importer
+	// TraktConnect is Trakt connect (IMP-002). New builds one with Trakt off (connect answers 503)
+	// when unset; app sets its Settings and API when TRAKT_CLIENT_ID is set.
+	TraktConnect *trakt.ConnectService
+	// MALConnect is MyAnimeList connect (SCR-005). New builds one with MAL off when unset; app sets
+	// its Settings and API when MAL_CLIENT_ID is set, which also starts the sync worker.
+	MALConnect *mal.ConnectService
+	// Listens is the listening log (MUS-004…008). New builds one over Pool when unset. Imports
+	// stage and apply listening history through Listens.Store.
+	Listens *music.Service
+	// Scrobble is watch events, plays and the "Now playing" Live Activity (SCR-001…011). New
+	// builds one over Pool, Library and Catalog when unset; its Notifier pushes through APNs, and
+	// is nil (no Live Activity pushes) when APNs is.
+	Scrobble *scrobble.Service
+	// StremioSeries is Cinemeta's series lookup, which puts Stremio's episode numbers on the TMDB
+	// show; nil keeps them as they come.
+	StremioSeries stremio.SeriesSource
+	// Stremio is the addon (SCR-003). New builds it when unset.
+	Stremio *stremio.Service
+}
+
+// Server implements api.StrictServerInterface.
+type Server struct {
+	Deps
+	q *sqlc.Queries
+}
+
+// New builds the handlers.
+func New(deps Deps) *Server {
+	q := sqlc.New(deps.Pool)
+	if deps.Gamification == nil && deps.Pool != nil {
+		deps.Gamification = gamification.New(deps.Pool, deps.Log)
+	}
+	if deps.Stats == nil && deps.Pool != nil {
+		deps.Stats = stats.New(deps.Pool)
+	}
+	if deps.Concerts == nil {
+		deps.Concerts = concerts.NewService(&concerts.Store{Q: q, Pool: deps.Pool}, nil, nil)
+	}
+	if deps.Sports == nil {
+		deps.Sports = sports.NewService(&sports.Store{Q: q, Pool: deps.Pool}, nil)
+	}
+	if deps.Library == nil && deps.Pool != nil && deps.Catalog != nil {
+		deps.Library = library.NewService(library.NewStore(deps.Pool), deps.Catalog, deps.Gamification, deps.Log)
+	}
+	if deps.Library != nil {
+		if deps.Lists == nil {
+			deps.Lists = &library.Lists{Library: deps.Library}
+		}
+		if deps.Shelves == nil {
+			deps.Shelves = &library.Shelves{Library: deps.Library}
+		}
+		if deps.Library.Store.OnProgress == nil {
+			// A progress write takes a Tonight pick shown in the last six hours (AG-005).
+			deps.Library.Store.OnProgress = func(ctx context.Context, user uuid.UUID, items []uuid.UUID) error {
+				return tonight.AcceptPicks(ctx, q, user, items)
+			}
+		}
+	}
+	if deps.Imports == nil && deps.Pool != nil && deps.Catalog != nil && deps.Library != nil {
+		deps.Imports = imports.NewService(imports.NewStore(deps.Pool), deps.Catalog, deps.Library.Store, deps.Gamification, deps.Log)
+		if deps.Push != nil {
+			deps.Imports.Push = deps.Push
+		}
+	}
+	if deps.TraktConnect == nil && deps.Pool != nil {
+		deps.TraktConnect = &trakt.ConnectService{Store: trakt.NewStore(deps.Pool)}
+	}
+	if deps.MALConnect == nil && deps.Pool != nil {
+		deps.MALConnect = &mal.ConnectService{Store: mal.NewStore(deps.Pool)}
+	}
+	if deps.Boards == nil && deps.Pool != nil && deps.Library != nil && deps.Catalog != nil {
+		deps.Boards = boards.New(q, deps.Catalog.Resolver(), deps.Library)
+	}
+	if deps.Schedule == nil && deps.Pool != nil {
+		deps.Schedule = schedule.New(deps.Pool)
+	}
+	if deps.Tonight == nil && deps.Schedule != nil {
+		deps.Tonight = tonight.New(sqlc.New(deps.Pool), deps.Schedule)
+	}
+	if deps.Realtime == nil {
+		deps.Realtime = realtime.NewHub(nil, deps.Log)
+	}
+	if deps.Realtime.Frame == nil {
+		deps.Realtime.Frame = RealtimeFrame
+	}
+	if deps.Groups == nil && deps.Pool != nil && deps.Catalog != nil && deps.Library != nil {
+		deps.Groups = groups.New(groups.NewStore(deps.Pool), deps.Catalog, deps.Library, deps.Gamification, deps.Log)
+		deps.Groups.Events = deps.Realtime
+		deps.Groups.AgentAvailable = deps.Model != nil
+		if deps.Push != nil {
+			deps.Groups.Push = deps.Push
+		}
+	}
+	if deps.Plans == nil && deps.Pool != nil && deps.Library != nil {
+		deps.Plans = plans.NewService(deps.Pool, deps.Library, deps.Push, deps.Gamification, deps.Log)
+	}
+	if deps.Social == nil && deps.Pool != nil {
+		deps.Social = social.New(social.NewStore(deps.Pool), auth.NewStore(deps.Pool), deps.Catalog, deps.Library,
+			deps.Gamification, webBaseURL(deps.Config))
+	}
+	if deps.Shares == nil && deps.Social != nil {
+		var items *library.Store
+		if deps.Library != nil {
+			items = deps.Library.Store
+		}
+		deps.Shares = shares.New(q, deps.Social, deps.Catalog, items, deps.Sports, deps.Concerts, webBaseURL(deps.Config))
+	}
+	if deps.Listens == nil && deps.Pool != nil {
+		deps.Listens = &music.Service{Store: music.NewStore(deps.Pool), Gamification: deps.Gamification}
+	}
+	if deps.Scrobble == nil && deps.Pool != nil && deps.Library != nil && deps.Catalog != nil {
+		deps.Scrobble = &scrobble.Service{
+			Store: scrobble.NewStore(deps.Pool), Library: deps.Library, Catalog: deps.Catalog, Listens: deps.Listens,
+			Log: deps.Log,
+		}
+		if deps.APNs != nil {
+			deps.Scrobble.Notifier = &scrobble.Notifier{
+				Store: deps.Scrobble.Store, Titles: deps.Catalog.Store, Sender: deps.APNs, Log: deps.Log,
+			}
+		}
+	}
+	if deps.Stremio == nil && deps.Scrobble != nil && deps.Schedule != nil {
+		deps.Stremio = &stremio.Service{
+			Library: deps.Library, Schedule: deps.Schedule, Catalog: deps.Catalog, Scrobble: deps.Scrobble,
+		}
+		if deps.StremioSeries != nil {
+			deps.Stremio.EpisodeMap = stremio.NewEpisodeMap(deps.StremioSeries)
+		}
+	}
+	return &Server{Deps: deps, q: q}
+}
+
+// webBaseURL is the web origin invite and share links open on.
+func webBaseURL(cfg *config.App) string {
+	if cfg == nil || cfg.WebBaseURL == nil {
+		return "https://aaruapp.com"
+	}
+	return cfg.WebBaseURL.String()
+}
+
+// currentUser is the signed-in user. The auth middleware already refused
+// anonymous requests to non-public routes; this guards a route that forgot to be listed.
+func currentUser(ctx context.Context) (uuid.UUID, error) {
+	id, ok := reqctx.UserID(ctx)
+	if !ok {
+		return uuid.Nil, apperr.Unauthorized()
+	}
+	return id, nil
+}

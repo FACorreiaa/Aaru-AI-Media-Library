@@ -1,0 +1,10 @@
+# Postgres for local runs and tests (the same defaults the Swift server used).
+services:
+  postgres:
+    image: postgres:17
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_PASSWORD=testing123
+      - POSTGRES_USER=hb
+      - POSTGRES_DB=hb

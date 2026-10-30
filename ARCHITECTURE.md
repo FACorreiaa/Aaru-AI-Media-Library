@@ -1,10 +1,10 @@
 # Aaru architecture
 
-Aaru is a private-first media library for movies, TV, anime, and books. Native clients are Swift; the web client is SolidJS + TanStack Start. The server is Hummingbird. Social, gamification, tracking integrations, and realtime are later phases (see "Phasing"). They must not leak into Phase 0–2 data-model or API design beyond nullable hooks that already exist (e.g. a `visibility` field defaulting to private).
+Aaru is a private-first media library for movies, TV, anime, and books. Native clients are Swift; the web client is SolidJS + TanStack Start. The server is Go (`aaru-server-v2`: echo, pgx, sqlc, goose), a 1:1 port of the Hummingbird server that is archived in `aaru-server/`; file paths below that name `aaru-server/Sources/App/<Area>` describe the Swift original, whose Go counterpart is `aaru-server-v2/internal/<area>` (see `aaru-server-v2/PORTING.md`). Social, gamification, tracking integrations, and realtime are later phases (see "Phasing"). They must not leak into Phase 0–2 data-model or API design beyond nullable hooks that already exist (e.g. a `visibility` field defaulting to private).
 
 ## Goals
 
-- One language on the wire and in the apps: Swift models in `AaruCore`.
+- One language on the wire: the `/v1` OpenAPI spec. Swift models in `AaruCore` for the apps; the server's rules in `aaru-server-v2/internal/core`.
 - Catalog providers are replaceable; the library schema is not.
 - Imports are asynchronous, idempotent, and one-way.
 - iOS and Mac ship first. The web app is a second client of the same API, not a second product.
@@ -17,7 +17,7 @@ Aaru is a private-first media library for movies, TV, anime, and books. Native c
                 └──┬───┘  └─────┬──────┘  └────┬────┘
                    │ metadata   │              │
 ┌────────────┐ JSON┌▼───────────▼──────────────▼┐     ┌──────────┐
-│ iOS / Mac  │────▶│      Hummingbird API       │────▶│ Postgres │
+│ iOS / Mac  │────▶│        Go API (echo)       │────▶│ Postgres │
 │ + widgets  │     │  auth · library · search   │     └──────────┘
 └────────────┘     │  lists · calendar · jobs   │
 ┌────────────┐     │                            │     ┌─────────┐
@@ -39,7 +39,8 @@ landing page and the signed-in app on `/v1`, mirroring the Apple apps. It never 
 | Component | Responsibility | Must not do |
 | --- | --- | --- |
 | `aaru-core` (`AaruCore`) | Shared DTOs, identifiers, status enums, title matching, lightweight validation | Persistence, HTTP server, TMDB secret handling |
-| `aaru-server` | HTTP, auth, Postgres, jobs, provider adapters | SwiftUI, store-kit, vendor JSON leaked to clients |
+| `aaru-server-v2` | HTTP, auth, Postgres, jobs, provider adapters (Go) | Vendor JSON leaked to clients, a second backend |
+| `aaru-server` | Archived Swift server: holds `Sources/AppAPI/openapi.yaml` and the generator for `aaru-api` | New code |
 | `aaru-api` (`AaruAPI`) | The `/v1` client for the Apple apps, generated from the server's `openapi.yaml` (committed, checked fresh in CI); bearer-token session middleware that reports a rejected session once | Hand-written DTOs, retries of a 401, business logic |
 | `aaru-ios` | iOS + macOS app, widget extension, Live Activity, App Intents, local cache, Sign in with Apple | Direct TMDB/Trakt/AniList calls (go through Aaru API) |
 | `aaru-client` | SolidJS + TanStack Start on Cloudflare Workers: landing page + the web app on `/v1`, at parity with the Apple apps. Holds the session in an HttpOnly cookie and forwards `/v1` calls with it | Database access, business logic, forking DTO meaning from the native clients |
@@ -1442,7 +1443,7 @@ server never sees plaintext.
 
 ## Push
 
-- APNSwift in `aaru-server`.
+- APNs over HTTP/2 from `aaru-server-v2` (`internal/push`); APNSwift in the archived Swift server.
 - `apns_devices(user_id, token, environment, bundle_id)` stores the APNs environment per
   token, so the TestFlight `.beta` app and the App Store app share one API.
 - Notification categories (requests, messages, rooms, airing) have per-user preferences.
@@ -1531,7 +1532,7 @@ window; an attempt is stamped on `titles.episodes_attempted_at` and not retried 
 | Prod | App Store | prod Worker (`wrangler.jsonc`) | prod |
 
 - Beta is client-side only. There is no staging backend.
-- **Server:** CI builds `ghcr.io/…/aaru-server:<sha>`, then opens a promote PR in the infra repo
+- **Server:** CI builds `ghcr.io/…/aaru-server:<sha>` from `aaru-server-v2`, then opens a promote PR in the infra repo
   that bumps `values-production.yaml`. Merging that PR is the deploy (Khepri pattern).
 - **Native:** fastlane lanes `beta`, `release`, `hotfix`, `seed_signing`, with `release.yml` on
   `workflow_run` after CI passes on `main` (Khepri pattern).

@@ -1,9 +1,12 @@
-# Server delivery (REL-005): build the aaru-server image, push it to GHCR, and
+# Server delivery (REL-005): build the API image from aaru-server-v2 (Go), push it to GHCR, and
 # open a promote PR against LuminaVault/LuminaVaultInfra. Merging that PR is the
 # deploy — ArgoCD syncs aaru-api-production in the horus namespace. Nothing in
 # this repository can put a new image in front of users on its own.
 #
-# Runs after "Swift CI" passes on main, or by hand.
+# Runs after "Go CI" passes on main, or by hand. The image keeps the name
+# ghcr.io/facorreiaa/aaru-server and the Swift image's entrypoint and flags, so the
+# chart, the migrate hook and the anime-mappings CronJob take it unchanged. The Swift
+# server (aaru-server/) is archived and no longer built.
 #
 # Required repo secret: INFRA_TOKEN — contents:write and pull-requests:write on
 # LuminaVault/LuminaVaultInfra. Without it the image is still pushed, and the
@@ -13,7 +16,7 @@ name: Server Deploy
 
 on:
   workflow_run:
-    workflows: ["Swift CI"]
+    workflows: ["Go CI"]
     types: [completed]
     branches: [main]
   workflow_dispatch:
@@ -57,9 +60,8 @@ jobs:
       - name: Build & push
         uses: docker/build-push-action@v6
         with:
-          # Repo root: the server depends on ../aaru-core.
-          context: .
-          file: ./aaru-server/Dockerfile
+          context: ./aaru-server-v2
+          file: ./aaru-server-v2/Dockerfile
           platforms: linux/amd64
           push: true
           tags: |

@@ -1,6 +1,6 @@
-# Swift CI for aaru-core, aaru-server and aaru-api (REL-001, SRV-009, APP-001).
-# The server depends on ../aaru-core, so a change to either runs both. aaru-api's client is
-# generated from the server's spec, so a spec change re-checks it.
+# Swift CI for aaru-core and aaru-api (REL-001, APP-001). The Swift server (aaru-server/) is
+# archived: the API is aaru-server-v2 (Go, ci-go.yml). aaru-server/ still holds the shared
+# openapi.yaml and the generator aaru-api's client is built with, so a spec change re-checks it.
 name: Swift CI
 
 on:
@@ -35,38 +35,6 @@ jobs:
       - name: Test
         run: swift test --package-path aaru-core
 
-  server:
-    name: aaru-server tests
-    runs-on: ubuntu-latest
-    container: swift:6.3-noble
-    services:
-      postgres:
-        image: postgres:18-alpine
-        env:
-          POSTGRES_USER: aaru
-          POSTGRES_PASSWORD: aaru
-          POSTGRES_DB: aaru_test
-        options: >-
-          --health-cmd "pg_isready -U aaru"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-    env:
-      POSTGRES_HOST: postgres
-      POSTGRES_USER: aaru
-      POSTGRES_PASSWORD: aaru
-      POSTGRES_DATABASE: aaru_test
-    steps:
-      - uses: actions/checkout@v4
-      - name: Cache SwiftPM
-        uses: actions/cache@v4
-        with:
-          path: aaru-server/.build
-          key: ${{ runner.os }}-server-${{ hashFiles('aaru-server/Package.resolved') }}
-          restore-keys: ${{ runner.os }}-server-
-      - name: Test (migrations run against the service database)
-        run: swift test --package-path aaru-server
-
   api:
     name: aaru-api client fresh + tests
     runs-on: ubuntu-latest
@@ -98,7 +66,7 @@ jobs:
       - name: Lint
         run: |
           set -euo pipefail
-          for pkg in aaru-core aaru-server aaru-api; do
+          for pkg in aaru-core aaru-api; do
             echo "== $pkg =="
             (cd "$pkg" && swiftformat . --lint && swiftlint --strict --quiet)
           done

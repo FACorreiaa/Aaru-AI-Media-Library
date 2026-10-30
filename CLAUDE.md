@@ -20,14 +20,14 @@ This file is the working contract for anyone — human or agent — changing the
 
 | Layer | Choice |
 | --- | --- |
-| API server | Hummingbird 2 (Swift, structured concurrency); routes generated from `aaru-server/Sources/AppAPI/openapi.yaml` |
-| Shared code | `AaruCore` Swift package in `aaru-core/` (models, IDs, validation). No HTTP client in it |
+| API server | `aaru-server-v2`: Go, echo v4 with its middleware; handlers generated (oapi-codegen strict server) from `aaru-server/Sources/AppAPI/openapi.yaml`. A 1:1 port of the Swift server, which is archived in `aaru-server/` (it keeps only the spec and the client generator); all server code goes in `aaru-server-v2`. Conventions in `aaru-server-v2/PORTING.md` |
+| Shared code | `AaruCore` Swift package in `aaru-core/` (models, IDs, validation) for the Apple apps; the Go server holds the same rules in `aaru-server-v2/internal/core`. No HTTP client in either |
 | API client (Apple) | `AaruAPI` Swift package in `aaru-api/`: the `/v1` client generated from the server's `openapi.yaml` and committed, plus session middleware. Regenerate with `scripts/generate-api-client.sh`; CI fails if stale |
 | iOS + Mac | SwiftUI, one multiplatform target in `aaru-ios/`, plus one widget extension (iOS + macOS widgets, Live Activity, App Intents) |
 | Web | `aaru-client/` — SolidJS + TanStack Start on Cloudflare Workers, a pure client of `/v1` with the same functionality as the Apple apps. Landing page + sign-in + the signed-in app in one Worker. API types generated from `openapi.yaml` (`npm run api:generate`). UI from shadcn-solid on Kobalte, every component as source in `src/components/ui` behind the `~/components/ui` barrel, themed on Aaru's tokens; animation through `motion/mini` via `src/lib/motion.ts` (DESIGN.md §17). No DB access, no business logic |
 | Browser extension | `aaru-extension/` — WXT, one Manifest V3 source for Chrome and Firefox (SCR-007). Reads the player on Netflix, Disney+ and Prime Video, and YouTube videos for Now playing (SCR-009), and calls `/v1/scrobble/*` with a scrobble-only token. A client like the others: no rules of its own |
-| Database | PostgreSQL via Fluent (`hummingbird-fluent`), a StatefulSet on the `maat` cluster |
-| Jobs | Hummingbird Jobs (or equivalent queue) for imports and hydration |
+| Database | PostgreSQL through pgx and sqlc (queries in `internal/db/queries`), goose migrations after a baseline of the Swift server's 60 Fluent migrations; a StatefulSet on the `maat` cluster |
+| Jobs | Workers inside the API process (`internal/httpapi/workers.go`), leasing rows with `FOR UPDATE SKIP LOCKED`: imports, hydration, sweeps |
 | Catalog — video | TMDB (also trending, on the air, new shows, in theaters for Discover) |
 | Catalog — anime | AniList GraphQL (with MAL ids); first-class from P1; this season + trending for Discover. While AniList is down, TMDB's Japanese animation stands in for search and Discover (CAT-021). AniDB's daily title dump adds alternate titles for matching only (CAT-022) |
 | Catalog — air times | TVmaze (no key, CC BY-SA): exact air times and network for TMDB shows, and the next episode's time on Discover's On air (DISC-003); TMDB stays the episode source |
@@ -44,24 +44,25 @@ This file is the working contract for anyone — human or agent — changing the
 | Scrobble — music | ListenBrainz's submit protocol at `/listenbrainz/1/` with music tokens only (MUS-005, owner 2026-10-21): Web Scrobbler, Pano Scrobbler, Navidrome, Jellyfin's plugin. No Spotify OAuth, no native Apple Music path |
 | Scrobble (P3) | `POST /v1/scrobble/*` (Trakt-shaped, scrobble tokens only), the browser extension for Netflix / Disney+ / Prime Video (SCR-007, owner exception 2026-10-21), Plex + Jellyfin webhooks, Stremio addon (catalogs + `player`/`library` events, no `stream`; pulled forward 2026-10-19) |
 | MyAnimeList sync | OAuth PKCE per user: anime progress pushed out (SCR-005) and the list read back on app open and every 6 h (SCR-010), the one two-way exception |
-| Realtime | Hummingbird WebSocket gateway at `/v1/ws` inside `aaru-server`; group envelopes first (GRP-006, pulled forward 2026-10-20), presence and DM delivery in P6. The web connects with a short-lived ticket because its session is cookie-only |
+| Realtime | WebSocket gateway at `/v1/ws` inside `aaru-server-v2`; group envelopes first (GRP-006, pulled forward 2026-10-20), presence and DM delivery in P6. The web connects with a short-lived ticket because its session is cookie-only |
 | Groups | Friends-only spaces with channels (`text`, `title`, `watch`, `shelf`) and `#general`. Server-visible messages in Postgres; `@aaru` replies through `ModelProviding` (pulled forward 2026-10-20) |
 | Messaging (P6) | libsignal; server is a key directory + ciphertext mailbox only |
 | Push | APNSwift, per-device environment; web push (VAPID, `swift-webpush`) to browsers. Airing alerts pulled into P2 (2026-10-15, web 2026-10-20); group mention and invite alerts with groups (GRP-012); the "Now watching" Live Activity pushed from scrobbles (push-to-start, update, end; SCR-008) |
 | Deploy | API: GHCR image → promote PR in `~/Work/production/platform/infra` → ArgoCD on `maat` (`horus` namespace). Web: Wrangler to Workers |
 | Observability | Grafana Cloud through the cluster's Alloy: Prometheus `/metrics` on an internal port, logs, probes, an "Apps / Aaru" board. Sentry for errors only (server, web, Apple apps, extension; no tracing, no replay, no PII). PostHog for a few server-side product events only; no client analytics SDK. Every claim lives in `docs/privacy.md`, which changes first (owner, 2026-10-21) |
 | User import — capture | Pasted text, an image, or a catalog link (TMDB, AniList, Open Library) as an import job (`source=capture`, AG-006, pulled forward 2026-10-22). Text and images are read by one `ModelProviding` call and deleted once read; links are parsed by id and never fetched. Free accounts get 3 a month |
-| Agent model | Pluggable `ModelProviding` in `aaru-server` (`Sources/App/Agent`). Anthropic default, user key supported, spend metered daily |
-| Billing | Aaru Plus on StoreKit 2, bought in the Apple apps only (BIL-001…004, pulled forward 2026-10-22). The server verifies Apple's signed transactions and notifications itself (`Sources/App/Billing`, against Apple's root) and keeps the entitlement; the web shows it and sells nothing. No Stripe, no web checkout |
-| Outbound agent access | App Intents in `aaru-ios`; MCP at `POST /v1/mcp` in `aaru-server/Sources/App/MCP`, with an OAuth front door (`Sources/App/OAuth`) so Claude can add Aaru as a custom connector. Not a second backend |
+| Agent model | Pluggable `model.Provider` in `aaru-server-v2` (`internal/model`, `internal/agent`). Anthropic default, user key supported, spend metered daily |
+| Billing | Aaru Plus on StoreKit 2, bought in the Apple apps only (BIL-001…004, pulled forward 2026-10-22). The server verifies Apple's signed transactions and notifications itself (`internal/billing`, against Apple's root) and keeps the entitlement; the web shows it and sells nothing. No Stripe, no web checkout |
+| Outbound agent access | App Intents in `aaru-ios`; MCP at `POST /v1/mcp` in `aaru-server-v2/internal/mcp`, with an OAuth front door (`internal/oauth`) so Claude can add Aaru as a custom connector. Not a second backend |
 
 ## Repo layout
 
 ```text
 aaru/
-  aaru-core/             # AaruCore: models, IDs, validation. Shared by server and clients
+  aaru-core/             # AaruCore: models, IDs, validation. Shared by the Apple apps
   aaru-api/              # AaruAPI: generated /v1 client for the Apple apps
-  aaru-server/           # Hummingbird API
+  aaru-server-v2/        # The API (Go: echo, pgx, sqlc, goose)
+  aaru-server/           # Archived Swift API: keeps openapi.yaml and the client generator only
   aaru-ios/              # SwiftUI iPhone + Mac + widget extension
   aaru-client/           # SolidJS + TanStack Start on Workers: landing + the web app on /v1
   aaru-extension/        # Browser extension (Chrome + Firefox): scrobbles streaming sites
@@ -91,11 +92,13 @@ swift test --package-path aaru-core
 ./scripts/generate-api-client.sh
 swift test --package-path aaru-api
 
-# Server (needs Postgres: cd aaru-server && docker compose up -d)
-cd aaru-server && swift run
-cd aaru-server && swift test
-cd aaru-server && swift run aaru --db-migrate
-docker build -f aaru-server/Dockerfile -t aaru-server .   # from the repo root: needs aaru-core
+# Server (needs Postgres: cd aaru-server-v2 && docker compose up -d)
+cd aaru-server-v2 && make generate        # after an openapi.yaml or query change
+cd aaru-server-v2 && make test            # AARU_REQUIRE_DB=1 to fail instead of skip without Postgres
+cd aaru-server-v2 && go run ./cmd/aaru
+cd aaru-server-v2 && go run ./cmd/aaru --db-migrate
+cd aaru-server-v2 && golangci-lint run ./...
+docker build -t aaru-server aaru-server-v2
 
 # Web
 cd aaru-client && npm run dev
@@ -135,11 +138,12 @@ apps share one API. See `BACKLOG.md` REL-001…REL-006.
 
 ## Coding conventions
 
-- Swift 6 / strict concurrency. No unannotated escaping of `Sendable` boundaries.
-- Models that cross server and client live in `AaruCore` only. Server persistence models may wrap them; they must not diverge in meaning.
+- Apple code: Swift 6 / strict concurrency. No unannotated escaping of `Sendable` boundaries.
+- Server code: Go, `gofumpt`, `go vet` and `golangci-lint` clean; errors wrapped, never dropped; `errgroup` for independent calls.
+- Rules shared by server and clients live in `AaruCore` (Apple) and `internal/core` (server); they must not diverge in meaning.
 - API types are explicit `Codable` DTOs. Do not return raw TMDB/Trakt JSON to clients.
-- Use structured concurrency (`async let`, task groups). Cancel in-flight work when the client disconnects.
-- PostgreSQL access goes through one data layer. No ad-hoc SQL in route handlers.
+- Use structured concurrency (`async let`, task groups; `context` and `errgroup` in Go). Cancel in-flight work when the client disconnects.
+- PostgreSQL access goes through one data layer (sqlc). No ad-hoc SQL in route handlers.
 - Imports are jobs, not request-path work. An import endpoint enqueues and returns a job id.
 - Image posters are referenced by catalog URLs. Do not download and host TMDB/Open Library artwork in MVP unless a legal/technical need appears.
 - Secrets stay in environment / server config. Never commit API keys.
@@ -271,7 +275,7 @@ Do not use “portfolio”, “watchlist-only”, or vendor names as the primary
 ## Basics (P0–P2, build this first)
 
 1. Rails: root CI, Xcode project with Beta/Release, fastlane, API on `maat`, Workers beta/prod.
-2. Auth: Sign in with Apple + email/password (or magic link). Sessions/JWT as implemented in `aaru-server`.
+2. Auth: Sign in with Apple + email/password (or magic link). Sessions/JWT as implemented in `aaru-server-v2`.
 3. Search titles via TMDB / AniList / Open Library.
 4. Add to library, set status, rating, notes.
 5. TV and anime progress by season/episode; calendar and Up Next.
@@ -357,7 +361,7 @@ id); entries for later seasons tick the TMDB season they map to and merge into o
 
 ## Architecture
 
-Read `ARCHITECTURE.md` before changing boundaries between `AaruCore`, `aaru-server`, and apps.
+Read `ARCHITECTURE.md` before changing boundaries between `AaruCore`, `aaru-server-v2`, and apps.
 Read `DESIGN.md` and `VIEWS.md` before adding or changing a client surface. The agent emits
 only components from the `VIEWS.md` catalog; it gets no write path a user tap does not have.
 
@@ -367,10 +371,10 @@ only components from the `VIEWS.md` catalog; it gets no write path a user tap do
 - If a task needs a new table, DTO, and client screen, do them in that order so the API stays the source of behavior.
 - Update this file and `ARCHITECTURE.md` when you add a source, status, or client. Adding or
   renaming a surface or component updates `DESIGN.md` and `VIEWS.md` too.
-- Do not introduce Vapor, a Node server, or a second backend. MCP, the Stremio addon, scrobble
-  webhooks, and the WebSocket gateway are transports inside `aaru-server`, not services. The
+- Do not introduce Vapor, a Node server, or a second backend; do not add code to the archived `aaru-server`. MCP, the Stremio addon, scrobble
+  webhooks, and the WebSocket gateway are transports inside `aaru-server-v2`, not services. The
   web Worker is a client: it holds the session in an HttpOnly cookie and forwards `/v1` calls
-  with it, nothing else. Every rule lives in `aaru-server`.
+  with it, nothing else. Every rule lives in `aaru-server-v2`.
 - Third-party agent access is per-user and token-scoped, over the same tool layer a tap uses.
   An outside caller gets no capability a signed-in session lacks: single-item writes behave
   like a tap, anything larger becomes a plan the user approves inside Aaru. See X-009 in
