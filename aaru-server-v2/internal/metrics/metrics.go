@@ -22,8 +22,8 @@ var (
 	httpRequests = counter("aaru_http_requests_total", "HTTP requests by method, route template and status code.", "method", "route", "code")
 	// Imports finished, by source and result (planned or failed).
 	Imports = counter("aaru_imports_total", "Import jobs that finished, by source and result (planned or failed).", "source", "result")
-	// Scrobbles received, by player.
-	Scrobbles = counter("aaru_scrobbles_total", "Playback reports received, by player.", "player")
+	// Scrobbles are playback reports and plays received, by source and action (Swift's labels).
+	Scrobbles = counter("aaru_scrobbles_total", "Playback reports received, by player.", "source", "action")
 	// Push sends by channel (apns, web, live_activity) and result.
 	Push = counter("aaru_push_total", "Push sends by channel (apns, web, live_activity) and result.", "channel", "result")
 	// LLMCalls are model calls by provider and result.
