@@ -13,6 +13,7 @@ import (
 	"aaru-go-api/internal/apperr"
 	"aaru-go-api/internal/auth"
 	"aaru-go-api/internal/billing"
+	"aaru-go-api/internal/catalog"
 	"aaru-go-api/internal/config"
 	"aaru-go-api/internal/db/sqlc"
 	"aaru-go-api/internal/oauth"
@@ -55,6 +56,9 @@ type Deps struct {
 	AgentTokens *auth.AgentTokenService
 	// OAuth is the front door for Claude's connector (oauth.FromConfig).
 	OAuth *oauth.Service
+	// Catalog is search, title detail, resolution, Discover and the refresh worker
+	// (catalog.NewKit). Other areas resolve refs through Catalog.Resolver().
+	Catalog *catalog.Kit
 }
 
 // Server implements api.StrictServerInterface.

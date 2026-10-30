@@ -6,11 +6,60 @@ package sqlc
 
 import (
 	"time"
+
+	"github.com/google/uuid"
 )
+
+type AnimeMapping struct {
+	Anilist    string
+	Mal        *string
+	Anidb      *string
+	Tvdb       *string
+	Tmdb       *string
+	TmdbSeason *int32
+}
 
 type OauthClient struct {
 	ID           string
 	Name         string
 	RedirectUris []string
 	CreatedAt    time.Time
+}
+
+type Title struct {
+	ID                   uuid.UUID
+	Type                 string
+	Title                string
+	OriginalTitle        *string
+	Year                 *int32
+	Synopsis             *string
+	PosterUrl            *string
+	Tmdb                 *string
+	Imdb                 *string
+	Trakt                *string
+	Tvdb                 *string
+	Isbn                 *string
+	OpenLibrary          *string
+	Anilist              *string
+	Mal                  *string
+	Anidb                *string
+	CreatedAt            time.Time
+	UpdatedAt            time.Time
+	IsAnime              bool
+	Status               *string
+	RuntimeMinutes       *int32
+	EpisodesHydratedAt   *time.Time
+	BackdropUrl          *string
+	Network              *string
+	EpisodesAttemptedAt  *time.Time
+	Genres               []string
+	GenresAttemptedAt    *time.Time
+	Musicbrainz          *string
+	Byline               *string
+	TracksHydratedAt     *time.Time
+	ArtistsCheckedAt     *time.Time
+	PageCount            *int32
+	PageCountAttemptedAt *time.Time
+	ChapterCount         *int32
+	VolumeCount          *int32
 }
