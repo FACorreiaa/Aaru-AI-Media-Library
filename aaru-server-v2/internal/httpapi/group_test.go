@@ -333,3 +333,39 @@ func TestGroupNonceRetryStaysInItsChannel(t *testing.T) {
 	assert.Equal(t, http.StatusConflict, elsewhere.Code)
 	assert.Empty(t, bodies(t, env.send(http.MethodGet, channelPath(group, other)+"/messages", nil)))
 }
+
+func TestGroupInvitesEndWithFriendship(t *testing.T) {
+	env := newGroupEnv(t)
+	mine := env.claimHandle()
+	group, _ := env.createGroup("Film club")
+	ana := env.friend(env.user)
+	require.Equal(t, http.StatusNoContent, env.send(http.MethodPost, "/v1/groups/"+group+"/invites", map[string]any{"userId": ana.ID}).Code)
+	inbox := env.inbox(ana)
+	require.NotEmpty(t, inbox)
+	stale := inbox[0]["id"].(string)
+	require.Equal(t, http.StatusNoContent, env.send(http.MethodDelete, "/v1/social/friends/"+ana.ID, nil).Code)
+	assert.Empty(t, env.inbox(ana))
+	assert.Equal(t, http.StatusNotFound, env.send(http.MethodPost, "/v1/group-invites/"+stale+"/accept", nil, ana.Token).Code)
+	env.send(http.MethodPost, "/v1/social/friend-requests", map[string]any{"handle": ana.Handle})
+	env.send(http.MethodPost, "/v1/social/friend-requests", map[string]any{"handle": mine}, ana.Token)
+	env.join(ana, group)
+}
+
+func TestGroupBlockDropsOnlyThePairsInvites(t *testing.T) {
+	env := newGroupEnv(t)
+	env.claimHandle()
+	group, _ := env.createGroup("Film club")
+	bob, cara := env.friend(env.user), env.friend(env.user)
+	env.send(http.MethodPost, "/v1/social/friend-requests", map[string]any{"handle": bob.Handle}, cara.Token)
+	env.send(http.MethodPost, "/v1/social/friend-requests", map[string]any{"handle": cara.Handle}, bob.Token)
+	carasGroup, _ := env.createGroup("Cara's", cara.Token)
+	require.Equal(t, http.StatusNoContent,
+		env.send(http.MethodPost, "/v1/groups/"+carasGroup+"/invites", map[string]any{"userId": bob.ID}, cara.Token).Code)
+	require.Equal(t, http.StatusNoContent, env.send(http.MethodPost, "/v1/groups/"+group+"/invites", map[string]any{"userId": bob.ID}).Code)
+	assert.Len(t, env.inbox(bob), 2)
+	require.Less(t, env.send(http.MethodPut, "/v1/social/blocks/"+up(env.user), nil, bob.Token).Code, 300)
+	left := env.inbox(bob)
+	require.Len(t, left, 1)
+	assert.Equal(t, carasGroup, left[0]["groupId"])
+	assert.Equal(t, cara.Handle, left[0]["inviter"].(map[string]any)["handle"])
+}
