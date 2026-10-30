@@ -11,5 +11,10 @@ type Worker interface {
 // Workers are the background loops this server needs (imports, sweeps, refreshes, pushes).
 // Each area appends its own.
 func (s *Server) Workers() []Worker {
-	return nil
+	var workers []Worker
+	if s.ProductEvents != nil {
+		// Posts product events every 10 seconds and drains the queue on shutdown.
+		workers = append(workers, s.ProductEvents)
+	}
+	return workers
 }
