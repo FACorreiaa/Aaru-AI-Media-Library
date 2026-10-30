@@ -21,6 +21,7 @@ import (
 	"aaru-go-api/internal/oauth"
 	"aaru-go-api/internal/push"
 	"aaru-go-api/internal/reqctx"
+	"aaru-go-api/internal/schedule"
 	"aaru-go-api/internal/sports"
 	"aaru-go-api/internal/telemetry"
 	"context"
@@ -74,6 +75,9 @@ type Deps struct {
 	// Sports is SPT-001…002 (sports off when its Listing is nil). New builds one with sports
 	// off when it is nil.
 	Sports *sports.Service
+	// Schedule is the calendar, Up Next and Watching (CAL-001, UPN-001/002, APP-018). New builds
+	// one over Pool when unset.
+	Schedule *schedule.Service
 }
 
 // Server implements api.StrictServerInterface.
@@ -93,6 +97,9 @@ func New(deps Deps) *Server {
 	}
 	if deps.Sports == nil {
 		deps.Sports = sports.NewService(&sports.Store{Q: q, Pool: deps.Pool}, nil)
+	}
+	if deps.Schedule == nil && deps.Pool != nil {
+		deps.Schedule = schedule.New(deps.Pool)
 	}
 	return &Server{Deps: deps, q: q}
 }

@@ -4,6 +4,8 @@ import (
 	"aaru-go-api/internal/catalog"
 	"aaru-go-api/internal/concerts"
 	"aaru-go-api/internal/gamification"
+	"aaru-go-api/internal/push"
+	"aaru-go-api/internal/schedule"
 	"context"
 )
 
@@ -33,5 +35,14 @@ func (s *Server) Workers() []Worker {
 	workers = append(workers, &concerts.Worker{
 		Refresher: concerts.NewRefresher(s.Concerts.Store, s.ConcertArtists, s.Concerts.Listing), Log: s.Log,
 	})
+	if s.Pool != nil {
+		// Announces newly aired episodes every ten minutes (AiringNotifierService). Without APNs
+		// or web push configured each pass sends nothing, as in Swift.
+		notifier := &push.AiringNotifier{Q: s.q}
+		if s.Push != nil {
+			notifier.APNs, notifier.Web = s.Push.APNs, s.Push.Web
+		}
+		workers = append(workers, schedule.NewAiringWorker(notifier, s.Log))
+	}
 	return workers
 }
