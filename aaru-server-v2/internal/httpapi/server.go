@@ -9,6 +9,7 @@
 package httpapi
 
 import (
+	"aaru-go-api/internal/agent"
 	"aaru-go-api/internal/api"
 	"aaru-go-api/internal/apperr"
 	"aaru-go-api/internal/auth"
@@ -22,6 +23,7 @@ import (
 	"aaru-go-api/internal/library"
 	"aaru-go-api/internal/model"
 	"aaru-go-api/internal/oauth"
+	"aaru-go-api/internal/plans"
 	"aaru-go-api/internal/push"
 	"aaru-go-api/internal/reqctx"
 	"aaru-go-api/internal/schedule"
@@ -101,6 +103,12 @@ type Deps struct {
 	// Model is the agent's language model; nil when ANTHROPIC_API_KEY is unset (`@aaru` and
 	// capture reading stay off).
 	Model model.Provider
+	// Plans is remote approval of an outside agent's larger changes (AG-003, OUT-004). New builds
+	// one over Pool and Library when unset.
+	Plans *plans.Service
+	// AgentImports is what MCP's plan_import needs from the imports area; nil until imports wires
+	// it, and plan_import answers that it could not finish.
+	AgentImports agent.Importer
 }
 
 // Server implements api.StrictServerInterface.
@@ -152,6 +160,9 @@ func New(deps Deps) *Server {
 	}
 	if deps.Tonight == nil && deps.Schedule != nil {
 		deps.Tonight = tonight.New(sqlc.New(deps.Pool), deps.Schedule)
+	}
+	if deps.Plans == nil && deps.Pool != nil && deps.Library != nil {
+		deps.Plans = plans.NewService(deps.Pool, deps.Library, deps.Push, deps.Gamification, deps.Log)
 	}
 	return &Server{Deps: deps, q: q}
 }

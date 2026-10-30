@@ -19,6 +19,7 @@ func (s *Server) registerRawRoutes(e *echo.Echo) {
 	e.POST("/v1/imports/capture", notImplemented)
 	e.GET("/internal/metrics", s.internalMetrics)
 	s.registerOAuthRoutes(e)
+	s.registerMCPRoutes(e)
 }
 
 func notImplemented(echo.Context) error { return errNotImplemented }

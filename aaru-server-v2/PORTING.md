@@ -77,6 +77,11 @@ here**.
   appended in `internal/httpapi/workers.go`. Leasing jobs uses
   `FOR UPDATE SKIP LOCKED`, as the Swift workers did.
 - **Metrics**: `internal/metrics` counters keep the Swift names and labels.
+- **Profiling**: Go's pprof is on the internal port next to `/metrics` (`METRICS_PORT`, 9090),
+  never on the API port. Flame graph: `kubectl port-forward <pod> 9090`, then
+  `go tool pprof -http=:0 http://localhost:9090/debug/pprof/profile?seconds=30` (or `/heap`,
+  `/goroutine`, `/trace`). `PPROF_ENABLED=false` turns it off; `PPROF_BLOCK_RATE` and
+  `PPROF_MUTEX_FRACTION` sample contention.
 - **Concurrency**: `errgroup` for independent calls; respect `ctx` cancellation.
 - Format with `gofumpt`; `go vet ./...` and `golangci-lint run` must be clean.
 
