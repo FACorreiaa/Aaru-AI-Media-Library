@@ -8,7 +8,9 @@ import (
 	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/push"
 	"aaru-go-api/internal/scrobble"
+	"bytes"
 	"context"
+	"encoding/json"
 	"net/http"
 	"strings"
 	"time"
@@ -29,15 +31,38 @@ func (s *Server) GetNowPlaying(ctx context.Context, _ api.GetNowPlayingRequestOb
 	if err != nil {
 		return nil, err
 	}
-	out := api.GetNowPlaying200JSONResponse{Items: make([]api.NowPlayingItem, len(entries))}
+	out := nowPlayingReply{Items: make([]api.NowPlayingItem, len(entries))}
 	if playing != nil {
-		v := nowPlayingDTO(*playing)
-		out.NowPlaying = &v
+		out.NowPlaying = &nowPlayingWire{NowPlaying: nowPlayingDTO(*playing), WatchEventID: strings.ToLower(playing.Session.ID.String())}
 	}
 	for i, e := range entries {
 		out.Items[i] = nowPlayingItemDTO(e)
 	}
 	return out, nil
+}
+
+// nowPlayingReply is api.NowPlayingReply with Swift's lowercase `watchEventId`: the generated id type
+// writes uppercase, and NowPlayingHandlers.swift sent `uuidString.lowercased()`.
+type nowPlayingReply struct {
+	Items      []api.NowPlayingItem `json:"items"`
+	NowPlaying *nowPlayingWire      `json:"nowPlaying,omitempty"`
+}
+
+// nowPlayingWire shadows the embedded WatchEventId: encoding/json takes the shallower field.
+type nowPlayingWire struct {
+	api.NowPlaying
+	WatchEventID string `json:"watchEventId"`
+}
+
+func (r nowPlayingReply) VisitGetNowPlayingResponse(w http.ResponseWriter) error {
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(r); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 func liveActivityInvalid(field, hint string) *apperr.Error {
