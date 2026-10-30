@@ -200,7 +200,7 @@ type musicField = struct {
 
 type musicLink = struct {
 	Label string `json:"label"`
-	Url   string `json:"url"`
+	Url   string `json:"url"` //nolint:revive // mirrors the generated type
 }
 
 type musicStep = struct {

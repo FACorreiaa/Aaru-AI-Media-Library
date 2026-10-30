@@ -49,7 +49,7 @@ func (p Profile) DisplayName() *string {
 	return JoinName(p.FirstName, p.LastName)
 }
 
-// EmailShareable: Apple's private relay takes mail only from Aaru, so sharing it with friends is pointless.
+// EmailShareable is false for none and for Apple's private relay, which takes mail only from Aaru: sharing it with friends is pointless.
 func (p Profile) EmailShareable() bool {
 	return p.Email != nil && !strings.HasSuffix(strings.ToLower(*p.Email), "@privaterelay.appleid.com")
 }

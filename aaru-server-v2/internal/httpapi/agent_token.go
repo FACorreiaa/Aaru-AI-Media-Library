@@ -65,9 +65,9 @@ func (s *Server) CreateAgentToken(ctx context.Context, req api.CreateAgentTokenR
 	if links := minted.Stremio; links != nil {
 		out.Stremio = &struct {
 			// InstallUrl The `stremio://` link that opens the Stremio app.
-			InstallUrl    string `json:"installUrl"`
-			ManifestUrl   string `json:"manifestUrl"`
-			WebInstallUrl string `json:"webInstallUrl"`
+			InstallUrl    string `json:"installUrl"`    //nolint:revive // mirrors the generated type
+			ManifestUrl   string `json:"manifestUrl"`   //nolint:revive // mirrors the generated type
+			WebInstallUrl string `json:"webInstallUrl"` //nolint:revive // mirrors the generated type
 		}{InstallUrl: links.InstallURL, ManifestUrl: links.ManifestURL, WebInstallUrl: links.WebInstallURL}
 	}
 	if setup, ok := agentSetup(kind, s.AgentTokens.PublicBaseURL, &minted.Secret); ok {

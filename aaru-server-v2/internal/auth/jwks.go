@@ -23,6 +23,9 @@ import (
 // errInvalidToken is any signature, issuer, audience, expiry or nonce failure.
 var errInvalidToken = errors.New("invalid identity token")
 
+// errUnknownKid is a kid the provider's set does not hold, even after a refresh: fail closed.
+var errUnknownKid = errors.New("unknown signing key")
+
 // errProviderUnavailable is the key set not answering 200.
 var errProviderUnavailable = apperr.New(http.StatusBadGateway, "provider_unavailable", "This sign-in provider is unavailable right now.")
 
@@ -61,7 +64,7 @@ func NewJWKSCacheWith(client *http.Client, url string, ttl, minimumRefreshInterv
 	return &JWKSCache{client: client, url: url, ttl: ttl, minimumRefreshInterval: minimumRefreshInterval, now: time.Now}
 }
 
-// key is the public key for kid, refreshing once if it is unknown. Nil means fail closed.
+// key is the public key for kid, refreshing once if it is unknown. errUnknownKid means fail closed.
 func (c *JWKSCache) key(ctx context.Context, kid string) (crypto.PublicKey, error) {
 	now := c.now()
 	c.mu.Lock()
@@ -83,14 +86,17 @@ func (c *JWKSCache) key(ctx context.Context, kid string) (crypto.PublicKey, erro
 	recent := c.loaded && now.Sub(c.fetchedAt) < c.minimumRefreshInterval
 	c.mu.Unlock()
 	if recent {
-		return nil, nil
+		return nil, errUnknownKid
 	}
 	if err := c.fetch(ctx, now); err != nil {
 		return nil, err
 	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	return c.keys[kid], nil
+	if k, ok := c.keys[kid]; ok {
+		return k, nil
+	}
+	return nil, errUnknownKid
 }
 
 // fetch joins the fetch already running, if any.
@@ -236,11 +242,11 @@ func (c *JWKSCache) verifyJWT(ctx context.Context, token string, v any, exp func
 		return errInvalidToken
 	}
 	key, err := c.key(ctx, kid)
+	if errors.Is(err, errUnknownKid) {
+		return errInvalidToken
+	}
 	if err != nil {
 		return err
-	}
-	if key == nil {
-		return errInvalidToken
 	}
 	parts := strings.Split(token, ".")
 	if len(parts) != 3 {

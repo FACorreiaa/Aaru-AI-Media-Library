@@ -90,7 +90,7 @@ func (s *Server) VerifyMagicLink(ctx context.Context, req api.VerifyMagicLinkReq
 		return nil, (&apperr.Error{
 			Status: http.StatusUnprocessableEntity, Code: "validation_failed",
 			Message: "Send the link's token, or the email and its code.",
-		}).WithDetails(map[string]string{"token": "Or email and code."})
+		}).WithDetails(map[string]string{"token": "Or email and code."}) //nolint:gosec // a field name, not a credential
 	}
 	if err != nil {
 		return nil, err

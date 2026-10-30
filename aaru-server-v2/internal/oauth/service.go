@@ -478,7 +478,7 @@ func isLoopback(host string) bool {
 	return false
 }
 
-// AcceptableRedirect: https anywhere, or http on the loopback interface (RFC 8252); never a fragment or userinfo.
+// AcceptableRedirect allows https anywhere, or http on the loopback interface (RFC 8252); never a fragment or userinfo.
 func AcceptableRedirect(raw string) bool {
 	p, ok := parse(raw)
 	if !ok || p.host() == "" || p.hasFragment || p.u.User != nil {

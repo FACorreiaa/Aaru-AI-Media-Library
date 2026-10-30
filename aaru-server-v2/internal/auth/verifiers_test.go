@@ -235,7 +235,7 @@ func TestJWKSUnknownKidWithinTheIntervalDoesNotRefetch(t *testing.T) {
 	cache := NewJWKSCacheWith(jwks.server.Client(), jwks.server.URL, 12*time.Hour, time.Minute)
 	for range 3 {
 		k, err := cache.key(context.Background(), "unknown")
-		require.NoError(t, err)
+		require.ErrorIs(t, err, errUnknownKid)
 		assert.Nil(t, k)
 	}
 	assert.EqualValues(t, 1, jwks.requests.Load())
