@@ -8,8 +8,10 @@ import (
 	"aaru-go-api/internal/gamification"
 	"aaru-go-api/internal/imports"
 	"aaru-go-api/internal/mal"
+	"aaru-go-api/internal/music"
 	"aaru-go-api/internal/push"
 	"aaru-go-api/internal/schedule"
+	"aaru-go-api/internal/scrobble"
 	"context"
 )
 
@@ -66,6 +68,17 @@ func (s *Server) Workers() []Worker {
 		workers = append(workers, &agent.ReplyWorker{
 			Replies: &agent.ReplyService{Groups: s.Groups, Catalog: s.Catalog, Library: s.Library, Model: s.Model},
 			Log:     s.Log, Workers: s.Config.Workers.AgentReplies,
+		})
+	}
+	if s.Scrobble != nil && s.Scrobble.Notifier != nil {
+		// Looks again every 15 s at users whose "Now playing" activity is due to change with no
+		// report to say so (LiveActivitySweepService). Without APNs there is nothing to sweep.
+		workers = append(workers, &scrobble.SweepWorker{Notifier: s.Scrobble.Notifier, Log: s.Log})
+	}
+	if s.Listens != nil && s.Catalog != nil && s.Catalog.Providers.Recordings != nil {
+		// Identifies scrobbled tracks on MusicBrainz every minute (ListenResolverService, MUS-006).
+		workers = append(workers, &music.ResolverWorker{
+			Resolver: &music.Resolver{Store: s.Listens.Store, Recordings: s.Catalog.Providers.Recordings}, Log: s.Log,
 		})
 	}
 	return workers

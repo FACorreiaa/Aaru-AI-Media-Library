@@ -51,3 +51,11 @@ func UsageOn(ctx context.Context, q *sqlc.Queries, user uuid.UUID, at time.Time)
 		OutputTokens: int(row.OutputTokens), CostMicros: int(row.CostMicros),
 	}, nil
 }
+
+// UsageStore meters model calls made outside this package (capture's extractor).
+type UsageStore struct{ Q *sqlc.Queries }
+
+// RecordUsage is RecordUsage over the store's queries.
+func (s UsageStore) RecordUsage(ctx context.Context, user uuid.UUID, at time.Time, inputTokens, outputTokens, costMicros int) error {
+	return RecordUsage(ctx, s.Q, user, at, inputTokens, outputTokens, costMicros)
+}

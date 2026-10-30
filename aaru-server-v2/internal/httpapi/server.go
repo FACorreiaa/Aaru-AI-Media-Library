@@ -25,16 +25,19 @@ import (
 	"aaru-go-api/internal/library"
 	"aaru-go-api/internal/mal"
 	"aaru-go-api/internal/model"
+	"aaru-go-api/internal/music"
 	"aaru-go-api/internal/oauth"
 	"aaru-go-api/internal/plans"
 	"aaru-go-api/internal/push"
 	"aaru-go-api/internal/realtime"
 	"aaru-go-api/internal/reqctx"
 	"aaru-go-api/internal/schedule"
+	"aaru-go-api/internal/scrobble"
 	"aaru-go-api/internal/shares"
 	"aaru-go-api/internal/social"
 	"aaru-go-api/internal/sports"
 	"aaru-go-api/internal/stats"
+	"aaru-go-api/internal/stremio"
 	"aaru-go-api/internal/telemetry"
 	"aaru-go-api/internal/tonight"
 	"aaru-go-api/internal/trakt"
@@ -44,9 +47,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
-
-// errNotImplemented answers a route whose handler has not been ported yet.
-var errNotImplemented = apperr.New(501, "not_implemented", "This route is not available yet.")
 
 var _ api.StrictServerInterface = (*Server)(nil)
 
@@ -135,6 +135,18 @@ type Deps struct {
 	// MALConnect is MyAnimeList connect (SCR-005). New builds one with MAL off when unset; app sets
 	// its Settings and API when MAL_CLIENT_ID is set, which also starts the sync worker.
 	MALConnect *mal.ConnectService
+	// Listens is the listening log (MUS-004…008). New builds one over Pool when unset. Imports
+	// stage and apply listening history through Listens.Store.
+	Listens *music.Service
+	// Scrobble is watch events, plays and the "Now playing" Live Activity (SCR-001…011). New
+	// builds one over Pool, Library and Catalog when unset; its Notifier pushes through APNs, and
+	// is nil (no Live Activity pushes) when APNs is.
+	Scrobble *scrobble.Service
+	// StremioSeries is Cinemeta's series lookup, which puts Stremio's episode numbers on the TMDB
+	// show; nil keeps them as they come.
+	StremioSeries stremio.SeriesSource
+	// Stremio is the addon (SCR-003). New builds it when unset.
+	Stremio *stremio.Service
 }
 
 // Server implements api.StrictServerInterface.
@@ -223,6 +235,28 @@ func New(deps Deps) *Server {
 			items = deps.Library.Store
 		}
 		deps.Shares = shares.New(q, deps.Social, deps.Catalog, items, deps.Sports, deps.Concerts, webBaseURL(deps.Config))
+	}
+	if deps.Listens == nil && deps.Pool != nil {
+		deps.Listens = &music.Service{Store: music.NewStore(deps.Pool), Gamification: deps.Gamification}
+	}
+	if deps.Scrobble == nil && deps.Pool != nil && deps.Library != nil && deps.Catalog != nil {
+		deps.Scrobble = &scrobble.Service{
+			Store: scrobble.NewStore(deps.Pool), Library: deps.Library, Catalog: deps.Catalog, Listens: deps.Listens,
+			Log: deps.Log,
+		}
+		if deps.APNs != nil {
+			deps.Scrobble.Notifier = &scrobble.Notifier{
+				Store: deps.Scrobble.Store, Titles: deps.Catalog.Store, Sender: deps.APNs, Log: deps.Log,
+			}
+		}
+	}
+	if deps.Stremio == nil && deps.Scrobble != nil && deps.Schedule != nil {
+		deps.Stremio = &stremio.Service{
+			Library: deps.Library, Schedule: deps.Schedule, Catalog: deps.Catalog, Scrobble: deps.Scrobble,
+		}
+		if deps.StremioSeries != nil {
+			deps.Stremio.EpisodeMap = stremio.NewEpisodeMap(deps.StremioSeries)
+		}
 	}
 	return &Server{Deps: deps, q: q}
 }

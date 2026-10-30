@@ -1,8 +1,10 @@
 package app
 
 import (
+	"aaru-go-api/internal/agent"
 	"aaru-go-api/internal/catalog"
 	"aaru-go-api/internal/config"
+	"aaru-go-api/internal/db/sqlc"
 	"aaru-go-api/internal/httpapi"
 	"aaru-go-api/internal/imports"
 	"aaru-go-api/internal/provider"
@@ -30,11 +32,14 @@ func buildImports(cfg *config.App, pool *pgxpool.Pool, log *slog.Logger, deps *h
 	buildConnections(cfg, pool, log, deps, svc)
 
 	// Stremio: its account API and Cinemeta (makeStremioAccount), always on as in Swift.
-	svc.Stremio = stremioapi.NewAccount(provider.NewHTTPTransport())
+	// The addon's episode map reads Cinemeta through the same account.
+	stremio := stremioapi.NewAccount(provider.NewHTTPTransport())
+	svc.Stremio = stremio
+	deps.StremioSeries = stremio
 
-	// Capture: text and images need the model; links work without it. Usage metering waits for
-	// the agent store (agent_usage).
-	svc.Capture = imports.CaptureDeps{Model: deps.Model}
+	// Capture: text and images need the model; links work without it. Every model call is
+	// metered in agent_usage.
+	svc.Capture = imports.CaptureDeps{Model: deps.Model, Usage: agent.UsageStore{Q: sqlc.New(pool)}}
 
 	// Listening history (MUS-004): ListenBrainz on the Discover rows' client; Last.fm only with
 	// LASTFM_API_KEY (without it, its import answers 503).

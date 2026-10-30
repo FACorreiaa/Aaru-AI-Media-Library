@@ -23,6 +23,9 @@ func (s *Server) registerRawRoutes(e *echo.Echo) {
 	e.GET("/v1/ws", s.realtimeGateway().Handle)
 	s.registerMCPRoutes(e)
 	s.registerConnectRedirectRoutes(e)
+	s.registerScrobbleRoutes(e)
+	s.registerListenBrainzRoutes(e)
+	s.registerStremioRoutes(e)
 }
 
 // internalMetrics is `GET /internal/metrics` → `{"users": N}` for the board at
