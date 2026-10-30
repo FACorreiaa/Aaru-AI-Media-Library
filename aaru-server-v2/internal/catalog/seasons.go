@@ -106,6 +106,9 @@ const (
 	SeasonMovies SeasonKind = "movies"
 )
 
+// AllSeasonKinds are every season list.
+var AllSeasonKinds = []SeasonKind{SeasonAnime, SeasonShowsNew, SeasonShowsReturning, SeasonMovies}
+
 // SeasonPage is one page of a season as a provider lists it.
 type SeasonPage struct {
 	Hits    []Hit
