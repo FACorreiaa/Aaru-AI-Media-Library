@@ -1,16 +1,15 @@
 package catalog
 
 import (
+	"aaru-go-api/internal/core"
+	"aaru-go-api/internal/provider"
+	"aaru-go-api/internal/testdb"
 	"context"
 	"encoding/json"
 	"strconv"
 	"sync/atomic"
 	"testing"
 	"time"
-
-	"aaru-go-api/internal/core"
-	"aaru-go-api/internal/provider"
-	"aaru-go-api/internal/testdb"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"

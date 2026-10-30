@@ -1,14 +1,13 @@
 package catalog
 
 import (
+	"aaru-go-api/internal/provider"
 	"context"
 	"net/url"
 	"strings"
 	"sync"
 	"testing"
 	"time"
-
-	"aaru-go-api/internal/provider"
 
 	"github.com/stretchr/testify/require"
 )

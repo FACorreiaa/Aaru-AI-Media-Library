@@ -1,11 +1,10 @@
 package catalog
 
 import (
+	"aaru-go-api/internal/core"
 	"context"
 	"sync"
 	"time"
-
-	"aaru-go-api/internal/core"
 )
 
 // fakeCatalog is every provider role at once, from stubbed answers. Test-only.

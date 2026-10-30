@@ -1,6 +1,8 @@
 package catalog
 
 import (
+	"aaru-go-api/internal/core"
+	"aaru-go-api/internal/testdb"
 	"context"
 	"fmt"
 	"math/rand/v2"
@@ -8,9 +10,6 @@ import (
 	"sync"
 	"testing"
 	"time"
-
-	"aaru-go-api/internal/core"
-	"aaru-go-api/internal/testdb"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -131,10 +130,14 @@ func TestMappedAnimeCoursResolveToOneShow(t *testing.T) {
 	ctx := context.Background()
 	store := NewStore(testdb.New(t))
 	fake := newFake()
-	fake.stubTitle(Record{Hit: Hit{Type: core.MediaShow, Title: "Long Anime", Year: ptr(2013), IDs: core.ExternalIDs{TMDB: "1429"}},
-		Status: ptr(StatusEnded), RuntimeMinutes: ptr(24)})
-	fake.stubTitle(Record{Hit: Hit{Type: core.MediaShow, Title: "Long Anime: Part 2 (AniList only)", Year: ptr(2014),
-		IDs: core.ExternalIDs{AniList: "300"}, IsAnime: true}, Status: ptr(StatusEnded), RuntimeMinutes: ptr(24)})
+	fake.stubTitle(Record{
+		Hit:    Hit{Type: core.MediaShow, Title: "Long Anime", Year: ptr(2013), IDs: core.ExternalIDs{TMDB: "1429"}},
+		Status: ptr(StatusEnded), RuntimeMinutes: ptr(24),
+	})
+	fake.stubTitle(Record{Hit: Hit{
+		Type: core.MediaShow, Title: "Long Anime: Part 2 (AniList only)", Year: ptr(2014),
+		IDs: core.ExternalIDs{AniList: "300"}, IsAnime: true,
+	}, Status: ptr(StatusEnded), RuntimeMinutes: ptr(24)})
 	require.NoError(t, store.UpsertMapping(ctx, AnimeMapping{AniList: "100", TMDB: ptr("1429"), TMDBSeason: ptr(1)}))
 	require.NoError(t, store.UpsertMapping(ctx, AnimeMapping{AniList: "200", TMDB: ptr("1429"), TMDBSeason: ptr(2)}))
 	resolver := NewResolver(store, fake.providers())

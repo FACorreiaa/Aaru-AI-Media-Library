@@ -1,14 +1,13 @@
 package catalog
 
 import (
+	"aaru-go-api/internal/core"
+	"aaru-go-api/internal/provider"
+	"aaru-go-api/internal/testdb"
 	"context"
 	"sync/atomic"
 	"testing"
 	"time"
-
-	"aaru-go-api/internal/core"
-	"aaru-go-api/internal/provider"
-	"aaru-go-api/internal/testdb"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -194,7 +193,9 @@ func TestCacheServesStaleOnFailureAndBacksOff(t *testing.T) {
 // halfBroken serves two lists; one always fails.
 type halfBroken struct{}
 
-func (halfBroken) DiscoverLists() []DiscoverList { return []DiscoverList{ListTVTrending, ListMoviesTrending} }
+func (halfBroken) DiscoverLists() []DiscoverList {
+	return []DiscoverList{ListTVTrending, ListMoviesTrending}
+}
 
 func (halfBroken) List(_ context.Context, list DiscoverList, _ time.Time) ([]Hit, error) {
 	if list != ListMoviesTrending {

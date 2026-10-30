@@ -1,15 +1,14 @@
 package catalog
 
 import (
+	"aaru-go-api/internal/core"
+	"aaru-go-api/internal/provider"
+	"aaru-go-api/internal/testdb"
 	"context"
 	"fmt"
 	"strings"
 	"testing"
 	"time"
-
-	"aaru-go-api/internal/core"
-	"aaru-go-api/internal/provider"
-	"aaru-go-api/internal/testdb"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -114,8 +113,10 @@ func decodeRecordings(t *testing.T, stub *stubTransport) []MusicBrainzRecording 
 }
 
 func albumRecord(name, mbid string) Record {
-	return Record{Hit: Hit{Type: core.MediaAlbum, Title: name, Year: ptr(1997), PosterURL: MusicBrainzCoverURL(mbid),
-		Byline: ptr("Radiohead"), IDs: core.ExternalIDs{MusicBrainz: mbid}}, Genres: []string{"art rock", "alternative rock"}}
+	return Record{Hit: Hit{
+		Type: core.MediaAlbum, Title: name, Year: ptr(1997), PosterURL: MusicBrainzCoverURL(mbid),
+		Byline: ptr("Radiohead"), IDs: core.ExternalIDs{MusicBrainz: mbid},
+	}, Genres: []string{"art rock", "alternative rock"}}
 }
 
 func TestAlbumDetailCarriesArtistGenresAndTracks(t *testing.T) {

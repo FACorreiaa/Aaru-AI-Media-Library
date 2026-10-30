@@ -1,14 +1,13 @@
 package catalog
 
 import (
+	"aaru-go-api/internal/core"
+	"aaru-go-api/internal/testdb"
 	"context"
 	"fmt"
 	"math/rand/v2"
 	"strconv"
 	"testing"
-
-	"aaru-go-api/internal/core"
-	"aaru-go-api/internal/testdb"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -58,8 +57,10 @@ func TestAnimeMappingsLoadTwiceAndResolve(t *testing.T) {
 	assert.Nil(t, film.TMDB)
 
 	fake := newFake()
-	fake.stubTitle(Record{Hit: Hit{Type: core.MediaShow, Title: "Mapped Anime", Year: ptr(1999), IDs: core.ExternalIDs{TMDB: tmdb}},
-		Status: ptr(StatusEnded), RuntimeMinutes: ptr(24)})
+	fake.stubTitle(Record{
+		Hit:    Hit{Type: core.MediaShow, Title: "Mapped Anime", Year: ptr(1999), IDs: core.ExternalIDs{TMDB: tmdb}},
+		Status: ptr(StatusEnded), RuntimeMinutes: ptr(24),
+	})
 	title, err := NewResolver(store, fake.providers()).Resolve(ctx, core.MediaRef{Type: core.MediaShow, IDs: core.ExternalIDs{AniList: ids[0]}}, nil)
 	require.NoError(t, err)
 	assert.Equal(t, tmdb, title.IDs.TMDB)
