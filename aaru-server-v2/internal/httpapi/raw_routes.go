@@ -16,13 +16,11 @@ var isNoRows = db.IsNoRows
 func (s *Server) registerRawRoutes(e *echo.Echo) {
 	e.POST("/v1/imports/csv", s.createCSVImport)
 	e.POST("/v1/imports/cat", s.createCATImport)
-	e.POST("/v1/imports/capture", notImplemented)
+	e.POST("/v1/imports/capture", s.createCaptureImport)
 	e.GET("/internal/metrics", s.internalMetrics)
 	s.registerOAuthRoutes(e)
 	s.registerMCPRoutes(e)
 }
-
-func notImplemented(echo.Context) error { return errNotImplemented }
 
 // internalMetrics is `GET /internal/metrics` → `{"users": N}` for the board at
 // facorreia.com/apps, called in-cluster with METRICS_SECRET. Bearer only,

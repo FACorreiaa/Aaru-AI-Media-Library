@@ -5,6 +5,7 @@ import (
 	"aaru-go-api/internal/httpapi"
 	"aaru-go-api/internal/imports"
 	"aaru-go-api/internal/provider"
+	"aaru-go-api/internal/stremioapi"
 	"log/slog"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -23,9 +24,12 @@ func buildImports(cfg *config.App, pool *pgxpool.Pool, log *slog.Logger, deps *h
 
 	// Trakt.
 
-	// Stremio.
+	// Stremio: its account API and Cinemeta (makeStremioAccount), always on as in Swift.
+	svc.Stremio = stremioapi.NewAccount(provider.NewHTTPTransport())
 
-	// Capture.
+	// Capture: text and images need the model; links work without it. Usage metering waits for
+	// the agent store (agent_usage).
+	svc.Capture = imports.CaptureDeps{Model: deps.Model}
 
 	// Listening history (MUS-004): ListenBrainz on the Discover rows' client; Last.fm only with
 	// LASTFM_API_KEY (without it, its import answers 503).
