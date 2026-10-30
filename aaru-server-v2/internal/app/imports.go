@@ -4,6 +4,7 @@ import (
 	"aaru-go-api/internal/config"
 	"aaru-go-api/internal/httpapi"
 	"aaru-go-api/internal/imports"
+	"aaru-go-api/internal/provider"
 	"log/slog"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -26,7 +27,13 @@ func buildImports(cfg *config.App, pool *pgxpool.Pool, log *slog.Logger, deps *h
 
 	// Capture.
 
-	// Listening history.
+	// Listening history (MUS-004): ListenBrainz on the Discover rows' client; Last.fm only with
+	// LASTFM_API_KEY (without it, its import answers 503).
+	var listenBrainz *provider.Client
+	if deps.Catalog != nil {
+		listenBrainz = deps.Catalog.ListenBrainzClient
+	}
+	svc.ListenHistory = imports.NewListenHistory(cfg.LastFMAPIKey, cfg.ProviderUserAgent, listenBrainz, provider.NewHTTPTransport())
 
 	deps.Imports = svc
 }
