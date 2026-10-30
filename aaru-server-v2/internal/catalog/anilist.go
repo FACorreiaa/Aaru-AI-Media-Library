@@ -425,7 +425,8 @@ func (m aniListMedia) hit() Hit {
 	return hit
 }
 
-var storyOrArt = regexp.MustCompile(`(?i)\b(story|art)\b`)
+// storyOrArt is Swift's `(?i)\b(story|art)\b`; core.MatchWordBounded checks the boundaries as ICU does.
+var storyOrArt = regexp.MustCompile(`(?i)(story|art)`)
 
 // authors are who wrote and drew it ("Story & Art", "Story", "Art", "Original Story"),
 // in AniList's order, once each, at most two. Translators, letterers and editors are left out.
@@ -435,7 +436,7 @@ func (m aniListMedia) authors() *string {
 	}
 	var names []string
 	for _, e := range m.Staff.Edges {
-		if e.Role == nil || !storyOrArt.MatchString(*e.Role) {
+		if e.Role == nil || !core.MatchWordBounded(storyOrArt, *e.Role) {
 			continue
 		}
 		name := nilIfBlank(e.Node.Name.Full)

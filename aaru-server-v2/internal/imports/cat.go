@@ -255,11 +255,13 @@ func icsUnescaped(value string) string {
 	return b.String()
 }
 
-var catEpisodePart = regexp.MustCompile(`\b[Ss](\d{1,3})` + swiftSpace + `*[Ee](\d{1,4})\b|\b(\d{1,3})x(\d{1,4})\b`)
+// catEpisodePart is Swift's `\b[Ss](\d{1,3})\s*[Ee](\d{1,4})\b|\b(\d{1,3})x(\d{1,4})\b`, its word
+// boundaries checked by core.FindWordBounded as ICU does (Unicode letters are word characters).
+var catEpisodePart = regexp.MustCompile(`[Ss](\d{1,3})` + swiftSpace + `*[Ee](\d{1,4})|(\d{1,3})x(\d{1,4})`)
 
 // catEpisodeAt is where a summary's first `S02E03` or `2x03` starts, and its numbers.
 func catEpisodeAt(summary string) (start, season, episode int, ok bool) {
-	m := catEpisodePart.FindStringSubmatchIndex(summary)
+	m := core.FindWordBounded(catEpisodePart, summary)
 	if m == nil {
 		return 0, 0, 0, false
 	}
