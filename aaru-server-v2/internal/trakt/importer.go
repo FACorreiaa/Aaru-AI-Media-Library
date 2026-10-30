@@ -219,11 +219,6 @@ type Source struct {
 
 var _ imports.TraktSource = (*Source)(nil)
 
-// NewSource is Trakt for imports over one API.
-func NewSource(store *Store, settings *Settings, api *API) *Source {
-	return &Source{Connect: &ConnectService{Store: store, Settings: settings, API: api}, Importer: &Importer{API: api}}
-}
-
 // Connected is whether the user has a Trakt connection.
 func (s *Source) Connected(ctx context.Context, user uuid.UUID) (bool, error) {
 	st, err := s.Connect.Status(ctx, user)

@@ -5,6 +5,7 @@ import (
 	"aaru-go-api/internal/concerts"
 	"aaru-go-api/internal/gamification"
 	"aaru-go-api/internal/imports"
+	"aaru-go-api/internal/mal"
 	"aaru-go-api/internal/push"
 	"aaru-go-api/internal/schedule"
 	"context"
@@ -35,6 +36,13 @@ func (s *Server) Workers() []Worker {
 	if s.Imports != nil {
 		// Leases import jobs and plans them (JOB-001), IMPORTS_WORKERS loops.
 		workers = append(workers, &imports.Worker{Imports: s.Imports, Log: s.Log, Loops: s.Config.Workers.Imports})
+	}
+	if s.MALConnect != nil && s.Imports != nil && s.Library != nil && s.Catalog != nil {
+		// Reads MyAnimeList lists back and pushes anime progress every 30 seconds (MALSyncService,
+		// SCR-005/SCR-010); none without MAL_CLIENT_ID.
+		if w := mal.NewWorker(s.MALConnect, s.Imports, s.Library.Store, s.Catalog.Store, s.Log); w != nil {
+			workers = append(workers, w)
+		}
 	}
 	// Looks up album artists and matches them to Ticketmaster every half hour (MUS-003).
 	workers = append(workers, &concerts.Worker{
