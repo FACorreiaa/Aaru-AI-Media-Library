@@ -1815,7 +1815,7 @@ type ActivityItem struct {
 
 	// MyReaction Your own reaction on this row.
 	MyReaction *string  `json:"myReaction,omitempty"`
-	Rating     *float32 `json:"rating,omitempty"`
+	Rating     *float64 `json:"rating,omitempty"`
 
 	// Reactions How many of each emoji, most first. Absent when none.
 	Reactions *[]ReactionCount `json:"reactions,omitempty"`
@@ -2116,7 +2116,7 @@ type BoardPost struct {
 	Mine         bool          `json:"mine"`
 
 	// Rating Needs a title.
-	Rating *float32 `json:"rating,omitempty"`
+	Rating *float64 `json:"rating,omitempty"`
 
 	// Spoiler How far into the title a reader must be to read the message unveiled. An episode, or the ending.
 	Spoiler     *SpoilerStamp `json:"spoiler,omitempty"`
@@ -2133,7 +2133,7 @@ type BoardPostCreate struct {
 	Body string `json:"body"`
 
 	// Rating Needs a title.
-	Rating *float32 `json:"rating,omitempty"`
+	Rating *float64 `json:"rating,omitempty"`
 
 	// Spoiler How far into the title a reader must be to read the message unveiled. An episode, or the ending.
 	Spoiler *SpoilerStamp `json:"spoiler,omitempty"`
@@ -2158,7 +2158,7 @@ type BoardPostPage struct {
 // BookProgress defines model for BookProgress.
 type BookProgress struct {
 	Page    *int     `json:"page,omitempty"`
-	Percent *float32 `json:"percent,omitempty"`
+	Percent *float64 `json:"percent,omitempty"`
 }
 
 // Calendar defines model for Calendar.
@@ -2298,7 +2298,7 @@ type Concert struct {
 	Country *string  `json:"country,omitempty"`
 
 	// DistanceKm From the searched point, or from the point or saved city for an `anywhere` search. Absent for "Your artists on tour", and when the venue's position is unknown.
-	DistanceKm *float32 `json:"distanceKm,omitempty"`
+	DistanceKm *float64 `json:"distanceKm,omitempty"`
 	Id         string   `json:"id"`
 
 	// ImageUrl Ticketmaster's image for the event, referenced, never hosted.
@@ -2362,10 +2362,10 @@ type ConcertPlace struct {
 	CountryCode *string `json:"countryCode,omitempty"`
 
 	// Latitude Rounded to two decimals by the server.
-	Latitude float32 `json:"latitude"`
+	Latitude float64 `json:"latitude"`
 
 	// Longitude Rounded to two decimals by the server.
-	Longitude float32 `json:"longitude"`
+	Longitude float64 `json:"longitude"`
 
 	// Name 1 to 200 characters.
 	Name   string  `json:"name"`
@@ -2410,8 +2410,8 @@ type ConcertSearchPage struct {
 // ConcertSearchRequest defines model for ConcertSearchRequest.
 type ConcertSearchRequest struct {
 	// Latitude Sent with `longitude` for a one-off position; absent uses the saved city.
-	Latitude  *float32 `json:"latitude,omitempty"`
-	Longitude *float32 `json:"longitude,omitempty"`
+	Latitude  *float64 `json:"latitude,omitempty"`
+	Longitude *float64 `json:"longitude,omitempty"`
 
 	// Page 1-based, at most 10.
 	Page *int `json:"page,omitempty"`
@@ -2438,8 +2438,8 @@ type ConcertSearchScope string
 // ConcertsNearRequest defines model for ConcertsNearRequest.
 type ConcertsNearRequest struct {
 	// Latitude Sent with `longitude` for a one-off position; absent uses the saved city.
-	Latitude  *float32 `json:"latitude,omitempty"`
-	Longitude *float32 `json:"longitude,omitempty"`
+	Latitude  *float64 `json:"latitude,omitempty"`
+	Longitude *float64 `json:"longitude,omitempty"`
 
 	// Page 1-based, at most 10.
 	Page     *int                        `json:"page,omitempty"`
@@ -2675,7 +2675,7 @@ type FriendItem struct {
 
 	// MangaChapter Manga. The last chapter they read.
 	MangaChapter *int     `json:"mangaChapter,omitempty"`
-	Rating       *float32 `json:"rating,omitempty"`
+	Rating       *float64 `json:"rating,omitempty"`
 
 	// Status Consumption only. `on_hold` is paused on purpose (LIB-007): it ranks with `in_progress` for imports, is left off Up Next, Tonight, the calendar and airing alerts, and a new tick moves it back to `in_progress`. Labels are per kind; `on_hold` reads "On hold" for every kind.
 	Status    LibraryStatus `json:"status"`
@@ -2909,7 +2909,7 @@ type ImportRow struct {
 	Ids       *ExternalIds     `json:"ids,omitempty"`
 	Index     int              `json:"index"`
 	Outcome   ImportRowOutcome `json:"outcome"`
-	Rating    *float32         `json:"rating,omitempty"`
+	Rating    *float64         `json:"rating,omitempty"`
 	Reason    *string          `json:"reason,omitempty"`
 	SourceKey *string          `json:"sourceKey,omitempty"`
 
@@ -3022,7 +3022,7 @@ type LibraryEntry struct {
 
 	// Progress Specials (season 0) are not counted.
 	Progress *ShowProgress `json:"progress,omitempty"`
-	Rating   *float32      `json:"rating,omitempty"`
+	Rating   *float64      `json:"rating,omitempty"`
 
 	// Status Consumption only. `on_hold` is paused on purpose (LIB-007): it ranks with `in_progress` for imports, is left off Up Next, Tonight, the calendar and airing alerts, and a new tick moves it back to `in_progress`. Labels are per kind; `on_hold` reads "On hold" for every kind.
 	Status    LibraryStatus `json:"status"`
@@ -3037,7 +3037,7 @@ type LibraryEntry struct {
 // LibraryItemPatch defines model for LibraryItemPatch.
 type LibraryItemPatch struct {
 	BookPage    *int     `json:"bookPage,omitempty"`
-	BookPercent *float32 `json:"bookPercent,omitempty"`
+	BookPercent *float64 `json:"bookPercent,omitempty"`
 
 	// Clear Fields to empty.
 	Clear   *[]LibraryItemPatchClear `json:"clear,omitempty"`
@@ -3051,7 +3051,7 @@ type LibraryItemPatch struct {
 	Notes       *string `json:"notes,omitempty"`
 
 	// Rating 1–10 in 0.5 steps.
-	Rating *float32 `json:"rating,omitempty"`
+	Rating *float64 `json:"rating,omitempty"`
 
 	// Status Consumption only. `on_hold` is paused on purpose (LIB-007): it ranks with `in_progress` for imports, is left off Up Next, Tonight, the calendar and airing alerts, and a new tick moves it back to `in_progress`. Labels are per kind; `on_hold` reads "On hold" for every kind.
 	Status *LibraryStatus `json:"status,omitempty"`
@@ -4225,8 +4225,8 @@ type StatsRatings struct {
 	// Distribution Ten counts of those ratings on the 1–10 scale. Index n holds ratings above n up to n + 1, so a half star rounds up: 7.5 counts as 8 (index 7), 1 is index 0, 10 is index 9.
 	Distribution  []int         `json:"distribution"`
 	Highest       *TitleSummary `json:"highest,omitempty"`
-	HighestRating *float32      `json:"highestRating,omitempty"`
-	Mean          *float32      `json:"mean,omitempty"`
+	HighestRating *float64      `json:"highestRating,omitempty"`
+	Mean          *float64      `json:"mean,omitempty"`
 }
 
 // StatsRun defines model for StatsRun.

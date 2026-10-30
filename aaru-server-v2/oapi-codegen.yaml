@@ -16,6 +16,10 @@ output-options:
     - createCaptureImport
   # Whole-second UTC dates on the wire, as the Swift server sent them; see internal/apitime.
   type-mapping:
+    # Swift decoded `type: number` without a format as Double.
+    number:
+      default:
+        type: float64
     string:
       formats:
         date-time:

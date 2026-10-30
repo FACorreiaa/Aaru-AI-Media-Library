@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"aaru-go-api/internal/catalog"
+	"aaru-go-api/internal/concerts"
 	"aaru-go-api/internal/gamification"
 	"context"
 )
@@ -28,5 +29,9 @@ func (s *Server) Workers() []Worker {
 		// Evaluates dirty and never-evaluated users' badges (GamificationWorker).
 		workers = append(workers, gamification.NewWorker(s.Gamification))
 	}
+	// Looks up album artists and matches them to Ticketmaster every half hour (MUS-003).
+	workers = append(workers, &concerts.Worker{
+		Refresher: concerts.NewRefresher(s.Concerts.Store, s.ConcertArtists, s.Concerts.Listing), Log: s.Log,
+	})
 	return workers
 }
