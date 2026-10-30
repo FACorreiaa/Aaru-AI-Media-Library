@@ -315,10 +315,12 @@ func (f *fakeImporter) DetectSource(text string) (core.ImportSource, error) {
 	if strings.HasPrefix(text, "Title,Year") {
 		return core.SourceGenericCSV, nil
 	}
-	return "", errors.New("Aaru could not tell which site this file is from.")
+	return "", errors.New("Aaru could not tell which site this file is from.") //nolint:revive // the user-facing message
 }
 
-func (f *fakeImporter) IsCATCalendar(text string) bool { return strings.HasPrefix(text, "BEGIN:VCALENDAR") }
+func (f *fakeImporter) IsCATCalendar(text string) bool {
+	return strings.HasPrefix(text, "BEGIN:VCALENDAR")
+}
 
 func (f *fakeImporter) CreateFileImport(_ context.Context, _ uuid.UUID, source core.ImportSource, _ *string, _ string) (uuid.UUID, error) {
 	f.created = append(f.created, source)

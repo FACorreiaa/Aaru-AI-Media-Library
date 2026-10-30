@@ -129,8 +129,13 @@ func writeJSON(w http.ResponseWriter, v any) error {
 
 type planResponse planJSON
 
-func (r planResponse) VisitGetPlanResponse(w http.ResponseWriter) error  { return writeJSON(w, planJSON(r)) }
-func (r planResponse) VisitDenyPlanResponse(w http.ResponseWriter) error { return writeJSON(w, planJSON(r)) }
+func (r planResponse) VisitGetPlanResponse(w http.ResponseWriter) error {
+	return writeJSON(w, planJSON(r))
+}
+
+func (r planResponse) VisitDenyPlanResponse(w http.ResponseWriter) error {
+	return writeJSON(w, planJSON(r))
+}
 
 type planListResponse struct {
 	Items []planJSON `json:"items"`

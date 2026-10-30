@@ -66,8 +66,8 @@ func (e *rpcError) Error() string { return e.Message }
 // response is one JSON-RPC answer. A nil id (a parse error) is left out, as Swift's
 // encodeIfPresent did.
 type response struct {
-	JSONRPC string    `json:"jsonrpc"`
+	JSONRPC string          `json:"jsonrpc"`
 	ID      json.RawMessage `json:"id,omitempty"`
-	Result  any       `json:"result,omitempty"`
-	Error   *rpcError `json:"error,omitempty"`
+	Result  any             `json:"result,omitempty"`
+	Error   *rpcError       `json:"error,omitempty"`
 }

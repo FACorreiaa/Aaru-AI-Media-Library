@@ -99,7 +99,7 @@ func wholePtr(n *wholeNumber) *int {
 
 func statusArg(raw *string) (*core.LibraryStatus, error) {
 	if raw == nil {
-		return nil, nil
+		return nil, nil //nolint:nilnil // absent
 	}
 	s := core.LibraryStatus(*raw)
 	if !s.Valid() {
@@ -110,7 +110,7 @@ func statusArg(raw *string) (*core.LibraryStatus, error) {
 
 func mediaTypeArg(raw *string) (*core.MediaType, error) {
 	if raw == nil {
-		return nil, nil
+		return nil, nil //nolint:nilnil // absent
 	}
 	t := core.MediaType(*raw)
 	if !t.Valid() {
@@ -284,17 +284,17 @@ func (p itemPatchArgs) patch() (library.ItemPatch, error) {
 		dto.Status = &st
 	}
 	if p.Clear != nil {
-		clear := make([]api.LibraryItemPatchClear, len(*p.Clear))
+		fields := make([]api.LibraryItemPatchClear, len(*p.Clear))
 		for i, c := range *p.Clear {
 			switch k := api.LibraryItemPatchClear(c); k {
 			case api.LibraryItemPatchClearRating, api.LibraryItemPatchClearNotes, api.LibraryItemPatchClearBookProgress,
 				api.LibraryItemPatchClearMangaProgress:
-				clear[i] = k
+				fields[i] = k
 			default:
 				return library.ItemPatch{}, errArgs
 			}
 		}
-		dto.Clear = &clear
+		dto.Clear = &fields
 	}
 	return ItemPatchFromAPI(dto), nil
 }
