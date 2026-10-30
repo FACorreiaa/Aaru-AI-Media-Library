@@ -3,6 +3,7 @@
 package app
 
 import (
+	"aaru-go-api/internal/auth"
 	"aaru-go-api/internal/billing"
 	"aaru-go-api/internal/config"
 	"aaru-go-api/internal/db"
@@ -10,6 +11,7 @@ import (
 	"aaru-go-api/internal/httpapi"
 	"aaru-go-api/internal/metrics"
 	"aaru-go-api/internal/middleware"
+	"aaru-go-api/internal/oauth"
 	"aaru-go-api/internal/push"
 	"aaru-go-api/internal/telemetry"
 	"context"
@@ -88,6 +90,9 @@ func serve(ctx context.Context, reader *config.Reader, log *slog.Logger) error {
 	if deps.ProductEvents != nil {
 		telemetry.Install(deps.ProductEvents)
 	}
+	outbound := &http.Client{Timeout: 15 * time.Second}
+	deps.Auth, deps.AgentTokens = auth.FromConfig(cfg, pool, outbound)
+	deps.OAuth = oauth.FromConfig(cfg, pool)
 	server := httpapi.New(deps)
 	router := server.Router(reporter)
 
