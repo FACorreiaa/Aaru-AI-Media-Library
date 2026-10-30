@@ -65,15 +65,15 @@ func TestAnOlderAppsDisplayNameIsNoChangeWhenItMatches(t *testing.T) {
 func TestAnAvatarIsAJPEGUnder1MB(t *testing.T) {
 	e := newSocialEnv(t)
 	png := []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}
-	assert.Equal(t, http.StatusUnsupportedMediaType, e.upload(png, "image/jpeg").Code)
-	assert.Equal(t, http.StatusUnsupportedMediaType, e.upload(png, "image/png").Code)
+	assert.Equal(t, http.StatusUnsupportedMediaType, e.uploadAvatar(png, "image/jpeg").Code)
+	assert.Equal(t, http.StatusUnsupportedMediaType, e.uploadAvatar(png, "image/png").Code)
 	huge := append(append([]byte{}, smallJPEG...), make([]byte, social.MaxAvatarBytes)...)
-	tooLarge := e.upload(huge, "image/jpeg")
+	tooLarge := e.uploadAvatar(huge, "image/jpeg")
 	assert.Equal(t, http.StatusRequestEntityTooLarge, tooLarge.Code)
 	assert.Equal(t, "file_too_large", decode[map[string]any](t, tooLarge)["code"])
 	assert.Nil(t, e.get("/v1/me")["avatarUrl"])
 
-	saved := e.upload(smallJPEG, "image/jpeg")
+	saved := e.uploadAvatar(smallJPEG, "image/jpeg")
 	require.Equal(t, http.StatusOK, saved.Code, saved.Body.String())
 	path := decode[map[string]any](t, saved)["avatarUrl"].(string)
 	assert.True(t, strings.HasPrefix(path, "/v1/users/"+strings.ToUpper(e.user.String())+"/avatar?v="), path)
@@ -85,7 +85,7 @@ func TestAnAvatarIsAJPEGUnder1MB(t *testing.T) {
 	assert.Equal(t, "private, max-age=604800", image.Header().Get("Cache-Control"))
 
 	// A new photo is a new URL, so no cache serves the old one.
-	again := e.upload(append(append([]byte{}, smallJPEG...), 5), "image/jpeg")
+	again := e.uploadAvatar(append(append([]byte{}, smallJPEG...), 5), "image/jpeg")
 	assert.NotEqual(t, path, decode[map[string]any](t, again)["avatarUrl"])
 
 	removed := e.send(http.MethodDelete, "/v1/me/avatar", nil)
@@ -97,7 +97,7 @@ func TestAnAvatarIsAJPEGUnder1MB(t *testing.T) {
 func TestAnAvatarShowsToAnyoneSignedInNeverSignedOutBlockedOrOnTheInvitePreview(t *testing.T) {
 	e := newSocialEnv(t)
 	mine := e.claimHandle()
-	path := decode[map[string]any](t, e.upload(smallJPEG, "image/jpeg"))["avatarUrl"].(string)
+	path := decode[map[string]any](t, e.uploadAvatar(smallJPEG, "image/jpeg"))["avatarUrl"].(string)
 	ana := e.friendByRequest(mine)
 
 	assert.Equal(t, http.StatusOK, e.send(http.MethodGet, path, nil, ana.token).Code)
@@ -154,7 +154,7 @@ func TestFriendsSeeTheEmailOnlyWhileShared(t *testing.T) {
 func TestTheExportCarriesNamesAndAvatarAndDeleteTakesTheAvatar(t *testing.T) {
 	e := newSocialEnv(t)
 	e.send(http.MethodPut, "/v1/me/profile", map[string]any{"firstName": "Ana", "lastName": "Lopes"})
-	e.upload(smallJPEG, "image/jpeg")
+	e.uploadAvatar(smallJPEG, "image/jpeg")
 	export := e.get("/v1/me/export")
 	account := export["account"].(map[string]any)
 	assert.Equal(t, "Ana", account["firstName"])

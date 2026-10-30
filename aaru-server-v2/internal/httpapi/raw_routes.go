@@ -14,15 +14,14 @@ var isNoRows = db.IsNoRows
 // imports whose bodies come in several binary types, and every transport that
 // is not in openapi.yaml. Each area registers its own here.
 func (s *Server) registerRawRoutes(e *echo.Echo) {
-	e.POST("/v1/imports/csv", notImplemented)
-	e.POST("/v1/imports/cat", notImplemented)
-	e.POST("/v1/imports/capture", notImplemented)
+	e.POST("/v1/imports/csv", s.createCSVImport)
+	e.POST("/v1/imports/cat", s.createCATImport)
+	e.POST("/v1/imports/capture", s.createCaptureImport)
 	e.GET("/internal/metrics", s.internalMetrics)
 	s.registerOAuthRoutes(e)
 	s.registerMCPRoutes(e)
+	s.registerConnectRedirectRoutes(e)
 }
-
-func notImplemented(echo.Context) error { return errNotImplemented }
 
 // internalMetrics is `GET /internal/metrics` → `{"users": N}` for the board at
 // facorreia.com/apps, called in-cluster with METRICS_SECRET. Bearer only,

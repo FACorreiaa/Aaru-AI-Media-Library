@@ -19,7 +19,9 @@ import (
 	"aaru-go-api/internal/config"
 	"aaru-go-api/internal/db/sqlc"
 	"aaru-go-api/internal/gamification"
+	"aaru-go-api/internal/imports"
 	"aaru-go-api/internal/library"
+	"aaru-go-api/internal/mal"
 	"aaru-go-api/internal/model"
 	"aaru-go-api/internal/oauth"
 	"aaru-go-api/internal/plans"
@@ -32,6 +34,7 @@ import (
 	"aaru-go-api/internal/stats"
 	"aaru-go-api/internal/telemetry"
 	"aaru-go-api/internal/tonight"
+	"aaru-go-api/internal/trakt"
 	"context"
 	"log/slog"
 
@@ -103,6 +106,10 @@ type Deps struct {
 	Social *social.Service
 	// Shares is SHR-002's share links. New builds one over Pool when unset.
 	Shares *shares.Service
+	// Imports is file and account imports, their plans and approval (IMP-*, MUS-004, AG-006).
+	// New builds one over Pool, Catalog and Library when unset; app sets its providers (Trakt,
+	// AniList lists, Stremio, CAT feed, capture, listening history) and Push.
+	Imports *imports.Service
 	// Model is the agent's language model; nil when ANTHROPIC_API_KEY is unset (`@aaru` and
 	// capture reading stay off).
 	Model model.Provider
@@ -112,6 +119,12 @@ type Deps struct {
 	// AgentImports is what MCP's plan_import needs from the imports area; nil until imports wires
 	// it, and plan_import answers that it could not finish.
 	AgentImports agent.Importer
+	// TraktConnect is Trakt connect (IMP-002). New builds one with Trakt off (connect answers 503)
+	// when unset; app sets its Settings and API when TRAKT_CLIENT_ID is set.
+	TraktConnect *trakt.ConnectService
+	// MALConnect is MyAnimeList connect (SCR-005). New builds one with MAL off when unset; app sets
+	// its Settings and API when MAL_CLIENT_ID is set, which also starts the sync worker.
+	MALConnect *mal.ConnectService
 }
 
 // Server implements api.StrictServerInterface.
@@ -151,6 +164,18 @@ func New(deps Deps) *Server {
 				return tonight.AcceptPicks(ctx, q, user, items)
 			}
 		}
+	}
+	if deps.Imports == nil && deps.Pool != nil && deps.Catalog != nil && deps.Library != nil {
+		deps.Imports = imports.NewService(imports.NewStore(deps.Pool), deps.Catalog, deps.Library.Store, deps.Gamification, deps.Log)
+		if deps.Push != nil {
+			deps.Imports.Push = deps.Push
+		}
+	}
+	if deps.TraktConnect == nil && deps.Pool != nil {
+		deps.TraktConnect = &trakt.ConnectService{Store: trakt.NewStore(deps.Pool)}
+	}
+	if deps.MALConnect == nil && deps.Pool != nil {
+		deps.MALConnect = &mal.ConnectService{Store: mal.NewStore(deps.Pool)}
 	}
 	if deps.Schedule == nil && deps.Pool != nil {
 		deps.Schedule = schedule.New(deps.Pool)

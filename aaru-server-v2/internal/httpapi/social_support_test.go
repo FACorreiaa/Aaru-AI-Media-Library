@@ -127,8 +127,8 @@ func (e *libEnv) userWithEmail(provider, email string) string {
 	return bearer
 }
 
-// upload sends raw bytes as the avatar.
-func (e *libEnv) upload(body []byte, contentType string, bearer ...string) *httptest.ResponseRecorder {
+// uploadAvatar sends raw bytes as the avatar.
+func (e *libEnv) uploadAvatar(body []byte, contentType string, bearer ...string) *httptest.ResponseRecorder {
 	e.t.Helper()
 	tok := e.bearer
 	if len(bearer) > 0 {
