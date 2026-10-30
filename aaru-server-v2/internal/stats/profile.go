@@ -54,9 +54,9 @@ func (c *Counts) add(status core.LibraryStatus) {
 
 // ProfileStats is GAM-006b: all-time numbers for the profile, from the user's own library.
 type ProfileStats struct {
-	MemberSince                             *time.Time
+	MemberSince                                *time.Time
 	EpisodesWatched, MinutesWatched, PagesRead int
-	Shows, Anime, Movies, Books             Counts
+	Shows, Anime, Movies, Books                Counts
 	// ByKind is movie, show, anime and book; Finished is the finished count.
 	ByKind      []KindTotals
 	TopGenres   []GenreTime

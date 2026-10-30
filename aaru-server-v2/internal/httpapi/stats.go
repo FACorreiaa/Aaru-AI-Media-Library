@@ -163,7 +163,7 @@ func musicDTO(m stats.ListenSummary) *api.StatsMusic {
 		out.TopArtist = &struct {
 			Artist   string  `json:"artist"`
 			Count    int     `json:"count"`
-			CoverUrl *string `json:"coverUrl,omitempty"`
+			CoverUrl *string `json:"coverUrl,omitempty"` //nolint:revive // the generated StatsMusic field
 			Minutes  int     `json:"minutes"`
 		}{Artist: top.Artist, Count: top.Count, Minutes: int(top.DurationMs / 60000)}
 		if top.ReleaseGroupMBID != nil {

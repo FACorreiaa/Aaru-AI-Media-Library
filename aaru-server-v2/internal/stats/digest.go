@@ -35,9 +35,9 @@ type Activity struct {
 
 // Totals are a period's sums.
 type Totals struct {
-	EpisodesWatched, MinutesWatched, ActiveDays                          int
-	MoviesFinished, ShowsFinished, AnimeFinished, BooksFinished          int
-	AlbumsFinished, MangaFinished                                        int
+	EpisodesWatched, MinutesWatched, ActiveDays                 int
+	MoviesFinished, ShowsFinished, AnimeFinished, BooksFinished int
+	AlbumsFinished, MangaFinished                               int
 }
 
 // Bucket is one month, day or year of a period.
@@ -99,7 +99,7 @@ type Moment struct {
 
 // GenreTime is GAM-006e: time spent in one genre, and how many titles carried it.
 type GenreTime struct {
-	Name           string
+	Name            string
 	Minutes, Titles int
 }
 

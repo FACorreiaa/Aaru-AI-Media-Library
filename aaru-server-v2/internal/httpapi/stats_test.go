@@ -214,7 +214,7 @@ func TestStatsRestoredTicksAreNotActivity(t *testing.T) {
 	// Undoing a delete restores the tick with its date unknown.
 	item := e.item(e.user, e.show("Lost", "ended"), "in_progress", nil, nil)
 	e.tick(item, 1, 1, time.Now(), false)
-	assert.Equal(t, 0, e.totals("/v1/me/stats?year="+strconv.Itoa(time.Now().UTC().Year()))["episodesWatched"])
+	assert.Equal(t, 0, e.totals("/v1/me/stats?year=" + strconv.Itoa(time.Now().UTC().Year()))["episodesWatched"])
 }
 
 func TestStatsRolling(t *testing.T) {
