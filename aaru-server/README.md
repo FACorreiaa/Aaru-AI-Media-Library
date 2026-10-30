@@ -1,4 +1,10 @@
-# aaru-server
+# aaru-server (archived)
+
+> **Archived.** The Aaru API is now [`aaru-server-v2`](../aaru-server-v2) (Go: echo, pgx, sqlc,
+> goose), a 1:1 port of this server. Add no code here. This package is kept for two things only:
+> `Sources/AppAPI/openapi.yaml`, the one spec every client and the Go server generate from, and
+> the `swift-openapi-generator` that `scripts/generate-api-client.sh` runs for `aaru-api`. Its
+> Swift sources stay as the reference the port was made from; CI no longer builds or tests them.
 
 The Aaru API. Hummingbird 2, Swift 6, PostgreSQL. It owns every rule: auth, the user's
 library and progress, catalog search, lists and shelves, imports, the calendar and Up Next,
