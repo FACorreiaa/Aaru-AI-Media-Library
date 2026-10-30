@@ -19,14 +19,6 @@ func (s *Server) CreateListenBrainzImport(context.Context, api.CreateListenBrain
 	return nil, errNotImplemented
 }
 
-func (s *Server) StartStremioLink(context.Context, api.StartStremioLinkRequestObject) (api.StartStremioLinkResponseObject, error) {
-	return nil, errNotImplemented
-}
-
-func (s *Server) PollStremioLink(context.Context, api.PollStremioLinkRequestObject) (api.PollStremioLinkResponseObject, error) {
-	return nil, errNotImplemented
-}
-
 func (s *Server) ConnectTrakt(context.Context, api.ConnectTraktRequestObject) (api.ConnectTraktResponseObject, error) {
 	return nil, errNotImplemented
 }
