@@ -58,7 +58,7 @@ RETURNING points;
 
 -- name: GamificationItemTitles :many
 SELECT li.id AS item_id, t.id AS title_id, t.type FROM library_items li JOIN titles t ON t.id = li.title_id
-WHERE li.id = ANY(sqlc.arg(items)::uuid[]);
+WHERE li.id = ANY(sqlc.arg(item_ids)::uuid[]);
 
 -- name: GamificationSeasonComplete :one
 -- Every aired regular episode of the season is ticked.

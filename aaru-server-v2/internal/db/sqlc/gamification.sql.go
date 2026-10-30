@@ -413,8 +413,8 @@ type GamificationItemTitlesRow struct {
 	Type    string
 }
 
-func (q *Queries) GamificationItemTitles(ctx context.Context, items []uuid.UUID) ([]GamificationItemTitlesRow, error) {
-	rows, err := q.db.Query(ctx, gamificationItemTitles, items)
+func (q *Queries) GamificationItemTitles(ctx context.Context, itemIds []uuid.UUID) ([]GamificationItemTitlesRow, error) {
+	rows, err := q.db.Query(ctx, gamificationItemTitles, itemIds)
 	if err != nil {
 		return nil, err
 	}
