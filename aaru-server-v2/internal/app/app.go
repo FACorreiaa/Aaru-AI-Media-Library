@@ -5,6 +5,7 @@ package app
 import (
 	"aaru-go-api/internal/auth"
 	"aaru-go-api/internal/billing"
+	"aaru-go-api/internal/catalog"
 	"aaru-go-api/internal/config"
 	"aaru-go-api/internal/db"
 	"aaru-go-api/internal/db/sqlc"
@@ -12,6 +13,7 @@ import (
 	"aaru-go-api/internal/metrics"
 	"aaru-go-api/internal/middleware"
 	"aaru-go-api/internal/oauth"
+	"aaru-go-api/internal/provider"
 	"aaru-go-api/internal/push"
 	"aaru-go-api/internal/telemetry"
 	"context"
@@ -61,9 +63,44 @@ func migrate(ctx context.Context, reader *config.Reader, log *slog.Logger) error
 	return db.Migrate(ctx, pool)
 }
 
-// loadAnimeMappings is CAT-010's `aaru --anime-mappings <path|url|default>`.
-var loadAnimeMappings = func(context.Context, *config.Reader, string, *slog.Logger) error {
-	return errors.New("--anime-mappings is not ported yet")
+// loadAnimeMappings is CAT-010's `aaru --anime-mappings <path|url|default>`: loads
+// Fribb's anime list into `anime_mappings` and exits. Needs only Postgres settings,
+// like `--db-migrate`.
+func loadAnimeMappings(ctx context.Context, reader *config.Reader, source string, log *slog.Logger) error {
+	settings, err := config.LoadPostgres(reader)
+	if err != nil {
+		return err
+	}
+	pool, err := db.Open(ctx, settings)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
+	if err := db.WaitFor(ctx, pool, 10, 3*time.Second, log); err != nil {
+		return err
+	}
+	if source == "" || source == "default" {
+		source = catalog.DefaultAnimeMappingsSource
+	}
+	data, err := catalog.LoadAnimeMappings(ctx, source, catalog.NewAnimeMappingsTransport())
+	if err != nil {
+		return err
+	}
+	mappings, err := catalog.ParseAnimeMappings(data)
+	if err != nil {
+		return err
+	}
+	if err := catalog.NewStore(pool).UpsertMappings(ctx, mappings); err != nil {
+		return err
+	}
+	withTMDB := 0
+	for _, m := range mappings {
+		if m.TMDB != nil {
+			withTMDB++
+		}
+	}
+	log.Info("Anime mappings loaded", "count", len(mappings), "withTMDB", withTMDB)
+	return nil
 }
 
 func serve(ctx context.Context, reader *config.Reader, log *slog.Logger) error {
@@ -93,6 +130,8 @@ func serve(ctx context.Context, reader *config.Reader, log *slog.Logger) error {
 	outbound := &http.Client{Timeout: 15 * time.Second}
 	deps.Auth, deps.AgentTokens = auth.FromConfig(cfg, pool, outbound)
 	deps.OAuth = oauth.FromConfig(cfg, pool)
+	deps.Catalog = catalog.NewKit(pool,
+		catalog.NewProviders(cfg.TMDBAPIKey, cfg.ProviderUserAgent, provider.NewHTTPTransport()), log)
 	server := httpapi.New(deps)
 	router := server.Router(reporter)
 
