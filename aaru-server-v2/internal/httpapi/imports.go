@@ -28,11 +28,11 @@ func (s *Server) ListImports(ctx context.Context, _ api.ListImportsRequestObject
 	if err != nil {
 		return nil, err
 	}
-	items := make([]api.ImportJob, len(jobs))
+	items := make([]importJobJSON, len(jobs))
 	for i, j := range jobs {
-		items[i] = ImportJobDTO(j)
+		items[i] = importJobOut(j)
 	}
-	return api.ListImports200JSONResponse{Items: items}, nil
+	return importListJSON{Items: items}, nil
 }
 
 func (s *Server) GetImport(ctx context.Context, req api.GetImportRequestObject) (api.GetImportResponseObject, error) {
@@ -48,7 +48,7 @@ func (s *Server) GetImport(ctx context.Context, req api.GetImportRequestObject) 
 	for i, r := range rows {
 		out[i] = ImportRowDTO(r)
 	}
-	return api.GetImport200JSONResponse{Job: ImportJobDTO(job), Rows: out}, nil
+	return importDetailJSON{Job: importJobOut(job), Rows: out}, nil
 }
 
 func (s *Server) DeleteImport(ctx context.Context, req api.DeleteImportRequestObject) (api.DeleteImportResponseObject, error) {
@@ -71,7 +71,7 @@ func (s *Server) ApplyImport(ctx context.Context, req api.ApplyImportRequestObje
 	if err != nil {
 		return nil, err
 	}
-	return api.ApplyImport200JSONResponse(ImportJobDTO(job)), nil
+	return importJobOut(job), nil
 }
 
 func (s *Server) ResolveImportRow(ctx context.Context, req api.ResolveImportRowRequestObject) (api.ResolveImportRowResponseObject, error) {
@@ -86,7 +86,7 @@ func (s *Server) ResolveImportRow(ctx context.Context, req api.ResolveImportRowR
 	if err != nil {
 		return nil, err
 	}
-	return api.ResolveImportRow200JSONResponse{Job: ImportJobDTO(job), Row: ImportRowDTO(row)}, nil
+	return importResolvedJSON{Job: importJobOut(job), Row: ImportRowDTO(row)}, nil
 }
 
 func (s *Server) CreateAniListImport(ctx context.Context, req api.CreateAniListImportRequestObject) (api.CreateAniListImportResponseObject, error) {
@@ -281,6 +281,48 @@ func ImportJobDTO(job core.ImportJob) api.ImportJob {
 		CreatedAt: apitime.From(job.CreatedAt), UpdatedAt: apitime.From(job.UpdatedAt),
 		RowsTotal: job.RowsTotal, RowsMatched: job.RowsMatched, ActionId: apiid.PtrOrNil(job.ActionID),
 	}
+}
+
+// importJobJSON is a job as Swift's ImportHandlers wrote it once applied: `actionId` lowercase
+// (`uuidString.lowercased()`), every other id uppercase. The generated type writes it uppercase,
+// so this shadows the field. A job is only given an action by approval, so only the responses
+// that can carry one (list, detail, apply, resolve) use it.
+type importJobJSON struct {
+	api.ImportJob
+	ActionId *string `json:"actionId,omitempty"` //nolint:revive // mirrors the generated field
+}
+
+func importJobOut(job core.ImportJob) importJobJSON {
+	out := importJobJSON{ImportJob: ImportJobDTO(job)}
+	if job.ActionID != nil {
+		id := strings.ToLower(job.ActionID.String())
+		out.ActionId = &id
+	}
+	return out
+}
+
+func (j importJobJSON) VisitApplyImportResponse(w http.ResponseWriter) error { return writeJSON(w, j) }
+
+type importListJSON struct {
+	Items []importJobJSON `json:"items"`
+}
+
+func (l importListJSON) VisitListImportsResponse(w http.ResponseWriter) error { return writeJSON(w, l) }
+
+type importDetailJSON struct {
+	Job  importJobJSON   `json:"job"`
+	Rows []api.ImportRow `json:"rows"`
+}
+
+func (d importDetailJSON) VisitGetImportResponse(w http.ResponseWriter) error { return writeJSON(w, d) }
+
+type importResolvedJSON struct {
+	Job importJobJSON `json:"job"`
+	Row api.ImportRow `json:"row"`
+}
+
+func (r importResolvedJSON) VisitResolveImportRowResponse(w http.ResponseWriter) error {
+	return writeJSON(w, r)
 }
 
 // ImportRowDTO is a planned row on the wire.

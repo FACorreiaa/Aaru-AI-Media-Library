@@ -29,4 +29,6 @@ func buildImports(cfg *config.App, pool *pgxpool.Pool, log *slog.Logger, deps *h
 	// Listening history.
 
 	deps.Imports = svc
+	// MCP's plan_import hands list exports to the same service (AgentTools+Import).
+	deps.AgentImports = imports.AgentImporter{Service: svc}
 }
