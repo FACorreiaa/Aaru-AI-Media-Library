@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"aaru-go-api/internal/catalog"
+	"aaru-go-api/internal/gamification"
 	"context"
 )
 
@@ -22,6 +23,10 @@ func (s *Server) Workers() []Worker {
 	if s.Catalog != nil {
 		// Keeps tracked shows' episodes, genres and book page counts current.
 		workers = append(workers, catalog.NewRefreshWorker(s.Catalog.Refresher, s.Log))
+	}
+	if s.Gamification != nil {
+		// Evaluates dirty and never-evaluated users' badges (GamificationWorker).
+		workers = append(workers, gamification.NewWorker(s.Gamification))
 	}
 	return workers
 }

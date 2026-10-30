@@ -16,6 +16,7 @@ import (
 	"aaru-go-api/internal/catalog"
 	"aaru-go-api/internal/config"
 	"aaru-go-api/internal/db/sqlc"
+	"aaru-go-api/internal/gamification"
 	"aaru-go-api/internal/oauth"
 	"aaru-go-api/internal/push"
 	"aaru-go-api/internal/reqctx"
@@ -59,6 +60,9 @@ type Deps struct {
 	// Catalog is search, title detail, resolution, Discover and the refresh worker
 	// (catalog.NewKit). Other areas resolve refs through Catalog.Resolver().
 	Catalog *catalog.Kit
+	// Gamification is points, streaks, badges and the board (GAM-001…005). New builds one over
+	// Pool when unset. Library, social, listens, imports and plans call its hooks.
+	Gamification *gamification.Service
 }
 
 // Server implements api.StrictServerInterface.
@@ -69,6 +73,9 @@ type Server struct {
 
 // New builds the handlers.
 func New(deps Deps) *Server {
+	if deps.Gamification == nil && deps.Pool != nil {
+		deps.Gamification = gamification.New(deps.Pool, deps.Log)
+	}
 	return &Server{Deps: deps, q: sqlc.New(deps.Pool)}
 }
 
