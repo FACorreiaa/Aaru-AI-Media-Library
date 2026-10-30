@@ -341,7 +341,7 @@ UPDATE agent_replies SET state = $2, error = $3, locked_until = NULL, updated_at
 -- name: RetryAgentReply :exec
 UPDATE agent_replies SET state = 'queued', error = $2, locked_until = $3, updated_at = $4 WHERE id = $1;
 
--- name: GroupAgentRecordUsage :exec
+-- name: RecordAgentUsage :exec
 INSERT INTO agent_usage (user_id, day, requests, input_tokens, output_tokens, cost_micros)
 VALUES (sqlc.arg(user_id), (sqlc.arg(at)::pg_catalog.timestamptz AT TIME ZONE 'UTC')::date, 1, sqlc.arg(input_tokens),
         sqlc.arg(output_tokens), sqlc.arg(cost_micros))
@@ -350,6 +350,6 @@ ON CONFLICT (user_id, day) DO UPDATE SET requests = agent_usage.requests + 1,
     output_tokens = agent_usage.output_tokens + EXCLUDED.output_tokens,
     cost_micros = agent_usage.cost_micros + EXCLUDED.cost_micros;
 
--- name: GroupAgentUsage :one
+-- name: AgentUsageOn :one
 SELECT requests, input_tokens, output_tokens, cost_micros FROM agent_usage
 WHERE user_id = sqlc.arg(user_id) AND day = (sqlc.arg(at)::pg_catalog.timestamptz AT TIME ZONE 'UTC')::date;

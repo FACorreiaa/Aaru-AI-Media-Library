@@ -41,6 +41,35 @@ func (q *Queries) AddGroupShelfItem(ctx context.Context, arg AddGroupShelfItemPa
 	return title_id, err
 }
 
+const agentUsageOn = `-- name: AgentUsageOn :one
+SELECT requests, input_tokens, output_tokens, cost_micros FROM agent_usage
+WHERE user_id = $1 AND day = ($2::pg_catalog.timestamptz AT TIME ZONE 'UTC')::date
+`
+
+type AgentUsageOnParams struct {
+	UserID uuid.UUID
+	At     time.Time
+}
+
+type AgentUsageOnRow struct {
+	Requests     int32
+	InputTokens  int64
+	OutputTokens int64
+	CostMicros   int64
+}
+
+func (q *Queries) AgentUsageOn(ctx context.Context, arg AgentUsageOnParams) (AgentUsageOnRow, error) {
+	row := q.db.QueryRow(ctx, agentUsageOn, arg.UserID, arg.At)
+	var i AgentUsageOnRow
+	err := row.Scan(
+		&i.Requests,
+		&i.InputTokens,
+		&i.OutputTokens,
+		&i.CostMicros,
+	)
+	return i, err
+}
+
 const claimAgentReply = `-- name: ClaimAgentReply :one
 UPDATE agent_replies SET state = 'running', attempts = attempts + 1,
     locked_until = $1::pg_catalog.timestamptz, updated_at = $2::pg_catalog.timestamptz
@@ -303,64 +332,6 @@ func (q *Queries) GroupAgentLoad(ctx context.Context, arg GroupAgentLoadParams) 
 		&i.GroupHour,
 		&i.UserNoted,
 		&i.GroupNoted,
-	)
-	return i, err
-}
-
-const groupAgentRecordUsage = `-- name: GroupAgentRecordUsage :exec
-INSERT INTO agent_usage (user_id, day, requests, input_tokens, output_tokens, cost_micros)
-VALUES ($1, ($2::pg_catalog.timestamptz AT TIME ZONE 'UTC')::date, 1, $3,
-        $4, $5)
-ON CONFLICT (user_id, day) DO UPDATE SET requests = agent_usage.requests + 1,
-    input_tokens = agent_usage.input_tokens + EXCLUDED.input_tokens,
-    output_tokens = agent_usage.output_tokens + EXCLUDED.output_tokens,
-    cost_micros = agent_usage.cost_micros + EXCLUDED.cost_micros
-`
-
-type GroupAgentRecordUsageParams struct {
-	UserID       uuid.UUID
-	At           time.Time
-	InputTokens  int64
-	OutputTokens int64
-	CostMicros   int64
-}
-
-func (q *Queries) GroupAgentRecordUsage(ctx context.Context, arg GroupAgentRecordUsageParams) error {
-	_, err := q.db.Exec(ctx, groupAgentRecordUsage,
-		arg.UserID,
-		arg.At,
-		arg.InputTokens,
-		arg.OutputTokens,
-		arg.CostMicros,
-	)
-	return err
-}
-
-const groupAgentUsage = `-- name: GroupAgentUsage :one
-SELECT requests, input_tokens, output_tokens, cost_micros FROM agent_usage
-WHERE user_id = $1 AND day = ($2::pg_catalog.timestamptz AT TIME ZONE 'UTC')::date
-`
-
-type GroupAgentUsageParams struct {
-	UserID uuid.UUID
-	At     time.Time
-}
-
-type GroupAgentUsageRow struct {
-	Requests     int32
-	InputTokens  int64
-	OutputTokens int64
-	CostMicros   int64
-}
-
-func (q *Queries) GroupAgentUsage(ctx context.Context, arg GroupAgentUsageParams) (GroupAgentUsageRow, error) {
-	row := q.db.QueryRow(ctx, groupAgentUsage, arg.UserID, arg.At)
-	var i GroupAgentUsageRow
-	err := row.Scan(
-		&i.Requests,
-		&i.InputTokens,
-		&i.OutputTokens,
-		&i.CostMicros,
 	)
 	return i, err
 }
@@ -1531,6 +1502,35 @@ type MarkGroupReadOnJoinParams struct {
 // History before joining is not unread.
 func (q *Queries) MarkGroupReadOnJoin(ctx context.Context, arg MarkGroupReadOnJoinParams) error {
 	_, err := q.db.Exec(ctx, markGroupReadOnJoin, arg.UserID, arg.Now, arg.GroupID)
+	return err
+}
+
+const recordAgentUsage = `-- name: RecordAgentUsage :exec
+INSERT INTO agent_usage (user_id, day, requests, input_tokens, output_tokens, cost_micros)
+VALUES ($1, ($2::pg_catalog.timestamptz AT TIME ZONE 'UTC')::date, 1, $3,
+        $4, $5)
+ON CONFLICT (user_id, day) DO UPDATE SET requests = agent_usage.requests + 1,
+    input_tokens = agent_usage.input_tokens + EXCLUDED.input_tokens,
+    output_tokens = agent_usage.output_tokens + EXCLUDED.output_tokens,
+    cost_micros = agent_usage.cost_micros + EXCLUDED.cost_micros
+`
+
+type RecordAgentUsageParams struct {
+	UserID       uuid.UUID
+	At           time.Time
+	InputTokens  int64
+	OutputTokens int64
+	CostMicros   int64
+}
+
+func (q *Queries) RecordAgentUsage(ctx context.Context, arg RecordAgentUsageParams) error {
+	_, err := q.db.Exec(ctx, recordAgentUsage,
+		arg.UserID,
+		arg.At,
+		arg.InputTokens,
+		arg.OutputTokens,
+		arg.CostMicros,
+	)
 	return err
 }
 

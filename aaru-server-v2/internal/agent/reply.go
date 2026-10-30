@@ -153,11 +153,8 @@ func (s *ReplyService) Answer(ctx context.Context, job Job) error {
 		if err != nil {
 			return err
 		}
-		if err := s.q().GroupAgentRecordUsage(ctx, sqlc.GroupAgentRecordUsageParams{
-			UserID: job.Tagger, At: s.now(), InputTokens: int64(response.InputTokens),
-			OutputTokens: int64(response.OutputTokens), CostMicros: int64(s.Model.Pricing().Micros(response)),
-		}); err != nil {
-			return fmt.Errorf("record agent usage: %w", err)
+		if err := RecordResponse(ctx, s.q(), job.Tagger, s.now(), s.Model, response); err != nil {
+			return err
 		}
 		if response.Stop == model.StopRefusal {
 			reply = RefusalReply
