@@ -75,6 +75,7 @@ func (f Facts) KindsFinished() int {
 // Family groups badges for display.
 type Family string
 
+// The badge families.
 const (
 	FamilyFilms     Family = "films"
 	FamilyShows     Family = "shows"

@@ -127,7 +127,7 @@ func (s store) tickAwards(ctx context.Context, facts *WriteFacts, items map[uuid
 				continue
 			}
 			row, err := s.q.GamificationSeasonComplete(ctx, sqlc.GamificationSeasonCompleteParams{
-				ItemID: item, TitleID: titleID, Season: int32(season),
+				ItemID: item, TitleID: titleID, Season: int32(season), //nolint:gosec // an episode key's season
 			})
 			if err != nil {
 				return nil, fmt.Errorf("season complete: %w", err)

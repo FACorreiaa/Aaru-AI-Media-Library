@@ -15,10 +15,10 @@ import (
 	"github.com/google/uuid"
 )
 
-// FriendReversalWindow: a friendship ended sooner than this loses its points.
+// FriendReversalWindow is how young a friendship must be to lose its points when it ends: a friendship ended sooner than this loses its points.
 const FriendReversalWindow = 7 * 24 * time.Hour
 
-// ListenWindow: only listens from the last day earn points.
+// ListenWindow is how recent a listen must be to earn points: only listens from the last day earn points.
 const ListenWindow = 24 * time.Hour
 
 // Service is points, streaks, badges and the board (GamificationService). The after-write hooks
@@ -617,7 +617,7 @@ func (s *Service) Leaderboard(ctx context.Context, viewer uuid.UUID, requested *
 
 // Events is a page of the ledger, newest first, before an instant (nil: from the newest).
 func (s *Service) Events(ctx context.Context, user uuid.UUID, before *time.Time, limit int) ([]PointsEvent, error) {
-	params := sqlc.GamificationEventsParams{UserID: user, RowLimit: int32(limit)}
+	params := sqlc.GamificationEventsParams{UserID: user, RowLimit: int32(limit)} //nolint:gosec // 1…100
 	if before != nil {
 		params.Before = timestamptz(*before)
 	}

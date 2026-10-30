@@ -15,6 +15,7 @@ import (
 // approved plan (one summary), or the first run over a user's existing library (one summary).
 type Origin string
 
+// The origins.
 const (
 	OriginLive     Origin = "live"
 	OriginBatch    Origin = "batch"
@@ -121,7 +122,7 @@ func (s store) addToTotal(ctx context.Context, userID uuid.UUID, delta int) erro
 	if delta == 0 {
 		return nil
 	}
-	if err := s.q.GamificationAddToTotal(ctx, sqlc.GamificationAddToTotalParams{UserID: userID, TotalPoints: int32(delta)}); err != nil {
+	if err := s.q.GamificationAddToTotal(ctx, sqlc.GamificationAddToTotalParams{UserID: userID, TotalPoints: int32(delta)}); err != nil { //nolint:gosec // a batch of awards
 		return fmt.Errorf("add to total: %w", err)
 	}
 	return nil
@@ -206,7 +207,7 @@ func (s store) award(ctx context.Context, awards []Award, userID uuid.UUID, loc 
 	ids, kinds, points, dueRoots, seqs, titles, actions :=
 		make([]uuid.UUID, n), make([]string, n), make([]int32, n), make([]string, n), make([]int32, n), make([]string, n), make([]string, n)
 	for i, a := range due {
-		ids[i], kinds[i], points[i], dueRoots[i] = uuid.New(), string(a.Kind), int32(a.Points), a.Root
+		ids[i], kinds[i], points[i], dueRoots[i] = uuid.New(), string(a.Kind), int32(a.Points), a.Root //nolint:gosec // at most 1,000
 		seq := int32(1)
 		if event, ok := last[a.Root]; ok {
 			seq = event.Seq + 1
@@ -354,7 +355,7 @@ func (s store) insertBadges(ctx context.Context, due []TierDue, userID uuid.UUID
 	}
 	ids, names, tiers := make([]uuid.UUID, len(due)), make([]string, len(due)), make([]int32, len(due))
 	for i, d := range due {
-		ids[i], names[i], tiers[i] = uuid.New(), d.Badge, int32(d.Tier)
+		ids[i], names[i], tiers[i] = uuid.New(), d.Badge, int32(d.Tier) //nolint:gosec // 1…4
 	}
 	rows, err := s.db.Query(ctx, insertBadgesSQL, userID, now, string(origin), actionID, ids, names, tiers)
 	if err != nil {

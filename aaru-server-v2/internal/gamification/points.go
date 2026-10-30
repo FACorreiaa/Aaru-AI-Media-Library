@@ -21,6 +21,7 @@ import (
 // them is a code change with a test.
 type Kind string
 
+// The kinds, as stored in points_events.kind.
 const (
 	KindEpisode         Kind = "episode"
 	KindMovieFinished   Kind = "movie_finished"
