@@ -6,6 +6,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -126,7 +127,8 @@ func TestAiringAnnouncedOnce(t *testing.T) {
 	got := sender.apns[0]
 	assert.Equal(t, "Severance", got.m.Title)
 	assert.Equal(t, "S1 E2 · “Episode 2” is out", got.m.Body)
-	assert.Equal(t, e.item.String(), got.m.Payload["libraryItemId"], "a tap opens the library item")
+	assert.Equal(t, strings.ToUpper(e.item.String()), got.m.Payload["libraryItemId"], "a tap opens the library item")
+	assert.Equal(t, strings.ToUpper(e.title.String()), got.m.Payload["titleId"])
 	assert.Equal(t, live, got.d.Token)
 	devices, err := e.svc.Devices(e.ctx, e.user)
 	require.NoError(t, err)
@@ -159,7 +161,7 @@ func TestAiringReachesABrowserOnlyUser(t *testing.T) {
 	assert.Equal(t, 1, sent)
 	require.Len(t, web.web, 1)
 	assert.Equal(t, live, web.web[0].s.Endpoint)
-	assert.Equal(t, e.item.String(), web.web[0].m.Payload["libraryItemId"])
+	assert.Equal(t, strings.ToUpper(e.item.String()), web.web[0].m.Payload["libraryItemId"])
 	subs, err := e.svc.WebSubscriptions(e.ctx, e.user)
 	require.NoError(t, err)
 	require.Len(t, subs, 1)
