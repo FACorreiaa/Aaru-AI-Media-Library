@@ -32,7 +32,7 @@ func (e *libEnv) uploadJob(path, contentType string, body []byte) string {
 }
 
 // runImports runs the signed-in user's queued import jobs until none is left.
-func (e *libEnv) runImports() {
+func (e *libEnv) runImports() { //nolint:unused // shared by the area's flow tests
 	e.t.Helper()
 	for {
 		worked, err := e.server.Imports.RunNext(context.Background(), &e.user)
