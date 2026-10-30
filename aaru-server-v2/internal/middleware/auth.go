@@ -38,6 +38,8 @@ var PublicPaths = map[string]bool{
 	"/v1/scrobble/stop":  true,
 	// App Store Server Notifications: Apple's signature is the authentication (BIL-003).
 	"/v1/billing/apple/notifications": true,
+	// The realtime socket signs in by bearer token or by a browser's single-use ticket itself.
+	"/v1/ws": true,
 }
 
 // IsPublic is the fixed public routes plus an invite's or a share's preview

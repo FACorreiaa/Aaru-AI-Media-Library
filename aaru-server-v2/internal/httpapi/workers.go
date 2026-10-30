@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"aaru-go-api/internal/agent"
 	"aaru-go-api/internal/capture"
 	"aaru-go-api/internal/catalog"
 	"aaru-go-api/internal/concerts"
@@ -59,6 +60,13 @@ func (s *Server) Workers() []Worker {
 			notifier.APNs, notifier.Web = s.Push.APNs, s.Push.Web
 		}
 		workers = append(workers, schedule.NewAiringWorker(notifier, s.Log))
+	}
+	if s.Model != nil && s.Groups != nil {
+		// Answers queued `@aaru` mentions (GRP-011), AGENT_REPLY_WORKERS loops on a leased queue.
+		workers = append(workers, &agent.ReplyWorker{
+			Replies: &agent.ReplyService{Groups: s.Groups, Catalog: s.Catalog, Library: s.Library, Model: s.Model},
+			Log:     s.Log, Workers: s.Config.Workers.AgentReplies,
+		})
 	}
 	return workers
 }

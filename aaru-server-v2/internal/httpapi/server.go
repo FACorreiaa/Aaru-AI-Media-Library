@@ -14,11 +14,13 @@ import (
 	"aaru-go-api/internal/apperr"
 	"aaru-go-api/internal/auth"
 	"aaru-go-api/internal/billing"
+	"aaru-go-api/internal/boards"
 	"aaru-go-api/internal/catalog"
 	"aaru-go-api/internal/concerts"
 	"aaru-go-api/internal/config"
 	"aaru-go-api/internal/db/sqlc"
 	"aaru-go-api/internal/gamification"
+	"aaru-go-api/internal/groups"
 	"aaru-go-api/internal/imports"
 	"aaru-go-api/internal/library"
 	"aaru-go-api/internal/mal"
@@ -26,6 +28,7 @@ import (
 	"aaru-go-api/internal/oauth"
 	"aaru-go-api/internal/plans"
 	"aaru-go-api/internal/push"
+	"aaru-go-api/internal/realtime"
 	"aaru-go-api/internal/reqctx"
 	"aaru-go-api/internal/schedule"
 	"aaru-go-api/internal/shares"
@@ -100,6 +103,13 @@ type Deps struct {
 	Schedule *schedule.Service
 	// Tonight is the Tonight strip (AG-005). New builds one over Schedule when unset.
 	Tonight *tonight.Service
+	// Boards is the friends-only Board (BOARD-001). New builds one over Pool, Catalog and Library.
+	Boards *boards.Service
+	// Realtime is the `/v1/ws` hub: open sockets and browser tickets (GRP-006). New builds one.
+	Realtime *realtime.Hub
+	// Groups is groups, channels, messages, watch parties and `@aaru` mentions (GRP-001…013). New
+	// builds one over Pool, Catalog and Library when unset, publishing to Realtime.
+	Groups *groups.Service
 	// Social is handles, friends, blocks, avatars, friend profiles and activity, invites,
 	// reactions, recommendations and favorites (P4). New builds one over Pool when unset; groups
 	// and boards read the graph through Social.Store (see package social).
@@ -177,11 +187,28 @@ func New(deps Deps) *Server {
 	if deps.MALConnect == nil && deps.Pool != nil {
 		deps.MALConnect = &mal.ConnectService{Store: mal.NewStore(deps.Pool)}
 	}
+	if deps.Boards == nil && deps.Pool != nil && deps.Library != nil && deps.Catalog != nil {
+		deps.Boards = boards.New(q, deps.Catalog.Resolver(), deps.Library)
+	}
 	if deps.Schedule == nil && deps.Pool != nil {
 		deps.Schedule = schedule.New(deps.Pool)
 	}
 	if deps.Tonight == nil && deps.Schedule != nil {
 		deps.Tonight = tonight.New(sqlc.New(deps.Pool), deps.Schedule)
+	}
+	if deps.Realtime == nil {
+		deps.Realtime = realtime.NewHub(nil, deps.Log)
+	}
+	if deps.Realtime.Frame == nil {
+		deps.Realtime.Frame = RealtimeFrame
+	}
+	if deps.Groups == nil && deps.Pool != nil && deps.Catalog != nil && deps.Library != nil {
+		deps.Groups = groups.New(groups.NewStore(deps.Pool), deps.Catalog, deps.Library, deps.Gamification, deps.Log)
+		deps.Groups.Events = deps.Realtime
+		deps.Groups.AgentAvailable = deps.Model != nil
+		if deps.Push != nil {
+			deps.Groups.Push = deps.Push
+		}
 	}
 	if deps.Plans == nil && deps.Pool != nil && deps.Library != nil {
 		deps.Plans = plans.NewService(deps.Pool, deps.Library, deps.Push, deps.Gamification, deps.Log)
