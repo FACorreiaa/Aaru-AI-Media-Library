@@ -39,7 +39,8 @@ func (s *Service) RegisterDevice(ctx context.Context, userID uuid.UUID, token st
 	if len(token) < 32 || len(token) > 200 || !isHex(token) {
 		return &apperr.Error{
 			Status: http.StatusUnprocessableEntity, Code: "validation_failed",
-			Message: "That is not an APNs device token.", Details: map[string]string{"token": "Hex, as the device gave it."},
+			Message: "That is not an APNs device token.",
+			Details: map[string]string{"token": "Hex, as the device gave it."}, //nolint:gosec // a field name, not a credential
 		}
 	}
 	if !AllowedTopics[bundleID] {

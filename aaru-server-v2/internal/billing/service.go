@@ -29,7 +29,7 @@ type Entitlement struct {
 	SignedAt time.Time
 }
 
-// IsActive: not revoked and not expired at now.
+// IsActive says it is neither revoked nor expired at now.
 func (e Entitlement) IsActive(now time.Time) bool {
 	return e.RevokedAt == nil && (e.ExpiresAt == nil || e.ExpiresAt.After(now))
 }
@@ -42,7 +42,7 @@ const (
 	Inserted Write = iota + 1
 	// Updated replaced an older state.
 	Updated
-	// Stale: the stored state was signed later; nothing changed.
+	// Stale means the stored state was signed later; nothing changed.
 	Stale
 )
 
@@ -51,7 +51,7 @@ type State struct {
 	Plus         *Entitlement
 	CapturesUsed int
 	// CaptureLimit is nil on Plus: the monthly limit is lifted (a fair-use cap per day still applies).
-	CaptureLimit     *int
+	CaptureLimit    *int
 	CapturesResetAt time.Time
 }
 

@@ -143,10 +143,9 @@ func serve(ctx context.Context, reader *config.Reader, log *slog.Logger) error {
 // configured or not parseable), the fan-out, and the App Store verifier (App+build.swift).
 func buildPushAndBilling(cfg *config.App, pool *pgxpool.Pool, log *slog.Logger, deps *httpapi.Deps) error {
 	fanout := &push.UserPush{Q: sqlc.New(pool), Log: log}
-	switch {
-	case cfg.Push == nil:
+	if cfg.Push == nil {
 		log.Info("Push disabled: APNS_PRIVATE_KEY is not set")
-	default:
+	} else {
 		sender, err := push.NewAPNSSender(push.APNSSettings{KeyID: cfg.Push.KeyID, TeamID: cfg.Push.TeamID, PrivateKeyPEM: cfg.Push.PrivateKeyPEM}, nil)
 		if err != nil {
 			log.Error("Push disabled: APNS_PRIVATE_KEY is not a valid .p8 key")
@@ -155,10 +154,9 @@ func buildPushAndBilling(cfg *config.App, pool *pgxpool.Pool, log *slog.Logger, 
 			fanout.APNs = sender
 		}
 	}
-	switch {
-	case cfg.VAPIDConfigJSON == nil:
+	if cfg.VAPIDConfigJSON == nil {
 		log.Info("Web push disabled: VAPID_CONFIG is not set")
-	default:
+	} else {
 		sender, err := push.NewVAPIDSender(*cfg.VAPIDConfigJSON, nil, log)
 		if err != nil {
 			log.Error("Web push disabled: VAPID_CONFIG is not a valid VAPID configuration")

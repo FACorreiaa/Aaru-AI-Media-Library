@@ -419,7 +419,7 @@ func encrypt(message []byte, uaPublic *ecdh.PublicKey, authSecret []byte, asPriv
 	header := make([]byte, 0, 16+4+1+len(asPublic))
 	header = append(header, salt...)
 	header = binary.BigEndian.AppendUint32(header, uint32(len(plaintext)+16)) //nolint:gosec // at most a few KB
-	header = append(header, byte(len(asPublic)))
+	header = append(header, byte(len(asPublic)))                              //nolint:gosec // an uncompressed P-256 key is 65 bytes
 	header = append(header, asPublic...)
 	return gcm.Seal(header, nonce, plaintext, nil), nil
 }

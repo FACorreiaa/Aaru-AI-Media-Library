@@ -169,7 +169,7 @@ func (p *UserPush) Deliver(ctx context.Context, m Message, userID uuid.UUID) (in
 
 // DueAiring is an episode that aired for a user who asked to hear about it, not yet announced.
 type DueAiring struct {
-	UserID uuid.UUID
+	UserID  uuid.UUID
 	TitleID uuid.UUID
 	// LibraryItemID is the user's library item for the show: what a tap on the alert opens.
 	LibraryItemID uuid.UUID

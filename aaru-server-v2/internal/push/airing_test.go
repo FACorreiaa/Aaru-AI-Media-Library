@@ -67,14 +67,14 @@ func deviceToken() string {
 }
 
 type airingEnv struct {
-	pool   *pgxpool.Pool
-	q      *sqlc.Queries
-	user   uuid.UUID
-	title  uuid.UUID
-	item   uuid.UUID
-	optIn  time.Time
-	svc    *Service
-	ctx    context.Context
+	pool    *pgxpool.Pool
+	q       *sqlc.Queries
+	user    uuid.UUID
+	title   uuid.UUID
+	item    uuid.UUID
+	optIn   time.Time
+	svc     *Service
+	ctx     context.Context
 	testing *testing.T
 }
 

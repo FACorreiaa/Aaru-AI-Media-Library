@@ -164,7 +164,7 @@ func (s *APNSSender) post(ctx context.Context, r request, expiredIsDead bool) (O
 	if err != nil {
 		return 0, fmt.Errorf("apns: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	data, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
 	if resp.StatusCode == http.StatusOK {
 		return Sent, nil
