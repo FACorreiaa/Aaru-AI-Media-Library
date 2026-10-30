@@ -1,5 +1,3 @@
-//go:build parity_g1
-
 package httpapi
 
 import (
