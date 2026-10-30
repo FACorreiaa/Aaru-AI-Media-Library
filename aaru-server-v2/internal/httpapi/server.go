@@ -26,6 +26,8 @@ import (
 	"aaru-go-api/internal/push"
 	"aaru-go-api/internal/reqctx"
 	"aaru-go-api/internal/schedule"
+	"aaru-go-api/internal/shares"
+	"aaru-go-api/internal/social"
 	"aaru-go-api/internal/sports"
 	"aaru-go-api/internal/stats"
 	"aaru-go-api/internal/telemetry"
@@ -95,6 +97,12 @@ type Deps struct {
 	Schedule *schedule.Service
 	// Tonight is the Tonight strip (AG-005). New builds one over Schedule when unset.
 	Tonight *tonight.Service
+	// Social is handles, friends, blocks, avatars, friend profiles and activity, invites,
+	// reactions, recommendations and favorites (P4). New builds one over Pool when unset; groups
+	// and boards read the graph through Social.Store (see package social).
+	Social *social.Service
+	// Shares is SHR-002's share links. New builds one over Pool when unset.
+	Shares *shares.Service
 	// Model is the agent's language model; nil when ANTHROPIC_API_KEY is unset (`@aaru` and
 	// capture reading stay off).
 	Model model.Provider
@@ -153,7 +161,26 @@ func New(deps Deps) *Server {
 	if deps.Plans == nil && deps.Pool != nil && deps.Library != nil {
 		deps.Plans = plans.NewService(deps.Pool, deps.Library, deps.Push, deps.Gamification, deps.Log)
 	}
+	if deps.Social == nil && deps.Pool != nil {
+		deps.Social = social.New(social.NewStore(deps.Pool), auth.NewStore(deps.Pool), deps.Catalog, deps.Library,
+			deps.Gamification, webBaseURL(deps.Config))
+	}
+	if deps.Shares == nil && deps.Social != nil {
+		var items *library.Store
+		if deps.Library != nil {
+			items = deps.Library.Store
+		}
+		deps.Shares = shares.New(q, deps.Social, deps.Catalog, items, deps.Sports, deps.Concerts, webBaseURL(deps.Config))
+	}
 	return &Server{Deps: deps, q: q}
+}
+
+// webBaseURL is the web origin invite and share links open on.
+func webBaseURL(cfg *config.App) string {
+	if cfg == nil || cfg.WebBaseURL == nil {
+		return "https://aaruapp.com"
+	}
+	return cfg.WebBaseURL.String()
 }
 
 // currentUser is the signed-in user. The auth middleware already refused

@@ -33,6 +33,29 @@ type OauthClient struct {
 	CreatedAt    time.Time
 }
 
+type Share struct {
+	Code         string
+	SenderID     *uuid.UUID
+	Kind         string
+	TitleID      *uuid.UUID
+	SportEventID *string
+	ConcertID    *string
+	Note         *string
+	CreatedAt    time.Time
+}
+
+type SocialInvite struct {
+	ID         uuid.UUID
+	Code       string
+	InviterID  uuid.UUID
+	TitleID    *uuid.UUID
+	CreatedAt  time.Time
+	ExpiresAt  time.Time
+	RedeemedBy *uuid.UUID
+	RedeemedAt *time.Time
+	RevokedAt  *time.Time
+}
+
 type Title struct {
 	ID                   uuid.UUID
 	Type                 string
