@@ -24,6 +24,7 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -320,7 +321,8 @@ func ValidNote(note *string) (*string, error) {
 	if trimmed == "" {
 		return nil, nil //nolint:nilnil // blank is none
 	}
-	if core.Length(trimmed) > MaxNote {
+	// Swift counted unicode scalars here, as Postgres measures the column.
+	if utf8.RuneCountInString(trimmed) > MaxNote {
 		return nil, Invalid(fmt.Sprintf("A note is at most %d characters.", MaxNote))
 	}
 	return &trimmed, nil
