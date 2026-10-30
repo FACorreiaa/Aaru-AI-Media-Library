@@ -19,6 +19,9 @@ func (s *Server) registerRawRoutes(e *echo.Echo) {
 	e.POST("/v1/imports/capture", notImplemented)
 	e.GET("/internal/metrics", s.internalMetrics)
 	s.registerOAuthRoutes(e)
+	s.registerScrobbleRoutes(e)
+	s.registerListenBrainzRoutes(e)
+	s.registerStremioRoutes(e)
 }
 
 func notImplemented(echo.Context) error { return errNotImplemented }

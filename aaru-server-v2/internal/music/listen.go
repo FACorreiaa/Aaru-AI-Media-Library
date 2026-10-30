@@ -10,12 +10,11 @@
 package music
 
 import (
+	"aaru-go-api/internal/catalog"
 	"net/url"
 	"strings"
 	"time"
 	"unicode/utf8"
-
-	"aaru-go-api/internal/catalog"
 
 	"github.com/google/uuid"
 	"golang.org/x/text/unicode/norm"
@@ -128,7 +127,7 @@ func IsYouTubeID(id string) bool {
 		return false
 	}
 	for _, r := range id {
-		if !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '-' || r == '_') {
+		if (r < 'a' || r > 'z') && (r < 'A' || r > 'Z') && (r < '0' || r > '9') && r != '-' && r != '_' {
 			return false
 		}
 	}

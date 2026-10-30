@@ -34,7 +34,7 @@ const (
 const (
 	// WatchedThreshold is Aaru's own threshold, documented in ARCHITECTURE.md.
 	WatchedThreshold = 80.0
-	// RepeatWindow: a second `stop` for the same item this soon after the first is a repeat, not a rewatch.
+	// RepeatWindow is the rule — a second `stop` for the same item this soon after the first is a repeat, not a rewatch.
 	RepeatWindow = 10 * time.Minute
 )
 

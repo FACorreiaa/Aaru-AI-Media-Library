@@ -18,7 +18,7 @@ const (
 	// StaleGrace is how long past the next expected change the activity may go unheard before it
 	// reads stale.
 	StaleGrace = 30 * time.Minute
-	// EndTimeSlack: an end time moving by more than this (a seek, a duration first known) is a change.
+	// EndTimeSlack is the rule — an end time moving by more than this (a seek, a duration first known) is a change.
 	EndTimeSlack = 60 * time.Second
 )
 

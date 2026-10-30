@@ -17,11 +17,11 @@ import (
 // a session a player never stopped simply stops counting.
 
 const (
-	// PlayingGrace: a playing session lasts until its end plus this, since the player may report late.
+	// PlayingGrace is the rule — a playing session lasts until its end plus this, since the player may report late.
 	PlayingGrace = 10 * time.Minute
-	// UnknownDurationLimit: a playing session with no known duration lasts this long from its last report.
+	// UnknownDurationLimit is the rule — a playing session with no known duration lasts this long from its last report.
 	UnknownDurationLimit = 3 * time.Hour
-	// PausedLimit: a paused session lasts this long from the pause.
+	// PausedLimit is the rule — a paused session lasts this long from the pause.
 	PausedLimit = 30 * time.Minute
 )
 
@@ -62,14 +62,15 @@ func Pick(sessions []OpenSession, now time.Time) *OpenSession {
 // MARK: Plays (SCR-009)
 
 const (
-	// TrackGrace: past its end by this, a track stops counting: the scrobbler sends no stop.
+	// TrackGrace is the rule — past its end by this, a track stops counting: the scrobbler sends no stop.
 	TrackGrace = 2 * time.Minute
-	// UnknownTrackLimit: a track with no length counts this long.
+	// UnknownTrackLimit is the rule — a track with no length counts this long.
 	UnknownTrackLimit = 10 * time.Minute
-	// VideoHeartbeat: a playing video counts this long past its last report, at most: the extension
+	// VideoHeartbeat is the rule — a playing video counts this long past its last report, at most: the extension
 	// reports every few seconds, so a closed tab is gone soon after.
 	VideoHeartbeat = 5 * time.Minute
-	VideoGrace     = 2 * time.Minute
+	// VideoGrace is added past a video's end or heartbeat before it stops counting.
+	VideoGrace = 2 * time.Minute
 	// MaxText cuts text the activity shows: the whole push must stay under 4 KB.
 	MaxText = 80
 )

@@ -157,7 +157,7 @@ func ParseBody(data []byte) (Body, error) {
 	return b, nil
 }
 
-// UnknownDurationMs: without a duration, progress is kept on a 100-second scale: only its percentage matters.
+// UnknownDurationMs is the rule — without a duration, progress is kept on a 100-second scale: only its percentage matters.
 const UnknownDurationMs int64 = 100_000
 
 func runes(s string) int { return utf8.RuneCountInString(s) }
@@ -293,10 +293,10 @@ func (b Body) VideoPlay(action Action, now time.Time) (LivePlay, error) {
 }
 
 const (
-	// HeardAfter: a listen is sent once half the track or 4 minutes has played, whichever comes first,
+	// HeardAfter is the rule — a listen is sent once half the track or 4 minutes has played, whichever comes first,
 	// as ListenBrainz asks of every scrobbler.
 	HeardAfter = 4 * time.Minute
-	// ShortestListen: a video under 30 s is never one.
+	// ShortestListen is the rule — a video under 30 s is never one.
 	ShortestListen = 30 * time.Second
 )
 
