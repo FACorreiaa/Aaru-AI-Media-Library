@@ -13,71 +13,6 @@ import (
 	"github.com/google/uuid"
 )
 
-const exportAvatar = `-- name: ExportAvatar :many
-SELECT image FROM avatars WHERE user_id = $1
-`
-
-// PostgresSocialStore.avatar(_:)
-func (q *Queries) ExportAvatar(ctx context.Context, userID uuid.UUID) ([][]byte, error) {
-	rows, err := q.db.Query(ctx, exportAvatar, userID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := [][]byte{}
-	for rows.Next() {
-		var image []byte
-		if err := rows.Scan(&image); err != nil {
-			return nil, err
-		}
-		items = append(items, image)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const exportBlocked = `-- name: ExportBlocked :many
-SELECT p.user_id, p.handle, u.display_name, u.avatar_version
-FROM social_blocks b JOIN profiles p ON p.user_id = b.blocked_id JOIN users u ON u.id = p.user_id
-WHERE b.blocker_id = $1
-ORDER BY p.handle
-`
-
-type ExportBlockedRow struct {
-	UserID        uuid.UUID
-	Handle        string
-	DisplayName   *string
-	AvatarVersion *int64
-}
-
-// PostgresSocialStore.blocked(by:)
-func (q *Queries) ExportBlocked(ctx context.Context, blockerID uuid.UUID) ([]ExportBlockedRow, error) {
-	rows, err := q.db.Query(ctx, exportBlocked, blockerID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ExportBlockedRow{}
-	for rows.Next() {
-		var i ExportBlockedRow
-		if err := rows.Scan(
-			&i.UserID,
-			&i.Handle,
-			&i.DisplayName,
-			&i.AvatarVersion,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const exportFavorites = `-- name: ExportFavorites :many
 SELECT kind, title_id FROM favorites WHERE user_id = $1 ORDER BY kind, position
 `
@@ -98,48 +33,6 @@ func (q *Queries) ExportFavorites(ctx context.Context, userID uuid.UUID) ([]Expo
 	for rows.Next() {
 		var i ExportFavoritesRow
 		if err := rows.Scan(&i.Kind, &i.TitleID); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const exportFriends = `-- name: ExportFriends :many
-SELECT p.user_id, p.handle, u.display_name, u.avatar_version
-FROM social_friendships f
-JOIN profiles p ON p.user_id = CASE WHEN f.user_low = $1::uuid THEN f.user_high ELSE f.user_low END
-JOIN users u ON u.id = p.user_id
-WHERE f.user_low = $1::uuid OR f.user_high = $1::uuid
-ORDER BY p.handle
-`
-
-type ExportFriendsRow struct {
-	UserID        uuid.UUID
-	Handle        string
-	DisplayName   *string
-	AvatarVersion *int64
-}
-
-// PostgresSocialStore.friends(_:)
-func (q *Queries) ExportFriends(ctx context.Context, userID uuid.UUID) ([]ExportFriendsRow, error) {
-	rows, err := q.db.Query(ctx, exportFriends, userID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ExportFriendsRow{}
-	for rows.Next() {
-		var i ExportFriendsRow
-		if err := rows.Scan(
-			&i.UserID,
-			&i.Handle,
-			&i.DisplayName,
-			&i.AvatarVersion,
-		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -252,62 +145,6 @@ func (q *Queries) ExportListItems(ctx context.Context, listIds []uuid.UUID) ([]E
 	return items, nil
 }
 
-const exportListens = `-- name: ExportListens :many
-SELECT l.id, l.listened_at, l.artist, l.track, l.album, l.duration_ms, l.release_group_mbid,
-       t.id AS album_title_id, l.origin_url, l.client, l.music_service
-FROM listens l
-LEFT JOIN titles t ON t.musicbrainz = l.release_group_mbid
-WHERE l.user_id = $1
-ORDER BY l.listened_at DESC, l.id DESC
-`
-
-type ExportListensRow struct {
-	ID               uuid.UUID
-	ListenedAt       time.Time
-	Artist           string
-	Track            string
-	Album            *string
-	DurationMs       *int32
-	ReleaseGroupMbid *string
-	AlbumTitleID     *uuid.UUID
-	OriginUrl        *string
-	Client           *string
-	MusicService     *string
-}
-
-// PostgresListenStore.listens(userID:before:nil, limit:.max)
-func (q *Queries) ExportListens(ctx context.Context, userID uuid.UUID) ([]ExportListensRow, error) {
-	rows, err := q.db.Query(ctx, exportListens, userID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ExportListensRow{}
-	for rows.Next() {
-		var i ExportListensRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.ListenedAt,
-			&i.Artist,
-			&i.Track,
-			&i.Album,
-			&i.DurationMs,
-			&i.ReleaseGroupMbid,
-			&i.AlbumTitleID,
-			&i.OriginUrl,
-			&i.Client,
-			&i.MusicService,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const exportLists = `-- name: ExportLists :many
 
 SELECT id, name, created_at FROM lists WHERE user_id = $1 ORDER BY created_at
@@ -319,9 +156,9 @@ type ExportListsRow struct {
 	CreatedAt time.Time
 }
 
-// GET /v1/me/export (AccountExport.swift, ExportHandlers.swift). Each read mirrors the Swift
-// store the export called (lists, shelves, social, groups, listens, favorites); those areas are
-// ported on their own branches, so fold these into their queries after merge.
+// GET /v1/me/export (AccountExport.swift, ExportHandlers.swift): the reads that have no store
+// method of their own. Friends, blocks, the avatar and listens go through the social and music
+// stores.
 // PostgresListStore.lists(userID:)
 func (q *Queries) ExportLists(ctx context.Context, userID uuid.UUID) ([]ExportListsRow, error) {
 	rows, err := q.db.Query(ctx, exportLists, userID)

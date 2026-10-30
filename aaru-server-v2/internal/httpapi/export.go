@@ -4,12 +4,12 @@ import (
 	"aaru-go-api/internal/api"
 	"aaru-go-api/internal/apiid"
 	"aaru-go-api/internal/apitime"
-	"aaru-go-api/internal/catalog"
-	"aaru-go-api/internal/core"
-	"aaru-go-api/internal/db/sqlc"
 	"aaru-go-api/internal/export"
+	"aaru-go-api/internal/music"
+	"aaru-go-api/internal/social"
 	"context"
 	"fmt"
+	"math"
 	"net/url"
 	"strings"
 	"time"
@@ -97,26 +97,20 @@ func (s *Server) exportService() *export.Service {
 func (s *Server) exportExtras(ctx context.Context, svc *export.Service, userID uuid.UUID, out *api.AccountExport) error {
 	g, gctx := errgroup.WithContext(ctx)
 	g.Go(func() error {
-		rows, err := s.q.ExportFriends(gctx, userID)
+		friends, err := social.NewStore(s.Pool).Friends(gctx, userID)
 		if err != nil {
 			return fmt.Errorf("export friends: %w", err)
 		}
-		users := make([]api.SocialUser, 0, len(rows))
-		for _, r := range rows {
-			users = append(users, exportSocialUser(r.UserID, r.Handle, r.DisplayName, r.AvatarVersion))
-		}
+		users := SocialUserDTOs(friends)
 		out.Friends = &users
 		return nil
 	})
 	g.Go(func() error {
-		rows, err := s.q.ExportBlocked(gctx, userID)
+		blocked, err := social.NewStore(s.Pool).Blocked(gctx, userID)
 		if err != nil {
 			return fmt.Errorf("export blocked: %w", err)
 		}
-		users := make([]api.SocialUser, 0, len(rows))
-		for _, r := range rows {
-			users = append(users, exportSocialUser(r.UserID, r.Handle, r.DisplayName, r.AvatarVersion))
-		}
+		users := SocialUserDTOs(blocked)
 		out.Blocked = &users
 		return nil
 	})
@@ -165,13 +159,14 @@ func (s *Server) exportExtras(ctx context.Context, svc *export.Service, userID u
 		return nil
 	})
 	g.Go(func() error {
-		rows, err := s.q.ExportListens(gctx, userID)
+		// Every listen, newest first (PostgresListenStore.listens(userID:before:nil, limit:.max)).
+		rows, err := music.NewStore(s.Pool).Listens(gctx, userID, nil, math.MaxInt64)
 		if err != nil {
 			return fmt.Errorf("export listens: %w", err)
 		}
 		listens := make([]api.Listen, 0, len(rows))
 		for _, r := range rows {
-			listens = append(listens, exportListen(r))
+			listens = append(listens, listenDTO(r))
 		}
 		out.Listens = &listens
 		return nil
@@ -221,40 +216,6 @@ func (s *Server) exportExtras(ctx context.Context, svc *export.Service, userID u
 		return nil
 	})
 	return g.Wait()
-}
-
-func exportSocialUser(id uuid.UUID, handle string, displayName *string, avatarVersion *int64) api.SocialUser {
-	u := api.SocialUser{UserId: apiid.From(id), Handle: handle, DisplayName: displayName}
-	if avatarVersion != nil {
-		path := AvatarPath(id, *avatarVersion)
-		u.AvatarUrl = &path
-	}
-	return u
-}
-
-// exportListen is Components.Schemas.Listen(Listen). Its id is lowercase, as Swift wrote it.
-// TODO: fold into listen.go after merge with the listens area.
-func exportListen(r sqlc.ExportListensRow) api.Listen {
-	l := api.Listen{
-		Id: strings.ToLower(r.ID.String()), ListenedAt: apitime.From(r.ListenedAt), Artist: r.Artist, Track: r.Track,
-		Album: r.Album, OriginUrl: r.OriginUrl, Client: r.Client, MusicService: r.MusicService,
-	}
-	if r.DurationMs != nil {
-		ms := int(*r.DurationMs)
-		l.DurationMs = &ms
-	}
-	if mbid := r.ReleaseGroupMbid; mbid != nil {
-		if cover := catalog.MusicBrainzCoverURL(*mbid); validURL(*cover) {
-			l.CoverUrl = cover
-		}
-		mb := *mbid
-		ref := api.MediaRef{
-			Type: api.MediaType(core.MediaAlbum), Ids: &api.ExternalIds{Musicbrainz: &mb}, Title: r.Album,
-			TitleId: apiid.PtrOrNil(r.AlbumTitleID),
-		}
-		l.AlbumRef = &ref
-	}
-	return l
 }
 
 // validURL is Foundation's URL(string:) refusing a string with spaces or other bare characters.

@@ -107,7 +107,10 @@ func listenDTO(l music.Listen) api.Listen {
 		Album: l.Album, DurationMs: l.DurationMs, OriginUrl: l.OriginURL, Client: l.Client, MusicService: l.MusicService,
 	}
 	if l.ReleaseGroupMBID != nil {
-		out.CoverUrl = catalog.MusicBrainzCoverURL(*l.ReleaseGroupMBID)
+		// Swift's URL(string:) refuses a malformed cover link; the field is then left out.
+		if cover := catalog.MusicBrainzCoverURL(*l.ReleaseGroupMBID); validURL(*cover) {
+			out.CoverUrl = cover
+		}
 		out.AlbumRef = albumRef(*l.ReleaseGroupMBID, l.AlbumTitleID, l.Album)
 	}
 	return out

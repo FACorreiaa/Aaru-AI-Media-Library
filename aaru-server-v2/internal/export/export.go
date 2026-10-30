@@ -11,6 +11,7 @@ import (
 	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/db/sqlc"
 	"aaru-go-api/internal/schedule"
+	"aaru-go-api/internal/social"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -260,14 +261,11 @@ func (s *Service) Favorites(ctx context.Context, userID uuid.UUID) (map[string][
 
 // Avatar is the user's avatar JPEG, nil without one.
 func (s *Service) Avatar(ctx context.Context, userID uuid.UUID) ([]byte, error) {
-	rows, err := s.Q.ExportAvatar(ctx, userID)
+	image, err := (&social.Store{Q: s.Q}).Avatar(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("export avatar: %w", err)
 	}
-	if len(rows) == 0 {
-		return nil, nil
-	}
-	return rows[0], nil
+	return image, nil
 }
 
 // MARK: CSV
