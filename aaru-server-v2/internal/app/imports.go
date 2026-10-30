@@ -22,7 +22,8 @@ func buildImports(cfg *config.App, pool *pgxpool.Pool, log *slog.Logger, deps *h
 	_ = cfg
 	// Parsers: CAT feed, AniList lists.
 
-	// Trakt.
+	// Trakt (IMP-002/003) and MyAnimeList (SCR-005/SCR-010): off without their client ids.
+	buildConnections(cfg, pool, log, deps, svc)
 
 	// Stremio: its account API and Cinemeta (makeStremioAccount), always on as in Swift.
 	svc.Stremio = stremioapi.NewAccount(provider.NewHTTPTransport())

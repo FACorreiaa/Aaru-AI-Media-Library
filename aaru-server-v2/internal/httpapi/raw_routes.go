@@ -20,6 +20,7 @@ func (s *Server) registerRawRoutes(e *echo.Echo) {
 	e.GET("/internal/metrics", s.internalMetrics)
 	s.registerOAuthRoutes(e)
 	s.registerMCPRoutes(e)
+	s.registerConnectRedirectRoutes(e)
 }
 
 // internalMetrics is `GET /internal/metrics` → `{"users": N}` for the board at
