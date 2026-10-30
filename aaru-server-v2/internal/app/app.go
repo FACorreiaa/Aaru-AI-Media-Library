@@ -11,6 +11,7 @@ import (
 	"aaru-go-api/internal/db"
 	"aaru-go-api/internal/db/sqlc"
 	"aaru-go-api/internal/gamification"
+	"aaru-go-api/internal/library"
 	"aaru-go-api/internal/httpapi"
 	"aaru-go-api/internal/metrics"
 	"aaru-go-api/internal/middleware"
@@ -139,6 +140,9 @@ func serve(ctx context.Context, reader *config.Reader, log *slog.Logger) error {
 		deps.ConcertArtists = concertArtists{deps.Catalog.MusicBrainz}
 	}
 	deps.Gamification = gamification.New(pool, log)
+	deps.Library = library.NewService(library.NewStore(pool), deps.Catalog, deps.Gamification, log)
+	deps.Lists = &library.Lists{Library: deps.Library}
+	deps.Shelves = &library.Shelves{Library: deps.Library}
 	deps.Concerts, deps.Sports = buildConcertsAndSports(cfg, pool, provider.NewHTTPTransport())
 	server := httpapi.New(deps)
 	router := server.Router(reporter)

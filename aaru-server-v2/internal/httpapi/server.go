@@ -18,6 +18,7 @@ import (
 	"aaru-go-api/internal/config"
 	"aaru-go-api/internal/db/sqlc"
 	"aaru-go-api/internal/gamification"
+	"aaru-go-api/internal/library"
 	"aaru-go-api/internal/oauth"
 	"aaru-go-api/internal/push"
 	"aaru-go-api/internal/reqctx"
@@ -74,6 +75,12 @@ type Deps struct {
 	// Sports is SPT-001…002 (sports off when its Listing is nil). New builds one with sports
 	// off when it is nil.
 	Sports *sports.Service
+	// Library is items, progress, the journal and undo (library.NewService); Lists and Shelves
+	// sit on it. New builds them over Pool and Catalog when unset. Imports, scrobbles, plans,
+	// groups, boards and invites write through Library.
+	Library *library.Service
+	Lists   *library.Lists
+	Shelves *library.Shelves
 }
 
 // Server implements api.StrictServerInterface.
@@ -93,6 +100,17 @@ func New(deps Deps) *Server {
 	}
 	if deps.Sports == nil {
 		deps.Sports = sports.NewService(&sports.Store{Q: q, Pool: deps.Pool}, nil)
+	}
+	if deps.Library == nil && deps.Pool != nil && deps.Catalog != nil {
+		deps.Library = library.NewService(library.NewStore(deps.Pool), deps.Catalog, deps.Gamification, deps.Log)
+	}
+	if deps.Library != nil {
+		if deps.Lists == nil {
+			deps.Lists = &library.Lists{Library: deps.Library}
+		}
+		if deps.Shelves == nil {
+			deps.Shelves = &library.Shelves{Library: deps.Library}
+		}
 	}
 	return &Server{Deps: deps, q: q}
 }
