@@ -39,6 +39,8 @@ func catalogHarness(t *testing.T) (*harness, *catalogStubs) {
 			_, _ = w.Write([]byte(`{"results":[{"id":603,"title":"The Matrix","release_date":"1999-03-30","poster_path":"/p.jpg"}]}`))
 		case "/search/multi":
 			_, _ = w.Write([]byte(`{"results":[{"id":95396,"media_type":"tv","name":"Severance","first_air_date":"2022-02-17"}]}`))
+		case "/search/tv":
+			_, _ = w.Write([]byte(`{"results":[{"id":95396,"name":"Severance","first_air_date":"2022-02-17"}]}`))
 		case "/movie/603":
 			_, _ = w.Write([]byte(`{"id":603,"title":"The Matrix","release_date":"1999-03-30","runtime":136,"poster_path":"/p.jpg",
 			 "genres":[{"id":28,"name":"Action"}],"external_ids":{"imdb_id":"tt0133093"}}`))
@@ -94,7 +96,9 @@ func TestSearchRoute(t *testing.T) {
 	assert.Contains(t, body, `"tmdb":"603"`)
 	assert.Contains(t, body, `"posterUrl":"https://image.tmdb.org/t/p/w500/p.jpg"`)
 	assert.NotContains(t, body, "poster_path")
+	assert.NotContains(t, body, "release_date")
 	assert.NotContains(t, body, `"status"`, "no library fields on a hit")
+	assert.NotContains(t, body, `"rating"`, "no library fields on a hit")
 
 	assert.Equal(t, http.StatusBadRequest, h.do(http.MethodGet, "/v1/search?q=matrix", bearer, nil).Code, "type is required")
 	short := h.do(http.MethodGet, "/v1/search?q=%20&type=movie", bearer, nil)
@@ -105,6 +109,8 @@ func TestSearchRoute(t *testing.T) {
 	assert.Equal(t, true, all["incomplete"], "AniList is down")
 	assert.Equal(t, "show", all["items"].([]any)[0].(map[string]any)["type"])
 	assert.Equal(t, catalog.NoticeAniListDown, all["notice"])
+	show := decode[map[string]any](t, h.do(http.MethodGet, "/v1/search?q=severance&type=show", bearer, nil))
+	assert.Equal(t, false, show["incomplete"], "one kind asks TMDB alone: complete")
 
 	stubs.tmdbDown.Store(true)
 	down := h.do(http.MethodGet, "/v1/search?q=matrix&type=movie", bearer, nil)

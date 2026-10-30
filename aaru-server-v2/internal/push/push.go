@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"log/slog"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -244,8 +245,9 @@ func AiringMessage(a DueAiring) Message {
 		Title: a.Title,
 		Body:  body,
 		Payload: map[string]string{
-			"titleId":       a.TitleID.String(),
-			"libraryItemId": a.LibraryItemID.String(),
+			// Uppercase, as Swift's `description` wrote them and as the API returns ids.
+			"titleId":       strings.ToUpper(a.TitleID.String()),
+			"libraryItemId": strings.ToUpper(a.LibraryItemID.String()),
 			"season":        strconv.Itoa(a.Season),
 			"episode":       strconv.Itoa(a.Episode),
 		},

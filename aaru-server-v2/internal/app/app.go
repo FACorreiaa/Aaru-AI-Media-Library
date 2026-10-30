@@ -168,13 +168,8 @@ func serve(ctx context.Context, reader *config.Reader, log *slog.Logger) error {
 		}
 		return nil
 	})
-	var metricsServer *http.Server
-	if cfg.MetricsPort > 0 {
-		metricsServer = &http.Server{
-			Addr: net.JoinHostPort("0.0.0.0", strconv.Itoa(cfg.MetricsPort)), Handler: internalMux(cfg),
-			// A CPU profile or trace streams for its `seconds`; give it room past the 30 s default.
-			ReadHeaderTimeout: 5 * time.Second, WriteTimeout: 2 * time.Minute,
-		}
+	metricsServer := newMetricsServer(cfg)
+	if metricsServer != nil {
 		group.Go(func() error {
 			if err := metricsServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 				return fmt.Errorf("metrics server: %w", err)
@@ -255,6 +250,18 @@ func buildConcertsAndSports(cfg *config.App, pool *pgxpool.Pool, transport provi
 		sportsListing = sports.NewTheSportsDB(*cfg.TheSportsDBAPIKey, transport)
 	}
 	return concertService, sports.NewService(&sports.Store{Q: q, Pool: pool}, sportsListing)
+}
+
+// newMetricsServer is the internal port's listener (METRICS_PORT), or nil when the port is 0.
+func newMetricsServer(cfg *config.App) *http.Server {
+	if cfg.MetricsPort <= 0 {
+		return nil
+	}
+	return &http.Server{
+		Addr: net.JoinHostPort("0.0.0.0", strconv.Itoa(cfg.MetricsPort)), Handler: internalMux(cfg),
+		// A CPU profile or trace streams for its `seconds`; give it room past the 30 s default.
+		ReadHeaderTimeout: 5 * time.Second, WriteTimeout: 2 * time.Minute,
+	}
 }
 
 // makeSentry is the error reporter, or nil (with a notice) when SENTRY_DSN is unset or not a DSN.

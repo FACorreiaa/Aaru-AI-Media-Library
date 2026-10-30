@@ -485,14 +485,13 @@ func TestImportPlansAroundAniListOutage(t *testing.T) {
 	require.NotNil(t, waiting.ErrorSummary)
 	assert.Equal(t, "AniList could not be reached while matching titles.", *waiting.ErrorSummary)
 
-	before := anilist.callCount("hydrate")
 	planned, err := svc.Plan(ctx, rows, env.user, true, nil)
 	require.NoError(t, err)
 	assert.Equal(t, imports.OutcomeCreate, planned[0].Outcome, "a mapped anime resolves through TMDB")
 	assert.Equal(t, imports.OutcomeUnmatched, planned[1].Outcome)
 	require.NotNil(t, planned[1].Reason)
 	assert.Contains(t, *planned[1].Reason, "AniList was not answering")
-	assert.Equal(t, before, anilist.callCount("hydrate"), "rows after the failed batch do not ask again")
+	assert.Zero(t, anilist.callCount("hydrate"), "rows after the failed batch do not ask again")
 }
 
 func TestImportMALBatchedWithProgress(t *testing.T) {

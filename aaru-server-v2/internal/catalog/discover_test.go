@@ -293,6 +293,9 @@ func TestDiscoverMarksTheLibraryAndDropsPosterless(t *testing.T) {
 	rows, err := service.Rows(env.ctx, env.user)
 	require.NoError(t, err)
 	assert.Equal(t, []DiscoverList{ListTVTrending, ListMoviesTrending}, rowLists(rows))
+	// The wire id and kind of each row (GET /v1/discover sends string(List) and List.Kind()).
+	assert.Equal(t, []string{"tv_trending", "movies_trending"}, []string{string(rows[0].List), string(rows[1].List)})
+	assert.Equal(t, []string{"show", "film"}, []string{string(rows[0].List.Kind()), string(rows[1].List.Kind())})
 	require.Len(t, rows[1].Items, 2)
 	assert.Equal(t, itemID, *rows[1].Items[0].LibraryItemID)
 	assert.Nil(t, rows[1].Items[1].LibraryItemID)

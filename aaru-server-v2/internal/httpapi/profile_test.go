@@ -109,6 +109,12 @@ func TestAnAvatarShowsToAnyoneSignedInNeverSignedOutBlockedOrOnTheInvitePreview(
 	require.Len(t, listed, 1)
 	assert.Equal(t, path, listed[0]["avatarUrl"])
 
+	created := e.json(http.MethodPost, "/v1/groups", map[string]any{"name": "Film club"})
+	group := created["group"].(map[string]any)["id"].(string)
+	members := e.get("/v1/groups/" + group)["members"].([]any)
+	require.NotEmpty(t, members)
+	assert.Equal(t, path, members[0].(map[string]any)["user"].(map[string]any)["avatarUrl"])
+
 	code := e.json(http.MethodPost, "/v1/social/invites", map[string]any{})["code"].(string)
 	preview := decode[map[string]any](t, e.send(http.MethodGet, "/v1/invites/"+code, nil, signedOut))
 	inviter := preview["inviter"].(map[string]any)

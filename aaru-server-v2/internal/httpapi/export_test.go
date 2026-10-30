@@ -1,6 +1,8 @@
 package httpapi
 
 import (
+	"aaru-go-api/internal/core"
+	"aaru-go-api/internal/imports"
 	"context"
 	"encoding/base64"
 	"encoding/csv"
@@ -140,6 +142,21 @@ func TestExportCSVRoundTripColumns(t *testing.T) {
 	assert.True(t, strings.HasSuffix(body, "\r\n"))
 	assert.Contains(t, body, ",329865,", "the TMDB id re-imports from its column")
 	assert.Contains(t, body, "'=SUM(A1)", "a formula-looking note is defused for spreadsheets")
+
+	// It re-imports through Aaru's own generic importer (ExportTests.csvRoundTrip).
+	source, err := imports.DetectFormat(body)
+	require.NoError(t, err)
+	assert.Equal(t, core.SourceGenericCSV, source)
+	parsed, err := imports.ParseGenericCSV(imports.ParseCSV(body))
+	require.NoError(t, err)
+	require.Len(t, parsed, 1)
+	assert.Equal(t, "Arrival", parsed[0].Title)
+	assert.Equal(t, core.MediaMovie, parsed[0].Type)
+	require.NotNil(t, parsed[0].Status)
+	assert.Equal(t, core.StatusFinished, *parsed[0].Status)
+	require.NotNil(t, parsed[0].Rating)
+	assert.InDelta(t, 8, *parsed[0].Rating, 0)
+	assert.Equal(t, "329865", parsed[0].IDs.TMDB)
 
 	rows, err := csv.NewReader(strings.NewReader(body)).ReadAll()
 	require.NoError(t, err)
