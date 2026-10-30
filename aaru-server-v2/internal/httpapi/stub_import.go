@@ -7,14 +7,6 @@ import (
 	"context"
 )
 
-func (s *Server) ListImports(context.Context, api.ListImportsRequestObject) (api.ListImportsResponseObject, error) {
-	return nil, errNotImplemented
-}
-
-func (s *Server) CreateAniListImport(context.Context, api.CreateAniListImportRequestObject) (api.CreateAniListImportResponseObject, error) {
-	return nil, errNotImplemented
-}
-
 func (s *Server) CreateCATFeedImport(context.Context, api.CreateCATFeedImportRequestObject) (api.CreateCATFeedImportResponseObject, error) {
 	return nil, errNotImplemented
 }
@@ -35,10 +27,6 @@ func (s *Server) PollStremioLink(context.Context, api.PollStremioLinkRequestObje
 	return nil, errNotImplemented
 }
 
-func (s *Server) CreateTraktImport(context.Context, api.CreateTraktImportRequestObject) (api.CreateTraktImportResponseObject, error) {
-	return nil, errNotImplemented
-}
-
 func (s *Server) ConnectTrakt(context.Context, api.ConnectTraktRequestObject) (api.ConnectTraktResponseObject, error) {
 	return nil, errNotImplemented
 }
@@ -48,22 +36,6 @@ func (s *Server) DisconnectTrakt(context.Context, api.DisconnectTraktRequestObje
 }
 
 func (s *Server) GetTraktConnection(context.Context, api.GetTraktConnectionRequestObject) (api.GetTraktConnectionResponseObject, error) {
-	return nil, errNotImplemented
-}
-
-func (s *Server) DeleteImport(context.Context, api.DeleteImportRequestObject) (api.DeleteImportResponseObject, error) {
-	return nil, errNotImplemented
-}
-
-func (s *Server) GetImport(context.Context, api.GetImportRequestObject) (api.GetImportResponseObject, error) {
-	return nil, errNotImplemented
-}
-
-func (s *Server) ApplyImport(context.Context, api.ApplyImportRequestObject) (api.ApplyImportResponseObject, error) {
-	return nil, errNotImplemented
-}
-
-func (s *Server) ResolveImportRow(context.Context, api.ResolveImportRowRequestObject) (api.ResolveImportRowResponseObject, error) {
 	return nil, errNotImplemented
 }
 

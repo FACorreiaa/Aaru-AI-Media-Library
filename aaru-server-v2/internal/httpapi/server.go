@@ -18,6 +18,7 @@ import (
 	"aaru-go-api/internal/config"
 	"aaru-go-api/internal/db/sqlc"
 	"aaru-go-api/internal/gamification"
+	"aaru-go-api/internal/imports"
 	"aaru-go-api/internal/library"
 	"aaru-go-api/internal/model"
 	"aaru-go-api/internal/oauth"
@@ -93,6 +94,10 @@ type Deps struct {
 	Schedule *schedule.Service
 	// Tonight is the Tonight strip (AG-005). New builds one over Schedule when unset.
 	Tonight *tonight.Service
+	// Imports is file and account imports, their plans and approval (IMP-*, MUS-004, AG-006).
+	// New builds one over Pool, Catalog and Library when unset; app sets its providers (Trakt,
+	// AniList lists, Stremio, CAT feed, capture, listening history) and Push.
+	Imports *imports.Service
 	// Model is the agent's language model; nil when ANTHROPIC_API_KEY is unset (`@aaru` and
 	// capture reading stay off).
 	Model model.Provider
@@ -134,6 +139,12 @@ func New(deps Deps) *Server {
 			deps.Library.Store.OnProgress = func(ctx context.Context, user uuid.UUID, items []uuid.UUID) error {
 				return tonight.AcceptPicks(ctx, q, user, items)
 			}
+		}
+	}
+	if deps.Imports == nil && deps.Pool != nil && deps.Catalog != nil && deps.Library != nil {
+		deps.Imports = imports.NewService(imports.NewStore(deps.Pool), deps.Catalog, deps.Library.Store, deps.Gamification, deps.Log)
+		if deps.Push != nil {
+			deps.Imports.Push = deps.Push
 		}
 	}
 	if deps.Schedule == nil && deps.Pool != nil {

@@ -14,8 +14,8 @@ var isNoRows = db.IsNoRows
 // imports whose bodies come in several binary types, and every transport that
 // is not in openapi.yaml. Each area registers its own here.
 func (s *Server) registerRawRoutes(e *echo.Echo) {
-	e.POST("/v1/imports/csv", notImplemented)
-	e.POST("/v1/imports/cat", notImplemented)
+	e.POST("/v1/imports/csv", s.createCSVImport)
+	e.POST("/v1/imports/cat", s.createCATImport)
 	e.POST("/v1/imports/capture", notImplemented)
 	e.GET("/internal/metrics", s.internalMetrics)
 	s.registerOAuthRoutes(e)
