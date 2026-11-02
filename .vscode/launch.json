@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:aaru}/aaru-server",
+            "name": "Debug aaru (aaru-server)",
+            "target": "aaru",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug aaru (aaru-server)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:aaru}/aaru-server",
+            "name": "Release aaru (aaru-server)",
+            "target": "aaru",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release aaru (aaru-server)"
+        }
+    ]
+}

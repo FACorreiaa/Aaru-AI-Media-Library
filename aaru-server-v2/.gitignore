@@ -1,1 +1,35 @@
+.env
+
+# Compiled binaries (local and CI outputs)
 bin/
+/north-web
+/north-api
+/north-worker
+/north-mcp
+/main
+*.exe
+*.test
+*.out
+
+# `go build ./cmd/worker/` writes its output here, named after the package
+# directory rather than the names above. A 50 MB binary reached main this way
+# once; `git add -A` does not know the difference.
+/api
+/worker
+/mcp-server
+
+# `go build ./cmd/...`-adjacent strays. `templ` is the templ CLI the browser
+# app used to generate with; a manual `go build` of it wrote 20 MB of Mach-O
+# here once.
+/templ
+
+# tools/model is a build-time Node tool, run by hand and never deployed
+node_modules/
+package-lock.json
+
+# Go module vendoring, at the repository root only.
+/vendor/
+# Local scratch output.
+tmp/
+web/.DS_Store
+.DS_Store

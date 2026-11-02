@@ -1,15 +1,19 @@
 # Build context: this directory (`docker build -t aaru-server aaru-server-v2`).
 FROM golang:1.27-bookworm AS build
 WORKDIR /src
-COPY go.mod go.sum ./
-RUN go mod download
-COPY . .
+COPY --link go.mod go.sum ./
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    go mod download
+COPY --link . .
 ARG AARU_RELEASE=""
-RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/aaru ./cmd/aaru
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/aaru ./cmd/aaru
 
 FROM gcr.io/distroless/static-debian12:nonroot
 WORKDIR /app
-COPY --from=build /out/aaru /app/aaru
+COPY --link --from=build /out/aaru /app/aaru
 # The commit this image was built from, as the release on Sentry error reports.
 ARG AARU_RELEASE=""
 ENV AARU_RELEASE=$AARU_RELEASE

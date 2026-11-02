@@ -6,8 +6,7 @@ FROM swift:6.3-noble AS build
 # Install OS updates
 RUN export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true \
     && apt-get -q update \
-    && apt-get -q dist-upgrade -y \
-    && apt-get install -y libjemalloc-dev \
+    && apt-get install -y --no-install-recommends libjemalloc-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Build context is the REPO ROOT (`docker build -f aaru-server/Dockerfile .`):
@@ -16,16 +15,18 @@ WORKDIR /build
 
 # First just resolve dependencies. This creates a cached layer that can be
 # reused as long as the manifests and aaru-core do not change.
-COPY ./aaru-core ./aaru-core
-COPY ./aaru-server/Package.* ./aaru-server/
+COPY --link ./aaru-core ./aaru-core
+COPY --link ./aaru-server/Package.* ./aaru-server/
 WORKDIR /build/aaru-server
-RUN swift package resolve
+RUN --mount=type=cache,target=/root/.cache \
+    swift package resolve
 
 # Copy the server sources
-COPY ./aaru-server ./
+COPY --link ./aaru-server ./
 
 # Build the application, with optimizations, with static linking, and using jemalloc
-RUN swift build -c release \
+RUN --mount=type=cache,target=/root/.cache \
+    swift build -c release \
     --product "aaru" \
     --static-swift-stdlib \
     -Xlinker -ljemalloc
@@ -54,8 +55,7 @@ FROM ubuntu:noble
 # Make sure all system packages are up to date, and install only essential packages.
 RUN export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true \
     && apt-get -q update \
-    && apt-get -q dist-upgrade -y \
-    && apt-get -q install -y \
+    && apt-get -q install -y --no-install-recommends \
       libjemalloc2 \
       ca-certificates \
       tzdata \
