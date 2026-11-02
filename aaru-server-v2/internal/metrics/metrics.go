@@ -80,6 +80,24 @@ func Group(route string) string {
 	return segments[0]
 }
 
+// Reset replaces the global registry and all collectors with fresh instances.
+// It is intended for tests that assert exact counter values across -count=N runs.
+func Reset() {
+	Registry = prometheus.NewRegistry()
+	httpRequests = counter("aaru_http_requests_total", "HTTP requests by method, route template and status code.", "method", "route", "code")
+	Imports = counter("aaru_imports_total", "Import jobs that finished, by source and result (planned or failed).", "source", "result")
+	Scrobbles = counter("aaru_scrobbles_total", "Playback reports received, by player.", "source", "action")
+	Push = counter("aaru_push_total", "Push sends by channel (apns, web, live_activity) and result.", "channel", "result")
+	LLMCalls = counter("aaru_llm_calls_total", "Model calls by provider and result.", "provider", "result")
+	inFlight = prometheus.NewGauge(prometheus.GaugeOpts{Name: "aaru_http_in_flight", Help: "HTTP requests being handled now."})
+	duration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "aaru_http_request_duration_seconds",
+		Help:    "Time spent handling a request, by route group.",
+		Buckets: prometheus.DefBuckets,
+	}, []string{"group"})
+	Registry.MustRegister(inFlight, duration)
+}
+
 // Handler serves `GET /metrics`.
 func Handler() http.Handler {
 	return promhttp.HandlerFor(Registry, promhttp.HandlerOpts{})

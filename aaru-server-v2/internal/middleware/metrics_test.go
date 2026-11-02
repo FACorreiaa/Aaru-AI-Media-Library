@@ -15,6 +15,7 @@ import (
 
 // MetricsTests.swift routeTemplate: the route label is the matched template, never the path with its id.
 func TestTheRouteLabelIsTheMatchedTemplateNeverThePath(t *testing.T) {
+	metrics.Reset()
 	e := echo.New()
 	e.Use(Metrics(), Errors(slog.New(slog.NewTextHandler(io.Discard, nil)), nil))
 	e.GET("/v1/metric-titles/:id", func(c echo.Context) error { return c.String(http.StatusOK, "ok") })

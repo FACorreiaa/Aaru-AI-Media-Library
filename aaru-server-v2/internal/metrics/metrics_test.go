@@ -25,6 +25,7 @@ func render(t *testing.T) string {
 }
 
 func TestCountersGaugeAndHistogramRenderInTheTextFormat(t *testing.T) {
+	Reset()
 	Imports.WithLabelValues("trakt", "planned").Inc()
 	Imports.WithLabelValues("trakt", "planned").Inc()
 	RequestStarted()
@@ -41,6 +42,7 @@ func TestCountersGaugeAndHistogramRenderInTheTextFormat(t *testing.T) {
 }
 
 func TestALabelValueCannotBreakOutOfItsQuotes(t *testing.T) {
+	Reset()
 	Scrobbles.WithLabelValues("a\"b\\c\nd", "start").Inc()
 	assert.Contains(t, render(t), `aaru_scrobbles_total{action="start",source="a\"b\\c\nd"} 1`+"\n")
 }
@@ -55,6 +57,7 @@ func TestRoutesGroupByTheirFirstSegmentAfterV1(t *testing.T) {
 }
 
 func TestTheMetricsHandlerServesTheTextFormat(t *testing.T) {
+	Reset()
 	Push.WithLabelValues("apns", "sent").Inc()
 	rec := httptest.NewRecorder()
 	Handler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/metrics", nil))
