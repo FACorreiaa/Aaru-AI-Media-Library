@@ -117,10 +117,18 @@ UPDATE live_activity_states SET next_check_at = sqlc.arg(at)::timestamptz
 WHERE user_id = sqlc.arg(user_id)::uuid AND (next_check_at IS NULL OR next_check_at > sqlc.arg(at)::timestamptz);
 
 -- name: ClaimDueLiveActivityChecks :many
--- Claims the users whose check is due, so one sweep alone looks at each.
-UPDATE live_activity_states SET next_check_at = NULL
+-- Claims the users whose check is due, so one sweep alone looks at each. The claim moves the check
+-- to retry_at rather than clearing it: a sweep that fails or is cut short looks again then, and
+-- one that succeeds settles it (SettleLiveActivityCheck) or saves its own next check.
+UPDATE live_activity_states SET next_check_at = sqlc.arg(retry_at)::timestamptz
 WHERE user_id IN (
     SELECT s.user_id FROM live_activity_states s WHERE s.next_check_at <= sqlc.arg(now)::timestamptz
     ORDER BY s.next_check_at LIMIT sqlc.arg(max_rows)::int FOR UPDATE SKIP LOCKED
 )
 RETURNING user_id;
+
+-- name: SettleLiveActivityCheck :exec
+-- A sweep that looked at the user sets the next check it found (none: NULL), unless something else
+-- already rescheduled them since the claim.
+UPDATE live_activity_states SET next_check_at = sqlc.narg(next_check_at)::timestamptz
+WHERE user_id = sqlc.arg(user_id)::uuid AND next_check_at = sqlc.arg(claimed_at)::timestamptz;

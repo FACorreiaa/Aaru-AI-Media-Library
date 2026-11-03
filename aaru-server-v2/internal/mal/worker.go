@@ -3,7 +3,9 @@ package mal
 import (
 	"aaru-go-api/internal/catalog"
 	"aaru-go-api/internal/library"
+	"aaru-go-api/internal/metrics"
 	"aaru-go-api/internal/provider"
+	"aaru-go-api/internal/safe"
 	"context"
 	"log/slog"
 	"strconv"
@@ -46,7 +48,11 @@ func (w *Worker) Run(ctx context.Context) error {
 		log = slog.Default()
 	}
 	for ctx.Err() == nil {
-		if err := w.pass(ctx, log); err != nil {
+		err := safe.Step(func() error { return w.pass(ctx, log) })
+		if ctx.Err() == nil {
+			metrics.WorkerPass(w.Name(), err)
+		}
+		if err != nil {
 			if ctx.Err() != nil {
 				return nil
 			}

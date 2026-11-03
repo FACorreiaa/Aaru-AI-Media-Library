@@ -67,6 +67,8 @@ type EntryState struct {
 type PushDue struct {
 	UserID uuid.UUID
 	Cursor time.Time
+	// Failures are the pushes that failed in a row before this one (REL-005's backoff).
+	Failures int
 }
 
 // PullDue is a connection due a read of its MAL list (SCR-010): a client asked, or the last read
@@ -208,17 +210,25 @@ func (s *Store) MarkRevoked(ctx context.Context, user uuid.UUID, revokedAt time.
 	return nil
 }
 
-// PushesDue are connections with library writes past their cursor.
-func (s *Store) PushesDue(ctx context.Context) ([]PushDue, error) {
-	rows, err := s.q.MALPushesDue(ctx)
+// PushesDue are connections with library writes past their cursor and no backoff left, at most limit.
+func (s *Store) PushesDue(ctx context.Context, now time.Time, limit int) ([]PushDue, error) {
+	rows, err := s.q.MALPushesDue(ctx, sqlc.MALPushesDueParams{Now: now, MaxRows: int32(min(limit, 1<<31-1))}) //nolint:gosec // clamped
 	if err != nil {
 		return nil, fmt.Errorf("mal pushes due: %w", err)
 	}
 	out := make([]PushDue, len(rows))
 	for i, r := range rows {
-		out[i] = PushDue{UserID: r.UserID, Cursor: r.PushCursor}
+		out[i] = PushDue{UserID: r.UserID, Cursor: r.PushCursor, Failures: int(r.PushFailures)}
 	}
 	return out, nil
+}
+
+// PushFailed records a failed push: the connection is not tried again before notBefore.
+func (s *Store) PushFailed(ctx context.Context, user uuid.UUID, notBefore time.Time) error {
+	if err := s.q.MALPushFailed(ctx, sqlc.MALPushFailedParams{UserID: user, NotBefore: notBefore}); err != nil {
+		return fmt.Errorf("mal push failed: %w", err)
+	}
+	return nil
 }
 
 // AdvanceCursor moves the push cursor forward, never back.

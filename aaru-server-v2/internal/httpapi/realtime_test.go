@@ -27,7 +27,7 @@ func quietLog() *slog.Logger { return slog.New(slog.NewTextHandler(io.Discard, n
 func TestRealtimeHubDeliversOnlyToRecipientsAndDropsAFailingSocket(t *testing.T) {
 	hub := realtime.NewHub(RealtimeFrame, quietLog())
 	ana, kai := uuid.New(), uuid.New()
-	phone, laptop, other := &frames{}, &frames{}, &frames{}
+	phone, laptop, other := &frames{hub: hub}, &frames{hub: hub}, &frames{hub: hub}
 	hub.Connect(ana, phone.sink)
 	hub.Connect(ana, laptop.sink)
 	hub.Connect(kai, other.sink)

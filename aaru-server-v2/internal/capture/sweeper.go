@@ -1,6 +1,7 @@
 package capture
 
 import (
+	"aaru-go-api/internal/metrics"
 	"context"
 	"log/slog"
 	"time"
@@ -34,7 +35,11 @@ func (w *Sweeper) Run(ctx context.Context) error {
 		log = slog.Default()
 	}
 	for {
-		if _, err := w.Store.Sweep(ctx, now().Add(-InputLifetime)); err != nil && ctx.Err() == nil {
+		_, err := w.Store.Sweep(ctx, now().Add(-InputLifetime))
+		if ctx.Err() == nil {
+			metrics.WorkerPass(w.Name(), err)
+		}
+		if err != nil && ctx.Err() == nil {
 			log.Error("Capture sweep failed", "error", err)
 		}
 		select {

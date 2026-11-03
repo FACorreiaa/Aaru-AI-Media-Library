@@ -5,15 +5,21 @@ import (
 	"aaru-go-api/internal/capture"
 	"aaru-go-api/internal/catalog"
 	"aaru-go-api/internal/concerts"
+	"aaru-go-api/internal/db/sqlc"
 	"aaru-go-api/internal/gamification"
 	"aaru-go-api/internal/imports"
 	"aaru-go-api/internal/library"
 	"aaru-go-api/internal/mal"
+	"aaru-go-api/internal/metrics"
 	"aaru-go-api/internal/music"
 	"aaru-go-api/internal/push"
+	"aaru-go-api/internal/safe"
 	"aaru-go-api/internal/schedule"
 	"aaru-go-api/internal/scrobble"
 	"context"
+	"fmt"
+	"log/slog"
+	"time"
 )
 
 // Worker runs beside the HTTP server until ctx is cancelled.
@@ -62,7 +68,7 @@ func (s *Server) Workers() []Worker {
 	if s.Pool != nil {
 		// Announces newly aired episodes every ten minutes (AiringNotifierService). Without APNs
 		// or web push configured each pass sends nothing, as in Swift.
-		notifier := &push.AiringNotifier{Q: s.q}
+		notifier := &push.AiringNotifier{Q: s.q, Log: s.Log}
 		if s.Push != nil {
 			notifier.APNs, notifier.Web = s.Push.APNs, s.Push.Web
 		}
@@ -71,7 +77,7 @@ func (s *Server) Workers() []Worker {
 	if s.Model != nil && s.Groups != nil {
 		// Answers queued `@aaru` mentions (GRP-011), AGENT_REPLY_WORKERS loops on a leased queue.
 		workers = append(workers, &agent.ReplyWorker{
-			Replies: &agent.ReplyService{Groups: s.Groups, Catalog: s.Catalog, Library: s.Library, Model: s.Model},
+			Replies: &agent.ReplyService{Groups: s.Groups, Catalog: s.Catalog, Library: s.Library, Model: s.Model, Log: s.Log},
 			Log:     s.Log, Workers: s.Config.Workers.AgentReplies,
 		})
 	}
@@ -86,5 +92,63 @@ func (s *Server) Workers() []Worker {
 			Resolver: &music.Resolver{Store: s.Listens.Store, Recordings: s.Catalog.Providers.Recordings}, Log: s.Log,
 		})
 	}
-	return workers
+	if s.Pool != nil {
+		// The import and `@aaru` queues' backlog on `/metrics`, read at scrape time.
+		q := s.q
+		metrics.SetQueueSource(func(ctx context.Context) ([]metrics.QueueStat, error) {
+			return queueStats(ctx, q)
+		})
+	}
+	supervised := make([]Worker, len(workers))
+	for i, w := range workers {
+		supervised[i] = &supervisedWorker{Worker: w, log: s.Log}
+	}
+	return supervised
+}
+
+func queueStats(ctx context.Context, q *sqlc.Queries) ([]metrics.QueueStat, error) {
+	rows, err := q.WorkerQueueStats(ctx, time.Now())
+	if err != nil {
+		return nil, fmt.Errorf("worker queue stats: %w", err)
+	}
+	out := make([]metrics.QueueStat, len(rows))
+	for i, r := range rows {
+		out[i] = metrics.QueueStat{
+			Queue: r.Queue, Depth: r.Depth, OldestAge: time.Duration(r.OldestAgeSeconds * float64(time.Second)),
+		}
+	}
+	return out, nil
+}
+
+// supervisedWorker is the backstop under every worker (Go audit REL-001): a panic that escapes
+// Run is logged, counted as the worker's failed pass, and Run starts again a second later instead
+// of the process going down with it. Workers recover their own job steps first; this catches
+// what they miss on their own goroutine.
+type supervisedWorker struct {
+	Worker
+	log *slog.Logger
+}
+
+// RestartDelay is the pause before a worker that panicked runs again.
+const RestartDelay = time.Second
+
+func (w *supervisedWorker) Run(ctx context.Context) error {
+	for {
+		err := safe.Step(func() error { return w.Worker.Run(ctx) })
+		if !safe.IsPanic(err) {
+			return err
+		}
+		metrics.WorkerPass(w.Name(), err)
+		log := w.log
+		if log == nil {
+			log = slog.Default()
+		}
+		log.Error("Worker panicked; restarting it", "worker", w.Name(), "error", err.Error(),
+			"stack", string(safe.Stack(err)))
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-time.After(RestartDelay):
+		}
+	}
 }

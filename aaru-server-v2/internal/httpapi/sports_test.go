@@ -414,6 +414,19 @@ func TestSportSearchAllThreeKindsInOrder(t *testing.T) {
 	assert.Len(t, teamsOnly, 1)
 }
 
+func TestSportSearchIsRateLimitedPerUser(t *testing.T) {
+	h := newHarness(t, withSports(sportsProvider()))
+	_, bearer := h.signIn()
+	for range sports.SearchesPerMinute {
+		require.Equal(t, http.StatusOK, h.do(http.MethodGet, "/v1/sports/search?q=Arsenal", bearer, nil).Code)
+	}
+	limited := h.do(http.MethodGet, "/v1/sports/search?q=Arsenal", bearer, nil)
+	assert.Equal(t, http.StatusTooManyRequests, limited.Code)
+	assert.Equal(t, "rate_limited", decode[map[string]any](t, limited)["code"])
+	_, other := h.signIn()
+	assert.Equal(t, http.StatusOK, h.do(http.MethodGet, "/v1/sports/search?q=Arsenal", other, nil).Code)
+}
+
 func TestAPublicSportEventNeedsNoUserAndSharesTheCache(t *testing.T) {
 	fake := sportsProvider()
 	fake.events["42"] = sampleMatch("42", "133604", "133615", "", "2026-10-18T14:00:00Z", "", ip(2), ip(1))

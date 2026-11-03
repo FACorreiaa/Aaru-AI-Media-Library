@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"aaru-go-api/internal/auth"
+	"aaru-go-api/internal/middleware"
 	"aaru-go-api/internal/stremio"
 	"bytes"
 	"encoding/json"
@@ -79,6 +80,7 @@ func (s *Server) stremioRespond(c echo.Context) error {
 		}
 	}
 	s.Log.ErrorContext(ctx, "Stremio request failed", "error", err.Error())
+	middleware.ReportFailure(c, err, "internal", http.StatusInternalServerError)
 	return stremioFail(c, http.StatusInternalServerError, "Something went wrong.")
 }
 

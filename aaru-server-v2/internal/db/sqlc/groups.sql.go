@@ -41,6 +41,21 @@ func (q *Queries) AddGroupShelfItem(ctx context.Context, arg AddGroupShelfItemPa
 	return title_id, err
 }
 
+const agentReplyPosted = `-- name: AgentReplyPosted :one
+SELECT EXISTS (
+    SELECT 1 FROM group_messages m
+    WHERE m.reply_to = $1::uuid AND m.author_kind = 'agent'
+)::boolean AS posted
+`
+
+// Whether Aaru already answered this mention: an earlier attempt posted, then failed to finish.
+func (q *Queries) AgentReplyPosted(ctx context.Context, messageID uuid.UUID) (bool, error) {
+	row := q.db.QueryRow(ctx, agentReplyPosted, messageID)
+	var posted bool
+	err := row.Scan(&posted)
+	return posted, err
+}
+
 const agentUsageOn = `-- name: AgentUsageOn :one
 SELECT requests, input_tokens, output_tokens, cost_micros FROM agent_usage
 WHERE user_id = $1 AND day = ($2::pg_catalog.timestamptz AT TIME ZONE 'UTC')::date
@@ -76,7 +91,8 @@ UPDATE agent_replies SET state = 'running', attempts = attempts + 1,
 WHERE id = (
     SELECT a.id FROM agent_replies a
     WHERE (a.state = 'queued' AND (a.locked_until IS NULL OR a.locked_until <= $2::pg_catalog.timestamptz))
-       OR (a.state = 'running' AND a.locked_until < $2::pg_catalog.timestamptz)
+       OR (a.state = 'running' AND a.locked_until < $2::pg_catalog.timestamptz
+           AND a.attempts < $3::int)
     ORDER BY a.created_at
     FOR UPDATE SKIP LOCKED
     LIMIT 1
@@ -87,6 +103,7 @@ RETURNING id, message_id, group_id, channel_id, tagger_id, attempts
 type ClaimAgentReplyParams struct {
 	LockedUntil time.Time
 	Now         time.Time
+	MaxAttempts int32
 }
 
 type ClaimAgentReplyRow struct {
@@ -98,9 +115,10 @@ type ClaimAgentReplyRow struct {
 	Attempts  int32
 }
 
-// One statement: SKIP LOCKED means two workers never lease the same mention.
+// One statement: SKIP LOCKED means two workers never lease the same mention. An expired lease is
+// taken over only while the mention has attempts left (FailExpiredAgentReplies fails the rest).
 func (q *Queries) ClaimAgentReply(ctx context.Context, arg ClaimAgentReplyParams) (ClaimAgentReplyRow, error) {
-	row := q.db.QueryRow(ctx, claimAgentReply, arg.LockedUntil, arg.Now)
+	row := q.db.QueryRow(ctx, claimAgentReply, arg.LockedUntil, arg.Now, arg.MaxAttempts)
 	var i ClaimAgentReplyRow
 	err := row.Scan(
 		&i.ID,
@@ -271,8 +289,57 @@ func (q *Queries) EnqueueAgentReply(ctx context.Context, arg EnqueueAgentReplyPa
 	return err
 }
 
-const finishAgentReply = `-- name: FinishAgentReply :exec
-UPDATE agent_replies SET state = $2, error = $3, locked_until = NULL, updated_at = $4 WHERE id = $1
+const failExpiredAgentReplies = `-- name: FailExpiredAgentReplies :many
+UPDATE agent_replies SET state = 'failed', error = $1::text, locked_until = NULL,
+    updated_at = $2::pg_catalog.timestamptz
+WHERE state = 'running' AND locked_until < $2::pg_catalog.timestamptz
+  AND attempts >= $3::int
+RETURNING id, message_id, group_id, channel_id
+`
+
+type FailExpiredAgentRepliesParams struct {
+	Error       string
+	Now         time.Time
+	MaxAttempts int32
+}
+
+type FailExpiredAgentRepliesRow struct {
+	ID        uuid.UUID
+	MessageID uuid.UUID
+	GroupID   uuid.UUID
+	ChannelID uuid.UUID
+}
+
+// A mention whose lease ran out on its last attempt never reached its own failure path: the
+// process died under it. It fails for good instead of being leased (and paid for) again forever.
+func (q *Queries) FailExpiredAgentReplies(ctx context.Context, arg FailExpiredAgentRepliesParams) ([]FailExpiredAgentRepliesRow, error) {
+	rows, err := q.db.Query(ctx, failExpiredAgentReplies, arg.Error, arg.Now, arg.MaxAttempts)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []FailExpiredAgentRepliesRow{}
+	for rows.Next() {
+		var i FailExpiredAgentRepliesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.MessageID,
+			&i.GroupID,
+			&i.ChannelID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const finishAgentReply = `-- name: FinishAgentReply :execrows
+UPDATE agent_replies SET state = $2, error = $3, locked_until = NULL, updated_at = $4
+WHERE id = $1 AND state = 'running' AND attempts = $5::int
 `
 
 type FinishAgentReplyParams struct {
@@ -280,16 +347,23 @@ type FinishAgentReplyParams struct {
 	State     string
 	Error     *string
 	UpdatedAt time.Time
+	Attempt   int32
 }
 
-func (q *Queries) FinishAgentReply(ctx context.Context, arg FinishAgentReplyParams) error {
-	_, err := q.db.Exec(ctx, finishAgentReply,
+// Only the attempt that holds the lease finishes it: a run that outlived its lease, while another
+// worker took the mention over, changes nothing.
+func (q *Queries) FinishAgentReply(ctx context.Context, arg FinishAgentReplyParams) (int64, error) {
+	result, err := q.db.Exec(ctx, finishAgentReply,
 		arg.ID,
 		arg.State,
 		arg.Error,
 		arg.UpdatedAt,
+		arg.Attempt,
 	)
-	return err
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const groupAgentLoad = `-- name: GroupAgentLoad :one
@@ -1296,6 +1370,17 @@ func (q *Queries) LatestWatchParty(ctx context.Context, channelID uuid.UUID) (La
 	return i, err
 }
 
+const lockUserGroupCreate = `-- name: LockUserGroupCreate :exec
+SELECT pg_advisory_xact_lock(hashtextextended('groups-owned:' || $1::text, 0))
+`
+
+// One group create per user at a time, so parallel creates cannot all pass the owned-groups count
+// (DB-008). Held until the transaction ends.
+func (q *Queries) LockUserGroupCreate(ctx context.Context, userKey string) error {
+	_, err := q.db.Exec(ctx, lockUserGroupCreate, userKey)
+	return err
+}
+
 const markGroupChannelRead = `-- name: MarkGroupChannelRead :exec
 INSERT INTO group_read_state (user_id, channel_id, last_read_at)
 SELECT $1::uuid, gmsg.channel_id, gmsg.created_at FROM group_messages gmsg
@@ -1363,6 +1448,24 @@ func (q *Queries) RecordAgentUsage(ctx context.Context, arg RecordAgentUsagePara
 	return err
 }
 
+const releaseAgentReply = `-- name: ReleaseAgentReply :exec
+UPDATE agent_replies SET state = 'queued', attempts = greatest(attempts - 1, 0), locked_until = NULL,
+    updated_at = $1::pg_catalog.timestamptz
+WHERE id = $2::uuid AND state = 'running' AND attempts = $3::int
+`
+
+type ReleaseAgentReplyParams struct {
+	Now     time.Time
+	ID      uuid.UUID
+	Attempt int32
+}
+
+// A shutdown is not the mention's failure: it goes back untouched, its attempt uncounted.
+func (q *Queries) ReleaseAgentReply(ctx context.Context, arg ReleaseAgentReplyParams) error {
+	_, err := q.db.Exec(ctx, releaseAgentReply, arg.Now, arg.ID, arg.Attempt)
+	return err
+}
+
 const removeGroupShelfItem = `-- name: RemoveGroupShelfItem :one
 DELETE FROM group_channel_items WHERE channel_id = $1 AND title_id = $2 RETURNING title_id
 `
@@ -1394,8 +1497,9 @@ func (q *Queries) RenameGroup(ctx context.Context, arg RenameGroupParams) error 
 	return err
 }
 
-const retryAgentReply = `-- name: RetryAgentReply :exec
-UPDATE agent_replies SET state = 'queued', error = $2, locked_until = $3, updated_at = $4 WHERE id = $1
+const retryAgentReply = `-- name: RetryAgentReply :execrows
+UPDATE agent_replies SET state = 'queued', error = $2, locked_until = $3, updated_at = $4
+WHERE id = $1 AND state = 'running' AND attempts = $5::int
 `
 
 type RetryAgentReplyParams struct {
@@ -1403,16 +1507,21 @@ type RetryAgentReplyParams struct {
 	Error       *string
 	LockedUntil *time.Time
 	UpdatedAt   time.Time
+	Attempt     int32
 }
 
-func (q *Queries) RetryAgentReply(ctx context.Context, arg RetryAgentReplyParams) error {
-	_, err := q.db.Exec(ctx, retryAgentReply,
+func (q *Queries) RetryAgentReply(ctx context.Context, arg RetryAgentReplyParams) (int64, error) {
+	result, err := q.db.Exec(ctx, retryAgentReply,
 		arg.ID,
 		arg.Error,
 		arg.LockedUntil,
 		arg.UpdatedAt,
+		arg.Attempt,
 	)
-	return err
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const setGroupMuted = `-- name: SetGroupMuted :exec

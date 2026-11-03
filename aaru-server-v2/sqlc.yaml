@@ -1,7 +1,11 @@
 version: "2"
 sql:
   - engine: postgresql
-    schema: internal/db/migrations
+    # baseline.sql first, then the numbered goose files in order (a directory would read them
+    # alphabetically, numbers before the baseline they alter).
+    schema:
+      - internal/db/migrations/baseline.sql
+      - internal/db/migrations/0*.sql
     queries: internal/db/queries
     gen:
       go:

@@ -10,9 +10,11 @@ import (
 	"aaru-go-api/internal/groups"
 	"aaru-go-api/internal/library"
 	"aaru-go-api/internal/model"
+	"aaru-go-api/internal/safe"
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"strconv"
 	"strings"
 	"time"
@@ -28,8 +30,13 @@ const (
 	MaxTokens       = 2048
 	MaxCards        = 4
 	Lease           = 120 * time.Second
-	RefusalReply    = "I can't help with that one."
-	FailureReply    = "I couldn't answer that just now. Try asking me again in a bit."
+	// AnswerDeadline bounds one attempt inside its lease, so no other worker takes the mention
+	// over while this one may still post (Go audit REL-002).
+	AnswerDeadline = Lease - 10*time.Second
+	RefusalReply   = "I can't help with that one."
+	FailureReply   = "I couldn't answer that just now. Try asking me again in a bit."
+	// ExpiredError is a mention whose last attempt never came back: the process died under it.
+	ExpiredError = "the last attempt never finished"
 )
 
 // ReplyService answers `@aaru` mentions, one queued mention at a time.
@@ -43,7 +50,10 @@ type ReplyService struct {
 	Catalog *catalog.Kit
 	Library *library.Service
 	Model   model.Provider
+	Log     *slog.Logger
 	Now     func() time.Time
+	// Deadline bounds one attempt; zero means AnswerDeadline.
+	Deadline time.Duration
 }
 
 func (s *ReplyService) now() time.Time {
@@ -51,6 +61,13 @@ func (s *ReplyService) now() time.Time {
 		return s.Now()
 	}
 	return time.Now()
+}
+
+func (s *ReplyService) log() *slog.Logger {
+	if s.Log != nil {
+		return s.Log
+	}
+	return slog.Default()
 }
 
 func (s *ReplyService) q() *sqlc.Queries { return s.Groups.Store.Q }
@@ -66,9 +83,18 @@ type Job struct {
 }
 
 // RunNext claims and answers one mention. False when nothing was queued.
+//
+// One attempt runs under AnswerDeadline, a panic is its failure like any error, and the bookkeeping
+// after it does not depend on ctx: a shutdown hands the mention back with its attempt uncounted,
+// and Finish and Retry only touch the row while this attempt still holds it.
 func (s *ReplyService) RunNext(ctx context.Context) (bool, error) {
 	now := s.now()
-	row, err := s.q().ClaimAgentReply(ctx, sqlc.ClaimAgentReplyParams{LockedUntil: now.Add(Lease), Now: now})
+	if err := s.failExpired(ctx, now); err != nil {
+		return false, err
+	}
+	row, err := s.q().ClaimAgentReply(ctx, sqlc.ClaimAgentReplyParams{
+		LockedUntil: now.Add(Lease), Now: now, MaxAttempts: MaxAttempts,
+	})
 	if db.IsNoRows(err) {
 		return false, nil
 	}
@@ -79,30 +105,87 @@ func (s *ReplyService) RunNext(ctx context.Context) (bool, error) {
 		ID: row.ID, MessageID: row.MessageID, GroupID: row.GroupID, ChannelID: row.ChannelID, Tagger: row.TaggerID,
 		Attempts: int(row.Attempts),
 	}
-	if answerErr := s.Answer(ctx, job); answerErr != nil {
-		summary := truncate(answerErr.Error(), 200)
-		if job.Attempts < MaxAttempts {
-			err := s.q().RetryAgentReply(ctx, sqlc.RetryAgentReplyParams{
-				ID: job.ID, Error: &summary, LockedUntil: ptr(s.now().Add(time.Duration(30*job.Attempts) * time.Second)),
-				UpdatedAt: s.now(),
-			})
-			if err != nil {
-				return true, fmt.Errorf("retry agent reply: %w", err)
-			}
-			return true, nil
+	deadline := s.Deadline
+	if deadline <= 0 {
+		deadline = AnswerDeadline
+	}
+	answerCtx, cancel := context.WithTimeout(ctx, deadline)
+	answerErr := safe.Step(func() error { return s.Answer(answerCtx, job) })
+	cancel()
+	book := context.WithoutCancel(ctx)
+	if answerErr == nil {
+		return true, s.finish(book, job, groups.ReplyDone, nil)
+	}
+	if ctx.Err() != nil {
+		// A shutdown is not the mention's failure.
+		if err := s.q().ReleaseAgentReply(book, sqlc.ReleaseAgentReplyParams{
+			Now: s.now(), ID: job.ID, Attempt: row.Attempts,
+		}); err != nil {
+			return true, fmt.Errorf("release agent reply: %w", err)
 		}
-		if err := s.finish(ctx, job.ID, groups.ReplyFailed, &summary); err != nil {
-			return true, err
+		return true, context.Canceled
+	}
+	// The row records the failure; the step itself went fine, as for imports.
+	s.log().Warn("Agent reply attempt failed", "reply", job.ID, "attempt", job.Attempts,
+		"error", answerErr.Error(), "stack", string(safe.Stack(answerErr)))
+	summary := truncate(answerErr.Error(), 200)
+	if job.Attempts < MaxAttempts {
+		n, err := s.q().RetryAgentReply(book, sqlc.RetryAgentReplyParams{
+			ID: job.ID, Error: &summary, LockedUntil: ptr(s.now().Add(time.Duration(30*job.Attempts) * time.Second)),
+			UpdatedAt: s.now(), Attempt: row.Attempts,
+		})
+		if err != nil {
+			return true, fmt.Errorf("retry agent reply: %w", err)
 		}
-		_, _ = s.Groups.PostAgentReply(ctx, job.GroupID, job.ChannelID, job.MessageID, FailureReply, nil, nil)
+		if n == 0 {
+			s.log().Warn("Agent reply lease lost before its retry", "reply", job.ID)
+		}
 		return true, nil
 	}
-	return true, s.finish(ctx, job.ID, groups.ReplyDone, nil)
+	if err := s.finish(book, job, groups.ReplyFailed, &summary); err != nil {
+		return true, err
+	}
+	s.postFailure(book, job.GroupID, job.ChannelID, job.MessageID)
+	return true, nil
 }
 
-func (s *ReplyService) finish(ctx context.Context, id uuid.UUID, state string, message *string) error {
-	if err := s.q().FinishAgentReply(ctx, sqlc.FinishAgentReplyParams{ID: id, State: state, Error: message, UpdatedAt: s.now()}); err != nil {
+// failExpired fails the mentions whose last attempt never came back (REL-001), with the failure
+// reply their own failure path would have posted.
+func (s *ReplyService) failExpired(ctx context.Context, now time.Time) error {
+	rows, err := s.q().FailExpiredAgentReplies(ctx, sqlc.FailExpiredAgentRepliesParams{
+		Error: ExpiredError, Now: now, MaxAttempts: MaxAttempts,
+	})
+	if err != nil {
+		return fmt.Errorf("fail expired agent replies: %w", err)
+	}
+	for _, r := range rows {
+		s.log().Error("Agent reply failed: its last attempt never finished", "reply", r.ID)
+		s.postFailure(context.WithoutCancel(ctx), r.GroupID, r.ChannelID, r.MessageID)
+	}
+	return nil
+}
+
+// postFailure tells the channel Aaru could not answer, unless an attempt already answered.
+func (s *ReplyService) postFailure(ctx context.Context, group, channel, mention uuid.UUID) {
+	posted, err := s.q().AgentReplyPosted(ctx, mention)
+	if err == nil && !posted {
+		_, err = s.Groups.PostAgentReply(ctx, group, channel, mention, FailureReply, nil, nil)
+	}
+	if err != nil {
+		// The row already says failed; the note in the channel is the lesser loss.
+		s.log().Warn("Post agent failure reply", "error", err.Error())
+	}
+}
+
+func (s *ReplyService) finish(ctx context.Context, job Job, state string, message *string) error {
+	n, err := s.q().FinishAgentReply(ctx, sqlc.FinishAgentReplyParams{
+		ID: job.ID, State: state, Error: message, UpdatedAt: s.now(), Attempt: int32(job.Attempts), //nolint:gosec // at most MaxAttempts
+	})
+	if err != nil {
 		return fmt.Errorf("finish agent reply: %w", err)
+	}
+	if n == 0 {
+		s.log().Warn("Agent reply lease lost before it finished", "reply", job.ID)
 	}
 	return nil
 }
@@ -110,6 +193,15 @@ func (s *ReplyService) finish(ctx context.Context, id uuid.UUID, state string, m
 // Answer answers one mention and posts the reply.
 func (s *ReplyService) Answer(ctx context.Context, job Job) error {
 	store := s.Groups.Store
+	// An earlier attempt posted and then failed before it finished: the mention is answered, and
+	// asking the model again would post (and pay) twice.
+	posted, err := s.q().AgentReplyPosted(ctx, job.MessageID)
+	if err != nil {
+		return fmt.Errorf("agent reply posted: %w", err)
+	}
+	if posted {
+		return nil
+	}
 	// The tagger left, or the mention or channel is gone: nothing to answer.
 	role, err := store.Role(ctx, job.GroupID, job.Tagger)
 	if err != nil || role == nil {

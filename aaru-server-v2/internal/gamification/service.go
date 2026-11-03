@@ -161,7 +161,7 @@ func (s *Service) BatchApplied(ctx context.Context, user uuid.UUID, actionID *uu
 	}()
 	if err != nil {
 		s.log().Error("Gamification step failed", "error", err.Error())
-		_ = s.store().markDirty(ctx, user, OriginBatch)
+		s.leaveDirty(ctx, user, OriginBatch)
 	}
 }
 
@@ -210,7 +210,15 @@ func (s *Service) award(ctx context.Context, user uuid.UUID, awards []Award) err
 func (s *Service) bestEffort(ctx context.Context, user uuid.UUID, body func() error) {
 	if err := body(); err != nil {
 		s.log().Error("Gamification step failed", "error", err.Error())
-		_ = s.store().markDirty(ctx, user, OriginLive)
+		s.leaveDirty(ctx, user, OriginLive)
+	}
+}
+
+// leaveDirty leaves the user for the Worker. The request may be what failed the step (a client
+// gone, its context cancelled), so the mark does not depend on it (Go audit REL-008).
+func (s *Service) leaveDirty(ctx context.Context, user uuid.UUID, origin Origin) {
+	if err := s.store().markDirty(context.WithoutCancel(ctx), user, origin); err != nil {
+		s.log().Error("Gamification mark dirty failed", "error", err.Error())
 	}
 }
 

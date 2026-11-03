@@ -4,6 +4,9 @@ import (
 	"aaru-go-api/internal/auth"
 	"aaru-go-api/internal/catalog"
 	"aaru-go-api/internal/gamification"
+	"aaru-go-api/internal/metrics"
+	"aaru-go-api/internal/provider"
+	"aaru-go-api/internal/safe"
 	"aaru-go-api/internal/stats"
 	"context"
 	"errors"
@@ -101,7 +104,8 @@ type Resolver struct {
 }
 
 // RunOnce looks up one batch. Returns how many tracks were asked about and how many listens gained
-// an album. A provider failure ends the pass without recording a miss.
+// an album. A provider that refuses one track (a 4xx) records a miss for it and the pass goes on
+// (Go audit REL-006); any other provider failure ends the pass without recording a miss.
 func (r *Resolver) RunOnce(ctx context.Context) (tracks, listens int, err error) {
 	now := time.Now()
 	if r.Now != nil {
@@ -120,6 +124,9 @@ func (r *Resolver) RunOnce(ctx context.Context) (tracks, listens int, err error)
 			return 0, listens, err
 		}
 		match, err := r.Recordings.Match(ctx, lookup.Query)
+		if refusedOne(err) {
+			match, err = catalog.RecordingMatch{}, nil
+		}
 		if err != nil {
 			return 0, listens, err
 		}
@@ -130,6 +137,13 @@ func (r *Resolver) RunOnce(ctx context.Context) (tracks, listens int, err error)
 		listens += filled
 	}
 	return len(due), listens, nil
+}
+
+// refusedOne is a provider refusing this one request (404 or another 4xx that is not about the
+// credential): asking again gets the same answer, so it is a miss, not an outage.
+func refusedOne(err error) bool {
+	pe, ok := provider.AsError(err)
+	return ok && (pe.Kind == provider.KindNotFound || pe.Kind == provider.KindRefused)
 }
 
 // ResolverWorker runs the resolver every minute in the API process (ListenResolverService).
@@ -154,7 +168,15 @@ func (w *ResolverWorker) Run(ctx context.Context) error {
 		log = slog.Default()
 	}
 	for {
-		tracks, listens, err := w.Resolver.RunOnce(ctx)
+		var tracks, listens int
+		err := safe.Step(func() error {
+			var err error
+			tracks, listens, err = w.Resolver.RunOnce(ctx)
+			return err
+		})
+		if ctx.Err() == nil {
+			metrics.WorkerPass(w.Name(), err)
+		}
 		switch {
 		case errors.Is(err, context.Canceled) || ctx.Err() != nil:
 			return nil

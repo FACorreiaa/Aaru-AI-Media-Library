@@ -35,17 +35,29 @@ func Validate(spec *openapi3.T) (echo.MiddlewareFunc, error) {
 				// those routes read their own requests, and echo answers the rest.
 				return next(c)
 			}
+			checked, jsonBody := req, isJSON(req)
+			if !jsonBody {
+				// An upload is the handler's to read, once and with its own bound: the validator
+				// would otherwise buffer the whole file (it reads the body even when told to
+				// leave it out) before the handler reads it again.
+				shallow := *req
+				shallow.Body = http.NoBody
+				checked = &shallow
+			}
 			input := &openapi3filter.RequestValidationInput{
-				Request:    req,
+				Request:    checked,
 				PathParams: params,
 				Route:      route,
 				Options: &openapi3filter.Options{
 					AuthenticationFunc: openapi3filter.NoopAuthenticationFunc,
-					ExcludeRequestBody: !isJSON(req),
+					ExcludeRequestBody: !jsonBody,
 					MultiError:         false,
 				},
 			}
 			if err := openapi3filter.ValidateRequest(req.Context(), input); err != nil {
+				if tooLarge := bodyTooLarge(c, err); tooLarge != nil {
+					return tooLarge
+				}
 				return apperr.BadRequest()
 			}
 			return next(c)

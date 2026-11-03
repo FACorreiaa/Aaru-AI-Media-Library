@@ -6,6 +6,9 @@ import (
 	"aaru-go-api/internal/token"
 	"context"
 	"encoding/json"
+	"fmt"
+	"log/slog"
+	"runtime/debug"
 	"slices"
 	"time"
 
@@ -24,6 +27,15 @@ const (
 	ReactionInterval = time.Second
 	// PingInterval keeps a 60 s-idle proxy from closing the socket.
 	PingInterval = 25 * time.Second
+	// InboundFramesPerSecond and InboundBurst are one connection's token bucket over every
+	// inbound frame, before any is parsed or reaches the database. Past it frames are dropped.
+	InboundFramesPerSecond = 5
+	InboundBurst           = 10
+	// MaxDroppedFrames is the frames over the bucket a connection may send in a row before it
+	// is closed with 1008 policy violation.
+	MaxDroppedFrames = 100
+	// MaxTypingChannels caps the per-connection typing throttle; past it the throttle restarts.
+	MaxTypingChannels = 256
 )
 
 // Commands are what a socket may ask for: typing and watch-party reactions. Writes stay on REST.
@@ -52,7 +64,10 @@ type Gateway struct {
 	Ping time.Duration
 }
 
-var errOrigin = apperr.Forbidden("This origin may not open a socket.")
+var (
+	errOrigin         = apperr.Forbidden("This origin may not open a socket.")
+	errTooManySockets = apperr.RateLimited("Too many open sockets.")
+)
 
 // authenticate signs in an upgrade by bearer token, or by ticket from an allowed Origin.
 func (g *Gateway) authenticate(c echo.Context) (uuid.UUID, error) {
@@ -86,6 +101,9 @@ func (g *Gateway) Handle(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	if g.Hub.ConnectionCount(user) >= MaxSocketsPerUser {
+		return errTooManySockets
+	}
 	// The origin rule is ours (above); the library's same-origin check would refuse every app.
 	conn, err := websocket.Accept(c.Response(), c.Request(), &websocket.AcceptOptions{InsecureSkipVerify: true})
 	if err != nil {
@@ -96,9 +114,24 @@ func (g *Gateway) Handle(c echo.Context) error {
 	ctx, cancel := context.WithCancel(context.WithoutCancel(c.Request().Context()))
 	defer cancel()
 
-	connection := g.Hub.Connect(user, func(ctx context.Context, frame []byte) error {
+	connection, ok := g.Hub.Attach(user, func(ctx context.Context, frame []byte) error {
 		return conn.Write(ctx, websocket.MessageText, frame)
+	}, func(reason DropReason) {
+		switch reason {
+		case DropShutdown:
+			_ = conn.Close(websocket.StatusGoingAway, "Server is restarting.")
+		case DropSlow:
+			_ = conn.Close(websocket.StatusPolicyViolation, "Too far behind.")
+		case DropClosed, DropWriteFailed:
+			_ = conn.CloseNow()
+		}
+		cancel()
 	})
+	if !ok {
+		// Over the socket cap since the check above, or the server is shutting down.
+		_ = conn.Close(websocket.StatusTryAgainLater, "Try again later.")
+		return nil
+	}
 	defer g.Hub.Disconnect(user, connection)
 
 	if err := conn.Write(ctx, websocket.MessageText, []byte(`{"type":"ready"}`)); err != nil {
@@ -111,6 +144,12 @@ func (g *Gateway) Handle(c echo.Context) error {
 }
 
 func (g *Gateway) keepAlive(ctx context.Context, conn *websocket.Conn, cancel context.CancelFunc) {
+	defer func() {
+		if r := recover(); r != nil {
+			g.log().Error("Recovered a panic", "where", "realtime keep-alive", "panic", fmt.Sprint(r), "stack", string(debug.Stack()))
+			cancel()
+		}
+	}()
 	every := g.Ping
 	if every <= 0 {
 		every = PingInterval
@@ -133,15 +172,55 @@ func (g *Gateway) keepAlive(ctx context.Context, conn *websocket.Conn, cancel co
 	}
 }
 
+func (g *Gateway) log() *slog.Logger {
+	if g.Hub != nil && g.Hub.Log != nil {
+		return g.Hub.Log
+	}
+	return slog.Default()
+}
+
+// frameBucket is a connection's token bucket over inbound frames.
+type frameBucket struct {
+	tokens float64
+	at     time.Time
+}
+
+func newFrameBucket(now time.Time) *frameBucket {
+	return &frameBucket{tokens: InboundBurst, at: now}
+}
+
+// take spends one token; false when the bucket is empty.
+func (b *frameBucket) take(now time.Time) bool {
+	b.tokens = min(InboundBurst, b.tokens+now.Sub(b.at).Seconds()*InboundFramesPerSecond)
+	b.at = now
+	if b.tokens < 1 {
+		return false
+	}
+	b.tokens--
+	return true
+}
+
 func (g *Gateway) read(ctx context.Context, conn *websocket.Conn, user uuid.UUID) {
 	lastTyping := map[uuid.UUID]time.Time{}
 	var lastReaction time.Time
+	bucket := newFrameBucket(time.Now())
+	dropped := 0
 	for {
 		kind, data, err := conn.Read(ctx)
 		if err != nil {
 			// Closed, too large, or the ping failed: the socket is done.
 			return
 		}
+		now := time.Now()
+		if !bucket.take(now) {
+			dropped++
+			if dropped > MaxDroppedFrames {
+				_ = conn.Close(websocket.StatusPolicyViolation, "Too many frames.")
+				return
+			}
+			continue
+		}
+		dropped = 0
 		if kind != websocket.MessageText {
 			continue
 		}
@@ -149,23 +228,39 @@ func (g *Gateway) read(ctx context.Context, conn *websocket.Conn, user uuid.UUID
 		if !ok {
 			continue
 		}
-		now := time.Now()
 		// A frame for a group the user is not in is dropped like a malformed one.
 		switch cmd.Type {
 		case "typing":
 			if last, seen := lastTyping[cmd.Channel]; seen && now.Sub(last) < TypingInterval {
 				continue
 			}
+			err := g.Commands.Typing(ctx, cmd.Group, cmd.Channel, user)
+			g.logCommandError(ctx, "typing", err)
+			if err != nil {
+				// Only a channel the user may type in is remembered: a made-up id costs no memory.
+				continue
+			}
+			if len(lastTyping) >= MaxTypingChannels {
+				clear(lastTyping)
+			}
 			lastTyping[cmd.Channel] = now
-			_ = g.Commands.Typing(ctx, cmd.Group, cmd.Channel, user)
 		case "react":
 			if now.Sub(lastReaction) < ReactionInterval {
 				continue
 			}
 			lastReaction = now
-			_ = g.Commands.React(ctx, cmd.Group, cmd.Channel, cmd.Emoji, user)
+			g.logCommandError(ctx, "react", g.Commands.React(ctx, cmd.Group, cmd.Channel, cmd.Emoji, user))
 		}
 	}
+}
+
+// logCommandError logs a command that failed for a reason other than the client's (not a
+// member, no such channel): those are dropped quietly, like a malformed frame.
+func (g *Gateway) logCommandError(ctx context.Context, command string, err error) {
+	if err == nil || apperr.From(err) != nil || ctx.Err() != nil {
+		return
+	}
+	g.log().WarnContext(ctx, "Realtime command failed", "command", command, "error", err.Error())
 }
 
 // Command is one inbound frame: typing in a channel, or a reaction in a watch channel.

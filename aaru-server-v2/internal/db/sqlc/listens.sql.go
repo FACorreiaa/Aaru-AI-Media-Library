@@ -382,21 +382,27 @@ func (q *Queries) SaveMusicLookup(ctx context.Context, arg SaveMusicLookupParams
 }
 
 const unresolvedListens = `-- name: UnresolvedListens :many
-SELECT due.track_key, due.album_key, due.artist, due.track, due.album, due.recording_mbid, due.isrc FROM (
-    SELECT DISTINCT ON (l.track_key, lower(coalesce(l.album, '')))
-           l.track_key, lower(coalesce(l.album, ''))::text AS album_key, l.artist, l.track, l.album,
-           l.recording_mbid, l.isrc, l.listened_at
+SELECT d.track_key, d.album_key, r.artist, r.track, r.album, r.recording_mbid, r.isrc
+FROM (
+    SELECT k.track_key, k.album_key FROM (
+        SELECT DISTINCT l.track_key, lower(coalesce(l.album, ''))::text AS album_key
+        FROM listens l WHERE l.release_group_mbid IS NULL
+    ) k
+    WHERE NOT EXISTS (
+        SELECT 1 FROM music_lookups m
+        WHERE m.track_key = k.track_key AND m.album_key = k.album_key
+          AND (m.release_group_mbid IS NOT NULL OR m.looked_up_at > $1::timestamptz)
+    )
+) d
+CROSS JOIN LATERAL (
+    SELECT l.artist, l.track, l.album, l.recording_mbid, l.isrc, l.listened_at
     FROM listens l
-    WHERE l.release_group_mbid IS NULL
-      AND NOT EXISTS (
-          SELECT 1 FROM music_lookups m
-          WHERE m.track_key = l.track_key AND m.album_key = lower(coalesce(l.album, ''))
-            AND (m.release_group_mbid IS NOT NULL OR m.looked_up_at > $1::timestamptz)
-      )
-    ORDER BY l.track_key, lower(coalesce(l.album, '')), l.recording_mbid IS NULL, l.isrc IS NULL,
-             l.listened_at DESC
-) due
-ORDER BY due.listened_at DESC
+    WHERE l.release_group_mbid IS NULL AND l.track_key = d.track_key
+      AND lower(coalesce(l.album, '')) = d.album_key
+    ORDER BY l.recording_mbid IS NULL, l.isrc IS NULL, l.listened_at DESC
+    LIMIT 1
+) r
+ORDER BY r.listened_at DESC
 LIMIT $2::int
 `
 
@@ -416,6 +422,9 @@ type UnresolvedListensRow struct {
 }
 
 // One row per track and album: the listen with the most ids, then the newest, speaks for it.
+// Keys first (DB-006): the distinct unresolved keys come from an index-only scan of
+// listens_unresolved_key (migration 00003), keys already looked up drop out before any listen is
+// read, and only the due keys read their speaking listen.
 func (q *Queries) UnresolvedListens(ctx context.Context, arg UnresolvedListensParams) ([]UnresolvedListensRow, error) {
 	rows, err := q.db.Query(ctx, unresolvedListens, arg.RetryBefore, arg.MaxRows)
 	if err != nil {

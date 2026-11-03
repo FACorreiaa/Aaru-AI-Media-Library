@@ -1,7 +1,9 @@
 package concerts
 
 import (
+	"aaru-go-api/internal/apperr"
 	"aaru-go-api/internal/provider"
+	"aaru-go-api/internal/ratelimit"
 	"context"
 	"errors"
 	"slices"
@@ -28,6 +30,11 @@ type Service struct {
 	// ShareLookups is share links' own slice of the Ticketmaster day (SHR-002), so share
 	// traffic never takes it all.
 	ShareLookups *CallBudget
+	// Lookups and DailyLookups are per-user limits on concert and performer searches, whose
+	// keys come from what the user types: each miss spends the Ticketmaster day everyone
+	// shares (CON-001).
+	Lookups      *ratelimit.FixedWindow
+	DailyLookups *ratelimit.FixedWindow
 
 	cache          *Cache[Results]
 	performerCache *Cache[[]Attraction]
@@ -47,6 +54,15 @@ const (
 	MaxPerformers = 8
 	// ShareCallsPerDay is share links' daily slice of the Ticketmaster budget.
 	ShareCallsPerDay = 1000
+	// LookupsPerMinute is one user's concert and performer searches a minute.
+	LookupsPerMinute = 20
+	// LookupsPerDay is one user's concert and performer searches a day.
+	LookupsPerDay = 300
+)
+
+var (
+	errTooManyLookups      = apperr.RateLimited("Too many requests. Wait a minute.")
+	errTooManyLookupsToday = apperr.RateLimited("Too many concert searches today. Try again tomorrow.")
 )
 
 // Radii are the radii a client may ask for, in km.
@@ -57,7 +73,21 @@ func NewService(store *Store, listing Listing, places PlaceSearcher) *Service {
 	return &Service{
 		Store: store, Listing: listing, Places: places, Now: time.Now, ShareLookups: NewCallBudget(ShareCallsPerDay),
 		cache: NewCache[Results](), performerCache: NewCache[[]Attraction](), eventCache: NewCache[*Concert](),
+		Lookups: ratelimit.New(LookupsPerMinute, time.Minute), DailyLookups: ratelimit.New(LookupsPerDay, 24*time.Hour),
 	}
+}
+
+// AllowLookup counts one concert or performer search by the user: a 429 `rate_limited` past
+// LookupsPerMinute or LookupsPerDay.
+func (s *Service) AllowLookup(userID uuid.UUID) error {
+	now, key := s.now(), userID.String()
+	if s.Lookups != nil && !s.Lookups.Allow(key, now) {
+		return errTooManyLookups
+	}
+	if s.DailyLookups != nil && !s.DailyLookups.Allow(key, now) {
+		return errTooManyLookupsToday
+	}
+	return nil
 }
 
 func (s *Service) now() time.Time {

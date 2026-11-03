@@ -1,6 +1,8 @@
 package agent
 
 import (
+	"aaru-go-api/internal/metrics"
+	"aaru-go-api/internal/safe"
 	"context"
 	"log/slog"
 	"sync"
@@ -20,6 +22,13 @@ type ReplyWorker struct {
 // Name is the worker's name in logs.
 func (w *ReplyWorker) Name() string { return "agent-replies" }
 
+func (w *ReplyWorker) log() *slog.Logger {
+	if w.Log != nil {
+		return w.Log
+	}
+	return slog.Default()
+}
+
 // Run loops until ctx is cancelled.
 func (w *ReplyWorker) Run(ctx context.Context) error {
 	idle := w.Idle
@@ -30,10 +39,14 @@ func (w *ReplyWorker) Run(ctx context.Context) error {
 	for range max(1, w.Workers) {
 		wg.Go(func() {
 			for ctx.Err() == nil {
-				worked, err := w.Replies.RunNext(ctx)
+				// A panic outside the answer itself (claiming, bookkeeping) fails the step, not the process.
+				worked, err := safe.Value(func() (bool, error) { return w.Replies.RunNext(ctx) })
+				if ctx.Err() == nil {
+					metrics.WorkerPass(w.Name(), err)
+				}
 				if err != nil && ctx.Err() == nil {
 					// The job already recorded its failure; the loop must outlive one bad mention.
-					w.Log.ErrorContext(ctx, "Agent reply step failed", "error", err)
+					w.log().Error("Agent reply step failed", "error", err, "stack", string(safe.Stack(err)))
 				}
 				if worked && err == nil {
 					continue

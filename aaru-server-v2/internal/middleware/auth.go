@@ -58,13 +58,15 @@ func IsPublic(path string) bool {
 
 // Auth resolves `Authorization: Bearer <token>` to a user and refuses every
 // `/v1` route but the public ones without one. It also records the address
-// per-client rate limits count.
-func Auth(sessions Sessions, webClientSecret string) echo.MiddlewareFunc {
+// per-client rate limits count; trustedProxyHops is how many proxies in front of
+// the API append to `X-Forwarded-For` (see ClientAddress).
+func Auth(sessions Sessions, webClientSecret string, trustedProxyHops int) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			req := c.Request()
 			ctx := reqctx.WithClientAddress(req.Context(), RateLimitAddress(
-				req.Header.Get("X-Aaru-Visitor"), req.Header.Get("X-Aaru-Web-Secret"), webClientSecret, clientAddress(c),
+				req.Header.Get("X-Aaru-Visitor"), req.Header.Get("X-Aaru-Web-Secret"), webClientSecret,
+				ClientAddress(req.Header.Values("X-Forwarded-For"), req.RemoteAddr, trustedProxyHops),
 			))
 			signedIn := false
 			if bearer := BearerToken(req.Header.Get("Authorization")); bearer != "" {
@@ -97,13 +99,31 @@ func BearerToken(header string) string {
 	return strings.TrimSpace(t)
 }
 
-// clientAddress is Traefik's first `X-Forwarded-For` hop, else the socket peer.
-func clientAddress(c echo.Context) string {
-	if fwd := c.Request().Header.Get("X-Forwarded-For"); fwd != "" {
-		first, _, _ := strings.Cut(fwd, ",")
-		return strings.TrimSpace(first)
+// ClientAddress is the caller's address as per-address limits count it (HTTP-007).
+//
+// Each trusted proxy appends the address it was called from to `X-Forwarded-For`, so the
+// caller is the entry trustedProxyHops from the right: the right-most one no trusted proxy
+// could have been handed by the caller. Anything left of it is what the caller sent and is
+// never believed. In production the one proxy is Traefik (platform/infra
+// cluster/traefik/helmchartconfig.yaml): api.aaruapp.com is DNS-only at Cloudflare, so nothing
+// sits in front of Traefik, and with externalTrafficPolicy Local Traefik sees the real peer
+// and appends it. Hence the default of 1 (TRUSTED_PROXY_HOPS). 0 ignores the header and uses
+// the socket peer. With fewer entries than hops, the left-most is the closest to the caller.
+func ClientAddress(forwarded []string, remoteAddr string, trustedProxyHops int) string {
+	if trustedProxyHops > 0 {
+		var hops []string
+		for _, header := range forwarded {
+			for _, hop := range strings.Split(header, ",") {
+				if hop = strings.TrimSpace(hop); hop != "" {
+					hops = append(hops, hop)
+				}
+			}
+		}
+		if len(hops) > 0 {
+			return hops[max(0, len(hops)-trustedProxyHops)]
+		}
 	}
-	host, _, err := net.SplitHostPort(c.Request().RemoteAddr)
+	host, _, err := net.SplitHostPort(remoteAddr)
 	if err != nil || host == "" {
 		return "unknown"
 	}

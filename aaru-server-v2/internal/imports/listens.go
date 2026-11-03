@@ -21,6 +21,7 @@ import (
 	"unicode"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 )
 
 // MaxListenUploadBytes is the largest listening file read: a Spotify history file holds years of
@@ -43,6 +44,8 @@ type ListenLog interface {
 	// ApplyStaged writes the plays CountNew counts as the job's `import` listens, then empties its
 	// staging. It returns how many were written.
 	ApplyStaged(ctx context.Context, jobID, user uuid.UUID) (int, error)
+	// ApplyStagedTx is ApplyStaged inside the caller's transaction.
+	ApplyStagedTx(ctx context.Context, tx pgx.Tx, jobID, user uuid.UUID) (int, error)
 	// DeleteImported deletes the listens a job wrote and returns how many.
 	DeleteImported(ctx context.Context, jobID, user uuid.UUID) (int, error)
 	// NewestImported is the newest listen an applied import of this source and account wrote, so
@@ -202,15 +205,23 @@ func (s *Service) fetchListens(ctx context.Context, job *core.ImportJob) (bool, 
 // applyListens writes the new plays to the listening log. No points, however recent: a backlog is
 // not a day's listening.
 func (s *Service) applyListens(ctx context.Context, job core.ImportJob) (core.ImportJob, error) {
-	written, err := s.listenLog().ApplyStaged(ctx, job.ID, job.UserID)
+	// One transaction with the job locked: a second approval waits, then finds it applied, and
+	// never overwrites the counts with its own zero (DB-003).
+	err := pgx.BeginFunc(ctx, s.Store.Pool, func(tx pgx.Tx) error {
+		if err := s.lockPlanned(ctx, tx, job.ID, job.UserID); err != nil {
+			return err
+		}
+		written, err := s.listenLog().ApplyStagedTx(ctx, tx, job.ID, job.UserID)
+		if err != nil {
+			return err
+		}
+		job.Stats.Created = written
+		job.Stats.Skipped = max(0, job.RowsTotal-written)
+		job.State = core.JobSucceeded
+		job.UpdatedAt = s.now()
+		return s.Store.UpdateTx(ctx, tx, job)
+	})
 	if err != nil {
-		return core.ImportJob{}, err
-	}
-	job.Stats.Created = written
-	job.Stats.Skipped = max(0, job.RowsTotal-written)
-	job.State = core.JobSucceeded
-	job.UpdatedAt = s.now()
-	if err := s.Store.Update(ctx, job); err != nil {
 		return core.ImportJob{}, err
 	}
 	if s.Game != nil {

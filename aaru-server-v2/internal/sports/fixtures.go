@@ -306,12 +306,12 @@ func (s *Service) Event(ctx context.Context, id string, userID uuid.UUID) (*Even
 	now := s.now()
 	s.primeLive(ctx, now)
 	channelsDone := make(chan []Broadcast, 1)
-	go func() {
+	goSafe("sports broadcasts", func() {
 		channels, _ := Value(ctx, s.cache, "tv:"+id, ttlBroadcasts, now, func(ctx context.Context) ([]Broadcast, error) {
 			return s.Listing.Broadcasts(ctx, id)
 		})
 		channelsDone <- channels
-	}()
+	}, func() { channelsDone <- nil })
 	found, _ := Value(ctx, s.cache, "event:"+id, ttlEvent, now, func(ctx context.Context) (*Event, error) {
 		return s.Listing.Event(ctx, id)
 	})

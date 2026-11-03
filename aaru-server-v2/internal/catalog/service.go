@@ -307,14 +307,26 @@ func (s *Service) searchAll(ctx context.Context, query string) (SearchResult, er
 	videoCh := make(chan hitsResult, 1)
 	animeCh := make(chan hitsResult, 1)
 	go func() {
-		h, err := s.Providers.TMDB.SearchMulti(ctx, query)
-		videoCh <- hitsResult{h, err}
+		var r hitsResult
+		defer func() {
+			if err := recovered(nil, "TMDB multi search", recover()); err != nil {
+				r = hitsResult{err: err}
+			}
+			videoCh <- r
+		}()
+		r.hits, r.err = s.Providers.TMDB.SearchMulti(ctx, query)
 	}()
 	go func() {
-		h, err := Within(ctx, s.aniListDeadline(), "anilist", func(ctx context.Context) ([]Hit, error) {
+		var r hitsResult
+		defer func() {
+			if err := recovered(nil, "AniList search", recover()); err != nil {
+				r = hitsResult{err: err}
+			}
+			animeCh <- r
+		}()
+		r.hits, r.err = Within(ctx, s.aniListDeadline(), "anilist", func(ctx context.Context) ([]Hit, error) {
 			return s.Providers.AniList.Search(ctx, query, core.MediaShow)
 		})
-		animeCh <- hitsResult{h, err}
 	}()
 	video, anime := <-videoCh, <-animeCh
 	if err := ctx.Err(); err != nil {
@@ -426,8 +438,14 @@ func Within[T any](ctx context.Context, deadline time.Duration, providerName str
 	}
 	done := make(chan result, 1)
 	go func() {
-		v, err := op(inner)
-		done <- result{v, err}
+		var r result
+		defer func() {
+			if err := recovered(nil, providerName, recover()); err != nil {
+				r = result{err: err}
+			}
+			done <- r
+		}()
+		r.value, r.err = op(inner)
 	}()
 	timer := time.NewTimer(deadline)
 	defer timer.Stop()

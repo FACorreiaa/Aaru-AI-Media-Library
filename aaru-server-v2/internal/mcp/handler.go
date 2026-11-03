@@ -96,8 +96,7 @@ func (h *Handler) post(c echo.Context) error {
 	secret := middleware.BearerToken(req.Header.Get("Authorization"))
 	caller, ok, err := h.Tokens.Authenticate(ctx, secret, auth.GroupMCP)
 	if err != nil {
-		h.log().ErrorContext(ctx, "MCP request failed", "error", err.Error())
-		return plain(c, http.StatusInternalServerError, "Something went wrong.")
+		return h.serverError(c, err)
 	}
 	if !ok {
 		c.Response().Header().Set("WWW-Authenticate", `Bearer realm="aaru", resource_metadata="`+h.ResourceMetadataURL+`"`)
@@ -112,8 +111,7 @@ func (h *Handler) post(c echo.Context) error {
 	}
 	answer, err := h.handle(ctx, body, caller)
 	if err != nil {
-		h.log().ErrorContext(ctx, "MCP request failed", "error", err.Error())
-		return plain(c, http.StatusInternalServerError, "Something went wrong.")
+		return h.serverError(c, err)
 	}
 	if answer == nil {
 		// Notifications and client responses get 202 and no body.
@@ -121,7 +119,7 @@ func (h *Handler) post(c echo.Context) error {
 	}
 	data, err := encode(answer)
 	if err != nil {
-		return plain(c, http.StatusInternalServerError, "Something went wrong.")
+		return h.serverError(c, err)
 	}
 	hdr := c.Response().Header()
 	hdr.Set("Content-Type", "application/json")
@@ -129,6 +127,19 @@ func (h *Handler) post(c echo.Context) error {
 	c.Response().WriteHeader(http.StatusOK)
 	_, err = c.Response().Write(data)
 	return err
+}
+
+// serverError answers a failure outside JSON-RPC with 500, logs it and reports it like a `/v1`
+// 500 (HTTP-006). A client that went away is logged at Info only.
+func (h *Handler) serverError(c echo.Context, err error) error {
+	ctx := c.Request().Context()
+	if middleware.ClientGone(ctx, err) {
+		h.log().InfoContext(ctx, "MCP request cancelled by the client")
+	} else {
+		h.log().ErrorContext(ctx, "MCP request failed", "error", err.Error())
+		middleware.ReportFailure(c, err, "internal", http.StatusInternalServerError)
+	}
+	return plain(c, http.StatusInternalServerError, "Something went wrong.")
 }
 
 // request is one JSON-RPC request, read as Swift's Decodable MCPRequest did: an object whose

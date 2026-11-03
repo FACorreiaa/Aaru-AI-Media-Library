@@ -66,43 +66,69 @@ func isConstraintFailure(err error) bool {
 // an item or list the user does not own is a 404. It does not run the gamification after-write
 // hooks; Service.Commit does.
 func (s *Store) Apply(ctx context.Context, op Op, user uuid.UUID, caller Caller, kind, summary string) (ActionRecord, error) {
-	zone := reqctx.TimeZone(ctx)
 	var action ActionRecord
 	err := pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
-		q := s.q.WithTx(tx)
-		inverse, err := run(ctx, q, op, user)
-		if err != nil {
-			return err
-		}
-		if UndatedKinds[kind] {
-			if ids := op.ItemIDs(); len(ids) > 0 {
-				if err := q.LibraryMarkUndatedTicks(ctx, ids); err != nil {
-					return fmt.Errorf("mark undated ticks: %w", err)
-				}
-			}
-		}
-		action, err = journal(ctx, q, journalEntry{
-			inverse: inverse, itemIDs: op.ItemIDs(), actor: caller.Actor, kind: kind, summary: summary,
-			agentTokenID: caller.AgentTokenID,
-		}, user)
-		if err != nil {
-			return err
-		}
-		facts := gamification.NewWriteFacts(kind)
-		collectFacts(facts, op, inverse)
-		return gamification.RecordLibraryWrite(ctx, tx, gamification.LibraryWrite{
-			Facts: facts, Scrobbled: caller.Scrobbled, ActionID: action.ID, UserID: user, RequestedZone: zone, Now: s.now(),
-		})
+		var err error
+		action, err = s.ApplyTx(ctx, tx, op, user, caller, kind, summary)
+		return err
 	})
+	if err != nil {
+		return ActionRecord{}, err
+	}
+	// After the commit, so a rolled-back write is never counted.
+	s.Committed(ctx, op, kind, caller.Actor, user)
+	return action, nil
+}
+
+// ApplyTx is Apply inside the caller's transaction: the op, its journal row, points and the streak
+// day all commit, or roll back, with the caller's own writes (an import approval saves its plan in
+// the same transaction, DB-003). A duplicate (user, title) is a StoreConflict. The caller calls
+// Committed once its transaction commits.
+func (s *Store) ApplyTx(ctx context.Context, tx pgx.Tx, op Op, user uuid.UUID, caller Caller, kind, summary string) (ActionRecord, error) {
+	action, err := s.applyTx(ctx, tx, op, user, caller, kind, summary)
 	if err != nil {
 		if isConstraintFailure(err) {
 			return ActionRecord{}, &StoreConflict{Message: "This title is already in the library."}
 		}
 		return ActionRecord{}, err
 	}
-	// After the commit, so a rolled-back write is never counted.
-	s.countWrite(ctx, op.ItemIDs(), kind, caller.Actor, user)
 	return action, nil
+}
+
+func (s *Store) applyTx(ctx context.Context, tx pgx.Tx, op Op, user uuid.UUID, caller Caller, kind, summary string) (ActionRecord, error) {
+	zone := reqctx.TimeZone(ctx)
+	q := s.q.WithTx(tx)
+	inverse, err := run(ctx, q, op, user)
+	if err != nil {
+		return ActionRecord{}, err
+	}
+	if UndatedKinds[kind] {
+		if ids := op.ItemIDs(); len(ids) > 0 {
+			if err := q.LibraryMarkUndatedTicks(ctx, ids); err != nil {
+				return ActionRecord{}, fmt.Errorf("mark undated ticks: %w", err)
+			}
+		}
+	}
+	action, err := journal(ctx, q, journalEntry{
+		inverse: inverse, itemIDs: op.ItemIDs(), actor: caller.Actor, kind: kind, summary: summary,
+		agentTokenID: caller.AgentTokenID,
+	}, user)
+	if err != nil {
+		return ActionRecord{}, err
+	}
+	facts := gamification.NewWriteFacts(kind)
+	collectFacts(facts, op, inverse)
+	if err := gamification.RecordLibraryWrite(ctx, tx, gamification.LibraryWrite{
+		Facts: facts, Scrobbled: caller.Scrobbled, ActionID: action.ID, UserID: user, RequestedZone: zone, Now: s.now(),
+	}); err != nil {
+		return ActionRecord{}, err
+	}
+	return action, nil
+}
+
+// Committed counts a write ApplyTx made, once the caller's transaction has committed.
+func (s *Store) Committed(ctx context.Context, op Op, kind string, actor Actor, user uuid.UUID) {
+	s.countWrite(ctx, op.ItemIDs(), kind, actor, user)
 }
 
 // countWrite counts a committed write: the library action, and, when it is progress on a Tonight

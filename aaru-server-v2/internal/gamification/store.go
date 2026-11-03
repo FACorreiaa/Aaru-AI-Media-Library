@@ -140,10 +140,59 @@ FROM unnest($5::uuid[], $6::text[], $7::int[], $8::text[], $9::int[], $10::text[
 ON CONFLICT (user_id, dedupe_key) DO NOTHING
 RETURNING points`
 
+// beginner is a pool or a transaction: Begin on a transaction is a savepoint.
+type beginner interface {
+	Begin(ctx context.Context) (pgx.Tx, error)
+}
+
 // award writes the awards whose root has no active award (or no event at all, for once-only
 // kinds), trimmed to each kind's daily cap. A capped award is still written at 0 points, so the
 // root stays spent. It returns the points actually added.
+//
+// The user's awards are serialized (Go audit DB-008): the cap reads today's points and then
+// inserts, so two writes at once could otherwise both see room under it. Inside a library
+// transaction the lock is held until that transaction ends.
 func (s store) award(ctx context.Context, awards []Award, userID uuid.UUID, loc *time.Location, now time.Time) (int, error) {
+	if len(awards) == 0 {
+		return 0, nil
+	}
+	b, ok := s.db.(beginner)
+	if !ok {
+		if err := s.lockPoints(ctx, userID); err != nil {
+			return 0, err
+		}
+		return s.awardLocked(ctx, awards, userID, loc, now)
+	}
+	var added int
+	err := pgx.BeginFunc(ctx, b, func(tx pgx.Tx) error {
+		locked := newStore(tx)
+		if err := locked.lockPoints(ctx, userID); err != nil {
+			return err
+		}
+		var err error
+		added, err = locked.awardLocked(ctx, awards, userID, loc, now)
+		return err
+	})
+	if err != nil {
+		return 0, fmt.Errorf("award points: %w", err)
+	}
+	return added, nil
+}
+
+// lockPoints takes the user's progress row (made if missing) until the transaction ends. Every
+// award already updates that row, so the lock adds no new ordering a library write could
+// deadlock on.
+func (s store) lockPoints(ctx context.Context, userID uuid.UUID) error {
+	if err := s.q.GamificationEnsureProgress(ctx, userID); err != nil {
+		return fmt.Errorf("ensure progress: %w", err)
+	}
+	if err := s.q.GamificationLockPoints(ctx, userID); err != nil {
+		return fmt.Errorf("lock points: %w", err)
+	}
+	return nil
+}
+
+func (s store) awardLocked(ctx context.Context, awards []Award, userID uuid.UUID, loc *time.Location, now time.Time) (int, error) {
 	seen := map[string]bool{}
 	var unique []Award
 	for _, a := range awards {

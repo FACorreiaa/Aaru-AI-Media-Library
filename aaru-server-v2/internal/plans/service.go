@@ -73,8 +73,7 @@ func (s *Service) Propose(ctx context.Context, changes []AgentChange, caller aut
 		return Plan{}, err
 	}
 	if pending >= MaxPendingPerToken {
-		return Plan{}, &ToolError{Message: strconv.Itoa(int(pending)) +
-			" changes from this connection are already waiting for the user. Ask them to review those in Aaru first."}
+		return Plan{}, tooManyPending(pending)
 	}
 	writes, err := s.prepare(ctx, changes, caller)
 	if err != nil {
@@ -112,6 +111,12 @@ func (s *Service) Propose(ctx context.Context, changes []AgentChange, caller aut
 	}
 	s.Push.Send(ctx, Message(plan), caller.UserID)
 	return plan, nil
+}
+
+// tooManyPending is the ToolError for a token already at MaxPendingPerToken.
+func tooManyPending(pending int32) *ToolError {
+	return &ToolError{Message: strconv.Itoa(int(pending)) +
+		" changes from this connection are already waiting for the user. Ask them to review those in Aaru first."}
 }
 
 // Plans are the user's plans, newest first: only pending ones (expired ones excluded), or all.

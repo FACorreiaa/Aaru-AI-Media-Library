@@ -15,7 +15,8 @@ import (
 
 // CallBudget is Ticketmaster's daily allowance: the free tier allows 5,000 calls a day, Aaru
 // stops at Limit (UTC day) and serves what it has cached, so a busy day never runs the key into
-// its hard cap.
+// its hard cap. Every HTTP attempt counts, retries included. The count lives in this process's
+// memory: a restart starts the day again, and two replicas would each spend a full Limit.
 type CallBudget struct {
 	Limit int
 	mu    sync.Mutex
@@ -25,6 +26,17 @@ type CallBudget struct {
 
 // NewCallBudget allows limit calls a UTC day.
 func NewCallBudget(limit int) *CallBudget { return &CallBudget{Limit: limit} }
+
+// Has is whether today's budget has a call left, without taking it.
+func (b *CallBudget) Has(now time.Time) bool {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	used := b.used
+	if now.UTC().Format(time.DateOnly) != b.day {
+		used = 0
+	}
+	return used < b.Limit
+}
 
 // Take takes one call from today's budget; false when it is spent.
 func (b *CallBudget) Take(now time.Time) bool {
@@ -193,14 +205,22 @@ func Timestamp(t time.Time) string {
 	return t.UTC().Format("2006-01-02T15:04:05Z")
 }
 
-// get spends one call of the day's budget, then sends query (sorted by name, the key last).
+// get sends query (sorted by name, the key last), spending one call of the day's budget per
+// HTTP attempt: a retried request costs Ticketmaster's quota each time, so it costs ours too.
 func (t *Ticketmaster) get(ctx context.Context, path string, query map[string]string, into interface{ valid() bool }) error {
 	now := time.Now
 	if t.Now != nil {
 		now = t.Now
 	}
-	if !t.Budget.Take(now()) {
+	// A spent day fails before anything is built or paced.
+	if !t.Budget.Has(now()) {
 		return provider.NewError("ticketmaster", provider.KindUnavailable)
+	}
+	spend := func() error {
+		if !t.Budget.Take(now()) {
+			return provider.NewError("ticketmaster", provider.KindUnavailable)
+		}
+		return nil
 	}
 	base := t.BaseURL
 	if base == "" {
@@ -217,8 +237,9 @@ func (t *Ticketmaster) get(ctx context.Context, path string, query map[string]st
 	}
 	parts = append(parts, "apikey="+url.QueryEscape(t.APIKey))
 	request := provider.Request{
-		URL:     strings.TrimSuffix(base, "/") + "/" + path + "?" + strings.Join(parts, "&"),
-		Headers: [][2]string{{"Accept", "application/json"}},
+		URL:           strings.TrimSuffix(base, "/") + "/" + path + "?" + strings.Join(parts, "&"),
+		Headers:       [][2]string{{"Accept", "application/json"}},
+		BeforeAttempt: spend,
 	}
 	if err := t.Client.DecodeJSON(ctx, request, into); err != nil {
 		return err

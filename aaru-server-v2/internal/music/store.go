@@ -285,21 +285,32 @@ func (s *Store) CountNew(ctx context.Context, jobID, user uuid.UUID) (int, error
 // ApplyStaged writes the plays CountNew counts as the job's `import` listens, then empties its
 // staging. Returns how many were written.
 func (s *Store) ApplyStaged(ctx context.Context, jobID, user uuid.UUID) (int, error) {
-	var written int32
+	var written int
 	err := pgx.BeginFunc(ctx, s.Pool, func(tx pgx.Tx) error {
-		q := s.Q.WithTx(tx)
-		// The same per-user lock as a scrobbler's insert, so a live listen arriving now is compared
-		// with these, or these with it.
-		if err := q.LockUserListens(ctx, userKey(user)); err != nil {
-			return err
-		}
 		var err error
-		if written, err = q.ApplyStagedListens(ctx, sqlc.ApplyStagedListensParams{JobID: jobID, UserID: user}); err != nil {
-			return err
-		}
-		return q.ClearStagedListens(ctx, jobID)
+		written, err = s.ApplyStagedTx(ctx, tx, jobID, user)
+		return err
 	})
 	if err != nil {
+		return 0, err
+	}
+	return written, nil
+}
+
+// ApplyStagedTx is ApplyStaged inside the caller's transaction (an import approval saves the job
+// in the same one, DB-003).
+func (s *Store) ApplyStagedTx(ctx context.Context, tx pgx.Tx, jobID, user uuid.UUID) (int, error) {
+	q := s.Q.WithTx(tx)
+	// The same per-user lock as a scrobbler's insert, so a live listen arriving now is compared
+	// with these, or these with it.
+	if err := q.LockUserListens(ctx, userKey(user)); err != nil {
+		return 0, fmt.Errorf("apply staged listens: %w", err)
+	}
+	written, err := q.ApplyStagedListens(ctx, sqlc.ApplyStagedListensParams{JobID: jobID, UserID: user})
+	if err != nil {
+		return 0, fmt.Errorf("apply staged listens: %w", err)
+	}
+	if err := q.ClearStagedListens(ctx, jobID); err != nil {
 		return 0, fmt.Errorf("apply staged listens: %w", err)
 	}
 	return int(written), nil

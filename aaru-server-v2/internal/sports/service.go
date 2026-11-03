@@ -1,6 +1,7 @@
 package sports
 
 import (
+	"aaru-go-api/internal/apperr"
 	"aaru-go-api/internal/ratelimit"
 	"context"
 	"errors"
@@ -28,7 +29,15 @@ const (
 	// ShareCallsPerMinute is share links' own slice of TheSportsDB's 100 calls a minute
 	// (SHR-002), for cache misses only.
 	ShareCallsPerMinute = 20
+	// SearchesPerMinute is one user's searches a minute: each can cost three provider calls,
+	// out of TheSportsDB's 100 a minute shared by everyone (CON-001).
+	SearchesPerMinute = 30
+	// EventsPerMinute is one user's event lookups a minute: any numeric id is a cache miss.
+	EventsPerMinute = 60
 )
+
+// errTooManyLookups is a user over SearchesPerMinute or EventsPerMinute.
+var errTooManyLookups = apperr.RateLimited("Too many requests. Wait a minute.")
 
 // Freshness of each kind of answer.
 const (
@@ -81,6 +90,9 @@ type Service struct {
 	Patience time.Duration
 	// ShareLookups is share links' own slice of TheSportsDB's 100 calls a minute (SHR-002).
 	ShareLookups *ratelimit.FixedWindow
+	// Searches and Events are per-user limits on the routes whose keys come from the user.
+	Searches *ratelimit.FixedWindow
+	Events   *ratelimit.FixedWindow
 
 	cache *Cache
 }
@@ -90,7 +102,24 @@ func NewService(store *Store, listing Listing) *Service {
 	return &Service{
 		Store: store, Listing: listing, Now: time.Now, Patience: 3 * time.Second,
 		ShareLookups: ratelimit.New(ShareCallsPerMinute, time.Minute), cache: NewCache(),
+		Searches: ratelimit.New(SearchesPerMinute, time.Minute), Events: ratelimit.New(EventsPerMinute, time.Minute),
 	}
+}
+
+// AllowSearch counts one search by the user; a 429 `rate_limited` past SearchesPerMinute.
+func (s *Service) AllowSearch(userID uuid.UUID) error {
+	if s.Searches != nil && !s.Searches.Allow(userID.String(), s.now()) {
+		return errTooManyLookups
+	}
+	return nil
+}
+
+// AllowEvent counts one event lookup by the user; a 429 `rate_limited` past EventsPerMinute.
+func (s *Service) AllowEvent(userID uuid.UUID) error {
+	if s.Events != nil && !s.Events.Allow(userID.String(), s.now()) {
+		return errTooManyLookups
+	}
+	return nil
 }
 
 func (s *Service) now() time.Time {
@@ -145,6 +174,7 @@ func (s *Service) Search(ctx context.Context, query string, kind EntityKind) ([]
 	var wg sync.WaitGroup
 	for i, k := range kinds {
 		wg.Go(func() {
+			defer logPanic("sports search")
 			found, _ := Value(ctx, s.cache, "search:"+string(k)+":"+slug, ttlEntity, now, func(ctx context.Context) ([]Entity, error) {
 				return s.Listing.Search(ctx, k, slug)
 			})

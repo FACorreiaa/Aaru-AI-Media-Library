@@ -299,6 +299,27 @@ func (c *onAirCache) shows(
 	return c.result
 }
 
+// The guide's detached work is bounded: the fetch, then the exact-times pass (TVmaze's pacer
+// makes that one slower).
+const (
+	OnAirFetchTimeout  = 2 * time.Minute
+	OnAirRefineTimeout = 5 * time.Minute
+)
+
+// fail records a failed fetch and wakes its waiters.
+func (c *onAirCache) fail(now time.Time, done chan struct{}, err error) {
+	c.mu.Lock()
+	c.inFlight = nil
+	c.failedAt = &now
+	c.mu.Unlock()
+	close(done)
+	log := c.log
+	if log == nil {
+		log = slog.Default()
+	}
+	log.Warn("On-air guide failed", "error", err.Error())
+}
+
 // start runs the fetch detached; the caller holds mu.
 func (c *onAirCache) start(
 	ctx context.Context, now time.Time,
@@ -309,27 +330,39 @@ func (c *onAirCache) start(
 	c.inFlight = done
 	c.result = nil
 	go func() {
-		shows, err := fetch(ctx)
-		c.mu.Lock()
-		c.inFlight = nil
-		if err != nil {
-			c.failedAt = &now
-			c.mu.Unlock()
-			close(done)
-			log := c.log
-			if log == nil {
-				log = slog.Default()
+		settled := false
+		defer func() {
+			// A panicking fetch or refine must still settle the flight: a stale inFlight
+			// would leave every later viewer waiting on a guide that never comes.
+			err := recovered(c.log, "On-air guide", recover())
+			if settled {
+				return
 			}
-			log.Warn("On-air guide failed", "error", err.Error())
+			if err == nil {
+				err = errFetchPanicked
+			}
+			c.fail(now, done, err)
+		}()
+		fetchCtx, cancel := context.WithTimeout(ctx, OnAirFetchTimeout)
+		shows, err := fetch(fetchCtx)
+		cancel()
+		if err != nil {
+			settled = true
+			c.fail(now, done, err)
 			return
 		}
+		c.mu.Lock()
+		c.inFlight = nil
 		fresh := &onAirFetched{shows: shows, fetchedAt: now}
 		c.failedAt = nil
 		c.fetched = fresh
 		c.result = fresh
 		c.mu.Unlock()
 		close(done)
-		refined := refine(ctx, shows)
+		settled = true
+		refineCtx, cancel := context.WithTimeout(ctx, OnAirRefineTimeout)
+		defer cancel()
+		refined := refine(refineCtx, shows)
 		c.mu.Lock()
 		defer c.mu.Unlock()
 		// Exact times replace the dates only if no newer guide landed meanwhile.

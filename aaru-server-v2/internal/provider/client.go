@@ -6,7 +6,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/rand/v2"
+	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -194,6 +197,9 @@ type Client struct {
 	BaseDelay time.Duration
 	// Sleep is replaceable in tests.
 	Sleep func(ctx context.Context, d time.Duration) error
+	// Jitter spreads a computed backoff so callers failing together do not retry together;
+	// nil is EqualJitter. A provider's own Retry-After is honoured as sent, without jitter.
+	Jitter func(d time.Duration) time.Duration
 	// Classify is a provider's own reading of a failed answer, before the
 	// status-code rules: AniList says "disabled" with a 403, which is an outage, not a
 	// refused credential. ok false leaves the answer to the default rules.
@@ -224,6 +230,10 @@ func (c *Client) Do(ctx context.Context, req Request) (*Response, error) {
 	if sleep == nil {
 		sleep = Sleep
 	}
+	jitter := c.Jitter
+	if jitter == nil {
+		jitter = EqualJitter
+	}
 	for attempt := 1; ; attempt++ {
 		if err := ctx.Err(); err != nil {
 			return nil, err
@@ -233,10 +243,18 @@ func (c *Client) Do(ctx context.Context, req Request) (*Response, error) {
 				return nil, err
 			}
 		}
+		if req.BeforeAttempt != nil {
+			if err := req.BeforeAttempt(); err != nil {
+				return nil, err
+			}
+		}
 		var retryAfter time.Duration
 		retryable := false
 		resp, err := c.Transport.Send(ctx, req)
 		switch {
+		case errors.Is(err, ErrBodyTooLarge):
+			// Asking again downloads the same oversize answer.
+			return nil, NewError(c.Name, KindMalformed)
 		case err != nil:
 			if ctxErr := ctx.Err(); ctxErr != nil {
 				return nil, ctxErr
@@ -249,10 +267,8 @@ func (c *Client) Do(ctx context.Context, req Request) (*Response, error) {
 				return nil, refused
 			}
 			retryable = resp.Status == 429 || (resp.Status >= 500 && resp.Status < 600)
-			if resp.Status == 429 {
-				if seconds, convErr := strconv.Atoi(resp.HeaderValue("Retry-After")); convErr == nil {
-					retryAfter = time.Duration(seconds) * time.Second
-				}
+			if resp.Status == 429 || resp.Status == 503 {
+				retryAfter = RetryAfter(resp.HeaderValue("Retry-After"), time.Now())
 			}
 		}
 		if !retryable || attempt >= maxAttempts || retryAfter > MaxRetryAfter {
@@ -260,12 +276,49 @@ func (c *Client) Do(ctx context.Context, req Request) (*Response, error) {
 		}
 		delay := retryAfter
 		if delay == 0 {
-			delay = c.BaseDelay * time.Duration(1<<(attempt-1))
+			delay = jitter(c.BaseDelay * time.Duration(1<<(attempt-1)))
+		}
+		// A wait the caller's deadline cannot cover fails now, with the provider's error,
+		// instead of sleeping into the deadline.
+		if deadline, ok := ctx.Deadline(); ok && time.Until(deadline) < delay {
+			return nil, NewError(c.Name, KindUnavailable)
 		}
 		if err := sleep(ctx, delay); err != nil {
 			return nil, err
 		}
 	}
+}
+
+// EqualJitter is d/2 plus a random part of d/2: never less than half the backoff, never more.
+func EqualJitter(d time.Duration) time.Duration {
+	if d <= 1 {
+		return d
+	}
+	half := d / 2
+	return half + rand.N(d-half+1) //nolint:gosec // jitter, not a secret
+}
+
+// RetryAfter reads a `Retry-After` header: delay-seconds or an HTTP-date (RFC 9110 10.2.3).
+// Zero when absent, unreadable or already past.
+func RetryAfter(value string, now time.Time) time.Duration {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return 0
+	}
+	if seconds, err := strconv.Atoi(value); err == nil {
+		if seconds <= 0 {
+			return 0
+		}
+		return time.Duration(seconds) * time.Second
+	}
+	at, err := http.ParseTime(value)
+	if err != nil {
+		return 0
+	}
+	if d := at.Sub(now); d > 0 {
+		return d.Round(time.Second)
+	}
+	return 0
 }
 
 // refuse is the error for answers asking again would not change: 404, 401/403, any

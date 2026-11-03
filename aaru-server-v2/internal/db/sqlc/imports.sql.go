@@ -19,8 +19,8 @@ UPDATE import_jobs SET state = 'running', attempts = attempts + 1, rows_matched 
 WHERE id = (
     SELECT j.id FROM import_jobs j
     WHERE ((j.state = 'queued' AND (j.locked_until IS NULL OR j.locked_until <= $2))
-       OR (j.state = 'running' AND j.locked_until < $2))
-      AND ($3::uuid IS NULL OR j.user_id = $3::uuid)
+       OR (j.state = 'running' AND j.locked_until < $2 AND j.attempts < $3))
+      AND ($4::uuid IS NULL OR j.user_id = $4::uuid)
     ORDER BY j.created_at
     FOR UPDATE SKIP LOCKED
     LIMIT 1
@@ -34,6 +34,7 @@ RETURNING id, user_id, source, state, stats, error_summary, filename, created_at
 type ImportJobClaimParams struct {
 	LockedUntil *time.Time
 	Now         time.Time
+	MaxAttempts int32
 	Owner       *uuid.UUID
 }
 
@@ -54,9 +55,15 @@ type ImportJobClaimRow struct {
 	ListensStaged int32
 }
 
-// One statement: SKIP LOCKED means two workers never lease the same job.
+// One statement: SKIP LOCKED means two workers never lease the same job. An expired lease is
+// taken over only while the job has attempts left (ImportJobFailExpired fails the rest).
 func (q *Queries) ImportJobClaim(ctx context.Context, arg ImportJobClaimParams) (ImportJobClaimRow, error) {
-	row := q.db.QueryRow(ctx, importJobClaim, arg.LockedUntil, arg.Now, arg.Owner)
+	row := q.db.QueryRow(ctx, importJobClaim,
+		arg.LockedUntil,
+		arg.Now,
+		arg.MaxAttempts,
+		arg.Owner,
+	)
 	var i ImportJobClaimRow
 	err := row.Scan(
 		&i.ID,
@@ -91,6 +98,46 @@ func (q *Queries) ImportJobDelete(ctx context.Context, arg ImportJobDeleteParams
 	var id uuid.UUID
 	err := row.Scan(&id)
 	return id, err
+}
+
+const importJobFailExpired = `-- name: ImportJobFailExpired :many
+UPDATE import_jobs SET state = 'failed', error_summary = $1, locked_until = NULL, updated_at = $2
+WHERE state = 'running' AND locked_until < $2 AND attempts >= $3
+RETURNING id, user_id, source
+`
+
+type ImportJobFailExpiredParams struct {
+	ErrorSummary *string
+	Now          time.Time
+	MaxAttempts  int32
+}
+
+type ImportJobFailExpiredRow struct {
+	ID     uuid.UUID
+	UserID uuid.UUID
+	Source string
+}
+
+// A job whose lease ran out on its last attempt never reached its own failure path: the process died
+// under it (a crash, an OOM kill). It fails for good instead of being leased again forever.
+func (q *Queries) ImportJobFailExpired(ctx context.Context, arg ImportJobFailExpiredParams) ([]ImportJobFailExpiredRow, error) {
+	rows, err := q.db.Query(ctx, importJobFailExpired, arg.ErrorSummary, arg.Now, arg.MaxAttempts)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ImportJobFailExpiredRow{}
+	for rows.Next() {
+		var i ImportJobFailExpiredRow
+		if err := rows.Scan(&i.ID, &i.UserID, &i.Source); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const importJobGet = `-- name: ImportJobGet :one
@@ -178,6 +225,24 @@ func (q *Queries) ImportJobInsert(ctx context.Context, arg ImportJobInsertParams
 		arg.UpdatedAt,
 	)
 	return err
+}
+
+const importJobLock = `-- name: ImportJobLock :one
+SELECT state FROM import_jobs WHERE id = $1 AND user_id = $2 FOR UPDATE
+`
+
+type ImportJobLockParams struct {
+	ID     uuid.UUID
+	UserID uuid.UUID
+}
+
+// Locks one of the user's jobs until the caller's transaction ends, so two approvals (a double tap, a
+// retry) never both pass the state check (DB-003).
+func (q *Queries) ImportJobLock(ctx context.Context, arg ImportJobLockParams) (string, error) {
+	row := q.db.QueryRow(ctx, importJobLock, arg.ID, arg.UserID)
+	var state string
+	err := row.Scan(&state)
+	return state, err
 }
 
 const importJobProgress = `-- name: ImportJobProgress :exec
@@ -418,6 +483,17 @@ type ImportRowsInsertParams struct {
 // A few hundred rows per statement: a 2,000-row export is a handful of round trips, not 2,000.
 func (q *Queries) ImportRowsInsert(ctx context.Context, arg ImportRowsInsertParams) error {
 	_, err := q.db.Exec(ctx, importRowsInsert, arg.JobID, arg.Idx, arg.Rows)
+	return err
+}
+
+const lockUserCaptures = `-- name: LockUserCaptures :exec
+SELECT pg_advisory_xact_lock(hashtextextended('captures:' || $1::text, 0))
+`
+
+// One capture start per user at a time, so parallel captures cannot all pass the quota count before
+// any is inserted (DB-004). Held until the transaction ends.
+func (q *Queries) LockUserCaptures(ctx context.Context, userKey string) error {
+	_, err := q.db.Exec(ctx, lockUserCaptures, userKey)
 	return err
 }
 

@@ -2,10 +2,14 @@ package catalog
 
 import (
 	"aaru-go-api/internal/core"
+	"aaru-go-api/internal/metrics"
+	"aaru-go-api/internal/safe"
 	"context"
 	"log/slog"
 	"sync"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // Refresher pacing.
@@ -38,6 +42,26 @@ type Refresher struct {
 	PageCountLimit int
 	// Now defaults to time.Now.
 	Now func() time.Time
+	// Log defaults to slog.Default.
+	Log *slog.Logger
+}
+
+func (r *Refresher) log() *slog.Logger {
+	if r.Log == nil {
+		return slog.Default()
+	}
+	return r.Log
+}
+
+// lookupFailed counts a provider lookup the pass moves past (the title is stamped and asked again
+// later), so a revoked key or an outage shows on `/metrics` instead of going unnoticed (Go audit
+// REL-004). A shutdown is not a failure.
+func (r *Refresher) lookupFailed(ctx context.Context, step string, id uuid.UUID, err error) {
+	if err == nil || ctx.Err() != nil {
+		return
+	}
+	metrics.RefreshFailed(step)
+	r.log().Debug("Catalog refresh lookup failed", "step", step, "title", id, "error", err.Error())
 }
 
 // NewRefresher builds a refresher with the default limits.
@@ -73,19 +97,26 @@ func (r *Refresher) RunOnce(ctx context.Context) (int, error) {
 		sem <- struct{}{}
 		wg.Go(func() {
 			defer func() { <-sem }()
-			if ctx.Err() != nil {
-				return
-			}
-			// Stamped first: a show the provider no longer knows would otherwise come back every pass.
-			if err := r.Store.MarkEpisodesAttempted(ctx, id, now); err != nil {
+			// A panic loading one show is that show's failure, not the process's (Go audit REL-001).
+			err := safe.Step(func() error {
+				if ctx.Err() != nil {
+					return nil
+				}
+				// Stamped first: a show the provider no longer knows would otherwise come back every pass.
+				if err := r.Store.MarkEpisodesAttempted(ctx, id, now); err != nil {
+					return err
+				}
+				_, err := r.Catalog.Detail(ctx, id)
+				r.lookupFailed(ctx, "episodes", id, err)
+				return nil
+			})
+			if err != nil {
 				mu.Lock()
 				if firstErr == nil {
 					firstErr = err
 				}
 				mu.Unlock()
-				return
 			}
-			_, _ = r.Catalog.Detail(ctx, id)
 		})
 	}
 	wg.Wait()
@@ -111,7 +142,8 @@ func (r *Refresher) FillGenres(ctx context.Context) (int, error) {
 		if err := ctx.Err(); err != nil {
 			return 0, err
 		}
-		genres, _ := resolver.Genres(ctx, title)
+		genres, err := resolver.Genres(ctx, title)
+		r.lookupFailed(ctx, "genres", title.ID, err)
 		// A shutdown mid-call is not "no genres": leave the title unstamped for the next pass.
 		if err := ctx.Err(); err != nil {
 			return 0, err
@@ -137,9 +169,11 @@ func (r *Refresher) FillPageCounts(ctx context.Context) (int, error) {
 			return 0, err
 		}
 		var pages *int
-		if found, err := r.Catalog.Providers.OpenLibrary.Hydrate(ctx, book.IDs, core.MediaBook); err == nil && found != nil {
+		found, err := r.Catalog.Providers.OpenLibrary.Hydrate(ctx, book.IDs, core.MediaBook)
+		if err == nil && found != nil {
 			pages = found.Hit.PageCount
 		}
+		r.lookupFailed(ctx, "page_counts", book.ID, err)
 		if err := ctx.Err(); err != nil {
 			return 0, err
 		}
@@ -162,6 +196,9 @@ type RefreshWorker struct {
 
 // NewRefreshWorker is the worker with the 60 s / 5 s pauses.
 func NewRefreshWorker(refresher *Refresher, log *slog.Logger) *RefreshWorker {
+	if refresher != nil && refresher.Log == nil {
+		refresher.Log = log
+	}
 	return &RefreshWorker{Refresher: refresher, Log: log, Interval: 60 * time.Second, BacklogInterval: 5 * time.Second}
 }
 
@@ -176,7 +213,11 @@ func (w *RefreshWorker) Run(ctx context.Context) error {
 	}
 	for ctx.Err() == nil {
 		pause := w.Interval
-		if err := w.pass(ctx, log, &pause); err != nil {
+		err := safe.Step(func() error { return w.pass(ctx, log, &pause) })
+		if ctx.Err() == nil {
+			metrics.WorkerPass(w.Name(), err)
+		}
+		if err != nil {
 			if ctx.Err() != nil {
 				return nil
 			}

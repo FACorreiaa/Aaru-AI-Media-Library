@@ -97,10 +97,24 @@ func (s *Store) OwnedCount(ctx context.Context, user uuid.UUID) (int, error) {
 	return int(n), nil
 }
 
-// CreateGroup inserts the group, its owner and its default text channel together.
-func (s *Store) CreateGroup(ctx context.Context, id uuid.UUID, name string, owner uuid.UUID, general Channel, now time.Time) error {
-	return pgx.BeginFunc(ctx, s.Pool, func(tx pgx.Tx) error {
+// CreateGroup inserts the group, its owner and its default text channel together, unless the owner
+// already owns maxOwned groups (false). The count and the insert run under the owner's lock, so
+// parallel creates cannot pass the cap together (DB-008).
+func (s *Store) CreateGroup(ctx context.Context, id uuid.UUID, name string, owner uuid.UUID, general Channel, now time.Time, maxOwned int) (bool, error) {
+	created := false
+	err := pgx.BeginFunc(ctx, s.Pool, func(tx pgx.Tx) error {
 		q := s.Q.WithTx(tx)
+		if err := q.LockUserGroupCreate(ctx, strings.ToUpper(owner.String())); err != nil {
+			return fmt.Errorf("lock owned groups: %w", err)
+		}
+		owned, err := q.GroupOwnedCount(ctx, owner)
+		if err != nil {
+			return fmt.Errorf("owned groups: %w", err)
+		}
+		if owned >= int64(maxOwned) {
+			return nil
+		}
+		created = true
 		if err := q.InsertGroup(ctx, sqlc.InsertGroupParams{ID: id, Name: name, CreatedAt: now}); err != nil {
 			return fmt.Errorf("insert group: %w", err)
 		}
@@ -111,6 +125,10 @@ func (s *Store) CreateGroup(ctx context.Context, id uuid.UUID, name string, owne
 		}
 		return insertChannel(ctx, q, general)
 	})
+	if err != nil {
+		return false, err
+	}
+	return created, nil
 }
 
 // RenameGroup renames a group.

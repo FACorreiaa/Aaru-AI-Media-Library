@@ -73,6 +73,9 @@ func (s *Server) SearchConcerts(ctx context.Context, req api.SearchConcertsReque
 	if err != nil {
 		return nil, err
 	}
+	if err := s.Concerts.AllowLookup(userID); err != nil {
+		return nil, err
+	}
 	scope := concerts.ScopeNear
 	if req.Body.Scope == api.ConcertSearchScopeAnywhere {
 		scope = concerts.ScopeAnywhere
@@ -97,11 +100,15 @@ func (s *Server) SearchConcertPerformers(ctx context.Context, req api.SearchConc
 	if req.Body == nil {
 		return nil, apperr.BadRequest()
 	}
-	if _, err := currentUser(ctx); err != nil {
+	userID, err := currentUser(ctx)
+	if err != nil {
 		return nil, err
 	}
 	query, err := artistName(req.Body.Q)
 	if err != nil {
+		return nil, err
+	}
+	if err := s.Concerts.AllowLookup(userID); err != nil {
 		return nil, err
 	}
 	found, ok := s.Concerts.Performers(ctx, query)

@@ -73,15 +73,36 @@ func (s *Service) create(ctx context.Context, p Plan, user uuid.UUID) error {
 	if err != nil {
 		return err
 	}
-	err = s.q.PlanCreate(ctx, sqlc.PlanCreateParams{
+	params := sqlc.PlanCreateParams{
 		ID: p.ID, UserID: user, AgentTokenID: p.AgentTokenID, AgentName: p.AgentName, Status: string(p.Status),
 		Summary: p.Summary, Changes: changes, Counts: counts, Op: op, Basis: basis, CreatedAt: p.CreatedAt,
 		ExpiresAt: p.ExpiresAt,
-	})
-	if err != nil {
-		return fmt.Errorf("create plan: %w", err)
 	}
-	return nil
+	if p.AgentTokenID == nil {
+		if err := s.q.PlanCreate(ctx, params); err != nil {
+			return fmt.Errorf("create plan: %w", err)
+		}
+		return nil
+	}
+	// The token's pending count again, under its lock and with the insert, so parallel proposals
+	// cannot pass MaxPendingPerToken together (DB-008).
+	return pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
+		q := s.q.WithTx(tx)
+		if err := q.LockAgentTokenPlans(ctx, strings.ToUpper(p.AgentTokenID.String())); err != nil {
+			return fmt.Errorf("lock pending plans: %w", err)
+		}
+		pending, err := q.PlanPendingCount(ctx, sqlc.PlanPendingCountParams{AgentTokenID: p.AgentTokenID, Now: p.CreatedAt})
+		if err != nil {
+			return fmt.Errorf("pending plans: %w", err)
+		}
+		if pending >= MaxPendingPerToken {
+			return tooManyPending(pending)
+		}
+		if err := q.PlanCreate(ctx, params); err != nil {
+			return fmt.Errorf("create plan: %w", err)
+		}
+		return nil
+	})
 }
 
 func plansFrom(rows []planRow) ([]Plan, error) {

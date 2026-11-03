@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"aaru-go-api/internal/middleware"
 	"aaru-go-api/internal/oauth"
 	"aaru-go-api/internal/reqctx"
 	"bytes"
@@ -133,7 +134,8 @@ func (s *Server) oauthRespond(next echo.HandlerFunc) echo.HandlerFunc {
 		if errors.As(err, &oauthErr) {
 			return oauthJSON(c, oauthErr.Status, map[string]any{"error": oauthErr.Code, "error_description": oauthErr.Description})
 		}
-		s.Log.Error("OAuth request failed", "error", err.Error())
+		s.Log.ErrorContext(c.Request().Context(), "OAuth request failed", "error", err.Error())
+		middleware.ReportFailure(c, err, "server_error", http.StatusInternalServerError)
 		return oauthJSON(c, http.StatusInternalServerError, map[string]any{"error": "server_error", "error_description": "Try again later."})
 	}
 }
