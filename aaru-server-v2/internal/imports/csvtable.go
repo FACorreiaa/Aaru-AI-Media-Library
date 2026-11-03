@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 	"unicode"
+	"unicode/utf8"
 )
 
 // CSVTable is a parsed CSV file: a header row and records keyed by header (CSVTable.swift). RFC
@@ -211,11 +212,16 @@ func splitFunc(s string, sep func(rune) bool) []string { return strings.FieldsFu
 // characters is the string's user-perceived characters, roughly Swift's `Character`s: a mark, a
 // variation selector, an emoji modifier, a zero-width joiner or what one joins, and the second
 // regional indicator of a flag stay with the character before; "\r\n" is one.
+//
+// Each piece is sliced by the rune's width in s, not len(string(r)): an invalid byte decodes to
+// U+FFFD (3 bytes) but is 1 byte wide, and slicing by 3 ran past the end (found by fuzzing).
 func characters(s string) []string {
 	var out []string
 	var prev rune = -1
 	regional := 0
 	for i, r := range s {
+		_, width := utf8.DecodeRuneInString(s[i:])
+		piece := s[i : i+width]
 		extend := len(out) > 0 && (unicode.Is(unicode.M, r) || r == '\u200D' || prev == '\u200D' ||
 			(r >= '\uFE00' && r <= '\uFE0F') || (r >= 0x1F3FB && r <= 0x1F3FF) || (prev == '\r' && r == '\n') ||
 			(isRegional(r) && regional%2 == 1))
@@ -225,9 +231,9 @@ func characters(s string) []string {
 			regional = 0
 		}
 		if extend {
-			out[len(out)-1] += string(r)
+			out[len(out)-1] += piece
 		} else {
-			out = append(out, s[i:i+len(string(r))])
+			out = append(out, piece)
 		}
 		prev = r
 	}

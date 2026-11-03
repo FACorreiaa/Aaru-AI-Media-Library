@@ -1,5 +1,6 @@
 # Build context: this directory (`docker build -t aaru-server aaru-server-v2`).
-FROM golang:1.27-bookworm AS build
+# Base images are pinned by multi-arch index digest (tag kept for reading); Dependabot bumps them.
+FROM golang:1.27-bookworm@sha256:d9b6a1beb9474adc2a1ce842573639b44b2a0dd49b6669f51d3821baf9ec37c9 AS build
 WORKDIR /src
 COPY --link go.mod go.sum ./
 RUN --mount=type=cache,target=/go/pkg/mod \
@@ -11,7 +12,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/aaru ./cmd/aaru
 
-FROM gcr.io/distroless/static-debian12:nonroot
+FROM gcr.io/distroless/static-debian12:nonroot@sha256:afa5c872c891853ca7fcf1f12c3edb23f7eeef36189728842dd51042ff57f7ab
 WORKDIR /app
 COPY --link --from=build /out/aaru /app/aaru
 # The commit this image was built from, as the release on Sentry error reports.
