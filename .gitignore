@@ -24,3 +24,25 @@ aaru-ios/build/
 
 # Full-size Apple audit screenshots stay local; the JPEGs beside them are committed.
 docs/audit/apple-shots/*.png
+
+# --- Build output: never commit a binary. ---
+# CI enforces this by file content (.github/workflows/no-binaries.yml); these
+# entries keep the usual outputs from ever being staged.
+bin/
+tmp/
+.build/
+*.exe
+*.test
+*.o
+*.a
+*.so
+*.dylib
+/aaru
+/aaru-go-api
+/air
+/golangci-lint
+/main
+/server
+/sqlc
+/tailwindcss
+/templ
