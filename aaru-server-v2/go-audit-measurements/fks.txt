@@ -1,5 +1,0 @@
-awk: syntax error at source line 1
- context is
-	/^ALTER TABLE ONLY/ {t=$4} /FOREIGN KEY/ {match($0,/FOREIGN KEY \(([^)]*)\) REFERENCES ([a-z_]*)\(.*ON DELETE ([A-Z >>>  ]*)/, <<< 
-awk: illegal statement at source line 1
-awk: illegal statement at source line 1
