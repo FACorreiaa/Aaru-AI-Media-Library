@@ -96,24 +96,25 @@ func (q *Queries) PlanByID(ctx context.Context, arg PlanByIDParams) (PlanByIDRow
 const planCreate = `-- name: PlanCreate :exec
 
 INSERT INTO agent_plans (id, user_id, agent_token_id, agent_name, status, summary, changes, counts, op, basis,
-    created_at, expires_at)
+    created_at, expires_at, spends_capture)
 VALUES ($1, $2, $3::uuid, $4, $5, $6, $7, $8, $9,
-    $10, $11::pg_catalog.timestamptz, $12::pg_catalog.timestamptz)
+    $10, $11::pg_catalog.timestamptz, $12::pg_catalog.timestamptz, $13)
 `
 
 type PlanCreateParams struct {
-	ID           uuid.UUID
-	UserID       uuid.UUID
-	AgentTokenID *uuid.UUID
-	AgentName    string
-	Status       string
-	Summary      string
-	Changes      json.RawMessage
-	Counts       json.RawMessage
-	Op           json.RawMessage
-	Basis        json.RawMessage
-	CreatedAt    time.Time
-	ExpiresAt    time.Time
+	ID            uuid.UUID
+	UserID        uuid.UUID
+	AgentTokenID  *uuid.UUID
+	AgentName     string
+	Status        string
+	Summary       string
+	Changes       json.RawMessage
+	Counts        json.RawMessage
+	Op            json.RawMessage
+	Basis         json.RawMessage
+	CreatedAt     time.Time
+	ExpiresAt     time.Time
+	SpendsCapture bool
 }
 
 // Agent plans (AG-003, OUT-004): changes an outside agent asked for that wait for the user
@@ -132,6 +133,7 @@ func (q *Queries) PlanCreate(ctx context.Context, arg PlanCreateParams) error {
 		arg.Basis,
 		arg.CreatedAt,
 		arg.ExpiresAt,
+		arg.SpendsCapture,
 	)
 	return err
 }
@@ -292,6 +294,26 @@ type PlanPendingCountParams struct {
 
 func (q *Queries) PlanPendingCount(ctx context.Context, arg PlanPendingCountParams) (int32, error) {
 	row := q.db.QueryRow(ctx, planPendingCount, arg.AgentTokenID, arg.Now)
+	var count int32
+	err := row.Scan(&count)
+	return count, err
+}
+
+const planPendingCountByName = `-- name: PlanPendingCountByName :one
+SELECT count(*)::int AS count FROM agent_plans
+WHERE user_id = $1 AND agent_token_id IS NULL AND agent_name = $2 AND status = 'pending'
+    AND expires_at > $3::pg_catalog.timestamptz
+`
+
+type PlanPendingCountByNameParams struct {
+	UserID    uuid.UUID
+	AgentName string
+	Now       time.Time
+}
+
+// Plans a tokenless origin has waiting for this user: a chat with Aaru, by name.
+func (q *Queries) PlanPendingCountByName(ctx context.Context, arg PlanPendingCountByNameParams) (int32, error) {
+	row := q.db.QueryRow(ctx, planPendingCountByName, arg.UserID, arg.AgentName, arg.Now)
 	var count int32
 	err := row.Scan(&count)
 	return count, err

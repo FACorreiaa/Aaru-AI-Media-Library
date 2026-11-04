@@ -1,5 +1,5 @@
-// Package plans is AG-003's remote slice (OUT-004, Plans/*.swift): an outside agent's library
-// change bigger than a tap is worked out now, against the library as it is, and stored as a plan.
+// Package plans is AG-003's remote slice (OUT-004, Plans/*.swift): an outside agent's or a chat's
+// library change bigger than a tap is worked out now, against the library as it is, and stored as a plan.
 // Only the user, signed in, approves or denies it; no agent token reaches the plan routes, so no
 // caller approves its own plan.
 //
@@ -8,7 +8,7 @@
 //   - AgentChange and ToolError: one validated library change an agent asked for, and a tool
 //     failure whose message is safe to hand the agent. internal/agent parses tool input into
 //     AgentChanges and applies tap-sized ones itself; the rest go to Service.Propose.
-//   - Service.Propose / Plans / Plan / Approve / Deny.
+//   - Service.Propose / ProposeFor / Plans / Plan / Approve / Deny.
 //
 // Plans are stored in `agent_plans` in the encoding the Swift server wrote (Foundation's default
 // JSONEncoder over Swift's synthesized Codable: property names as keys, uppercase UUIDs), so
@@ -18,6 +18,7 @@ package plans
 import (
 	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/library"
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -99,6 +100,32 @@ type Plan struct {
 	ExpiresAt    time.Time
 	DecidedAt    *time.Time
 	ActionID     *uuid.UUID
+}
+
+// Origin is who asks for a plan: an outside agent's token, or a chat with Aaru (no token).
+type Origin struct {
+	UserID uuid.UUID
+	// TokenID is nil for a chat.
+	TokenID *uuid.UUID
+	Name    string
+	// Caller is who the plan's writes are worked out for: it decides whether a status holds by hand.
+	// Approval journals by what the plan stored (Plan.caller).
+	Caller library.Caller
+	// SpendsCapture: this origin pays for many titles. A plan of it that really adds two or more
+	// spends one capture; changes that would do nothing do not count.
+	SpendsCapture bool
+	// Quota refuses a plan that would spend a capture the user does not have; nil is no limit. It
+	// runs under the user's capture lock, on its own connection, and nothing is stored if it fails.
+	Quota func(context.Context) error
+}
+
+// caller is who approval journals the plan as. A plan whose token was deleted stays an outside
+// agent's; only a tokenless plan under Aaru's name came from a chat.
+func (p Plan) caller() library.Caller {
+	if p.AgentTokenID == nil && p.AgentName == library.ChatAgentName {
+		return library.ChatCaller
+	}
+	return library.Caller{Actor: library.ActorExternalAgent, AgentTokenID: p.AgentTokenID, AgentName: &p.AgentName}
 }
 
 // IsExpired is pending, but past its expiry: it can no longer be approved.

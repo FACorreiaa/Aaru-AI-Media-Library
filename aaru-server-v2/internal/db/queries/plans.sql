@@ -3,9 +3,9 @@
 
 -- name: PlanCreate :exec
 INSERT INTO agent_plans (id, user_id, agent_token_id, agent_name, status, summary, changes, counts, op, basis,
-    created_at, expires_at)
+    created_at, expires_at, spends_capture)
 VALUES (@id, @user_id, sqlc.narg('agent_token_id')::uuid, @agent_name, @status, @summary, @changes, @counts, @op,
-    @basis, @created_at::pg_catalog.timestamptz, @expires_at::pg_catalog.timestamptz);
+    @basis, @created_at::pg_catalog.timestamptz, @expires_at::pg_catalog.timestamptz, @spends_capture);
 
 -- Pending plans not yet expired, newest first.
 -- name: PlansPending :many
@@ -43,6 +43,12 @@ SELECT pg_advisory_xact_lock(hashtextextended('plans-pending:' || sqlc.arg(token
 -- name: PlanPendingCount :one
 SELECT count(*)::int AS count FROM agent_plans
 WHERE agent_token_id = @agent_token_id AND status = 'pending' AND expires_at > @now::pg_catalog.timestamptz;
+
+-- Plans a tokenless origin has waiting for this user: a chat with Aaru, by name.
+-- name: PlanPendingCountByName :one
+SELECT count(*)::int AS count FROM agent_plans
+WHERE user_id = @user_id AND agent_token_id IS NULL AND agent_name = @agent_name AND status = 'pending'
+    AND expires_at > @now::pg_catalog.timestamptz;
 
 -- name: PlanDecide :exec
 UPDATE agent_plans SET status = @status, decided_at = @decided_at::pg_catalog.timestamptz,

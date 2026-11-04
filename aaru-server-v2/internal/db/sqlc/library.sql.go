@@ -209,6 +209,38 @@ func (q *Queries) LibraryJournal(ctx context.Context, arg LibraryJournalParams) 
 	return created_at, err
 }
 
+const libraryJournalClock = `-- name: LibraryJournalClock :one
+SELECT now()::pg_catalog.timestamptz AS now
+`
+
+// The clock actions.created_at is stamped by.
+func (q *Queries) LibraryJournalClock(ctx context.Context) (time.Time, error) {
+	row := q.db.QueryRow(ctx, libraryJournalClock)
+	var now time.Time
+	err := row.Scan(&now)
+	return now, err
+}
+
+const libraryLatestActionOnItem = `-- name: LibraryLatestActionOnItem :one
+SELECT id FROM actions
+WHERE user_id = $1 AND $2::uuid = ANY(item_ids) AND created_at >= $3::pg_catalog.timestamptz
+ORDER BY created_at DESC, id DESC LIMIT 1
+`
+
+type LibraryLatestActionOnItemParams struct {
+	UserID uuid.UUID
+	ItemID uuid.UUID
+	Since  time.Time
+}
+
+// The user's newest action on an item since a time on the journal's clock.
+func (q *Queries) LibraryLatestActionOnItem(ctx context.Context, arg LibraryLatestActionOnItemParams) (uuid.UUID, error) {
+	row := q.db.QueryRow(ctx, libraryLatestActionOnItem, arg.UserID, arg.ItemID, arg.Since)
+	var id uuid.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
 const libraryLockAction = `-- name: LibraryLockAction :one
 SELECT summary, inverse, item_ids, undone_at FROM actions
 WHERE id = $1 AND user_id = $2 FOR UPDATE

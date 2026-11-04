@@ -92,7 +92,7 @@ func (s *Service) CreateCapture(ctx context.Context, user uuid.UUID, req Capture
 			return err
 		}
 		q := s.Store.Q.WithTx(tx)
-		if err := s.checkCaptureQuota(ctx, q, user); err != nil {
+		if err := s.CheckCaptureQuota(ctx, q, user); err != nil {
 			return err
 		}
 		if input != nil {
@@ -154,9 +154,10 @@ func captureRow(t capture.Title) Row {
 	}
 }
 
-// checkCaptureQuota: free accounts get FreeCapturesPerMonth; past it, a 402 the apps answer with
-// Plus. Plus lifts the month's limit; PlusCapturesPerDay keeps one account from running up the bill.
-func (s *Service) checkCaptureQuota(ctx context.Context, q *sqlc.Queries, user uuid.UUID) error {
+// CheckCaptureQuota refuses a capture past the quota. Free accounts get FreeCapturesPerMonth; past
+// it, a 402 the apps answer with Plus. Plus lifts the month's limit; PlusCapturesPerDay keeps one
+// account from running up the bill.
+func (s *Service) CheckCaptureQuota(ctx context.Context, q *sqlc.Queries, user uuid.UUID) error {
 	now := s.now()
 	plus, err := (&billing.Service{Q: q}).Active(ctx, user, now)
 	if err != nil {
