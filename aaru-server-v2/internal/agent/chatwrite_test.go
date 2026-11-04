@@ -28,10 +28,18 @@ import (
 type fakeCatalog struct {
 	mu       sync.Mutex
 	episodes map[string]catalog.Episodes
+	// hits are what Search finds, for the type they have.
+	hits []catalog.Hit
 }
 
-func (f *fakeCatalog) Search(context.Context, string, core.MediaType) ([]catalog.Hit, error) {
-	return nil, nil
+func (f *fakeCatalog) Search(_ context.Context, _ string, mediaType core.MediaType) ([]catalog.Hit, error) {
+	var out []catalog.Hit
+	for _, h := range f.hits {
+		if h.Type == mediaType {
+			out = append(out, h)
+		}
+	}
+	return out, nil
 }
 
 func (f *fakeCatalog) SearchMulti(context.Context, string) ([]catalog.Hit, error) { return nil, nil }

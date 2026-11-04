@@ -16,7 +16,7 @@ import (
 // know (thinking, anything the API adds later) is replayed unchanged.
 type Block = json.RawMessage
 
-// Tool is one the model may call. Every agent tool is a read; none writes (X-009).
+// Tool is one the model may call. A group's tools all read (X-009); a Chat's has one write, apply_library_patch (ASK-009).
 type Tool struct {
 	Name        string
 	Description string
