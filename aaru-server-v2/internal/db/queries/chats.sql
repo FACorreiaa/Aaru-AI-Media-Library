@@ -71,3 +71,11 @@ SELECT id, user_id, title, created_at, updated_at FROM chats WHERE user_id = $1 
 -- name: ChatTurnsForExport :many
 SELECT id, chat_id, role, body, components, state, created_at FROM chat_turns
 WHERE user_id = $1 ORDER BY chat_id, created_at, role DESC;
+
+-- name: InProgressTitleNames :many
+-- What the user is in the middle of, latest first: the names a spoken question is likely to use.
+SELECT t.title FROM library_items li
+JOIN titles t ON t.id = li.title_id
+WHERE li.user_id = $1 AND li.status = 'in_progress'
+ORDER BY li.updated_at DESC, li.id
+LIMIT $2;

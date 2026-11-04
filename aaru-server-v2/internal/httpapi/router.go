@@ -35,6 +35,7 @@ var ownBodyLimits = map[string]int64{
 	"POST /v1/imports/csv":                         imports.MaxListenUploadBytes, // listening history; exports 5 MB
 	"POST /v1/imports/cat":                         imports.MaxUploadBytes,
 	"POST /v1/imports/capture":                     imports.MaxUploadBytes, // an image; JSON has captureJSONLimit
+	"POST /v1/chats/transcribe":                    maxChatAudioBytes,
 	"PUT /v1/me/avatar":                            social.MaxAvatarBytes,
 	"POST " + listenBrainzPath + "/submit-listens": listenBrainzMaxBody,
 	"POST " + mcp.Path:                             mcp.MaxBody,
@@ -47,7 +48,8 @@ var ownBodyLimits = map[string]int64{
 }
 
 // noDeadline are the routes the request deadline leaves alone (DB-001): the socket lives for
-// hours, uploads arrive at the client's pace, the export and MCP tool calls can run long, and
+// hours, uploads arrive at the client's pace, the export, MCP tool calls, a Chat turn and a
+// transcription can run long (each has its own ceiling), and
 // an import's approval, a plan's, their undo and account deletion are one transaction each that must not be
 // cut half way through a large library.
 var noDeadline = map[string]bool{
@@ -55,6 +57,8 @@ var noDeadline = map[string]bool{
 	"POST /v1/imports/csv":                         true,
 	"POST /v1/imports/cat":                         true,
 	"POST /v1/imports/capture":                     true,
+	"POST /v1/chats/:id/turns":                     true,
+	"POST /v1/chats/transcribe":                    true,
 	"PUT /v1/me/avatar":                            true,
 	"POST " + listenBrainzPath + "/submit-listens": true,
 	"GET /v1/me/export":                            true,

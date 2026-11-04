@@ -140,7 +140,7 @@ func (s *Server) exportService() *export.Service {
 	return &export.Service{Pool: s.Pool, Q: s.q}
 }
 
-// exportExtras reads the account's social, group, favorite and sports data, each independently,
+// exportExtras reads the account's social, group, favorite, sports and chat data, each independently,
 // a few at a time: one export must not take the whole pool (DB-002, PERF-002). Listens are not
 // here: they are streamed.
 func (s *Server) exportExtras(ctx context.Context, svc *export.Service, userID uuid.UUID, out *api.AccountExport) error {
@@ -240,6 +240,14 @@ func (s *Server) exportExtras(ctx context.Context, svc *export.Service, userID u
 			entities = append(entities, sportEntityDTO(f, map[string]bool{sportFollowKey(f): true}))
 		}
 		out.Sports = &api.SportsExport{Follows: entities, WatchCountryCode: country}
+		return nil
+	})
+	g.Go(func() error {
+		chats, err := s.chatExports(gctx, userID)
+		if err != nil {
+			return err
+		}
+		out.Chats = &chats
 		return nil
 	})
 	g.Go(func() error {

@@ -202,6 +202,40 @@ func TestExportCSVWatchedEpisodesAndAnime(t *testing.T) {
 	assert.Equal(t, "a, b", row[16])
 }
 
+func TestExportHasChats(t *testing.T) {
+	f := newExportFixture(t)
+	other, _ := f.h.signIn()
+	chat := uuid.New()
+	created := time.Now().Add(-time.Hour)
+	f.exec(`INSERT INTO chats (id, user_id, title, created_at, updated_at) VALUES ($1, $2, 'Tonight', $3, $3)`, chat, f.user, created)
+	for i, turn := range [][2]string{{"user", "what is on?"}, {"agent", "Andor, at nine."}} {
+		f.exec(`INSERT INTO chat_turns (id, chat_id, user_id, role, body, state, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, 'done', $6, $6)`,
+			uuid.New(), chat, f.user, turn[0], turn[1], created.Add(time.Duration(i)*time.Minute))
+	}
+	otherChat := uuid.New()
+	f.exec(`INSERT INTO chats (id, user_id, title) VALUES ($1, $2, 'Not yours')`, otherChat, other)
+	f.item(f.title("movie", "Arrival", "arrival"), "finished", created)
+
+	rec := f.h.do(http.MethodGet, "/v1/me/export", f.bearer, nil)
+	require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
+	export := decode[api.AccountExport](t, rec)
+	require.NotNil(t, export.Chats)
+	require.Len(t, *export.Chats, 1, "only the caller's")
+	got := (*export.Chats)[0]
+	require.NotNil(t, got.Title)
+	assert.Equal(t, "Tonight", *got.Title)
+	require.Len(t, got.Turns, 2)
+	assert.Equal(t, api.ChatExportTurnRoleUser, got.Turns[0].Role)
+	assert.Equal(t, "what is on?", got.Turns[0].Body)
+	assert.Equal(t, api.ChatExportTurnRoleAgent, got.Turns[1].Role)
+	assert.Equal(t, "Andor, at nine.", got.Turns[1].Body)
+
+	csv := f.h.do(http.MethodGet, "/v1/me/export?format=csv", f.bearer, nil)
+	require.Equal(t, http.StatusOK, csv.Code)
+	assert.Contains(t, csv.Body.String(), "Arrival")
+	assert.NotContains(t, csv.Body.String(), "Andor, at nine.", "a chat is not a library row")
+}
+
 func TestExportNeedsSignIn(t *testing.T) {
 	h := newHarness(t)
 	rec := h.do(http.MethodGet, "/v1/me/export", "", nil)

@@ -2671,6 +2671,94 @@ paths:
               schema: {$ref: '#/components/schemas/ImportList'}
         default:
           $ref: '#/components/responses/Error'
+  /v1/chats:
+    post:
+      operationId: createChat
+      summary: Start a Chat with Aaru (ASK-009), a one-to-one thread only its user can read.
+      responses:
+        '201':
+          description: The new chat.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ChatCreated'}
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: deleteChats
+      summary: Delete all of the caller's chats with Aaru, their turns with them.
+      responses:
+        '204':
+          description: Deleted.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/chats/status:
+    get:
+      operationId: getChatStatus
+      summary: Whether Aaru and voice are on, so clients hide the owl and the mic when the server has them off.
+      responses:
+        '200':
+          description: What is on.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ChatStatus'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/chats/transcribe:
+    post:
+      operationId: transcribeChatAudio
+      summary: >-
+        Turn a spoken question into text (ASK-009). The audio is held in memory while it is read and
+        never stored. 413 `file_too_large` over 8 MB, 413 `audio_too_long` when `X-Audio-Seconds` says
+        over 60, 422 `transcription_empty` when no words were heard, 429 `rate_limited` past 40 an hour,
+        503 `transcription_unavailable` when voice is off.
+      parameters:
+        - name: X-Audio-Seconds
+          in: header
+          required: false
+          description: How long the recording is, as the client measured it.
+          schema: {type: number}
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema: {type: string, format: binary}
+          audio/*:
+            schema: {type: string, format: binary}
+      responses:
+        '200':
+          description: What was said.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ChatTranscript'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/chats/{id}/turns:
+    post:
+      operationId: createChatTurn
+      summary: >-
+        Ask Aaru (ASK-009). The answer is a stream of server-sent events, each frame an `event:` line
+        with its type and a `data:` line with JSON: `status` and `delta` carry ChatTextFrame, `components`
+        ChatComponentsFrame, `done` ChatDoneFrame, `error` ChatErrorFrame. Lines starting with `:` are
+        heartbeats. Once the stream has begun, a failure can only be an `error` frame: a send past the
+        daily cap is a 200 with one `error` frame, code `resting`. Before it begins: 404 for a chat that
+        is not the caller's, 409 `chat_busy` while the chat is still answering, 422 for a body that is
+        blank or over 4000 characters, 503 `agent_unavailable` when Aaru is off. Hanging up stops the
+        turn and keeps what was written.
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ChatTurnRequest'}
+      responses:
+        '200':
+          description: The answer, as it is written.
+          content:
+            text/event-stream:
+              schema: {type: string, format: binary}
+        default:
+          $ref: '#/components/responses/Error'
   /v1/me/export:
     get:
       operationId: exportAccount
@@ -5515,6 +5603,92 @@ components:
             Every watched episode of a show, in order. Only on single-item responses (the item,
             and episode and season writes); lists and sync leave it out.
           items: {$ref: '#/components/schemas/EpisodeRef'}
+    ChatCreated:
+      type: object
+      required: [id]
+      properties:
+        id: {type: string, format: uuid}
+    ChatStatus:
+      type: object
+      required: [assistant, voice]
+      properties:
+        assistant:
+          type: boolean
+          description: Aaru can answer. False hides the owl.
+        voice:
+          type: boolean
+          description: Spoken questions can be read. False hides the mic.
+    ChatHint:
+      type: object
+      description: Where the user is. A screen the server does not know and a title the catalog does not have are dropped.
+      required: [screen]
+      properties:
+        screen:
+          type: string
+          description: One of home, discover, library, calendar, lists, friends, groups, books, manga, music, sports, insights, title.
+        titleId: {type: string, format: uuid}
+    ChatTurnRequest:
+      type: object
+      required: [body]
+      properties:
+        body: {type: string, minLength: 1, maxLength: 4000}
+        hint: {$ref: '#/components/schemas/ChatHint'}
+    ChatTranscript:
+      type: object
+      required: [text, language]
+      properties:
+        text: {type: string}
+        language:
+          type: string
+          description: The language the service detected. Empty when it did not say.
+    ChatTextFrame:
+      type: object
+      description: The data of a `status` frame (what Aaru is doing) or a `delta` frame (the next words of the answer).
+      required: [text]
+      properties:
+        text: {type: string}
+    ChatComponentsFrame:
+      type: object
+      description: The data of a `components` frame, what the turn's tools left for the client.
+      properties:
+        titles:
+          type: array
+          items: {$ref: '#/components/schemas/TitleSummary'}
+        plan: {$ref: '#/components/schemas/AgentPlan'}
+        actionId:
+          type: string
+          format: uuid
+          description: A single change Aaru applied, undone at `/v1/actions/{id}/undo`.
+        actionSummary: {type: string}
+    ChatDoneFrame:
+      type: object
+      description: The data of a `done` frame, the last of a turn that answered.
+      required: [turnId]
+      properties:
+        turnId: {type: string, format: uuid}
+    ChatErrorFrame:
+      type: object
+      description: The data of an `error` frame, the last of a turn that did not answer.
+      required: [code, message]
+      properties:
+        code: {type: string, enum: [resting, try_again]}
+        message: {type: string}
+    ChatExport:
+      type: object
+      required: [createdAt, turns]
+      properties:
+        title: {type: string}
+        createdAt: {type: string, format: date-time}
+        turns:
+          type: array
+          items: {$ref: '#/components/schemas/ChatExportTurn'}
+    ChatExportTurn:
+      type: object
+      required: [role, body, createdAt]
+      properties:
+        role: {type: string, enum: [user, agent]}
+        body: {type: string}
+        createdAt: {type: string, format: date-time}
     AccountExport:
       type: object
       required: [exportedAt, account, library, lists, shelves]
@@ -5574,6 +5748,10 @@ components:
           items: {$ref: '#/components/schemas/Listen'}
         favorites: {$ref: '#/components/schemas/Favorites'}
         sports: {$ref: '#/components/schemas/SportsExport'}
+        chats:
+          type: array
+          description: Your chats with Aaru, oldest first, with their turns.
+          items: {$ref: '#/components/schemas/ChatExport'}
     LibraryPage:
       type: object
       required: [items, page]

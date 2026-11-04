@@ -251,6 +251,40 @@ func (q *Queries) GetChat(ctx context.Context, arg GetChatParams) (Chat, error) 
 	return i, err
 }
 
+const inProgressTitleNames = `-- name: InProgressTitleNames :many
+SELECT t.title FROM library_items li
+JOIN titles t ON t.id = li.title_id
+WHERE li.user_id = $1 AND li.status = 'in_progress'
+ORDER BY li.updated_at DESC, li.id
+LIMIT $2
+`
+
+type InProgressTitleNamesParams struct {
+	UserID uuid.UUID
+	Limit  int32
+}
+
+// What the user is in the middle of, latest first: the names a spoken question is likely to use.
+func (q *Queries) InProgressTitleNames(ctx context.Context, arg InProgressTitleNamesParams) ([]string, error) {
+	rows, err := q.db.Query(ctx, inProgressTitleNames, arg.UserID, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var title string
+		if err := rows.Scan(&title); err != nil {
+			return nil, err
+		}
+		items = append(items, title)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const recentChatTurns = `-- name: RecentChatTurns :many
 SELECT id, chat_id, role, body, components, state, created_at
 FROM (
