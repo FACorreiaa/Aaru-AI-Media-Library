@@ -3,6 +3,7 @@ package httpapi
 import (
 	"aaru-go-api/internal/apitime"
 	"aaru-go-api/internal/catalog"
+	"aaru-go-api/internal/realtime"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"net/http"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -20,6 +22,8 @@ import (
 
 // frames records what one socket was sent.
 type frames struct {
+	// hub, when set, is flushed before reading: Publish queues frames and returns.
+	hub  *realtime.Hub
 	mu   sync.Mutex
 	list []map[string]any
 }
@@ -36,6 +40,11 @@ func (f *frames) sink(_ context.Context, frame []byte) error {
 }
 
 func (f *frames) all() []map[string]any {
+	if f.hub != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		f.hub.Flush(ctx)
+		cancel()
+	}
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return append([]map[string]any(nil), f.list...)
@@ -51,7 +60,7 @@ func (f *frames) types() []string {
 
 // listen opens a fake socket for a user on the hub.
 func (e *groupEnv) listen(user uuid.UUID) *frames {
-	f := &frames{}
+	f := &frames{hub: e.server.Realtime}
 	e.server.Realtime.Connect(user, f.sink)
 	return f
 }

@@ -10,6 +10,7 @@ import (
 	"aaru-go-api/internal/catalog"
 	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/db/sqlc"
+	"aaru-go-api/internal/safe"
 	"aaru-go-api/internal/schedule"
 	"aaru-go-api/internal/social"
 	"context"
@@ -22,7 +23,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"golang.org/x/sync/errgroup"
 )
 
 // syncLimit is the library sync's "every item" bound (PostgresLibraryStore.changes).
@@ -87,7 +87,7 @@ func (s *Service) Gather(ctx context.Context, userID uuid.UUID) (Account, error)
 		out   Account
 		lists []List
 	)
-	g, gctx := errgroup.WithContext(ctx)
+	g, gctx := safe.WithContext(ctx)
 	g.Go(func() error {
 		entries, err := schedule.ReadEntries(gctx, s.Pool, userID, schedule.EntryFilter{}, syncLimit, s.now())
 		if err != nil {

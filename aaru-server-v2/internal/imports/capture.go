@@ -9,6 +9,7 @@ import (
 	"aaru-go-api/internal/billing"
 	"aaru-go-api/internal/capture"
 	"aaru-go-api/internal/core"
+	"aaru-go-api/internal/db/sqlc"
 	"aaru-go-api/internal/model"
 	"aaru-go-api/internal/push"
 	"aaru-go-api/internal/telemetry"
@@ -20,6 +21,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 )
 
 // CaptureDeps are what reading a capture needs (AG-006). The inputs store is always there (over
@@ -79,19 +81,29 @@ func (s *Service) CreateCapture(ctx context.Context, user uuid.UUID, req Capture
 		return core.ImportJob{}, apperr.New(http.StatusServiceUnavailable, "capture_unavailable",
 			"Aaru cannot read captures right now. A link to the title still works.")
 	}
-	if err := s.checkCaptureQuota(ctx, user); err != nil {
-		return core.ImportJob{}, err
-	}
 	now := s.now()
-	if input != nil {
-		if err := s.CaptureStore().Save(ctx, capture.Input{JobID: jobID, UserID: user, Content: *input, CreatedAt: now}); err != nil {
-			return core.ImportJob{}, err
-		}
-	}
 	job := newJob(user, core.SourceCapture, nil, now)
 	job.ID = jobID
 	job.RowsTotal = len(rows)
-	if err := s.Store.Insert(ctx, job, rows); err != nil {
+	// Count and insert under the user's capture lock, in one transaction: parallel captures queue
+	// behind it, so the quota holds (DB-004).
+	err = pgx.BeginFunc(ctx, s.Store.Pool, func(tx pgx.Tx) error {
+		if err := s.Store.LockUserCaptures(ctx, tx, user); err != nil {
+			return err
+		}
+		q := s.Store.Q.WithTx(tx)
+		if err := s.checkCaptureQuota(ctx, q, user); err != nil {
+			return err
+		}
+		if input != nil {
+			store := &capture.Store{Q: q}
+			if err := store.Save(ctx, capture.Input{JobID: jobID, UserID: user, Content: *input, CreatedAt: now}); err != nil {
+				return err
+			}
+		}
+		return s.Store.InsertTx(ctx, tx, job, rows)
+	})
+	if err != nil {
 		return core.ImportJob{}, err
 	}
 	telemetry.Capture(telemetry.CaptureSubmitted, user, map[string]string{"kind": req.kind()})
@@ -144,13 +156,13 @@ func captureRow(t capture.Title) Row {
 
 // checkCaptureQuota: free accounts get FreeCapturesPerMonth; past it, a 402 the apps answer with
 // Plus. Plus lifts the month's limit; PlusCapturesPerDay keeps one account from running up the bill.
-func (s *Service) checkCaptureQuota(ctx context.Context, user uuid.UUID) error {
+func (s *Service) checkCaptureQuota(ctx context.Context, q *sqlc.Queries, user uuid.UUID) error {
 	now := s.now()
-	plus, err := (&billing.Service{Q: s.Store.Q}).Active(ctx, user, now)
+	plus, err := (&billing.Service{Q: q}).Active(ctx, user, now)
 	if err != nil {
 		return err
 	}
-	store := s.CaptureStore()
+	store := &capture.Store{Q: q}
 	if plus != nil {
 		today, err := store.Captures(ctx, user, DayStart(now))
 		if err != nil {

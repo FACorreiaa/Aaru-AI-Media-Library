@@ -98,6 +98,8 @@ cd aaru-server-v2 && make test            # AARU_REQUIRE_DB=1 to fail instead of
 cd aaru-server-v2 && go run ./cmd/aaru
 cd aaru-server-v2 && go run ./cmd/aaru --db-migrate
 cd aaru-server-v2 && golangci-lint run ./...
+cd aaru-server-v2 && make vuln            # known vulnerabilities in reachable code, as CI runs it
+cd aaru-server-v2 && go test -run='^$' -fuzz=FuzzDetectAndParse -fuzztime=45s ./internal/imports   # fuzz one parser (one target per run)
 docker build -t aaru-server aaru-server-v2
 
 # Web
@@ -139,7 +141,7 @@ apps share one API. See `BACKLOG.md` REL-001…REL-006.
 ## Coding conventions
 
 - Apple code: Swift 6 / strict concurrency. No unannotated escaping of `Sendable` boundaries.
-- Server code: Go, `gofumpt`, `go vet` and `golangci-lint` clean; errors wrapped, never dropped; `errgroup` for independent calls.
+- Server code: Go, `gofumpt`, `go vet` and `golangci-lint` clean; errors wrapped, never dropped; `safe.WithContext` for independent calls (a raw `errgroup` goroutine that panics takes the process down; lint refuses it).
 - Rules shared by server and clients live in `AaruCore` (Apple) and `internal/core` (server); they must not diverge in meaning.
 - API types are explicit `Codable` DTOs. Do not return raw TMDB/Trakt JSON to clients.
 - Use structured concurrency (`async let`, task groups; `context` and `errgroup` in Go). Cancel in-flight work when the client disconnects.

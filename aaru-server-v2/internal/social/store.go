@@ -51,7 +51,7 @@ func userOf(id uuid.UUID, handle string, name *string, avatar *int64) User {
 func (s *Store) User(ctx context.Context, id uuid.UUID) (*User, error) {
 	row, err := s.Q.SocialUserByID(ctx, id)
 	if db.IsNoRows(err) {
-		return nil, nil //nolint:nilnil // no handle
+		return nil, nil // no handle
 	}
 	if err != nil {
 		return nil, fmt.Errorf("social user: %w", err)
@@ -64,7 +64,7 @@ func (s *Store) User(ctx context.Context, id uuid.UUID) (*User, error) {
 func (s *Store) UserByHandle(ctx context.Context, handle string) (*User, error) {
 	row, err := s.Q.SocialUserByHandle(ctx, handle)
 	if db.IsNoRows(err) {
-		return nil, nil //nolint:nilnil // nobody
+		return nil, nil // nobody
 	}
 	if err != nil {
 		return nil, fmt.Errorf("social user by handle: %w", err)
@@ -169,7 +169,7 @@ func (s *Store) AreFriends(ctx context.Context, first, second uuid.UUID) (bool, 
 func (s *Store) FriendsSince(ctx context.Context, first, second uuid.UUID) (*time.Time, error) {
 	since, err := s.Q.SocialFriendsSince(ctx, sqlc.SocialFriendsSinceParams{First: first, Second: second})
 	if db.IsNoRows(err) {
-		return nil, nil //nolint:nilnil // not friends
+		return nil, nil // not friends
 	}
 	if err != nil {
 		return nil, fmt.Errorf("friends since: %w", err)
@@ -181,7 +181,7 @@ func (s *Store) FriendsSince(ctx context.Context, first, second uuid.UUID) (*tim
 func (s *Store) PendingRequest(ctx context.Context, sender, recipient uuid.UUID) (*uuid.UUID, error) {
 	id, err := s.Q.SocialPendingRequest(ctx, sqlc.SocialPendingRequestParams{FromUserID: sender, ToUserID: recipient})
 	if db.IsNoRows(err) {
-		return nil, nil //nolint:nilnil // none pending
+		return nil, nil // none pending
 	}
 	if err != nil {
 		return nil, fmt.Errorf("pending request: %w", err)
@@ -411,7 +411,7 @@ func (s *Store) CreateInvite(ctx context.Context, i Invite) error {
 func (s *Store) Invite(ctx context.Context, code string) (*Invite, error) {
 	row, err := s.Q.SocialInvite(ctx, code)
 	if db.IsNoRows(err) {
-		return nil, nil //nolint:nilnil // none
+		return nil, nil // none
 	}
 	if err != nil {
 		return nil, fmt.Errorf("invite: %w", err)

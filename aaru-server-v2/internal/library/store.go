@@ -66,43 +66,69 @@ func isConstraintFailure(err error) bool {
 // an item or list the user does not own is a 404. It does not run the gamification after-write
 // hooks; Service.Commit does.
 func (s *Store) Apply(ctx context.Context, op Op, user uuid.UUID, caller Caller, kind, summary string) (ActionRecord, error) {
-	zone := reqctx.TimeZone(ctx)
 	var action ActionRecord
 	err := pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
-		q := s.q.WithTx(tx)
-		inverse, err := run(ctx, q, op, user)
-		if err != nil {
-			return err
-		}
-		if UndatedKinds[kind] {
-			if ids := op.ItemIDs(); len(ids) > 0 {
-				if err := q.LibraryMarkUndatedTicks(ctx, ids); err != nil {
-					return fmt.Errorf("mark undated ticks: %w", err)
-				}
-			}
-		}
-		action, err = journal(ctx, q, journalEntry{
-			inverse: inverse, itemIDs: op.ItemIDs(), actor: caller.Actor, kind: kind, summary: summary,
-			agentTokenID: caller.AgentTokenID,
-		}, user)
-		if err != nil {
-			return err
-		}
-		facts := gamification.NewWriteFacts(kind)
-		collectFacts(facts, op, inverse)
-		return gamification.RecordLibraryWrite(ctx, tx, gamification.LibraryWrite{
-			Facts: facts, Scrobbled: caller.Scrobbled, ActionID: action.ID, UserID: user, RequestedZone: zone, Now: s.now(),
-		})
+		var err error
+		action, err = s.ApplyTx(ctx, tx, op, user, caller, kind, summary)
+		return err
 	})
+	if err != nil {
+		return ActionRecord{}, err
+	}
+	// After the commit, so a rolled-back write is never counted.
+	s.Committed(ctx, op, kind, caller.Actor, user)
+	return action, nil
+}
+
+// ApplyTx is Apply inside the caller's transaction: the op, its journal row, points and the streak
+// day all commit, or roll back, with the caller's own writes (an import approval saves its plan in
+// the same transaction, DB-003). A duplicate (user, title) is a StoreConflict. The caller calls
+// Committed once its transaction commits.
+func (s *Store) ApplyTx(ctx context.Context, tx pgx.Tx, op Op, user uuid.UUID, caller Caller, kind, summary string) (ActionRecord, error) {
+	action, err := s.applyTx(ctx, tx, op, user, caller, kind, summary)
 	if err != nil {
 		if isConstraintFailure(err) {
 			return ActionRecord{}, &StoreConflict{Message: "This title is already in the library."}
 		}
 		return ActionRecord{}, err
 	}
-	// After the commit, so a rolled-back write is never counted.
-	s.countWrite(ctx, op.ItemIDs(), kind, caller.Actor, user)
 	return action, nil
+}
+
+func (s *Store) applyTx(ctx context.Context, tx pgx.Tx, op Op, user uuid.UUID, caller Caller, kind, summary string) (ActionRecord, error) {
+	zone := reqctx.TimeZone(ctx)
+	q := s.q.WithTx(tx)
+	inverse, err := run(ctx, q, op, user)
+	if err != nil {
+		return ActionRecord{}, err
+	}
+	if UndatedKinds[kind] {
+		if ids := op.ItemIDs(); len(ids) > 0 {
+			if err := q.LibraryMarkUndatedTicks(ctx, ids); err != nil {
+				return ActionRecord{}, fmt.Errorf("mark undated ticks: %w", err)
+			}
+		}
+	}
+	action, err := journal(ctx, q, journalEntry{
+		inverse: inverse, itemIDs: op.ItemIDs(), actor: caller.Actor, kind: kind, summary: summary,
+		agentTokenID: caller.AgentTokenID,
+	}, user)
+	if err != nil {
+		return ActionRecord{}, err
+	}
+	facts := gamification.NewWriteFacts(kind)
+	collectFacts(facts, op, inverse)
+	if err := gamification.RecordLibraryWrite(ctx, tx, gamification.LibraryWrite{
+		Facts: facts, Scrobbled: caller.Scrobbled, ActionID: action.ID, UserID: user, RequestedZone: zone, Now: s.now(),
+	}); err != nil {
+		return ActionRecord{}, err
+	}
+	return action, nil
+}
+
+// Committed counts a write ApplyTx made, once the caller's transaction has committed.
+func (s *Store) Committed(ctx context.Context, op Op, kind string, actor Actor, user uuid.UUID) {
+	s.countWrite(ctx, op.ItemIDs(), kind, actor, user)
 }
 
 // countWrite counts a committed write: the library action, and, when it is progress on a Tonight
@@ -210,17 +236,35 @@ func run(ctx context.Context, q *sqlc.Queries, op Op, user uuid.UUID) (Op, error
 		return runListOp(ctx, q, op, user)
 	case OpBatch:
 		inverses := make([]Op, 0, len(op.Ops))
-		for _, child := range op.Ops {
-			inv, err := run(ctx, q, child, user)
+		for i := 0; i < len(op.Ops); {
+			// A run of new items goes down the wire together (PERF-003): an import's are thousands.
+			end := i
+			for end < len(op.Ops) && op.Ops[end].Kind == OpInsertItem {
+				end++
+			}
+			if end > i {
+				items := make([]ItemSnapshot, 0, end-i)
+				for _, child := range op.Ops[i:end] {
+					items = append(items, *child.Snapshot)
+					inverses = append(inverses, DeleteItem(child.Snapshot.ID))
+				}
+				if err := insertItems(ctx, q, items, user); err != nil {
+					return Op{}, err
+				}
+				i = end
+				continue
+			}
+			inv, err := run(ctx, q, op.Ops[i], user)
 			if err != nil {
 				return Op{}, err
 			}
 			inverses = append(inverses, inv)
+			i++
 		}
 		slices.Reverse(inverses)
 		return Batch(inverses...), nil
 	case OpInsertItem:
-		if err := insertItem(ctx, q, *op.Snapshot, user); err != nil {
+		if err := insertItems(ctx, q, []ItemSnapshot{*op.Snapshot}, user); err != nil {
 			return Op{}, err
 		}
 		return DeleteItem(op.Snapshot.ID), nil
@@ -288,23 +332,59 @@ func setEpisodes(ctx context.Context, q *sqlc.Queries, id uuid.UUID, watch, unwa
 	return SetEpisodes(id, removed, added), nil
 }
 
-func insertItem(ctx context.Context, q *sqlc.Queries, s ItemSnapshot, user uuid.UUID) error {
-	f := s.Fields
-	byHand := f.StatusByHand != nil && *f.StatusByHand
-	err := q.LibraryInsertItem(ctx, sqlc.LibraryInsertItemParams{
-		ID: s.ID, UserID: user, TitleID: s.TitleID, Status: string(f.Status), IsOwned: f.IsOwned, Rating: f.Rating,
-		Notes: f.Notes, AddedAt: s.AddedAt, FinishedAt: f.FinishedAt, BookPage: i32(f.BookPage),
-		BookPercent: f.BookPercent, MangaChapter: i32(f.MangaChapter), MangaVolume: i32(f.MangaVolume),
-		StatusByHand: byHand,
+// insertBatch is how many statements go down the wire at once.
+const insertBatch = 1000
+
+// batchResults is what sqlc generates for a :batchexec query.
+type batchResults interface {
+	Exec(f func(int, error))
+}
+
+// finishBatch reads a batch's results and returns the first failure: once a statement fails the
+// transaction is aborted, and the rest only report that.
+func finishBatch(results batchResults) error {
+	var first error
+	results.Exec(func(_ int, err error) {
+		if err != nil && first == nil {
+			first = err
+		}
 	})
-	if err != nil {
-		return fmt.Errorf("insert item: %w", err)
+	return first
+}
+
+// insertItems writes new items, their ticks and the end of their tombstones, each kind in
+// pipelined batches, so 2,000 items wait for a few round trips and not 4,000 (PERF-003).
+func insertItems(ctx context.Context, q *sqlc.Queries, items []ItemSnapshot, user uuid.UUID) error {
+	inserts := make([]sqlc.LibraryInsertItemParams, len(items))
+	clears := make([]sqlc.LibraryClearTombstoneParams, len(items))
+	var ticks []sqlc.LibraryInsertTicksParams
+	for i, s := range items {
+		f := s.Fields
+		inserts[i] = sqlc.LibraryInsertItemParams{
+			ID: s.ID, UserID: user, TitleID: s.TitleID, Status: string(f.Status), IsOwned: f.IsOwned, Rating: f.Rating,
+			Notes: f.Notes, AddedAt: s.AddedAt, FinishedAt: f.FinishedAt, BookPage: i32(f.BookPage),
+			BookPercent: f.BookPercent, MangaChapter: i32(f.MangaChapter), MangaVolume: i32(f.MangaVolume),
+			StatusByHand: f.StatusByHand != nil && *f.StatusByHand,
+		}
+		clears[i] = sqlc.LibraryClearTombstoneParams{UserID: user, LibraryItemID: s.ID}
+		if len(s.Watched) > 0 {
+			ticks = append(ticks, tickParams(s.Watched, s.ID, false))
+		}
 	}
-	if err := insertTicks(ctx, q, s.Watched, s.ID, false); err != nil {
-		return err
+	for chunk := range slices.Chunk(inserts, insertBatch) {
+		if err := finishBatch(q.LibraryInsertItem(ctx, chunk)); err != nil {
+			return fmt.Errorf("insert item: %w", err)
+		}
 	}
-	if err := q.LibraryClearTombstone(ctx, sqlc.LibraryClearTombstoneParams{UserID: user, LibraryItemID: s.ID}); err != nil {
-		return fmt.Errorf("clear tombstone: %w", err)
+	for chunk := range slices.Chunk(ticks, insertBatch) {
+		if err := finishBatch(q.LibraryInsertTicks(ctx, chunk)); err != nil {
+			return fmt.Errorf("insert ticks: %w", err)
+		}
+	}
+	for chunk := range slices.Chunk(clears, insertBatch) {
+		if err := finishBatch(q.LibraryClearTombstone(ctx, chunk)); err != nil {
+			return fmt.Errorf("clear tombstone: %w", err)
+		}
 	}
 	return nil
 }
@@ -341,17 +421,20 @@ func insertTicks(ctx context.Context, q *sqlc.Queries, keys []core.EpisodeKey, i
 	if len(keys) == 0 {
 		return nil
 	}
+	err := finishBatch(q.LibraryInsertTicks(ctx, []sqlc.LibraryInsertTicksParams{tickParams(keys, item, known)}))
+	if err != nil {
+		return fmt.Errorf("insert ticks: %w", err)
+	}
+	return nil
+}
+
+func tickParams(keys []core.EpisodeKey, item uuid.UUID, known bool) sqlc.LibraryInsertTicksParams {
 	ids := make([]uuid.UUID, len(keys))
 	for i := range ids {
 		ids[i] = uuid.New()
 	}
 	seasons, episodes := splitKeys(keys)
-	if err := q.LibraryInsertTicks(ctx, sqlc.LibraryInsertTicksParams{
-		Ids: ids, LibraryItemID: item, Seasons: seasons, Episodes: episodes, Known: known,
-	}); err != nil {
-		return fmt.Errorf("insert ticks: %w", err)
-	}
-	return nil
+	return sqlc.LibraryInsertTicksParams{Ids: ids, LibraryItemID: item, Seasons: seasons, Episodes: episodes, Known: known}
 }
 
 // lockedFields locks the user's item row and returns its fields. Another user's item is 404.
@@ -426,7 +509,7 @@ func journal(ctx context.Context, q *sqlc.Queries, e journalEntry, user uuid.UUI
 
 // Actions are the user's newest journal rows, at most limit (clamped to 1…100).
 func (s *Store) Actions(ctx context.Context, user uuid.UUID, limit int) ([]ActionRecord, error) {
-	rows, err := s.q.LibraryActions(ctx, sqlc.LibraryActionsParams{UserID: user, RowLimit: int32(max(1, min(limit, 100)))}) //nolint:gosec // clamped
+	rows, err := s.q.LibraryActions(ctx, sqlc.LibraryActionsParams{UserID: user, RowLimit: int32(max(1, min(limit, 100)))}) // clamped
 	if err != nil {
 		return nil, fmt.Errorf("actions: %w", err)
 	}

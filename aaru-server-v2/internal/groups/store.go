@@ -97,10 +97,24 @@ func (s *Store) OwnedCount(ctx context.Context, user uuid.UUID) (int, error) {
 	return int(n), nil
 }
 
-// CreateGroup inserts the group, its owner and its default text channel together.
-func (s *Store) CreateGroup(ctx context.Context, id uuid.UUID, name string, owner uuid.UUID, general Channel, now time.Time) error {
-	return pgx.BeginFunc(ctx, s.Pool, func(tx pgx.Tx) error {
+// CreateGroup inserts the group, its owner and its default text channel together, unless the owner
+// already owns maxOwned groups (false). The count and the insert run under the owner's lock, so
+// parallel creates cannot pass the cap together (DB-008).
+func (s *Store) CreateGroup(ctx context.Context, id uuid.UUID, name string, owner uuid.UUID, general Channel, now time.Time, maxOwned int) (bool, error) {
+	created := false
+	err := pgx.BeginFunc(ctx, s.Pool, func(tx pgx.Tx) error {
 		q := s.Q.WithTx(tx)
+		if err := q.LockUserGroupCreate(ctx, strings.ToUpper(owner.String())); err != nil {
+			return fmt.Errorf("lock owned groups: %w", err)
+		}
+		owned, err := q.GroupOwnedCount(ctx, owner)
+		if err != nil {
+			return fmt.Errorf("owned groups: %w", err)
+		}
+		if owned >= int64(maxOwned) {
+			return nil
+		}
+		created = true
 		if err := q.InsertGroup(ctx, sqlc.InsertGroupParams{ID: id, Name: name, CreatedAt: now}); err != nil {
 			return fmt.Errorf("insert group: %w", err)
 		}
@@ -111,6 +125,10 @@ func (s *Store) CreateGroup(ctx context.Context, id uuid.UUID, name string, owne
 		}
 		return insertChannel(ctx, q, general)
 	})
+	if err != nil {
+		return false, err
+	}
+	return created, nil
 }
 
 // RenameGroup renames a group.
@@ -151,7 +169,7 @@ func (s *Store) Members(ctx context.Context, group uuid.UUID) ([]Member, error) 
 func (s *Store) Role(ctx context.Context, group, user uuid.UUID) (*Role, error) {
 	raw, err := s.Q.GroupRole(ctx, sqlc.GroupRoleParams{GroupID: group, UserID: user})
 	if db.IsNoRows(err) {
-		return nil, nil //nolint:nilnil // not a member, as Swift's optional
+		return nil, nil // not a member, as Swift's optional
 	}
 	if err != nil {
 		return nil, fmt.Errorf("group role: %w", err)
@@ -329,7 +347,7 @@ func (s *Store) Channels(ctx context.Context, group, viewer uuid.UUID) ([]Channe
 func (s *Store) Channel(ctx context.Context, id, group uuid.UUID) (*Channel, error) {
 	r, err := s.Q.GroupChannel(ctx, sqlc.GroupChannelParams{ID: id, GroupID: group})
 	if db.IsNoRows(err) {
-		return nil, nil //nolint:nilnil // none, as Swift's optional
+		return nil, nil // none, as Swift's optional
 	}
 	if err != nil {
 		return nil, fmt.Errorf("group channel: %w", err)
@@ -487,7 +505,7 @@ func (s *Store) Message(ctx context.Context, id, channel uuid.UUID) (*Message, e
 func (s *Store) message(ctx context.Context, id uuid.UUID, channel *uuid.UUID) (*Message, error) {
 	r, err := s.Q.GroupMessage(ctx, sqlc.GroupMessageParams{ID: id, ChannelID: channel})
 	if db.IsNoRows(err) {
-		return nil, nil //nolint:nilnil // none, as Swift's optional
+		return nil, nil // none, as Swift's optional
 	}
 	if err != nil {
 		return nil, fmt.Errorf("message: %w", err)
@@ -625,7 +643,7 @@ func (s *Store) RemoveShelfItem(ctx context.Context, channel, title uuid.UUID) (
 func (s *Store) LatestParty(ctx context.Context, channel uuid.UUID) (*WatchParty, error) {
 	r, err := s.Q.LatestWatchParty(ctx, channel)
 	if db.IsNoRows(err) {
-		return nil, nil //nolint:nilnil // none, as Swift's optional
+		return nil, nil // none, as Swift's optional
 	}
 	if err != nil {
 		return nil, fmt.Errorf("latest party: %w", err)

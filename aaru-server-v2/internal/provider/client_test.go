@@ -32,6 +32,7 @@ func testClient(t TransportFunc, sleeps *sleepLog) *Client {
 		sleeps = &sleepLog{}
 	}
 	c.Sleep = sleeps.sleep
+	c.Jitter = func(d time.Duration) time.Duration { return d }
 	return c
 }
 
@@ -179,4 +180,83 @@ func TestJSONValue(t *testing.T) {
 	got, err := DecodeJSONValue[input](v)
 	require.NoError(t, err)
 	assert.Equal(t, 1, got.A)
+}
+
+func TestAnOversizeBodyIsMalformedAndNotRetried(t *testing.T) {
+	var calls atomic.Int32
+	c := testClient(func(context.Context, Request) (*Response, error) {
+		calls.Add(1)
+		return nil, ErrBodyTooLarge
+	}, nil)
+	_, err := c.Data(context.Background(), Request{URL: "x"})
+	assert.ErrorIs(t, err, NewError("test", KindMalformed))
+	assert.EqualValues(t, 1, calls.Load())
+}
+
+func TestBackoffIsJittered(t *testing.T) {
+	for range 200 {
+		d := EqualJitter(time.Second)
+		assert.GreaterOrEqual(t, d, 500*time.Millisecond)
+		assert.LessOrEqual(t, d, time.Second)
+	}
+	sleeps := &sleepLog{}
+	c := testClient(func(context.Context, Request) (*Response, error) { return respond(503, ""), nil }, sleeps)
+	c.Jitter = nil // the default
+	_, err := c.Data(context.Background(), Request{URL: "x"})
+	require.Error(t, err)
+	require.Len(t, sleeps.values, 2)
+	assert.GreaterOrEqual(t, sleeps.values[0], 125*time.Millisecond)
+	assert.LessOrEqual(t, sleeps.values[0], 250*time.Millisecond)
+	assert.GreaterOrEqual(t, sleeps.values[1], 250*time.Millisecond)
+	assert.LessOrEqual(t, sleeps.values[1], 500*time.Millisecond)
+}
+
+func TestRetryAfterReadsSecondsOrAnHTTPDate(t *testing.T) {
+	now := time.Date(2026, 11, 3, 12, 0, 0, 0, time.UTC)
+	assert.Equal(t, 7*time.Second, RetryAfter("7", now))
+	assert.Equal(t, 30*time.Second, RetryAfter(now.Add(30*time.Second).Format(http.TimeFormat), now))
+	assert.Zero(t, RetryAfter(now.Add(-time.Minute).Format(http.TimeFormat), now))
+	assert.Zero(t, RetryAfter("soon", now))
+	assert.Zero(t, RetryAfter("", now))
+	assert.Zero(t, RetryAfter("-3", now))
+
+	sleeps := &sleepLog{}
+	var calls atomic.Int32
+	date := time.Now().Add(5 * time.Second).UTC().Format(http.TimeFormat)
+	_, err := testClient(counting(&calls, func(n int32) *Response {
+		if n < 1 {
+			return respond(503, "", "Retry-After", date)
+		}
+		return respond(200, "ok")
+	}), sleeps).Data(context.Background(), Request{URL: "x"})
+	require.NoError(t, err)
+	require.Len(t, sleeps.values, 1)
+	assert.InDelta(t, 5*time.Second, sleeps.values[0], float64(1500*time.Millisecond))
+}
+
+func TestAWaitPastTheCallersDeadlineFailsFast(t *testing.T) {
+	sleeps := &sleepLog{}
+	var calls atomic.Int32
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	_, err := testClient(counting(&calls, func(int32) *Response { return respond(429, "", "Retry-After", "30") }), sleeps).
+		Data(ctx, Request{URL: "x"})
+	assert.ErrorIs(t, err, NewError("test", KindUnavailable))
+	assert.EqualValues(t, 1, calls.Load())
+	assert.Empty(t, sleeps.values, "no sleep the deadline cannot cover")
+}
+
+func TestBeforeAttemptRunsPerAttemptAndCanStopTheCall(t *testing.T) {
+	var calls, attempts atomic.Int32
+	stop := errors.New("budget spent")
+	c := testClient(counting(&calls, func(int32) *Response { return respond(503, "") }), nil)
+	_, err := c.Data(context.Background(), Request{URL: "x", BeforeAttempt: func() error {
+		if attempts.Add(1) > 2 {
+			return stop
+		}
+		return nil
+	}})
+	assert.ErrorIs(t, err, stop)
+	assert.EqualValues(t, 2, calls.Load())
+	assert.EqualValues(t, 3, attempts.Load())
 }

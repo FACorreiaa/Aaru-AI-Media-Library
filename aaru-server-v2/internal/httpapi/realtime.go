@@ -4,6 +4,7 @@ import (
 	"aaru-go-api/internal/api"
 	"aaru-go-api/internal/apiid"
 	"aaru-go-api/internal/apitime"
+	"aaru-go-api/internal/apperr"
 	"aaru-go-api/internal/groups"
 	"aaru-go-api/internal/realtime"
 	"context"
@@ -14,6 +15,8 @@ import (
 	"github.com/google/uuid"
 )
 
+var errTooManyTickets = apperr.RateLimited("Too many requests. Wait a minute.")
+
 // CreateRealtimeTicket is POST /v1/realtime/ticket: a single-use ticket a browser opens
 // `/v1/ws` with, since it cannot send a bearer token on the upgrade.
 func (s *Server) CreateRealtimeTicket(ctx context.Context, _ api.CreateRealtimeTicketRequestObject) (api.CreateRealtimeTicketResponseObject, error) {
@@ -21,7 +24,11 @@ func (s *Server) CreateRealtimeTicket(ctx context.Context, _ api.CreateRealtimeT
 	if err != nil {
 		return nil, err
 	}
-	ticket, expiresAt := s.Realtime.IssueTicket(user, time.Now())
+	now := time.Now()
+	if !s.Realtime.AllowTicket(user, now) {
+		return nil, errTooManyTickets
+	}
+	ticket, expiresAt := s.Realtime.IssueTicket(user, now)
 	socket := url.URL{Scheme: "wss", Path: "/v1/ws", RawQuery: url.Values{"ticket": {ticket}}.Encode()}
 	if base := s.Config.PublicBaseURL; base != nil {
 		socket.Host = base.Host

@@ -10,18 +10,20 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// RequestLog logs each request and its outcome, never a secret in the URL: the
-// Stremio addon's token is a path segment, and the provider callbacks carry
-// `code` and `state`.
+// RequestLog writes one line per request, when it is answered (HLT-005); the line as it
+// arrives is Debug only. Each carries the request id through the context handler. Never a
+// secret in the URL: the Stremio addon's token is a path segment, and the provider callbacks
+// carry `code` and `state`.
 func RequestLog(log *slog.Logger) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			req := c.Request()
+			ctx := req.Context()
 			path := Redacted(req.URL.Path, req.URL.RawQuery)
-			log.Info("Request", "hb.request.path", path, "hb.request.method", req.Method)
+			log.DebugContext(ctx, "Request", "hb.request.path", path, "hb.request.method", req.Method)
 			started := time.Now()
 			err := next(c)
-			log.Info("Response",
+			log.InfoContext(ctx, "Response",
 				"hb.request.path", path,
 				"hb.request.method", req.Method,
 				"hb.response.status", c.Response().Status,

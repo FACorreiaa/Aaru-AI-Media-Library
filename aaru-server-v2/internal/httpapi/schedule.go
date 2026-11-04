@@ -4,10 +4,9 @@ import (
 	"aaru-go-api/internal/api"
 	"aaru-go-api/internal/apiid"
 	"aaru-go-api/internal/apitime"
+	"aaru-go-api/internal/safe"
 	"aaru-go-api/internal/schedule"
 	"context"
-
-	"golang.org/x/sync/errgroup"
 )
 
 // ScheduleHandlers.swift: calendar, Up Next, Watching.
@@ -21,7 +20,7 @@ func (s *Server) GetCalendar(ctx context.Context, req api.GetCalendarRequestObje
 		entries []schedule.CalendarEntry
 		pending int
 	)
-	g, gctx := errgroup.WithContext(ctx)
+	g, gctx := safe.WithContext(ctx)
 	g.Go(func() (err error) {
 		entries, err = s.Schedule.Calendar(gctx, userID, req.Params.From.Time, req.Params.To.Time)
 		return err

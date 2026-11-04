@@ -1,0 +1,27 @@
+# Dependency update PRs (HLT-001). Weekly, grouped, so they arrive as a few PRs, not dozens.
+# Actions are pinned by tag across .github/workflows; pinning them by commit SHA is the stronger
+# option and Dependabot keeps SHA pins current too.
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /aaru-server-v2
+    schedule:
+      interval: weekly
+    groups:
+      go-modules:
+        patterns: ["*"]
+    open-pull-requests-limit: 5
+
+  # The Dockerfile's base images are pinned by digest; this bumps the digest when the tag moves.
+  - package-ecosystem: docker
+    directory: /aaru-server-v2
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      github-actions:
+        patterns: ["*"]

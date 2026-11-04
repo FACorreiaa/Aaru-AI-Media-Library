@@ -186,13 +186,25 @@ const AiringWindow = 2 * 24 * time.Hour
 // AiringNotifier announces newly aired episodes of shows a user is watching (2026-10-15 decision).
 // Each episode is claimed in Postgres before it is sent, so two replicas or a restart never send it twice.
 // The ten-minute loop around RunOnce (AiringNotifierService) belongs to the schedule area.
+//
+// Alerts are at most once, on purpose: the claim commits before the send, so a send that fails
+// (or a crash between the two) loses that one alert rather than risking a duplicate. A failure for
+// one user is logged and the pass goes on to the next (Go audit REL-007).
 type AiringNotifier struct {
 	Q *sqlc.Queries
 	// APNs is nil when no APNs key is configured: devices still register, nothing is sent to them.
 	APNs Sender
 	// Web is nil when no VAPID key is configured: browsers cannot subscribe.
 	Web WebSender
+	Log *slog.Logger
 	Now func() time.Time
+}
+
+func (n *AiringNotifier) log() *slog.Logger {
+	if n.Log != nil {
+		return n.Log
+	}
+	return slog.Default()
 }
 
 // RunOnce is one pass. It returns how many notifications went out.
@@ -211,12 +223,19 @@ func (n *AiringNotifier) RunOnce(ctx context.Context) (int, error) {
 	}
 	push := &UserPush{Q: n.Q, APNs: n.APNs, Web: n.Web}
 	sent := 0
+	var failed []error
 	for _, row := range rows {
+		if err := ctx.Err(); err != nil {
+			return sent, err
+		}
 		claimed, err := n.Q.ClaimAiring(ctx, sqlc.ClaimAiringParams{
 			UserID: row.UserID, TitleID: row.TitleID, Season: row.Season, Episode: row.Episode,
 		})
 		if err != nil {
-			return sent, fmt.Errorf("claim airing: %w", err)
+			// Not claimed: the next pass tries this episode again.
+			n.log().Warn("Airing alert claim failed", "error", err.Error())
+			failed = append(failed, fmt.Errorf("claim airing: %w", err))
+			continue
 		}
 		if len(claimed) == 0 {
 			continue
@@ -228,8 +247,13 @@ func (n *AiringNotifier) RunOnce(ctx context.Context) (int, error) {
 		count, err := push.Deliver(ctx, AiringMessage(airing), airing.UserID)
 		sent += count
 		if err != nil {
-			return sent, err
+			// Claimed already: this alert is lost (at most once), the next user's is not.
+			n.log().Warn("Airing alert delivery failed", "error", err.Error())
+			failed = append(failed, err)
 		}
+	}
+	if len(failed) > 0 {
+		return sent, fmt.Errorf("airing alerts: %d failed: %w", len(failed), failed[0])
 	}
 	return sent, nil
 }

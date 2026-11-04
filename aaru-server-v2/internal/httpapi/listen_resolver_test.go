@@ -4,6 +4,7 @@ import (
 	"aaru-go-api/internal/catalog"
 	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/music"
+	"aaru-go-api/internal/provider"
 	"context"
 	"net/http"
 	"sync"
@@ -219,4 +220,57 @@ func TestListensTopRowsCarryCoversLinkAlbumsAndNarrowToOneArtist(t *testing.T) {
 		tracks = append(tracks, it.(map[string]any)["track"].(string))
 	}
 	assert.ElementsMatch(t, []string{"Teardrop", "Angel"}, tracks)
+}
+
+// failingRecordings fails the artists in fail and answers the rest.
+type failingRecordings struct {
+	*fakeRecordings
+	fail map[string]bool
+}
+
+func (f *failingRecordings) Match(ctx context.Context, q catalog.RecordingQuery) (catalog.RecordingMatch, error) {
+	if f.fail[q.Artist] {
+		f.mu.Lock()
+		f.asked = append(f.asked, q)
+		f.mu.Unlock()
+		return catalog.RecordingMatch{}, provider.NewError("musicbrainz", provider.KindUnavailable)
+	}
+	return f.fakeRecordings.Match(ctx, q)
+}
+
+// REL-006: a track that keeps failing is skipped with no miss recorded and does not hold up the
+// rest. Three failures in a row are the provider down, and end the pass.
+func TestListenResolverGoesPastOneTrackThatKeepsFailing(t *testing.T) {
+	env := newLibEnv(t)
+	poison, fine := env.fake.uniqueID("Poison"), env.fake.uniqueID("Fine")
+	recordings := &failingRecordings{fakeRecordings: newFakeRecordings(), fail: map[string]bool{poison: true}}
+	recordings.answer(fine, catalog.RecordingMatch{RecordingMBID: ptr("r-1"), ReleaseGroupMBID: ptr("rg-1"), ArtistMBID: ptr("a-1")})
+	env.insertListens(
+		resolverListen(poison, "Newest", nil, 10), // asked first
+		resolverListen(fine, "Older", nil, 20),
+	)
+	resolver := &music.Resolver{Store: music.NewStore(env.pool), Recordings: recordings}
+	_, listens, err := resolver.RunOnce(context.Background())
+	require.Error(t, err, "the failure still reaches the worker's metrics")
+	assert.Equal(t, 1, listens, "the track behind it got its album")
+	var misses int
+	require.NoError(t, env.pool.QueryRow(context.Background(),
+		`SELECT count(*) FROM music_lookups WHERE release_group_mbid IS NULL`).Scan(&misses))
+	assert.Zero(t, misses, "a failure is not a miss")
+}
+
+func TestListenResolverEndsThePassWhenTheProviderIsDown(t *testing.T) {
+	env := newLibEnv(t)
+	names := make([]string, 5)
+	fail := map[string]bool{}
+	for i := range names {
+		names[i] = env.fake.uniqueID("Down")
+		fail[names[i]] = true
+		env.insertListens(resolverListen(names[i], "Track", nil, float64(i+1)))
+	}
+	recordings := &failingRecordings{fakeRecordings: newFakeRecordings(), fail: fail}
+	resolver := &music.Resolver{Store: music.NewStore(env.pool), Recordings: recordings}
+	_, _, err := resolver.RunOnce(context.Background())
+	require.Error(t, err)
+	assert.Len(t, recordings.asked, 3, "it stops asking")
 }

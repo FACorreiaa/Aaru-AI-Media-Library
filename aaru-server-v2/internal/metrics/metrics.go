@@ -96,6 +96,7 @@ func Reset() {
 		Buckets: prometheus.DefBuckets,
 	}, []string{"group"})
 	Registry.MustRegister(inFlight, duration)
+	registerWorkers()
 }
 
 // Handler serves `GET /metrics`.

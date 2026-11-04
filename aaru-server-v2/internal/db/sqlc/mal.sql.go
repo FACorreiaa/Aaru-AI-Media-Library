@@ -13,7 +13,8 @@ import (
 )
 
 const mALAdvanceCursor = `-- name: MALAdvanceCursor :exec
-UPDATE mal_connections SET push_cursor = GREATEST(push_cursor, $1::pg_catalog.timestamptz)
+UPDATE mal_connections SET push_cursor = GREATEST(push_cursor, $1::pg_catalog.timestamptz),
+    push_failures = 0, push_not_before = NULL
 WHERE user_id = $2
 `
 
@@ -22,6 +23,7 @@ type MALAdvanceCursorParams struct {
 	UserID uuid.UUID
 }
 
+// A push that went through also ends any backoff.
 func (q *Queries) MALAdvanceCursor(ctx context.Context, arg MALAdvanceCursorParams) error {
 	_, err := q.db.Exec(ctx, mALAdvanceCursor, arg.Cursor, arg.UserID)
 	return err
@@ -340,20 +342,49 @@ func (q *Queries) MALMarkRevoked(ctx context.Context, arg MALMarkRevokedParams) 
 	return err
 }
 
-const mALPushesDue = `-- name: MALPushesDue :many
-SELECT c.user_id, c.push_cursor FROM mal_connections c
-WHERE c.revoked_at IS NULL AND EXISTS (
-    SELECT 1 FROM library_items li WHERE li.user_id = c.user_id AND li.updated_at > c.push_cursor
-)
+const mALPushFailed = `-- name: MALPushFailed :exec
+UPDATE mal_connections SET push_failures = push_failures + 1,
+    push_not_before = $1::pg_catalog.timestamptz
+WHERE user_id = $2
 `
 
-type MALPushesDueRow struct {
-	UserID     uuid.UUID
-	PushCursor time.Time
+type MALPushFailedParams struct {
+	NotBefore time.Time
+	UserID    uuid.UUID
 }
 
-func (q *Queries) MALPushesDue(ctx context.Context) ([]MALPushesDueRow, error) {
-	rows, err := q.db.Query(ctx, mALPushesDue)
+// REL-005: one more failed push, and no new try before not_before.
+func (q *Queries) MALPushFailed(ctx context.Context, arg MALPushFailedParams) error {
+	_, err := q.db.Exec(ctx, mALPushFailed, arg.NotBefore, arg.UserID)
+	return err
+}
+
+const mALPushesDue = `-- name: MALPushesDue :many
+SELECT c.user_id, c.push_cursor, c.push_failures FROM mal_connections c
+WHERE c.revoked_at IS NULL
+  AND (c.push_not_before IS NULL OR c.push_not_before <= $1::pg_catalog.timestamptz)
+  AND EXISTS (
+    SELECT 1 FROM library_items li WHERE li.user_id = c.user_id AND li.updated_at > c.push_cursor
+)
+ORDER BY c.push_cursor
+LIMIT $2
+`
+
+type MALPushesDueParams struct {
+	Now     time.Time
+	MaxRows int32
+}
+
+type MALPushesDueRow struct {
+	UserID       uuid.UUID
+	PushCursor   time.Time
+	PushFailures int32
+}
+
+// A connection backing off after failed pushes waits for push_not_before; the longest-waiting go
+// first, a bounded batch a pass.
+func (q *Queries) MALPushesDue(ctx context.Context, arg MALPushesDueParams) ([]MALPushesDueRow, error) {
+	rows, err := q.db.Query(ctx, mALPushesDue, arg.Now, arg.MaxRows)
 	if err != nil {
 		return nil, err
 	}
@@ -361,7 +392,7 @@ func (q *Queries) MALPushesDue(ctx context.Context) ([]MALPushesDueRow, error) {
 	items := []MALPushesDueRow{}
 	for rows.Next() {
 		var i MALPushesDueRow
-		if err := rows.Scan(&i.UserID, &i.PushCursor); err != nil {
+		if err := rows.Scan(&i.UserID, &i.PushCursor, &i.PushFailures); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

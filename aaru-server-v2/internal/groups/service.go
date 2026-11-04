@@ -105,14 +105,19 @@ func (s *Service) Create(ctx context.Context, name string, viewer uuid.UUID) (De
 	if err != nil {
 		return Detail{}, err
 	}
+	ownedTooMany := Invalid("name", fmt.Sprintf("You own %d groups already. Delete one first.", MaxOwnedGroups))
 	if owned >= MaxOwnedGroups {
-		return Detail{}, Invalid("name", fmt.Sprintf("You own %d groups already. Delete one first.", MaxOwnedGroups))
+		return Detail{}, ownedTooMany
 	}
 	id := uuid.New()
 	now := s.now()
 	general := Channel{ID: uuid.New(), GroupID: id, Kind: KindText, Name: "general", Position: 0, IsDefault: true, CreatedAt: now}
-	if err := s.Store.CreateGroup(ctx, id, name, viewer, general, now); err != nil {
+	created, err := s.Store.CreateGroup(ctx, id, name, viewer, general, now, MaxOwnedGroups)
+	if err != nil {
 		return Detail{}, err
+	}
+	if !created {
+		return Detail{}, ownedTooMany
 	}
 	telemetry.Capture(telemetry.GroupCreated, viewer, nil)
 	return s.Detail(ctx, id, viewer)

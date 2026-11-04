@@ -68,20 +68,6 @@ func (q *Queries) LibraryActions(ctx context.Context, arg LibraryActionsParams) 
 	return items, nil
 }
 
-const libraryClearTombstone = `-- name: LibraryClearTombstone :exec
-DELETE FROM library_tombstones WHERE user_id = $1 AND library_item_id = $2
-`
-
-type LibraryClearTombstoneParams struct {
-	UserID        uuid.UUID
-	LibraryItemID uuid.UUID
-}
-
-func (q *Queries) LibraryClearTombstone(ctx context.Context, arg LibraryClearTombstoneParams) error {
-	_, err := q.db.Exec(ctx, libraryClearTombstone, arg.UserID, arg.LibraryItemID)
-	return err
-}
-
 const libraryDeleteItem = `-- name: LibraryDeleteItem :exec
 DELETE FROM library_items WHERE id = $1
 `
@@ -167,78 +153,6 @@ func (q *Queries) LibraryImportStates(ctx context.Context, arg LibraryImportStat
 		return nil, err
 	}
 	return items, nil
-}
-
-const libraryInsertItem = `-- name: LibraryInsertItem :exec
-INSERT INTO library_items (id, user_id, title_id, status, is_owned, rating, notes, added_at,
-    updated_at, finished_at, book_page, book_percent, manga_chapter, manga_volume, status_by_hand)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8,
-    now(), $9, $10, $11, $12,
-    $13, $14)
-`
-
-type LibraryInsertItemParams struct {
-	ID           uuid.UUID
-	UserID       uuid.UUID
-	TitleID      uuid.UUID
-	Status       string
-	IsOwned      bool
-	Rating       *float64
-	Notes        *string
-	AddedAt      time.Time
-	FinishedAt   *time.Time
-	BookPage     *int32
-	BookPercent  *float64
-	MangaChapter *int32
-	MangaVolume  *int32
-	StatusByHand bool
-}
-
-func (q *Queries) LibraryInsertItem(ctx context.Context, arg LibraryInsertItemParams) error {
-	_, err := q.db.Exec(ctx, libraryInsertItem,
-		arg.ID,
-		arg.UserID,
-		arg.TitleID,
-		arg.Status,
-		arg.IsOwned,
-		arg.Rating,
-		arg.Notes,
-		arg.AddedAt,
-		arg.FinishedAt,
-		arg.BookPage,
-		arg.BookPercent,
-		arg.MangaChapter,
-		arg.MangaVolume,
-		arg.StatusByHand,
-	)
-	return err
-}
-
-const libraryInsertTicks = `-- name: LibraryInsertTicks :exec
-INSERT INTO episode_progress (id, library_item_id, season, episode, watched_at_known)
-SELECT ($1::uuid[])[i], $2, ($3::int[])[i], ($4::int[])[i], $5::boolean
-FROM generate_subscripts($3::int[], 1) AS i
-ON CONFLICT (library_item_id, season, episode) DO NOTHING
-`
-
-type LibraryInsertTicksParams struct {
-	Ids           []uuid.UUID
-	LibraryItemID uuid.UUID
-	Seasons       []int32
-	Episodes      []int32
-	Known         bool
-}
-
-// Episode ticks in one statement. `known` is false for imports and restores (GAM-006a).
-func (q *Queries) LibraryInsertTicks(ctx context.Context, arg LibraryInsertTicksParams) error {
-	_, err := q.db.Exec(ctx, libraryInsertTicks,
-		arg.Ids,
-		arg.LibraryItemID,
-		arg.Seasons,
-		arg.Episodes,
-		arg.Known,
-	)
-	return err
 }
 
 const libraryItemTitleAndAdded = `-- name: LibraryItemTitleAndAdded :one

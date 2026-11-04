@@ -1,6 +1,6 @@
 // Package reqctx carries what the middleware learned about a request to the
 // handlers: the signed-in user, the session they presented, the address
-// rate limits count, and the caller's time zone.
+// rate limits count, the caller's time zone, and the request id logs carry.
 package reqctx
 
 import (
@@ -17,6 +17,7 @@ const (
 	sessionKey
 	addressKey
 	zoneKey
+	requestIDKey
 )
 
 // WithUser records the signed-in user and the hash of the session token they presented.
@@ -60,4 +61,15 @@ func WithTimeZone(ctx context.Context, loc *time.Location) context.Context {
 func TimeZone(ctx context.Context) *time.Location {
 	loc, _ := ctx.Value(zoneKey).(*time.Location)
 	return loc
+}
+
+// WithRequestID records the id every log line about this request carries (HLT-005).
+func WithRequestID(ctx context.Context, id string) context.Context {
+	return context.WithValue(ctx, requestIDKey, id)
+}
+
+// RequestID is the request's id, or "" outside a request.
+func RequestID(ctx context.Context) string {
+	id, _ := ctx.Value(requestIDKey).(string)
+	return id
 }

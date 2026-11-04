@@ -4,13 +4,12 @@ import (
 	"aaru-go-api/internal/config"
 	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/provider"
+	"aaru-go-api/internal/safe"
 	"cmp"
 	"context"
 	"slices"
 	"strconv"
 	"time"
-
-	"golang.org/x/sync/errgroup"
 )
 
 // ListenBrainzBaseURL is ListenBrainz's API root.
@@ -61,7 +60,7 @@ func (l *ListenBrainz) newAlbums(ctx context.Context) ([]Hit, error) {
 			ReleaseGroups []lbPlayedGroup `json:"release_groups"`
 		} `json:"payload"`
 	}
-	g, gctx := errgroup.WithContext(ctx)
+	g, gctx := safe.WithContext(ctx)
 	g.Go(func() (err error) { fresh, err = l.releases(gctx, true); return err })
 	g.Go(func() error {
 		return l.get(gctx, "stats/sitewide/release-groups", map[string]string{"range": "this_month", "count": listenBrainzStatsCount}, &played)
@@ -98,7 +97,7 @@ func (l *ListenBrainz) upcoming(ctx context.Context) ([]Hit, error) {
 			} `json:"artists"`
 		} `json:"payload"`
 	}
-	g, gctx := errgroup.WithContext(ctx)
+	g, gctx := safe.WithContext(ctx)
 	g.Go(func() (err error) { fresh, err = l.releases(gctx, false); return err })
 	g.Go(func() error {
 		return l.get(gctx, "stats/sitewide/artists", map[string]string{"range": "this_month", "count": listenBrainzStatsCount}, &played)

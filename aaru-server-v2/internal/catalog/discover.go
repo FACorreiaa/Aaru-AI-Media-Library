@@ -196,6 +196,7 @@ func (s *DiscoverService) Rows(ctx context.Context, userID uuid.UUID) ([]Discove
 	lists := map[DiscoverList]discoverFetch{}
 	for list, source := range s.sources {
 		wg.Go(func() {
+			defer func() { _ = recovered(s.cache.log, "Discover row", recover()) }()
 			fetched, ok := s.cache.get(ctx, list, now, func(f discoverFetch) time.Duration { return f.ttl },
 				func(ctx context.Context) (discoverFetch, error) { return s.fetch(ctx, list, source, now) })
 			if ok {

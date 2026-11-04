@@ -2,6 +2,7 @@ package library
 
 import (
 	"aaru-go-api/internal/db/sqlc"
+	"aaru-go-api/internal/metrics"
 	"context"
 	"log/slog"
 	"time"
@@ -48,6 +49,9 @@ func (w *ReopenWorker) Run(ctx context.Context) error {
 	}
 	for ctx.Err() == nil {
 		n, err := w.Store.ReopenAired(ctx, w.Store.now())
+		if ctx.Err() == nil {
+			metrics.WorkerPass(w.Name(), err)
+		}
 		switch {
 		case err != nil && ctx.Err() != nil:
 			return nil

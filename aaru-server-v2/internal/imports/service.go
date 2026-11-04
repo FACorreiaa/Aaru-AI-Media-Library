@@ -27,6 +27,7 @@ import (
 	"aaru-go-api/internal/model"
 	"aaru-go-api/internal/provider"
 	"aaru-go-api/internal/push"
+	"aaru-go-api/internal/safe"
 	"aaru-go-api/internal/telemetry"
 	"context"
 	"errors"
@@ -35,6 +36,7 @@ import (
 	"net/http"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -99,6 +101,9 @@ type Service struct {
 	Push PushSender
 	// Now is the clock; tests pin it.
 	Now func() time.Time
+
+	listenFileOnce sync.Once
+	listenFileSlot chan struct{}
 }
 
 // NewService builds the service over the job store, the catalog and the library.
@@ -217,12 +222,20 @@ func (s *Service) Delete(ctx context.Context, id, user uuid.UUID) error {
 // RunNext leases one job and plans it. It returns false when there was nothing to do. The worker
 // passes no user; tests pass theirs so parallel tests never take each other's jobs.
 func (s *Service) RunNext(ctx context.Context, owner *uuid.UUID) (bool, error) {
+	if err := s.failExpired(ctx); err != nil {
+		return false, err
+	}
 	claimed, err := s.Store.ClaimNext(ctx, s.now(), Lease, owner)
 	if err != nil || claimed == nil {
 		return false, err
 	}
 	job := claimed.Job
-	if err := s.runClaimed(ctx, &job, claimed.Attempts); err != nil {
+	// A panic is the attempt's failure like any other error: retried, then failed for good, and
+	// never the process's end (Go audit REL-001).
+	if err := safe.Step(func() error { return s.runClaimed(ctx, &job, claimed.Attempts) }); err != nil {
+		if safe.IsPanic(err) {
+			s.log().Error("Import job panicked", "job", job.ID, "error", err, "stack", string(safe.Stack(err)))
+		}
 		// A shutdown is not the job's failure: hand it back untouched, attempt uncounted, for the
 		// next worker (whatever the provider client turned the cancellation into).
 		if ctx.Err() != nil || errors.Is(err, context.Canceled) {
@@ -243,14 +256,36 @@ func (s *Service) RunNext(ctx context.Context, owner *uuid.UUID) (bool, error) {
 		if err := s.Store.Update(ctx, job); err != nil {
 			return true, err
 		}
-		count(job)
-		if job.Source == core.SourceCapture {
-			if err := s.deleteCaptureInput(ctx, job.ID); err != nil {
-				s.log().Error("delete capture input", "error", err)
-			}
-		}
+		s.failed(ctx, job)
 	}
 	return true, nil
+}
+
+// ExpiredSummary is what a job reads when the process died under its last attempt.
+const ExpiredSummary = "Matching stopped: this import could not be finished. Try importing the file again."
+
+// failExpired fails the jobs whose last attempt never came back (REL-001): without it, a job that
+// crashes the process is leased again every Lease, forever.
+func (s *Service) failExpired(ctx context.Context) error {
+	jobs, err := s.Store.FailExpired(ctx, s.now(), ExpiredSummary)
+	if err != nil {
+		return err
+	}
+	for _, job := range jobs {
+		s.log().Error("Import job failed: its last attempt never finished", "job", job.ID)
+		s.failed(ctx, job)
+	}
+	return nil
+}
+
+// failed counts a job failed for good; a capture's input goes with it.
+func (s *Service) failed(ctx context.Context, job core.ImportJob) {
+	count(job)
+	if job.Source == core.SourceCapture {
+		if err := s.deleteCaptureInput(ctx, job.ID); err != nil {
+			s.log().Error("delete capture input", "error", err)
+		}
+	}
 }
 
 // runClaimed plans one leased job. An error is the attempt's failure.

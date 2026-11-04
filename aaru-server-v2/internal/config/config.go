@@ -159,23 +159,40 @@ func (r *Reader) required(key, env string) (string, error) {
 
 // Postgres settings, needed to serve and to migrate.
 type Postgres struct {
-	Host               string
-	Port               int
-	User               string
-	Password           string
-	Database           string
-	PoolSize           int
+	Host     string
+	Port     int
+	User     string
+	Password string
+	Database string
+	PoolSize int
+	// PoolTimeoutSeconds is how long a query waits for a free connection (Swift's meaning),
+	// and also bounds dialing a new one (POSTGRES_POOL_TIMEOUT, default 10).
 	PoolTimeoutSeconds int
+	// StatementTimeoutSeconds is Postgres' statement_timeout for the API's connections
+	// (POSTGRES_STATEMENT_TIMEOUT, default 30; 0 leaves the server's default).
+	StatementTimeoutSeconds int
+	// IdleInTransactionTimeoutSeconds is idle_in_transaction_session_timeout
+	// (POSTGRES_IDLE_TRANSACTION_TIMEOUT, default 60; 0 leaves the server's default).
+	IdleInTransactionTimeoutSeconds int
+}
+
+// WithoutSessionTimeouts is s for the one-shot modes (`--db-migrate`, `--anime-mappings`): a
+// migration or a bulk load runs as long as it needs, never cut by the API's statement timeouts.
+func (s Postgres) WithoutSessionTimeouts() Postgres {
+	s.StatementTimeoutSeconds, s.IdleInTransactionTimeoutSeconds = 0, 0
+	return s
 }
 
 // LoadPostgres reads POSTGRES_*.
 func LoadPostgres(r *Reader) (Postgres, error) {
 	var err error
 	p := Postgres{
-		Host:               r.String("postgres.host", "127.0.0.1"),
-		Port:               r.Int("postgres.port", 5432),
-		PoolSize:           max(1, r.Int("postgres.pool.size", 10)),
-		PoolTimeoutSeconds: max(1, r.Int("postgres.pool.timeout", 10)),
+		Host:                            r.String("postgres.host", "127.0.0.1"),
+		Port:                            r.Int("postgres.port", 5432),
+		PoolSize:                        max(1, r.Int("postgres.pool.size", 10)),
+		PoolTimeoutSeconds:              max(1, r.Int("postgres.pool.timeout", 10)),
+		StatementTimeoutSeconds:         max(0, r.Int("postgres.statement.timeout", 30)),
+		IdleInTransactionTimeoutSeconds: max(0, r.Int("postgres.idle.transaction.timeout", 60)),
 	}
 	if p.User, err = r.required("postgres.user", "POSTGRES_USER"); err != nil {
 		return p, err
@@ -193,6 +210,12 @@ func LoadPostgres(r *Reader) (Postgres, error) {
 type HTTP struct {
 	Host string
 	Port int
+	// RequestTimeoutSeconds bounds each request but the long-lived ones (the WebSocket,
+	// uploads, the export, MCP) (HTTP_REQUEST_TIMEOUT, default 30; 0 turns it off).
+	RequestTimeoutSeconds int
+	// TrustedProxyHops is how many proxies in front of the API append to `X-Forwarded-For`
+	// (TRUSTED_PROXY_HOPS, default 1: Traefik). 0 ignores the header.
+	TrustedProxyHops int
 }
 
 // Workers is how many jobs each queue runs at once in this process.
@@ -307,8 +330,12 @@ func Load(r *Reader) (*App, error) {
 		return nil, err
 	}
 	cfg := &App{
-		Postgres:           pg,
-		HTTP:               HTTP{Host: r.String("http.host", "127.0.0.1"), Port: r.Int("http.port", 8080)},
+		Postgres: pg,
+		HTTP: HTTP{
+			Host: r.String("http.host", "127.0.0.1"), Port: r.Int("http.port", 8080),
+			RequestTimeoutSeconds: max(0, r.Int("http.request.timeout", 30)),
+			TrustedProxyHops:      max(0, r.Int("trusted.proxy.hops", 1)),
+		},
 		TMDBAPIKey:         tmdb,
 		AppleAudiences:     list(r.String("apple.audiences", DefaultAppleAudiences)),
 		GoogleAudiences:    list(r.String("google.client.ids", "")),
@@ -392,7 +419,7 @@ func httpURL(raw, env, key string) (*url.URL, error) {
 func loadEmail(r *Reader) (*Email, error) {
 	key, ok := r.Lookup("resend.api.key")
 	if !ok || key == "" {
-		return nil, nil //nolint:nilnil // unset turns the feature off
+		return nil, nil // unset turns the feature off
 	}
 	link, err := url.Parse(r.String("magic.link.base.url", "https://aaruapp.com/auth/verify"))
 	if err != nil {
@@ -404,7 +431,7 @@ func loadEmail(r *Reader) (*Email, error) {
 func loadOAuthProvider(r *Reader, prefix, env, defaultRedirect string) (*OAuthProvider, error) {
 	clientID, ok := r.Lookup(prefix + ".client.id")
 	if !ok || clientID == "" {
-		return nil, nil //nolint:nilnil // unset turns the provider off
+		return nil, nil // unset turns the provider off
 	}
 	redirect, err := url.Parse(r.String(prefix+".redirect.uri", defaultRedirect))
 	if err != nil {
@@ -448,7 +475,7 @@ func TokenKey(b64 string) ([]byte, error) {
 func loadPush(r *Reader) (*Push, error) {
 	key, ok := r.Lookup("apns.private.key")
 	if !ok || key == "" {
-		return nil, nil //nolint:nilnil // unset turns push off
+		return nil, nil // unset turns push off
 	}
 	keyID, err := r.required("apns.key.id", "APNS_KEY_ID")
 	if err != nil {
@@ -460,7 +487,7 @@ func loadPush(r *Reader) (*Push, error) {
 func loadAnthropic(r *Reader) (*Anthropic, error) {
 	key, ok := r.Lookup("anthropic.api.key")
 	if !ok || key == "" {
-		return nil, nil //nolint:nilnil // unset leaves @aaru off
+		return nil, nil // unset leaves @aaru off
 	}
 	base, err := httpURL(r.String("anthropic.base.url", "https://api.anthropic.com"), "ANTHROPIC_BASE_URL", "anthropic.base.url")
 	if err != nil {

@@ -1,6 +1,7 @@
 package schedule
 
 import (
+	"aaru-go-api/internal/metrics"
 	"aaru-go-api/internal/push"
 	"context"
 	"log/slog"
@@ -33,6 +34,9 @@ func (w *AiringWorker) Run(ctx context.Context) error {
 	}
 	for ctx.Err() == nil {
 		sent, err := w.Notifier.RunOnce(ctx)
+		if ctx.Err() == nil {
+			metrics.WorkerPass(w.Name(), err)
+		}
 		switch {
 		case err != nil && ctx.Err() != nil:
 			return nil

@@ -142,11 +142,11 @@ func ValidName(raw string) (string, error) {
 // ValidTopic is trimmed; empty clears it (nil).
 func ValidTopic(raw *string) (*string, error) {
 	if raw == nil {
-		return nil, nil //nolint:nilnil // no stamp, as Swift's optional
+		return nil, nil // no stamp, as Swift's optional
 	}
 	topic := trim(*raw)
 	if topic == "" {
-		return nil, nil //nolint:nilnil // no stamp, as Swift's optional
+		return nil, nil // no stamp, as Swift's optional
 	}
 	if length(topic) > MaxTopicLength {
 		return nil, Invalid("topic", fmt.Sprintf("Keep the topic under %d characters.", MaxTopicLength))

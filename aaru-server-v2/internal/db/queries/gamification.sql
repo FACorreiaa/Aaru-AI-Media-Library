@@ -118,30 +118,71 @@ WHERE user_id = sqlc.arg(user_id) AND id = ANY(sqlc.arg(ids)::uuid[]) AND seen_a
 SELECT evaluated_at FROM user_progress WHERE user_id = $1;
 
 -- name: GamificationMarkDirty :exec
--- A batch outranks a live mark: one summary instead of a toast per badge.
+-- A batch outranks a live mark: one summary instead of a toast per badge. A new write also gives a
+-- user whose evaluation kept failing a fresh start.
 INSERT INTO user_progress (user_id, dirty_at, dirty_origin)
 VALUES (sqlc.arg(user_id), now(), sqlc.arg(origin)::text)
 ON CONFLICT (user_id) DO UPDATE SET dirty_at = now(),
     dirty_origin = CASE
         WHEN user_progress.dirty_origin IN ('batch', 'backfill') AND user_progress.dirty_at IS NOT NULL
-        THEN user_progress.dirty_origin ELSE EXCLUDED.dirty_origin END;
+        THEN user_progress.dirty_origin ELSE EXCLUDED.dirty_origin END,
+    eval_failures = 0, eval_not_before = NULL;
 
 -- name: GamificationClaimDirty :many
+-- Dirty users first, oldest mark first (the user_progress_dirty index). A user backing off after a
+-- failed evaluation waits; one that failed max_failures times waits for their next write.
 UPDATE user_progress SET locked_until = now() + make_interval(secs => sqlc.arg(lease_seconds)::float8)
 WHERE user_id = (
     SELECT p.user_id FROM user_progress p
-    WHERE (p.dirty_at IS NOT NULL OR p.evaluated_at IS NULL) AND (p.locked_until IS NULL OR p.locked_until < now())
-    ORDER BY p.dirty_at NULLS LAST
+    WHERE p.dirty_at IS NOT NULL AND (p.locked_until IS NULL OR p.locked_until < now())
+      AND (p.eval_not_before IS NULL OR p.eval_not_before <= now())
+      AND p.eval_failures < sqlc.arg(max_failures)::int
+    ORDER BY p.dirty_at
     LIMIT 1 FOR UPDATE SKIP LOCKED
 )
 RETURNING user_id, dirty_origin, (evaluated_at IS NULL)::boolean AS fresh;
+
+-- name: GamificationClaimFresh :many
+-- Then users never evaluated and not dirty (the user_progress_fresh index): the first run over an
+-- existing library. Split from GamificationClaimDirty so each side reads its own index.
+UPDATE user_progress SET locked_until = now() + make_interval(secs => sqlc.arg(lease_seconds)::float8)
+WHERE user_id = (
+    SELECT p.user_id FROM user_progress p
+    WHERE p.evaluated_at IS NULL AND p.dirty_at IS NULL
+      AND (p.locked_until IS NULL OR p.locked_until < now())
+      AND (p.eval_not_before IS NULL OR p.eval_not_before <= now())
+      AND p.eval_failures < sqlc.arg(max_failures)::int
+    LIMIT 1 FOR UPDATE SKIP LOCKED
+)
+RETURNING user_id, dirty_origin, (evaluated_at IS NULL)::boolean AS fresh;
+
+-- name: GamificationEvaluationFailed :one
+-- REL-006: one more failed evaluation. The lease is let go and the next try waits base_seconds,
+-- doubling with each failure up to max_seconds (SET reads the old count).
+UPDATE user_progress SET eval_failures = eval_failures + 1,
+    eval_not_before = now() + make_interval(secs => least(
+        sqlc.arg(base_seconds)::float8 * power(2, eval_failures)::float8, sqlc.arg(max_seconds)::float8)),
+    locked_until = NULL
+WHERE user_id = sqlc.arg(user_id)
+RETURNING eval_failures;
 
 -- name: GamificationFinishEvaluation :exec
 INSERT INTO user_progress (user_id, evaluated_at) VALUES (sqlc.arg(user_id), now())
 ON CONFLICT (user_id) DO UPDATE SET evaluated_at = now(), locked_until = NULL,
     dirty_at = CASE WHEN user_progress.dirty_at > sqlc.arg(started_at)::timestamptz THEN user_progress.dirty_at END,
     dirty_origin = CASE WHEN user_progress.dirty_at > sqlc.arg(started_at)::timestamptz
-        THEN user_progress.dirty_origin END;
+        THEN user_progress.dirty_origin END,
+    eval_failures = 0, eval_not_before = NULL;
+
+-- name: GamificationLockPoints :exec
+-- One award at a time per user: the daily caps read today's points and then insert, so two
+-- writes at once could both see room under a cap. Held until the transaction ends. The lock is
+-- the user's progress row, which every award already updates (its total), so a library write
+-- that took it first and an award from the pool always queue in the same order.
+SELECT 1 FROM user_progress WHERE user_id = sqlc.arg(user_id) FOR UPDATE;
+
+-- name: GamificationEnsureProgress :exec
+INSERT INTO user_progress (user_id) VALUES (sqlc.arg(user_id)) ON CONFLICT (user_id) DO NOTHING;
 
 -- name: GamificationSeedProgress :many
 INSERT INTO user_progress (user_id)

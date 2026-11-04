@@ -1,7 +1,9 @@
 package concerts
 
 import (
+	"aaru-go-api/internal/metrics"
 	"aaru-go-api/internal/provider"
+	"aaru-go-api/internal/safe"
 	"context"
 	"errors"
 	"log/slog"
@@ -47,8 +49,9 @@ func (r *Refresher) now() time.Time {
 	return r.Now()
 }
 
-// FillAlbumArtists returns how many albums were looked up. A provider failure ends the pass;
-// the rest wait.
+// FillAlbumArtists returns how many albums were looked up. A provider refusing one album (a 4xx)
+// records it as looked up with no artists and the pass goes on (Go audit REL-006); any other
+// provider failure skips it, and a few in a row end the pass (failuresToStop).
 func (r *Refresher) FillAlbumArtists(ctx context.Context) (int, error) {
 	if r.Artists == nil {
 		return 0, nil
@@ -58,18 +61,25 @@ func (r *Refresher) FillAlbumArtists(ctx context.Context) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	done := 0
+	done, inARow := 0, 0
 	for _, album := range due {
 		if err := ctx.Err(); err != nil {
 			return done, err
 		}
 		found, err := r.Artists.AlbumArtists(ctx, album.MusicBrainzID)
+		if refusedOne(err) {
+			found, err = nil, nil
+		}
 		if _, isProvider := provider.AsError(err); isProvider {
-			break
+			if inARow++; inARow >= failuresToStop {
+				break
+			}
+			continue
 		}
 		if err != nil {
 			return done, err
 		}
+		inARow = 0
 		if err := r.Store.SaveAlbumArtists(ctx, found, album.TitleID, now); err != nil {
 			return done, err
 		}
@@ -78,8 +88,9 @@ func (r *Refresher) FillAlbumArtists(ctx context.Context) (int, error) {
 	return done, nil
 }
 
-// MatchArtists returns how many artists were matched or found unknown. Stops when the provider
-// fails or the day's call budget is spent.
+// MatchArtists returns how many artists were matched or found unknown. A provider refusing one
+// artist (a 4xx) records them unknown and the pass goes on. Any other provider failure, a spent
+// day's call budget included, skips the artist, and a few in a row end the pass (failuresToStop).
 func (r *Refresher) MatchArtists(ctx context.Context) (int, error) {
 	if r.Listing == nil {
 		return 0, nil
@@ -89,7 +100,7 @@ func (r *Refresher) MatchArtists(ctx context.Context) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	done := 0
+	done, inARow := 0, 0
 	for _, artist := range due {
 		if err := ctx.Err(); err != nil {
 			return done, err
@@ -97,12 +108,19 @@ func (r *Refresher) MatchArtists(ctx context.Context) (int, error) {
 		var match *string
 		if artist.MusicBrainzID != VariousArtists {
 			found, err := r.Listing.Attractions(ctx, artist.Name)
+			if refusedOne(err) {
+				found, err = nil, nil
+			}
 			if _, isProvider := provider.AsError(err); isProvider {
-				break
+				if inARow++; inARow >= failuresToStop {
+					break
+				}
+				continue
 			}
 			if err != nil {
 				return done, err
 			}
+			inARow = 0
 			for _, a := range found {
 				if slices.Contains(a.MusicBrainzIDs, artist.MusicBrainzID) {
 					id := a.ID
@@ -117,6 +135,18 @@ func (r *Refresher) MatchArtists(ctx context.Context) (int, error) {
 		done++
 	}
 	return done, nil
+}
+
+// failuresToStop is how many provider failures in a row end a pass: that is the provider down, not
+// one bad row. Fewer move on without recording anything, so one row that keeps failing never holds
+// up the rest (Go audit REL-006).
+const failuresToStop = 3
+
+// refusedOne is a provider refusing this one request (404 or another 4xx that is not about the
+// credential): asking again gets the same answer, so it is a miss, not an outage.
+func refusedOne(err error) bool {
+	pe, ok := provider.AsError(err)
+	return ok && (pe.Kind == provider.KindNotFound || pe.Kind == provider.KindRefused)
 }
 
 // Worker runs the refresher every half hour in the API process (ConcertRefreshService).
@@ -140,10 +170,17 @@ func (w *Worker) Run(ctx context.Context) error {
 		log = slog.Default()
 	}
 	for ctx.Err() == nil {
-		albums, err := w.Refresher.FillAlbumArtists(ctx)
-		artists := 0
-		if err == nil {
+		var albums, artists int
+		err := safe.Step(func() error {
+			var err error
+			if albums, err = w.Refresher.FillAlbumArtists(ctx); err != nil {
+				return err
+			}
 			artists, err = w.Refresher.MatchArtists(ctx)
+			return err
+		})
+		if ctx.Err() == nil {
+			metrics.WorkerPass(w.Name(), err)
 		}
 		switch {
 		case errors.Is(err, context.Canceled) || ctx.Err() != nil:

@@ -4,12 +4,12 @@ import (
 	"aaru-go-api/internal/catalog"
 	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/library"
+	"aaru-go-api/internal/safe"
 	"context"
 	"fmt"
 	"slices"
 
 	"github.com/google/uuid"
-	"golang.org/x/sync/errgroup"
 )
 
 // Rows that land on one title (ImportRowMerge). AniList and MAL list each anime season as its own
@@ -91,7 +91,7 @@ func (s *Service) mergeContext(ctx context.Context, rows []PlannedRow, user uuid
 	}
 	mc := mergeContext{byAniList: map[string]catalog.AnimeMapping{}, tmdb: map[uuid.UUID]string{}}
 	store := s.Catalog.Store
-	g, gctx := errgroup.WithContext(ctx)
+	g, gctx := safe.WithContext(ctx)
 	g.Go(func() error {
 		var err error
 		mc.states, err = s.Library.ImportStates(gctx, user, uniqueIDs(titleIDs))

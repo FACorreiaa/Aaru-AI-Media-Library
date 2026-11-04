@@ -315,11 +315,11 @@ func (s *Service) knownConcert(ctx context.Context, id string) (string, error) {
 // char_length counts them: an emoji with a skin tone is two.
 func ValidNote(note *string) (*string, error) {
 	if note == nil {
-		return nil, nil //nolint:nilnil // no note
+		return nil, nil // no note
 	}
 	trimmed := strings.TrimSpace(*note)
 	if trimmed == "" {
-		return nil, nil //nolint:nilnil // blank is none
+		return nil, nil // blank is none
 	}
 	// Swift counted unicode scalars here, as Postgres measures the column.
 	if utf8.RuneCountInString(trimmed) > MaxNote {
@@ -404,7 +404,7 @@ func (s *Service) Save(ctx context.Context, share Share) error {
 func (s *Service) Share(ctx context.Context, code string) (*Share, error) {
 	row, err := s.Q.ShareByCode(ctx, code)
 	if db.IsNoRows(err) {
-		return nil, nil //nolint:nilnil // none
+		return nil, nil // none
 	}
 	if err != nil {
 		return nil, fmt.Errorf("share: %w", err)
@@ -419,7 +419,7 @@ func (s *Service) existing(ctx context.Context, sender uuid.UUID, target Target,
 		SenderID: sender, Kind: string(target.Kind), TitleID: title, SportEventID: sport, ConcertID: concert, Note: note,
 	})
 	if db.IsNoRows(err) {
-		return nil, nil //nolint:nilnil // none
+		return nil, nil // none
 	}
 	if err != nil {
 		return nil, fmt.Errorf("existing share: %w", err)

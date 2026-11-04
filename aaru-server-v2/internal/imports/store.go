@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -78,23 +79,34 @@ func validState(s core.ImportJobState) bool {
 }
 
 func statsJSON(s core.ImportStats) json.RawMessage {
-	data, _ := json.Marshal(s) //nolint:errchkjson // plain ints
+	data, _ := json.Marshal(s) // plain ints
 	return data
 }
 
 // Insert writes a job and its rows in one transaction.
 func (s *Store) Insert(ctx context.Context, job core.ImportJob, rows []Row) error {
-	return pgx.BeginFunc(ctx, s.Pool, func(tx pgx.Tx) error {
-		q := s.Q.WithTx(tx)
-		if err := q.ImportJobInsert(ctx, sqlc.ImportJobInsertParams{
-			ID: job.ID, UserID: job.UserID, Source: string(job.Source), State: string(job.State),
-			Stats: statsJSON(job.Stats), ErrorSummary: job.ErrorSummary, Filename: job.Filename,
-			CreatedAt: job.CreatedAt, UpdatedAt: job.UpdatedAt,
-		}); err != nil {
-			return fmt.Errorf("insert import job: %w", err)
-		}
-		return insertRows(ctx, q, rows, job.ID)
-	})
+	return pgx.BeginFunc(ctx, s.Pool, func(tx pgx.Tx) error { return s.InsertTx(ctx, tx, job, rows) })
+}
+
+// InsertTx is Insert inside the caller's transaction.
+func (s *Store) InsertTx(ctx context.Context, tx pgx.Tx, job core.ImportJob, rows []Row) error {
+	q := s.Q.WithTx(tx)
+	if err := q.ImportJobInsert(ctx, sqlc.ImportJobInsertParams{
+		ID: job.ID, UserID: job.UserID, Source: string(job.Source), State: string(job.State),
+		Stats: statsJSON(job.Stats), ErrorSummary: job.ErrorSummary, Filename: job.Filename,
+		CreatedAt: job.CreatedAt, UpdatedAt: job.UpdatedAt,
+	}); err != nil {
+		return fmt.Errorf("insert import job: %w", err)
+	}
+	return insertRows(ctx, q, rows, job.ID)
+}
+
+// LockUserCaptures holds the user's capture lock until tx ends (DB-004).
+func (s *Store) LockUserCaptures(ctx context.Context, tx pgx.Tx, user uuid.UUID) error {
+	if err := s.Q.WithTx(tx).LockUserCaptures(ctx, strings.ToUpper(user.String())); err != nil {
+		return fmt.Errorf("lock captures: %w", err)
+	}
+	return nil
 }
 
 // AppendRows adds the rows a source gave (Trakt, AniList, a capture) to a job that had none.
@@ -114,7 +126,7 @@ func insertRows(ctx context.Context, q *sqlc.Queries, rows []Row, jobID uuid.UUI
 			if err != nil {
 				return fmt.Errorf("encode import row: %w", err)
 			}
-			idx = append(idx, int32(i)) //nolint:gosec // a row index
+			idx = append(idx, int32(i)) // a row index
 			data = append(data, encoded)
 		}
 		if err := q.ImportRowsInsert(ctx, sqlc.ImportRowsInsertParams{JobID: jobID, Idx: idx, Rows: data}); err != nil {
@@ -139,7 +151,7 @@ func (s *Store) Update(ctx context.Context, job core.ImportJob) error {
 func (s *Store) Job(ctx context.Context, id, user uuid.UUID) (*core.ImportJob, error) {
 	r, err := s.Q.ImportJobGet(ctx, sqlc.ImportJobGetParams{ID: id, UserID: user})
 	if db.IsNoRows(err) {
-		return nil, nil //nolint:nilnil // no such job
+		return nil, nil // no such job
 	}
 	if err != nil {
 		return nil, fmt.Errorf("import job: %w", err)
@@ -149,7 +161,7 @@ func (s *Store) Job(ctx context.Context, id, user uuid.UUID) (*core.ImportJob, e
 		r.RowsMatched, r.RowsTotal, r.ListensStaged, r.ActionID,
 	}.job()
 	if !ok {
-		return nil, nil //nolint:nilnil // no such job
+		return nil, nil // no such job
 	}
 	return &job, nil
 }
@@ -157,7 +169,7 @@ func (s *Store) Job(ctx context.Context, id, user uuid.UUID) (*core.ImportJob, e
 // Jobs are the user's latest jobs, newest first.
 func (s *Store) Jobs(ctx context.Context, user uuid.UUID, limit int) ([]core.ImportJob, error) {
 	rows, err := s.Q.ImportJobsByUser(ctx, sqlc.ImportJobsByUserParams{
-		UserID: user, RowLimit: int32(max(1, min(limit, 100))), //nolint:gosec // clamped
+		UserID: user, RowLimit: int32(max(1, min(limit, 100))), // clamped
 	})
 	if err != nil {
 		return nil, fmt.Errorf("import jobs: %w", err)
@@ -178,9 +190,11 @@ func (s *Store) Jobs(ctx context.Context, user uuid.UUID, limit int) ([]core.Imp
 // limits it to one user's jobs, for tests running side by side.
 func (s *Store) ClaimNext(ctx context.Context, now time.Time, lease time.Duration, owner *uuid.UUID) (*ClaimedJob, error) {
 	until := now.Add(lease)
-	r, err := s.Q.ImportJobClaim(ctx, sqlc.ImportJobClaimParams{LockedUntil: &until, Now: now, Owner: owner})
+	r, err := s.Q.ImportJobClaim(ctx, sqlc.ImportJobClaimParams{
+		LockedUntil: &until, Now: now, Owner: owner, MaxAttempts: MaxAttempts,
+	})
 	if db.IsNoRows(err) {
-		return nil, nil //nolint:nilnil // no such job
+		return nil, nil // no such job
 	}
 	if err != nil {
 		return nil, fmt.Errorf("claim import job: %w", err)
@@ -190,9 +204,28 @@ func (s *Store) ClaimNext(ctx context.Context, now time.Time, lease time.Duratio
 		r.RowsMatched, r.RowsTotal, r.ListensStaged, r.ActionID,
 	}.job()
 	if !ok {
-		return nil, nil //nolint:nilnil // no such job
+		return nil, nil // no such job
 	}
 	return &ClaimedJob{Job: job, Attempts: int(r.Attempts)}, nil
+}
+
+// FailExpired fails for good the running jobs whose lease ran out on their last attempt: the
+// process died under them, so their own failure path never ran. It returns them, failed.
+func (s *Store) FailExpired(ctx context.Context, now time.Time, summary string) ([]core.ImportJob, error) {
+	rows, err := s.Q.ImportJobFailExpired(ctx, sqlc.ImportJobFailExpiredParams{
+		ErrorSummary: &summary, Now: now, MaxAttempts: MaxAttempts,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("fail expired import jobs: %w", err)
+	}
+	out := make([]core.ImportJob, len(rows))
+	for i, r := range rows {
+		out[i] = core.ImportJob{
+			ID: r.ID, UserID: r.UserID, Source: core.ImportSource(r.Source), State: core.JobFailed,
+			ErrorSummary: &summary, UpdatedAt: now,
+		}
+	}
+	return out, nil
 }
 
 // Retry queues a failed attempt again, not before notBefore.
@@ -248,43 +281,71 @@ func (s *Store) Rows(ctx context.Context, jobID uuid.UUID) ([]PlannedRow, error)
 
 // SavePlan writes rows' outcomes (and their rows, which planning may have changed) and the job's
 // state in one transaction.
+func (s *Store) SavePlan(ctx context.Context, job core.ImportJob, rows []PlannedRow) error {
+	return pgx.BeginFunc(ctx, s.Pool, func(tx pgx.Tx) error { return s.SavePlanTx(ctx, tx, job, rows) })
+}
+
+// SavePlanTx is SavePlan inside the caller's transaction.
 //
 // Written with pgx rather than sqlc: the bulk UPDATE … FROM unnest of five parallel arrays has
 // nullable elements (reason, title id), which sqlc's array parameters cannot carry.
-func (s *Store) SavePlan(ctx context.Context, job core.ImportJob, rows []PlannedRow) error {
-	return pgx.BeginFunc(ctx, s.Pool, func(tx pgx.Tx) error {
-		for start := 0; start < len(rows); start += insertChunk {
-			chunk := rows[start:min(start+insertChunk, len(rows))]
-			idx := make([]int32, len(chunk))
-			outcomes := make([]string, len(chunk))
-			reasons := make([]*string, len(chunk))
-			titles := make([]*uuid.UUID, len(chunk))
-			data := make([]string, len(chunk))
-			for i, r := range chunk {
-				encoded, err := json.Marshal(r.Row)
-				if err != nil {
-					return fmt.Errorf("encode import row: %w", err)
-				}
-				idx[i] = int32(r.Index) //nolint:gosec // a row index
-				outcomes[i], reasons[i], titles[i], data[i] = string(r.Outcome), r.Reason, r.TitleID, string(encoded)
+func (s *Store) SavePlanTx(ctx context.Context, tx pgx.Tx, job core.ImportJob, rows []PlannedRow) error {
+	for start := 0; start < len(rows); start += insertChunk {
+		chunk := rows[start:min(start+insertChunk, len(rows))]
+		idx := make([]int32, len(chunk))
+		outcomes := make([]string, len(chunk))
+		reasons := make([]*string, len(chunk))
+		titles := make([]*uuid.UUID, len(chunk))
+		data := make([]string, len(chunk))
+		for i, r := range chunk {
+			encoded, err := json.Marshal(r.Row)
+			if err != nil {
+				return fmt.Errorf("encode import row: %w", err)
 			}
-			if _, err := tx.Exec(ctx, `
-				UPDATE import_rows r SET outcome = v.outcome, reason = v.reason, title_id = v.title_id, row = v.row
-				FROM unnest($2::int[], $3::text[], $4::text[], $5::uuid[], $6::jsonb[]) AS v(idx, outcome, reason, title_id, row)
-				WHERE r.job_id = $1 AND r.idx = v.idx`,
-				job.ID, idx, outcomes, reasons, titles, data,
-			); err != nil {
-				return fmt.Errorf("save import plan rows: %w", err)
-			}
+			idx[i] = int32(r.Index) //nolint:gosec // a row index
+			outcomes[i], reasons[i], titles[i], data[i] = string(r.Outcome), r.Reason, r.TitleID, string(encoded)
 		}
-		if err := s.Q.WithTx(tx).ImportJobSavePlan(ctx, sqlc.ImportJobSavePlanParams{
-			State: string(job.State), Stats: statsJSON(job.Stats), ErrorSummary: job.ErrorSummary,
-			UpdatedAt: job.UpdatedAt, ActionID: job.ActionID, ID: job.ID,
-		}); err != nil {
-			return fmt.Errorf("save import plan: %w", err)
+		if _, err := tx.Exec(ctx, `
+			UPDATE import_rows r SET outcome = v.outcome, reason = v.reason, title_id = v.title_id, row = v.row
+			FROM unnest($2::int[], $3::text[], $4::text[], $5::uuid[], $6::jsonb[]) AS v(idx, outcome, reason, title_id, row)
+			WHERE r.job_id = $1 AND r.idx = v.idx`,
+			job.ID, idx, outcomes, reasons, titles, data,
+		); err != nil {
+			return fmt.Errorf("save import plan rows: %w", err)
 		}
-		return nil
-	})
+	}
+	if err := s.Q.WithTx(tx).ImportJobSavePlan(ctx, sqlc.ImportJobSavePlanParams{
+		State: string(job.State), Stats: statsJSON(job.Stats), ErrorSummary: job.ErrorSummary,
+		UpdatedAt: job.UpdatedAt, ActionID: job.ActionID, ID: job.ID,
+	}); err != nil {
+		return fmt.Errorf("save import plan: %w", err)
+	}
+	return nil
+}
+
+// UpdateTx is Update inside the caller's transaction.
+func (s *Store) UpdateTx(ctx context.Context, tx pgx.Tx, job core.ImportJob) error {
+	if err := s.Q.WithTx(tx).ImportJobUpdate(ctx, sqlc.ImportJobUpdateParams{
+		State: string(job.State), Stats: statsJSON(job.Stats), ErrorSummary: job.ErrorSummary,
+		UpdatedAt: job.UpdatedAt, ID: job.ID, UserID: job.UserID,
+	}); err != nil {
+		return fmt.Errorf("update import job: %w", err)
+	}
+	return nil
+}
+
+// LockState locks one of the user's jobs for the rest of the transaction and returns its state;
+// nil when they have no such job (DB-003).
+func (s *Store) LockState(ctx context.Context, tx pgx.Tx, id, user uuid.UUID) (*core.ImportJobState, error) {
+	state, err := s.Q.WithTx(tx).ImportJobLock(ctx, sqlc.ImportJobLockParams{ID: id, UserID: user})
+	if db.IsNoRows(err) {
+		return nil, nil // no such job
+	}
+	if err != nil {
+		return nil, fmt.Errorf("lock import job: %w", err)
+	}
+	st := core.ImportJobState(state)
+	return &st, nil
 }
 
 // Delete removes one of the user's jobs; false when there was none.

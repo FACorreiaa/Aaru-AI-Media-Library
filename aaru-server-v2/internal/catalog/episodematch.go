@@ -10,21 +10,38 @@ type NamedEpisode struct {
 	Name   string `json:"name"`
 }
 
+// EpisodeNames is one show's episodes by normalized name, so each name a source gives costs a map
+// lookup, not a pass over the whole show (PERF-004). A Netflix history asks for many.
+type EpisodeNames map[string][]Episode
+
+// NewEpisodeNames indexes episodes, keeping their order within a name.
+func NewEpisodeNames(episodes []Episode) EpisodeNames {
+	names := make(EpisodeNames, len(episodes))
+	for _, e := range episodes {
+		if e.Name == nil {
+			continue
+		}
+		name := core.NormalizeTitle(*e.Name)
+		names[name] = append(names[name], e)
+	}
+	return names
+}
+
 // MatchEpisodeName (IMP-018, SCR-007) finds an episode named by a source in the
 // catalog's episode list. Same season first; if the source's seasons differ from
 // TMDB's (Netflix splits and merges them), the one episode in the whole show with
 // that name. Two with the name is no answer.
 func MatchEpisodeName(named NamedEpisode, episodes []Episode) (core.EpisodeKey, bool) {
+	return NewEpisodeNames(episodes).Match(named)
+}
+
+// Match is MatchEpisodeName over the index.
+func (n EpisodeNames) Match(named NamedEpisode) (core.EpisodeKey, bool) {
 	wanted := core.NormalizeTitle(named.Name)
 	if wanted == "" {
 		return core.EpisodeKey{}, false
 	}
-	var matches []Episode
-	for _, e := range episodes {
-		if e.Name != nil && core.NormalizeTitle(*e.Name) == wanted {
-			matches = append(matches, e)
-		}
-	}
+	matches := n[wanted]
 	key := func(e Episode) (core.EpisodeKey, bool) {
 		k, err := core.NewEpisodeKey(e.Season, e.Episode)
 		return k, err == nil

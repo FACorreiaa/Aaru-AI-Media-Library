@@ -2,10 +2,33 @@ package catalog
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"log/slog"
+	"runtime/debug"
 	"sync"
 	"time"
 )
+
+// FetchTimeout bounds one detached cache fetch: a fetch nobody waits for any more must
+// still end, so it cannot hold a provider's pacer (and the next caller) forever.
+const FetchTimeout = time.Minute
+
+// errFetchPanicked is a fetch that panicked: the cache records it as a failure.
+var errFetchPanicked = errors.New("cache fetch panicked")
+
+// recovered turns a panic in a detached goroutine into an error, logging it with its
+// stack; nil when there was none. Call it from a deferred function.
+func recovered(log *slog.Logger, where string, r any) error {
+	if r == nil {
+		return nil
+	}
+	if log == nil {
+		log = slog.Default()
+	}
+	log.Error("Recovered a panic", "where", where, "panic", fmt.Sprint(r), "stack", string(debug.Stack()))
+	return errFetchPanicked
+}
 
 // sharedCache is a list or page cache shared by every user. The API runs one
 // replica, so memory is enough; a second replica would only fetch its own copy.
@@ -21,8 +44,10 @@ type sharedCache[K comparable, V any] struct {
 	// capacity bounds the entries (0: unbounded); the least recently used go first.
 	capacity   int
 	retryAfter time.Duration
-	log        *slog.Logger
-	failure    string
+	// timeout bounds one fetch (FetchTimeout when zero).
+	timeout time.Duration
+	log     *slog.Logger
+	failure string
 }
 
 type cacheEntry[V any] struct {
@@ -90,7 +115,26 @@ func (c *sharedCache[K, V]) get(
 }
 
 func (c *sharedCache[K, V]) run(ctx context.Context, key K, now time.Time, f *flight[V], fetch func(context.Context) (V, error)) {
+	// Registered before the fetch: a panicking fetch still settles the flight, so later
+	// callers never wait on a flight that cannot finish.
+	defer func() {
+		if err := recovered(c.log, c.failure, recover()); err != nil {
+			var zero V
+			f.value, f.err = zero, err
+		}
+		c.settle(key, now, f)
+	}()
+	timeout := c.timeout
+	if timeout <= 0 {
+		timeout = FetchTimeout
+	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
 	f.value, f.err = fetch(ctx)
+}
+
+// settle records the flight's outcome and wakes its waiters.
+func (c *sharedCache[K, V]) settle(key K, now time.Time, f *flight[V]) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	defer close(f.done)
@@ -105,6 +149,7 @@ func (c *sharedCache[K, V]) run(ctx context.Context, key K, now time.Time, f *fl
 			log = slog.Default()
 		}
 		log.Warn(c.failure, "key", key, "error", f.err.Error())
+		c.pruneFailures(now)
 		return
 	}
 	delete(c.failedAt, key)
@@ -119,6 +164,19 @@ func (c *sharedCache[K, V]) run(ctx context.Context, key K, now time.Time, f *fl
 			}
 		}
 		delete(c.entries, oldest)
+	}
+}
+
+// pruneFailures forgets failures past retryAfter once there are more of them than entries
+// allowed, so failing keys cannot grow the map for the life of the process.
+func (c *sharedCache[K, V]) pruneFailures(now time.Time) {
+	if c.capacity <= 0 || len(c.failedAt) <= c.capacity {
+		return
+	}
+	for k, at := range c.failedAt {
+		if now.Sub(at) >= c.retryAfter {
+			delete(c.failedAt, k)
+		}
 	}
 }
 

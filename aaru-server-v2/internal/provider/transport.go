@@ -36,6 +36,10 @@ type Request struct {
 	Body    []byte
 	// Timeout defaults to DefaultTimeout.
 	Timeout time.Duration
+	// BeforeAttempt, when set, runs before each attempt the Client sends (after pacing), so a
+	// caller can charge a quota per HTTP call rather than per Do; an error ends the call with
+	// it. Transports ignore it.
+	BeforeAttempt func() error
 }
 
 // Response is a whole buffered answer.

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 	"unicode"
 
 	"golang.org/x/text/cases"
@@ -39,13 +40,28 @@ func (k MatchKey) String() string {
 
 // fold is Foundation's diacritic-, case- and width-insensitive folding.
 func fold(s string) string {
-	t := transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC, width.Fold)
-	out, _, err := transform.String(t, s)
+	f, _ := folders.Get().(*folder)
+	defer folders.Put(f)
+	out, _, err := transform.String(f.chain, s)
 	if err != nil {
 		out = s
 	}
-	return cases.Fold().String(out)
+	return f.fold.String(out)
 }
+
+// folder is one goroutine's transformers: they hold state, and building them is most of what a
+// call to fold costs (PERF-004).
+type folder struct {
+	chain transform.Transformer
+	fold  cases.Caser
+}
+
+var folders = sync.Pool{New: func() any {
+	return &folder{
+		chain: transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC, width.Fold),
+		fold:  cases.Fold(),
+	}
+}}
 
 func isAlphanumeric(r rune) bool {
 	return unicode.IsLetter(r) || unicode.IsMark(r) || unicode.IsNumber(r)

@@ -22,14 +22,14 @@ type Store struct {
 func (s *Store) Place(ctx context.Context, userID uuid.UUID) (*Place, error) {
 	row, err := s.Q.ConcertPlace(ctx, userID)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil //nolint:nilnil // none, as Swift's optional
+		return nil, nil // none, as Swift's optional
 	}
 	if err != nil {
 		return nil, fmt.Errorf("concert place: %w", err)
 	}
 	point, ok := NewGeoPoint(row.Latitude, row.Longitude)
 	if !ok {
-		return nil, nil //nolint:nilnil // none, as Swift's optional
+		return nil, nil // none, as Swift's optional
 	}
 	return &Place{Name: row.Name, Region: row.Region, Country: row.Country, CountryCode: row.CountryCode, Point: point}, nil
 }
@@ -75,7 +75,7 @@ func (s *Store) SaveAlbumArtists(ctx context.Context, artists []MusicArtist, tit
 				return err
 			}
 			if err := q.UpsertAlbumArtist(ctx, sqlc.UpsertAlbumArtistParams{
-				TitleID: titleID, Artist: artist.MusicBrainzID, Position: int32(position), //nolint:gosec // a tracklist's credits
+				TitleID: titleID, Artist: artist.MusicBrainzID, Position: int32(position), // a tracklist's credits
 			}); err != nil {
 				return err
 			}

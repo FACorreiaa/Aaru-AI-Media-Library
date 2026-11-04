@@ -8,8 +8,10 @@ import (
 	"aaru-go-api/internal/metrics"
 	"aaru-go-api/internal/music"
 	"aaru-go-api/internal/provider"
+	"aaru-go-api/internal/safe"
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -201,7 +203,7 @@ func (s *Service) NowPlaying(ctx context.Context, user uuid.UUID) (*NowPlaying, 
 	}
 	live := Pick(sessions, s.NowTime())
 	if live == nil {
-		return nil, nil //nolint:nilnil // nothing plays
+		return nil, nil // nothing plays
 	}
 	title, err := s.Catalog.Store.Title(ctx, live.TitleID)
 	if err != nil || title == nil {
@@ -242,11 +244,11 @@ func unlessUnknown(body func() (core.Title, error)) (*core.Title, error) {
 		return &t, nil
 	}
 	if _, ok := catalog.IsResolutionError(err); ok {
-		return nil, nil //nolint:nilnil // unknown
+		return nil, nil // unknown
 	}
 	var pe *provider.Error
 	if errors.As(err, &pe) && pe.Kind == provider.KindNotFound {
-		return nil, nil //nolint:nilnil // unknown
+		return nil, nil // unknown
 	}
 	return nil, err
 }
@@ -341,6 +343,13 @@ func (s *Service) StopPlay(ctx context.Context, kind PlayKind, caller auth.Agent
 // SweepInterval is how often the sweep runs.
 const SweepInterval = 15 * time.Second
 
+// SweepRetry is how soon a claimed user is looked at again when the sweep's look fails or is cut
+// short (Go audit REL-003). A look that succeeds sets the next check itself.
+const SweepRetry = 60 * time.Second
+
+// SweepClaimedAt is the check a sweep's claim at now leaves on each user it claims.
+func SweepClaimedAt(now time.Time) time.Time { return now.Add(SweepRetry) }
+
 // SweepWorker is LiveActivitySweepService: looks again at users whose "Now playing" activity is due
 // to change with no report to say so (SCR-009): a song that ended, a tab closed on a video, an
 // episode past its end, a "Watched" row done lingering. Each user's check is claimed, so two
@@ -362,7 +371,11 @@ func (w *SweepWorker) Run(ctx context.Context) error {
 		interval = SweepInterval
 	}
 	for {
-		if err := w.Sweep(ctx); err != nil && ctx.Err() == nil {
+		err := safe.Step(func() error { return w.Sweep(ctx) })
+		if ctx.Err() == nil {
+			metrics.WorkerPass(w.Name(), err)
+		}
+		if err != nil && ctx.Err() == nil {
 			log := w.Log
 			if log == nil {
 				log = slog.Default()
@@ -387,8 +400,20 @@ func (w *SweepWorker) Sweep(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	// A user whose look fails keeps the claim's check and comes back after SweepRetry; one left
+	// when the pass stops (a shutdown) comes back the same way.
+	claimedAt := SweepClaimedAt(now)
+	var failed []error
 	for _, user := range users {
-		w.Notifier.Sync(ctx, user, now, nil)
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		if err := w.Notifier.SweepUser(ctx, user, now, claimedAt); err != nil {
+			failed = append(failed, err)
+		}
+	}
+	if len(failed) > 0 {
+		return fmt.Errorf("live activity sweep: %d of %d users failed: %w", len(failed), len(users), failed[0])
 	}
 	return nil
 }

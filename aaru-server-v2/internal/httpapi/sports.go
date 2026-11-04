@@ -47,6 +47,9 @@ func (s *Server) SearchSports(ctx context.Context, req api.SearchSportsRequestOb
 	if !s.Sports.IsAvailable() {
 		return api.SearchSports200JSONResponse{Items: []api.SportEntity{}, Unavailable: true}, nil
 	}
+	if err := s.Sports.AllowSearch(userID); err != nil {
+		return nil, err
+	}
 	var kind sports.EntityKind
 	if req.Params.Kind != nil {
 		kind = sports.EntityKind(*req.Params.Kind)
@@ -131,6 +134,9 @@ func (s *Server) GetSportEvent(ctx context.Context, req api.GetSportEventRequest
 	if !isSportsProviderID(req.Id) {
 		return nil, apperr.NotFound()
 	}
+	if err := s.Sports.AllowEvent(userID); err != nil {
+		return nil, err
+	}
 	detail, err := s.Sports.Event(ctx, req.Id, userID)
 	if errors.Is(err, sports.ErrSportsOff) {
 		return nil, errSportsOff
@@ -170,6 +176,10 @@ func (s *Server) FollowSport(ctx context.Context, req api.FollowSportRequestObje
 	}
 	if !isSportsProviderID(req.ProviderId) {
 		return nil, apperr.NotFound()
+	}
+	// Any id is a provider lookup, on the shared budget (CON-001).
+	if err := s.Sports.AllowEvent(userID); err != nil {
+		return nil, err
 	}
 	entity, err := s.Sports.Follow(ctx, sports.EntityKind(req.Kind), req.ProviderId, userID)
 	switch {

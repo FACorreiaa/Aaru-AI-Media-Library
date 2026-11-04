@@ -35,6 +35,11 @@ FROM agent_plans
 WHERE id = @id AND user_id = @user_id FOR UPDATE;
 
 -- Plans this token has waiting, so one agent cannot flood the user.
+-- name: LockAgentTokenPlans :exec
+-- One plan proposal per agent token at a time, so parallel proposals cannot all pass the pending count
+-- (DB-008). Held until the transaction ends.
+SELECT pg_advisory_xact_lock(hashtextextended('plans-pending:' || sqlc.arg(token_key)::text, 0));
+
 -- name: PlanPendingCount :one
 SELECT count(*)::int AS count FROM agent_plans
 WHERE agent_token_id = @agent_token_id AND status = 'pending' AND expires_at > @now::pg_catalog.timestamptz;

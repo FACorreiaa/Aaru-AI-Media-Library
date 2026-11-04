@@ -25,7 +25,7 @@ func mapWeek(count int) *time.Time {
 	return &t
 }
 
-func randomIMDb() string { return fmt.Sprintf("tt%d", 10_000_000+rand.IntN(89_999_999)) } //nolint:gosec // a test id
+func randomIMDb() string { return fmt.Sprintf("tt%d", 10_000_000+rand.IntN(89_999_999)) } // a test id
 
 // fakeCinemeta knows one IMDb series, `part`, seasons 1 and 2 of two episodes released weekly.
 type fakeCinemeta struct {
@@ -122,7 +122,7 @@ func TestStremioMapWithCinemetaDownTicksNothingRatherThanTheWrongEpisode(t *test
 
 func TestStremioMapFindsANearEmptyDuplicateSeriesByItsTVDBID(t *testing.T) {
 	part := randomIMDb()
-	tvdb := fmt.Sprint(100_000 + rand.IntN(899_999)) //nolint:gosec // a test id
+	tvdb := fmt.Sprint(100_000 + rand.IntN(899_999)) // a test id
 	env := newMapEnv(t, fakeCinemeta{part: part, tvdb: tvdb})
 	secret, _ := env.connectStremio(false)
 	// The show, with TVDB's id, and TMDB's own entry for the part's IMDb id, as Bleach's `30984` and

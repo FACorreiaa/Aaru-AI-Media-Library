@@ -64,15 +64,17 @@ func (s *Service) ResolveRow(ctx context.Context, id uuid.UUID, index int, ref c
 	rows[position] = row
 
 	if job.State == core.JobPlanned {
-		if rows, err = s.Decided(ctx, rows, user); err != nil {
+		decided, err := s.Decided(ctx, rows, user)
+		if err != nil {
 			return core.ImportJob{}, PlannedRow{}, err
 		}
-		job.Stats = Stats(rows)
+		job.Stats = Stats(decided)
 		job.UpdatedAt = s.now()
-		if err := s.Store.SavePlan(ctx, job, rows); err != nil {
+		// One pick changes its row and the rows it now merges with: the rest are not rewritten.
+		if err := s.Store.SavePlan(ctx, job, changedRows(rows, decided, position)); err != nil {
 			return core.ImportJob{}, PlannedRow{}, err
 		}
-		return job, rows[position], nil
+		return job, decided[position], nil
 	}
 
 	if err := s.writeRow(ctx, &row, job, user); err != nil {
@@ -89,6 +91,25 @@ func (s *Service) ResolveRow(ctx context.Context, id uuid.UUID, index int, ref c
 		return core.ImportJob{}, PlannedRow{}, err
 	}
 	return job, row, nil
+}
+
+// changedRows is the picked row and every row deciding moved (PERF-006). Deciding sets only a
+// row's outcome and reason.
+func changedRows(before, after []PlannedRow, picked int) []PlannedRow {
+	var changed []PlannedRow
+	for i := range after {
+		if i == picked || before[i].Outcome != after[i].Outcome || !equalReason(before[i].Reason, after[i].Reason) {
+			changed = append(changed, after[i])
+		}
+	}
+	return changed
+}
+
+func equalReason(a, b *string) bool {
+	if a == nil || b == nil {
+		return a == b
+	}
+	return *a == *b
 }
 
 // writeRow writes one row of an approved import, decided against the library as it is now, as one

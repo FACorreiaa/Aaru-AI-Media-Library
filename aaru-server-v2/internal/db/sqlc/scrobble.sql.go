@@ -15,22 +15,25 @@ import (
 )
 
 const claimDueLiveActivityChecks = `-- name: ClaimDueLiveActivityChecks :many
-UPDATE live_activity_states SET next_check_at = NULL
+UPDATE live_activity_states SET next_check_at = $1::timestamptz
 WHERE user_id IN (
-    SELECT s.user_id FROM live_activity_states s WHERE s.next_check_at <= $1::timestamptz
-    ORDER BY s.next_check_at LIMIT $2::int FOR UPDATE SKIP LOCKED
+    SELECT s.user_id FROM live_activity_states s WHERE s.next_check_at <= $2::timestamptz
+    ORDER BY s.next_check_at LIMIT $3::int FOR UPDATE SKIP LOCKED
 )
 RETURNING user_id
 `
 
 type ClaimDueLiveActivityChecksParams struct {
+	RetryAt pgtype.Timestamptz
 	Now     pgtype.Timestamptz
 	MaxRows int32
 }
 
-// Claims the users whose check is due, so one sweep alone looks at each.
+// Claims the users whose check is due, so one sweep alone looks at each. The claim moves the check
+// to retry_at rather than clearing it: a sweep that fails or is cut short looks again then, and
+// one that succeeds settles it (SettleLiveActivityCheck) or saves its own next check.
 func (q *Queries) ClaimDueLiveActivityChecks(ctx context.Context, arg ClaimDueLiveActivityChecksParams) ([]uuid.UUID, error) {
-	rows, err := q.db.Query(ctx, claimDueLiveActivityChecks, arg.Now, arg.MaxRows)
+	rows, err := q.db.Query(ctx, claimDueLiveActivityChecks, arg.RetryAt, arg.Now, arg.MaxRows)
 	if err != nil {
 		return nil, err
 	}
@@ -536,6 +539,24 @@ type ScheduleLiveActivityCheckParams struct {
 // The sweep looks at the user again at `at`, unless it already will sooner.
 func (q *Queries) ScheduleLiveActivityCheck(ctx context.Context, arg ScheduleLiveActivityCheckParams) error {
 	_, err := q.db.Exec(ctx, scheduleLiveActivityCheck, arg.At, arg.UserID)
+	return err
+}
+
+const settleLiveActivityCheck = `-- name: SettleLiveActivityCheck :exec
+UPDATE live_activity_states SET next_check_at = $1::timestamptz
+WHERE user_id = $2::uuid AND next_check_at = $3::timestamptz
+`
+
+type SettleLiveActivityCheckParams struct {
+	NextCheckAt pgtype.Timestamptz
+	UserID      uuid.UUID
+	ClaimedAt   pgtype.Timestamptz
+}
+
+// A sweep that looked at the user sets the next check it found (none: NULL), unless something else
+// already rescheduled them since the claim.
+func (q *Queries) SettleLiveActivityCheck(ctx context.Context, arg SettleLiveActivityCheckParams) error {
+	_, err := q.db.Exec(ctx, settleLiveActivityCheck, arg.NextCheckAt, arg.UserID, arg.ClaimedAt)
 	return err
 }
 

@@ -112,7 +112,7 @@ func (s *Service) music(ctx context.Context, userID uuid.UUID, period Period, pr
 		return nil, err
 	}
 	if artists.listens <= 0 {
-		return nil, nil //nolint:nilnil // nil: nothing was heard
+		return nil, nil // nil: nothing was heard
 	}
 	summary := &ListenSummary{Listens: artists.listens, DurationMs: artists.durationMs, TopArtistTracks: []ListenTotal{}}
 	if previous != nil {

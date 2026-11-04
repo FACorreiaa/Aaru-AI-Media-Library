@@ -77,7 +77,7 @@ func (ids *BodyIDs) UnmarshalJSON(data []byte) error {
 	text := func(key string) (*string, error) {
 		v, ok := raw[key]
 		if !ok || string(v) == "null" {
-			return nil, nil //nolint:nilnil // absent
+			return nil, nil // absent
 		}
 		var n int64
 		if json.Unmarshal(v, &n) == nil {
@@ -294,12 +294,12 @@ const (
 // playing. Nil before then, and for a video the page did not say is music.
 func (b Body) VideoListen(now time.Time) (*music.NewListen, error) {
 	if b.Video == nil || b.Video.Music == nil || b.DurationMs == nil || *b.DurationMs <= 0 {
-		return nil, nil //nolint:nilnil // not a listen
+		return nil, nil // not a listen
 	}
 	length := float64(*b.DurationMs) / 1000
 	played := length * b.Progress / 100
 	if length < ShortestListen.Seconds() || played < min(length/2, HeardAfter.Seconds()) {
-		return nil, nil //nolint:nilnil // not heard yet
+		return nil, nil // not heard yet
 	}
 	m := b.Video.Music
 	artist, track := music.Text(&m.Artist), music.Text(&m.Track)

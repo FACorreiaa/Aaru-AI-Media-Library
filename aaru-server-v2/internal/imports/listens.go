@@ -16,25 +16,23 @@ import (
 	"errors"
 	"net/http"
 	"strings"
-	"sync"
 	"time"
 	"unicode"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 )
 
 // MaxListenUploadBytes is the largest listening file read: a Spotify history file holds years of
 // plays; library exports stay at 5 MB.
 const MaxListenUploadBytes = 24 * 1024 * 1024
 
-// listenFileGate lets one listening file be parsed at a time, so two large uploads never share the
-// server's memory.
-var listenFileGate sync.Mutex
-
 // ListenLog is what listening imports need of the listening log (ListenStore's MUS-004 part).
 type ListenLog interface {
 	// Stage adds plays to a job's staging, numbered from index.
 	Stage(ctx context.Context, listens []NewListen, jobID uuid.UUID, index int) error
+	// StageTx is Stage inside the caller's transaction.
+	StageTx(ctx context.Context, tx pgx.Tx, listens []NewListen, jobID uuid.UUID, index int) error
 	// ClearStaged empties a job's staging, so a retried fetch starts over.
 	ClearStaged(ctx context.Context, jobID uuid.UUID) error
 	// CountNew is how many staged plays applying would keep: those outside every stored listen's
@@ -43,6 +41,8 @@ type ListenLog interface {
 	// ApplyStaged writes the plays CountNew counts as the job's `import` listens, then empties its
 	// staging. It returns how many were written.
 	ApplyStaged(ctx context.Context, jobID, user uuid.UUID) (int, error)
+	// ApplyStagedTx is ApplyStaged inside the caller's transaction.
+	ApplyStagedTx(ctx context.Context, tx pgx.Tx, jobID, user uuid.UUID) (int, error)
 	// DeleteImported deletes the listens a job wrote and returns how many.
 	DeleteImported(ctx context.Context, jobID, user uuid.UUID) (int, error)
 	// NewestImported is the newest listen an applied import of this source and account wrote, so
@@ -61,9 +61,27 @@ func (s *Service) listenLog() ListenLog {
 	return music.NewStore(s.Store.Pool)
 }
 
+// listenFileTurn waits for this server's one listening file at a time, so two large uploads never
+// share the server's memory, or for ctx to end (PERF-001). The returned func gives the turn back.
+func (s *Service) listenFileTurn(ctx context.Context) (func(), error) {
+	s.listenFileOnce.Do(func() { s.listenFileSlot = make(chan struct{}, 1) })
+	select {
+	case s.listenFileSlot <- struct{}{}:
+		return func() { <-s.listenFileSlot }, nil
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+}
+
 // CreateListenFileImport parses the file now and stages its plays; the worker counts which are new.
-// source nil detects it from the file.
+// source nil detects it from the file. The job and its plays are written together, so the worker
+// never sees a job whose plays are not there yet, and a failure leaves no job behind.
 func (s *Service) CreateListenFileImport(ctx context.Context, user uuid.UUID, source *core.ImportSource, filename *string, data []byte) (core.ImportJob, error) {
+	done, err := s.listenFileTurn(ctx)
+	if err != nil {
+		return core.ImportJob{}, err
+	}
+	defer done()
 	resolved, page, err := s.parseListenFile(source, data)
 	if err != nil {
 		var format *FormatError
@@ -78,18 +96,19 @@ func (s *Service) CreateListenFileImport(ctx context.Context, user uuid.UUID, so
 	job := newJob(user, resolved, filename, s.now())
 	job.Stats = core.ImportStats{Ignored: page.Ignored}
 	job.RowsTotal = len(page.Listens)
-	if err := s.Store.Insert(ctx, job, nil); err != nil {
-		return core.ImportJob{}, err
-	}
-	if err := s.listenLog().Stage(ctx, page.Listens, job.ID, 0); err != nil {
+	err = pgx.BeginFunc(ctx, s.Store.Pool, func(tx pgx.Tx) error {
+		if err := s.Store.InsertTx(ctx, tx, job, nil); err != nil {
+			return err
+		}
+		return s.listenLog().StageTx(ctx, tx, page.Listens, job.ID, 0)
+	})
+	if err != nil {
 		return core.ImportJob{}, err
 	}
 	return job, nil
 }
 
 func (s *Service) parseListenFile(source *core.ImportSource, data []byte) (core.ImportSource, ListenHistoryPage, error) {
-	listenFileGate.Lock()
-	defer listenFileGate.Unlock()
 	var resolved core.ImportSource
 	if source != nil {
 		resolved = *source
@@ -202,15 +221,23 @@ func (s *Service) fetchListens(ctx context.Context, job *core.ImportJob) (bool, 
 // applyListens writes the new plays to the listening log. No points, however recent: a backlog is
 // not a day's listening.
 func (s *Service) applyListens(ctx context.Context, job core.ImportJob) (core.ImportJob, error) {
-	written, err := s.listenLog().ApplyStaged(ctx, job.ID, job.UserID)
+	// One transaction with the job locked: a second approval waits, then finds it applied, and
+	// never overwrites the counts with its own zero (DB-003).
+	err := pgx.BeginFunc(ctx, s.Store.Pool, func(tx pgx.Tx) error {
+		if err := s.lockPlanned(ctx, tx, job.ID, job.UserID); err != nil {
+			return err
+		}
+		written, err := s.listenLog().ApplyStagedTx(ctx, tx, job.ID, job.UserID)
+		if err != nil {
+			return err
+		}
+		job.Stats.Created = written
+		job.Stats.Skipped = max(0, job.RowsTotal-written)
+		job.State = core.JobSucceeded
+		job.UpdatedAt = s.now()
+		return s.Store.UpdateTx(ctx, tx, job)
+	})
 	if err != nil {
-		return core.ImportJob{}, err
-	}
-	job.Stats.Created = written
-	job.Stats.Skipped = max(0, job.RowsTotal-written)
-	job.State = core.JobSucceeded
-	job.UpdatedAt = s.now()
-	if err := s.Store.Update(ctx, job); err != nil {
 		return core.ImportJob{}, err
 	}
 	if s.Game != nil {

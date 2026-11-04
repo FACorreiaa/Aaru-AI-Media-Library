@@ -40,13 +40,27 @@ DELETE FROM mal_connections WHERE user_id = @user_id;
 UPDATE mal_connections SET revoked_at = @revoked_at WHERE user_id = @user_id;
 
 -- name: MALPushesDue :many
-SELECT c.user_id, c.push_cursor FROM mal_connections c
-WHERE c.revoked_at IS NULL AND EXISTS (
+-- A connection backing off after failed pushes waits for push_not_before; the longest-waiting go
+-- first, a bounded batch a pass.
+SELECT c.user_id, c.push_cursor, c.push_failures FROM mal_connections c
+WHERE c.revoked_at IS NULL
+  AND (c.push_not_before IS NULL OR c.push_not_before <= @now::pg_catalog.timestamptz)
+  AND EXISTS (
     SELECT 1 FROM library_items li WHERE li.user_id = c.user_id AND li.updated_at > c.push_cursor
-);
+)
+ORDER BY c.push_cursor
+LIMIT @max_rows;
 
 -- name: MALAdvanceCursor :exec
-UPDATE mal_connections SET push_cursor = GREATEST(push_cursor, @cursor::pg_catalog.timestamptz)
+-- A push that went through also ends any backoff.
+UPDATE mal_connections SET push_cursor = GREATEST(push_cursor, @cursor::pg_catalog.timestamptz),
+    push_failures = 0, push_not_before = NULL
+WHERE user_id = @user_id;
+
+-- name: MALPushFailed :exec
+-- REL-005: one more failed push, and no new try before not_before.
+UPDATE mal_connections SET push_failures = push_failures + 1,
+    push_not_before = @not_before::pg_catalog.timestamptz
 WHERE user_id = @user_id;
 
 -- name: MALEntryStates :many

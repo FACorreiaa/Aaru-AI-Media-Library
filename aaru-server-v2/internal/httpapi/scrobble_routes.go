@@ -95,7 +95,7 @@ func (s *Server) scrobbleRespond(c echo.Context, action scrobble.Action) error {
 		if !fits {
 			return scrobbleError(c, http.StatusRequestEntityTooLarge, "validation_failed", "A scrobble is at most 16 KiB.")
 		}
-		answer, err := s.scrobbleAnswer(c, data, action, caller)
+		answer, err := s.scrobbleAnswer(c, data, action, caller) //nolint:contextcheck // c carries the request context
 		var bad *scrobble.InvalidError
 		if errors.As(err, &bad) {
 			return scrobbleError(c, http.StatusUnprocessableEntity, "validation_failed", bad.Message)
@@ -107,6 +107,7 @@ func (s *Server) scrobbleRespond(c echo.Context, action scrobble.Action) error {
 	}()
 	if err != nil {
 		s.Log.ErrorContext(ctx, "Scrobble failed", "error", err.Error())
+		middleware.ReportFailure(c, err, "internal", http.StatusInternalServerError)
 		return scrobbleError(c, http.StatusInternalServerError, "internal", "Something went wrong.")
 	}
 	return nil
@@ -274,6 +275,7 @@ func (s *Server) listenBrainzSubmit(c echo.Context) error {
 	}()
 	if err != nil {
 		s.Log.ErrorContext(ctx, "Listen submission failed", "error", err.Error())
+		middleware.ReportFailure(c, err, "internal", http.StatusInternalServerError)
 		return listenBrainzError(c, http.StatusInternalServerError, "Something went wrong.")
 	}
 	return nil
@@ -300,6 +302,7 @@ func (s *Server) listenBrainzValidate(c echo.Context) error {
 	caller, ok, err := s.AgentTokens.Authenticate(ctx, secret, auth.GroupMusic)
 	if err != nil {
 		s.Log.ErrorContext(ctx, "Token check failed", "error", err.Error())
+		middleware.ReportFailure(c, err, "internal", http.StatusInternalServerError)
 		return listenBrainzError(c, http.StatusInternalServerError, "Something went wrong.")
 	}
 	if !ok {

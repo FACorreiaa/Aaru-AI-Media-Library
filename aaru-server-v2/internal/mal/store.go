@@ -1,6 +1,7 @@
 package mal
 
 import (
+	"aaru-go-api/internal/db"
 	"aaru-go-api/internal/db/sqlc"
 	"context"
 	"fmt"
@@ -67,6 +68,8 @@ type EntryState struct {
 type PushDue struct {
 	UserID uuid.UUID
 	Cursor time.Time
+	// Failures are the pushes that failed in a row before this one (REL-005's backoff).
+	Failures int
 }
 
 // PullDue is a connection due a read of its MAL list (SCR-010): a client asked, or the last read
@@ -114,7 +117,7 @@ func (s *Store) ConsumeAuthRequest(ctx context.Context, stateHash string, now ti
 		return nil, fmt.Errorf("consume mal auth request: %w", err)
 	}
 	if len(rows) == 0 || !rows[0].ExpiresAt.After(now) {
-		return nil, nil //nolint:nilnil // unknown or expired
+		return nil, nil // unknown or expired
 	}
 	return &AuthRequest{UserID: rows[0].UserID, CodeVerifier: rows[0].CodeVerifier, ReturnTo: rows[0].ReturnTo}, nil
 }
@@ -145,7 +148,7 @@ func (s *Store) Connection(ctx context.Context, user uuid.UUID) (*Connection, er
 		return nil, fmt.Errorf("mal connection: %w", err)
 	}
 	if len(rows) == 0 {
-		return nil, nil //nolint:nilnil // not connected
+		return nil, nil // not connected
 	}
 	c := connectionOf(rows[0])
 	return &c, nil
@@ -158,6 +161,10 @@ func (s *Store) RefreshConnection(ctx context.Context, user uuid.UUID,
 ) (*Connection, error) {
 	var out *Connection
 	err := pgx.BeginFunc(ctx, s.Pool, func(tx pgx.Tx) error {
+		// The refresh below is a provider call inside this transaction: a rotated token must commit.
+		if err := db.AllowIdleInTransaction(ctx, tx); err != nil {
+			return err
+		}
 		q := s.q.WithTx(tx)
 		rows, err := q.MALConnectionForUpdate(ctx, user)
 		if err != nil {
@@ -208,17 +215,25 @@ func (s *Store) MarkRevoked(ctx context.Context, user uuid.UUID, revokedAt time.
 	return nil
 }
 
-// PushesDue are connections with library writes past their cursor.
-func (s *Store) PushesDue(ctx context.Context) ([]PushDue, error) {
-	rows, err := s.q.MALPushesDue(ctx)
+// PushesDue are connections with library writes past their cursor and no backoff left, at most limit.
+func (s *Store) PushesDue(ctx context.Context, now time.Time, limit int) ([]PushDue, error) {
+	rows, err := s.q.MALPushesDue(ctx, sqlc.MALPushesDueParams{Now: now, MaxRows: int32(min(limit, 1<<31-1))}) //nolint:gosec // clamped
 	if err != nil {
 		return nil, fmt.Errorf("mal pushes due: %w", err)
 	}
 	out := make([]PushDue, len(rows))
 	for i, r := range rows {
-		out[i] = PushDue{UserID: r.UserID, Cursor: r.PushCursor}
+		out[i] = PushDue{UserID: r.UserID, Cursor: r.PushCursor, Failures: int(r.PushFailures)}
 	}
 	return out, nil
+}
+
+// PushFailed records a failed push: the connection is not tried again before notBefore.
+func (s *Store) PushFailed(ctx context.Context, user uuid.UUID, notBefore time.Time) error {
+	if err := s.q.MALPushFailed(ctx, sqlc.MALPushFailedParams{UserID: user, NotBefore: notBefore}); err != nil {
+		return fmt.Errorf("mal push failed: %w", err)
+	}
+	return nil
 }
 
 // AdvanceCursor moves the push cursor forward, never back.

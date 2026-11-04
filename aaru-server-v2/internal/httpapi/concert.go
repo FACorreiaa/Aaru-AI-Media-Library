@@ -37,6 +37,13 @@ func (s *Server) GetConcertsNear(ctx context.Context, req api.GetConcertsNearReq
 	if err != nil {
 		return nil, err
 	}
+	// A point the client names is a new cache key each time, on the shared budget; the saved city
+	// is one key (CON-001).
+	if point != nil {
+		if err := s.Concerts.AllowLookup(userID); err != nil {
+			return nil, err
+		}
+	}
 	nearby, err := s.Concerts.Near(ctx, userID, point, int(req.Body.RadiusKm), page)
 	if errors.Is(err, concerts.ErrNoPlace) {
 		return nil, errNoConcertPlace
@@ -73,6 +80,9 @@ func (s *Server) SearchConcerts(ctx context.Context, req api.SearchConcertsReque
 	if err != nil {
 		return nil, err
 	}
+	if err := s.Concerts.AllowLookup(userID); err != nil {
+		return nil, err
+	}
 	scope := concerts.ScopeNear
 	if req.Body.Scope == api.ConcertSearchScopeAnywhere {
 		scope = concerts.ScopeAnywhere
@@ -97,11 +107,15 @@ func (s *Server) SearchConcertPerformers(ctx context.Context, req api.SearchConc
 	if req.Body == nil {
 		return nil, apperr.BadRequest()
 	}
-	if _, err := currentUser(ctx); err != nil {
+	userID, err := currentUser(ctx)
+	if err != nil {
 		return nil, err
 	}
 	query, err := artistName(req.Body.Q)
 	if err != nil {
+		return nil, err
+	}
+	if err := s.Concerts.AllowLookup(userID); err != nil {
 		return nil, err
 	}
 	found, ok := s.Concerts.Performers(ctx, query)
@@ -248,7 +262,7 @@ func wireNumber(f float64) float64 { return f }
 func oneOffPoint(latitude, longitude *float64) (*concerts.GeoPoint, error) {
 	switch {
 	case latitude == nil && longitude == nil:
-		return nil, nil //nolint:nilnil // none
+		return nil, nil // none
 	case latitude != nil && longitude != nil:
 		point, ok := concerts.NewGeoPoint(wireNumber(*latitude), wireNumber(*longitude))
 		if !ok {

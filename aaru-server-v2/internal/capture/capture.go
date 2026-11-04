@@ -86,7 +86,7 @@ func (s *Store) Input(ctx context.Context, jobID uuid.UUID) (*Input, error) {
 		return nil, fmt.Errorf("capture input: %w", err)
 	}
 	if len(rows) == 0 {
-		return nil, nil //nolint:nilnil // no input
+		return nil, nil // no input
 	}
 	r := rows[0]
 	in := &Input{JobID: jobID, UserID: r.UserID, CreatedAt: r.CreatedAt}

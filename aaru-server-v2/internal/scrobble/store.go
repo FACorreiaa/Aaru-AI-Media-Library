@@ -25,7 +25,7 @@ func NewStore(pool *pgxpool.Pool) *Store { return &Store{Q: sqlc.New(pool)} }
 
 func ts(t time.Time) pgtype.Timestamptz { return pgtype.Timestamptz{Time: t, Valid: true} }
 
-func i32(n int) int32 { return int32(min(max(n, math.MinInt32), math.MaxInt32)) } //nolint:gosec // clamped
+func i32(n int) int32 { return int32(min(max(n, math.MinInt32), math.MaxInt32)) } // clamped
 
 // Record opens or updates the session for this user, source and item, and returns it.
 func (s *Store) Record(ctx context.Context, r Report, titleID *uuid.UUID, user uuid.UUID, agentTokenID *uuid.UUID, now time.Time) (Session, error) {
@@ -279,12 +279,30 @@ func (s *Store) ScheduleLiveActivityCheck(ctx context.Context, user uuid.UUID, a
 }
 
 // ClaimDueLiveActivityChecks claims the users whose check is due, so one sweep alone looks at each.
+// The claim moves each check to SweepClaimedAt(now): a sweep that fails looks again then.
 func (s *Store) ClaimDueLiveActivityChecks(ctx context.Context, now time.Time, limit int) ([]uuid.UUID, error) {
-	ids, err := s.Q.ClaimDueLiveActivityChecks(ctx, sqlc.ClaimDueLiveActivityChecksParams{Now: ts(now), MaxRows: i32(limit)})
+	ids, err := s.Q.ClaimDueLiveActivityChecks(ctx, sqlc.ClaimDueLiveActivityChecksParams{
+		RetryAt: ts(SweepClaimedAt(now)), Now: ts(now), MaxRows: i32(limit),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("claim live activity checks: %w", err)
 	}
 	return ids, nil
+}
+
+// SettleLiveActivityCheck sets the check a sweep found (nil: none), unless something rescheduled
+// the user since the claim at claimedAt.
+func (s *Store) SettleLiveActivityCheck(ctx context.Context, user uuid.UUID, claimedAt time.Time, next *time.Time) error {
+	var at pgtype.Timestamptz
+	if next != nil {
+		at = ts(*next)
+	}
+	if err := s.Q.SettleLiveActivityCheck(ctx, sqlc.SettleLiveActivityCheckParams{
+		NextCheckAt: at, UserID: user, ClaimedAt: ts(claimedAt),
+	}); err != nil {
+		return fmt.Errorf("settle live activity check: %w", err)
+	}
+	return nil
 }
 
 // normalized never encodes items as null: ActivityKit decodes an array.

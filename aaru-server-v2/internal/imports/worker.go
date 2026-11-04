@@ -1,6 +1,8 @@
 package imports
 
 import (
+	"aaru-go-api/internal/metrics"
+	"aaru-go-api/internal/safe"
 	"context"
 	"errors"
 	"log/slog"
@@ -33,16 +35,21 @@ func (w *Worker) Run(ctx context.Context) error {
 		log = slog.Default()
 	}
 	Loops(ctx, max(1, w.Loops), idle, func(ctx context.Context) (bool, error) {
-		return w.Imports.RunNext(ctx, nil)
+		worked, err := safe.Value(func() (bool, error) { return w.Imports.RunNext(ctx, nil) })
+		if ctx.Err() == nil {
+			metrics.WorkerPass(w.Name(), err)
+		}
+		return worked, err
 	}, func(err error) {
 		// The job already recorded its failure; the loop must outlive one bad job.
-		log.Error("Import worker step failed", "error", err)
+		log.Error("Import worker step failed", "error", err, "stack", string(safe.Stack(err)))
 	})
 	return nil
 }
 
 // Loops runs count copies of one queue's loop, each taking the next job until ctx is cancelled.
 // step returns whether it did work; an idle loop sleeps idle before asking again (workerLoops).
+// A step that panics fails like one that returns an error, and the loop goes on.
 func Loops(ctx context.Context, count int, idle time.Duration, step func(context.Context) (bool, error), failed func(error)) {
 	var wg sync.WaitGroup
 	for range count {
@@ -50,7 +57,7 @@ func Loops(ctx context.Context, count int, idle time.Duration, step func(context
 		go func() {
 			defer wg.Done()
 			for ctx.Err() == nil {
-				worked, err := step(ctx)
+				worked, err := safe.Value(func() (bool, error) { return step(ctx) })
 				if err != nil {
 					if errors.Is(err, context.Canceled) && ctx.Err() != nil {
 						return

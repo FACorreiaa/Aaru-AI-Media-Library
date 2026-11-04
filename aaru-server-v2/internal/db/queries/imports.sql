@@ -17,6 +17,16 @@ SELECT id, user_id, source, state, stats, error_summary, filename, created_at, u
     (SELECT count(*)::integer FROM import_listens l WHERE l.job_id = import_jobs.id) AS listens_staged
 FROM import_jobs WHERE id = @id AND user_id = @user_id;
 
+-- name: ImportJobLock :one
+-- Locks one of the user's jobs until the caller's transaction ends, so two approvals (a double tap, a
+-- retry) never both pass the state check (DB-003).
+SELECT state FROM import_jobs WHERE id = @id AND user_id = @user_id FOR UPDATE;
+
+-- name: LockUserCaptures :exec
+-- One capture start per user at a time, so parallel captures cannot all pass the quota count before
+-- any is inserted (DB-004). Held until the transaction ends.
+SELECT pg_advisory_xact_lock(hashtextextended('captures:' || sqlc.arg(user_key)::text, 0));
+
 -- name: ImportJobsByUser :many
 SELECT id, user_id, source, state, stats, error_summary, filename, created_at, updated_at, attempts, rows_matched,
     action_id,
@@ -25,14 +35,22 @@ SELECT id, user_id, source, state, stats, error_summary, filename, created_at, u
 FROM import_jobs WHERE user_id = @user_id
 ORDER BY created_at DESC LIMIT @row_limit;
 
+-- name: ImportJobFailExpired :many
+-- A job whose lease ran out on its last attempt never reached its own failure path: the process died
+-- under it (a crash, an OOM kill). It fails for good instead of being leased again forever.
+UPDATE import_jobs SET state = 'failed', error_summary = @error_summary, locked_until = NULL, updated_at = @now
+WHERE state = 'running' AND locked_until < @now AND attempts >= @max_attempts
+RETURNING id, user_id, source;
+
 -- name: ImportJobClaim :one
--- One statement: SKIP LOCKED means two workers never lease the same job.
+-- One statement: SKIP LOCKED means two workers never lease the same job. An expired lease is
+-- taken over only while the job has attempts left (ImportJobFailExpired fails the rest).
 UPDATE import_jobs SET state = 'running', attempts = attempts + 1, rows_matched = 0,
     locked_until = @locked_until, updated_at = @now
 WHERE id = (
     SELECT j.id FROM import_jobs j
     WHERE ((j.state = 'queued' AND (j.locked_until IS NULL OR j.locked_until <= @now))
-       OR (j.state = 'running' AND j.locked_until < @now))
+       OR (j.state = 'running' AND j.locked_until < @now AND j.attempts < @max_attempts))
       AND (sqlc.narg(owner)::uuid IS NULL OR j.user_id = sqlc.narg(owner)::uuid)
     ORDER BY j.created_at
     FOR UPDATE SKIP LOCKED

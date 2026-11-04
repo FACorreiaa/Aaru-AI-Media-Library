@@ -182,7 +182,7 @@ func (s *Store) Shelves(ctx context.Context, user uuid.UUID) ([]Shelf, error) {
 func (s *Store) Shelf(ctx context.Context, id, user uuid.UUID) (*Shelf, error) {
 	r, err := s.q.ShelfByID(ctx, sqlc.ShelfByIDParams{ID: id, UserID: user})
 	if db.IsNoRows(err) {
-		return nil, nil //nolint:nilnil // none
+		return nil, nil // none
 	}
 	if err != nil {
 		return nil, fmt.Errorf("shelf: %w", err)

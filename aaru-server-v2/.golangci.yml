@@ -4,19 +4,40 @@ run:
 linters:
   default: standard
   enable:
+    - bodyclose
+    - contextcheck
+    - depguard
     - errorlint
     - gosec
     - misspell
-    - nilnil
+    - noctx
+    - nolintlint
     - revive
+    - rowserrcheck
     - unconvert
+  # nilnil stays off: `nil, nil` is the deliberate port of a Swift optional ("not found"), used
+  # over a hundred times. Suppressing each one said nothing.
+  settings:
+    depguard:
+      rules:
+        panic-safe-goroutines:
+          # A panic in a raw errgroup goroutine takes the whole process down: a recover in the
+          # caller cannot reach it (Go audit REL-001).
+          files: ["!**/internal/safe/**"]
+          deny:
+            - pkg: golang.org/x/sync/errgroup
+              desc: use safe.WithContext, whose goroutines turn a panic into the group's error
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+      allow-unused: false
   exclusions:
     paths:
       - internal/api/api.gen.go
       - internal/db/sqlc
     rules:
       - path: _test\.go
-        linters: [gosec, errcheck]
+        linters: [gosec, errcheck, noctx, bodyclose]
       # Handlers implement the generated interface; its docs live in openapi.yaml.
       - path: internal/httpapi/
         linters: [revive]

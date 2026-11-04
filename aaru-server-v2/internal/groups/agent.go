@@ -86,7 +86,8 @@ func (s *Service) mentionAgent(ctx context.Context, m Message, group, tagger uui
 }
 
 // PostAgentReply posts a message from `@aaru` and tells the members. Catalog cards only; no
-// mentions, so a reply never notifies anyone.
+// mentions, so a reply never notifies anyone. Once the message is saved it is posted: telling the
+// members is best effort, so a failure there never sends the reply round again (Go audit REL-002).
 func (s *Service) PostAgentReply(ctx context.Context, group, channel, replyTo uuid.UUID, body string, components []Component, spoiler *SpoilerStamp) (Message, error) {
 	body = core.Prefix(body, MaxMessageLength)
 	reply := replyTo
@@ -98,19 +99,26 @@ func (s *Service) PostAgentReply(ctx context.Context, group, channel, replyTo uu
 		return Message{}, err
 	}
 	posted.Components = components
+	if err := s.announceAgentReply(ctx, group, channel, posted, spoiler); err != nil {
+		s.log().WarnContext(ctx, "announce @aaru reply", "error", err)
+	}
+	return posted, nil
+}
+
+func (s *Service) announceAgentReply(ctx context.Context, group, channel uuid.UUID, posted Message, spoiler *SpoilerStamp) error {
 	members, err := s.Store.Members(ctx, group)
 	if err != nil {
-		return Message{}, err
+		return err
 	}
 	var progress map[uuid.UUID]TitleProgress
 	if spoiler != nil {
 		found, err := s.requireChannel(ctx, group, channel)
 		if err != nil {
-			return Message{}, err
+			return err
 		}
 		if found.TitleID != nil {
 			if progress, err = Progress(ctx, s.q(), *found.TitleID, memberIDs(members)); err != nil {
-				return Message{}, err
+				return err
 			}
 		}
 	}
@@ -118,5 +126,5 @@ func (s *Service) PostAgentReply(ctx context.Context, group, channel, replyTo uu
 		Type: EventMessageCreated, Group: group, Channel: channel, MessageID: posted.ID, Message: &posted,
 		BlockedBy: map[uuid.UUID]bool{}, VeiledFor: VeiledFor(posted, members, progress),
 	}, memberIDs(members))
-	return posted, nil
+	return nil
 }

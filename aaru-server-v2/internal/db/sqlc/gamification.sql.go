@@ -153,12 +153,19 @@ const gamificationClaimDirty = `-- name: GamificationClaimDirty :many
 UPDATE user_progress SET locked_until = now() + make_interval(secs => $1::float8)
 WHERE user_id = (
     SELECT p.user_id FROM user_progress p
-    WHERE (p.dirty_at IS NOT NULL OR p.evaluated_at IS NULL) AND (p.locked_until IS NULL OR p.locked_until < now())
-    ORDER BY p.dirty_at NULLS LAST
+    WHERE p.dirty_at IS NOT NULL AND (p.locked_until IS NULL OR p.locked_until < now())
+      AND (p.eval_not_before IS NULL OR p.eval_not_before <= now())
+      AND p.eval_failures < $2::int
+    ORDER BY p.dirty_at
     LIMIT 1 FOR UPDATE SKIP LOCKED
 )
 RETURNING user_id, dirty_origin, (evaluated_at IS NULL)::boolean AS fresh
 `
+
+type GamificationClaimDirtyParams struct {
+	LeaseSeconds float64
+	MaxFailures  int32
+}
 
 type GamificationClaimDirtyRow struct {
 	UserID      uuid.UUID
@@ -166,8 +173,10 @@ type GamificationClaimDirtyRow struct {
 	Fresh       bool
 }
 
-func (q *Queries) GamificationClaimDirty(ctx context.Context, leaseSeconds float64) ([]GamificationClaimDirtyRow, error) {
-	rows, err := q.db.Query(ctx, gamificationClaimDirty, leaseSeconds)
+// Dirty users first, oldest mark first (the user_progress_dirty index). A user backing off after a
+// failed evaluation waits; one that failed max_failures times waits for their next write.
+func (q *Queries) GamificationClaimDirty(ctx context.Context, arg GamificationClaimDirtyParams) ([]GamificationClaimDirtyRow, error) {
+	rows, err := q.db.Query(ctx, gamificationClaimDirty, arg.LeaseSeconds, arg.MaxFailures)
 	if err != nil {
 		return nil, err
 	}
@@ -175,6 +184,52 @@ func (q *Queries) GamificationClaimDirty(ctx context.Context, leaseSeconds float
 	items := []GamificationClaimDirtyRow{}
 	for rows.Next() {
 		var i GamificationClaimDirtyRow
+		if err := rows.Scan(&i.UserID, &i.DirtyOrigin, &i.Fresh); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const gamificationClaimFresh = `-- name: GamificationClaimFresh :many
+UPDATE user_progress SET locked_until = now() + make_interval(secs => $1::float8)
+WHERE user_id = (
+    SELECT p.user_id FROM user_progress p
+    WHERE p.evaluated_at IS NULL AND p.dirty_at IS NULL
+      AND (p.locked_until IS NULL OR p.locked_until < now())
+      AND (p.eval_not_before IS NULL OR p.eval_not_before <= now())
+      AND p.eval_failures < $2::int
+    LIMIT 1 FOR UPDATE SKIP LOCKED
+)
+RETURNING user_id, dirty_origin, (evaluated_at IS NULL)::boolean AS fresh
+`
+
+type GamificationClaimFreshParams struct {
+	LeaseSeconds float64
+	MaxFailures  int32
+}
+
+type GamificationClaimFreshRow struct {
+	UserID      uuid.UUID
+	DirtyOrigin *string
+	Fresh       bool
+}
+
+// Then users never evaluated and not dirty (the user_progress_fresh index): the first run over an
+// existing library. Split from GamificationClaimDirty so each side reads its own index.
+func (q *Queries) GamificationClaimFresh(ctx context.Context, arg GamificationClaimFreshParams) ([]GamificationClaimFreshRow, error) {
+	rows, err := q.db.Query(ctx, gamificationClaimFresh, arg.LeaseSeconds, arg.MaxFailures)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GamificationClaimFreshRow{}
+	for rows.Next() {
+		var i GamificationClaimFreshRow
 		if err := rows.Scan(&i.UserID, &i.DirtyOrigin, &i.Fresh); err != nil {
 			return nil, err
 		}
@@ -238,6 +293,15 @@ func (q *Queries) GamificationEarnedToday(ctx context.Context, arg GamificationE
 	return items, nil
 }
 
+const gamificationEnsureProgress = `-- name: GamificationEnsureProgress :exec
+INSERT INTO user_progress (user_id) VALUES ($1) ON CONFLICT (user_id) DO NOTHING
+`
+
+func (q *Queries) GamificationEnsureProgress(ctx context.Context, userID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, gamificationEnsureProgress, userID)
+	return err
+}
+
 const gamificationEvaluatedAt = `-- name: GamificationEvaluatedAt :many
 
 SELECT evaluated_at FROM user_progress WHERE user_id = $1
@@ -262,6 +326,30 @@ func (q *Queries) GamificationEvaluatedAt(ctx context.Context, userID uuid.UUID)
 		return nil, err
 	}
 	return items, nil
+}
+
+const gamificationEvaluationFailed = `-- name: GamificationEvaluationFailed :one
+UPDATE user_progress SET eval_failures = eval_failures + 1,
+    eval_not_before = now() + make_interval(secs => least(
+        $1::float8 * power(2, eval_failures)::float8, $2::float8)),
+    locked_until = NULL
+WHERE user_id = $3
+RETURNING eval_failures
+`
+
+type GamificationEvaluationFailedParams struct {
+	BaseSeconds float64
+	MaxSeconds  float64
+	UserID      uuid.UUID
+}
+
+// REL-006: one more failed evaluation. The lease is let go and the next try waits base_seconds,
+// doubling with each failure up to max_seconds (SET reads the old count).
+func (q *Queries) GamificationEvaluationFailed(ctx context.Context, arg GamificationEvaluationFailedParams) (int32, error) {
+	row := q.db.QueryRow(ctx, gamificationEvaluationFailed, arg.BaseSeconds, arg.MaxSeconds, arg.UserID)
+	var eval_failures int32
+	err := row.Scan(&eval_failures)
+	return eval_failures, err
 }
 
 const gamificationEvents = `-- name: GamificationEvents :many
@@ -323,7 +411,8 @@ INSERT INTO user_progress (user_id, evaluated_at) VALUES ($1, now())
 ON CONFLICT (user_id) DO UPDATE SET evaluated_at = now(), locked_until = NULL,
     dirty_at = CASE WHEN user_progress.dirty_at > $2::timestamptz THEN user_progress.dirty_at END,
     dirty_origin = CASE WHEN user_progress.dirty_at > $2::timestamptz
-        THEN user_progress.dirty_origin END
+        THEN user_progress.dirty_origin END,
+    eval_failures = 0, eval_not_before = NULL
 `
 
 type GamificationFinishEvaluationParams struct {
@@ -692,6 +781,19 @@ func (q *Queries) GamificationLibraryFacts(ctx context.Context, userID uuid.UUID
 	return i, err
 }
 
+const gamificationLockPoints = `-- name: GamificationLockPoints :exec
+SELECT 1 FROM user_progress WHERE user_id = $1 FOR UPDATE
+`
+
+// One award at a time per user: the daily caps read today's points and then insert, so two
+// writes at once could both see room under a cap. Held until the transaction ends. The lock is
+// the user's progress row, which every award already updates (its total), so a library write
+// that took it first and an award from the pool always queue in the same order.
+func (q *Queries) GamificationLockPoints(ctx context.Context, userID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, gamificationLockPoints, userID)
+	return err
+}
+
 const gamificationMarkBadgesSeen = `-- name: GamificationMarkBadgesSeen :exec
 UPDATE user_badges SET seen_at = $1
 WHERE user_id = $2 AND id = ANY($3::uuid[]) AND seen_at IS NULL
@@ -714,7 +816,8 @@ VALUES ($1, now(), $2::text)
 ON CONFLICT (user_id) DO UPDATE SET dirty_at = now(),
     dirty_origin = CASE
         WHEN user_progress.dirty_origin IN ('batch', 'backfill') AND user_progress.dirty_at IS NOT NULL
-        THEN user_progress.dirty_origin ELSE EXCLUDED.dirty_origin END
+        THEN user_progress.dirty_origin ELSE EXCLUDED.dirty_origin END,
+    eval_failures = 0, eval_not_before = NULL
 `
 
 type GamificationMarkDirtyParams struct {
@@ -722,7 +825,8 @@ type GamificationMarkDirtyParams struct {
 	Origin string
 }
 
-// A batch outranks a live mark: one summary instead of a toast per badge.
+// A batch outranks a live mark: one summary instead of a toast per badge. A new write also gives a
+// user whose evaluation kept failing a fresh start.
 func (q *Queries) GamificationMarkDirty(ctx context.Context, arg GamificationMarkDirtyParams) error {
 	_, err := q.db.Exec(ctx, gamificationMarkDirty, arg.UserID, arg.Origin)
 	return err

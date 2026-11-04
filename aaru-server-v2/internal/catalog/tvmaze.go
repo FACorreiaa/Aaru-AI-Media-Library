@@ -89,11 +89,11 @@ func (t *TVmaze) NextAirTime(ctx context.Context, ids core.ExternalIDs) (*time.T
 		return nil, err
 	}
 	if next.Embedded == nil || next.Embedded.NextEpisode == nil || next.Embedded.NextEpisode.Airstamp == nil {
-		return nil, nil //nolint:nilnil // nil: not known
+		return nil, nil // nil: not known
 	}
 	stamp, err := time.Parse(time.RFC3339, *next.Embedded.NextEpisode.Airstamp)
 	if err != nil {
-		return nil, nil //nolint:nilnil // nil: not known
+		return nil, nil // nil: not known
 	}
 	stamp = stamp.UTC()
 	return &stamp, nil
@@ -114,7 +114,7 @@ func (t *TVmaze) lookup(ctx context.Context, ids core.ExternalIDs) (*tvmazeShow,
 		}
 		return &show, nil
 	}
-	return nil, nil //nolint:nilnil // nil: not known
+	return nil, nil // nil: not known
 }
 
 func (t *TVmaze) get(ctx context.Context, path string, query map[string]string, v any) error {

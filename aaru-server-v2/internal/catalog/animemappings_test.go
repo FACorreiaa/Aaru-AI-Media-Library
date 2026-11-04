@@ -38,7 +38,7 @@ func TestParseAnimeMappings(t *testing.T) {
 	assert.Equal(t, 3, *mappings[2].TMDBSeason)
 }
 
-func randomID() string { return strconv.Itoa(10_000_000 + rand.IntN(89_999_999)) } //nolint:gosec // test ids
+func randomID() string { return strconv.Itoa(10_000_000 + rand.IntN(89_999_999)) } // test ids
 
 func TestAnimeMappingsLoadTwiceAndResolve(t *testing.T) {
 	ctx := context.Background()

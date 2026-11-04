@@ -59,9 +59,26 @@ func (p *Pusher) log() *slog.Logger {
 	return slog.Default()
 }
 
-// RunOnce pushes for every connection with library writes past its cursor. It returns the entries sent.
+// Push pacing (Go audit REL-005): a pass pushes at most PushBatch connections, and one whose push
+// failed waits PushBackoff, doubling each time up to PushBackoffMax, before it is tried again.
+const (
+	PushBatch      = 50
+	PushBackoff    = 30 * time.Second
+	PushBackoffMax = time.Hour
+)
+
+// PushRetryAfter is how long a connection waits after failures pushes failed in a row.
+func PushRetryAfter(failures int) time.Duration {
+	wait := PushBackoff
+	for i := 1; i < failures && wait < PushBackoffMax; i++ {
+		wait *= 2
+	}
+	return min(wait, PushBackoffMax)
+}
+
+// RunOnce pushes for the connections with library writes past their cursor. It returns the entries sent.
 func (p *Pusher) RunOnce(ctx context.Context) (int, error) {
-	due, err := p.Store.PushesDue(ctx)
+	due, err := p.Store.PushesDue(ctx, p.now(), PushBatch)
 	if err != nil {
 		return 0, err
 	}
@@ -72,8 +89,12 @@ func (p *Pusher) RunOnce(ctx context.Context) (int, error) {
 			if ctx.Err() != nil {
 				return sent, ctx.Err()
 			}
-			// The cursor stays put, so the next pass tries these writes again.
-			p.log().Warn("MyAnimeList push failed", "error", err.Error())
+			// The cursor stays put, so a later pass tries these writes again, after the backoff.
+			wait := PushRetryAfter(d.Failures + 1)
+			p.log().Warn("MyAnimeList push failed", "error", err.Error(), "retryIn", wait.String())
+			if err := p.Store.PushFailed(ctx, d.UserID, p.now().Add(wait)); err != nil {
+				return sent, err
+			}
 			continue
 		}
 		sent += n

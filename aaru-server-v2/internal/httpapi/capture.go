@@ -4,11 +4,18 @@ import (
 	"aaru-go-api/internal/apperr"
 	"aaru-go-api/internal/imports"
 	"encoding/json"
-	"io"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
 )
+
+// captureJSONLimit bounds capture's JSON body (HTTP-001): text is at most 20,000 characters.
+const captureJSONLimit = 128 << 10
+
+// errCaptureTooLarge is imports' answer for text over its limit, given to a JSON body too big to
+// hold that much text.
+var errCaptureTooLarge = apperr.New(http.StatusRequestEntityTooLarge, "capture_too_large",
+	"That is more text than a capture reads. Paste a shorter list, or use an import.")
 
 // errImageTooLarge is a capture image over 5 MB.
 var errImageTooLarge = apperr.New(http.StatusRequestEntityTooLarge, "file_too_large", "That image is larger than 5 MB.")
@@ -24,9 +31,12 @@ func (s *Server) createCaptureImport(c echo.Context) error {
 	var req imports.CaptureRequest
 	switch mediaType := contentType(c); mediaType {
 	case "application/json":
-		data, err := io.ReadAll(c.Request().Body)
+		data, fits, err := readUpTo(c.Request().Body, captureJSONLimit)
 		if err != nil {
 			return apperr.BadRequest()
+		}
+		if !fits {
+			return errCaptureTooLarge
 		}
 		var body struct {
 			Text *string `json:"text"`

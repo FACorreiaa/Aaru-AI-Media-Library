@@ -6,7 +6,7 @@
 -- the duplicate check.
 SELECT pg_advisory_xact_lock(hashtextextended('listens:' || sqlc.arg(user_key)::text, 0));
 
--- name: InsertListen :one
+-- name: InsertListen :batchone
 -- A track MusicBrainz already identified (MUS-006) gets its ids now, not on the next pass. Nothing is
 -- written inside a stored listen's duplicate window, nor (SCR-011) inside the same YouTube video's
 -- own length.
@@ -53,27 +53,51 @@ SELECT l.id, l.listened_at, l.artist, l.track, l.album, l.duration_ms, l.release
 FROM listens l
 LEFT JOIN titles t ON t.musicbrainz = l.release_group_mbid
 WHERE l.user_id = sqlc.arg(user_id)::uuid
-  AND (sqlc.narg(before)::timestamptz IS NULL OR l.listened_at < sqlc.narg(before)::timestamptz)
+  AND l.listened_at < coalesce(sqlc.narg(before)::timestamptz, 'infinity')
+ORDER BY l.listened_at DESC, l.id DESC
+LIMIT sqlc.arg(max_rows)::bigint;
+
+-- name: ListenExportPage :many
+-- Newest first, a page after the given listen. Keyset on the id too: plays of different tracks can
+-- share a time, and a page boundary must not lose them (PERF-002).
+SELECT l.id, l.listened_at, l.artist, l.track, l.album, l.duration_ms, l.release_group_mbid,
+       t.id AS album_title_id, l.origin_url, l.client, l.music_service
+FROM listens l
+LEFT JOIN titles t ON t.musicbrainz = l.release_group_mbid
+WHERE l.user_id = sqlc.arg(user_id)::uuid
+  -- No OR for the first page: under a generic plan it hides the bound from the index, and every
+  -- page walks again from the newest listen.
+  AND (l.listened_at, l.id) < (coalesce(sqlc.narg(after_at)::timestamptz, 'infinity'),
+                               coalesce(sqlc.narg(after_id)::uuid, 'ffffffff-ffff-ffff-ffff-ffffffffffff'))
 ORDER BY l.listened_at DESC, l.id DESC
 LIMIT sqlc.arg(max_rows)::bigint;
 
 -- name: UnresolvedListens :many
 -- One row per track and album: the listen with the most ids, then the newest, speaks for it.
-SELECT due.track_key, due.album_key, due.artist, due.track, due.album, due.recording_mbid, due.isrc FROM (
-    SELECT DISTINCT ON (l.track_key, lower(coalesce(l.album, '')))
-           l.track_key, lower(coalesce(l.album, ''))::text AS album_key, l.artist, l.track, l.album,
-           l.recording_mbid, l.isrc, l.listened_at
+-- Keys first (DB-006): the distinct unresolved keys come from an index-only scan of
+-- listens_unresolved_key (migration 00003), keys already looked up drop out before any listen is
+-- read, and only the due keys read their speaking listen.
+SELECT d.track_key, d.album_key, r.artist, r.track, r.album, r.recording_mbid, r.isrc
+FROM (
+    SELECT k.track_key, k.album_key FROM (
+        SELECT DISTINCT l.track_key, lower(coalesce(l.album, ''))::text AS album_key
+        FROM listens l WHERE l.release_group_mbid IS NULL
+    ) k
+    WHERE NOT EXISTS (
+        SELECT 1 FROM music_lookups m
+        WHERE m.track_key = k.track_key AND m.album_key = k.album_key
+          AND (m.release_group_mbid IS NOT NULL OR m.looked_up_at > sqlc.arg(retry_before)::timestamptz)
+    )
+) d
+CROSS JOIN LATERAL (
+    SELECT l.artist, l.track, l.album, l.recording_mbid, l.isrc, l.listened_at
     FROM listens l
-    WHERE l.release_group_mbid IS NULL
-      AND NOT EXISTS (
-          SELECT 1 FROM music_lookups m
-          WHERE m.track_key = l.track_key AND m.album_key = lower(coalesce(l.album, ''))
-            AND (m.release_group_mbid IS NOT NULL OR m.looked_up_at > sqlc.arg(retry_before)::timestamptz)
-      )
-    ORDER BY l.track_key, lower(coalesce(l.album, '')), l.recording_mbid IS NULL, l.isrc IS NULL,
-             l.listened_at DESC
-) due
-ORDER BY due.listened_at DESC
+    WHERE l.release_group_mbid IS NULL AND l.track_key = d.track_key
+      AND lower(coalesce(l.album, '')) = d.album_key
+    ORDER BY l.recording_mbid IS NULL, l.isrc IS NULL, l.listened_at DESC
+    LIMIT 1
+) r
+ORDER BY r.listened_at DESC
 LIMIT sqlc.arg(max_rows)::int;
 
 -- name: SaveMusicLookup :exec

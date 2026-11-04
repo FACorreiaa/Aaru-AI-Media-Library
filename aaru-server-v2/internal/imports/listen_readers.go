@@ -230,7 +230,7 @@ func (r *lastFMRecentTracks) UnmarshalJSON(data []byte) error {
 		Attr  json.RawMessage `json:"@attr"`
 	}
 	if err := json.Unmarshal(data, &raw); err != nil {
-		return err //nolint:wrapcheck // decoding
+		return err // decoding
 	}
 	// One scrobble comes as an object, not a list of one.
 	var list []lastFMTrack

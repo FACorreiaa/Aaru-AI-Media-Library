@@ -5,6 +5,7 @@ import (
 	"aaru-go-api/internal/provider"
 	"aaru-go-api/internal/sports"
 	"context"
+	"fmt"
 	"net/http"
 	"slices"
 	"sync"
@@ -74,7 +75,7 @@ func (f *fakeSports) Lookup(_ context.Context, kind sports.EntityKind, id string
 	if e, ok := f.entities[string(kind)+":"+id]; ok {
 		return &e, nil
 	}
-	return nil, nil //nolint:nilnil // none
+	return nil, nil // none
 }
 
 func (f *fakeSports) Schedule(_ context.Context, direction sports.ScheduleDirection, kind sports.EntityKind, id string) ([]sports.Event, error) {
@@ -99,7 +100,7 @@ func (f *fakeSports) Event(_ context.Context, id string) (*sports.Event, error) 
 	if e, ok := f.events[id]; ok {
 		return &e, nil
 	}
-	return nil, nil //nolint:nilnil // none
+	return nil, nil // none
 }
 
 func (f *fakeSports) Live(context.Context) ([]sports.Event, error) {
@@ -414,6 +415,19 @@ func TestSportSearchAllThreeKindsInOrder(t *testing.T) {
 	assert.Len(t, teamsOnly, 1)
 }
 
+func TestSportSearchIsRateLimitedPerUser(t *testing.T) {
+	h := newHarness(t, withSports(sportsProvider()))
+	_, bearer := h.signIn()
+	for range sports.SearchesPerMinute {
+		require.Equal(t, http.StatusOK, h.do(http.MethodGet, "/v1/sports/search?q=Arsenal", bearer, nil).Code)
+	}
+	limited := h.do(http.MethodGet, "/v1/sports/search?q=Arsenal", bearer, nil)
+	assert.Equal(t, http.StatusTooManyRequests, limited.Code)
+	assert.Equal(t, "rate_limited", decode[map[string]any](t, limited)["code"])
+	_, other := h.signIn()
+	assert.Equal(t, http.StatusOK, h.do(http.MethodGet, "/v1/sports/search?q=Arsenal", other, nil).Code)
+}
+
 func TestAPublicSportEventNeedsNoUserAndSharesTheCache(t *testing.T) {
 	fake := sportsProvider()
 	fake.events["42"] = sampleMatch("42", "133604", "133615", "", "2026-10-18T14:00:00Z", "", ip(2), ip(1))
@@ -437,4 +451,26 @@ func TestAPublicSportEventNeedsNoUserAndSharesTheCache(t *testing.T) {
 	missing, err := h.server.Sports.PublicEvent(ctx, "999")
 	require.NoError(t, err)
 	assert.Nil(t, missing)
+}
+
+func TestSportEventIsRateLimitedPerUser(t *testing.T) {
+	h := newHarness(t, withSports(sportsProvider()))
+	_, bearer := h.signIn()
+	for range sports.EventsPerMinute {
+		require.NotEqual(t, http.StatusTooManyRequests, h.do(http.MethodGet, "/v1/sports/events/42", bearer, nil).Code)
+	}
+	limited := h.do(http.MethodGet, "/v1/sports/events/42", bearer, nil)
+	assert.Equal(t, http.StatusTooManyRequests, limited.Code)
+	assert.Equal(t, "rate_limited", decode[map[string]any](t, limited)["code"])
+}
+
+// CON-001: following looks the id up at the provider, so it spends the same budget as an event.
+func TestSportFollowIsRateLimitedPerUser(t *testing.T) {
+	h := newHarness(t, withSports(sportsProvider()))
+	_, bearer := h.signIn()
+	for i := range sports.EventsPerMinute {
+		code := h.do(http.MethodPut, fmt.Sprintf("/v1/me/sport-follows/team/%d", 900000+i), bearer, nil).Code
+		require.NotEqual(t, http.StatusTooManyRequests, code)
+	}
+	assert.Equal(t, http.StatusTooManyRequests, h.do(http.MethodPut, "/v1/me/sport-follows/team/42", bearer, nil).Code)
 }

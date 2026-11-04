@@ -66,6 +66,10 @@ func (s *Store) entryRows(ctx context.Context, user uuid.UUID, now time.Time, q 
 	for _, clause := range q.where {
 		where += " AND " + clause
 	}
+	// The limit is bound, not spliced, so pages of different sizes share one prepared statement
+	// per filter shape (DB-007).
+	args = append(args, int64(limit))
+	limitParam := "$" + strconv.Itoa(len(args))
 	sql := `
 SELECT li.id, li.title_id, li.status, li.rating, li.notes, li.is_owned, li.added_at, li.updated_at,
     li.finished_at, li.book_page, li.book_percent, li.manga_chapter, li.manga_volume, li.status_by_hand,
@@ -90,7 +94,7 @@ LEFT JOIN LATERAL (
     ORDER BY se.season, se.episode LIMIT 1
 ) next ON t.type = 'show'
 WHERE li.user_id = $1` + where + `
-ORDER BY li.updated_at DESC, li.id DESC LIMIT ` + strconv.Itoa(limit)
+ORDER BY li.updated_at DESC, li.id DESC LIMIT ` + limitParam + `::bigint`
 	rows, err := s.pool.Query(ctx, sql, args...)
 	if err != nil {
 		return nil, fmt.Errorf("library entries: %w", err)
@@ -192,7 +196,7 @@ func (s *Store) Entry(ctx context.Context, id, user uuid.UUID, now time.Time) (*
 	if es := toEntries(rows, user); len(es) > 0 {
 		return &es[0], nil
 	}
-	return nil, nil //nolint:nilnil // none
+	return nil, nil // none
 }
 
 // EntryForTitle is the user's item for a title, or nil.
@@ -206,7 +210,7 @@ func (s *Store) EntryForTitle(ctx context.Context, user, titleID uuid.UUID, now 
 	if es := toEntries(rows, user); len(es) > 0 {
 		return &es[0], nil
 	}
-	return nil, nil //nolint:nilnil // none
+	return nil, nil // none
 }
 
 // Entries is one page of the user's entries matching the filter, newest change first, and the

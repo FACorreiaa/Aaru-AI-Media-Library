@@ -7,19 +7,25 @@
 -- Unread: messages from others since the viewer's read point, not deleted.
 SELECT g.id, g.name, gm.role, gm.share_progress, gm.muted,
     (SELECT c0.id FROM group_channels c0 WHERE c0.group_id = g.id AND c0.is_default)::uuid AS default_channel_id,
-    (SELECT count(*) FROM group_channels c JOIN group_messages m ON m.channel_id = c.id
-        LEFT JOIN group_read_state r ON r.channel_id = c.id AND r.user_id = sqlc.arg(viewer)::uuid
-        WHERE c.group_id = g.id AND m.deleted_at IS NULL AND m.author_id IS DISTINCT FROM sqlc.arg(viewer)::uuid
-          AND m.created_at > coalesce(r.last_read_at, '-infinity'))::bigint AS unread,
-    (SELECT count(*) FROM group_channels c JOIN group_messages m ON m.channel_id = c.id
-        LEFT JOIN group_read_state r ON r.channel_id = c.id AND r.user_id = sqlc.arg(viewer)::uuid
-        WHERE c.group_id = g.id AND m.deleted_at IS NULL AND m.author_id IS DISTINCT FROM sqlc.arg(viewer)::uuid
-          AND m.created_at > coalesce(r.last_read_at, '-infinity')
-          AND sqlc.arg(viewer)::uuid = ANY(m.mentions))::bigint AS mentions
+    n.unread, n.mentions
 FROM group_members gm JOIN groups g ON g.id = gm.group_id
+CROSS JOIN LATERAL (
+    -- One walk of the messages for both counts (DB-008).
+    SELECT count(*)::bigint AS unread,
+        count(*) FILTER (WHERE sqlc.arg(viewer)::uuid = ANY(m.mentions))::bigint AS mentions
+    FROM group_channels c JOIN group_messages m ON m.channel_id = c.id
+    LEFT JOIN group_read_state r ON r.channel_id = c.id AND r.user_id = sqlc.arg(viewer)::uuid
+    WHERE c.group_id = g.id AND m.deleted_at IS NULL AND m.author_id IS DISTINCT FROM sqlc.arg(viewer)::uuid
+      AND m.created_at > coalesce(r.last_read_at, '-infinity')
+) n
 WHERE gm.user_id = sqlc.arg(viewer)::uuid
   AND (sqlc.narg(only_group)::uuid IS NULL OR g.id = sqlc.narg(only_group)::uuid)
 ORDER BY gm.joined_at, g.id;
+
+-- name: LockUserGroupCreate :exec
+-- One group create per user at a time, so parallel creates cannot all pass the owned-groups count
+-- (DB-008). Held until the transaction ends.
+SELECT pg_advisory_xact_lock(hashtextextended('groups-owned:' || sqlc.arg(user_key)::text, 0));
 
 -- name: GroupOwnedCount :one
 SELECT count(*) FROM group_members WHERE user_id = $1 AND role = 'owner';
@@ -283,25 +289,53 @@ SELECT
     EXISTS (SELECT 1 FROM agent_replies a WHERE a.group_id = sqlc.arg(group_id)::uuid
         AND a.created_at >= sqlc.arg(hour_start)::pg_catalog.timestamptz AND a.state = 'capped') AS group_noted;
 
+-- name: FailExpiredAgentReplies :many
+-- A mention whose lease ran out on its last attempt never reached its own failure path: the
+-- process died under it. It fails for good instead of being leased (and paid for) again forever.
+UPDATE agent_replies SET state = 'failed', error = sqlc.arg(error)::text, locked_until = NULL,
+    updated_at = sqlc.arg(now)::pg_catalog.timestamptz
+WHERE state = 'running' AND locked_until < sqlc.arg(now)::pg_catalog.timestamptz
+  AND attempts >= sqlc.arg(max_attempts)::int
+RETURNING id, message_id, group_id, channel_id;
+
 -- name: ClaimAgentReply :one
--- One statement: SKIP LOCKED means two workers never lease the same mention.
+-- One statement: SKIP LOCKED means two workers never lease the same mention. An expired lease is
+-- taken over only while the mention has attempts left (FailExpiredAgentReplies fails the rest).
 UPDATE agent_replies SET state = 'running', attempts = attempts + 1,
     locked_until = sqlc.arg(locked_until)::pg_catalog.timestamptz, updated_at = sqlc.arg(now)::pg_catalog.timestamptz
 WHERE id = (
     SELECT a.id FROM agent_replies a
     WHERE (a.state = 'queued' AND (a.locked_until IS NULL OR a.locked_until <= sqlc.arg(now)::pg_catalog.timestamptz))
-       OR (a.state = 'running' AND a.locked_until < sqlc.arg(now)::pg_catalog.timestamptz)
+       OR (a.state = 'running' AND a.locked_until < sqlc.arg(now)::pg_catalog.timestamptz
+           AND a.attempts < sqlc.arg(max_attempts)::int)
     ORDER BY a.created_at
     FOR UPDATE SKIP LOCKED
     LIMIT 1
 )
 RETURNING id, message_id, group_id, channel_id, tagger_id, attempts;
 
--- name: FinishAgentReply :exec
-UPDATE agent_replies SET state = $2, error = $3, locked_until = NULL, updated_at = $4 WHERE id = $1;
+-- name: FinishAgentReply :execrows
+-- Only the attempt that holds the lease finishes it: a run that outlived its lease, while another
+-- worker took the mention over, changes nothing.
+UPDATE agent_replies SET state = $2, error = $3, locked_until = NULL, updated_at = $4
+WHERE id = $1 AND state = 'running' AND attempts = sqlc.arg(attempt)::int;
 
--- name: RetryAgentReply :exec
-UPDATE agent_replies SET state = 'queued', error = $2, locked_until = $3, updated_at = $4 WHERE id = $1;
+-- name: RetryAgentReply :execrows
+UPDATE agent_replies SET state = 'queued', error = $2, locked_until = $3, updated_at = $4
+WHERE id = $1 AND state = 'running' AND attempts = sqlc.arg(attempt)::int;
+
+-- name: ReleaseAgentReply :exec
+-- A shutdown is not the mention's failure: it goes back untouched, its attempt uncounted.
+UPDATE agent_replies SET state = 'queued', attempts = greatest(attempts - 1, 0), locked_until = NULL,
+    updated_at = sqlc.arg(now)::pg_catalog.timestamptz
+WHERE id = sqlc.arg(id)::uuid AND state = 'running' AND attempts = sqlc.arg(attempt)::int;
+
+-- name: AgentReplyPosted :one
+-- Whether Aaru already answered this mention: an earlier attempt posted, then failed to finish.
+SELECT EXISTS (
+    SELECT 1 FROM group_messages m
+    WHERE m.reply_to = sqlc.arg(message_id)::uuid AND m.author_kind = 'agent'
+)::boolean AS posted;
 
 -- name: RecordAgentUsage :exec
 INSERT INTO agent_usage (user_id, day, requests, input_tokens, output_tokens, cost_micros)

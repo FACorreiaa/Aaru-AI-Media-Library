@@ -13,11 +13,13 @@ import (
 	"aaru-go-api/internal/gamification"
 	"aaru-go-api/internal/httpapi"
 	"aaru-go-api/internal/library"
+	"aaru-go-api/internal/metrics"
 	"aaru-go-api/internal/middleware"
 	"aaru-go-api/internal/model"
 	"aaru-go-api/internal/oauth"
 	"aaru-go-api/internal/provider"
 	"aaru-go-api/internal/push"
+	"aaru-go-api/internal/safe"
 	"aaru-go-api/internal/schedule"
 	"aaru-go-api/internal/sports"
 	"aaru-go-api/internal/stats"
@@ -35,7 +37,6 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"golang.org/x/sync/errgroup"
 )
 
 // Run is the process: a one-shot mode, or serve until ctx is cancelled.
@@ -58,7 +59,7 @@ func migrate(ctx context.Context, reader *config.Reader, log *slog.Logger) error
 	if err != nil {
 		return err
 	}
-	pool, err := db.Open(ctx, settings)
+	pool, err := db.Open(ctx, settings.WithoutSessionTimeouts())
 	if err != nil {
 		return err
 	}
@@ -78,7 +79,7 @@ func loadAnimeMappings(ctx context.Context, reader *config.Reader, source string
 	if err != nil {
 		return err
 	}
-	pool, err := db.Open(ctx, settings)
+	pool, err := db.Open(ctx, settings.WithoutSessionTimeouts())
 	if err != nil {
 		return err
 	}
@@ -120,6 +121,9 @@ func serve(ctx context.Context, reader *config.Reader, log *slog.Logger) error {
 		return err
 	}
 	defer pool.Close()
+	if err := metrics.RegisterPool(pool); err != nil {
+		return err
+	}
 
 	deps := httpapi.Deps{Config: cfg, Pool: pool, Log: log}
 	if err := buildPushAndBilling(cfg, pool, log, &deps); err != nil {
@@ -153,14 +157,20 @@ func serve(ctx context.Context, reader *config.Reader, log *slog.Logger) error {
 	deps.Model = makeModel(cfg.Anthropic, log)
 	buildImports(cfg, pool, log, &deps)
 	server := httpapi.New(deps)
-	router := server.Router(reporter)
+	router := server.Router(reporter) //nolint:contextcheck // builds the routes; each request brings its own context
 
 	api := &http.Server{
 		Addr:              net.JoinHostPort(cfg.HTTP.Host, strconv.Itoa(cfg.HTTP.Port)),
 		Handler:           router,
 		ReadHeaderTimeout: 10 * time.Second,
+		// Idle keep-alives close after two minutes (HTTP-005), after Traefik's own idle backend
+		// connections (its serversTransport default, 90 s) so it never reuses one being closed.
+		// No ReadTimeout/WriteTimeout: they would cut WebSockets and 24 MB uploads;
+		// a route's handler is bounded by the request deadline (HTTP_REQUEST_TIMEOUT) and its body
+		// by a read deadline per request (middleware.BodyRule.ReadTimeout).
+		IdleTimeout: 120 * time.Second,
 	}
-	group, ctx := errgroup.WithContext(ctx)
+	group, ctx := safe.WithContext(ctx)
 	group.Go(func() error {
 		log.Info("Server started and listening", "address", api.Addr)
 		if err := api.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -188,8 +198,11 @@ func serve(ctx context.Context, reader *config.Reader, log *slog.Logger) error {
 	}
 	group.Go(func() error {
 		<-ctx.Done()
-		shutdown, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+		shutdown, cancel := context.WithTimeout(context.WithoutCancel(ctx), 20*time.Second)
 		defer cancel()
+		// Hijacked WebSockets are not tracked by Shutdown: close them first with 1001 going
+		// away, so clients reconnect at once instead of waiting for a dead socket to time out.
+		server.Realtime.CloseAll(shutdown)
 		errs := []error{api.Shutdown(shutdown)}
 		if metricsServer != nil {
 			errs = append(errs, metricsServer.Shutdown(shutdown))
@@ -299,7 +312,8 @@ func NewLogger(level string) *slog.Logger {
 	default:
 		l = slog.LevelInfo
 	}
-	return slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: l}))
+	// The context handler puts the request id on every line logged with a request's context.
+	return slog.New(middleware.NewContextHandler(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: l})))
 }
 
 // makeModel is the agent's model, or nil (with a notice) when ANTHROPIC_API_KEY is unset.

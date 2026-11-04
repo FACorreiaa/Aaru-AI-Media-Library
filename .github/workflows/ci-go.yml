@@ -63,7 +63,13 @@ jobs:
         run: go vet ./...
       - name: Test
         run: go test -race ./...
+      # Known vulnerabilities in code the module actually reaches. The tool is pinned, like the
+      # lint version below, so CI changes only with the code, the vuln database or a deliberate
+      # bump (by hand: Dependabot does not read `go run …@version`; keep `make vuln` in step).
+      - name: Vulnerabilities
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
       - name: Lint
         uses: golangci/golangci-lint-action@v8
         with:
+          version: v2.15.0
           working-directory: aaru-server-v2

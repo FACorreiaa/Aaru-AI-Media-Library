@@ -93,12 +93,12 @@ func LuceneEscaped(text string) string {
 // Hydrate is the album record for a release-group id, with its five most-tagged genres.
 func (m *MusicBrainz) Hydrate(ctx context.Context, ids core.ExternalIDs, _ core.MediaType) (*Record, error) {
 	if ids.MusicBrainz == "" {
-		return nil, nil //nolint:nilnil // nil: no release-group id
+		return nil, nil // nil: no release-group id
 	}
 	var group mbReleaseGroup
 	err := m.get(ctx, "release-group/"+ids.MusicBrainz, map[string]string{"inc": "artist-credits+genres"}, &group)
 	if provider.IsNotFound(err) {
-		return nil, nil //nolint:nilnil // nil: not known
+		return nil, nil // nil: not known
 	}
 	if err != nil {
 		return nil, err
@@ -120,7 +120,7 @@ func (m *MusicBrainz) Artists(ctx context.Context, releaseGroup string) ([]Music
 	var group mbReleaseGroup
 	err := m.get(ctx, "release-group/"+releaseGroup, map[string]string{"inc": "artist-credits"}, &group)
 	if provider.IsNotFound(err) {
-		return nil, nil //nolint:nilnil // nil: not known
+		return nil, nil // nil: not known
 	}
 	if err != nil {
 		return nil, err
@@ -141,7 +141,7 @@ func (m *MusicBrainz) Artists(ctx context.Context, releaseGroup string) ([]Music
 // undated releases come last. Nil without a release-group id.
 func (m *MusicBrainz) Tracks(ctx context.Context, ids core.ExternalIDs) ([]AlbumTrack, error) {
 	if ids.MusicBrainz == "" {
-		return nil, nil //nolint:nilnil // nil: not known
+		return nil, nil // nil: not known
 	}
 	var page struct {
 		Releases []struct {

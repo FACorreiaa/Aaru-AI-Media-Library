@@ -6,6 +6,7 @@ import (
 	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/library"
 	"aaru-go-api/internal/provider"
+	"aaru-go-api/internal/safe"
 	"aaru-go-api/internal/telemetry"
 	"context"
 	"errors"
@@ -14,7 +15,7 @@ import (
 	"sync"
 
 	"github.com/google/uuid"
-	"golang.org/x/sync/errgroup"
+	"github.com/jackc/pgx/v5"
 )
 
 // Planning and approval (ImportService+Plan). Rows for the same title (two AniList seasons of one
@@ -124,7 +125,7 @@ func (s *Service) matchChunk(ctx context.Context, chunk []PlannedRow, withoutAni
 // finished hears each result as it lands, one at a time.
 func boundedMap[I, R any](ctx context.Context, items []I, limit int, transform func(context.Context, I) (R, error), finished func(R) error) ([]R, error) {
 	results := make([]R, len(items))
-	g, gctx := errgroup.WithContext(ctx)
+	g, gctx := safe.WithContext(ctx)
 	g.SetLimit(limit)
 	var mu sync.Mutex
 	for i, item := range items {
@@ -257,12 +258,8 @@ func (s *Service) Apply(ctx context.Context, id, user uuid.UUID) (core.ImportJob
 		return core.ImportJob{}, apperr.NotFound()
 	}
 	job := *stored
-	if job.State != core.JobPlanned {
-		message := "This import has no plan yet."
-		if job.State.IsTerminal() {
-			message = "This import was already applied."
-		}
-		return core.ImportJob{}, apperr.New(http.StatusConflict, "import_not_planned", message)
+	if err := notPlanned(job.State); err != nil {
+		return core.ImportJob{}, err
 	}
 	if job.Source.IsListens() {
 		return s.applyListens(ctx, job)
@@ -276,22 +273,35 @@ func (s *Service) Apply(ctx context.Context, id, user uuid.UUID) (core.ImportJob
 		return core.ImportJob{}, err
 	}
 	job.Stats = Stats(rows)
-	var actionID *uuid.UUID
-	if len(ops) > 0 {
-		action, err := s.Library.Apply(ctx, library.Batch(ops...), user, library.UserCaller, "import", summary(job.Source, job.Stats))
-		if err != nil {
-			return core.ImportJob{}, err
+	batch := library.Batch(ops...)
+	// One transaction: the job is locked and its state checked again, the library written and the
+	// plan saved, so a second approval waits and then finds it applied (DB-003).
+	err = pgx.BeginFunc(ctx, s.Store.Pool, func(tx pgx.Tx) error {
+		if err := s.lockPlanned(ctx, tx, id, user); err != nil {
+			return err
 		}
-		actionID = &action.ID
-	}
-	job.State = core.JobSucceeded
-	if job.Stats.Unmatched > 0 {
-		job.State = core.JobPartial
-	}
-	job.UpdatedAt = s.now()
-	job.ActionID = actionID
-	if err := s.Store.SavePlan(ctx, job, rows); err != nil {
+		var actionID *uuid.UUID
+		if len(ops) > 0 {
+			action, err := s.Library.ApplyTx(ctx, tx, batch, user, library.UserCaller, "import", summary(job.Source, job.Stats))
+			if err != nil {
+				return err
+			}
+			actionID = &action.ID
+		}
+		job.State = core.JobSucceeded
+		if job.Stats.Unmatched > 0 {
+			job.State = core.JobPartial
+		}
+		job.UpdatedAt = s.now()
+		job.ActionID = actionID
+		return s.Store.SavePlanTx(ctx, tx, job, rows)
+	})
+	if err != nil {
 		return core.ImportJob{}, err
+	}
+	actionID := job.ActionID
+	if len(ops) > 0 {
+		s.Library.Committed(ctx, batch, "import", library.UserCaller.Actor, user)
 	}
 	if job.Source == core.SourceCapture {
 		telemetry.Capture(telemetry.CapturePlanDecided, user, map[string]string{"decision": "approved"})
@@ -300,6 +310,30 @@ func (s *Service) Apply(ctx context.Context, id, user uuid.UUID) (core.ImportJob
 		s.Game.BatchApplied(ctx, user, actionID, true)
 	}
 	return job, nil
+}
+
+// notPlanned is the 409 for approving a job that is not waiting for approval; nil when it is.
+func notPlanned(state core.ImportJobState) error {
+	if state == core.JobPlanned {
+		return nil
+	}
+	message := "This import has no plan yet."
+	if state.IsTerminal() {
+		message = "This import was already applied."
+	}
+	return apperr.New(http.StatusConflict, "import_not_planned", message)
+}
+
+// lockPlanned locks the user's job for the rest of tx and checks it still waits for approval.
+func (s *Service) lockPlanned(ctx context.Context, tx pgx.Tx, id, user uuid.UUID) error {
+	state, err := s.Store.LockState(ctx, tx, id, user)
+	if err != nil {
+		return err
+	}
+	if state == nil {
+		return apperr.NotFound()
+	}
+	return notPlanned(*state)
 }
 
 // writes are every write a matched plan makes, decided again against the library as it is now (the

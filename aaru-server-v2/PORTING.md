@@ -84,8 +84,31 @@ here**.
   `go tool pprof -http=:0 http://localhost:9090/debug/pprof/profile?seconds=30` (or `/heap`,
   `/goroutine`, `/trace`). `PPROF_ENABLED=false` turns it off; `PPROF_BLOCK_RATE` and
   `PPROF_MUTEX_FRACTION` sample contention.
-- **Concurrency**: `errgroup` for independent calls; respect `ctx` cancellation.
+- **Concurrency**: `safe.WithContext` for independent calls (`errgroup` whose goroutines turn a panic into the group's error; depguard refuses a raw `errgroup`); respect `ctx` cancellation.
+- **Request limits**: `ownBodyLimits` in `internal/httpapi/router.go` caps each route's body, and a body that stalls is cut off after `bodyReadTimeout` (`uploadReadTimeout` for uploads). `noDeadline` lists routes that may outlast the normal request deadline: the socket, uploads, the export, MCP calls, and one-transaction writes over a whole library (import or plan approval, undo, account deletion).
+- **Long statements**: Postgres ends a statement at the pool's `statement_timeout` and an idle transaction at `idle_in_transaction_session_timeout`. Work known to run longer says so inside its transaction: `db.AllowLongStatements`, or `db.AllowIdleInTransaction` for a transaction held across an outbound call.
+- **Paging**: never `arg IS NULL OR col < arg` on a large table. Under a generic plan the index cannot use that bound and each page walks from the first row; use `col < coalesce(arg, 'infinity')`.
 - Format with `gofumpt`; `go vet ./...` and `golangci-lint run` must be clean.
+
+## Settings
+
+Every Swift setting keeps its name and meaning (`aaru-server/README.md` has the table).
+`POSTGRES_POOL_TIMEOUT` is, as in Swift, the seconds a query waits for a free connection: the
+pool's acquire is bounded by it (and dialing a new connection too); a request that waits longer
+answers 503 `timeout`. The port adds these, each env-driven so it can be relaxed without code:
+
+| Key | Env | Default |
+| --- | --- | --- |
+| `postgres.statement.timeout` | `POSTGRES_STATEMENT_TIMEOUT` | `30` seconds, Postgres' `statement_timeout` on the API's connections; `0` leaves the server's. `--db-migrate` and `--anime-mappings` never set it |
+| `postgres.idle.transaction.timeout` | `POSTGRES_IDLE_TRANSACTION_TIMEOUT` | `60` seconds, `idle_in_transaction_session_timeout`; `0` leaves the server's. Not set by the one-shot modes |
+| `http.request.timeout` | `HTTP_REQUEST_TIMEOUT` | `30` seconds a request may run (503 `timeout` after); `0` turns it off. Not applied to `/v1/ws`, the uploads (`/v1/imports/csv`, `cat`, `capture`, `PUT /v1/me/avatar`, ListenBrainz `submit-listens`), `GET /v1/me/export`, `/v1/mcp`, an import's apply and undo, and `DELETE /v1/me` |
+| `trusted.proxy.hops` | `TRUSTED_PROXY_HOPS` | `1`: proxies in front of the API that append to `X-Forwarded-For` (Traefik). The caller is that many entries from the right; `0` uses the socket peer |
+
+Request bodies are at most 1 MiB, except the routes in `ownBodyLimits`
+(`internal/httpapi/router.go`), which read with their own bound and message, and capture's JSON,
+128 KiB. Every response carries `X-Request-Id`, and every log line written with a request's
+context carries it as `requestId`; a request is logged once, when answered (`Request` at
+arrival is Debug). A request the client abandoned is logged at Info as a 499 and not reported.
 
 ## Running
 

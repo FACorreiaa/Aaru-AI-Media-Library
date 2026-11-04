@@ -2,13 +2,12 @@ package catalog
 
 import (
 	"aaru-go-api/internal/provider"
+	"aaru-go-api/internal/safe"
 	"context"
 	"slices"
 	"strconv"
 	"strings"
 	"time"
-
-	"golang.org/x/sync/errgroup"
 )
 
 // TMDBOnAirLimit notes: the guide covers this many shows, two on-the-air pages after the row filter.
@@ -42,7 +41,7 @@ func (t *TMDB) OnAir(ctx context.Context, now time.Time) ([]OnAirShow, error) {
 	// A week back covers a show whose next episode TMDB has not rolled over yet.
 	from, until := now.Add(-24*time.Hour), now.Add(8*24*time.Hour)
 	shows := make([]*OnAirShow, len(unique))
-	group, gctx := errgroup.WithContext(ctx)
+	group, gctx := safe.WithContext(ctx)
 	for i, hit := range unique {
 		group.Go(func() error {
 			var detail tmdbOnAirDetail

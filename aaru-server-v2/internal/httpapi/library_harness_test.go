@@ -21,6 +21,8 @@ type libraryFake struct {
 	titles   []catalog.Record
 	episodes map[string]catalog.Episodes
 	next     int
+	// panicISBN makes Hydrate panic for that book, as a provider decoder bug would.
+	panicISBN string
 }
 
 func (f *libraryFake) Search(context.Context, string, core.MediaType) ([]catalog.Hit, error) {
@@ -32,12 +34,15 @@ func (f *libraryFake) SearchMulti(context.Context, string) ([]catalog.Hit, error
 func (f *libraryFake) Hydrate(_ context.Context, ids core.ExternalIDs, mediaType core.MediaType) (*catalog.Record, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+	if f.panicISBN != "" && ids.ISBN == f.panicISBN {
+		panic("catalog decoder bug")
+	}
 	for _, r := range f.titles {
 		if r.Hit.Type == mediaType && r.Hit.IDs.Matches(ids) {
 			return &r, nil
 		}
 	}
-	return nil, nil //nolint:nilnil // not known
+	return nil, nil // not known
 }
 
 func (f *libraryFake) Episodes(_ context.Context, ids core.ExternalIDs) (*catalog.Episodes, error) {
@@ -48,7 +53,7 @@ func (f *libraryFake) Episodes(_ context.Context, ids core.ExternalIDs) (*catalo
 			return &e, nil
 		}
 	}
-	return nil, nil //nolint:nilnil // not known
+	return nil, nil // not known
 }
 
 func (f *libraryFake) Tracks(context.Context, core.ExternalIDs) ([]catalog.AlbumTrack, error) {

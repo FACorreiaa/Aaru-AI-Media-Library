@@ -53,22 +53,36 @@ type event struct {
 // Sync recomputes what plays for user and pushes the difference. ticked names watch events that
 // just ticked: their rows stay a moment as "Watched".
 func (n *Notifier) Sync(ctx context.Context, user uuid.UUID, now time.Time, ticked []uuid.UUID) {
-	err := func() error {
-		has, err := n.Store.HasLiveActivityTokens(ctx, user)
-		if err != nil || !has {
-			return err
-		}
-		// A second report saving first means this one recomputes once on top of it.
-		saved, err := n.attempt(ctx, user, now, ticked)
-		if err != nil || saved {
-			return err
-		}
-		_, err = n.attempt(ctx, user, now, ticked)
-		return err
-	}()
-	if err != nil {
+	if err := n.sync(ctx, user, now, ticked, nil); err != nil {
 		n.log().Warn("Live Activity push failed", "error", err.Error())
 	}
+}
+
+// SweepUser is the sweep's Sync for a user it claimed at claimedAt (the check the claim left). It
+// returns the error, and leaves the claimed check in place when it fails, so the next sweep after
+// claimedAt looks again. On success the user's next check is what this look found.
+func (n *Notifier) SweepUser(ctx context.Context, user uuid.UUID, now, claimedAt time.Time) error {
+	return n.sync(ctx, user, now, nil, &claimedAt)
+}
+
+func (n *Notifier) sync(ctx context.Context, user uuid.UUID, now time.Time, ticked []uuid.UUID, claim *time.Time) error {
+	has, err := n.Store.HasLiveActivityTokens(ctx, user)
+	if err != nil {
+		return err
+	}
+	if !has {
+		if claim != nil {
+			return n.Store.SettleLiveActivityCheck(ctx, user, *claim, nil)
+		}
+		return nil
+	}
+	// A second report saving first means this one recomputes once on top of it.
+	saved, err := n.attempt(ctx, user, now, ticked, claim)
+	if err != nil || saved {
+		return err
+	}
+	_, err = n.attempt(ctx, user, now, ticked, claim)
+	return err
 }
 
 // CaughtUp is an activity's token arriving, maybe well after a push started it in the background:
@@ -102,7 +116,7 @@ func (n *Notifier) CaughtUp(ctx context.Context, token push.LiveActivityToken, u
 }
 
 // attempt is one read, compute, save and push. False when another report saved first.
-func (n *Notifier) attempt(ctx context.Context, user uuid.UUID, now time.Time, ticked []uuid.UUID) (bool, error) {
+func (n *Notifier) attempt(ctx context.Context, user uuid.UUID, now time.Time, ticked []uuid.UUID, claim *time.Time) (bool, error) {
 	state, err := n.Store.LiveActivityState(ctx, user)
 	if err != nil {
 		return false, err
@@ -168,6 +182,10 @@ func (n *Notifier) attempt(ctx context.Context, user uuid.UUID, now time.Time, t
 		ev = &event{kind: push.LiveActivityUpdate}
 	}
 	if ev == nil {
+		if claim != nil {
+			// The sweep's claim stands in for the check: replace it with the one found now.
+			return true, n.Store.SettleLiveActivityCheck(ctx, user, *claim, nextCheck)
+		}
 		if nextCheck != nil {
 			return true, n.Store.ScheduleLiveActivityCheck(ctx, user, *nextCheck)
 		}

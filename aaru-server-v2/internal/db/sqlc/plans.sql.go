@@ -13,6 +13,18 @@ import (
 	"github.com/google/uuid"
 )
 
+const lockAgentTokenPlans = `-- name: LockAgentTokenPlans :exec
+SELECT pg_advisory_xact_lock(hashtextextended('plans-pending:' || $1::text, 0))
+`
+
+// Plans this token has waiting, so one agent cannot flood the user.
+// One plan proposal per agent token at a time, so parallel proposals cannot all pass the pending count
+// (DB-008). Held until the transaction ends.
+func (q *Queries) LockAgentTokenPlans(ctx context.Context, tokenKey string) error {
+	_, err := q.db.Exec(ctx, lockAgentTokenPlans, tokenKey)
+	return err
+}
+
 const planAnyTitlePresent = `-- name: PlanAnyTitlePresent :one
 SELECT EXISTS (
     SELECT 1 FROM library_items WHERE user_id = $1 AND title_id = ANY($2::uuid[])
@@ -278,7 +290,6 @@ type PlanPendingCountParams struct {
 	Now          time.Time
 }
 
-// Plans this token has waiting, so one agent cannot flood the user.
 func (q *Queries) PlanPendingCount(ctx context.Context, arg PlanPendingCountParams) (int32, error) {
 	row := q.db.QueryRow(ctx, planPendingCount, arg.AgentTokenID, arg.Now)
 	var count int32

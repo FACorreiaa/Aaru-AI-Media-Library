@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -33,13 +34,75 @@ func Open(ctx context.Context, settings config.Postgres) (*pgxpool.Pool, error) 
 	cfg.ConnConfig.Database = settings.Database
 	cfg.ConnConfig.TLSConfig = nil
 	cfg.MaxConns = int32(settings.PoolSize) //nolint:gosec // clamped in config
-	cfg.ConnConfig.ConnectTimeout = time.Duration(settings.PoolTimeoutSeconds) * time.Second
+	poolTimeout := time.Duration(settings.PoolTimeoutSeconds) * time.Second
+	cfg.ConnConfig.ConnectTimeout = poolTimeout
+	// POSTGRES_POOL_TIMEOUT is, as in the Swift server, how long a query waits for a free
+	// connection (DB-001). pgx's Acquire waits on ctx alone, so the tracer bounds it.
+	if poolTimeout > 0 {
+		cfg.ConnConfig.Tracer = acquireTimeout{timeout: poolTimeout}
+	}
+	if settings.StatementTimeoutSeconds > 0 {
+		cfg.ConnConfig.RuntimeParams["statement_timeout"] = millis(settings.StatementTimeoutSeconds)
+	}
+	if settings.IdleInTransactionTimeoutSeconds > 0 {
+		cfg.ConnConfig.RuntimeParams["idle_in_transaction_session_timeout"] = millis(settings.IdleInTransactionTimeoutSeconds)
+	}
 	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("open pool: %w", err)
 	}
 	return pool, nil
 }
+
+// longStatementTimeout is what AllowLongStatements gives a transaction.
+const longStatementTimeout = "5min"
+
+// AllowLongStatements lifts POSTGRES_STATEMENT_TIMEOUT for the rest of tx to five minutes: for the
+// few writes that are one large statement by nature (a listening file applied, an account's
+// cascade), on routes the request deadline leaves alone for the same reason.
+func AllowLongStatements(ctx context.Context, tx pgx.Tx) error {
+	if _, err := tx.Exec(ctx, "SET LOCAL statement_timeout = '"+longStatementTimeout+"'"); err != nil {
+		return fmt.Errorf("allow long statements: %w", err)
+	}
+	return nil
+}
+
+// AllowIdleInTransaction lifts POSTGRES_IDLE_TRANSACTION_TIMEOUT for the rest of tx: for a
+// transaction that holds a row while it calls a provider, and whose commit must not be lost once
+// the provider has answered (a rotated single-use refresh token).
+func AllowIdleInTransaction(ctx context.Context, tx pgx.Tx) error {
+	if _, err := tx.Exec(ctx, "SET LOCAL idle_in_transaction_session_timeout = 0"); err != nil {
+		return fmt.Errorf("allow idle in transaction: %w", err)
+	}
+	return nil
+}
+
+func millis(seconds int) string { return strconv.Itoa(seconds * 1000) }
+
+// acquireTimeout bounds the wait for a pool connection: pgxpool hands TraceAcquireStart's
+// context to the wait, and the end hook releases its timer. Queries are not traced.
+type acquireTimeout struct{ timeout time.Duration }
+
+var _ pgxpool.AcquireTracer = acquireTimeout{}
+
+type acquireCancelKey struct{}
+
+func (a acquireTimeout) TraceAcquireStart(ctx context.Context, _ *pgxpool.Pool, _ pgxpool.TraceAcquireStartData) context.Context {
+	ctx, cancel := context.WithTimeout(ctx, a.timeout)
+	return context.WithValue(ctx, acquireCancelKey{}, cancel)
+}
+
+func (acquireTimeout) TraceAcquireEnd(ctx context.Context, _ *pgxpool.Pool, _ pgxpool.TraceAcquireEndData) {
+	if cancel, ok := ctx.Value(acquireCancelKey{}).(context.CancelFunc); ok {
+		cancel()
+	}
+}
+
+func (acquireTimeout) TraceQueryStart(ctx context.Context, _ *pgx.Conn, _ pgx.TraceQueryStartData) context.Context {
+	return ctx
+}
+
+func (acquireTimeout) TraceQueryEnd(context.Context, *pgx.Conn, pgx.TraceQueryEndData) {}
 
 // WaitFor pings until Postgres answers. A fresh pod can be refused for its first
 // seconds while the network policy that admits it is still being programmed.

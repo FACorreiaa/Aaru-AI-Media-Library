@@ -13,8 +13,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"math/big"
 	"net/http"
+	"runtime/debug"
 	"strings"
 	"sync"
 	"time"
@@ -44,7 +46,17 @@ type JWKSCache struct {
 	loaded    bool
 	fetchedAt time.Time
 	inFlight  *fetchCall
+	// failedAt is the last failed fetch; for failureBackoff after it, callers fail at once
+	// instead of each waiting on a provider that is down.
+	failedAt time.Time
+	failed   bool
 }
+
+// jwksFetchTimeout bounds one key-set fetch, which runs detached from the caller that started it.
+const jwksFetchTimeout = 15 * time.Second
+
+// maxFailureBackoff is the longest a failed fetch is trusted before the next one is tried.
+const maxFailureBackoff = 10 * time.Second
 
 type fetchCall struct {
 	done chan struct{}
@@ -99,34 +111,62 @@ func (c *JWKSCache) key(ctx context.Context, kid string) (crypto.PublicKey, erro
 	return nil, errUnknownKid
 }
 
-// fetch joins the fetch already running, if any.
+// failureBackoff is how long a failed fetch answers for the provider: the refresh interval,
+// at most maxFailureBackoff (tests use 0: every call fetches).
+func (c *JWKSCache) failureBackoff() time.Duration {
+	return min(c.minimumRefreshInterval, maxFailureBackoff)
+}
+
+// fetch joins the fetch already running, if any, or starts one. The fetch runs detached from
+// every caller, bounded by jwksFetchTimeout: the caller that started it disconnecting must not
+// fail everyone waiting on it. Right after a failure it fails at once (failureBackoff).
 func (c *JWKSCache) fetch(ctx context.Context, now time.Time) error {
 	c.mu.Lock()
-	if call := c.inFlight; call != nil {
-		c.mu.Unlock()
-		select {
-		case <-call.done:
-			return call.err
-		case <-ctx.Done():
-			return ctx.Err()
+	call := c.inFlight
+	if call == nil {
+		if c.failed && now.Sub(c.failedAt) < c.failureBackoff() {
+			c.mu.Unlock()
+			return errProviderUnavailable
 		}
+		call = &fetchCall{done: make(chan struct{})}
+		c.inFlight = call
+		go c.run(context.WithoutCancel(ctx), now, call)
 	}
-	call := &fetchCall{done: make(chan struct{})}
-	c.inFlight = call
 	c.mu.Unlock()
+	select {
+	case <-call.done:
+		return call.err
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
 
-	keys, err := c.load(ctx)
-	c.mu.Lock()
-	if err == nil {
-		c.keys = keys
-		c.loaded = true
-		c.fetchedAt = now
-	}
-	c.inFlight = nil
-	call.err = err
-	c.mu.Unlock()
-	close(call.done)
-	return err
+// run loads the key set for one fetch call and settles it, even if loading panics.
+func (c *JWKSCache) run(ctx context.Context, now time.Time, call *fetchCall) {
+	var keys map[string]crypto.PublicKey
+	var err error = errProviderUnavailable
+	defer func() {
+		if r := recover(); r != nil {
+			slog.Default().Error("Recovered a panic", "where", "JWKS fetch", "panic", fmt.Sprint(r), "stack", string(debug.Stack()))
+			keys, err = nil, errProviderUnavailable
+		}
+		c.mu.Lock()
+		if err == nil {
+			c.keys = keys
+			c.loaded = true
+			c.fetchedAt = now
+			c.failed = false
+		} else {
+			c.failed, c.failedAt = true, now
+		}
+		c.inFlight = nil
+		call.err = err
+		c.mu.Unlock()
+		close(call.done)
+	}()
+	ctx, cancel := context.WithTimeout(ctx, jwksFetchTimeout)
+	defer cancel()
+	keys, err = c.load(ctx)
 }
 
 type jwk struct {
