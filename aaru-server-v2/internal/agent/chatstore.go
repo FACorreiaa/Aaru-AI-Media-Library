@@ -121,6 +121,14 @@ func (s *ChatStore) FinishTurn(ctx context.Context, turn uuid.UUID, state, body 
 	return nil
 }
 
+// SetTitle names a chat that has no name yet.
+func (s *ChatStore) SetTitle(ctx context.Context, chat uuid.UUID, title string) error {
+	if err := s.Q.SetChatTitle(ctx, sqlc.SetChatTitleParams{ID: chat, Title: title}); err != nil {
+		return fmt.Errorf("set chat title: %w", err)
+	}
+	return nil
+}
+
 // RecentTurns is the chat's newest limit turns, oldest first.
 func (s *ChatStore) RecentTurns(ctx context.Context, chat uuid.UUID, limit int) ([]ChatTurn, error) {
 	rows, err := s.Q.RecentChatTurns(ctx, sqlc.RecentChatTurnsParams{ChatID: chat, Limit: int32(limit)}) //nolint:gosec // a small page size

@@ -301,3 +301,18 @@ func (q *Queries) RecentChatTurns(ctx context.Context, arg RecentChatTurnsParams
 	}
 	return items, nil
 }
+
+const setChatTitle = `-- name: SetChatTitle :exec
+UPDATE chats SET title = $1::text WHERE id = $2::uuid AND title IS NULL
+`
+
+type SetChatTitleParams struct {
+	Title string
+	ID    uuid.UUID
+}
+
+// Only a chat's first turn names it.
+func (q *Queries) SetChatTitle(ctx context.Context, arg SetChatTitleParams) error {
+	_, err := q.db.Exec(ctx, setChatTitle, arg.Title, arg.ID)
+	return err
+}

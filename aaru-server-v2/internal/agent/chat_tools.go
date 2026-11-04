@@ -145,8 +145,6 @@ func (t *ChatTools) Definitions() []model.Tool {
 }
 
 // results runs every call in one assistant turn and answers them all in one user turn.
-//
-//nolint:unused // the Chat loop calls it
 func (t *ChatTools) results(ctx context.Context, calls []model.ToolCall) model.Turn {
 	blocks := make([]model.Block, len(calls))
 	for i, call := range calls {

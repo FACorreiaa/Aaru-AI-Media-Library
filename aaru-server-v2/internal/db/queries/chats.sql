@@ -5,6 +5,10 @@ INSERT INTO chats (id, user_id) VALUES ($1, $2);
 -- Someone else's chat is no row, same as a missing one.
 SELECT id, user_id, title, created_at, updated_at FROM chats WHERE id = $1 AND user_id = $2;
 
+-- name: SetChatTitle :exec
+-- Only a chat's first turn names it.
+UPDATE chats SET title = sqlc.arg(title)::text WHERE id = sqlc.arg(id)::uuid AND title IS NULL;
+
 -- name: FailStaleChatTurns :exec
 -- An agent turn that streamed past the cutoff lost its process: it fails so the chat is free.
 UPDATE chat_turns SET state = 'failed', updated_at = sqlc.arg(now)::pg_catalog.timestamptz
