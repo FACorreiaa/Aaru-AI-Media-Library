@@ -212,7 +212,7 @@ streamingEpisodes { title }`
 	} else if n, err := strconv.Atoi(ids.MAL); ids.MAL != "" && err == nil {
 		selector, id = "idMal: $id", n
 	} else {
-		return nil, nil //nolint:nilnil // nil: the provider does not know these ids
+		return nil, nil // nil: the provider does not know these ids
 	}
 	var body struct {
 		Media *aniListMedia `json:"Media"`
@@ -221,7 +221,7 @@ streamingEpisodes { title }`
   Media(%s, type: %s) { %s %s }
 }`, selector, aniListType(mediaType), aniListFields(mediaType), schedule), map[string]any{"id": id}, &body)
 	if provider.IsNotFound(err) {
-		return nil, nil //nolint:nilnil // nil: the provider does not know these ids
+		return nil, nil // nil: the provider does not know these ids
 	}
 	if err != nil {
 		return nil, err

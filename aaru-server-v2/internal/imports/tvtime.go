@@ -439,6 +439,8 @@ type tvTimeShows struct {
 	index      map[string]int
 	list       []Row
 	firstYears map[int]int
+	// ticked is each slot's episodes so far: a long show's watch log is one row per tick (PERF-006).
+	ticked map[int]map[core.EpisodeKey]bool
 }
 
 // slot is the show's slot; false when the row names no show (TV Time lost some names).
@@ -516,7 +518,14 @@ func (s *tvTimeShows) tick(slot int, season, episode *string, watchedAt *time.Ti
 	if err != nil {
 		return
 	}
-	if !slices.Contains(s.list[slot].Watched, key) {
+	if s.ticked == nil {
+		s.ticked = map[int]map[core.EpisodeKey]bool{}
+	}
+	if s.ticked[slot] == nil {
+		s.ticked[slot] = map[core.EpisodeKey]bool{}
+	}
+	if !s.ticked[slot][key] {
+		s.ticked[slot][key] = true
 		s.list[slot].Watched = append(s.list[slot].Watched, key)
 	}
 	if watchedAt != nil {

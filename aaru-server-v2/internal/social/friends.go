@@ -141,14 +141,14 @@ func (s *Service) FriendProfile(ctx context.Context, friend, viewer uuid.UUID) (
 // friends cannot write to.
 func (s *Service) sharedEmail(ctx context.Context, friend uuid.UUID, settings Settings) (*string, error) {
 	if !settings.ShareEmailWithFriends {
-		return nil, nil //nolint:nilnil // not shared
+		return nil, nil // not shared
 	}
 	p, found, err := s.Profiles.Profile(ctx, friend)
 	if err != nil {
 		return nil, err
 	}
 	if !found || !p.EmailShareable() {
-		return nil, nil //nolint:nilnil // not shared
+		return nil, nil // not shared
 	}
 	return p.Email, nil
 }

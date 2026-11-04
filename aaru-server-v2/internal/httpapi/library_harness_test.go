@@ -42,7 +42,7 @@ func (f *libraryFake) Hydrate(_ context.Context, ids core.ExternalIDs, mediaType
 			return &r, nil
 		}
 	}
-	return nil, nil //nolint:nilnil // not known
+	return nil, nil // not known
 }
 
 func (f *libraryFake) Episodes(_ context.Context, ids core.ExternalIDs) (*catalog.Episodes, error) {
@@ -53,7 +53,7 @@ func (f *libraryFake) Episodes(_ context.Context, ids core.ExternalIDs) (*catalo
 			return &e, nil
 		}
 	}
-	return nil, nil //nolint:nilnil // not known
+	return nil, nil // not known
 }
 
 func (f *libraryFake) Tracks(context.Context, core.ExternalIDs) ([]catalog.AlbumTrack, error) {

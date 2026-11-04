@@ -1,6 +1,7 @@
 package mal
 
 import (
+	"aaru-go-api/internal/db"
 	"aaru-go-api/internal/db/sqlc"
 	"context"
 	"fmt"
@@ -116,7 +117,7 @@ func (s *Store) ConsumeAuthRequest(ctx context.Context, stateHash string, now ti
 		return nil, fmt.Errorf("consume mal auth request: %w", err)
 	}
 	if len(rows) == 0 || !rows[0].ExpiresAt.After(now) {
-		return nil, nil //nolint:nilnil // unknown or expired
+		return nil, nil // unknown or expired
 	}
 	return &AuthRequest{UserID: rows[0].UserID, CodeVerifier: rows[0].CodeVerifier, ReturnTo: rows[0].ReturnTo}, nil
 }
@@ -147,7 +148,7 @@ func (s *Store) Connection(ctx context.Context, user uuid.UUID) (*Connection, er
 		return nil, fmt.Errorf("mal connection: %w", err)
 	}
 	if len(rows) == 0 {
-		return nil, nil //nolint:nilnil // not connected
+		return nil, nil // not connected
 	}
 	c := connectionOf(rows[0])
 	return &c, nil
@@ -160,6 +161,10 @@ func (s *Store) RefreshConnection(ctx context.Context, user uuid.UUID,
 ) (*Connection, error) {
 	var out *Connection
 	err := pgx.BeginFunc(ctx, s.Pool, func(tx pgx.Tx) error {
+		// The refresh below is a provider call inside this transaction: a rotated token must commit.
+		if err := db.AllowIdleInTransaction(ctx, tx); err != nil {
+			return err
+		}
 		q := s.q.WithTx(tx)
 		rows, err := q.MALConnectionForUpdate(ctx, user)
 		if err != nil {

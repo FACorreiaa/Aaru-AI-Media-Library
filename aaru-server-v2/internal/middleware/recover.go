@@ -1,28 +1,17 @@
 package middleware
 
 import (
+	"aaru-go-api/internal/safe"
 	"errors"
-	"fmt"
 	"net/http"
 	"runtime/debug"
 
 	"github.com/labstack/echo/v4"
 )
 
-// PanicError is a handler panic turned into an error, with the goroutine's stack where it
-// happened. Errors logs the stack and reports it like any 500.
-type PanicError struct {
-	Value any
-	Stack []byte
-}
-
-func (e *PanicError) Error() string { return fmt.Sprintf("panic: %v", e.Value) }
-
-// Unwrap is the panic's value when it was an error.
-func (e *PanicError) Unwrap() error {
-	err, _ := e.Value.(error)
-	return err
-}
+// PanicError is a panic turned into an error, with the goroutine's stack where it happened: a
+// handler's, or one of its safe.Group goroutines'. Errors logs the stack and reports it like any 500.
+type PanicError = safe.PanicError
 
 // Recover turns a handler panic into a *PanicError (REL-001), so Errors, which wraps it, answers
 // the JSON 500, logs the stack and reports it once, instead of net/http cutting the connection.

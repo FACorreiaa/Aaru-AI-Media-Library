@@ -41,7 +41,7 @@ type Settings struct {
 // NewSettings builds the settings from config (nil when MyAnimeList is not configured).
 func NewSettings(p *config.OAuthProvider) (*Settings, error) {
 	if p == nil {
-		return nil, nil //nolint:nilnil // unset turns MyAnimeList off
+		return nil, nil // unset turns MyAnimeList off
 	}
 	cipher, err := crypto.NewTokenCipherFromKey(p.TokenKey)
 	if err != nil {

@@ -49,18 +49,18 @@ func (o *OpenLibrary) Hydrate(ctx context.Context, ids core.ExternalIDs, _ core.
 	case isbn != "":
 		query = map[string]string{"isbn": isbn, "fields": openLibraryFields, "limit": "1"}
 	default:
-		return nil, nil //nolint:nilnil // nil: not known
+		return nil, nil // nil: not known
 	}
 	var page openLibraryPage
 	if err := o.get(ctx, "search.json", query, &page); err != nil {
 		return nil, err
 	}
 	if len(page.Docs) == 0 {
-		return nil, nil //nolint:nilnil // nil: not known
+		return nil, nil // nil: not known
 	}
 	hit, ok := page.Docs[0].hit()
 	if !ok {
-		return nil, nil //nolint:nilnil // nil: not known
+		return nil, nil // nil: not known
 	}
 	// Keep the ISBN that resolved it: it is the key a later import will look up.
 	if isbn != "" {

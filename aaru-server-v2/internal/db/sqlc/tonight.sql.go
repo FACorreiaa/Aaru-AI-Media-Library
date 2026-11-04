@@ -234,29 +234,28 @@ func (q *Queries) TonightReading(ctx context.Context, arg TonightReadingParams) 
 	return items, nil
 }
 
-const tonightRecordPick = `-- name: TonightRecordPick :exec
+const tonightRecordPicks = `-- name: TonightRecordPicks :exec
 INSERT INTO tonight_picks (user_id, day, library_item_id, rank, served_at)
-VALUES ($1, $2::text::date, $3, $4,
-    $5)
+SELECT $1, $2::text::date, p.library_item_id, (p.ord - 1)::smallint, $3
+FROM unnest($4::uuid[]) WITH ORDINALITY AS p(library_item_id, ord)
 ON CONFLICT (user_id, day, library_item_id)
     DO UPDATE SET rank = EXCLUDED.rank, served_at = EXCLUDED.served_at
 `
 
-type TonightRecordPickParams struct {
-	UserID        uuid.UUID
-	Day           string
-	LibraryItemID uuid.UUID
-	Rank          int16
-	ServedAt      time.Time
+type TonightRecordPicksParams struct {
+	UserID         uuid.UUID
+	Day            string
+	ServedAt       time.Time
+	LibraryItemIds []uuid.UUID
 }
 
-func (q *Queries) TonightRecordPick(ctx context.Context, arg TonightRecordPickParams) error {
-	_, err := q.db.Exec(ctx, tonightRecordPick,
+// One statement, so a strip is recorded whole or not at all (PERF-006). A pick's rank is its place.
+func (q *Queries) TonightRecordPicks(ctx context.Context, arg TonightRecordPicksParams) error {
+	_, err := q.db.Exec(ctx, tonightRecordPicks,
 		arg.UserID,
 		arg.Day,
-		arg.LibraryItemID,
-		arg.Rank,
 		arg.ServedAt,
+		arg.LibraryItemIds,
 	)
 	return err
 }

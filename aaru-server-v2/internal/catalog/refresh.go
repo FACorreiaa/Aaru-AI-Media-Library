@@ -3,6 +3,7 @@ package catalog
 import (
 	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/metrics"
+	"aaru-go-api/internal/provider"
 	"aaru-go-api/internal/safe"
 	"context"
 	"log/slog"
@@ -61,7 +62,12 @@ func (r *Refresher) lookupFailed(ctx context.Context, step string, id uuid.UUID,
 		return
 	}
 	metrics.RefreshFailed(step)
-	r.log().Debug("Catalog refresh lookup failed", "step", step, "title", id, "error", err.Error())
+	// A title the provider dropped is routine; anything else (a revoked key, an outage) is not.
+	if provider.IsNotFound(err) {
+		r.log().Debug("Catalog refresh lookup failed", "step", step, "title", id, "error", err.Error())
+		return
+	}
+	r.log().Warn("Catalog refresh lookup failed", "step", step, "title", id, "error", err.Error())
 }
 
 // NewRefresher builds a refresher with the default limits.

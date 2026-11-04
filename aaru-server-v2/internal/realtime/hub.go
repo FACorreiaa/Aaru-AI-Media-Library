@@ -174,7 +174,10 @@ func (h *Hub) drop(s *socket, reason DropReason) {
 			}
 		}
 		h.mu.Unlock()
-		if reason != DropClosed && s.onDrop != nil {
+		if reason == DropClosed || s.onDrop == nil {
+			return
+		}
+		notify := func() {
 			defer func() {
 				if r := recover(); r != nil {
 					h.Log.Error("Recovered a panic", "where", "realtime drop", "panic", fmt.Sprint(r), "stack", string(debug.Stack()))
@@ -182,6 +185,14 @@ func (h *Hub) drop(s *socket, reason DropReason) {
 			}()
 			s.onDrop(reason)
 		}
+		// A socket that fell behind is dropped on the publisher's goroutine, and closing a stalled
+		// socket can take seconds: the poster's request and the other sockets do not wait for that
+		// (CON-004). It already takes no more frames.
+		if reason == DropSlow {
+			go notify()
+			return
+		}
+		notify()
 	})
 }
 

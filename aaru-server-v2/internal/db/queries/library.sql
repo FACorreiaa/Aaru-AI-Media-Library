@@ -19,14 +19,14 @@ UPDATE library_items SET status = @status, rating = sqlc.narg(rating), notes = s
     status_by_hand = COALESCE(sqlc.narg(status_by_hand)::boolean, status_by_hand), updated_at = now()
 WHERE id = @id;
 
--- name: LibraryInsertItem :exec
+-- name: LibraryInsertItem :batchexec
 INSERT INTO library_items (id, user_id, title_id, status, is_owned, rating, notes, added_at,
     updated_at, finished_at, book_page, book_percent, manga_chapter, manga_volume, status_by_hand)
 VALUES (@id, @user_id, @title_id, @status, @is_owned, sqlc.narg(rating), sqlc.narg(notes), @added_at,
     now(), sqlc.narg(finished_at), sqlc.narg(book_page), sqlc.narg(book_percent), sqlc.narg(manga_chapter),
     sqlc.narg(manga_volume), @status_by_hand);
 
--- name: LibraryClearTombstone :exec
+-- name: LibraryClearTombstone :batchexec
 DELETE FROM library_tombstones WHERE user_id = @user_id AND library_item_id = @library_item_id;
 
 -- name: LibraryItemTitleAndAdded :one
@@ -40,7 +40,7 @@ INSERT INTO library_tombstones (user_id, library_item_id)
 VALUES (@user_id, @library_item_id)
 ON CONFLICT (user_id, library_item_id) DO UPDATE SET deleted_at = now();
 
--- name: LibraryInsertTicks :exec
+-- name: LibraryInsertTicks :batchexec
 -- Episode ticks in one statement. `known` is false for imports and restores (GAM-006a).
 INSERT INTO episode_progress (id, library_item_id, season, episode, watched_at_known)
 SELECT (@ids::uuid[])[i], @library_item_id, (@seasons::int[])[i], (@episodes::int[])[i], @known::boolean

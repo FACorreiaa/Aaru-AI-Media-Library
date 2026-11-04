@@ -36,6 +36,7 @@ import (
 	"net/http"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -100,6 +101,9 @@ type Service struct {
 	Push PushSender
 	// Now is the clock; tests pin it.
 	Now func() time.Time
+
+	listenFileOnce sync.Once
+	listenFileSlot chan struct{}
 }
 
 // NewService builds the service over the job store, the catalog and the library.

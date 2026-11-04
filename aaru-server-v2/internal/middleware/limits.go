@@ -4,6 +4,7 @@ import (
 	"aaru-go-api/internal/apperr"
 	"context"
 	"errors"
+	"io"
 	"net/http"
 	"time"
 
@@ -20,6 +21,8 @@ type BodyRule struct {
 	OwnBound bool
 	// TooLarge answers an oversize body instead of the shared 413.
 	TooLarge *apperr.Error
+	// ReadTimeout bounds reading the whole body (HTTP-005); 0 leaves it open.
+	ReadTimeout time.Duration
 }
 
 const tooLargeKey = "aaru.body.too.large"
@@ -40,9 +43,40 @@ func BodyLimit(rule func(c echo.Context) BodyRule) echo.MiddlewareFunc {
 			}
 			c.Set(tooLargeKey, tooLarge)
 			req.Body = http.MaxBytesReader(c.Response(), req.Body, r.Limit)
+			if r.ReadTimeout > 0 && req.ContentLength != 0 {
+				req.Body = deadlineBody(c.Response(), req.Body, r.ReadTimeout)
+			}
 			return next(c)
 		}
 	}
+}
+
+// deadlineBody bounds how long the client may take to send body (HTTP-005). A context deadline
+// cannot do it: it does not interrupt a read. A server-wide ReadTimeout cannot either: it would cut
+// WebSockets and large uploads alike. The connection's read deadline is lifted as soon as the body
+// ends, because net/http then keeps a read open to notice the client leaving, and a deadline
+// passing there would cancel a handler still at work. A writer that cannot set one (tests) just
+// has no bound.
+func deadlineBody(w http.ResponseWriter, body io.ReadCloser, timeout time.Duration) io.ReadCloser {
+	rc := http.NewResponseController(w)
+	if err := rc.SetReadDeadline(time.Now().Add(timeout)); err != nil {
+		return body
+	}
+	return &timedBody{ReadCloser: body, rc: rc}
+}
+
+type timedBody struct {
+	io.ReadCloser
+	rc *http.ResponseController
+}
+
+// Read lifts the deadline once the body has ended, or failed.
+func (b *timedBody) Read(p []byte) (int, error) {
+	n, err := b.ReadCloser.Read(p)
+	if err != nil {
+		_ = b.rc.SetReadDeadline(time.Time{}) // the connection is going away if this fails
+	}
+	return n, err
 }
 
 // bodyTooLarge is the answer for err when reading the body ran past its limit, else nil.

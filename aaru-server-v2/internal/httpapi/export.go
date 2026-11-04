@@ -6,16 +6,18 @@ import (
 	"aaru-go-api/internal/apitime"
 	"aaru-go-api/internal/export"
 	"aaru-go-api/internal/music"
+	"aaru-go-api/internal/safe"
 	"aaru-go-api/internal/social"
 	"context"
+	"encoding/json"
 	"fmt"
-	"math"
+	"io"
+	"net/http"
 	"net/url"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
-	"golang.org/x/sync/errgroup"
 )
 
 // ExportAccount is `GET /v1/me/export` (ExportHandlers.swift): the whole account as JSON, or
@@ -83,19 +85,67 @@ func (s *Server) ExportAccount(ctx context.Context, req api.ExportAccountRequest
 		return nil, err
 	}
 	disposition := fmt.Sprintf("attachment; filename=\"aaru-export-%s.json\"", stamp)
-	return api.ExportAccount200JSONResponse{
-		Body: out, Headers: api.ExportAccount200ResponseHeaders{ContentDisposition: &disposition},
+	return exportStream{
+		body: out, disposition: disposition,
+		listens: func(each func(music.Listen) error) error {
+			return music.NewStore(s.Pool).EachListen(ctx, userID, exportListenPage, each)
+		},
 	}, nil
+}
+
+// exportListenPage is how many listens the export reads at a time.
+const exportListenPage = 2000
+
+// exportStream is the JSON export with its listens written as they are read (PERF-002): a long
+// listening history must not sit in memory, parsed and copied, before the first byte goes out. A
+// read that fails part way leaves the JSON unterminated, so the client cannot take it for whole.
+type exportStream struct {
+	body        api.AccountExport
+	disposition string
+	listens     func(each func(music.Listen) error) error
+}
+
+// VisitExportAccountResponse writes the rest of the account, then the listens as its last field.
+func (r exportStream) VisitExportAccountResponse(w http.ResponseWriter) error {
+	head, err := json.Marshal(r.body)
+	if err != nil {
+		return fmt.Errorf("export: %w", err)
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Disposition", r.disposition)
+	w.WriteHeader(http.StatusOK)
+	// The object's own closing brace comes after the listens. It always has fields: exportedAt.
+	if _, err := w.Write(append(head[:len(head)-1], `,"listens":[`...)); err != nil {
+		return fmt.Errorf("export: %w", err)
+	}
+	enc := json.NewEncoder(w)
+	first := true
+	err = r.listens(func(l music.Listen) error {
+		if !first {
+			if _, err := io.WriteString(w, ","); err != nil {
+				return fmt.Errorf("export: %w", err)
+			}
+		}
+		first = false
+		return enc.Encode(listenDTO(l))
+	})
+	if err != nil {
+		return err
+	}
+	_, err = io.WriteString(w, "]}\n")
+	return err
 }
 
 func (s *Server) exportService() *export.Service {
 	return &export.Service{Pool: s.Pool, Q: s.q}
 }
 
-// exportExtras reads the account's social, group, music, favorite and sports data, each
-// independently.
+// exportExtras reads the account's social, group, favorite and sports data, each independently,
+// a few at a time: one export must not take the whole pool (DB-002, PERF-002). Listens are not
+// here: they are streamed.
 func (s *Server) exportExtras(ctx context.Context, svc *export.Service, userID uuid.UUID, out *api.AccountExport) error {
-	g, gctx := errgroup.WithContext(ctx)
+	g, gctx := safe.WithContext(ctx)
+	g.SetLimit(3)
 	g.Go(func() error {
 		friends, err := social.NewStore(s.Pool).Friends(gctx, userID)
 		if err != nil {
@@ -156,19 +206,6 @@ func (s *Server) exportExtras(ctx context.Context, svc *export.Service, userID u
 			}{Body: r.Body, Channel: r.ChannelName, CreatedAt: apitime.From(r.CreatedAt), Group: r.GroupName})
 		}
 		out.GroupMessages = &messages
-		return nil
-	})
-	g.Go(func() error {
-		// Every listen, newest first (PostgresListenStore.listens(userID:before:nil, limit:.max)).
-		rows, err := music.NewStore(s.Pool).Listens(gctx, userID, nil, math.MaxInt64)
-		if err != nil {
-			return fmt.Errorf("export listens: %w", err)
-		}
-		listens := make([]api.Listen, 0, len(rows))
-		for _, r := range rows {
-			listens = append(listens, listenDTO(r))
-		}
-		out.Listens = &listens
 		return nil
 	})
 	g.Go(func() error {

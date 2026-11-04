@@ -4,6 +4,7 @@ import (
 	"aaru-go-api/internal/db"
 	"aaru-go-api/internal/db/sqlc"
 	"aaru-go-api/internal/push"
+	"aaru-go-api/internal/safe"
 	"context"
 	"strings"
 	"sync"
@@ -74,7 +75,7 @@ func (s *Service) alertMentions(ctx context.Context, m Message, channel Channel,
 	alert := MentionAlert(*m.Author, group.Name, channel)
 	var wg sync.WaitGroup
 	for _, user := range recipients {
-		wg.Go(func() { s.Push.Send(ctx, alert, user) })
+		safe.Go(&wg, "group mention alert", func() { s.Push.Send(ctx, alert, user) })
 	}
 	wg.Wait()
 }

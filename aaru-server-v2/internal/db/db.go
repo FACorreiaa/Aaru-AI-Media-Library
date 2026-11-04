@@ -54,6 +54,29 @@ func Open(ctx context.Context, settings config.Postgres) (*pgxpool.Pool, error) 
 	return pool, nil
 }
 
+// longStatementTimeout is what AllowLongStatements gives a transaction.
+const longStatementTimeout = "5min"
+
+// AllowLongStatements lifts POSTGRES_STATEMENT_TIMEOUT for the rest of tx to five minutes: for the
+// few writes that are one large statement by nature (a listening file applied, an account's
+// cascade), on routes the request deadline leaves alone for the same reason.
+func AllowLongStatements(ctx context.Context, tx pgx.Tx) error {
+	if _, err := tx.Exec(ctx, "SET LOCAL statement_timeout = '"+longStatementTimeout+"'"); err != nil {
+		return fmt.Errorf("allow long statements: %w", err)
+	}
+	return nil
+}
+
+// AllowIdleInTransaction lifts POSTGRES_IDLE_TRANSACTION_TIMEOUT for the rest of tx: for a
+// transaction that holds a row while it calls a provider, and whose commit must not be lost once
+// the provider has answered (a rotated single-use refresh token).
+func AllowIdleInTransaction(ctx context.Context, tx pgx.Tx) error {
+	if _, err := tx.Exec(ctx, "SET LOCAL idle_in_transaction_session_timeout = 0"); err != nil {
+		return fmt.Errorf("allow idle in transaction: %w", err)
+	}
+	return nil
+}
+
 func millis(seconds int) string { return strconv.Itoa(seconds * 1000) }
 
 // acquireTimeout bounds the wait for a pool connection: pgxpool hands TraceAcquireStart's

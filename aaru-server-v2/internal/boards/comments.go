@@ -83,7 +83,7 @@ func (s *Service) liveComment(ctx context.Context, id, post, viewer uuid.UUID) (
 			return nil, err
 		}
 		if hidden[found.Author.ID] {
-			return nil, nil //nolint:nilnil // nil: hidden reads as missing
+			return nil, nil // nil: hidden reads as missing
 		}
 	}
 	return found, nil

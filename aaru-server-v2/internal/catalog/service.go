@@ -203,7 +203,7 @@ func freshEpisodes(ctx context.Context, source EpisodeLister, ids core.ExternalI
 	fresh, err := source.Episodes(ctx, ids)
 	if err != nil {
 		if provider.IsAniListOutage(err) && len(stored) > 0 {
-			return nil, nil //nolint:nilnil // nil: not known
+			return nil, nil // nil: not known
 		}
 		return nil, err
 	}

@@ -196,7 +196,7 @@ func (s *Store) Entry(ctx context.Context, id, user uuid.UUID, now time.Time) (*
 	if es := toEntries(rows, user); len(es) > 0 {
 		return &es[0], nil
 	}
-	return nil, nil //nolint:nilnil // none
+	return nil, nil // none
 }
 
 // EntryForTitle is the user's item for a title, or nil.
@@ -210,7 +210,7 @@ func (s *Store) EntryForTitle(ctx context.Context, user, titleID uuid.UUID, now 
 	if es := toEntries(rows, user); len(es) > 0 {
 		return &es[0], nil
 	}
-	return nil, nil //nolint:nilnil // none
+	return nil, nil // none
 }
 
 // Entries is one page of the user's entries matching the filter, newest change first, and the

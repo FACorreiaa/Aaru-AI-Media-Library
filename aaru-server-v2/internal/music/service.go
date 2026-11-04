@@ -103,9 +103,15 @@ type Resolver struct {
 	Now       func() time.Time
 }
 
+// failuresToStop is how many provider failures in a row end a pass: that is the provider down, not
+// one bad track.
+const failuresToStop = 3
+
 // RunOnce looks up one batch. Returns how many tracks were asked about and how many listens gained
 // an album. A provider that refuses one track (a 4xx) records a miss for it and the pass goes on
-// (Go audit REL-006); any other provider failure ends the pass without recording a miss.
+// (Go audit REL-006). Any other provider failure records no miss, since the track may be fine next
+// time, and moves on, so one track that keeps failing never holds up the rest. A few in a row end
+// the pass. The last failure is returned, so the worker's metrics see it.
 func (r *Resolver) RunOnce(ctx context.Context) (tracks, listens int, err error) {
 	now := time.Now()
 	if r.Now != nil {
@@ -119,6 +125,8 @@ func (r *Resolver) RunOnce(ctx context.Context) (tracks, listens int, err error)
 	if err != nil {
 		return 0, 0, err
 	}
+	var failed error
+	inARow := 0
 	for _, lookup := range due {
 		if err := ctx.Err(); err != nil {
 			return 0, listens, err
@@ -127,16 +135,24 @@ func (r *Resolver) RunOnce(ctx context.Context) (tracks, listens int, err error)
 		if refusedOne(err) {
 			match, err = catalog.RecordingMatch{}, nil
 		}
+		if _, isProvider := provider.AsError(err); isProvider {
+			failed = err
+			if inARow++; inARow >= failuresToStop {
+				return 0, listens, err
+			}
+			continue
+		}
 		if err != nil {
 			return 0, listens, err
 		}
+		inARow = 0
 		filled, err := r.Store.Resolve(ctx, lookup, match, now)
 		if err != nil {
 			return 0, listens, err
 		}
 		listens += filled
 	}
-	return len(due), listens, nil
+	return len(due), listens, failed
 }
 
 // refusedOne is a provider refusing this one request (404 or another 4xx that is not about the

@@ -25,7 +25,7 @@ func NewStore(pool *pgxpool.Pool) *Store { return &Store{Q: sqlc.New(pool)} }
 
 func ts(t time.Time) pgtype.Timestamptz { return pgtype.Timestamptz{Time: t, Valid: true} }
 
-func i32(n int) int32 { return int32(min(max(n, math.MinInt32), math.MaxInt32)) } //nolint:gosec // clamped
+func i32(n int) int32 { return int32(min(max(n, math.MinInt32), math.MaxInt32)) } // clamped
 
 // Record opens or updates the session for this user, source and item, and returns it.
 func (s *Store) Record(ctx context.Context, r Report, titleID *uuid.UUID, user uuid.UUID, agentTokenID *uuid.UUID, now time.Time) (Session, error) {

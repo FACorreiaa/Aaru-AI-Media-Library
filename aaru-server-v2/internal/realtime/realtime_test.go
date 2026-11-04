@@ -61,13 +61,20 @@ func TestPublishDoesNotWaitOnASlowSocketAndDropsItWhenItFallsBehind(t *testing.T
 	fast := &counter{}
 	hub.Connect(user, fast.sink)
 
-	start := time.Now()
-	for range SendQueue + 5 {
+	// The healthy socket gets to drain between frames: this test is about the blocked one, and a
+	// tight loop can outrun any writer's queue.
+	var publishing time.Duration
+	for i := range SendQueue + 5 {
+		start := time.Now()
 		hub.Publish(context.Background(), groups.Event{Type: groups.EventGroupUpdated}, []uuid.UUID{user})
+		publishing += time.Since(start)
+		require.Eventually(t, func() bool { return fast.n.Load() == int32(i+1) }, 5*time.Second, 100*time.Microsecond)
 	}
-	assert.Less(t, time.Since(start), 100*time.Millisecond, "publishing never waits on a socket")
-	assert.EqualValues(t, 1, dropped.Load(), "the socket that fell behind is dropped once")
+	assert.Less(t, publishing, 100*time.Millisecond, "publishing never waits on a socket")
+	require.Eventually(t, func() bool { return dropped.Load() == 1 }, 5*time.Second, 5*time.Millisecond,
+		"the socket that fell behind is dropped")
 	flush(t, hub)
+	assert.EqualValues(t, 1, dropped.Load(), "once")
 	assert.EqualValues(t, SendQueue+5, fast.n.Load(), "the other socket got every frame")
 	assert.Equal(t, 1, hub.ConnectionCount(user))
 }
@@ -259,4 +266,45 @@ func TestFrameBucketRefills(t *testing.T) {
 	}
 	assert.False(t, b.take(now))
 	assert.True(t, b.take(now.Add(time.Second/InboundFramesPerSecond)))
+}
+
+// CON-004: closing a socket that fell behind can take seconds. The poster and the other sockets
+// do not wait for it.
+func TestPublishDoesNotWaitForASlowSocketToClose(t *testing.T) {
+	hub := NewHub(plainFrame, quiet())
+	user := uuid.New()
+	writing := make(chan struct{}, 1)
+	release := make(chan struct{})
+	defer close(release)
+	closing := make(chan struct{})
+	var once sync.Once
+	_, ok := hub.Attach(user, func(ctx context.Context, _ []byte) error {
+		select {
+		case writing <- struct{}{}:
+		default:
+		}
+		select {
+		case <-release:
+		case <-ctx.Done():
+		}
+		return nil
+	}, func(DropReason) {
+		once.Do(func() { close(closing) })
+		<-release // a close that takes as long as it likes
+	})
+	require.True(t, ok)
+
+	event := groups.Event{Type: groups.EventMessageCreated, Group: uuid.New(), Channel: uuid.New()}
+	hub.Publish(context.Background(), event, []uuid.UUID{user})
+	<-writing
+	started := time.Now()
+	for range SendQueue + 2 {
+		hub.Publish(context.Background(), event, []uuid.UUID{user})
+	}
+	assert.Less(t, time.Since(started), time.Second)
+	select {
+	case <-closing:
+	case <-time.After(5 * time.Second):
+		t.Fatal("the socket that fell behind was not dropped")
+	}
 }

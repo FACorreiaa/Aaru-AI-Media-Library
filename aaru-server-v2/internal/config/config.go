@@ -419,7 +419,7 @@ func httpURL(raw, env, key string) (*url.URL, error) {
 func loadEmail(r *Reader) (*Email, error) {
 	key, ok := r.Lookup("resend.api.key")
 	if !ok || key == "" {
-		return nil, nil //nolint:nilnil // unset turns the feature off
+		return nil, nil // unset turns the feature off
 	}
 	link, err := url.Parse(r.String("magic.link.base.url", "https://aaruapp.com/auth/verify"))
 	if err != nil {
@@ -431,7 +431,7 @@ func loadEmail(r *Reader) (*Email, error) {
 func loadOAuthProvider(r *Reader, prefix, env, defaultRedirect string) (*OAuthProvider, error) {
 	clientID, ok := r.Lookup(prefix + ".client.id")
 	if !ok || clientID == "" {
-		return nil, nil //nolint:nilnil // unset turns the provider off
+		return nil, nil // unset turns the provider off
 	}
 	redirect, err := url.Parse(r.String(prefix+".redirect.uri", defaultRedirect))
 	if err != nil {
@@ -475,7 +475,7 @@ func TokenKey(b64 string) ([]byte, error) {
 func loadPush(r *Reader) (*Push, error) {
 	key, ok := r.Lookup("apns.private.key")
 	if !ok || key == "" {
-		return nil, nil //nolint:nilnil // unset turns push off
+		return nil, nil // unset turns push off
 	}
 	keyID, err := r.required("apns.key.id", "APNS_KEY_ID")
 	if err != nil {
@@ -487,7 +487,7 @@ func loadPush(r *Reader) (*Push, error) {
 func loadAnthropic(r *Reader) (*Anthropic, error) {
 	key, ok := r.Lookup("anthropic.api.key")
 	if !ok || key == "" {
-		return nil, nil //nolint:nilnil // unset leaves @aaru off
+		return nil, nil // unset leaves @aaru off
 	}
 	base, err := httpURL(r.String("anthropic.base.url", "https://api.anthropic.com"), "ANTHROPIC_BASE_URL", "anthropic.base.url")
 	if err != nil {

@@ -49,7 +49,7 @@ func (e *libEnv) itemTitle(item string) string {
 // stubIMDbShow is an ended show with an IMDb id (so Stremio names it `tt…`) and two aired seasons of three.
 func (e *libEnv) stubIMDbShow(name string) (tmdb, imdb string) {
 	tmdb = e.fake.uniqueID("tmdb")
-	imdb = fmt.Sprintf("tt%d", 10_000_000+rand.IntN(89_999_999)) //nolint:gosec // a test id
+	imdb = fmt.Sprintf("tt%d", 10_000_000+rand.IntN(89_999_999)) // a test id
 	year := 2020
 	ended := catalog.StatusEnded
 	e.fake.stubTitle(catalog.Record{

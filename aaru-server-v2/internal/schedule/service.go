@@ -9,6 +9,7 @@ import (
 	"aaru-go-api/internal/catalog"
 	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/db/sqlc"
+	"aaru-go-api/internal/safe"
 	"context"
 	"fmt"
 	"net/http"
@@ -16,7 +17,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -104,7 +104,7 @@ func (s *Service) PendingShows(ctx context.Context, userID uuid.UUID) (int, erro
 func (s *Service) UpNext(ctx context.Context, userID uuid.UUID) (UpNext, error) {
 	now := s.now()
 	var out UpNext
-	g, ctx := errgroup.WithContext(ctx)
+	g, ctx := safe.WithContext(ctx)
 	g.Go(func() (err error) {
 		out.ContinueWatching, err = s.ContinueWatching(ctx, userID, now, 50)
 		return err
@@ -151,7 +151,7 @@ func (s *Service) Watching(ctx context.Context, userID uuid.UUID) ([]WatchingRow
 		airing     map[uuid.UUID]catalog.TitleAiring
 		continuing []ContinueEntry
 	)
-	g, gctx := errgroup.WithContext(ctx)
+	g, gctx := safe.WithContext(ctx)
 	g.Go(func() (err error) {
 		airing, err = s.store.Airing(gctx, shows, now)
 		return err

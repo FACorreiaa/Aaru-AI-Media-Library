@@ -7,6 +7,7 @@ import (
 	"aaru-go-api/internal/apperr"
 	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/db/sqlc"
+	"aaru-go-api/internal/safe"
 	"aaru-go-api/internal/schedule"
 	"aaru-go-api/internal/telemetry"
 	"context"
@@ -20,7 +21,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
-	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -153,7 +153,7 @@ func (s *Service) Tonight(ctx context.Context, userID uuid.UUID, zoneName *strin
 		library  Library
 		feedback []Feedback
 	)
-	g, gctx := errgroup.WithContext(ctx)
+	g, gctx := safe.WithContext(ctx)
 	g.Go(func() (err error) {
 		library.Continuing, err = s.schedule.ContinueWatching(gctx, userID, now, 50)
 		return err
@@ -541,13 +541,15 @@ func (s *Service) recordPicks(ctx context.Context, picks []Pick, day string, use
 	if err != nil {
 		return false, fmt.Errorf("tonight shown: %w", err)
 	}
-	for rank, p := range picks {
-		err := s.q.TonightRecordPick(ctx, sqlc.TonightRecordPickParams{
-			UserID: userID, Day: day, LibraryItemID: p.LibraryItemID, Rank: int16(rank), ServedAt: servedAt, //nolint:gosec // at most MaxPicks
-		})
-		if err != nil {
-			return false, fmt.Errorf("tonight pick: %w", err)
-		}
+	ids := make([]uuid.UUID, len(picks))
+	for i, p := range picks {
+		ids[i] = p.LibraryItemID
+	}
+	err = s.q.TonightRecordPicks(ctx, sqlc.TonightRecordPicksParams{
+		UserID: userID, Day: day, LibraryItemIds: ids, ServedAt: servedAt,
+	})
+	if err != nil {
+		return false, fmt.Errorf("tonight pick: %w", err)
 	}
 	return !shown, nil
 }

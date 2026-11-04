@@ -117,7 +117,7 @@ func (f *fakeCatalog) Hydrate(_ context.Context, ids core.ExternalIDs, mediaType
 			return &r, nil
 		}
 	}
-	return nil, nil //nolint:nilnil // not known
+	return nil, nil // not known
 }
 
 func (f *fakeCatalog) HydrateMAL(_ context.Context, malIDs []string, mediaType core.MediaType) (map[string]Record, error) {
@@ -156,7 +156,7 @@ func (f *fakeCatalog) Episodes(_ context.Context, ids core.ExternalIDs) (*Episod
 	if e, ok := f.episodeLists[ids.AniList]; ids.AniList != "" && ok {
 		return &e, nil
 	}
-	return nil, nil //nolint:nilnil // not known
+	return nil, nil // not known
 }
 
 func (f *fakeCatalog) stubDiscover(list DiscoverList, hits []Hit) {

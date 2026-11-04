@@ -52,7 +52,7 @@ type Store struct {
 }
 
 // postFrom reads a post row; every post read's generated row type converts to this one.
-func postFrom(r sqlc.BoardPostRow) Post { //nolint:gocritic // rows are passed by value
+func postFrom(r sqlc.BoardPostRow) Post { // rows are passed by value
 	p := Post{
 		ID:              r.ID,
 		Author:          groups.User{ID: r.UserID, Handle: r.Handle, DisplayName: r.DisplayName, AvatarVersion: r.AvatarVersion},
@@ -103,7 +103,7 @@ func posts[R ~postFields](rows []R) []Post {
 }
 
 // commentFrom reads a comment row; BoardCommentsRow converts to this one.
-func commentFrom(r sqlc.BoardCommentRow) Comment { //nolint:gocritic // rows are passed by value
+func commentFrom(r sqlc.BoardCommentRow) Comment { // rows are passed by value
 	c := Comment{
 		ID: r.ID, PostID: r.PostID, FromAgent: r.AuthorKind == "agent", ReplyTo: r.ReplyTo, Body: r.Body,
 		Mentions: r.Mentions, MentionsAgent: r.MentionsAgent, CreatedAt: r.CreatedAt, DeletedAt: r.DeletedAt,
@@ -140,7 +140,7 @@ func (s *Store) CreatePost(ctx context.Context, p Post) (Post, error) {
 func (s *Store) Post(ctx context.Context, id, viewer uuid.UUID) (*Post, error) {
 	row, err := s.Q.BoardPost(ctx, sqlc.BoardPostParams{ID: id, Viewer: viewer})
 	if db.IsNoRows(err) {
-		return nil, nil //nolint:nilnil // nil: no such post
+		return nil, nil // nil: no such post
 	}
 	if err != nil {
 		return nil, fmt.Errorf("board post: %w", err)
@@ -247,7 +247,7 @@ func (s *Store) AddComment(ctx context.Context, c Comment) (Comment, error) {
 func (s *Store) Comment(ctx context.Context, id, post uuid.UUID) (*Comment, error) {
 	row, err := s.Q.BoardComment(ctx, sqlc.BoardCommentParams{ID: id, PostID: post})
 	if db.IsNoRows(err) {
-		return nil, nil //nolint:nilnil // nil: no such comment
+		return nil, nil // nil: no such comment
 	}
 	if err != nil {
 		return nil, fmt.Errorf("board comment: %w", err)

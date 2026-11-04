@@ -224,11 +224,11 @@ func ValidHandle(raw string) (string, error) {
 // ValidName is a first or last name trimmed; empty clears it.
 func ValidName(raw *string, field string) (*string, error) {
 	if raw == nil {
-		return nil, nil //nolint:nilnil // no name
+		return nil, nil // no name
 	}
 	name := strings.TrimSpace(*raw)
 	if name == "" {
-		return nil, nil //nolint:nilnil // no name
+		return nil, nil // no name
 	}
 	if core.Length(name) > MaxDisplayNameLength {
 		return nil, invalid(field, fmt.Sprintf("Keep your name under %d characters.", MaxDisplayNameLength))
@@ -600,7 +600,7 @@ func (s *Service) titles(ctx context.Context, ids []uuid.UUID) (map[uuid.UUID]co
 
 func (s *Service) title(ctx context.Context, id uuid.UUID) (*core.Title, error) {
 	if s.Catalog == nil {
-		return nil, nil //nolint:nilnil // no catalog
+		return nil, nil // no catalog
 	}
 	return s.Catalog.Store.Title(ctx, id)
 }

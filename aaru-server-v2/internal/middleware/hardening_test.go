@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -50,7 +51,7 @@ func TestAPanickingHandlerIsAReportedJSON500(t *testing.T) {
 	assert.JSONEq(t, `{"code":"internal","message":"Something went wrong."}`, rec.Body.String())
 	require.Len(t, reporter.failures, 1)
 	assert.Equal(t, "/v1/boom/{id}", reporter.failures[0].Route)
-	assert.Equal(t, "*middleware.PanicError", reporter.failures[0].ErrorType)
+	assert.Equal(t, "*safe.PanicError", reporter.failures[0].ErrorType)
 	require.NotEmpty(t, logs.records)
 	stack := ""
 	logs.records[len(logs.records)-1].Attrs(func(a slog.Attr) bool {
@@ -323,4 +324,50 @@ func TestTheArrivalLineIsDebug(t *testing.T) {
 	require.Len(t, logs.records, 2)
 	assert.Equal(t, slog.LevelDebug, logs.records[0].Level)
 	assert.Equal(t, slog.LevelInfo, logs.records[1].Level)
+}
+
+// HTTP-005, over a real connection: a body that stalls ends the handler's read at the deadline, and
+// a handler still at work after a body that arrived whole is not cancelled by it. net/http keeps a
+// read open once the body ends, so a deadline left in place would cancel that handler's context.
+func TestBodyReadDeadlineCutsAStalledBodyAndSparesASlowHandler(t *testing.T) {
+	const timeout = 200 * time.Millisecond
+	readErr := make(chan error, 1)
+	ctxErr := make(chan error, 1)
+	e := echo.New()
+	e.Use(BodyLimit(func(echo.Context) BodyRule { return BodyRule{Limit: 1 << 20, ReadTimeout: timeout} }))
+	e.POST("/read", func(c echo.Context) error {
+		_, err := io.ReadAll(c.Request().Body)
+		readErr <- err
+		return nil
+	})
+	e.POST("/slow", func(c echo.Context) error {
+		if _, err := io.ReadAll(c.Request().Body); err != nil {
+			return err
+		}
+		time.Sleep(3 * timeout)
+		ctxErr <- c.Request().Context().Err()
+		return c.NoContent(http.StatusNoContent)
+	})
+	server := httptest.NewServer(e)
+	defer server.Close()
+
+	conn, err := net.Dial("tcp", server.Listener.Addr().String())
+	require.NoError(t, err)
+	defer func() { _ = conn.Close() }()
+	_, err = io.WriteString(conn, "POST /read HTTP/1.1\r\nHost: x\r\nContent-Length: 100\r\n\r\npartial")
+	require.NoError(t, err)
+	select {
+	case err := <-readErr:
+		require.Error(t, err, "the stalled body ends in an error")
+	case <-time.After(5 * time.Second):
+		t.Fatal("a stalled body was not cut off")
+	}
+
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, server.URL+"/slow", strings.NewReader("whole"))
+	require.NoError(t, err)
+	res, err := server.Client().Do(req)
+	require.NoError(t, err)
+	defer func() { _ = res.Body.Close() }()
+	assert.Equal(t, http.StatusNoContent, res.StatusCode)
+	require.NoError(t, <-ctxErr, "the deadline does not outlive the body")
 }

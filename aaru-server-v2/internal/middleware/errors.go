@@ -55,7 +55,16 @@ func Errors(log *slog.Logger, reporter Reporter) echo.MiddlewareFunc {
 				return nil
 			}
 			if c.Response().Committed {
+				// A response under way (a streamed export) cannot take an error body. A client
+				// that left is not a failure; anything else is one nobody else will report.
+				if ClientGone(ctx, err) {
+					return nil
+				}
 				log.ErrorContext(ctx, "Request failed after the response started", "errorType", errorType(err))
+				if reporter != nil {
+					f, _ := failure(c, err, "internal", http.StatusInternalServerError)
+					reporter.Report(f)
+				}
 				return nil
 			}
 			if ClientGone(ctx, err) {

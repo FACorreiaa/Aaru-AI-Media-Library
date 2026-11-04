@@ -3,13 +3,13 @@ package trakt
 import (
 	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/imports"
+	"aaru-go-api/internal/safe"
 	"context"
 	"slices"
 	"strconv"
 	"time"
 
 	"github.com/google/uuid"
-	"golang.org/x/sync/errgroup"
 )
 
 // Importer is IMP-003: reads a user's Trakt library into import rows. Watched history (with every
@@ -32,7 +32,7 @@ func (im *Importer) Rows(ctx context.Context, token string) ([]imports.Row, erro
 	validMovie := func(m WatchedMovie) bool { return validMedia(m.Movie) }
 	validShow := func(s WatchedShow) bool { return validMedia(s.Show) && validSeasons(s.Seasons) }
 	validList := func(l List) bool { return l.Name != nil && l.IDs != nil && l.IDs.Trakt != nil }
-	g, gctx := errgroup.WithContext(ctx)
+	g, gctx := safe.WithContext(ctx)
 	item := func(path string, out *[]Item) func() error {
 		return func() error {
 			got, err := paged(gctx, api, path, nil, token, validItem)

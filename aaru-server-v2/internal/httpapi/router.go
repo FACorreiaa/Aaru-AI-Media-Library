@@ -20,6 +20,14 @@ import (
 // validator reads and decodes a JSON body before the handler does, on public routes too.
 const defaultBodyLimit = 1 << 20
 
+// How long a client may take to send a body (HTTP-005): Traefik's own read timeout is off, for
+// streams, so nothing else ends a request whose body stalls. An upload's allows 24 MB over a slow
+// phone connection.
+const (
+	bodyReadTimeout   = time.Minute
+	uploadReadTimeout = 10 * time.Minute
+)
+
 // ownBodyLimits are the routes that take more than the default, or read their body with their
 // own bound and their own "too large" message. The middleware only stops reading past the
 // limit here; the handler checks the declared length and speaks.
@@ -40,7 +48,7 @@ var ownBodyLimits = map[string]int64{
 
 // noDeadline are the routes the request deadline leaves alone (DB-001): the socket lives for
 // hours, uploads arrive at the client's pace, the export and MCP tool calls can run long, and
-// an import's approval, its undo and account deletion are one transaction each that must not be
+// an import's approval, a plan's, their undo and account deletion are one transaction each that must not be
 // cut half way through a large library.
 var noDeadline = map[string]bool{
 	"GET /v1/ws":                                   true,
@@ -53,6 +61,8 @@ var noDeadline = map[string]bool{
 	"POST " + mcp.Path:                             true,
 	"POST /v1/imports/:id/apply":                   true,
 	"POST /v1/imports/:id/undo":                    true,
+	"POST /v1/actions/:id/undo":                    true,
+	"POST /v1/plans/:id/approve":                   true,
 	"DELETE /v1/me":                                true,
 }
 
@@ -62,12 +72,16 @@ func routeKey(c echo.Context) string { return c.Request().Method + " " + c.Path(
 func bodyRule(c echo.Context) middleware.BodyRule {
 	key := routeKey(c)
 	if key == "POST /v1/imports/capture" && contentType(c) == "application/json" {
-		return middleware.BodyRule{Limit: captureJSONLimit, TooLarge: errCaptureTooLarge}
+		return middleware.BodyRule{Limit: captureJSONLimit, TooLarge: errCaptureTooLarge, ReadTimeout: bodyReadTimeout}
 	}
 	if limit, ok := ownBodyLimits[key]; ok {
-		return middleware.BodyRule{Limit: limit, OwnBound: true}
+		timeout := bodyReadTimeout
+		if limit > defaultBodyLimit {
+			timeout = uploadReadTimeout
+		}
+		return middleware.BodyRule{Limit: limit, OwnBound: true, ReadTimeout: timeout}
 	}
-	return middleware.BodyRule{Limit: defaultBodyLimit}
+	return middleware.BodyRule{Limit: defaultBodyLimit, ReadTimeout: bodyReadTimeout}
 }
 
 // Router builds the echo instance: request id, log, metrics, the shared error shape,

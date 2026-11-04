@@ -6,7 +6,7 @@
 -- the duplicate check.
 SELECT pg_advisory_xact_lock(hashtextextended('listens:' || sqlc.arg(user_key)::text, 0));
 
--- name: InsertListen :one
+-- name: InsertListen :batchone
 -- A track MusicBrainz already identified (MUS-006) gets its ids now, not on the next pass. Nothing is
 -- written inside a stored listen's duplicate window, nor (SCR-011) inside the same YouTube video's
 -- own length.
@@ -53,7 +53,22 @@ SELECT l.id, l.listened_at, l.artist, l.track, l.album, l.duration_ms, l.release
 FROM listens l
 LEFT JOIN titles t ON t.musicbrainz = l.release_group_mbid
 WHERE l.user_id = sqlc.arg(user_id)::uuid
-  AND (sqlc.narg(before)::timestamptz IS NULL OR l.listened_at < sqlc.narg(before)::timestamptz)
+  AND l.listened_at < coalesce(sqlc.narg(before)::timestamptz, 'infinity')
+ORDER BY l.listened_at DESC, l.id DESC
+LIMIT sqlc.arg(max_rows)::bigint;
+
+-- name: ListenExportPage :many
+-- Newest first, a page after the given listen. Keyset on the id too: plays of different tracks can
+-- share a time, and a page boundary must not lose them (PERF-002).
+SELECT l.id, l.listened_at, l.artist, l.track, l.album, l.duration_ms, l.release_group_mbid,
+       t.id AS album_title_id, l.origin_url, l.client, l.music_service
+FROM listens l
+LEFT JOIN titles t ON t.musicbrainz = l.release_group_mbid
+WHERE l.user_id = sqlc.arg(user_id)::uuid
+  -- No OR for the first page: under a generic plan it hides the bound from the index, and every
+  -- page walks again from the newest listen.
+  AND (l.listened_at, l.id) < (coalesce(sqlc.narg(after_at)::timestamptz, 'infinity'),
+                               coalesce(sqlc.narg(after_id)::uuid, 'ffffffff-ffff-ffff-ffff-ffffffffffff'))
 ORDER BY l.listened_at DESC, l.id DESC
 LIMIT sqlc.arg(max_rows)::bigint;
 

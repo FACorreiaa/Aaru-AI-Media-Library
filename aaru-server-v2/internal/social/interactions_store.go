@@ -173,7 +173,7 @@ func (s *Store) ResolveRecommendation(ctx context.Context, id, user uuid.UUID, a
 		row = sqlc.SocialMarkRecommendationAddedRow(dismissed)
 	}
 	if db.IsNoRows(err) {
-		return nil, nil //nolint:nilnil // none waiting
+		return nil, nil // none waiting
 	}
 	if err != nil {
 		return nil, fmt.Errorf("resolve recommendation: %w", err)

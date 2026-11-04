@@ -102,7 +102,7 @@ func wholePtr(n *wholeNumber) *int {
 
 func statusArg(raw *string) (*core.LibraryStatus, error) {
 	if raw == nil {
-		return nil, nil //nolint:nilnil // absent
+		return nil, nil // absent
 	}
 	s := core.LibraryStatus(*raw)
 	if !s.Valid() {
@@ -113,7 +113,7 @@ func statusArg(raw *string) (*core.LibraryStatus, error) {
 
 func mediaTypeArg(raw *string) (*core.MediaType, error) {
 	if raw == nil {
-		return nil, nil //nolint:nilnil // absent
+		return nil, nil // absent
 	}
 	t := core.MediaType(*raw)
 	if !t.Valid() {

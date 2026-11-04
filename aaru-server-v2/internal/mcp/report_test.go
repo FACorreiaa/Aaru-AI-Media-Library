@@ -29,7 +29,7 @@ func (failingTokens) Allow(auth.AgentCaller) bool { return true }
 type noTools struct{}
 
 func (noTools) Call(context.Context, string, json.RawMessage, auth.AgentCaller) (any, error) {
-	return nil, nil //nolint:nilnil // never called
+	return nil, nil // never called
 }
 
 type reports struct{ failures []middleware.Failure }

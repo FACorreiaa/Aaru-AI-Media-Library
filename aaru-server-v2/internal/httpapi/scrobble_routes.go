@@ -95,7 +95,7 @@ func (s *Server) scrobbleRespond(c echo.Context, action scrobble.Action) error {
 		if !fits {
 			return scrobbleError(c, http.StatusRequestEntityTooLarge, "validation_failed", "A scrobble is at most 16 KiB.")
 		}
-		answer, err := s.scrobbleAnswer(c, data, action, caller)
+		answer, err := s.scrobbleAnswer(c, data, action, caller) //nolint:contextcheck // c carries the request context
 		var bad *scrobble.InvalidError
 		if errors.As(err, &bad) {
 			return scrobbleError(c, http.StatusUnprocessableEntity, "validation_failed", bad.Message)

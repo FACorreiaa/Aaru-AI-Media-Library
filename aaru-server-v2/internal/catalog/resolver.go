@@ -270,7 +270,7 @@ func (r Resolver) hydrate(ctx context.Context, ids core.ExternalIDs, mediaType c
 		return r.Providers.OpenLibrary.Hydrate(ctx, ids, mediaType)
 	case core.MediaAlbum:
 		if r.Providers.Music == nil {
-			return nil, nil //nolint:nilnil // nil: not known
+			return nil, nil // nil: not known
 		}
 		return r.Providers.Music.Hydrate(ctx, ids, mediaType)
 	case core.MediaManga:
@@ -310,7 +310,7 @@ func (r Resolver) hydrateFromAniList(ctx context.Context, ids core.ExternalIDs, 
 			return &record, nil
 		}
 		if r.unknownMAL[key] {
-			return nil, nil //nolint:nilnil // nil: not known
+			return nil, nil // nil: not known
 		}
 	}
 	if ids.AniList != "" || ids.MAL != "" {
@@ -319,7 +319,7 @@ func (r Resolver) hydrateFromAniList(ctx context.Context, ids core.ExternalIDs, 
 		}
 		return r.Providers.AniList.Hydrate(ctx, ids, mediaType)
 	}
-	return nil, nil //nolint:nilnil // e.g. a Trakt-only id
+	return nil, nil // e.g. a Trakt-only id
 }
 
 // AnimeMapping is the community mapping for an anime: by AniList id, else by MAL id
@@ -335,7 +335,7 @@ func (r Resolver) AnimeMapping(ctx context.Context, ids core.ExternalIDs) (*Anim
 	if ids.MAL != "" {
 		return r.Store.MappingByMAL(ctx, ids.MAL)
 	}
-	return nil, nil //nolint:nilnil // nil: not known
+	return nil, nil // nil: not known
 }
 
 // MARK: By title + year
@@ -440,9 +440,22 @@ func (r Resolver) ResolveNamed(ctx context.Context, name string, mediaType core.
 // EpisodesNamed is the episodes of title that names describe (Netflix names
 // episodes, it does not number them). Names that match nothing, or more than one
 // episode, are left out. Sorted, without duplicates.
+//
+// The stored episodes answer when they know every name, which saves TMDB's detail and
+// per-season requests on each Netflix row and scrobble stop (PERF-004). A name they do not
+// know may be an episode newer than they are, so TMDB is asked then.
 func (r Resolver) EpisodesNamed(ctx context.Context, title core.Title, names []NamedEpisode) ([]core.EpisodeKey, error) {
 	if title.Type != core.MediaShow || len(names) == 0 {
 		return []core.EpisodeKey{}, nil
+	}
+	if r.Store != nil {
+		stored, err := r.Store.ShowEpisodes(ctx, title.ID)
+		if err != nil {
+			return nil, err
+		}
+		if keys, complete := matchNames(names, stored); complete {
+			return keys, nil
+		}
 	}
 	list, err := r.Providers.TMDB.Episodes(ctx, title.IDs)
 	if err != nil {
@@ -451,16 +464,29 @@ func (r Resolver) EpisodesNamed(ctx context.Context, title core.Title, names []N
 	if list == nil {
 		return []core.EpisodeKey{}, nil
 	}
+	keys, _ := matchNames(names, list.Episodes)
+	return keys, nil
+}
+
+// matchNames is the sorted, distinct episodes names describe, and whether every name found one.
+func matchNames(names []NamedEpisode, episodes []Episode) ([]core.EpisodeKey, bool) {
+	index := NewEpisodeNames(episodes)
 	seen := map[core.EpisodeKey]bool{}
 	keys := []core.EpisodeKey{}
+	complete := true
 	for _, n := range names {
-		if k, ok := MatchEpisodeName(n, list.Episodes); ok && !seen[k] {
+		k, ok := index.Match(n)
+		if !ok {
+			complete = false
+			continue
+		}
+		if !seen[k] {
 			seen[k] = true
 			keys = append(keys, k)
 		}
 	}
 	slices.SortFunc(keys, core.EpisodeKey.Compare)
-	return keys, nil
+	return keys, complete
 }
 
 // airs is the one candidate with airing's episode dated within a day of it (calendar
@@ -469,7 +495,7 @@ func (r Resolver) airs(ctx context.Context, airing ImportAiring, hits []Hit) (*H
 	day := ParseDay(&airing.Day)
 	year := ParseYear(&airing.Day)
 	if len(hits) > MaxAiringCandidates || day == nil || year == nil {
-		return nil, nil //nolint:nilnil // nil: not known
+		return nil, nil // nil: not known
 	}
 	var airingHits []Hit
 	for _, h := range hits {
@@ -494,7 +520,7 @@ func (r Resolver) airs(ctx context.Context, airing ImportAiring, hits []Hit) (*H
 		}
 	}
 	if len(airingHits) != 1 {
-		return nil, nil //nolint:nilnil // nil: not known
+		return nil, nil // nil: not known
 	}
 	return &airingHits[0], nil
 }

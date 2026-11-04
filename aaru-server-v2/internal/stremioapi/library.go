@@ -37,7 +37,7 @@ type swiftInt int
 func (n *swiftInt) UnmarshalJSON(data []byte) error {
 	var f float64
 	if err := json.Unmarshal(data, &f); err != nil {
-		return err //nolint:wrapcheck // a decode failure drops the item
+		return err // a decode failure drops the item
 	}
 	if f != math.Trunc(f) || math.Abs(f) > math.MaxInt64/2 {
 		return errNotInteger

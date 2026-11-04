@@ -1,12 +1,20 @@
 package httpapi
 
 import (
+	"aaru-go-api/internal/api"
+	"aaru-go-api/internal/apitime"
 	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/imports"
+	"aaru-go-api/internal/music"
 	"context"
 	"encoding/base64"
 	"encoding/csv"
+	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
+	"net/http/httptest"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -198,4 +206,72 @@ func TestExportNeedsSignIn(t *testing.T) {
 	h := newHarness(t)
 	rec := h.do(http.MethodGet, "/v1/me/export", "", nil)
 	assert.Equal(t, http.StatusUnauthorized, rec.Code)
+}
+
+// Plays of different tracks can share a time; a page boundary between them must lose none (PERF-002).
+func TestExportListensPageLosesNothingAcrossSharedTimes(t *testing.T) {
+	f := newExportFixture(t)
+	at := time.Date(2026, 3, 1, 12, 0, 0, 0, time.UTC)
+	want := map[string]bool{}
+	for i := range 7 {
+		id := uuid.New()
+		want[id.String()] = true
+		f.exec(`INSERT INTO listens (id, user_id, listened_at, artist, track, track_key, source)
+VALUES ($1, $2, $3, 'A', $4, $5, 'live')`, id, f.user, at, fmt.Sprintf("T%d", i), fmt.Sprintf("a|t%d", i))
+	}
+	var pages []string
+	err := music.NewStore(f.h.pool).EachListen(context.Background(), f.user, 3, func(l music.Listen) error {
+		pages = append(pages, l.ID.String())
+		return nil
+	})
+	require.NoError(t, err)
+	assert.Len(t, pages, 7)
+	for _, id := range pages {
+		assert.True(t, want[id], id)
+		delete(want, id)
+	}
+	assert.True(t, slices.IsSortedFunc(pages, func(a, b string) int { return strings.Compare(b, a) }), "newest first, then by id")
+}
+
+// The stream is one JSON document whatever the number of listens, none included.
+func TestExportStreamIsValidJSON(t *testing.T) {
+	for _, listens := range []int{0, 1, 3} {
+		rec := httptest.NewRecorder()
+		stream := exportStream{
+			body: api.AccountExport{ExportedAt: apitime.From(time.Now())}, disposition: "attachment",
+			listens: func(each func(music.Listen) error) error {
+				for i := range listens {
+					if err := each(music.Listen{ID: uuid.New(), Track: fmt.Sprint(i), ListenedAt: time.Now()}); err != nil {
+						return err
+					}
+				}
+				return nil
+			},
+		}
+		require.NoError(t, stream.VisitExportAccountResponse(rec))
+		var got struct {
+			ExportedAt string       `json:"exportedAt"`
+			Listens    []api.Listen `json:"listens"`
+		}
+		require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &got), rec.Body.String())
+		assert.Len(t, got.Listens, listens)
+		assert.NotNil(t, got.Listens)
+		assert.NotEmpty(t, got.ExportedAt)
+		assert.Equal(t, "attachment", rec.Header().Get("Content-Disposition"))
+	}
+}
+
+// A read that fails part way leaves JSON no client can take for the whole export.
+func TestExportStreamFailurePartWayIsNotValidJSON(t *testing.T) {
+	rec := httptest.NewRecorder()
+	boom := errors.New("connection lost")
+	stream := exportStream{
+		body: api.AccountExport{ExportedAt: apitime.From(time.Now())}, disposition: "attachment",
+		listens: func(each func(music.Listen) error) error {
+			require.NoError(t, each(music.Listen{ID: uuid.New(), ListenedAt: time.Now()}))
+			return boom
+		},
+	}
+	require.ErrorIs(t, stream.VisitExportAccountResponse(rec), boom)
+	assert.False(t, json.Valid(rec.Body.Bytes()))
 }

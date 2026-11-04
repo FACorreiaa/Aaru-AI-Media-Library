@@ -3,6 +3,7 @@ package catalog
 import (
 	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/provider"
+	"aaru-go-api/internal/safe"
 	"cmp"
 	"context"
 	"slices"
@@ -10,8 +11,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"golang.org/x/sync/errgroup"
 )
 
 // TMDB image bases. Poster URLs are referenced, never downloaded.
@@ -83,7 +82,7 @@ func (t *TMDB) withIMDbIDs(ctx context.Context, hits []Hit) []Hit {
 		if hit.IDs.TMDB == "" || err != nil {
 			continue
 		}
-		wg.Go(func() {
+		safe.Go(&wg, "TMDB external ids", func() {
 			var body tmdbExternalIDs
 			imdb := ""
 			if t.get(ctx, kind+"/"+hit.IDs.TMDB+"/external_ids", nil, &body) == nil {
@@ -111,13 +110,13 @@ func (t *TMDB) Hydrate(ctx context.Context, ids core.ExternalIDs, mediaType core
 	var detail tmdbDetail
 	if err := t.get(ctx, kind+"/"+id, map[string]string{"append_to_response": "external_ids"}, &detail); err != nil {
 		if provider.IsNotFound(err) {
-			return nil, nil //nolint:nilnil // nil: not known
+			return nil, nil // nil: not known
 		}
 		return nil, err
 	}
 	hit, ok := detail.hit(mediaType)
 	if !ok {
-		return nil, nil //nolint:nilnil // nil: not known
+		return nil, nil // nil: not known
 	}
 	hit.IDs = hit.IDs.Filling(ids)
 	genres := []string{}
@@ -162,7 +161,7 @@ func (t *TMDB) Episodes(ctx context.Context, ids core.ExternalIDs) (*Episodes, e
 	var show tmdbDetail
 	if err := t.get(ctx, "tv/"+id, nil, &show); err != nil {
 		if provider.IsNotFound(err) {
-			return nil, nil //nolint:nilnil // nil: not known
+			return nil, nil // nil: not known
 		}
 		return nil, err
 	}
@@ -171,7 +170,7 @@ func (t *TMDB) Episodes(ctx context.Context, ids core.ExternalIDs) (*Episodes, e
 		fallbackRuntime = intPtr(show.EpisodeRunTime[0])
 	}
 	seasons := make([][]Episode, len(show.Seasons))
-	group, gctx := errgroup.WithContext(ctx)
+	group, gctx := safe.WithContext(ctx)
 	for i, summary := range show.Seasons {
 		group.Go(func() error {
 			var season tmdbSeason

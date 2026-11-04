@@ -107,7 +107,7 @@ func (g *Gateway) Handle(c echo.Context) error {
 	// The origin rule is ours (above); the library's same-origin check would refuse every app.
 	conn, err := websocket.Accept(c.Response(), c.Request(), &websocket.AcceptOptions{InsecureSkipVerify: true})
 	if err != nil {
-		return nil //nolint:nilerr // Accept already answered the failed upgrade
+		return nil // Accept already answered the failed upgrade
 	}
 	defer func() { _ = conn.CloseNow() }()
 	conn.SetReadLimit(MaxInboundBytes)

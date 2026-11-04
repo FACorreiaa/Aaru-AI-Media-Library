@@ -67,7 +67,7 @@ func (s *Service) PreparePatch(current Entry, patch ItemPatch, caller Caller) (*
 		return nil, err
 	}
 	if fields.Equal(current.Fields()) {
-		return nil, nil //nolint:nilnil // nothing to write
+		return nil, nil // nothing to write
 	}
 	return &PreparedWrite{
 		Op: SetFields(current.Item.ID, fields), Kind: "update", Summary: UpdateSummary(current, fields),
@@ -169,7 +169,7 @@ func (s *Service) PrepareEpisodes(ctx context.Context, show ShowContext, keys []
 		}
 	}
 	if len(changing) == 0 {
-		return nil, nil //nolint:nilnil // nothing to write
+		return nil, nil // nothing to write
 	}
 	slices.SortFunc(changing, core.EpisodeKey.Compare)
 	verb := "unwatched"
@@ -258,7 +258,7 @@ func (s *Service) PrepareShowWatched(ctx context.Context, show ShowContext, patc
 		return nil, err
 	}
 	if len(w.Op.Ops) <= 1 && len(unwatched) == 0 {
-		return nil, nil //nolint:nilnil // nothing to write
+		return nil, nil // nothing to write
 	}
 	return &w, nil
 }

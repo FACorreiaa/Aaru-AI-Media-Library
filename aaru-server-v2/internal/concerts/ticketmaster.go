@@ -165,7 +165,7 @@ func (t *Ticketmaster) Event(ctx context.Context, id string) (*Concert, error) {
 	var event tmEvent
 	if err := t.get(ctx, "events/"+url.PathEscape(id)+".json", nil, &event); err != nil {
 		if provider.IsNotFound(err) {
-			return nil, nil //nolint:nilnil // none, as Swift's optional
+			return nil, nil // none, as Swift's optional
 		}
 		return nil, err
 	}

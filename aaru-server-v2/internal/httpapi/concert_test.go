@@ -97,7 +97,7 @@ func (f *fakeConcerts) Event(_ context.Context, id string) (*concerts.Concert, e
 	if c, ok := f.eventsByID[id]; ok {
 		return &c, nil
 	}
-	return nil, nil //nolint:nilnil // none
+	return nil, nil // none
 }
 
 func (f *fakeConcerts) AlbumArtists(_ context.Context, mbid string) ([]concerts.MusicArtist, error) {
@@ -288,6 +288,78 @@ func TestYourArtistsOnTourMatchByMusicBrainzIDOnly(t *testing.T) {
 	assert.Equal(t, 1, count, "a matched artist waits a month")
 }
 
+// failingAttractions is a concert provider that fails for the names `fails` picks.
+type failingAttractions struct {
+	*fakeConcerts
+	fails func(name string) bool
+	calls int
+}
+
+func (f *failingAttractions) Attractions(ctx context.Context, name string) ([]concerts.Attraction, error) {
+	f.calls++
+	if f.fails(name) {
+		return nil, provider.NewError("ticketmaster", provider.KindUnavailable)
+	}
+	return f.fakeConcerts.Attractions(ctx, name)
+}
+
+// concertArtistsToMatch has one user's album credit these artists and returns their names.
+func concertArtistsToMatch(t *testing.T, h *harness, fake *fakeConcerts, n int) []string {
+	t.Helper()
+	ctx := context.Background()
+	album := uuid.NewString()
+	titleID := uuid.New()
+	_, err := h.pool.Exec(ctx, `INSERT INTO titles (id, type, title, musicbrainz) VALUES ($1, 'album', 'Various', $2)`, titleID, album)
+	require.NoError(t, err)
+	userID, _ := h.signIn()
+	_, err = h.pool.Exec(ctx, `INSERT INTO library_items (id, user_id, title_id, status, added_at, updated_at)
+		VALUES ($1, $2, $3, 'wishlist', now(), now())`, uuid.New(), userID, titleID)
+	require.NoError(t, err)
+	names := make([]string, n)
+	for i := range names {
+		id := uuid.NewString()
+		names[i] = "Artist " + id
+		fake.artistsByAlbum[album] = append(fake.artistsByAlbum[album], concerts.MusicArtist{MusicBrainzID: id, Name: names[i]})
+	}
+	refresher := concerts.NewRefresher(h.server.Concerts.Store, fake, fake)
+	refresher.AlbumLimit = 10000
+	_, err = refresher.FillAlbumArtists(ctx)
+	require.NoError(t, err)
+	return names
+}
+
+func TestConcertRefreshGoesPastOneArtistThatKeepsFailing(t *testing.T) {
+	fake := newFakeConcerts()
+	h := newHarness(t, withConcerts(fake))
+	names := concertArtistsToMatch(t, h, fake, 3)
+	listing := &failingAttractions{fakeConcerts: fake, fails: func(name string) bool { return name == names[1] }}
+	refresher := concerts.NewRefresher(h.server.Concerts.Store, fake, listing)
+	refresher.ArtistLimit = 10000
+
+	done, err := refresher.MatchArtists(context.Background())
+	require.NoError(t, err)
+	assert.Equal(t, 2, done, "the others are matched past the one that fails")
+
+	listing.fails = func(string) bool { return false }
+	done, err = refresher.MatchArtists(context.Background())
+	require.NoError(t, err)
+	assert.Equal(t, 1, done, "the failure recorded nothing, so the artist is asked again")
+}
+
+func TestConcertRefreshEndsThePassWhenTheProviderIsDown(t *testing.T) {
+	fake := newFakeConcerts()
+	h := newHarness(t, withConcerts(fake))
+	concertArtistsToMatch(t, h, fake, 6)
+	listing := &failingAttractions{fakeConcerts: fake, fails: func(string) bool { return true }}
+	refresher := concerts.NewRefresher(h.server.Concerts.Store, fake, listing)
+	refresher.ArtistLimit = 10000
+
+	done, err := refresher.MatchArtists(context.Background())
+	require.NoError(t, err)
+	assert.Zero(t, done)
+	assert.Equal(t, 3, listing.calls, "three failures in a row end the pass")
+}
+
 func TestAConcertByIDIsCachedAndNeverAnError(t *testing.T) {
 	fake := newFakeConcerts()
 	fake.eventsByID["Z1"] = sampleConcert("Z1", "2026-11-02", nil)
@@ -422,4 +494,34 @@ func TestConcertSearchValidation(t *testing.T) {
 	assert.Equal(t, http.StatusUnprocessableEntity, half.Code)
 	short := h.do(http.MethodGet, "/v1/concerts/places?q=L", bearer, nil)
 	assert.Equal(t, http.StatusUnprocessableEntity, short.Code)
+}
+
+// A person past the limit gets a 429, and the provider's budget is not spent on them (CON-001).
+func TestConcertSearchIsRateLimitedPerUser(t *testing.T) {
+	fake := newFakeConcerts()
+	h := newHarness(t, withConcerts(fake))
+	_, bearer := h.signIn()
+	body := map[string]any{"q": "Radiohead", "scope": "anywhere", "radiusKm": 50}
+	for range concerts.LookupsPerMinute {
+		require.Equal(t, http.StatusOK, h.do(http.MethodPost, "/v1/concerts/search", bearer, body).Code)
+	}
+	limited := h.do(http.MethodPost, "/v1/concerts/search", bearer, body)
+	assert.Equal(t, http.StatusTooManyRequests, limited.Code)
+	assert.Equal(t, "rate_limited", decode[map[string]any](t, limited)["code"])
+	performers := h.do(http.MethodPost, "/v1/concerts/performers", bearer, map[string]any{"q": "Radiohead"})
+	assert.Equal(t, http.StatusTooManyRequests, performers.Code, "the two searches share one budget")
+	_, other := h.signIn()
+	assert.Equal(t, http.StatusOK, h.do(http.MethodPost, "/v1/concerts/search", other, body).Code)
+}
+
+// CON-001: a point the client names costs a lookup; the saved city is one cache key and does not.
+func TestConcertsNearAOneOffPointIsRateLimited(t *testing.T) {
+	fake := newFakeConcerts()
+	h := newHarness(t, withConcerts(fake))
+	_, bearer := h.signIn()
+	point := map[string]any{"radiusKm": 50, "latitude": 38.72, "longitude": -9.14}
+	for range concerts.LookupsPerMinute {
+		require.Equal(t, http.StatusOK, h.do(http.MethodPost, "/v1/concerts/near", bearer, point).Code)
+	}
+	assert.Equal(t, http.StatusTooManyRequests, h.do(http.MethodPost, "/v1/concerts/near", bearer, point).Code)
 }

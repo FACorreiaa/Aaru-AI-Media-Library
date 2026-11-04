@@ -156,100 +156,78 @@ func (q *Queries) FillListenIDs(ctx context.Context, arg FillListenIDsParams) (i
 	return result.RowsAffected(), nil
 }
 
-const insertListen = `-- name: InsertListen :one
-INSERT INTO listens
-    (id, user_id, listened_at, artist, track, album, track_key, duration_ms, isrc, recording_mbid,
-     release_mbid, release_group_mbid, artist_mbid, spotify_id, origin_url, client, music_service,
-     source, agent_token_id)
-SELECT $1::uuid, $2::uuid, $3::timestamptz, $4::text,
-       $5::text, $6::text, $7::text, $8::int,
-       $9::text,
-       coalesce($10::text, (
-           SELECT m.recording_mbid FROM music_lookups m WHERE m.track_key = $7::text
-             AND m.album_key = lower(coalesce($6::text, '')))),
-       $11::text,
-       coalesce($12::text, (
-           SELECT m.release_group_mbid FROM music_lookups m WHERE m.track_key = $7::text
-             AND m.album_key = lower(coalesce($6::text, '')))),
-       coalesce($13::text, (
-           SELECT m.artist_mbid FROM music_lookups m WHERE m.track_key = $7::text
-             AND m.album_key = lower(coalesce($6::text, '')))),
-       $14::text,
-       $15::text, $16::text, $17::text, 'live',
-       $18::uuid
-WHERE NOT EXISTS (
-    SELECT 1 FROM listens l
-    WHERE l.user_id = $2::uuid AND l.track_key = $7::text
-      AND l.listened_at BETWEEN $3::timestamptz - make_interval(secs => $19::float8)
-                            AND $3::timestamptz + make_interval(secs => $19::float8)
-)
-AND ($20::text IS NULL OR NOT EXISTS (
-    SELECT 1 FROM listens l
-    WHERE l.user_id = $2::uuid
-      AND l.listened_at BETWEEN $3::timestamptz - make_interval(secs => $21::float8)
-                            AND $3::timestamptz + make_interval(secs => $21::float8)
-      AND substring(l.origin_url from $22::text) = $20::text
-))
-ON CONFLICT (user_id, track_key, listened_at) DO NOTHING
-RETURNING id
+const listenExportPage = `-- name: ListenExportPage :many
+SELECT l.id, l.listened_at, l.artist, l.track, l.album, l.duration_ms, l.release_group_mbid,
+       t.id AS album_title_id, l.origin_url, l.client, l.music_service
+FROM listens l
+LEFT JOIN titles t ON t.musicbrainz = l.release_group_mbid
+WHERE l.user_id = $1::uuid
+  -- No OR for the first page: under a generic plan it hides the bound from the index, and every
+  -- page walks again from the newest listen.
+  AND (l.listened_at, l.id) < (coalesce($2::timestamptz, 'infinity'),
+                               coalesce($3::uuid, 'ffffffff-ffff-ffff-ffff-ffffffffffff'))
+ORDER BY l.listened_at DESC, l.id DESC
+LIMIT $4::bigint
 `
 
-type InsertListenParams struct {
+type ListenExportPageParams struct {
+	UserID  uuid.UUID
+	AfterAt pgtype.Timestamptz
+	AfterID *uuid.UUID
+	MaxRows int64
+}
+
+type ListenExportPageRow struct {
 	ID               uuid.UUID
-	UserID           uuid.UUID
-	ListenedAt       pgtype.Timestamptz
+	ListenedAt       time.Time
 	Artist           string
 	Track            string
 	Album            *string
-	TrackKey         string
 	DurationMs       *int32
-	Isrc             *string
-	RecordingMbid    *string
-	ReleaseMbid      *string
 	ReleaseGroupMbid *string
-	ArtistMbid       *string
-	SpotifyID        *string
+	AlbumTitleID     *uuid.UUID
 	OriginUrl        *string
 	Client           *string
 	MusicService     *string
-	AgentTokenID     *uuid.UUID
-	WindowSecs       float64
-	VideoID          *string
-	VideoWindowSecs  float64
-	VideoPattern     string
 }
 
-// A track MusicBrainz already identified (MUS-006) gets its ids now, not on the next pass. Nothing is
-// written inside a stored listen's duplicate window, nor (SCR-011) inside the same YouTube video's
-// own length.
-func (q *Queries) InsertListen(ctx context.Context, arg InsertListenParams) (uuid.UUID, error) {
-	row := q.db.QueryRow(ctx, insertListen,
-		arg.ID,
+// Newest first, a page after the given listen. Keyset on the id too: plays of different tracks can
+// share a time, and a page boundary must not lose them (PERF-002).
+func (q *Queries) ListenExportPage(ctx context.Context, arg ListenExportPageParams) ([]ListenExportPageRow, error) {
+	rows, err := q.db.Query(ctx, listenExportPage,
 		arg.UserID,
-		arg.ListenedAt,
-		arg.Artist,
-		arg.Track,
-		arg.Album,
-		arg.TrackKey,
-		arg.DurationMs,
-		arg.Isrc,
-		arg.RecordingMbid,
-		arg.ReleaseMbid,
-		arg.ReleaseGroupMbid,
-		arg.ArtistMbid,
-		arg.SpotifyID,
-		arg.OriginUrl,
-		arg.Client,
-		arg.MusicService,
-		arg.AgentTokenID,
-		arg.WindowSecs,
-		arg.VideoID,
-		arg.VideoWindowSecs,
-		arg.VideoPattern,
+		arg.AfterAt,
+		arg.AfterID,
+		arg.MaxRows,
 	)
-	var id uuid.UUID
-	err := row.Scan(&id)
-	return id, err
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListenExportPageRow{}
+	for rows.Next() {
+		var i ListenExportPageRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ListenedAt,
+			&i.Artist,
+			&i.Track,
+			&i.Album,
+			&i.DurationMs,
+			&i.ReleaseGroupMbid,
+			&i.AlbumTitleID,
+			&i.OriginUrl,
+			&i.Client,
+			&i.MusicService,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listenPage = `-- name: ListenPage :many
@@ -258,7 +236,7 @@ SELECT l.id, l.listened_at, l.artist, l.track, l.album, l.duration_ms, l.release
 FROM listens l
 LEFT JOIN titles t ON t.musicbrainz = l.release_group_mbid
 WHERE l.user_id = $1::uuid
-  AND ($2::timestamptz IS NULL OR l.listened_at < $2::timestamptz)
+  AND l.listened_at < coalesce($2::timestamptz, 'infinity')
 ORDER BY l.listened_at DESC, l.id DESC
 LIMIT $3::bigint
 `

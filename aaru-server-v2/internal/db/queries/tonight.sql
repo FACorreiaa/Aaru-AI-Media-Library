@@ -35,10 +35,11 @@ SELECT EXISTS (
     SELECT 1 FROM tonight_picks WHERE user_id = sqlc.arg(user_id) AND day = sqlc.arg(day)::text::date
 ) AS shown;
 
--- name: TonightRecordPick :exec
+-- name: TonightRecordPicks :exec
+-- One statement, so a strip is recorded whole or not at all (PERF-006). A pick's rank is its place.
 INSERT INTO tonight_picks (user_id, day, library_item_id, rank, served_at)
-VALUES (sqlc.arg(user_id), sqlc.arg(day)::text::date, sqlc.arg(library_item_id), sqlc.arg(rank),
-    sqlc.arg(served_at))
+SELECT sqlc.arg(user_id), sqlc.arg(day)::text::date, p.library_item_id, (p.ord - 1)::smallint, sqlc.arg(served_at)
+FROM unnest(sqlc.arg(library_item_ids)::uuid[]) WITH ORDINALITY AS p(library_item_id, ord)
 ON CONFLICT (user_id, day, library_item_id)
     DO UPDATE SET rank = EXCLUDED.rank, served_at = EXCLUDED.served_at;
 

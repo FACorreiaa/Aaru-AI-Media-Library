@@ -7,16 +7,17 @@
 -- Unread: messages from others since the viewer's read point, not deleted.
 SELECT g.id, g.name, gm.role, gm.share_progress, gm.muted,
     (SELECT c0.id FROM group_channels c0 WHERE c0.group_id = g.id AND c0.is_default)::uuid AS default_channel_id,
-    (SELECT count(*) FROM group_channels c JOIN group_messages m ON m.channel_id = c.id
-        LEFT JOIN group_read_state r ON r.channel_id = c.id AND r.user_id = sqlc.arg(viewer)::uuid
-        WHERE c.group_id = g.id AND m.deleted_at IS NULL AND m.author_id IS DISTINCT FROM sqlc.arg(viewer)::uuid
-          AND m.created_at > coalesce(r.last_read_at, '-infinity'))::bigint AS unread,
-    (SELECT count(*) FROM group_channels c JOIN group_messages m ON m.channel_id = c.id
-        LEFT JOIN group_read_state r ON r.channel_id = c.id AND r.user_id = sqlc.arg(viewer)::uuid
-        WHERE c.group_id = g.id AND m.deleted_at IS NULL AND m.author_id IS DISTINCT FROM sqlc.arg(viewer)::uuid
-          AND m.created_at > coalesce(r.last_read_at, '-infinity')
-          AND sqlc.arg(viewer)::uuid = ANY(m.mentions))::bigint AS mentions
+    n.unread, n.mentions
 FROM group_members gm JOIN groups g ON g.id = gm.group_id
+CROSS JOIN LATERAL (
+    -- One walk of the messages for both counts (DB-008).
+    SELECT count(*)::bigint AS unread,
+        count(*) FILTER (WHERE sqlc.arg(viewer)::uuid = ANY(m.mentions))::bigint AS mentions
+    FROM group_channels c JOIN group_messages m ON m.channel_id = c.id
+    LEFT JOIN group_read_state r ON r.channel_id = c.id AND r.user_id = sqlc.arg(viewer)::uuid
+    WHERE c.group_id = g.id AND m.deleted_at IS NULL AND m.author_id IS DISTINCT FROM sqlc.arg(viewer)::uuid
+      AND m.created_at > coalesce(r.last_read_at, '-infinity')
+) n
 WHERE gm.user_id = sqlc.arg(viewer)::uuid
   AND (sqlc.narg(only_group)::uuid IS NULL OR g.id = sqlc.narg(only_group)::uuid)
 ORDER BY gm.joined_at, g.id;

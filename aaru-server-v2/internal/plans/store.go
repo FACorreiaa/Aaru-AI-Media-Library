@@ -23,7 +23,7 @@ type planRow sqlc.PlanByIDRow
 func (r planRow) plan() (*Plan, error) {
 	status := Status(r.Status)
 	if !status.valid() {
-		return nil, nil //nolint:nilnil // skipped, as Swift dropped it
+		return nil, nil // skipped, as Swift dropped it
 	}
 	changes, err := decodeChanges(r.Changes)
 	if err != nil {
@@ -144,7 +144,7 @@ func (s *Service) list(ctx context.Context, user uuid.UUID, pendingOnly bool, no
 func (s *Service) find(ctx context.Context, id, user uuid.UUID) (*Plan, error) {
 	row, err := s.q.PlanByID(ctx, sqlc.PlanByIDParams{ID: id, UserID: user})
 	if db.IsNoRows(err) {
-		return nil, nil //nolint:nilnil // no such plan
+		return nil, nil // no such plan
 	}
 	if err != nil {
 		return nil, fmt.Errorf("plan: %w", err)
@@ -198,7 +198,7 @@ type decision struct {
 func lockPlan(ctx context.Context, q *sqlc.Queries, id, user uuid.UUID) (*Plan, error) {
 	row, err := q.PlanLock(ctx, sqlc.PlanLockParams{ID: id, UserID: user})
 	if db.IsNoRows(err) {
-		return nil, nil //nolint:nilnil // no such plan
+		return nil, nil // no such plan
 	}
 	if err != nil {
 		return nil, fmt.Errorf("lock plan: %w", err)

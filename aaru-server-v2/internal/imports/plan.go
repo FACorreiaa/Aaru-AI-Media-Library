@@ -6,6 +6,7 @@ import (
 	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/library"
 	"aaru-go-api/internal/provider"
+	"aaru-go-api/internal/safe"
 	"aaru-go-api/internal/telemetry"
 	"context"
 	"errors"
@@ -15,7 +16,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"golang.org/x/sync/errgroup"
 )
 
 // Planning and approval (ImportService+Plan). Rows for the same title (two AniList seasons of one
@@ -125,7 +125,7 @@ func (s *Service) matchChunk(ctx context.Context, chunk []PlannedRow, withoutAni
 // finished hears each result as it lands, one at a time.
 func boundedMap[I, R any](ctx context.Context, items []I, limit int, transform func(context.Context, I) (R, error), finished func(R) error) ([]R, error) {
 	results := make([]R, len(items))
-	g, gctx := errgroup.WithContext(ctx)
+	g, gctx := safe.WithContext(ctx)
 	g.SetLimit(limit)
 	var mu sync.Mutex
 	for i, item := range items {

@@ -109,7 +109,7 @@ func newOneFakeEnv(t *testing.T) (*libEnv, *importFake) {
 }
 
 func importISBN13() string {
-	twelve := fmt.Sprintf("978%09d", rand.IntN(1_000_000_000)) //nolint:gosec // test data
+	twelve := fmt.Sprintf("978%09d", rand.IntN(1_000_000_000)) // test data
 	sum := 0
 	for i, r := range twelve {
 		d := int(r - '0')
@@ -458,7 +458,7 @@ func TestImportPlansAroundAniListOutage(t *testing.T) {
 	tmdb, anilist := newImportFake(), newImportFake()
 	env := newImportEnv(t, tmdb, anilist, tmdb)
 	ctx := context.Background()
-	base := 1_000_000 + rand.IntN(8_000_000) //nolint:gosec // test data
+	base := 1_000_000 + rand.IntN(8_000_000) // test data
 	mapped, lonely, tmdbID := fmt.Sprint(base), fmt.Sprint(base+1), fmt.Sprint(base)
 	season := 1
 	require.NoError(t, env.server.Catalog.Store.UpsertMapping(ctx, catalog.AnimeMapping{
@@ -497,7 +497,7 @@ func TestImportPlansAroundAniListOutage(t *testing.T) {
 func TestImportMALBatchedWithProgress(t *testing.T) {
 	env, fake := newOneFakeEnv(t)
 	ctx := context.Background()
-	base := 1_000_000 + rand.IntN(8_000_000) //nolint:gosec // test data
+	base := 1_000_000 + rand.IntN(8_000_000) // test data
 	var known []string
 	for i := range 59 {
 		known = append(known, fmt.Sprint(base+i))
@@ -537,7 +537,7 @@ func TestImportMALBatchedWithProgress(t *testing.T) {
 
 func TestImportProgressReports(t *testing.T) {
 	env, fake := newOneFakeEnv(t)
-	base := 1_000_000 + rand.IntN(8_000_000) //nolint:gosec // test data
+	base := 1_000_000 + rand.IntN(8_000_000) // test data
 	var ids []string
 	for i := range 60 {
 		ids = append(ids, fmt.Sprint(base+i))
@@ -573,4 +573,21 @@ func decodeBytes(t *testing.T, data []byte) map[string]any {
 	var v map[string]any
 	require.NoError(t, json.Unmarshal(data, &v), string(data))
 	return v
+}
+
+// PERF-006: picking the title for one row rewrites that row, not the whole plan.
+func TestImportResolveRewritesOnlyTheRowsItChanges(t *testing.T) {
+	env := newLibEnv(t)
+	id, isbn := env.resolveUpload()
+	version := func(row int) string {
+		var xmin string
+		require.NoError(t, env.pool.QueryRow(context.Background(),
+			`SELECT xmin::text FROM import_rows WHERE job_id = $1 AND idx = $2`, id, row).Scan(&xmin))
+		return xmin
+	}
+	untouched, picked := version(0), version(1)
+	reply := env.resolveRow(id, 1, isbn)
+	require.Equal(t, http.StatusOK, reply.code, string(reply.body))
+	assert.Equal(t, untouched, version(0), "the other row is left alone")
+	assert.NotEqual(t, picked, version(1), "the picked row is written")
 }

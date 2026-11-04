@@ -22,6 +22,7 @@ type WriteFacts struct {
 	kind        string
 	live        bool
 	order       []uuid.UUID
+	seen        map[uuid.UUID]bool
 	Ticked      map[uuid.UUID][]core.EpisodeKey
 	Unticked    map[uuid.UUID][]core.EpisodeKey
 	Finished    map[uuid.UUID]bool
@@ -41,18 +42,19 @@ type ProgressFields struct {
 // NewWriteFacts starts the facts for a write of the journal kind.
 func NewWriteFacts(kind string) *WriteFacts {
 	return &WriteFacts{
-		kind: kind, live: LiveKinds[kind],
+		kind: kind, live: LiveKinds[kind], seen: map[uuid.UUID]bool{},
 		Ticked: map[uuid.UUID][]core.EpisodeKey{}, Unticked: map[uuid.UUID][]core.EpisodeKey{},
 		Finished: map[uuid.UUID]bool{}, Unfinished: map[uuid.UUID]bool{}, BookForward: map[uuid.UUID]bool{},
 	}
 }
 
+// see keeps the items in first-seen order, in constant time per op: a batch or undo sees many
+// (PERF-006).
 func (f *WriteFacts) see(item uuid.UUID) {
-	for _, id := range f.order {
-		if id == item {
-			return
-		}
+	if f.seen[item] {
+		return
 	}
+	f.seen[item] = true
 	f.order = append(f.order, item)
 }
 

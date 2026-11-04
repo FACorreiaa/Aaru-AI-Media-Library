@@ -34,6 +34,34 @@ library layer stay separate, external IDs stored whenever known, no second backe
 - **Anime is first-class from P1** (AniList catalog, `anilist`/`mal`/`anidb` external IDs).
 - DMs are **Signal-grade (libsignal)**. Licence and web support are OPEN — see DM-003, DM-004.
 
+## Decisions recorded 2026-11-04
+
+Go audit of `aaru-server-v2` (2026-11-03) remediated. The report is in the git history of
+`aaru-server-v2/Go-audit.md`; the REL-, DB-, HTTP-, CON-, PERF- and HLT- ids in server comments refer
+to it. Left for later, because code alone cannot settle them:
+
+- **Pool size (DB-002).** `POSTGRES_POOL_SIZE` stays at 10. Raising it is an infra-values decision,
+  made from the new pool gauges once they show data.
+- **First `Changes` sync (DB-007).** A client's first sync still returns up to 100,000 entries in one
+  response. Paging it changes the API, so it waits for a client that needs it.
+- **Forwarded headers (HTTP-007), settled.** Client addresses take the right-most hop a caller could
+  not forge (`TRUSTED_PROXY_HOPS`, default 1). Checked in `platform/infra`: `api.aaruapp.com` is DNS-only
+  and Traefik runs with `externalTrafficPolicy: Local` and no trusted forwarded headers. A proxy added
+  in front of Traefik must raise it.
+- **Ticketmaster's daily budget (CON-005) stays in memory.** It charges per attempt now, and a restart
+  resets it. Aaru stops at 4,500 of 5,000 a day, so overshooting takes several restarts in a day of
+  heavy use. Persist the count if that ever happens.
+- **Worker alerts (REL-004).** The API exports `aaru_worker_*`, `aaru_queue_*` and pool gauges; the
+  "Apps / Aaru" board and alerts in `platform/infra` do not use them yet.
+- **No index on `listens(agent_token_id)` (DB-005).** Measured: bulk inserts cost 2 to 3 times as much
+  and the rare token delete gained nothing, about 1.4 s either way on 800k listens.
+- **Unread counts (DB-008) stay live counts.** Measured with 20 groups, 5 channels each, 200,000
+  messages and half the channels never read: `GroupSummaries` 340 ms before, 240 ms after it counts
+  unread and mentions in one walk; `GroupChannels` 10 to 50 ms. The cost follows how much is unread, so
+  a stored counter waits until real groups get near this size. `ScheduleContinueWatching` (3 ms, 92 ms
+  with every one of 1,000 shows caught up), `BoardFeed` (10 ms) and `LibraryReopenAired` (150 ms for
+  60,000 finished shows, on a five-minute worker) need nothing.
+
 ## Decisions recorded 2026-10-28
 
 - **Share links: share anything, anyone can open it (owner, 2026-10-25, SHR-002).** Design:

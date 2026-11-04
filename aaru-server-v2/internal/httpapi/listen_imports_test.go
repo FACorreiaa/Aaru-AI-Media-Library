@@ -11,6 +11,7 @@ import (
 	"aaru-go-api/internal/provider"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"sync"
@@ -18,6 +19,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -322,4 +324,27 @@ func TestListenImportBigApply(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 20000, applied)
 	assert.Less(t, time.Since(start), 15*time.Second)
+}
+
+// failingStage is the listening log with staging broken.
+type failingStage struct {
+	*music.Store
+}
+
+func (failingStage) StageTx(context.Context, pgx.Tx, []imports.NewListen, uuid.UUID, int) error {
+	return errors.New("staging failed")
+}
+
+// The job and its plays are one write (PERF-001): the worker never claims a job whose plays are
+// not there, and a failed staging leaves no job with a row count and no rows.
+func TestListenFileStagingFailureLeavesNoJob(t *testing.T) {
+	e := newLibEnv(t)
+	e.server.Imports.Listens = failingStage{music.NewStore(e.pool)}
+	file := listenImpSpotifyFile(t, listenImpPlay{"Airbag", listenImpEnded, 240_000})
+	created := listenImpUpload(e, file, "auto")
+	require.Equal(t, http.StatusInternalServerError, created.status, string(created.body))
+	var jobs int
+	require.NoError(t, e.pool.QueryRow(context.Background(),
+		`SELECT count(*) FROM import_jobs WHERE user_id = $1`, e.user).Scan(&jobs))
+	assert.Equal(t, 0, jobs)
 }

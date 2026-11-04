@@ -121,3 +121,19 @@ func TestASaturatedPoolAnswers503WithinThePoolTimeout(t *testing.T) {
 	assert.Equal(t, "timeout", decode[api.ErrorResponse](t, rec).Code)
 	assert.Less(t, time.Since(started), 3*time.Second)
 }
+
+// A route named in these tables that no longer exists under that exact spelling would silently
+// lose its limit or its exemption from the deadline, cutting an upload or a socket off at 30 s.
+func TestBodyLimitAndDeadlineTablesNameRealRoutes(t *testing.T) {
+	h := newHarness(t)
+	routes := map[string]bool{}
+	for _, r := range h.echo.Routes() {
+		routes[r.Method+" "+r.Path] = true
+	}
+	for key := range ownBodyLimits {
+		assert.True(t, routes[key], "ownBodyLimits: %s", key)
+	}
+	for key := range noDeadline {
+		assert.True(t, routes[key], "noDeadline: %s", key)
+	}
+}

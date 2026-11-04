@@ -203,7 +203,7 @@ func (s *Service) NowPlaying(ctx context.Context, user uuid.UUID) (*NowPlaying, 
 	}
 	live := Pick(sessions, s.NowTime())
 	if live == nil {
-		return nil, nil //nolint:nilnil // nothing plays
+		return nil, nil // nothing plays
 	}
 	title, err := s.Catalog.Store.Title(ctx, live.TitleID)
 	if err != nil || title == nil {
@@ -244,11 +244,11 @@ func unlessUnknown(body func() (core.Title, error)) (*core.Title, error) {
 		return &t, nil
 	}
 	if _, ok := catalog.IsResolutionError(err); ok {
-		return nil, nil //nolint:nilnil // unknown
+		return nil, nil // unknown
 	}
 	var pe *provider.Error
 	if errors.As(err, &pe) && pe.Kind == provider.KindNotFound {
-		return nil, nil //nolint:nilnil // unknown
+		return nil, nil // unknown
 	}
 	return nil, err
 }

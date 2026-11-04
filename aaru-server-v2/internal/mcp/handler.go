@@ -190,7 +190,7 @@ func (h *Handler) handle(ctx context.Context, body []byte, caller auth.AgentCall
 		return &response{JSONRPC: "2.0", Error: &rpcError{Code: codeParseError, Message: "The body is not one JSON-RPC request."}}, nil
 	}
 	if r.id == nil {
-		return nil, nil //nolint:nilnil // a notification has no answer
+		return nil, nil // a notification has no answer
 	}
 	result, err := h.dispatch(ctx, r, caller)
 	if err != nil {

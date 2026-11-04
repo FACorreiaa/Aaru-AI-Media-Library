@@ -8,6 +8,8 @@ import (
 	"aaru-go-api/internal/core"
 	"bytes"
 	"encoding/json"
+	"errors"
+	"io"
 	"strings"
 	"time"
 )
@@ -60,34 +62,43 @@ func listenFileDate(text *string) *time.Time {
 	return &t
 }
 
-// jsonObjects is a JSON array of objects, each as its raw fields; false when the file is not one.
-func jsonObjects(data []byte) ([]map[string]json.RawMessage, bool) {
-	var items []json.RawMessage
-	if err := json.Unmarshal(data, &items); err != nil || items == nil {
-		return nil, false
+// eachJSONObject streams a JSON array of objects into T, one element at a time, so a large file is
+// never held twice (PERF-001). False when the file is not such an array: anything else at the top,
+// a null or non-object element, or anything after the closing bracket. Keys match as encoding/json
+// matches struct fields, which also accepts another case; the files read here never use one.
+func eachJSONObject[T any](data []byte, each func(*T)) bool {
+	dec := json.NewDecoder(bytes.NewReader(data))
+	open, err := dec.Token()
+	if err != nil || open != json.Delim('[') {
+		return false
 	}
-	out := make([]map[string]json.RawMessage, 0, len(items))
-	for _, raw := range items {
-		var fields map[string]json.RawMessage
-		if err := json.Unmarshal(raw, &fields); err != nil || fields == nil {
-			return nil, false
+	for dec.More() {
+		var item *T
+		if err := dec.Decode(&item); err != nil || item == nil {
+			return false
 		}
-		out = append(out, fields)
+		each(item)
 	}
-	return out, true
+	if _, err := dec.Token(); err != nil {
+		return false
+	}
+	_, err = dec.Token()
+	return errors.Is(err, io.EOF)
 }
 
-// lenientString is a field's string, nil when it is missing, null or not a string.
-func lenientString(fields map[string]json.RawMessage, key string) *string {
-	raw, ok := fields[key]
-	if !ok {
-		return nil
+// lenient is a field's value, nil when it is missing, null or of another type.
+type lenient[T any] struct {
+	v *T
+}
+
+// UnmarshalJSON never fails: a value of another type is the same as none.
+func (l *lenient[T]) UnmarshalJSON(raw []byte) error {
+	var v *T
+	if json.Unmarshal(raw, &v) != nil {
+		v = nil
 	}
-	var s *string
-	if json.Unmarshal(raw, &s) != nil {
-		return nil
-	}
-	return s
+	l.v = v
+	return nil
 }
 
 // MARK: Spotify
@@ -100,37 +111,42 @@ const spotifyShortestPlayMs = 30000
 // scrobbler would have sent. Podcast episodes, audiobooks and plays under 30 s are left out. The
 // file's IP address, country and device are never read.
 func ParseSpotifyHistory(data []byte, now time.Time) (ListenHistoryPage, error) {
-	plays, ok := jsonObjects(data)
-	if !ok {
-		return ListenHistoryPage{}, formatError("That file is not a Spotify streaming history.")
-	}
 	var page ListenHistoryPage
-	for _, play := range plays {
+	ok := eachJSONObject(data, func(play *spotifyPlay) {
 		if listen, ok := spotifyListen(play, now); ok {
 			page.Listens = append(page.Listens, listen)
 		} else {
 			page.Ignored++
 		}
+	})
+	if !ok {
+		return ListenHistoryPage{}, formatError("That file is not a Spotify streaming history.")
 	}
 	return page, nil
 }
 
-func spotifyListen(play map[string]json.RawMessage, now time.Time) (NewListen, bool) {
-	str := func(key string) *string { return lenientString(play, key) }
-	var played *int
-	if raw, ok := play["ms_played"]; ok {
-		var v *int
-		if json.Unmarshal(raw, &v) == nil {
-			played = v
-		}
-	}
-	if str("episode_name") != nil || str("audiobook_title") != nil || str("audiobook_chapter_title") != nil ||
+// spotifyPlay is one entry of the file, the fields Aaru reads, each leniently.
+type spotifyPlay struct {
+	TS                    lenient[string] `json:"ts"`
+	MsPlayed              lenient[int]    `json:"ms_played"`
+	Artist                lenient[string] `json:"master_metadata_album_artist_name"`
+	Track                 lenient[string] `json:"master_metadata_track_name"`
+	Album                 lenient[string] `json:"master_metadata_album_album_name"`
+	TrackURI              lenient[string] `json:"spotify_track_uri"`
+	EpisodeName           lenient[string] `json:"episode_name"`
+	AudiobookTitle        lenient[string] `json:"audiobook_title"`
+	AudiobookChapterTitle lenient[string] `json:"audiobook_chapter_title"`
+}
+
+func spotifyListen(play *spotifyPlay, now time.Time) (NewListen, bool) {
+	played := play.MsPlayed.v
+	if play.EpisodeName.v != nil || play.AudiobookTitle.v != nil || play.AudiobookChapterTitle.v != nil ||
 		played == nil || *played < spotifyShortestPlayMs {
 		return NewListen{}, false
 	}
-	ended := listenFileDate(str("ts"))
-	artist := listenText(str("master_metadata_album_artist_name"))
-	track := listenText(str("master_metadata_track_name"))
+	ended := listenFileDate(play.TS.v)
+	artist := listenText(play.Artist.v)
+	track := listenText(play.Track.v)
 	if ended == nil || artist == nil || track == nil {
 		return NewListen{}, false
 	}
@@ -139,14 +155,14 @@ func spotifyListen(play map[string]json.RawMessage, now time.Time) (NewListen, b
 		return NewListen{}, false
 	}
 	var trackID *string
-	if uri := str("spotify_track_uri"); uri != nil && strings.HasPrefix(*uri, "spotify:track:") {
+	if uri := play.TrackURI.v; uri != nil && strings.HasPrefix(*uri, "spotify:track:") {
 		trackID = listenTextOf(strings.TrimPrefix(*uri, "spotify:track:"))
 	}
 	service := "Spotify"
 	duration := *played
 	// Spotify gives the time heard, not the track's length: that is what Insights adds up.
 	return NewListen{
-		ListenedAt: started, Artist: *artist, Track: *track, Album: listenText(str("master_metadata_album_album_name")),
+		ListenedAt: started, Artist: *artist, Track: *track, Album: listenText(play.Album.v),
 		DurationMs: &duration, SpotifyID: trackID, MusicService: &service,
 	}, true
 }
@@ -170,37 +186,40 @@ type takeoutEntry struct {
 	subtitles, details            []*string
 }
 
+// takeoutJSON is the entry as the file has it.
+type takeoutJSON struct {
+	Header    lenient[string]      `json:"header"`
+	Title     lenient[string]      `json:"title"`
+	TitleURL  lenient[string]      `json:"titleUrl"`
+	Time      lenient[string]      `json:"time"`
+	Subtitles lenient[[]namedJSON] `json:"subtitles"`
+	Details   lenient[[]namedJSON] `json:"details"`
+}
+
+type namedJSON struct {
+	Name *string `json:"name"`
+}
+
+func names(list *[]namedJSON) []*string {
+	if list == nil {
+		return nil
+	}
+	out := make([]*string, len(*list))
+	for i, n := range *list {
+		out[i] = n.Name
+	}
+	return out
+}
+
 func takeoutEntries(data []byte) ([]takeoutEntry, bool) {
-	objects, ok := jsonObjects(data)
-	if !ok {
-		return nil, false
-	}
-	named := func(fields map[string]json.RawMessage, key string) []*string {
-		raw, ok := fields[key]
-		if !ok {
-			return nil
-		}
-		var list []struct {
-			Name *string `json:"name"`
-		}
-		if json.Unmarshal(raw, &list) != nil {
-			return nil
-		}
-		out := make([]*string, len(list))
-		for i, n := range list {
-			out[i] = n.Name
-		}
-		return out
-	}
-	entries := make([]takeoutEntry, 0, len(objects))
-	for _, o := range objects {
+	var entries []takeoutEntry
+	ok := eachJSONObject(data, func(o *takeoutJSON) {
 		entries = append(entries, takeoutEntry{
-			header: lenientString(o, "header"), title: lenientString(o, "title"),
-			titleURL: lenientString(o, "titleUrl"), time: lenientString(o, "time"),
-			subtitles: named(o, "subtitles"), details: named(o, "details"),
+			header: o.Header.v, title: o.Title.v, titleURL: o.TitleURL.v, time: o.Time.v,
+			subtitles: names(o.Subtitles.v), details: names(o.Details.v),
 		})
-	}
-	return entries, true
+	})
+	return entries, ok
 }
 
 // ParseYouTubeTakeout reads Google Takeout's `watch-history.json` (decisions 2026-10-27): music

@@ -86,7 +86,7 @@ func (s *Service) Active(ctx context.Context, userID uuid.UUID, now time.Time) (
 		return nil, fmt.Errorf("active entitlement: %w", err)
 	}
 	if len(rows) == 0 {
-		return nil, nil //nolint:nilnil // nil is the free tier
+		return nil, nil // nil is the free tier
 	}
 	r := rows[0]
 	return &Entitlement{

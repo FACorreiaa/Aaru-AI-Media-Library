@@ -177,6 +177,10 @@ func (s *Server) FollowSport(ctx context.Context, req api.FollowSportRequestObje
 	if !isSportsProviderID(req.ProviderId) {
 		return nil, apperr.NotFound()
 	}
+	// Any id is a provider lookup, on the shared budget (CON-001).
+	if err := s.Sports.AllowEvent(userID); err != nil {
+		return nil, err
+	}
 	entity, err := s.Sports.Follow(ctx, sports.EntityKind(req.Kind), req.ProviderId, userID)
 	switch {
 	case errors.Is(err, sports.ErrSportsOff):

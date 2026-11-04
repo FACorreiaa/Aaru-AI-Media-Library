@@ -199,14 +199,14 @@ func (s *Store) Insert(ctx context.Context, t core.Title, status *TitleStatus, r
 func (s *Store) Title(ctx context.Context, id uuid.UUID) (*core.Title, error) {
 	row, err := s.q.TitleByID(ctx, id)
 	if db.IsNoRows(err) {
-		return nil, nil //nolint:nilnil // nil: not known
+		return nil, nil // nil: not known
 	}
 	if err != nil {
 		return nil, fmt.Errorf("title: %w", err)
 	}
 	t, ok := TitleFromRow(row)
 	if !ok {
-		return nil, nil //nolint:nilnil // nil: not known
+		return nil, nil // nil: not known
 	}
 	return &t, nil
 }
@@ -214,7 +214,7 @@ func (s *Store) Title(ctx context.Context, id uuid.UUID) (*core.Title, error) {
 // Find is the title of this type holding any of these ids. TMDB/Trakt ids are type-scoped.
 func (s *Store) Find(ctx context.Context, ids core.ExternalIDs, mediaType core.MediaType) (*core.Title, error) {
 	if ids.IsEmpty() {
-		return nil, nil //nolint:nilnil // nil: not known
+		return nil, nil // nil: not known
 	}
 	row, err := s.q.FindTitle(ctx, sqlc.FindTitleParams{
 		Type: string(mediaType), Tmdb: sptr(ids.TMDB), Imdb: sptr(ids.IMDB), Trakt: sptr(ids.Trakt),
@@ -222,14 +222,14 @@ func (s *Store) Find(ctx context.Context, ids core.ExternalIDs, mediaType core.M
 		Mal: sptr(ids.MAL), Anidb: sptr(ids.AniDB), Musicbrainz: sptr(ids.MusicBrainz),
 	})
 	if db.IsNoRows(err) {
-		return nil, nil //nolint:nilnil // nil: not known
+		return nil, nil // nil: not known
 	}
 	if err != nil {
 		return nil, fmt.Errorf("find title: %w", err)
 	}
 	t, ok := TitleFromRow(row)
 	if !ok {
-		return nil, nil //nolint:nilnil // nil: not known
+		return nil, nil // nil: not known
 	}
 	return &t, nil
 }
@@ -297,7 +297,7 @@ func setID(ids *core.ExternalIDs, provider, value string) {
 func (s *Store) State(ctx context.Context, id uuid.UUID) (*State, error) {
 	row, err := s.q.TitleByID(ctx, id)
 	if db.IsNoRows(err) {
-		return nil, nil //nolint:nilnil // nil: not known
+		return nil, nil // nil: not known
 	}
 	if err != nil {
 		return nil, fmt.Errorf("catalog state: %w", err)
@@ -607,7 +607,7 @@ func mappingsFromRows(rows []sqlc.AnimeMapping) []AnimeMapping {
 func (s *Store) MappingByAniList(ctx context.Context, anilist string) (*AnimeMapping, error) {
 	row, err := s.q.AnimeMappingByAniList(ctx, anilist)
 	if db.IsNoRows(err) {
-		return nil, nil //nolint:nilnil // nil: not known
+		return nil, nil // nil: not known
 	}
 	if err != nil {
 		return nil, fmt.Errorf("anime mapping: %w", err)
@@ -620,7 +620,7 @@ func (s *Store) MappingByAniList(ctx context.Context, anilist string) (*AnimeMap
 func (s *Store) MappingByMAL(ctx context.Context, mal string) (*AnimeMapping, error) {
 	row, err := s.q.AnimeMappingByMAL(ctx, &mal)
 	if db.IsNoRows(err) {
-		return nil, nil //nolint:nilnil // nil: not known
+		return nil, nil // nil: not known
 	}
 	if err != nil {
 		return nil, fmt.Errorf("anime mapping by mal: %w", err)
@@ -777,7 +777,7 @@ func (s *Store) LibraryItemIDs(ctx context.Context, userID uuid.UUID, keys []Key
 func (s *Store) LibraryItemID(ctx context.Context, userID, titleID uuid.UUID) (*uuid.UUID, error) {
 	id, err := s.q.LibraryItemIDForTitle(ctx, sqlc.LibraryItemIDForTitleParams{UserID: userID, TitleID: titleID})
 	if db.IsNoRows(err) {
-		return nil, nil //nolint:nilnil // nil: not known
+		return nil, nil // nil: not known
 	}
 	if err != nil {
 		return nil, fmt.Errorf("library item for title: %w", err)

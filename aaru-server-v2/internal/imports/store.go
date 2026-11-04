@@ -79,7 +79,7 @@ func validState(s core.ImportJobState) bool {
 }
 
 func statsJSON(s core.ImportStats) json.RawMessage {
-	data, _ := json.Marshal(s) //nolint:errchkjson // plain ints
+	data, _ := json.Marshal(s) // plain ints
 	return data
 }
 
@@ -126,7 +126,7 @@ func insertRows(ctx context.Context, q *sqlc.Queries, rows []Row, jobID uuid.UUI
 			if err != nil {
 				return fmt.Errorf("encode import row: %w", err)
 			}
-			idx = append(idx, int32(i)) //nolint:gosec // a row index
+			idx = append(idx, int32(i)) // a row index
 			data = append(data, encoded)
 		}
 		if err := q.ImportRowsInsert(ctx, sqlc.ImportRowsInsertParams{JobID: jobID, Idx: idx, Rows: data}); err != nil {
@@ -151,7 +151,7 @@ func (s *Store) Update(ctx context.Context, job core.ImportJob) error {
 func (s *Store) Job(ctx context.Context, id, user uuid.UUID) (*core.ImportJob, error) {
 	r, err := s.Q.ImportJobGet(ctx, sqlc.ImportJobGetParams{ID: id, UserID: user})
 	if db.IsNoRows(err) {
-		return nil, nil //nolint:nilnil // no such job
+		return nil, nil // no such job
 	}
 	if err != nil {
 		return nil, fmt.Errorf("import job: %w", err)
@@ -161,7 +161,7 @@ func (s *Store) Job(ctx context.Context, id, user uuid.UUID) (*core.ImportJob, e
 		r.RowsMatched, r.RowsTotal, r.ListensStaged, r.ActionID,
 	}.job()
 	if !ok {
-		return nil, nil //nolint:nilnil // no such job
+		return nil, nil // no such job
 	}
 	return &job, nil
 }
@@ -169,7 +169,7 @@ func (s *Store) Job(ctx context.Context, id, user uuid.UUID) (*core.ImportJob, e
 // Jobs are the user's latest jobs, newest first.
 func (s *Store) Jobs(ctx context.Context, user uuid.UUID, limit int) ([]core.ImportJob, error) {
 	rows, err := s.Q.ImportJobsByUser(ctx, sqlc.ImportJobsByUserParams{
-		UserID: user, RowLimit: int32(max(1, min(limit, 100))), //nolint:gosec // clamped
+		UserID: user, RowLimit: int32(max(1, min(limit, 100))), // clamped
 	})
 	if err != nil {
 		return nil, fmt.Errorf("import jobs: %w", err)
@@ -194,7 +194,7 @@ func (s *Store) ClaimNext(ctx context.Context, now time.Time, lease time.Duratio
 		LockedUntil: &until, Now: now, Owner: owner, MaxAttempts: MaxAttempts,
 	})
 	if db.IsNoRows(err) {
-		return nil, nil //nolint:nilnil // no such job
+		return nil, nil // no such job
 	}
 	if err != nil {
 		return nil, fmt.Errorf("claim import job: %w", err)
@@ -204,7 +204,7 @@ func (s *Store) ClaimNext(ctx context.Context, now time.Time, lease time.Duratio
 		r.RowsMatched, r.RowsTotal, r.ListensStaged, r.ActionID,
 	}.job()
 	if !ok {
-		return nil, nil //nolint:nilnil // no such job
+		return nil, nil // no such job
 	}
 	return &ClaimedJob{Job: job, Attempts: int(r.Attempts)}, nil
 }
@@ -339,7 +339,7 @@ func (s *Store) UpdateTx(ctx context.Context, tx pgx.Tx, job core.ImportJob) err
 func (s *Store) LockState(ctx context.Context, tx pgx.Tx, id, user uuid.UUID) (*core.ImportJobState, error) {
 	state, err := s.Q.WithTx(tx).ImportJobLock(ctx, sqlc.ImportJobLockParams{ID: id, UserID: user})
 	if db.IsNoRows(err) {
-		return nil, nil //nolint:nilnil // no such job
+		return nil, nil // no such job
 	}
 	if err != nil {
 		return nil, fmt.Errorf("lock import job: %w", err)

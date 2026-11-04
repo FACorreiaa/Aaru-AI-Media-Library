@@ -20,7 +20,7 @@ func NewSocial(q *sqlc.Queries) Social { return Social{Store: &social.Store{Q: q
 
 // User is someone with a handle, or nil without one.
 func (s Social) User(ctx context.Context, id uuid.UUID) (*User, error) {
-	return s.Store.User(ctx, id) //nolint:wrapcheck // the store wraps its own errors
+	return s.Store.User(ctx, id) // the store wraps its own errors
 }
 
 // RequireHandle is the viewer with their handle, or 422 `handle_required`.
@@ -37,27 +37,27 @@ func (s Social) RequireHandle(ctx context.Context, viewer uuid.UUID) (User, erro
 
 // AreFriends reports a mutual friendship.
 func (s Social) AreFriends(ctx context.Context, a, b uuid.UUID) (bool, error) {
-	return s.Store.AreFriends(ctx, a, b) //nolint:wrapcheck // the store wraps its own errors
+	return s.Store.AreFriends(ctx, a, b) // the store wraps its own errors
 }
 
 // IsBlocked reports a block in either direction.
 func (s Social) IsBlocked(ctx context.Context, a, b uuid.UUID) (bool, error) {
-	return s.Store.IsBlocked(ctx, a, b) //nolint:wrapcheck // the store wraps its own errors
+	return s.Store.IsBlocked(ctx, a, b) // the store wraps its own errors
 }
 
 // Friends are the user's friends by handle.
 func (s Social) Friends(ctx context.Context, user uuid.UUID) ([]User, error) {
-	return s.Store.Friends(ctx, user) //nolint:wrapcheck // the store wraps its own errors
+	return s.Store.Friends(ctx, user) // the store wraps its own errors
 }
 
 // Blocked is everyone the user blocked.
 func (s Social) Blocked(ctx context.Context, user uuid.UUID) ([]User, error) {
-	return s.Store.Blocked(ctx, user) //nolint:wrapcheck // the store wraps its own errors
+	return s.Store.Blocked(ctx, user) // the store wraps its own errors
 }
 
 // Blockers is everyone who blocked the user.
 func (s Social) Blockers(ctx context.Context, user uuid.UUID) (map[uuid.UUID]bool, error) {
-	return s.Store.Blockers(ctx, user) //nolint:wrapcheck // the store wraps its own errors
+	return s.Store.Blockers(ctx, user) // the store wraps its own errors
 }
 
 // BlockedEitherWay is everyone the user blocked plus everyone who blocked the user.

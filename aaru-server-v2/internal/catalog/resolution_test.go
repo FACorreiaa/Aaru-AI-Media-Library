@@ -112,7 +112,7 @@ func isbn10Check(nine string) string {
 func TestISBN10And13ResolveToOneTitle(t *testing.T) {
 	ctx := context.Background()
 	store := NewStore(testdb.New(t))
-	digits := fmt.Sprintf("%09d", rand.IntN(1_000_000_000)) //nolint:gosec // test data
+	digits := fmt.Sprintf("%09d", rand.IntN(1_000_000_000)) // test data
 	isbn10 := digits + isbn10Check(digits)
 	isbn13 := core.NormalizeISBN(isbn10)
 	require.NotEmpty(t, isbn13)
@@ -188,4 +188,35 @@ func TestEpisodesHydrateOnceThenRefreshAfterTheWindow(t *testing.T) {
 	require.Len(t, refreshed.Episodes, 2)
 	assert.Equal(t, []int{1, 2}, []int{refreshed.Episodes[0].Season, refreshed.Episodes[1].Season})
 	assert.Equal(t, StatusReturning, *refreshed.Status)
+}
+
+// PERF-004: names the stored episodes know cost TMDB nothing. A name they do not know may be newer
+// than they are, so TMDB answers for that request, and only then.
+func TestEpisodesNamedReadsStoredEpisodesFirst(t *testing.T) {
+	ctx := context.Background()
+	store := NewStore(testdb.New(t))
+	fake := newFake()
+	year := 2015
+	fake.stubTitle(Record{Hit: Hit{Type: core.MediaShow, Title: "Named", Year: &year, IDs: core.ExternalIDs{TMDB: "7001"}}})
+	resolver := NewResolver(store, fake.providers())
+	title, err := resolver.Resolve(ctx, core.MediaRef{Type: core.MediaShow, IDs: core.ExternalIDs{TMDB: "7001"}}, nil)
+	require.NoError(t, err)
+	stored := Episodes{Episodes: []Episode{
+		{Season: 1, Episode: 1, Name: ptr("Arrival")},
+		{Season: 1, Episode: 2, Name: ptr("Departure")},
+	}}
+	require.NoError(t, store.SaveEpisodes(ctx, title.ID, stored, time.Now()))
+	fresh := Episodes{Episodes: append(stored.Episodes[:2:2], Episode{Season: 2, Episode: 1, Name: ptr("Return")})}
+	fake.stubEpisodes("7001", fresh)
+	before := fake.callCount("episodes")
+
+	keys, err := resolver.EpisodesNamed(ctx, title, []NamedEpisode{{Name: "departure"}, {Name: "Arrival"}})
+	require.NoError(t, err)
+	assert.Equal(t, []core.EpisodeKey{{Season: 1, Episode: 1}, {Season: 1, Episode: 2}}, keys, "sorted")
+	assert.Equal(t, before, fake.callCount("episodes"), "the stored list knew every name")
+
+	keys, err = resolver.EpisodesNamed(ctx, title, []NamedEpisode{{Name: "Arrival"}, {Name: "Return"}})
+	require.NoError(t, err)
+	assert.Equal(t, []core.EpisodeKey{{Season: 1, Episode: 1}, {Season: 2, Episode: 1}}, keys)
+	assert.Equal(t, before+1, fake.callCount("episodes"), "an unknown name asks TMDB")
 }

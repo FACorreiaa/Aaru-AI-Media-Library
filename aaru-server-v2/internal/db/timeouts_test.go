@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/assert"
@@ -70,4 +71,49 @@ func TestTheAPIsConnectionsCarryStatementTimeouts(t *testing.T) {
 	t.Cleanup(maintenance.Close)
 	require.NoError(t, maintenance.QueryRow(ctx, `SELECT current_setting('statement_timeout')`).Scan(&statement))
 	assert.Equal(t, "0", statement)
+}
+
+// The few writes that are one large statement lift the statement timeout for their transaction,
+// and only theirs.
+func TestAllowLongStatementsLiftsTheTimeoutForOneTransaction(t *testing.T) {
+	ctx := context.Background()
+	settings := settingsOf(testdb.New(t))
+	settings.PoolSize = 2
+	settings.StatementTimeoutSeconds = 1
+	pool, err := db.Open(ctx, settings)
+	require.NoError(t, err)
+	t.Cleanup(pool.Close)
+
+	_, err = pool.Exec(ctx, `SELECT pg_sleep(1.3)`)
+	require.Error(t, err, "the pool's timeout holds")
+
+	require.NoError(t, pgx.BeginFunc(ctx, pool, func(tx pgx.Tx) error {
+		if err := db.AllowLongStatements(ctx, tx); err != nil {
+			return err
+		}
+		_, err := tx.Exec(ctx, `SELECT pg_sleep(1.3)`)
+		return err
+	}))
+
+	_, err = pool.Exec(ctx, `SELECT pg_sleep(1.3)`)
+	require.Error(t, err, "and is back after the commit")
+}
+
+// A transaction holding a row across a provider call keeps its commit past the idle timeout.
+func TestAllowIdleInTransactionKeepsTheCommit(t *testing.T) {
+	ctx := context.Background()
+	settings := settingsOf(testdb.New(t))
+	settings.IdleInTransactionTimeoutSeconds = 1
+	pool, err := db.Open(ctx, settings)
+	require.NoError(t, err)
+	t.Cleanup(pool.Close)
+
+	require.NoError(t, pgx.BeginFunc(ctx, pool, func(tx pgx.Tx) error {
+		if err := db.AllowIdleInTransaction(ctx, tx); err != nil {
+			return err
+		}
+		time.Sleep(1300 * time.Millisecond) // the provider's answer
+		_, err := tx.Exec(ctx, `SELECT 1`)
+		return err
+	}))
 }

@@ -215,6 +215,10 @@ func (s *Store) deleteUser(ctx context.Context, id uuid.UUID) error {
 		if err := q.ClearUserShareNotes(ctx, id); err != nil {
 			return err
 		}
+		// The cascade is one statement over everything the account holds.
+		if err := db.AllowLongStatements(ctx, tx); err != nil {
+			return err
+		}
 		return q.DeleteUser(ctx, id)
 	})
 	if err != nil {

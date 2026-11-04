@@ -1042,16 +1042,17 @@ const groupSummaries = `-- name: GroupSummaries :many
 
 SELECT g.id, g.name, gm.role, gm.share_progress, gm.muted,
     (SELECT c0.id FROM group_channels c0 WHERE c0.group_id = g.id AND c0.is_default)::uuid AS default_channel_id,
-    (SELECT count(*) FROM group_channels c JOIN group_messages m ON m.channel_id = c.id
-        LEFT JOIN group_read_state r ON r.channel_id = c.id AND r.user_id = $1::uuid
-        WHERE c.group_id = g.id AND m.deleted_at IS NULL AND m.author_id IS DISTINCT FROM $1::uuid
-          AND m.created_at > coalesce(r.last_read_at, '-infinity'))::bigint AS unread,
-    (SELECT count(*) FROM group_channels c JOIN group_messages m ON m.channel_id = c.id
-        LEFT JOIN group_read_state r ON r.channel_id = c.id AND r.user_id = $1::uuid
-        WHERE c.group_id = g.id AND m.deleted_at IS NULL AND m.author_id IS DISTINCT FROM $1::uuid
-          AND m.created_at > coalesce(r.last_read_at, '-infinity')
-          AND $1::uuid = ANY(m.mentions))::bigint AS mentions
+    n.unread, n.mentions
 FROM group_members gm JOIN groups g ON g.id = gm.group_id
+CROSS JOIN LATERAL (
+    -- One walk of the messages for both counts (DB-008).
+    SELECT count(*)::bigint AS unread,
+        count(*) FILTER (WHERE $1::uuid = ANY(m.mentions))::bigint AS mentions
+    FROM group_channels c JOIN group_messages m ON m.channel_id = c.id
+    LEFT JOIN group_read_state r ON r.channel_id = c.id AND r.user_id = $1::uuid
+    WHERE c.group_id = g.id AND m.deleted_at IS NULL AND m.author_id IS DISTINCT FROM $1::uuid
+      AND m.created_at > coalesce(r.last_read_at, '-infinity')
+) n
 WHERE gm.user_id = $1::uuid
   AND ($2::uuid IS NULL OR g.id = $2::uuid)
 ORDER BY gm.joined_at, g.id

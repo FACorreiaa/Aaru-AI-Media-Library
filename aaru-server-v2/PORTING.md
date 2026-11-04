@@ -84,7 +84,10 @@ here**.
   `go tool pprof -http=:0 http://localhost:9090/debug/pprof/profile?seconds=30` (or `/heap`,
   `/goroutine`, `/trace`). `PPROF_ENABLED=false` turns it off; `PPROF_BLOCK_RATE` and
   `PPROF_MUTEX_FRACTION` sample contention.
-- **Concurrency**: `errgroup` for independent calls; respect `ctx` cancellation.
+- **Concurrency**: `safe.WithContext` for independent calls (`errgroup` whose goroutines turn a panic into the group's error; depguard refuses a raw `errgroup`); respect `ctx` cancellation.
+- **Request limits**: `ownBodyLimits` in `internal/httpapi/router.go` caps each route's body, and a body that stalls is cut off after `bodyReadTimeout` (`uploadReadTimeout` for uploads). `noDeadline` lists routes that may outlast the normal request deadline: the socket, uploads, the export, MCP calls, and one-transaction writes over a whole library (import or plan approval, undo, account deletion).
+- **Long statements**: Postgres ends a statement at the pool's `statement_timeout` and an idle transaction at `idle_in_transaction_session_timeout`. Work known to run longer says so inside its transaction: `db.AllowLongStatements`, or `db.AllowIdleInTransaction` for a transaction held across an outbound call.
+- **Paging**: never `arg IS NULL OR col < arg` on a large table. Under a generic plan the index cannot use that bound and each page walks from the first row; use `col < coalesce(arg, 'infinity')`.
 - Format with `gofumpt`; `go vet ./...` and `golangci-lint run` must be clean.
 
 ## Settings

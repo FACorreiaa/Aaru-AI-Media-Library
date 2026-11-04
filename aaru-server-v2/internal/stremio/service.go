@@ -179,17 +179,17 @@ var undated = time.Unix(4_102_444_800, 0).UTC()
 // Meta is details for an `aaru:` title (Cinemeta serves `tt` ones); nil when unknown.
 func (s *Service) Meta(ctx context.Context, raw string, caller auth.AgentCaller) (*Meta, error) {
 	if !caller.Has(auth.ScopeLibraryRead) {
-		return nil, nil //nolint:nilnil // unknown to this caller
+		return nil, nil // unknown to this caller
 	}
 	id, ok := ParseID(raw)
 	if !ok || id.TitleID == nil {
-		return nil, nil //nolint:nilnil // not an Aaru id
+		return nil, nil // not an Aaru id
 	}
 	detail, err := s.Catalog.Service.Detail(ctx, *id.TitleID)
 	if err != nil {
 		var ae *apperr.Error
 		if errors.As(err, &ae) && ae.Status == http.StatusNotFound {
-			return nil, nil //nolint:nilnil // unknown title
+			return nil, nil // unknown title
 		}
 		return nil, err
 	}

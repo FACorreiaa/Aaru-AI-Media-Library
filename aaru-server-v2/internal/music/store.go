@@ -35,7 +35,7 @@ func i32(p *int) *int32 {
 	if p == nil {
 		return nil
 	}
-	v := int32(min(max(*p, math.MinInt32), math.MaxInt32)) //nolint:gosec // clamped
+	v := int32(min(max(*p, math.MinInt32), math.MaxInt32)) // clamped
 	return &v
 }
 
@@ -64,8 +64,9 @@ func (s *Store) Insert(ctx context.Context, listens []NewListen, user uuid.UUID,
 		if err := q.LockUserListens(ctx, userKey(user)); err != nil {
 			return err
 		}
-		for _, l := range listens {
-			_, err := q.InsertListen(ctx, sqlc.InsertListenParams{
+		params := make([]sqlc.InsertListenParams, len(listens))
+		for i, l := range listens {
+			params[i] = sqlc.InsertListenParams{
 				ID: uuid.New(), UserID: user, ListenedAt: ts(l.ListenedAt), Artist: l.Artist, Track: l.Track,
 				Album: l.Album, TrackKey: l.TrackKey(), DurationMs: i32(l.DurationMs), Isrc: l.ISRC,
 				RecordingMbid: l.RecordingMBID, ReleaseMbid: l.ReleaseMBID, ReleaseGroupMbid: l.ReleaseGroupMBID,
@@ -73,16 +74,22 @@ func (s *Store) Insert(ctx context.Context, listens []NewListen, user uuid.UUID,
 				MusicService: l.MusicService, AgentTokenID: agentTokenID,
 				WindowSecs: l.DuplicateWindow().Seconds(), VideoID: l.YouTubeVideoID(),
 				VideoWindowSecs: l.VideoWindow().Seconds(), VideoPattern: YouTubeVideoPattern,
-			})
-			if db.IsNoRows(err) {
-				continue
 			}
-			if err != nil {
-				return err
-			}
-			kept++
 		}
-		return nil
+		// In order, down the wire together (PERF-003): each statement sees the ones before it, so
+		// a repeat inside the payload is still a duplicate. A row kept returns its id; none is a
+		// duplicate. After a failure the rest only report it, so the first one is kept.
+		var first error
+		q.InsertListen(ctx, params).QueryRow(func(_ int, _ uuid.UUID, err error) {
+			switch {
+			case err == nil:
+				kept++
+			case db.IsNoRows(err):
+			case first == nil:
+				first = err
+			}
+		})
+		return first
 	})
 	if err != nil {
 		return 0, fmt.Errorf("insert listens: %w", err)
@@ -192,6 +199,33 @@ ORDER BY ranked.count DESC, ranked.duration_ms DESC, ranked.sort_key`, append(ar
 	return out, nil
 }
 
+// EachListen hands over every listen of the user, newest first, a page at a time, so an account's
+// whole history is never in memory at once (PERF-002). No connection is held between pages.
+func (s *Store) EachListen(ctx context.Context, user uuid.UUID, pageSize int64, each func(Listen) error) error {
+	params := sqlc.ListenExportPageParams{UserID: user, MaxRows: pageSize}
+	for {
+		rows, err := s.Q.ListenExportPage(ctx, params)
+		if err != nil {
+			return fmt.Errorf("export listens: %w", err)
+		}
+		for _, r := range rows {
+			err := each(Listen{
+				ID: r.ID, ListenedAt: r.ListenedAt, Artist: r.Artist, Track: r.Track, Album: r.Album,
+				DurationMs: intPtr(r.DurationMs), ReleaseGroupMBID: r.ReleaseGroupMbid, AlbumTitleID: r.AlbumTitleID,
+				OriginURL: r.OriginUrl, Client: r.Client, MusicService: r.MusicService,
+			})
+			if err != nil {
+				return err
+			}
+		}
+		if int64(len(rows)) < pageSize {
+			return nil
+		}
+		last := rows[len(rows)-1]
+		params.AfterAt, params.AfterID = ts(last.ListenedAt), &last.ID
+	}
+}
+
 // Unresolved is tracks still waiting for an album that were never looked up, or whose last miss is
 // older than retryBefore; newest listens first.
 func (s *Store) Unresolved(ctx context.Context, retryBefore time.Time, limit int) ([]Lookup, error) {
@@ -242,26 +276,43 @@ func (s *Store) Resolve(ctx context.Context, lookup Lookup, match catalog.Record
 // the live duplicate window, written as the job's `import` listens, and deleted with it on undo.
 
 // Stage adds plays to a job's staging, numbered from index.
-//
-// pgx COPY directly: sqlc rejects the many-array unnest a bulk insert needs.
 func (s *Store) Stage(ctx context.Context, listens []NewListen, jobID uuid.UUID, index int) error {
-	rows := make([][]any, len(listens))
-	for i, l := range listens {
-		rows[i] = []any{
-			jobID, int32(index + i), l.ListenedAt, l.Artist, l.Track, l.Album, l.TrackKey(), i32(l.DurationMs), //nolint:gosec // an import's size
-			l.ISRC, l.RecordingMBID, l.ReleaseMBID, l.ReleaseGroupMBID, l.ArtistMBID, l.SpotifyID, l.OriginURL,
-			l.Client, l.MusicService,
-		}
-	}
-	_, err := s.Pool.CopyFrom(ctx, pgx.Identifier{"import_listens"}, []string{
-		"job_id", "idx", "listened_at", "artist", "track", "album", "track_key", "duration_ms", "isrc",
-		"recording_mbid", "release_mbid", "release_group_mbid", "artist_mbid", "spotify_id", "origin_url",
-		"client", "music_service",
-	}, pgx.CopyFromRows(rows))
+	_, err := s.Pool.CopyFrom(ctx, stagedListensTable, stagedListensColumns, stagedRows(listens, jobID, index))
 	if err != nil {
 		return fmt.Errorf("stage listens: %w", err)
 	}
 	return nil
+}
+
+// StageTx is Stage inside the caller's transaction.
+func (s *Store) StageTx(ctx context.Context, tx pgx.Tx, listens []NewListen, jobID uuid.UUID, index int) error {
+	_, err := tx.CopyFrom(ctx, stagedListensTable, stagedListensColumns, stagedRows(listens, jobID, index))
+	if err != nil {
+		return fmt.Errorf("stage listens: %w", err)
+	}
+	return nil
+}
+
+// pgx COPY directly: sqlc rejects the many-array unnest a bulk insert needs.
+var (
+	stagedListensTable   = pgx.Identifier{"import_listens"}
+	stagedListensColumns = []string{
+		"job_id", "idx", "listened_at", "artist", "track", "album", "track_key", "duration_ms", "isrc",
+		"recording_mbid", "release_mbid", "release_group_mbid", "artist_mbid", "spotify_id", "origin_url",
+		"client", "music_service",
+	}
+)
+
+// stagedRows reads each play's row as COPY sends it, so a large file is not held twice.
+func stagedRows(listens []NewListen, jobID uuid.UUID, index int) pgx.CopyFromSource {
+	return pgx.CopyFromSlice(len(listens), func(i int) ([]any, error) {
+		l := listens[i]
+		return []any{
+			jobID, int32(index + i), l.ListenedAt, l.Artist, l.Track, l.Album, l.TrackKey(), i32(l.DurationMs), //nolint:gosec // an import's size
+			l.ISRC, l.RecordingMBID, l.ReleaseMBID, l.ReleaseGroupMBID, l.ArtistMBID, l.SpotifyID, l.OriginURL,
+			l.Client, l.MusicService,
+		}, nil
+	})
 }
 
 // ClearStaged empties a job's staging, so a retried fetch starts over.
@@ -275,7 +326,15 @@ func (s *Store) ClearStaged(ctx context.Context, jobID uuid.UUID) error {
 // CountNew is how many staged plays applying would keep: those outside every stored listen's
 // duplicate window and outside the window of the play before them of the same track.
 func (s *Store) CountNew(ctx context.Context, jobID, user uuid.UUID) (int, error) {
-	n, err := s.Q.CountNewStagedListens(ctx, sqlc.CountNewStagedListensParams{JobID: jobID, UserID: user})
+	var n int32
+	err := pgx.BeginFunc(ctx, s.Pool, func(tx pgx.Tx) error {
+		if err := db.AllowLongStatements(ctx, tx); err != nil {
+			return err
+		}
+		var err error
+		n, err = s.Q.WithTx(tx).CountNewStagedListens(ctx, sqlc.CountNewStagedListensParams{JobID: jobID, UserID: user})
+		return err
+	})
 	if err != nil {
 		return 0, fmt.Errorf("count staged listens: %w", err)
 	}
@@ -300,6 +359,10 @@ func (s *Store) ApplyStaged(ctx context.Context, jobID, user uuid.UUID) (int, er
 // ApplyStagedTx is ApplyStaged inside the caller's transaction (an import approval saves the job
 // in the same one, DB-003).
 func (s *Store) ApplyStagedTx(ctx context.Context, tx pgx.Tx, jobID, user uuid.UUID) (int, error) {
+	// One statement over a whole file, on a route with no request deadline.
+	if err := db.AllowLongStatements(ctx, tx); err != nil {
+		return 0, err
+	}
 	q := s.Q.WithTx(tx)
 	// The same per-user lock as a scrobbler's insert, so a live listen arriving now is compared
 	// with these, or these with it.
@@ -318,7 +381,15 @@ func (s *Store) ApplyStagedTx(ctx context.Context, tx pgx.Tx, jobID, user uuid.U
 
 // DeleteImported deletes the listens a job wrote. Returns how many.
 func (s *Store) DeleteImported(ctx context.Context, jobID, user uuid.UUID) (int, error) {
-	n, err := s.Q.DeleteImportedListens(ctx, sqlc.DeleteImportedListensParams{UserID: user, JobID: jobID})
+	var n int64
+	err := pgx.BeginFunc(ctx, s.Pool, func(tx pgx.Tx) error {
+		if err := db.AllowLongStatements(ctx, tx); err != nil {
+			return err
+		}
+		var err error
+		n, err = s.Q.WithTx(tx).DeleteImportedListens(ctx, sqlc.DeleteImportedListensParams{UserID: user, JobID: jobID})
+		return err
+	})
 	if err != nil {
 		return 0, fmt.Errorf("delete imported listens: %w", err)
 	}
@@ -335,7 +406,7 @@ func (s *Store) NewestImported(ctx context.Context, user uuid.UUID, source core.
 		return nil, fmt.Errorf("newest imported listen: %w", err)
 	}
 	if !newest.Valid {
-		return nil, nil //nolint:nilnil // none imported yet
+		return nil, nil // none imported yet
 	}
 	t := newest.Time
 	return &t, nil

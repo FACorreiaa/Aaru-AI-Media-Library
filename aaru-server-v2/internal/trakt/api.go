@@ -90,7 +90,7 @@ func (a *API) Username(ctx context.Context, token string) (*string, error) {
 		return nil, err
 	}
 	if settings.User == nil {
-		return nil, nil //nolint:nilnil // no user
+		return nil, nil // no user
 	}
 	return settings.User.Username, nil
 }

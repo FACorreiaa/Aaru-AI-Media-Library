@@ -19,6 +19,7 @@ import (
 	"aaru-go-api/internal/oauth"
 	"aaru-go-api/internal/provider"
 	"aaru-go-api/internal/push"
+	"aaru-go-api/internal/safe"
 	"aaru-go-api/internal/schedule"
 	"aaru-go-api/internal/sports"
 	"aaru-go-api/internal/stats"
@@ -36,7 +37,6 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"golang.org/x/sync/errgroup"
 )
 
 // Run is the process: a one-shot mode, or serve until ctx is cancelled.
@@ -157,7 +157,7 @@ func serve(ctx context.Context, reader *config.Reader, log *slog.Logger) error {
 	deps.Model = makeModel(cfg.Anthropic, log)
 	buildImports(cfg, pool, log, &deps)
 	server := httpapi.New(deps)
-	router := server.Router(reporter)
+	router := server.Router(reporter) //nolint:contextcheck // builds the routes; each request brings its own context
 
 	api := &http.Server{
 		Addr:              net.JoinHostPort(cfg.HTTP.Host, strconv.Itoa(cfg.HTTP.Port)),
@@ -166,10 +166,11 @@ func serve(ctx context.Context, reader *config.Reader, log *slog.Logger) error {
 		// Idle keep-alives close after two minutes (HTTP-005), after Traefik's own idle backend
 		// connections (its serversTransport default, 90 s) so it never reuses one being closed.
 		// No ReadTimeout/WriteTimeout: they would cut WebSockets and 24 MB uploads;
-		// handlers are bounded by the request deadline instead (HTTP_REQUEST_TIMEOUT).
+		// a route's handler is bounded by the request deadline (HTTP_REQUEST_TIMEOUT) and its body
+		// by a read deadline per request (middleware.BodyRule.ReadTimeout).
 		IdleTimeout: 120 * time.Second,
 	}
-	group, ctx := errgroup.WithContext(ctx)
+	group, ctx := safe.WithContext(ctx)
 	group.Go(func() error {
 		log.Info("Server started and listening", "address", api.Addr)
 		if err := api.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -197,7 +198,7 @@ func serve(ctx context.Context, reader *config.Reader, log *slog.Logger) error {
 	}
 	group.Go(func() error {
 		<-ctx.Done()
-		shutdown, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+		shutdown, cancel := context.WithTimeout(context.WithoutCancel(ctx), 20*time.Second)
 		defer cancel()
 		// Hijacked WebSockets are not tracked by Shutdown: close them first with 1001 going
 		// away, so clients reconnect at once instead of waiting for a dead socket to time out.

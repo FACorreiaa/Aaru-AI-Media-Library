@@ -169,7 +169,7 @@ func (s *Store) Members(ctx context.Context, group uuid.UUID) ([]Member, error) 
 func (s *Store) Role(ctx context.Context, group, user uuid.UUID) (*Role, error) {
 	raw, err := s.Q.GroupRole(ctx, sqlc.GroupRoleParams{GroupID: group, UserID: user})
 	if db.IsNoRows(err) {
-		return nil, nil //nolint:nilnil // not a member, as Swift's optional
+		return nil, nil // not a member, as Swift's optional
 	}
 	if err != nil {
 		return nil, fmt.Errorf("group role: %w", err)
@@ -347,7 +347,7 @@ func (s *Store) Channels(ctx context.Context, group, viewer uuid.UUID) ([]Channe
 func (s *Store) Channel(ctx context.Context, id, group uuid.UUID) (*Channel, error) {
 	r, err := s.Q.GroupChannel(ctx, sqlc.GroupChannelParams{ID: id, GroupID: group})
 	if db.IsNoRows(err) {
-		return nil, nil //nolint:nilnil // none, as Swift's optional
+		return nil, nil // none, as Swift's optional
 	}
 	if err != nil {
 		return nil, fmt.Errorf("group channel: %w", err)
@@ -505,7 +505,7 @@ func (s *Store) Message(ctx context.Context, id, channel uuid.UUID) (*Message, e
 func (s *Store) message(ctx context.Context, id uuid.UUID, channel *uuid.UUID) (*Message, error) {
 	r, err := s.Q.GroupMessage(ctx, sqlc.GroupMessageParams{ID: id, ChannelID: channel})
 	if db.IsNoRows(err) {
-		return nil, nil //nolint:nilnil // none, as Swift's optional
+		return nil, nil // none, as Swift's optional
 	}
 	if err != nil {
 		return nil, fmt.Errorf("message: %w", err)
@@ -643,7 +643,7 @@ func (s *Store) RemoveShelfItem(ctx context.Context, channel, title uuid.UUID) (
 func (s *Store) LatestParty(ctx context.Context, channel uuid.UUID) (*WatchParty, error) {
 	r, err := s.Q.LatestWatchParty(ctx, channel)
 	if db.IsNoRows(err) {
-		return nil, nil //nolint:nilnil // none, as Swift's optional
+		return nil, nil // none, as Swift's optional
 	}
 	if err != nil {
 		return nil, fmt.Errorf("latest party: %w", err)

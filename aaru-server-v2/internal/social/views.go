@@ -3,13 +3,13 @@ package social
 import (
 	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/db/sqlc"
+	"aaru-go-api/internal/safe"
 	"context"
 	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"golang.org/x/sync/errgroup"
 )
 
 // What one friend may see of another (PostgresFriendViewStore.swift). Activity is read from the
@@ -61,7 +61,7 @@ type FriendActivity struct {
 // Shelf reads a friend's shelf as the viewer sees it.
 func (s *Store) Shelf(ctx context.Context, owner, viewer uuid.UUID, limit int) (FriendShelf, error) {
 	var shelf FriendShelf
-	g, ctx := errgroup.WithContext(ctx)
+	g, ctx := safe.WithContext(ctx)
 	g.Go(func() (err error) {
 		shelf.Watching, err = s.shelfItems(ctx, owner, "in_progress", "li.updated_at DESC", limit)
 		return err
