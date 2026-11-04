@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     container: swift:6.3-noble
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Test
         run: swift test --package-path aaru-core
 
@@ -40,9 +40,9 @@ jobs:
     runs-on: ubuntu-latest
     container: swift:6.3-noble
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Cache SwiftPM
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: aaru-server/.build
           key: ${{ runner.os }}-server-${{ hashFiles('aaru-server/Package.resolved') }}
@@ -60,7 +60,7 @@ jobs:
     name: swiftformat + swiftlint
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install tools
         run: brew install swiftformat swiftlint
       - name: Lint
