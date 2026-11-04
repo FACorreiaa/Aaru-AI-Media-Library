@@ -1,0 +1,69 @@
+-- name: CreateChat :exec
+INSERT INTO chats (id, user_id) VALUES ($1, $2);
+
+-- name: GetChat :one
+-- Someone else's chat is no row, same as a missing one.
+SELECT id, user_id, title, created_at, updated_at FROM chats WHERE id = $1 AND user_id = $2;
+
+-- name: FailStaleChatTurns :exec
+-- An agent turn that streamed past the cutoff lost its process: it fails so the chat is free.
+UPDATE chat_turns SET state = 'failed', updated_at = sqlc.arg(now)::pg_catalog.timestamptz
+WHERE chat_id = sqlc.arg(chat_id)::uuid AND state = 'streaming'
+  AND updated_at < sqlc.arg(cutoff)::pg_catalog.timestamptz;
+
+-- name: BeginChatTurn :one
+-- One statement, so the unique index on a streaming turn refuses the pair whole. The user turn is
+-- stored done, the agent turn streaming. No row when the chat is not the user's.
+WITH mine AS (
+    SELECT id FROM chats WHERE id = sqlc.arg(chat_id)::uuid AND user_id = sqlc.arg(user_id)::uuid
+), u AS (
+    INSERT INTO chat_turns (id, chat_id, user_id, role, body, state, created_at, updated_at)
+    SELECT sqlc.arg(user_turn)::uuid, mine.id, sqlc.arg(user_id)::uuid, 'user', sqlc.arg(body)::text, 'done',
+        sqlc.arg(now)::pg_catalog.timestamptz, sqlc.arg(now)::pg_catalog.timestamptz
+    FROM mine
+    RETURNING id
+), a AS (
+    INSERT INTO chat_turns (id, chat_id, user_id, role, state, created_at, updated_at)
+    SELECT sqlc.arg(agent_turn)::uuid, mine.id, sqlc.arg(user_id)::uuid, 'agent', 'streaming',
+        sqlc.arg(now)::pg_catalog.timestamptz, sqlc.arg(now)::pg_catalog.timestamptz
+    FROM mine
+    RETURNING id
+), touched AS (
+    UPDATE chats SET updated_at = sqlc.arg(now)::pg_catalog.timestamptz WHERE id IN (SELECT id FROM mine)
+    RETURNING id
+)
+SELECT (SELECT count(*) FROM u)::int AS stored;
+
+-- name: FinishChatTurn :execrows
+-- Only a streaming turn finishes: one already failed as stale stays failed.
+UPDATE chat_turns SET state = sqlc.arg(state)::text, body = sqlc.arg(body)::text,
+    components = sqlc.narg(components)::jsonb, updated_at = sqlc.arg(now)::pg_catalog.timestamptz
+WHERE id = sqlc.arg(id)::uuid AND state = 'streaming';
+
+-- name: RecentChatTurns :many
+SELECT id, chat_id, role, body, components, state, created_at
+FROM (
+    SELECT id, chat_id, role, body, components, state, created_at FROM chat_turns
+    WHERE chat_id = $1 ORDER BY created_at DESC, role DESC LIMIT $2
+) t ORDER BY created_at, role DESC;
+
+-- name: ChatRepliesToday :one
+-- What counts toward the daily cap shared with @aaru: replies whose model was, or will be, called
+-- (the states GroupAgentLoad counts), plus the user's chat turns.
+SELECT (
+    (SELECT count(*) FROM agent_replies a WHERE a.tagger_id = sqlc.arg(user_id)::uuid
+        AND a.created_at >= sqlc.arg(day_start)::pg_catalog.timestamptz
+        AND a.state IN ('queued', 'running', 'done', 'failed'))
+    + (SELECT count(*) FROM chat_turns c WHERE c.user_id = sqlc.arg(user_id)::uuid AND c.role = 'user'
+        AND c.created_at >= sqlc.arg(day_start)::pg_catalog.timestamptz)
+)::bigint AS replies;
+
+-- name: DeleteAllChats :exec
+DELETE FROM chats WHERE user_id = $1;
+
+-- name: ChatsForExport :many
+SELECT id, user_id, title, created_at, updated_at FROM chats WHERE user_id = $1 ORDER BY created_at, id;
+
+-- name: ChatTurnsForExport :many
+SELECT id, chat_id, role, body, components, state, created_at FROM chat_turns
+WHERE user_id = $1 ORDER BY chat_id, created_at, role DESC;

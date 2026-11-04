@@ -280,7 +280,10 @@ ON CONFLICT (message_id) DO NOTHING;
 SELECT
     (SELECT count(*) FROM agent_replies a WHERE a.tagger_id = sqlc.arg(tagger)::uuid
         AND a.created_at >= sqlc.arg(day_start)::pg_catalog.timestamptz
-        AND a.state IN ('queued', 'running', 'done', 'failed'))::bigint AS user_today,
+        AND a.state IN ('queued', 'running', 'done', 'failed'))::bigint
+    -- The daily cap is shared with chat: every chat turn the user sent today counts too (ASK-009).
+    + (SELECT count(*) FROM chat_turns c WHERE c.user_id = sqlc.arg(tagger)::uuid AND c.role = 'user'
+        AND c.created_at >= sqlc.arg(day_start)::pg_catalog.timestamptz)::bigint AS user_today,
     (SELECT count(*) FROM agent_replies a WHERE a.group_id = sqlc.arg(group_id)::uuid
         AND a.created_at >= sqlc.arg(hour_start)::pg_catalog.timestamptz
         AND a.state IN ('queued', 'running', 'done', 'failed'))::bigint AS group_hour,

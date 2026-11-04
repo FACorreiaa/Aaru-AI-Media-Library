@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type AnimeMapping struct {
@@ -17,6 +18,14 @@ type AnimeMapping struct {
 	Tvdb       *string
 	Tmdb       *string
 	TmdbSeason *int32
+}
+
+type Chat struct {
+	ID        uuid.UUID
+	UserID    uuid.UUID
+	Title     *string
+	CreatedAt pgtype.Timestamptz
+	UpdatedAt pgtype.Timestamptz
 }
 
 type MusicArtist struct {

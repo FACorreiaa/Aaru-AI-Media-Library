@@ -370,7 +370,10 @@ const groupAgentLoad = `-- name: GroupAgentLoad :one
 SELECT
     (SELECT count(*) FROM agent_replies a WHERE a.tagger_id = $1::uuid
         AND a.created_at >= $2::pg_catalog.timestamptz
-        AND a.state IN ('queued', 'running', 'done', 'failed'))::bigint AS user_today,
+        AND a.state IN ('queued', 'running', 'done', 'failed'))::bigint
+    -- The daily cap is shared with chat: every chat turn the user sent today counts too (ASK-009).
+    + (SELECT count(*) FROM chat_turns c WHERE c.user_id = $1::uuid AND c.role = 'user'
+        AND c.created_at >= $2::pg_catalog.timestamptz)::bigint AS user_today,
     (SELECT count(*) FROM agent_replies a WHERE a.group_id = $3::uuid
         AND a.created_at >= $4::pg_catalog.timestamptz
         AND a.state IN ('queued', 'running', 'done', 'failed'))::bigint AS group_hour,
@@ -388,7 +391,7 @@ type GroupAgentLoadParams struct {
 }
 
 type GroupAgentLoadRow struct {
-	UserToday  int64
+	UserToday  int32
 	GroupHour  int64
 	UserNoted  bool
 	GroupNoted bool

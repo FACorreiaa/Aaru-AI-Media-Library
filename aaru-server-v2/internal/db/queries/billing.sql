@@ -27,5 +27,8 @@ SELECT EXISTS (SELECT 1 FROM users WHERE id = $1);
 
 -- name: BillingCapturesSince :one
 -- PostgresCaptureStore.captures: what the entitlement reports as this month's captures.
-SELECT count(*)::int AS count FROM import_jobs
-WHERE user_id = $1 AND source = 'capture' AND created_at >= $2;
+-- A chat's plan that spends a capture counts like a capture job (ASK-009).
+SELECT (
+    (SELECT count(*) FROM import_jobs j WHERE j.user_id = $1 AND j.source = 'capture' AND j.created_at >= $2)
+    + (SELECT count(*) FROM agent_plans p WHERE p.user_id = $1 AND p.spends_capture AND p.created_at >= $2)
+)::int AS count;

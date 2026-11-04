@@ -60,8 +60,10 @@ func (q *Queries) ActiveEntitlement(ctx context.Context, arg ActiveEntitlementPa
 }
 
 const billingCapturesSince = `-- name: BillingCapturesSince :one
-SELECT count(*)::int AS count FROM import_jobs
-WHERE user_id = $1 AND source = 'capture' AND created_at >= $2
+SELECT (
+    (SELECT count(*) FROM import_jobs j WHERE j.user_id = $1 AND j.source = 'capture' AND j.created_at >= $2)
+    + (SELECT count(*) FROM agent_plans p WHERE p.user_id = $1 AND p.spends_capture AND p.created_at >= $2)
+)::int AS count
 `
 
 type BillingCapturesSinceParams struct {
@@ -70,6 +72,7 @@ type BillingCapturesSinceParams struct {
 }
 
 // PostgresCaptureStore.captures: what the entitlement reports as this month's captures.
+// A chat's plan that spends a capture counts like a capture job (ASK-009).
 func (q *Queries) BillingCapturesSince(ctx context.Context, arg BillingCapturesSinceParams) (int32, error) {
 	row := q.db.QueryRow(ctx, billingCapturesSince, arg.UserID, arg.CreatedAt)
 	var count int32
