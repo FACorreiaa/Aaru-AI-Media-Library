@@ -98,7 +98,7 @@ func (s *Service) create(ctx context.Context, p Plan, origin Origin, spends bool
 				return fmt.Errorf("lock captures: %w", err)
 			}
 			if origin.Quota != nil {
-				if err := origin.Quota(ctx); err != nil {
+				if err := origin.Quota(ctx, q); err != nil {
 					return err
 				}
 			}

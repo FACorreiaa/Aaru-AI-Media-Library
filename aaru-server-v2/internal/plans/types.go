@@ -17,6 +17,7 @@ package plans
 
 import (
 	"aaru-go-api/internal/core"
+	"aaru-go-api/internal/db/sqlc"
 	"aaru-go-api/internal/library"
 	"context"
 	"encoding/json"
@@ -115,8 +116,10 @@ type Origin struct {
 	// spends one capture; changes that would do nothing do not count.
 	SpendsCapture bool
 	// Quota refuses a plan that would spend a capture the user does not have; nil is no limit. It
-	// runs under the user's capture lock, on its own connection, and nothing is stored if it fails.
-	Quota func(context.Context) error
+	// runs under the user's capture lock and reads through the plan's transaction, q, never the
+	// pool: proposals queued on the lock may hold every other connection. Nothing is stored if it
+	// fails.
+	Quota func(ctx context.Context, q *sqlc.Queries) error
 }
 
 // caller is who approval journals the plan as. A plan whose token was deleted stays an outside

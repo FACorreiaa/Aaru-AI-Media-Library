@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -82,11 +83,25 @@ func newWriteFixture(t *testing.T) *writeFixture {
 	}
 }
 
+// toolsOnOneConnection is the same tools over a pool of one connection, for a write that would
+// need a second one while holding it.
+func (f *writeFixture) toolsOnOneConnection() *agent.Tools {
+	f.t.Helper()
+	cfg := f.pool.Config()
+	cfg.MinConns, cfg.MinIdleConns, cfg.MaxConns = 0, 0, 1
+	pool, err := pgxpool.NewWithConfig(f.ctx, cfg)
+	require.NoError(f.t, err)
+	f.t.Cleanup(pool.Close)
+	providers := catalog.Providers{TMDB: f.fake, AniList: f.fake, OpenLibrary: f.fake, Music: f.fake}
+	log := slog.Default()
+	kit := catalog.NewKit(pool, providers, log)
+	lib := library.NewService(library.NewStore(pool), kit, nil, log)
+	return &agent.Tools{Catalog: kit, Library: lib, Plans: plans.NewService(pool, lib, nil, nil, log)}
+}
+
 // realQuota is the capture quota as the server wires it.
-func (f *writeFixture) realQuota() func(context.Context, uuid.UUID) error {
-	service := imports.NewService(imports.NewStore(f.pool), f.kit, f.lib.Store, nil, slog.Default())
-	q := sqlc.New(f.pool)
-	return func(ctx context.Context, user uuid.UUID) error { return service.CheckCaptureQuota(ctx, q, user) }
+func (f *writeFixture) realQuota() func(context.Context, *sqlc.Queries, uuid.UUID) error {
+	return imports.NewService(imports.NewStore(f.pool), f.kit, f.lib.Store, nil, slog.Default()).CheckCaptureQuota
 }
 
 func movieRef(tmdb string) *core.MediaRef {
@@ -311,7 +326,7 @@ func TestChatPatchRemovePlanNoSpend(t *testing.T) {
 	id := added.Item.Item.ID.String()
 
 	// Removing does not need a capture left, so nobody asks.
-	f.tools.Quota = func(context.Context, uuid.UUID) error { return errors.New("quota was consulted") }
+	f.tools.Quota = func(context.Context, *sqlc.Queries, uuid.UUID) error { return errors.New("quota was consulted") }
 	res, err := f.tools.ChatPatch(f.ctx, patch(agent.PatchChange{Op: "remove", LibraryItemID: &id}), f.user)
 	require.NoError(t, err)
 	assert.False(t, res.Applied)
@@ -349,7 +364,7 @@ func TestChatPatchQuotaCountsRealAdds(t *testing.T) {
 		_, err := f.tools.ChatPatch(f.ctx, patch(addChange(tmdb, core.StatusInProgress)), f.user)
 		require.NoError(t, err)
 	}
-	f.tools.Quota = func(context.Context, uuid.UUID) error {
+	f.tools.Quota = func(context.Context, *sqlc.Queries, uuid.UUID) error {
 		return errors.New("quota was consulted")
 	}
 
@@ -365,6 +380,35 @@ func TestChatPatchQuotaCountsRealAdds(t *testing.T) {
 	require.NotNil(t, res.Plan)
 	assert.Equal(t, 1, res.Plan.Counts.Adds)
 	assert.Equal(t, 0, f.count(`SELECT count(*)::int FROM agent_plans WHERE id = $1 AND spends_capture`, res.Plan.ID))
+}
+
+// The quota reads on the plan's own transaction: that transaction holds the only connection here,
+// so a read that asked the pool for another would wait until the deadline and fail as no refusal.
+func TestChatPatchQuotaRunsOnThePlanTransaction(t *testing.T) {
+	f := newWriteFixture(t)
+	tools := f.toolsOnOneConnection()
+	tools.Quota = f.realQuota()
+	ctx, cancel := context.WithTimeout(f.ctx, 15*time.Second)
+	defer cancel()
+
+	callers := imports.FreeCapturesPerMonth + 3
+	errs := make([]error, callers)
+	var wg sync.WaitGroup
+	for i := range callers {
+		wg.Go(func() {
+			_, errs[i] = tools.ChatPatch(ctx, bulk(fmt.Sprintf("7%d", i)), f.user)
+		})
+	}
+	wg.Wait()
+	refused := 0
+	for _, err := range errs {
+		if err != nil {
+			require.ErrorIs(t, err, agent.ErrCaptureQuota)
+			refused++
+		}
+	}
+	assert.Equal(t, callers-imports.FreeCapturesPerMonth, refused)
+	assert.Equal(t, imports.FreeCapturesPerMonth, f.count(`SELECT count(*)::int FROM agent_plans WHERE user_id = $1 AND spends_capture`, f.user))
 }
 
 // Parallel chats cannot pass the quota together (DB-004 for captures).
@@ -422,7 +466,7 @@ func TestChatPatchWaitsForCaptureLock(t *testing.T) {
 func TestChatPatchQuotaFailureIsNotQuota(t *testing.T) {
 	f := newWriteFixture(t)
 	broken := errors.New("database down")
-	f.tools.Quota = func(context.Context, uuid.UUID) error { return broken }
+	f.tools.Quota = func(context.Context, *sqlc.Queries, uuid.UUID) error { return broken }
 	_, err := f.tools.ChatPatch(f.ctx, bulk("70"), f.user)
 	require.ErrorIs(t, err, broken)
 	assert.NotErrorIs(t, err, agent.ErrCaptureQuota)
@@ -470,7 +514,7 @@ func (f *writeFixture) externalCaller() auth.AgentCaller {
 
 func TestExternalAgentUnchanged(t *testing.T) {
 	f := newWriteFixture(t)
-	f.tools.Quota = func(context.Context, uuid.UUID) error { return errors.New("quota was consulted") }
+	f.tools.Quota = func(context.Context, *sqlc.Queries, uuid.UUID) error { return errors.New("quota was consulted") }
 	caller := f.externalCaller()
 
 	res, err := f.tools.ApplyLibraryPatch(f.ctx, patch(addChange("90", core.StatusInProgress)), caller)

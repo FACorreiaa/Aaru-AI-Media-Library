@@ -22,6 +22,7 @@ import (
 	"aaru-go-api/internal/auth"
 	"aaru-go-api/internal/catalog"
 	"aaru-go-api/internal/core"
+	"aaru-go-api/internal/db/sqlc"
 	"aaru-go-api/internal/library"
 	"aaru-go-api/internal/plans"
 	"aaru-go-api/internal/push"
@@ -85,8 +86,8 @@ type Tools struct {
 	Push *push.UserPush
 	// Quota refuses a chat plan that would spend a capture the user does not have, as the capture
 	// route's 402 or 429 (imports.Service.CheckCaptureQuota); any other error is a failure. Nil is
-	// no limit.
-	Quota func(ctx context.Context, user uuid.UUID) error
+	// no limit. q is the plan's transaction; read through it, not the pool.
+	Quota func(ctx context.Context, q *sqlc.Queries, user uuid.UUID) error
 	// Now defaults to time.Now.
 	Now func() time.Time
 }
@@ -412,7 +413,7 @@ func (t *Tools) ChatPatch(ctx context.Context, in PatchInput, user uuid.UUID) (C
 	if len(changes) != 1 || !changes[0].IsTapSized() {
 		plan, err := t.Plans.ProposeFor(ctx, changes, plans.Origin{
 			UserID: user, Name: library.ChatAgentName, Caller: library.ChatCaller, SpendsCapture: true,
-			Quota: func(ctx context.Context) error { return t.captureQuota(ctx, user) },
+			Quota: func(ctx context.Context, q *sqlc.Queries) error { return t.captureQuota(ctx, q, user) },
 		})
 		if err != nil {
 			return ChatPatchResult{}, err
@@ -440,11 +441,11 @@ func (t *Tools) ChatPatch(ctx context.Context, in PatchInput, user uuid.UUID) (C
 }
 
 // captureQuota is Quota, with a refusal as ErrCaptureQuota.
-func (t *Tools) captureQuota(ctx context.Context, user uuid.UUID) error {
+func (t *Tools) captureQuota(ctx context.Context, q *sqlc.Queries, user uuid.UUID) error {
 	if t.Quota == nil {
 		return nil
 	}
-	err := t.Quota(ctx, user)
+	err := t.Quota(ctx, q, user)
 	if err == nil {
 		return nil
 	}
