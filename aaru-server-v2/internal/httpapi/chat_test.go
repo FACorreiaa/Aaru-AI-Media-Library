@@ -261,8 +261,13 @@ func TestTurnSSE(t *testing.T) {
 	release := make(chan struct{})
 	m := &chatModel{script: []chatMainCall{waits("Hel", release, "lo")}}
 	e := newChatEnv(t, m)
-	chat := e.newChat(e.bearer)
-	res := e.openTurn(chatDeadline(t), e.listen(), chat, e.bearer, map[string]any{
+	// The heartbeat flushes too: this far off, only a flush per frame can deliver the first one.
+	e.server.chatHeartbeat = time.Hour
+	chat, srv := e.newChat(e.bearer), e.listen()
+	ctx, hangUp := context.WithCancel(chatDeadline(t))
+	defer hangUp()
+	firstFrame := time.AfterFunc(5*time.Second, hangUp)
+	res := e.openTurn(ctx, srv, chat, e.bearer, map[string]any{
 		"body": "  what is on tonight?  ", "hint": map[string]any{"screen": "lists"},
 	})
 	require.Equal(t, http.StatusOK, res.StatusCode)
@@ -274,6 +279,7 @@ func TestTurnSSE(t *testing.T) {
 	frames := sseOf(res.Body)
 	first, ok := frames.next()
 	require.True(t, ok, "the first frame arrives while the model waits")
+	require.True(t, firstFrame.Stop(), "the first frame arrives within 5 s")
 	assert.Equal(t, "delta", first.event)
 	assert.Equal(t, "Hel", frameData[api.ChatTextFrame](t, first).Text)
 	close(release)
