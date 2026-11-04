@@ -57,6 +57,14 @@ func (r *Response) HeaderValue(name string) string {
 	return r.Header.Get(name)
 }
 
+// StreamResponse is an answer whose body the caller reads as it arrives. Closing Body
+// releases the connection and the request's timeout.
+type StreamResponse struct {
+	Status int
+	Body   io.ReadCloser
+	Header http.Header
+}
+
 // Transport sends one request. Cancelling ctx cancels it.
 type Transport interface {
 	Send(ctx context.Context, req Request) (*Response, error)
@@ -149,6 +157,60 @@ func (t *HTTPTransport) Send(ctx context.Context, req Request) (*Response, error
 		return nil, ErrBodyTooLarge
 	}
 	return &Response{Status: resp.StatusCode, Body: data, Header: resp.Header}, nil
+}
+
+// cancelOnClose cancels a request's context when its body is closed.
+type cancelOnClose struct {
+	io.ReadCloser
+	cancel context.CancelFunc
+}
+
+func (c cancelOnClose) Close() error {
+	err := c.ReadCloser.Close()
+	c.cancel()
+	return err
+}
+
+// Stream sends the request and returns as soon as the headers arrive, with the body
+// unbuffered. req.Timeout (DefaultTimeout when unset) bounds the whole read, so a
+// caller that streams a long answer sets it well above the default. The caller
+// closes Body. Any status is returned, not only 2xx.
+func (t *HTTPTransport) Stream(ctx context.Context, req Request) (*StreamResponse, error) {
+	timeout := req.Timeout
+	if timeout <= 0 {
+		timeout = DefaultTimeout
+	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	method := req.Method
+	if method == "" {
+		method = http.MethodGet
+	}
+	var body io.Reader
+	if req.Body != nil {
+		body = bytes.NewReader(req.Body)
+	}
+	httpReq, err := http.NewRequestWithContext(ctx, method, req.URL, body)
+	if err != nil {
+		cancel()
+		return nil, fmt.Errorf("build request: %w", err)
+	}
+	for _, h := range req.Headers {
+		httpReq.Header.Add(h[0], h[1])
+	}
+	client := t.Client
+	if client == nil {
+		client = http.DefaultClient
+	}
+	resp, err := client.Do(httpReq) //nolint:bodyclose // the caller closes it through StreamResponse.Body
+	if err != nil {
+		cancel()
+		return nil, fmt.Errorf("send %s %s: %w", method, redact(req.URL), err)
+	}
+	return &StreamResponse{
+		Status: resp.StatusCode,
+		Body:   cancelOnClose{ReadCloser: resp.Body, cancel: cancel},
+		Header: resp.Header,
+	}, nil
 }
 
 // redact drops the query, which may carry an API key, from a URL for an error.

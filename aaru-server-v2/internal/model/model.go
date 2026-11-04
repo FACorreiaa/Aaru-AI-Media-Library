@@ -146,6 +146,30 @@ type Provider interface {
 	Complete(ctx context.Context, req Request) (Response, error)
 }
 
+// Streamer is a Provider that can deliver text as it is written. Provider itself
+// does not require it.
+type Streamer interface {
+	// Stream is Complete that calls onText with each piece of answer text in order.
+	// The returned Response is whole, as Complete's is.
+	Stream(ctx context.Context, req Request, onText func(string)) (Response, error)
+}
+
+// StreamOrComplete streams when p can; otherwise it completes and hands onText the
+// whole text once (not at all when there is none).
+func StreamOrComplete(ctx context.Context, p Provider, req Request, onText func(string)) (Response, error) {
+	if s, ok := p.(Streamer); ok {
+		return s.Stream(ctx, req, onText)
+	}
+	resp, err := p.Complete(ctx, req)
+	if err != nil {
+		return resp, err
+	}
+	if text := resp.Text(); text != "" {
+		onText(text)
+	}
+	return resp, nil
+}
+
 // Pricing is dollars per million tokens, the same number as millionths of a dollar per token.
 type Pricing struct {
 	InputPerMTok  float64

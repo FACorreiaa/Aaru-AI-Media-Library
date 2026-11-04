@@ -11,6 +11,7 @@ require (
 	github.com/oapi-codegen/runtime v1.8.0
 	github.com/pressly/goose/v3 v3.29.0
 	github.com/prometheus/client_golang v1.25.0
+	github.com/prometheus/client_model v0.6.3
 	github.com/rivo/uniseg v0.4.7
 	github.com/stretchr/testify v1.12.1
 	golang.org/x/sync v0.24.0
@@ -55,7 +56,6 @@ require (
 	github.com/pingcap/failpoint v0.0.0-20240528011301-b51a646c7c86 // indirect
 	github.com/pingcap/log v1.1.0 // indirect
 	github.com/pingcap/tidb/pkg/parser v0.0.0-20260418072757-ce92298d1124 // indirect
-	github.com/prometheus/client_model v0.6.3 // indirect
 	github.com/prometheus/common v0.73.1 // indirect
 	github.com/prometheus/procfs v0.23.0 // indirect
 	github.com/riza-io/grpc-go v0.2.0 // indirect

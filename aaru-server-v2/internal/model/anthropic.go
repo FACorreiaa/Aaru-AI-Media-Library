@@ -45,19 +45,7 @@ func (a *AnthropicMessages) Pricing() Pricing { return a.Price }
 // Complete makes one call and counts it in `aaru_llm_calls_total`.
 func (a *AnthropicMessages) Complete(ctx context.Context, req Request) (Response, error) {
 	resp, err := a.call(ctx, req)
-	result := "ok"
-	if err != nil {
-		var pe *ProviderError
-		switch {
-		case errors.As(err, &pe) && pe.OutOfCredit:
-			result = "out_of_credit"
-		case errors.As(err, &pe):
-			result = "http_error"
-		default:
-			result = "error"
-		}
-	}
-	metrics.LLMCalls.WithLabelValues("anthropic", result).Inc()
+	metrics.LLMCalls.WithLabelValues("anthropic", llmResult(err)).Inc()
 	return resp, err
 }
 
@@ -66,6 +54,30 @@ func (a *AnthropicMessages) call(ctx context.Context, req Request) (Response, er
 	if err != nil {
 		return Response{}, fmt.Errorf("encode messages request: %w", err)
 	}
+	resp, err := a.Transport.Send(ctx, provider.Request{
+		Method:  "POST",
+		URL:     a.BaseURL.JoinPath("v1/messages").String(),
+		Headers: a.headers(),
+		Body:    body,
+		Timeout: cmpDuration(a.Timeout, 60*time.Second),
+	})
+	if err != nil {
+		return Response{}, fmt.Errorf("messages request: %w", err)
+	}
+	if resp.Status < 200 || resp.Status >= 300 {
+		return Response{}, statusError(resp.Status, string(resp.Body))
+	}
+	return ParseAnthropic(resp.Body)
+}
+
+func cmpDuration(d, fallback time.Duration) time.Duration {
+	if d == 0 {
+		return fallback
+	}
+	return d
+}
+
+func (a *AnthropicMessages) headers() [][2]string {
 	headers := [][2]string{
 		{"content-type", "application/json"},
 		{"x-api-key", a.APIKey},
@@ -74,28 +86,51 @@ func (a *AnthropicMessages) call(ctx context.Context, req Request) (Response, er
 	if a.WorkspaceID != "" {
 		headers = append(headers, [2]string{"anthropic-workspace-id", a.WorkspaceID})
 	}
-	timeout := a.Timeout
-	if timeout == 0 {
-		timeout = 60 * time.Second
+	return headers
+}
+
+// statusError is the error for a non-2xx answer; a 400 that names the usage limit or
+// credit balance is the trial cap being hit.
+func statusError(status int, text string) *ProviderError {
+	return &ProviderError{
+		Status:      status,
+		OutOfCredit: strings.Contains(text, "usage limit") || strings.Contains(text, "credit balance"),
 	}
-	resp, err := a.Transport.Send(ctx, provider.Request{
-		Method:  "POST",
-		URL:     a.BaseURL.JoinPath("v1/messages").String(),
-		Headers: headers,
-		Body:    body,
-		Timeout: timeout,
-	})
-	if err != nil {
-		return Response{}, fmt.Errorf("messages request: %w", err)
+}
+
+// llmResult is the `aaru_llm_calls_total` result label for a call's error.
+func llmResult(err error) string {
+	if err == nil {
+		return "ok"
 	}
-	if resp.Status < 200 || resp.Status >= 300 {
-		text := string(resp.Body)
-		return Response{}, &ProviderError{
-			Status:      resp.Status,
-			OutOfCredit: strings.Contains(text, "usage limit") || strings.Contains(text, "credit balance"),
-		}
+	var pe *ProviderError
+	switch {
+	case errors.As(err, &pe) && pe.OutOfCredit:
+		return "out_of_credit"
+	case errors.As(err, &pe):
+		return "http_error"
+	default:
+		return "error"
 	}
-	return ParseAnthropic(resp.Body)
+}
+
+// mapStop maps the API's stop_reason onto Stop.
+func mapStop(reason *string) Stop {
+	if reason == nil {
+		return Stop("none")
+	}
+	switch *reason {
+	case "end_turn", "stop_sequence":
+		return StopDone
+	case "tool_use":
+		return StopToolUse
+	case "max_tokens":
+		return StopMaxTokens
+	case "refusal":
+		return StopRefusal
+	default:
+		return Stop(*reason)
+	}
 }
 
 // AnthropicBody is the request body. Deliberately no sampling fields and no prefill.
@@ -143,21 +178,7 @@ func ParseAnthropic(data []byte) (Response, error) {
 	if err := json.Unmarshal(data, &raw); err != nil || raw.Content == nil {
 		return Response{}, &ProviderError{Status: 200}
 	}
-	stop := Stop("none")
-	if raw.StopReason != nil {
-		switch *raw.StopReason {
-		case "end_turn", "stop_sequence":
-			stop = StopDone
-		case "tool_use":
-			stop = StopToolUse
-		case "max_tokens":
-			stop = StopMaxTokens
-		case "refusal":
-			stop = StopRefusal
-		default:
-			stop = Stop(*raw.StopReason)
-		}
-	}
+	stop := mapStop(raw.StopReason)
 	return Response{
 		Content: raw.Content, Stop: stop,
 		InputTokens: int(raw.Usage.InputTokens), OutputTokens: int(raw.Usage.OutputTokens),
