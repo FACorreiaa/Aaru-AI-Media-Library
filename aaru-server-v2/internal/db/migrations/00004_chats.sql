@@ -24,7 +24,7 @@ CREATE TABLE chat_turns (
     updated_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX chat_turns_chat ON chat_turns (chat_id, created_at);
-CREATE INDEX chat_turns_user_day ON chat_turns (user_id, created_at) WHERE role = 'user';
+CREATE INDEX chat_turns_user ON chat_turns (user_id);
 CREATE UNIQUE INDEX chat_turns_one_streaming ON chat_turns (chat_id) WHERE state = 'streaming';
 ALTER TABLE agent_plans ADD COLUMN spends_capture boolean NOT NULL DEFAULT false;
 ALTER TABLE agent_usage ADD COLUMN chat_turns integer NOT NULL DEFAULT 0;

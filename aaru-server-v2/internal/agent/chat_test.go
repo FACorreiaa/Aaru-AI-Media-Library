@@ -722,6 +722,24 @@ func TestWriteInComponents(t *testing.T) {
 }
 
 // The whole turn, whichever way the model spreads the calls.
+func TestTurnProposesOnePlan(t *testing.T) {
+	search := call{"search_titles", map[string]any{"query": "hit", "kind": "movie"}, "a"}
+	addBoth := func(id string) call {
+		return call{"apply_library_patch", map[string]any{"changes": []any{
+			map[string]any{"op": "add", "ref": "r1", "status": "finished"},
+			map[string]any{"op": "add", "ref": "r2", "status": "finished"},
+		}}, id}
+	}
+	f := newTurnFixture(t, gate(true), step{response: toolCalls(search, addBoth("b"), addBoth("c"))}, says("Review it."))
+	f.withHits("910", "911")
+	f.ask("mark both as watched, then do it again")
+
+	assert.Equal(t, 1, f.count(`SELECT count(*)::int FROM agent_plans WHERE user_id = $1`, f.user), "one plan")
+	assert.Equal(t, 0, f.count(`SELECT count(*)::int FROM library_items WHERE user_id = $1`, f.user))
+	assert.NotNil(t, f.event("components").Plan)
+	assert.Contains(t, f.model.everythingSeen(), "Nothing was changed", "the model is told")
+}
+
 func TestTurnAppliesOneChange(t *testing.T) {
 	search := call{"search_titles", map[string]any{"query": "hit", "kind": "movie"}, "a"}
 	add := func(ref, id string) call {

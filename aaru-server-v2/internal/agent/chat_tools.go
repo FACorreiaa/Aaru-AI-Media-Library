@@ -76,7 +76,7 @@ func spoilerGuard(ctx context.Context, q *sqlc.Queries, title core.Title, user u
 		return "", fmt.Errorf("chat title progress: %w", err)
 	}
 	if progress != nil && progress.Status != core.StatusFinished && progress.Furthest == nil {
-		return "Their library has it as \"" + library.StatusLabel(progress.Status, title.Type) + "\", with no point recorded. " +
+		return "Their library has it as \"" + library.StatusLabel(progress.Status, title.Type) + "\", with no episode marked. " +
 			"Do not reveal anything that happens in it unless they say how far they are.", nil
 	}
 	return "They have " + DescribeProgress(progress) + ". Do not reveal anything that happens after that point.", nil
@@ -505,7 +505,15 @@ var errOneTapPerTurn = toolError("Nothing was changed by this call: one single c
 	"reply, and only one can. Put all the remaining changes in one apply_library_patch call so the user can " +
 	"approve them together. If only one remains, tell the user it was not made and that they can ask again.")
 
+// errOnePlanPerTurn is any change after a plan in one turn. The card shows one plan, so a second
+// would wait unseen in Aaru and hold another capture.
+var errOnePlanPerTurn = toolError("Nothing was changed by this call: this reply already has a request for the user " +
+	"to approve, and it can only have one. Tell the user to review that request, and that they can ask for the rest after.")
+
 func (t *ChatTools) patch(ctx context.Context, raw json.RawMessage) (string, error) {
+	if t.plan != nil {
+		return "", errOnePlanPerTurn
+	}
 	in, err := t.patchInput(raw)
 	if err != nil {
 		return "", err

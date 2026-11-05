@@ -80,7 +80,9 @@ func bodyRule(c echo.Context) middleware.BodyRule {
 	}
 	if limit, ok := ownBodyLimits[key]; ok {
 		timeout := bodyReadTimeout
-		if limit > defaultBodyLimit {
+		// A voice clip holds one of a few shared upload slots while it reads, and is small: a stalled
+		// one gets the short timeout, so four of them cannot refuse voice to everyone for ten minutes.
+		if limit > defaultBodyLimit && key != "POST /v1/chats/transcribe" {
 			timeout = uploadReadTimeout
 		}
 		return middleware.BodyRule{Limit: limit, OwnBound: true, ReadTimeout: timeout}
