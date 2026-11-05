@@ -278,8 +278,10 @@ within a year. Error reports are deleted within 90 days and product counts withi
 ## Your choices
 
 - **Delete your account:** Settings → Delete account, in the app or on the web.
-- **Export:** Settings → Export your data, in the app or on the web. JSON has everything; CSV
-  opens in a spreadsheet and imports back into Aaru.
+- **Export:** Settings → Export your data, in the app or on the web. JSON has your account, library,
+  lists, shelves, favorites, friends, blocks, groups, listens, followed sports and chats. It leaves
+  out daily usage counts, the history behind Undo, plans Aaru proposed and import records. CSV opens
+  in a spreadsheet and imports back into Aaru.
 - **Delete your chats:** Settings → Delete my chats with Aaru. The daily count of questions you
   sent, which holds no text, stays to enforce the daily limit and is removed with your account.
 - **Questions or requests:** privacy@aaruapp.com.
