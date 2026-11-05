@@ -14,7 +14,7 @@ import (
 // OpenLibraryBaseURL is Open Library's API root.
 const OpenLibraryBaseURL = "https://openlibrary.org"
 
-const openLibraryFields = "key,title,first_publish_year,isbn,cover_i,author_name,number_of_pages_median"
+const openLibraryFields = "key,title,subtitle,first_publish_year,isbn,cover_i,author_name,number_of_pages_median"
 
 // OpenLibrary is the Open Library adapter (CAT-003): book search and detail, ISBN
 // normalized to ISBN-13, cover URLs referenced, never downloaded. Also Discover's
@@ -160,6 +160,7 @@ func (openLibraryPage) hits(docs []openLibraryDoc) []Hit {
 type openLibraryDoc struct {
 	Key                 string   `json:"key"`
 	Title               *string  `json:"title"`
+	Subtitle            *string  `json:"subtitle"`
 	FirstPublishYear    *int     `json:"first_publish_year"`
 	ISBN                []string `json:"isbn"`
 	CoverI              *int     `json:"cover_i"`
@@ -188,7 +189,8 @@ func (d openLibraryDoc) hit() (Hit, bool) {
 		}
 	}
 	return Hit{
-		Type: core.MediaBook, Title: *title, Year: d.FirstPublishYear, PosterURL: poster, Byline: byline,
+		Type: core.MediaBook, Title: *title, Subtitle: nilIfBlank(d.Subtitle), Year: d.FirstPublishYear,
+		PosterURL: poster, Byline: byline,
 		IDs:       core.ExternalIDs{ISBN: isbn, OpenLibrary: strings.TrimPrefix(d.Key, "/works/")},
 		PageCount: positive(d.NumberOfPagesMedian),
 	}, true

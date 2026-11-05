@@ -3181,6 +3181,33 @@ paths:
           description: Undone.
         default:
           $ref: '#/components/responses/Error'
+  /v1/imports/{id}/match-all:
+    post:
+      operationId: matchAllImportRows
+      summary: >-
+        Find a best guess for the plan's unmatched rows (IMP-021): the "Match all" button. A guess
+        joins the plan like a pick and shows what it found, so the person checks it before
+        approving; nothing is written here. One call does what fits in a few seconds, so a client
+        calls again while `remaining` goes down, and stops when it does not. Only while the plan
+        waits.
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: Saved. The job's counts, the rows this call changed, and how many are left to try.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [job, rows, remaining]
+                properties:
+                  job: {$ref: '#/components/schemas/ImportJob'}
+                  rows:
+                    type: array
+                    items: {$ref: '#/components/schemas/ImportRow'}
+                  remaining: {type: integer}
+        '404': {description: No such import.}
+        '409': {description: 'The plan has been applied (`import_not_planned`).'}
   /v1/imports/{id}/rows/{index}/left-out:
     post:
       operationId: leaveOutImportRow
@@ -3814,6 +3841,8 @@ components:
         year: {type: integer}
         author: {type: string}
         leftOut: {type: boolean, description: Unticked in the review; the plan does not write it.}
+        guess: {$ref: '#/components/schemas/ImportRowGuess'}
+        guessable: {type: boolean, description: Match all has yet to try this unmatched row.}
         type: {$ref: '#/components/schemas/MediaType'}
         sourceKey: {type: string}
         ids: {$ref: '#/components/schemas/ExternalIds'}
@@ -3824,6 +3853,14 @@ components:
           enum: [pending, create, update, skip, unmatched]
         reason: {type: string}
         titleId: {type: string, format: uuid}
+    ImportRowGuess:
+      type: object
+      required: [title]
+      description: The title Match all chose for a row (IMP-021), for the person to check. Absent on a row they matched themselves.
+      properties:
+        title: {type: string}
+        byline: {type: string}
+        posterUrl: {type: string}
     ImportDetail:
       type: object
       required: [job, rows]

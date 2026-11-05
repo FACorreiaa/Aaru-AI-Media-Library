@@ -796,6 +796,10 @@ not in the merge order, and it plans and applies like every other import (one pl
 - **Spend:** every model call records tokens and `cost_micros` in `agent_usage`, priced from
   `ANTHROPIC_PRICE_INPUT` / `ANTHROPIC_PRICE_OUTPUT` (dollars per million tokens).
 - A planned capture pushes "N ready · M need a pick" to the user's devices.
+- **Match all (IMP-021):** `POST /v1/imports/{id}/match-all` searches outside any transaction, three at
+  a time for 15 seconds, then saves under the job's lock; the client calls again while `remaining`
+  falls. A guess joins the plan like a pick (`Row.Guess`, `Row.GuessTried`, in the row's JSON, so no
+  migration) and only Approve writes it. `resolve` may replace a guess while the plan waits.
 - **Books page (BOOK-001):** `?kind=book` is stored on the input; the model's tool takes only `book`
   and `Rows`' other kinds are dropped. Text runs to 100,000 characters. A `multipart/form-data` body
   carries up to 5 `image` parts in `capture_images`, which go in one model turn and cascade away with

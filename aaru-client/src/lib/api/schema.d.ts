@@ -2719,6 +2719,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/imports/{id}/match-all': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Find a best guess for the plan's unmatched rows (IMP-021): the "Match all" button. A guess joins the plan like a pick and shows what it found, so the person checks it before approving; nothing is written here. One call does what fits in a few seconds, so a client calls again while `remaining` goes down, and stops when it does not. Only while the plan waits. */
+    post: operations['matchAllImportRows']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/imports/{id}/rows/{index}/left-out': {
     parameters: {
       query?: never
@@ -3191,6 +3208,9 @@ export interface components {
       author?: string
       /** @description Unticked in the review; the plan does not write it. */
       leftOut?: boolean
+      guess?: components['schemas']['ImportRowGuess']
+      /** @description Match all has yet to try this unmatched row. */
+      guessable?: boolean
       type: components['schemas']['MediaType']
       sourceKey?: string
       ids?: components['schemas']['ExternalIds']
@@ -3201,6 +3221,12 @@ export interface components {
       reason?: string
       /** Format: uuid */
       titleId?: string
+    }
+    /** @description The title Match all chose for a row (IMP-021), for the person to check. Absent on a row they matched themselves. */
+    ImportRowGuess: {
+      title: string
+      byline?: string
+      posterUrl?: string
     }
     ImportDetail: {
       job: components['schemas']['ImportJob']
@@ -9838,6 +9864,46 @@ export interface operations {
         content?: never
       }
       default: components['responses']['Error']
+    }
+  }
+  matchAllImportRows: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Saved. The job's counts, the rows this call changed, and how many are left to try. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            job: components['schemas']['ImportJob']
+            rows: components['schemas']['ImportRow'][]
+            remaining: number
+          }
+        }
+      }
+      /** @description No such import. */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description The plan has been applied (`import_not_planned`). */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
     }
   }
   leaveOutImportRow: {

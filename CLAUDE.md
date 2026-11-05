@@ -355,7 +355,7 @@ Scrobbles are not in this order either: they are live events, applied as they ar
 Listening-history imports (MUS-004) are not in it either: they fill the listening log, never the
 library.
 
-Matching key: external IDs first, then normalized title + year + type. Never merge two titles that only share a similar name. A book with an author and neither id nor year goes by title + author instead: same author always, same title or same part before a colon (BOOK-001).
+Matching key: external IDs first, then normalized title + year + type. Never merge two titles that only share a similar name. A book with an author and neither id nor year goes by title + author instead: same author always, same title or the one such book by that author (BOOK-001). Match all's best guesses (IMP-021) are looser, and only ever a proposal the user sees before approving.
 
 Merging sources (owner, 2026-10-20): an import fills empty fields and adds missing ticks, and may
 move a status forward (`wishlist` → `in_progress` → `finished`). It never moves one backward, never

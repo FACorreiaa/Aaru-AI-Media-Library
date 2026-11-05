@@ -44,7 +44,9 @@ func (s *Service) ResolveRow(ctx context.Context, id uuid.UUID, index int, ref c
 	if position < 0 {
 		return core.ImportJob{}, PlannedRow{}, apperr.NotFound()
 	}
-	if rows[position].Outcome != OutcomeUnmatched {
+	// A guess waiting in the plan can be changed; anything else already matched cannot.
+	changingGuess := job.State == core.JobPlanned && rows[position].Row.Guess != nil
+	if rows[position].Outcome != OutcomeUnmatched && !changingGuess {
 		return core.ImportJob{}, PlannedRow{}, apperr.New(http.StatusConflict, "import_row_matched", "This row is already matched.")
 	}
 	resolver := s.Resolver()
@@ -57,6 +59,7 @@ func (s *Service) ResolveRow(ctx context.Context, id uuid.UUID, index int, ref c
 	row.TitleID = &titleID
 	row.Row.Type = title.Type
 	row.Row.Unsupported = nil
+	row.Row.Guess, row.Row.LeftOut = nil, nil
 	if err := numberNamedEpisodes(ctx, &row.Row, title, resolver); err != nil {
 		return core.ImportJob{}, PlannedRow{}, err
 	}

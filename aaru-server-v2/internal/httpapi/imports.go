@@ -105,6 +105,23 @@ func (s *Server) LeaveOutImportRow(ctx context.Context, req api.LeaveOutImportRo
 	return importResolvedJSON{Job: importJobOut(job), Row: ImportRowDTO(row)}, nil
 }
 
+// MatchAllImportRows is the review's Match all (IMP-021).
+func (s *Server) MatchAllImportRows(ctx context.Context, req api.MatchAllImportRowsRequestObject) (api.MatchAllImportRowsResponseObject, error) {
+	user, err := currentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result, err := s.Imports.MatchAll(ctx, req.Id.ID(), user)
+	if err != nil {
+		return nil, err
+	}
+	rows := make([]api.ImportRow, len(result.Rows))
+	for i, row := range result.Rows {
+		rows[i] = ImportRowDTO(row)
+	}
+	return importMatchedJSON{Job: importJobOut(result.Job), Rows: rows, Remaining: result.Remaining}, nil
+}
+
 func (s *Server) CreateAniListImport(ctx context.Context, req api.CreateAniListImportRequestObject) (api.CreateAniListImportResponseObject, error) {
 	user, err := currentUser(ctx)
 	if err != nil {
@@ -332,6 +349,17 @@ type importDetailJSON struct {
 
 func (d importDetailJSON) VisitGetImportResponse(w http.ResponseWriter) error { return writeJSON(w, d) }
 
+// importMatchedJSON is Match all's answer, with the job in its own shape.
+type importMatchedJSON struct {
+	Job       importJobJSON   `json:"job"`
+	Rows      []api.ImportRow `json:"rows"`
+	Remaining int             `json:"remaining"`
+}
+
+func (r importMatchedJSON) VisitMatchAllImportRowsResponse(w http.ResponseWriter) error {
+	return writeJSON(w, r)
+}
+
 type importResolvedJSON struct {
 	Job importJobJSON `json:"job"`
 	Row api.ImportRow `json:"row"`
@@ -357,6 +385,13 @@ func ImportRowDTO(p imports.PlannedRow) api.ImportRow {
 	if row.Status != nil {
 		status := api.LibraryStatus(*row.Status)
 		out.Status = &status
+	}
+	if row.Guess != nil {
+		out.Guess = &api.ImportRowGuess{Byline: row.Guess.Byline, PosterUrl: row.Guess.PosterURL, Title: row.Guess.Title}
+	}
+	if imports.Guessable(p) {
+		guessable := true
+		out.Guessable = &guessable
 	}
 	return out
 }
