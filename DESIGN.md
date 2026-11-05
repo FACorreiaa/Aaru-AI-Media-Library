@@ -586,6 +586,9 @@ One page per kind, all in More (§18), built from one shape so they read alike:
   the toolbar's `+`, in a sheet (on the web, an "Import books" button and a dialog). Its shelf also has On hold and Read rows.
 - **A planned capture is chosen row by row** (BOOK-001): its rows come before Approve, each with a
   tick, all ticked to start, and the counts follow. Other imports keep their order and have no ticks.
+- **Match all** (IMP-021) sits on the Not matched heading of any plan still waiting, and reads "Matching
+  12 of 30" while it runs. A filled row moves to Will be added: small cover, what the catalog calls it,
+  its author, `Best guess for "what the list said"`, a tick and Change. Rows it could not fill keep Find it.
 - **Credits** name only the providers on the page: Open Library; AniList; ListenBrainz,
   MusicBrainz and the Cover Art Archive, with Ticketmaster for concerts.
 - **Music** has three views, Albums · Concerts · Listens: Albums is the shelf and rows above,

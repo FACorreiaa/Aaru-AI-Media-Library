@@ -156,38 +156,30 @@ struct ImportDetailView: View {
     private func rows(_ outcome: Components.Schemas.ImportRow.OutcomePayload, title: String) -> some View {
         let matching = detail?.rows.filter { $0.outcome == outcome } ?? []
         let findable = outcome == .unmatched && canFind
-        let tickable = canTick(outcome)
+        let guessable = matching.count(where: { $0.guessable == true })
         if !matching.isEmpty {
             Section {
                 ForEach(matching.prefix(Self.shownRows), id: \.index) { row in
-                    HStack {
-                        if tickable {
-                            tick(row)
-                        }
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(row.label)
-                                .foregroundStyle(row.leftOut == true ? Color(.muted) : Color(.ink))
-                            if tickable, let author = row.author {
-                                Text(author).font(.caption).foregroundStyle(Color(.muted))
-                            }
-                            if let reason = row.reason {
-                                Text(reason).font(.caption).foregroundStyle(Color(.muted))
-                            }
-                        }
-                        if findable {
-                            Spacer(minLength: 8)
-                            Button("Find it") { finding = row }
-                                .buttonStyle(.borderless)
-                                .frame(minHeight: 44)
-                                .accessibilityLabel("Find \(row.title)")
-                        }
-                    }
+                    ImportReviewRow(
+                        row: row,
+                        canTick: canTick(row),
+                        canChange: job?.state == .planned && row.guess != nil,
+                        canFind: findable,
+                        onTick: { leftOut in Task { await setLeftOut(row, leftOut) } },
+                        onFind: { finding = row }
+                    )
                 }
             } header: {
-                Text("\(title) (\(matching.filter { $0.leftOut != true }.count.formatted()))")
+                HStack {
+                    Text("\(title) (\(matching.filter { $0.leftOut != true }.count.formatted()))")
+                    if job?.state == .planned, guessable > 0 {
+                        Spacer()
+                        MatchAllButton(id: id, imports: imports, guessable: guessable, onBatch: applyMatches)
+                    }
+                }
             } footer: {
                 VStack(alignment: .leading, spacing: 4) {
-                    if tickable {
+                    if matching.contains(where: canTick) {
                         Text("Untick anything you don't want.")
                     }
                     if findable {
@@ -305,13 +297,6 @@ extension ImportRow: @retroactive Identifiable {
     }
 }
 
-private extension ImportRow {
-    /// "Dune (2021)": the name as the import file had it.
-    var label: String {
-        [title, year.map { "(\($0))" }].compactMap(\.self).joined(separator: " ")
-    }
-}
-
 // MARK: Choosing and finding rows
 
 private extension ImportDetailView {
@@ -327,29 +312,26 @@ private extension ImportDetailView {
         rows(.update, title: job.state == .planned ? "Will be filled in" : "Filled in")
     }
 
-    /// BOOK-001: a planned capture's rows can each be left out. Other imports look as they did.
-    func canTick(_ outcome: Components.Schemas.ImportRow.OutcomePayload) -> Bool {
-        job?.isCapture == true && job?.state == .planned && (outcome == .create || outcome == .update)
+    /// BOOK-001: a planned capture's rows can each be left out. So can a guess in any import, which
+    /// is always the person's to check (IMP-021). Other imports look as they did.
+    func canTick(_ row: ImportRow) -> Bool {
+        job?.state == .planned && (row.outcome == .create || row.outcome == .update)
+            && (job?.isCapture == true || row.guess != nil)
+    }
+
+    /// Match all's batch: the counts and the rows it changed, in place.
+    func applyMatches(_ answer: MatchedImportRows) {
+        detail?.job = answer.job
+        for row in answer.rows {
+            if let position = detail?.rows.firstIndex(where: { $0.index == row.index }) {
+                detail?.rows[position] = row
+            }
+        }
     }
 
     var everyRowLeftOut: Bool {
-        let rows = detail?.rows.filter { canTick($0.outcome) } ?? []
+        let rows = detail?.rows.filter(canTick) ?? []
         return !rows.isEmpty && rows.allSatisfy { $0.leftOut == true }
-    }
-
-    func tick(_ row: ImportRow) -> some View {
-        let ticked = row.leftOut != true
-        return Button(
-            ticked ? "Leave out \(row.title)" : "Add \(row.title)",
-            systemImage: ticked ? "checkmark.circle.fill" : "circle"
-        ) {
-            Task { await setLeftOut(row, ticked) }
-        }
-        .labelStyle(.iconOnly)
-        .font(.title3)
-        .foregroundStyle(ticked ? Color(.accent) : Color(.muted))
-        .buttonStyle(.borderless)
-        .frame(minWidth: 44, minHeight: 44)
     }
 
     /// Updates the row and the counts in place.

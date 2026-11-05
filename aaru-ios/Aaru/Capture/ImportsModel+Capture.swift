@@ -2,6 +2,7 @@ import AaruAPI
 import OpenAPIRuntime
 
 typealias LeftOutImportRow = Operations.LeaveOutImportRow.Output.Ok.Body.JsonPayload
+typealias MatchedImportRows = Operations.MatchAllImportRows.Output.Ok.Body.JsonPayload
 
 extension ImportsModel {
     /// What a capture came to.
@@ -38,6 +39,25 @@ extension ImportsModel {
     }
 
     /// BOOK-001: a row of a planned capture ticked or unticked. It answers like `resolve`.
+    /// IMP-021: a best guess for as many unmatched rows as fit in one call.
+    func matchAll(_ id: String) async -> MatchedImportRows? {
+        guard let api else { return nil }
+        problem = nil
+        do {
+            switch try await api.matchAllImportRows(path: .init(id: id)) {
+            case let .ok(response):
+                let answer = try response.body.json
+                replace(answer.job)
+                return answer
+            case let .default(_, error):
+                problem = (try? error.body.json.message) ?? "Match all did not finish."
+            }
+        } catch {
+            problem = "Match all did not finish. Aaru could not reach the server."
+        }
+        return nil
+    }
+
     func leaveOut(_ id: String, row index: Int, leftOut: Bool) async -> LeftOutImportRow? {
         guard let api else { return nil }
         problem = nil
