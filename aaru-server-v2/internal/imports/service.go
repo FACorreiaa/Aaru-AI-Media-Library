@@ -441,6 +441,10 @@ func containsID(ids []uuid.UUID, id uuid.UUID) bool {
 func Stats(rows []PlannedRow) core.ImportStats {
 	var st core.ImportStats
 	for _, r := range rows {
+		// Left out by hand: not added, not "already there".
+		if isTrue(r.Row.LeftOut) {
+			continue
+		}
 		switch r.Outcome {
 		case OutcomeCreate:
 			st.Created++

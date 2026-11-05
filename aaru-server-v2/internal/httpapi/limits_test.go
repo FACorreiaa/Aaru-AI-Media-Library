@@ -85,11 +85,11 @@ func TestUploadsKeepTheirOwnLimitsAndMessages(t *testing.T) {
 	assert.Equal(t, "file_too_large", decode[api.ErrorResponse](t, rec).Code)
 }
 
-// HTTP-001: capture's JSON body is at most 128 KiB, answered as text over capture's limit.
-func TestCaptureJSONIsAtMost128KiB(t *testing.T) {
+// HTTP-001: capture's JSON body is at most 512 KiB, answered as text over capture's limit.
+func TestCaptureJSONIsAtMost512KiB(t *testing.T) {
 	h := newHarness(t)
 	_, bearer := h.signIn()
-	text := []byte(`{"text":"` + strings.Repeat("a", 200<<10) + `"}`)
+	text := []byte(`{"text":"` + strings.Repeat("a", 600<<10) + `"}`)
 	for _, chunked := range []bool{false, true} {
 		rec := h.sendBytes(http.MethodPost, "/v1/imports/capture", bearer, "application/json", text, chunked)
 		assert.Equal(t, http.StatusRequestEntityTooLarge, rec.Code, "chunked=%v", chunked)

@@ -63,7 +63,6 @@ func entitlementDTO(state billing.State, userID uuid.UUID) api.Entitlement {
 		out.Sandbox = &sandbox
 	}
 	out.Capture.Used = state.CapturesUsed
-	out.Capture.Limit = state.CaptureLimit
 	out.Capture.ResetsAt = apitime.From(state.CapturesResetAt)
 	return out
 }

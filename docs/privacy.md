@@ -152,12 +152,12 @@ from your own library with their status and progress. It never sends another mem
 or progress. Aaru's answer is posted in the channel like any message. Aaru keeps a count of how
 many questions you asked each day and how much text they used, to keep the service fair.
 
-**Capture.** If you paste text or send a picture to Aaru to find titles in it, Aaru sends that
-text or picture to Anthropic (below) to read the names of films, shows, anime and books. It is
+**Capture.** If you paste text or send pictures to Aaru to find titles in them, Aaru sends that
+text or those pictures to Anthropic (below) to read the names of films, shows, anime and books. It is
 kept only until it has been read, and never longer than an hour, then deleted. What it found
 becomes an import you review like any other; nothing is added to your library until you approve
 it. A link you send is read for the title it names and is never opened. Aaru counts how many
-captures you made this month and how much text each used.
+captures you made today and how much text each used.
 
 **Your chats with Aaru.** When you ask Aaru something from the owl in the top bar, the
 question and Aaru's answer are kept as a chat. Chats stay until you delete them with "Delete my
@@ -214,7 +214,7 @@ where, a title was added or changed and by whom (you, an agent, an import or a p
 group was created, a friend was added, an agent's request was approved or declined, the Tonight
 strip showed something today, one of its picks was started within six hours, or you answered a
 pick with "not tonight" or "not for me", a capture was sent (as text, a link or a picture) and its
-plan approved or discarded, the monthly capture limit was reached, Aaru Plus was bought
+plan approved or discarded, Aaru Plus was bought
 (and which plan), a share link was made or opened (and whether it points to a title, a match or
 a concert), or you asked Aaru something from the owl (a count only, with no text of the question
 or the reply). A share link's events carry the sender's random id, never the id of whoever opened it. Each event

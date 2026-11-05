@@ -14,7 +14,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -106,6 +105,16 @@ func (f *writeFixture) toolsOnOneConnection() *agent.Tools {
 	kit := catalog.NewKit(pool, providers, log)
 	lib := library.NewService(library.NewStore(pool), kit, nil, log)
 	return &agent.Tools{Catalog: kit, Library: lib, Plans: plans.NewService(pool, lib, nil, nil, log)}
+}
+
+// spendCaptures is n captures already started today: the 20-change cap on waiting chat plans would
+// stop a chat from getting near the day's limit on its own.
+func (f *writeFixture) spendCaptures(n int) {
+	f.t.Helper()
+	for range n {
+		f.exec(`INSERT INTO import_jobs (id, user_id, source, state, stats, created_at, updated_at)
+			VALUES (gen_random_uuid(), $1, 'capture', 'succeeded', '{}', now(), now())`, f.user)
+	}
 }
 
 // realQuota is the capture quota as the server wires it.
@@ -347,17 +356,13 @@ func TestChatPatchRemovePlanNoSpend(t *testing.T) {
 func TestChatPatchQuota(t *testing.T) {
 	f := newWriteFixture(t)
 	f.tools.Quota = f.realQuota()
-	for i := range imports.FreeCapturesPerMonth {
-		res, err := f.tools.ChatPatch(f.ctx, bulk("3"+strconv.Itoa(i)), f.user)
-		require.NoError(t, err)
-		require.NotNil(t, res.Plan)
-	}
+	f.spendCaptures(imports.CapturesPerDay)
 	plansBefore := f.count(`SELECT count(*)::int FROM agent_plans WHERE user_id = $1`, f.user)
 
-	_, err := f.tools.ChatPatch(f.ctx, bulk("39"), f.user)
+	_, err := f.tools.ChatPatch(f.ctx, bulk("3999"), f.user)
 	require.ErrorIs(t, err, agent.ErrCaptureQuota)
-	assert.Contains(t, err.Error(), "Aaru Plus lifts the limit")
-	assert.NotContains(t, err.Error(), "402")
+	assert.Contains(t, err.Error(), "captures a day")
+	assert.NotContains(t, err.Error(), "429")
 	assert.Equal(t, plansBefore, f.count(`SELECT count(*)::int FROM agent_plans WHERE user_id = $1`, f.user))
 
 	one, err := f.tools.ChatPatch(f.ctx, patch(addChange("400", core.StatusInProgress)), f.user)
@@ -400,7 +405,8 @@ func TestChatPatchQuotaRunsOnThePlanTransaction(t *testing.T) {
 	ctx, cancel := context.WithTimeout(f.ctx, 15*time.Second)
 	defer cancel()
 
-	callers := imports.FreeCapturesPerMonth + 3
+	f.spendCaptures(imports.CapturesPerDay - 1)
+	const callers = 4
 	errs := make([]error, callers)
 	var wg sync.WaitGroup
 	for i := range callers {
@@ -416,8 +422,8 @@ func TestChatPatchQuotaRunsOnThePlanTransaction(t *testing.T) {
 			refused++
 		}
 	}
-	assert.Equal(t, callers-imports.FreeCapturesPerMonth, refused)
-	assert.Equal(t, imports.FreeCapturesPerMonth, f.count(`SELECT count(*)::int FROM agent_plans WHERE user_id = $1 AND spends_capture`, f.user))
+	assert.Equal(t, callers-1, refused)
+	assert.Equal(t, 1, f.count(`SELECT count(*)::int FROM agent_plans WHERE user_id = $1 AND spends_capture`, f.user))
 }
 
 // A waiting plan holds its capture; one refused, stale or run out gives it back.
@@ -447,27 +453,25 @@ func TestCaptureCountFollowsThePlan(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			f := newWriteFixture(t)
 			f.tools.Quota = f.realQuota()
-			var last uuid.UUID
-			for i := range imports.FreeCapturesPerMonth {
-				res, err := f.tools.ChatPatch(f.ctx, bulk("2"+strconv.Itoa(i)), f.user)
-				require.NoError(t, err)
-				last = res.Plan.ID
-			}
-			_, err := f.tools.ChatPatch(f.ctx, bulk("29"), f.user)
-			require.ErrorIs(t, err, agent.ErrCaptureQuota, "the month's captures are all held")
+			f.spendCaptures(imports.CapturesPerDay - 1)
+			res, err := f.tools.ChatPatch(f.ctx, bulk("20"), f.user)
+			require.NoError(t, err)
+			last := res.Plan.ID
+			_, err = f.tools.ChatPatch(f.ctx, bulk("2999"), f.user)
+			require.ErrorIs(t, err, agent.ErrCaptureQuota, "the day's captures are all held")
 
 			tc.settle(f, last)
 
 			now := time.Now()
 			used, err := (&capture.Store{Q: sqlc.New(f.pool)}).Captures(f.ctx, f.user, now.Add(-time.Hour), now)
 			require.NoError(t, err)
-			_, err = f.tools.ChatPatch(f.ctx, bulk("29"), f.user)
+			_, err = f.tools.ChatPatch(f.ctx, bulk("2999"), f.user)
 			if tc.counted {
-				assert.Equal(t, imports.FreeCapturesPerMonth, used)
+				assert.Equal(t, imports.CapturesPerDay, used)
 				require.ErrorIs(t, err, agent.ErrCaptureQuota)
 				return
 			}
-			assert.Equal(t, imports.FreeCapturesPerMonth-1, used)
+			assert.Equal(t, imports.CapturesPerDay-1, used)
 			require.NoError(t, err, "the slot came back")
 		})
 	}
@@ -477,10 +481,7 @@ func TestCaptureCountFollowsThePlan(t *testing.T) {
 func TestChatPatchQuotaHoldsInParallel(t *testing.T) {
 	f := newWriteFixture(t)
 	f.tools.Quota = f.realQuota()
-	for i := range imports.FreeCapturesPerMonth - 1 {
-		_, err := f.tools.ChatPatch(f.ctx, bulk("5"+strconv.Itoa(i)), f.user)
-		require.NoError(t, err)
-	}
+	f.spendCaptures(imports.CapturesPerDay - 1)
 	const callers = 6
 	errs := make([]error, callers)
 	var wg sync.WaitGroup
@@ -498,7 +499,7 @@ func TestChatPatchQuotaHoldsInParallel(t *testing.T) {
 		}
 	}
 	assert.Equal(t, callers-1, refused)
-	assert.Equal(t, imports.FreeCapturesPerMonth, f.count(`SELECT count(*)::int FROM agent_plans WHERE user_id = $1 AND spends_capture`, f.user))
+	assert.Equal(t, 1, f.count(`SELECT count(*)::int FROM agent_plans WHERE user_id = $1 AND spends_capture`, f.user))
 }
 
 // A spending plan queues behind a capture counting the same quota (DB-004), and stores nothing while it does.

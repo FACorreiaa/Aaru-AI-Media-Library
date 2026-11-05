@@ -54,13 +54,27 @@ func UserText(text string) Turn {
 
 // UserImage is one base64 image and the words about it, in that order.
 func UserImage(image []byte, mediaType, text string) Turn {
-	return Turn{Role: RoleUser, Content: []Block{
-		block(map[string]any{
-			"type":   "image",
-			"source": map[string]string{"type": "base64", "media_type": mediaType, "data": base64.StdEncoding.EncodeToString(image)},
-		}),
-		block(map[string]string{"type": "text", "text": text}),
-	}}
+	return UserImages([]Image{{Data: image, MediaType: mediaType}}, text)
+}
+
+// Image is one picture for a turn.
+type Image struct {
+	Data      []byte
+	MediaType string
+}
+
+// UserImages is one user turn: the pictures, in order, then text.
+func UserImages(images []Image, text string) Turn {
+	content := make([]Block, 0, len(images)+1)
+	for _, image := range images {
+		content = append(content, block(map[string]any{
+			"type": "image",
+			"source": map[string]string{
+				"type": "base64", "media_type": image.MediaType, "data": base64.StdEncoding.EncodeToString(image.Data),
+			},
+		}))
+	}
+	return Turn{Role: RoleUser, Content: append(content, block(map[string]string{"type": "text", "text": text}))}
 }
 
 // Request is one model call.

@@ -49,7 +49,7 @@ func TestEntitlementReportsPlusAndCaptures(t *testing.T) {
 	free := decode[map[string]any](t, h.do(http.MethodGet, "/v1/me/entitlement", bearer, nil))
 	assert.Equal(t, false, free["plus"])
 	assert.Equal(t, strings.ToUpper(user.String()), free["appAccountToken"])
-	assert.InDelta(t, 3, free["capture"].(map[string]any)["limit"], 0)
+	assert.Nil(t, free["capture"].(map[string]any)["limit"])
 
 	bad := h.do(http.MethodPost, "/v1/billing/apple/transactions", bearer, map[string]string{"signedTransaction": "garbage"})
 	assert.Equal(t, http.StatusUnprocessableEntity, bad.Code)

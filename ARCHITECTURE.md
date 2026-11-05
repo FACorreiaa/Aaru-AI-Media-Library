@@ -785,15 +785,26 @@ not in the merge order, and it plans and applies like every other import (one pl
   bytes, media type) and returns the job. The worker sends it to the model in one call that must
   answer with the `report_titles` tool (`tool_choice`), turns the reported names into rows
   (deduplicated, at most 50, anime planned as shows, status `wishlist`), and deletes the input
-  whatever the model found. `CaptureSweeper` deletes any input still there an hour on. Images are
-  at most 5 MB, JPEG/PNG/GIF/WebP; clients downscale to 1568 px on the long edge first.
-- **Quota:** a free account starts 3 captures per UTC month (counted from `import_jobs`); the
-  fourth gets 402 `capture_quota` with the reset date. Plus lifts it (BIL items).
+  whatever the model found. `CaptureSweeper` deletes any input still there an hour on. One image is
+  at most 5 MB, several at most 15 MB in all, JPEG/PNG/GIF/WebP; clients downscale to 1568 px on the
+  long edge first.
+- **Quota:** every account starts 30 captures per UTC day (counted from `import_jobs`), under the
+  user's capture lock; the next gets 429 `capture_fair_use`. There is no monthly limit while Plus is
+  off sale (BIL-005).
 - **Spend:** every model call records tokens and `cost_micros` in `agent_usage`, priced from
   `ANTHROPIC_PRICE_INPUT` / `ANTHROPIC_PRICE_OUTPUT` (dollars per million tokens).
 - A planned capture pushes "N ready · M need a pick" to the user's devices.
-- **Plus fair use:** a Plus account has no monthly limit but gets 429 `capture_fair_use` after 30
-  captures in a UTC day.
+- **Books page (BOOK-001):** `?kind=book` is stored on the input; the model's tool takes only `book`
+  and `Rows`' other kinds are dropped. Text runs to 100,000 characters. A `multipart/form-data` body
+  carries up to 5 `image` parts in `capture_images`, which go in one model turn and cascade away with
+  the input. A captured book's `author` goes on the row, and replaces its year for matching: the
+  year is often an edition's. A book with an author and neither id nor year resolves through
+  `ResolveBookByAuthor`: the search is the part of the title before a colon plus the author, a hit
+  must have that author, the same title wins over the same part before a colon, and the search's
+  order picks among duplicates.
+- **Leaving a row out:** `POST /v1/imports/{id}/rows/{index}/left-out`, while the job is planned and
+  only on a create or update row. A left-out row stays in the plan, is written as a skip, and leaves
+  the job's counts. Applying with every row left out gets 422 `import_nothing_chosen`.
 
 ### Listening history (MUS-004)
 

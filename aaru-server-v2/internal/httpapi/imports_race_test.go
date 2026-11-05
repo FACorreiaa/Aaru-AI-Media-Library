@@ -76,13 +76,13 @@ func TestListenImportApplyConcurrentAppliesOnce(t *testing.T) {
 }
 
 // DB-004: the quota is counted and the capture inserted under one per-user lock, so parallel
-// captures from a free account cannot all pass the count.
-func TestCaptureParallelFreeAccountGetsExactlyThree(t *testing.T) {
+// captures from one account cannot all pass the count.
+func TestCaptureParallelAccountGetsExactlyThirtyADay(t *testing.T) {
 	env := newCaptureEnv(t, nil, nil)
 	tmdb := env.captureFilm("Race " + uuid.NewString())
 	link := map[string]any{"url": "https://www.themoviedb.org/movie/" + tmdb}
 	var wg sync.WaitGroup
-	codes := make([]int, 10)
+	codes := make([]int, 40)
 	start := make(chan struct{})
 	for i := range codes {
 		wg.Add(1)
@@ -99,14 +99,14 @@ func TestCaptureParallelFreeAccountGetsExactlyThree(t *testing.T) {
 		switch c {
 		case http.StatusAccepted:
 			accepted++
-		case http.StatusPaymentRequired:
+		case http.StatusTooManyRequests:
 			refused++
 		}
 	}
-	assert.Equal(t, 3, accepted, codes)
-	assert.Equal(t, 7, refused, codes)
+	assert.Equal(t, 30, accepted, codes)
+	assert.Equal(t, 10, refused, codes)
 	var jobs int
 	require.NoError(t, env.pool.QueryRow(context.Background(),
 		`SELECT count(*)::int FROM import_jobs WHERE user_id = $1 AND source = 'capture'`, env.user).Scan(&jobs))
-	assert.Equal(t, 3, jobs)
+	assert.Equal(t, 30, jobs)
 }

@@ -2470,7 +2470,7 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Capture (AG-006): pasted text, one image, or a link to a title on TMDB, AniList or Open Library, planned like any import and written only after approval. Links are read from the URL alone, never fetched. Text and images are read by Aaru's model in the background and deleted once read. A free account starts 3 captures a calendar month (UTC); the next is refused with 402 `capture_quota`. Letterboxd and IMDb links are refused with `capture_use_csv`, other links with `capture_unsupported_url`; `capture_unavailable` (503) means no model is configured. */
+    /** Capture (AG-006): pasted text, up to five images, or a link to a title on TMDB, AniList or Open Library, planned like any import and written only after approval. Links are read from the URL alone, never fetched. Text and images are read by Aaru's model in the background and deleted once read. An account starts 30 captures a UTC day; the next is refused with 429 `capture_fair_use`. Letterboxd and IMDb links are refused with `capture_use_csv`, other links with `capture_unsupported_url`; more than five images with `capture_too_many_images`; `capture_unavailable` (503) means no model is configured. */
     post: operations['createCaptureImport']
     delete?: never
     options?: never
@@ -2713,6 +2713,23 @@ export interface paths {
     put?: never
     /** Undo an applied listening-history import (MUS-004): deletes the listens it wrote and the import. 409 `import_not_listens` for a library import (undo its action instead), 409 `import_not_applied` before it is applied (delete it instead). */
     post: operations['undoListenImport']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/imports/{id}/rows/{index}/left-out': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Untick one row of a plan before approving it, or tick it again (BOOK-001). Only a row the plan would write, and only while the plan waits. The job's counts follow. Approving with every row unticked is refused with `import_nothing_chosen`. */
+    post: operations['leaveOutImportRow']
     delete?: never
     options?: never
     head?: never
@@ -3172,6 +3189,8 @@ export interface components {
       title: string
       year?: number
       author?: string
+      /** @description Unticked in the review; the plan does not write it. */
+      leftOut?: boolean
       type: components['schemas']['MediaType']
       sourceKey?: string
       ids?: components['schemas']['ExternalIds']
@@ -3370,7 +3389,7 @@ export interface components {
       capture: {
         /** @description Captures started this UTC month. */
         used: number
-        /** @description The month's limit. Absent on Plus. */
+        /** @description The month's limit. No longer sent; older clients read it as optional. */
         limit?: number
         /** Format: date-time */
         resetsAt: string
@@ -9396,7 +9415,10 @@ export interface operations {
   }
   createCaptureImport: {
     parameters: {
-      query?: never
+      query?: {
+        /** @description Read this kind only (BOOK-001). A link names its own kind. */
+        kind?: 'book'
+      }
       header?: never
       path?: never
       cookie?: never
@@ -9406,6 +9428,9 @@ export interface operations {
         'application/json': {
           text?: string
           url?: string
+        }
+        'multipart/form-data': {
+          image?: string[]
         }
         'image/jpeg': string
         'image/png': string
@@ -9809,6 +9834,39 @@ export interface operations {
           [name: string]: unknown
         }
         content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  leaveOutImportRow: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+        index: number
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': {
+          leftOut: boolean
+        }
+      }
+    }
+    responses: {
+      /** @description Saved. The job's counts and the row as it now stands. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            job: components['schemas']['ImportJob']
+            row: components['schemas']['ImportRow']
+          }
+        }
       }
       default: components['responses']['Error']
     }

@@ -2884,12 +2884,20 @@ paths:
     post:
       operationId: createCaptureImport
       summary: >-
-        Capture (AG-006): pasted text, one image, or a link to a title on TMDB, AniList or Open Library,
-        planned like any import and written only after approval. Links are read from the URL alone,
-        never fetched. Text and images are read by Aaru's model in the background and deleted once read.
-        A free account starts 3 captures a calendar month (UTC); the next is refused with 402
-        `capture_quota`. Letterboxd and IMDb links are refused with `capture_use_csv`, other links with
-        `capture_unsupported_url`; `capture_unavailable` (503) means no model is configured.
+        Capture (AG-006): pasted text, up to five images, or a link to a title on TMDB, AniList or Open
+        Library, planned like any import and written only after approval. Links are read from the URL
+        alone, never fetched. Text and images are read by Aaru's model in the background and deleted once
+        read. An account starts 30 captures a UTC day; the next is refused with 429 `capture_fair_use`.
+        Letterboxd and IMDb links are refused with `capture_use_csv`, other links with
+        `capture_unsupported_url`; more than five images with `capture_too_many_images`;
+        `capture_unavailable` (503) means no model is configured.
+      parameters:
+        - name: kind
+          in: query
+          description: Read this kind only (BOOK-001). A link names its own kind.
+          schema:
+            type: string
+            enum: [book]
       requestBody:
         required: true
         content:
@@ -2898,8 +2906,19 @@ paths:
               type: object
               description: Exactly one of `text` and `url`.
               properties:
-                text: {type: string, maxLength: 20000}
+                text: {type: string, maxLength: 100000}
                 url: {type: string, maxLength: 2048}
+          multipart/form-data:
+            schema:
+              type: object
+              description: Up to five images, one capture. 5 MB each, 15 MB together.
+              properties:
+                image:
+                  type: array
+                  maxItems: 5
+                  items: {type: string, format: binary}
+            encoding:
+              image: {contentType: image/jpeg}
           image/jpeg:
             schema: {type: string, format: binary}
           image/png:
@@ -3160,6 +3179,38 @@ paths:
       responses:
         '204':
           description: Undone.
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/imports/{id}/rows/{index}/left-out:
+    post:
+      operationId: leaveOutImportRow
+      summary: >-
+        Untick one row of a plan before approving it, or tick it again (BOOK-001). Only a row the plan
+        would write, and only while the plan waits. The job's counts follow. Approving with every row
+        unticked is refused with `import_nothing_chosen`.
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: index, in: path, required: true, schema: {type: integer}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [leftOut]
+              properties:
+                leftOut: {type: boolean}
+      responses:
+        '200':
+          description: Saved. The job's counts and the row as it now stands.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [job, row]
+                properties:
+                  job: {$ref: '#/components/schemas/ImportJob'}
+                  row: {$ref: '#/components/schemas/ImportRow'}
         default:
           $ref: '#/components/responses/Error'
   /v1/imports/{id}/rows/{index}/resolve:
@@ -3762,6 +3813,7 @@ components:
         title: {type: string}
         year: {type: integer}
         author: {type: string}
+        leftOut: {type: boolean, description: Unticked in the review; the plan does not write it.}
         type: {$ref: '#/components/schemas/MediaType'}
         sourceKey: {type: string}
         ids: {$ref: '#/components/schemas/ExternalIds'}
@@ -4011,7 +4063,7 @@ components:
               description: Captures started this UTC month.
             limit:
               type: integer
-              description: The month's limit. Absent on Plus.
+              description: The month's limit. No longer sent; older clients read it as optional.
             resetsAt:
               type: string
               format: date-time

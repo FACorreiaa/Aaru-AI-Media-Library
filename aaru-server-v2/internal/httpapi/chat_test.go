@@ -7,6 +7,7 @@ import (
 	"aaru-go-api/internal/catalog"
 	"aaru-go-api/internal/config"
 	"aaru-go-api/internal/core"
+	"aaru-go-api/internal/imports"
 	"aaru-go-api/internal/model"
 	"aaru-go-api/internal/telemetry"
 	"bufio"
@@ -1025,12 +1026,12 @@ func TestChatToolsHaveTheCaptureQuota(t *testing.T) {
 	require.NoError(t, quota(ctx, e.server.q, e.user))
 
 	tmdb := e.captureFilm("Quota " + uuid.NewString())
-	for range 3 {
+	for range imports.CapturesPerDay {
 		link := map[string]any{"url": "https://www.themoviedb.org/movie/" + tmdb}
 		require.Equal(t, http.StatusAccepted, e.send(http.MethodPost, "/v1/imports/capture", link).Code)
 	}
 	err := quota(ctx, e.server.q, e.user)
 	var refused *apperr.Error
 	require.True(t, errors.As(err, &refused), "%v", err)
-	assert.Equal(t, "capture_quota", refused.Code)
+	assert.Equal(t, "capture_fair_use", refused.Code)
 }

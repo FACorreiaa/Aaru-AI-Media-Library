@@ -856,7 +856,7 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/imports/cat/feed`.
     /// - Remark: Generated from `#/paths//v1/imports/cat/feed/post(createCATFeedImport)`.
     func createCATFeedImport(_ input: Operations.CreateCATFeedImport.Input) async throws -> Operations.CreateCATFeedImport.Output
-    /// Capture (AG-006): pasted text, one image, or a link to a title on TMDB, AniList or Open Library, planned like any import and written only after approval. Links are read from the URL alone, never fetched. Text and images are read by Aaru's model in the background and deleted once read. A free account starts 3 captures a calendar month (UTC); the next is refused with 402 `capture_quota`. Letterboxd and IMDb links are refused with `capture_use_csv`, other links with `capture_unsupported_url`; `capture_unavailable` (503) means no model is configured.
+    /// Capture (AG-006): pasted text, up to five images, or a link to a title on TMDB, AniList or Open Library, planned like any import and written only after approval. Links are read from the URL alone, never fetched. Text and images are read by Aaru's model in the background and deleted once read. An account starts 30 captures a UTC day; the next is refused with 429 `capture_fair_use`. Letterboxd and IMDb links are refused with `capture_use_csv`, other links with `capture_unsupported_url`; more than five images with `capture_too_many_images`; `capture_unavailable` (503) means no model is configured.
     ///
     /// - Remark: HTTP `POST /v1/imports/capture`.
     /// - Remark: Generated from `#/paths//v1/imports/capture/post(createCaptureImport)`.
@@ -942,6 +942,11 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/imports/{id}/undo`.
     /// - Remark: Generated from `#/paths//v1/imports/{id}/undo/post(undoListenImport)`.
     func undoListenImport(_ input: Operations.UndoListenImport.Input) async throws -> Operations.UndoListenImport.Output
+    /// Untick one row of a plan before approving it, or tick it again (BOOK-001). Only a row the plan would write, and only while the plan waits. The job's counts follow. Approving with every row unticked is refused with `import_nothing_chosen`.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/{id}/rows/{index}/left-out`.
+    /// - Remark: Generated from `#/paths//v1/imports/{id}/rows/{index}/left-out/post(leaveOutImportRow)`.
+    func leaveOutImportRow(_ input: Operations.LeaveOutImportRow.Input) async throws -> Operations.LeaveOutImportRow.Output
     /// Match one unmatched row by hand (IMP-011), with a title the person picked from a search. Before the plan is approved the pick joins the plan; after it, the row is written at once as its own undoable action. The source's status, rating and ticks come with it, merged like any import row.
     ///
     /// - Remark: HTTP `POST /v1/imports/{id}/rows/{index}/resolve`.
@@ -3070,15 +3075,17 @@ extension APIProtocol {
             body: body
         ))
     }
-    /// Capture (AG-006): pasted text, one image, or a link to a title on TMDB, AniList or Open Library, planned like any import and written only after approval. Links are read from the URL alone, never fetched. Text and images are read by Aaru's model in the background and deleted once read. A free account starts 3 captures a calendar month (UTC); the next is refused with 402 `capture_quota`. Letterboxd and IMDb links are refused with `capture_use_csv`, other links with `capture_unsupported_url`; `capture_unavailable` (503) means no model is configured.
+    /// Capture (AG-006): pasted text, up to five images, or a link to a title on TMDB, AniList or Open Library, planned like any import and written only after approval. Links are read from the URL alone, never fetched. Text and images are read by Aaru's model in the background and deleted once read. An account starts 30 captures a UTC day; the next is refused with 429 `capture_fair_use`. Letterboxd and IMDb links are refused with `capture_use_csv`, other links with `capture_unsupported_url`; more than five images with `capture_too_many_images`; `capture_unavailable` (503) means no model is configured.
     ///
     /// - Remark: HTTP `POST /v1/imports/capture`.
     /// - Remark: Generated from `#/paths//v1/imports/capture/post(createCaptureImport)`.
     public func createCaptureImport(
+        query: Operations.CreateCaptureImport.Input.Query = .init(),
         headers: Operations.CreateCaptureImport.Input.Headers = .init(),
         body: Operations.CreateCaptureImport.Input.Body
     ) async throws -> Operations.CreateCaptureImport.Output {
         try await createCaptureImport(Operations.CreateCaptureImport.Input(
+            query: query,
             headers: headers,
             body: body
         ))
@@ -3256,6 +3263,21 @@ extension APIProtocol {
         try await undoListenImport(Operations.UndoListenImport.Input(
             path: path,
             headers: headers
+        ))
+    }
+    /// Untick one row of a plan before approving it, or tick it again (BOOK-001). Only a row the plan would write, and only while the plan waits. The job's counts follow. Approving with every row unticked is refused with `import_nothing_chosen`.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/{id}/rows/{index}/left-out`.
+    /// - Remark: Generated from `#/paths//v1/imports/{id}/rows/{index}/left-out/post(leaveOutImportRow)`.
+    public func leaveOutImportRow(
+        path: Operations.LeaveOutImportRow.Input.Path,
+        headers: Operations.LeaveOutImportRow.Input.Headers = .init(),
+        body: Operations.LeaveOutImportRow.Input.Body
+    ) async throws -> Operations.LeaveOutImportRow.Output {
+        try await leaveOutImportRow(Operations.LeaveOutImportRow.Input(
+            path: path,
+            headers: headers,
+            body: body
         ))
     }
     /// Match one unmatched row by hand (IMP-011), with a title the person picked from a search. Before the plan is approved the pick joins the plan; after it, the row is written at once as its own undoable action. The source's status, rating and ticks come with it, merged like any import row.
@@ -4689,6 +4711,10 @@ public enum Components {
             public var year: Swift.Int?
             /// - Remark: Generated from `#/components/schemas/ImportRow/author`.
             public var author: Swift.String?
+            /// Unticked in the review; the plan does not write it.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ImportRow/leftOut`.
+            public var leftOut: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/ImportRow/type`.
             public var _type: Components.Schemas.MediaType
             /// - Remark: Generated from `#/components/schemas/ImportRow/sourceKey`.
@@ -4720,6 +4746,7 @@ public enum Components {
             ///   - title:
             ///   - year:
             ///   - author:
+            ///   - leftOut: Unticked in the review; the plan does not write it.
             ///   - _type:
             ///   - sourceKey:
             ///   - ids:
@@ -4733,6 +4760,7 @@ public enum Components {
                 title: Swift.String,
                 year: Swift.Int? = nil,
                 author: Swift.String? = nil,
+                leftOut: Swift.Bool? = nil,
                 _type: Components.Schemas.MediaType,
                 sourceKey: Swift.String? = nil,
                 ids: Components.Schemas.ExternalIds? = nil,
@@ -4746,6 +4774,7 @@ public enum Components {
                 self.title = title
                 self.year = year
                 self.author = author
+                self.leftOut = leftOut
                 self._type = _type
                 self.sourceKey = sourceKey
                 self.ids = ids
@@ -4760,6 +4789,7 @@ public enum Components {
                 case title
                 case year
                 case author
+                case leftOut
                 case _type = "type"
                 case sourceKey
                 case ids
@@ -5447,7 +5477,7 @@ public enum Components {
                 ///
                 /// - Remark: Generated from `#/components/schemas/Entitlement/capture/used`.
                 public var used: Swift.Int
-                /// The month's limit. Absent on Plus.
+                /// The month's limit. No longer sent; older clients read it as optional.
                 ///
                 /// - Remark: Generated from `#/components/schemas/Entitlement/capture/limit`.
                 public var limit: Swift.Int?
@@ -5457,7 +5487,7 @@ public enum Components {
                 ///
                 /// - Parameters:
                 ///   - used: Captures started this UTC month.
-                ///   - limit: The month's limit. Absent on Plus.
+                ///   - limit: The month's limit. No longer sent; older clients read it as optional.
                 ///   - resetsAt:
                 public init(
                     used: Swift.Int,
@@ -38859,13 +38889,32 @@ public enum Operations {
             }
         }
     }
-    /// Capture (AG-006): pasted text, one image, or a link to a title on TMDB, AniList or Open Library, planned like any import and written only after approval. Links are read from the URL alone, never fetched. Text and images are read by Aaru's model in the background and deleted once read. A free account starts 3 captures a calendar month (UTC); the next is refused with 402 `capture_quota`. Letterboxd and IMDb links are refused with `capture_use_csv`, other links with `capture_unsupported_url`; `capture_unavailable` (503) means no model is configured.
+    /// Capture (AG-006): pasted text, up to five images, or a link to a title on TMDB, AniList or Open Library, planned like any import and written only after approval. Links are read from the URL alone, never fetched. Text and images are read by Aaru's model in the background and deleted once read. An account starts 30 captures a UTC day; the next is refused with 429 `capture_fair_use`. Letterboxd and IMDb links are refused with `capture_use_csv`, other links with `capture_unsupported_url`; more than five images with `capture_too_many_images`; `capture_unavailable` (503) means no model is configured.
     ///
     /// - Remark: HTTP `POST /v1/imports/capture`.
     /// - Remark: Generated from `#/paths//v1/imports/capture/post(createCaptureImport)`.
     public enum CreateCaptureImport {
         public static let id: Swift.String = "createCaptureImport"
         public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/imports/capture/POST/query`.
+            public struct Query: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/capture/POST/query/kind`.
+                @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                    case book = "book"
+                }
+                /// Read this kind only (BOOK-001). A link names its own kind.
+                ///
+                /// - Remark: Generated from `#/paths/v1/imports/capture/POST/query/kind`.
+                public var kind: Operations.CreateCaptureImport.Input.Query.KindPayload?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - kind: Read this kind only (BOOK-001). A link names its own kind.
+                public init(kind: Operations.CreateCaptureImport.Input.Query.KindPayload? = nil) {
+                    self.kind = kind
+                }
+            }
+            public var query: Operations.CreateCaptureImport.Input.Query
             /// - Remark: Generated from `#/paths/v1/imports/capture/POST/header`.
             public struct Headers: Sendable, Hashable {
                 public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateCaptureImport.AcceptableContentType>]
@@ -38907,6 +38956,24 @@ public enum Operations {
                 }
                 /// - Remark: Generated from `#/paths/v1/imports/capture/POST/requestBody/content/application\/json`.
                 case json(Operations.CreateCaptureImport.Input.Body.JsonPayload)
+                /// - Remark: Generated from `#/paths/v1/imports/capture/POST/requestBody/multipartForm`.
+                @frozen public enum MultipartFormPayload: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/imports/capture/POST/requestBody/multipartForm/image`.
+                    public struct ImagePayload: Sendable, Hashable {
+                        public var body: OpenAPIRuntime.HTTPBody
+                        /// Creates a new `ImagePayload`.
+                        ///
+                        /// - Parameters:
+                        ///   - body:
+                        public init(body: OpenAPIRuntime.HTTPBody) {
+                            self.body = body
+                        }
+                    }
+                    case image(OpenAPIRuntime.MultipartPart<Operations.CreateCaptureImport.Input.Body.MultipartFormPayload.ImagePayload>)
+                    case undocumented(OpenAPIRuntime.MultipartRawPart)
+                }
+                /// - Remark: Generated from `#/paths/v1/imports/capture/POST/requestBody/content/multipart\/form-data`.
+                case multipartForm(OpenAPIRuntime.MultipartBody<Operations.CreateCaptureImport.Input.Body.MultipartFormPayload>)
                 /// - Remark: Generated from `#/paths/v1/imports/capture/POST/requestBody/content/image\/jpeg`.
                 case jpeg(OpenAPIRuntime.HTTPBody)
                 /// - Remark: Generated from `#/paths/v1/imports/capture/POST/requestBody/content/image\/png`.
@@ -38920,12 +38987,15 @@ public enum Operations {
             /// Creates a new `Input`.
             ///
             /// - Parameters:
+            ///   - query:
             ///   - headers:
             ///   - body:
             public init(
+                query: Operations.CreateCaptureImport.Input.Query = .init(),
                 headers: Operations.CreateCaptureImport.Input.Headers = .init(),
                 body: Operations.CreateCaptureImport.Input.Body
             ) {
+                self.query = query
                 self.headers = headers
                 self.body = body
             }
@@ -41291,6 +41361,207 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/imports/{id}/undo/post(undoListenImport)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Untick one row of a plan before approving it, or tick it again (BOOK-001). Only a row the plan would write, and only while the plan waits. The job's counts follow. Approving with every row unticked is refused with `import_nothing_chosen`.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/{id}/rows/{index}/left-out`.
+    /// - Remark: Generated from `#/paths//v1/imports/{id}/rows/{index}/left-out/post(leaveOutImportRow)`.
+    public enum LeaveOutImportRow {
+        public static let id: Swift.String = "leaveOutImportRow"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/imports/{id}/rows/{index}/left-out/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/{id}/rows/{index}/left-out/POST/path/id`.
+                public var id: Swift.String
+                /// - Remark: Generated from `#/paths/v1/imports/{id}/rows/{index}/left-out/POST/path/index`.
+                public var index: Swift.Int
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                ///   - index:
+                public init(
+                    id: Swift.String,
+                    index: Swift.Int
+                ) {
+                    self.id = id
+                    self.index = index
+                }
+            }
+            public var path: Operations.LeaveOutImportRow.Input.Path
+            /// - Remark: Generated from `#/paths/v1/imports/{id}/rows/{index}/left-out/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.LeaveOutImportRow.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.LeaveOutImportRow.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.LeaveOutImportRow.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/imports/{id}/rows/{index}/left-out/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/{id}/rows/{index}/left-out/POST/requestBody/json`.
+                public struct JsonPayload: Codable, Hashable, Sendable {
+                    /// - Remark: Generated from `#/paths/v1/imports/{id}/rows/{index}/left-out/POST/requestBody/json/leftOut`.
+                    public var leftOut: Swift.Bool
+                    /// Creates a new `JsonPayload`.
+                    ///
+                    /// - Parameters:
+                    ///   - leftOut:
+                    public init(leftOut: Swift.Bool) {
+                        self.leftOut = leftOut
+                    }
+                    public enum CodingKeys: String, CodingKey {
+                        case leftOut
+                    }
+                }
+                /// - Remark: Generated from `#/paths/v1/imports/{id}/rows/{index}/left-out/POST/requestBody/content/application\/json`.
+                case json(Operations.LeaveOutImportRow.Input.Body.JsonPayload)
+            }
+            public var body: Operations.LeaveOutImportRow.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.LeaveOutImportRow.Input.Path,
+                headers: Operations.LeaveOutImportRow.Input.Headers = .init(),
+                body: Operations.LeaveOutImportRow.Input.Body
+            ) {
+                self.path = path
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/imports/{id}/rows/{index}/left-out/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/imports/{id}/rows/{index}/left-out/POST/responses/200/content/json`.
+                    public struct JsonPayload: Codable, Hashable, Sendable {
+                        /// - Remark: Generated from `#/paths/v1/imports/{id}/rows/{index}/left-out/POST/responses/200/content/json/job`.
+                        public var job: Components.Schemas.ImportJob
+                        /// - Remark: Generated from `#/paths/v1/imports/{id}/rows/{index}/left-out/POST/responses/200/content/json/row`.
+                        public var row: Components.Schemas.ImportRow
+                        /// Creates a new `JsonPayload`.
+                        ///
+                        /// - Parameters:
+                        ///   - job:
+                        ///   - row:
+                        public init(
+                            job: Components.Schemas.ImportJob,
+                            row: Components.Schemas.ImportRow
+                        ) {
+                            self.job = job
+                            self.row = row
+                        }
+                        public enum CodingKeys: String, CodingKey {
+                            case job
+                            case row
+                        }
+                    }
+                    /// - Remark: Generated from `#/paths/v1/imports/{id}/rows/{index}/left-out/POST/responses/200/content/application\/json`.
+                    case json(Operations.LeaveOutImportRow.Output.Ok.Body.JsonPayload)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Operations.LeaveOutImportRow.Output.Ok.Body.JsonPayload {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.LeaveOutImportRow.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.LeaveOutImportRow.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Saved. The job's counts and the row as it now stands.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/{id}/rows/{index}/left-out/post(leaveOutImportRow)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.LeaveOutImportRow.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.LeaveOutImportRow.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/imports/{id}/rows/{index}/left-out/post(leaveOutImportRow)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

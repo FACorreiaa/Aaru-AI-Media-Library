@@ -12,10 +12,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// FreeCapturesPerMonth is how many captures a free account may start in one UTC calendar month
-// (ImportService.freeCapturesPerMonth).
-const FreeCapturesPerMonth = 3
-
 // Entitlement is one App Store subscription, as Aaru keeps it (BIL-001).
 type Entitlement struct {
 	OriginalTransactionID string
@@ -48,10 +44,8 @@ const (
 
 // State is what `/v1/me/entitlement` reports.
 type State struct {
-	Plus         *Entitlement
-	CapturesUsed int
-	// CaptureLimit is nil on Plus: the monthly limit is lifted (a fair-use cap per day still applies).
-	CaptureLimit    *int
+	Plus            *Entitlement
+	CapturesUsed    int
 	CapturesResetAt time.Time
 }
 
@@ -126,12 +120,7 @@ func (s *Service) State(ctx context.Context, userID uuid.UUID) (State, error) {
 	if err != nil {
 		return State{}, fmt.Errorf("captures: %w", err)
 	}
-	state := State{Plus: plus, CapturesUsed: int(used), CapturesResetAt: next}
-	if plus == nil {
-		limit := FreeCapturesPerMonth
-		state.CaptureLimit = &limit
-	}
-	return state, nil
+	return State{Plus: plus, CapturesUsed: int(used), CapturesResetAt: next}, nil
 }
 
 // RecordPurchase is a purchase or a restore, from the app that made it. The transaction must name this account.

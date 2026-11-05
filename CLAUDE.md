@@ -50,7 +50,7 @@ This file is the working contract for anyone — human or agent — changing the
 | Push | APNSwift, per-device environment; web push (VAPID, `swift-webpush`) to browsers. Airing alerts pulled into P2 (2026-10-15, web 2026-10-20); group mention and invite alerts with groups (GRP-012); the "Now watching" Live Activity pushed from scrobbles (push-to-start, update, end; SCR-008) |
 | Deploy | API: GHCR image → promote PR in `~/Work/production/platform/infra` → ArgoCD on `maat` (`horus` namespace). Web: Wrangler to Workers |
 | Observability | Grafana Cloud through the cluster's Alloy: Prometheus `/metrics` on an internal port, logs, probes, an "Apps / Aaru" board. Sentry for errors only (server, web, Apple apps, extension; no tracing, no replay, no PII). PostHog for a few server-side product events only; no client analytics SDK. Every claim lives in `docs/privacy.md`, which changes first (owner, 2026-10-21) |
-| User import — capture | Pasted text, an image, or a catalog link (TMDB, AniList, Open Library) as an import job (`source=capture`, AG-006, pulled forward 2026-10-22). Text and images are read by one `ModelProviding` call and deleted once read; links are parsed by id and never fetched. Free accounts get 3 a month |
+| User import — capture | Pasted text, an image, or a catalog link (TMDB, AniList, Open Library) as an import job (`source=capture`, AG-006, pulled forward 2026-10-22). Text (up to 100,000 characters, so a whole chat) and up to 5 images are read by one `ModelProviding` call and deleted once read; links are parsed by id and never fetched. `?kind=book` reads books only (BOOK-001). 30 a day for every account, no monthly limit while Plus is off sale (BIL-005) |
 | Agent model | Pluggable `model.Provider` in `aaru-server-v2` (`internal/model`, `internal/agent`). Anthropic default, user key supported, spend metered daily |
 | Transcription | The cluster's own Whisper (`http://whisper.horus.svc.cluster.local:8000/v1`, `Systran/faster-whisper-small`, auto-detected language) behind an OpenAI-compatible provider, as Norviq does; audio held in memory, never stored, no paid speech API (ASK-009) |
 | Assistant | A card opened from the owl in the top bar, talk or type, on iPhone, Mac and web. A streaming chat turn in `aaru-server-v2` (`internal/agent/chat.go`) over `model.Provider`, reading only the signed-in user's own data and the catalog; one item changes like a tap, a larger plan is a `PlanCard`. Free for every account; chats stored until deleted in Settings (ASK-009, owner 2026-11-04) |
@@ -354,7 +354,7 @@ Scrobbles are not in this order either: they are live events, applied as they ar
 Listening-history imports (MUS-004) are not in it either: they fill the listening log, never the
 library.
 
-Matching key: external IDs first, then normalized title + year + type. Never merge two titles that only share a similar name.
+Matching key: external IDs first, then normalized title + year + type. Never merge two titles that only share a similar name. A book with an author and neither id nor year goes by title + author instead: same author always, same title or same part before a colon (BOOK-001).
 
 Merging sources (owner, 2026-10-20): an import fills empty fields and adds missing ticks, and may
 move a status forward (`wishlist` → `in_progress` → `finished`). It never moves one backward, never

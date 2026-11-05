@@ -102,3 +102,31 @@ func toMap(t *testing.T, v any) map[string]any {
 	require.NoError(t, json.Unmarshal(data, &out))
 	return out
 }
+
+func TestReportedAuthorIsTrimmedAndAnEmptyOneIsNone(t *testing.T) {
+	titles := Rows(json.RawMessage(`{"titles":[
+		{"title":"Dune","type":"book","author":" Frank Herbert "},
+		{"title":"Emma","type":"book","author":"  "}]}`))
+	require.Len(t, titles, 2)
+	require.NotNil(t, titles[0].Author)
+	assert.Equal(t, "Frank Herbert", *titles[0].Author)
+	assert.Nil(t, titles[1].Author)
+}
+
+func TestABooksOnlyRequestAsksForBooksAndSeveralImagesGoInOneTurn(t *testing.T) {
+	all := Request(Content{Text: "x"})
+	assert.Equal(t, System, all.System)
+	assert.Contains(t, string(all.Tools[0].InputSchema), `"movie"`)
+
+	books := Request(Content{Text: "x", Only: core.MediaBook})
+	assert.Contains(t, books.System, "Report books only")
+	assert.NotContains(t, string(books.Tools[0].InputSchema), `"movie"`)
+	assert.Contains(t, string(books.Tools[0].InputSchema), `"book"`)
+
+	three := Request(Content{
+		Image: []byte{1}, MediaType: "image/png",
+		More: []model.Image{{Data: []byte{2}, MediaType: "image/jpeg"}, {Data: []byte{3}, MediaType: "image/jpeg"}},
+	})
+	assert.Len(t, three.Turns, 1)
+	assert.Len(t, three.Turns[0].Content, 4, "three images, then the text")
+}
