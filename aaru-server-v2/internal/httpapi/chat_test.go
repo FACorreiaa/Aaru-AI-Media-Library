@@ -569,11 +569,9 @@ func TestTurnPastTheCapIsOneRestingFrame(t *testing.T) {
 	m := &chatModel{script: []chatMainCall{says("never")}}
 	e := newChatEnv(t, m)
 	chat := e.newChat(e.bearer)
-	for range 30 {
-		_, err := e.pool.Exec(context.Background(), `INSERT INTO chat_turns (id, chat_id, user_id, role, body, state)
-VALUES ($1, $2, $3, 'user', 'earlier', 'done')`, uuid.New(), chat, e.user)
-		require.NoError(t, err)
-	}
+	_, err := e.pool.Exec(context.Background(), `INSERT INTO agent_usage (user_id, day, chat_turns)
+VALUES ($1, (now() AT TIME ZONE 'UTC')::date, 30)`, e.user)
+	require.NoError(t, err)
 	res := e.openTurn(chatDeadline(t), e.listen(), chat, e.bearer, map[string]any{"body": "one more"})
 	require.Equal(t, http.StatusOK, res.StatusCode)
 	frames := sseOf(res.Body).rest()
@@ -856,6 +854,31 @@ func TestDeleteChats(t *testing.T) {
 	assert.Zero(t, e.count(`SELECT count(*)::int FROM chat_turns WHERE user_id = $1`, e.user))
 	assert.Equal(t, 1, e.count(`SELECT count(*)::int FROM chats WHERE id = $1 AND user_id = $2`, theirs, other), "only the caller's")
 	assert.Equal(t, http.StatusNotFound, e.send(http.MethodPost, "/v1/chats/"+mine+"/turns", map[string]any{"body": "hi"}).Code)
+}
+
+// The route the user has: DELETE /v1/chats does not hand the day's sends back.
+func TestDeleteChatsKeepsTheCap(t *testing.T) {
+	m := &chatModel{script: []chatMainCall{says("never")}}
+	e := newChatEnv(t, m)
+	id := uuid.MustParse(e.newChat(e.bearer))
+	ctx := context.Background()
+	now := time.Now()
+	for range 30 {
+		_, turn, err := e.server.chats().BeginTurn(ctx, id, e.user, "q", now)
+		require.NoError(t, err)
+		require.NoError(t, e.server.chats().FinishTurn(ctx, turn, agent.TurnDone, "a", nil, now))
+	}
+
+	require.Equal(t, http.StatusNoContent, e.send(http.MethodDelete, "/v1/chats", nil).Code)
+	assert.Zero(t, e.count(`SELECT count(*)::int FROM chat_turns WHERE user_id = $1`, e.user))
+
+	res := e.openTurn(chatDeadline(t), e.listen(), e.newChat(e.bearer), e.bearer, map[string]any{"body": "and again"})
+	require.Equal(t, http.StatusOK, res.StatusCode)
+	frames := sseOf(res.Body).rest()
+	require.Equal(t, []string{"error"}, frameEvents(frames))
+	assert.Equal(t, api.ChatErrorFrameCodeResting, frameData[api.ChatErrorFrame](t, frames[0]).Code)
+	gates, mains := m.counts()
+	assert.Zero(t, gates+mains)
 }
 
 func TestChatStatus(t *testing.T) {

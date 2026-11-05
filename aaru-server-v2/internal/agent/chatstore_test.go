@@ -162,7 +162,8 @@ func (f *chatFixture) agentReply(user uuid.UUID, state string, at time.Time) {
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $7)`, uuid.New(), message, group, channel, user, state, at)
 }
 
-// userTurns inserts n finished chat turns by the user at at, in a chat of their own.
+// userTurns inserts n finished chat turns by the user at at, in a chat of their own, and counts them
+// as BeginTurn does.
 func (f *chatFixture) userTurns(user uuid.UUID, n int, at time.Time) {
 	f.t.Helper()
 	chat := uuid.New()
@@ -171,6 +172,115 @@ func (f *chatFixture) userTurns(user uuid.UUID, n int, at time.Time) {
 		f.exec(`INSERT INTO chat_turns (id, chat_id, user_id, role, body, state, created_at, updated_at)
 			VALUES ($1, $2, $3, 'user', 'q', 'done', $4, $4)`, uuid.New(), chat, user, at)
 	}
+	f.exec(`INSERT INTO agent_usage (user_id, day, chat_turns) VALUES ($1, ($2::timestamptz AT TIME ZONE 'UTC')::date, $3)
+		ON CONFLICT (user_id, day) DO UPDATE SET chat_turns = agent_usage.chat_turns + EXCLUDED.chat_turns`, user, at, n)
+}
+
+// begun sends n turns on the chat through BeginTurn and finishes each: only the store's own count.
+func (f *chatFixture) begun(chat uuid.UUID, n int) {
+	f.t.Helper()
+	for range n {
+		_, turn, err := f.store.BeginTurn(f.ctx, chat, f.user, "q", f.now)
+		require.NoError(f.t, err)
+		require.NoError(f.t, f.store.FinishTurn(f.ctx, turn, agent.TurnDone, "a", nil, f.now))
+	}
+}
+
+func (f *chatFixture) userToday(day time.Time) int32 {
+	f.t.Helper()
+	load, err := f.store.Q.GroupAgentLoad(f.ctx, sqlc.GroupAgentLoadParams{
+		Tagger: f.user, DayStart: dayStart(day), GroupID: uuid.New(), HourStart: day.Add(-time.Hour),
+	})
+	require.NoError(f.t, err)
+	return load.UserToday
+}
+
+func (f *chatFixture) repliesToday(at time.Time) int {
+	f.t.Helper()
+	n, err := f.store.RepliesToday(f.ctx, f.user, at)
+	require.NoError(f.t, err)
+	return n
+}
+
+// Both directions of the shared cap: a delete hands nothing back to chat or to `@aaru`.
+func TestDeleteAllKeepsTheDaysCount(t *testing.T) {
+	f := newChatFixture(t)
+	f.begun(f.newChat(), 4)
+	f.agentReply(f.user, "done", f.now)
+	require.Equal(t, 5, f.repliesToday(f.now))
+	require.EqualValues(t, 5, f.userToday(f.now))
+
+	require.NoError(t, f.store.DeleteAll(f.ctx, f.user))
+
+	assert.Zero(t, f.count(`SELECT count(*)::int FROM chat_turns WHERE user_id = $1`, f.user), "the turns are gone")
+	assert.Equal(t, 5, f.repliesToday(f.now))
+	assert.EqualValues(t, 5, f.userToday(f.now), "@aaru's cap reads the same count")
+}
+
+func TestABusyOrForeignSendCountsNothing(t *testing.T) {
+	f := newChatFixture(t)
+	chat := f.newChat()
+	_, _, err := f.store.BeginTurn(f.ctx, chat, f.user, "first", f.now)
+	require.NoError(t, err)
+	require.Equal(t, 1, f.repliesToday(f.now))
+
+	_, _, err = f.store.BeginTurn(f.ctx, chat, f.user, "second", f.now)
+	require.ErrorIs(t, err, agent.ErrChatBusy)
+	assert.Equal(t, 1, f.repliesToday(f.now), "the refused statement took its count with it")
+
+	stranger := f.newUser()
+	_, _, err = f.store.BeginTurn(f.ctx, chat, stranger, "not mine", f.now)
+	require.ErrorIs(t, err, agent.ErrChatNotFound)
+	assert.Equal(t, 1, f.repliesToday(f.now))
+	assert.Zero(t, f.count(`SELECT count(*)::int FROM agent_usage WHERE user_id = $1`, stranger), "no row for a send that stored nothing")
+}
+
+// The cap's day is the UTC day, whatever zone the clock's time is in, and both readers agree on it.
+func TestTheCountIsPerUTCDay(t *testing.T) {
+	f := newChatFixture(t)
+	tokyo := time.FixedZone("JST", 9*60*60)
+	late := time.Date(2026, 11, 4, 23, 59, 0, 0, time.UTC).In(tokyo)
+	_, _, err := f.store.BeginTurn(f.ctx, f.newChat(), f.user, "late", late)
+	require.NoError(t, err)
+
+	assert.Equal(t, 1, f.repliesToday(time.Date(2026, 11, 4, 0, 0, 1, 0, time.UTC)))
+	assert.EqualValues(t, 1, f.userToday(time.Date(2026, 11, 4, 0, 0, 1, 0, time.UTC)))
+	next := time.Date(2026, 11, 5, 0, 0, 1, 0, time.UTC)
+	assert.Zero(t, f.repliesToday(next), "Tokyo's clock already reads the 5th; the turn is the 4th's")
+	assert.Zero(t, f.userToday(next))
+
+	_, _, err = f.store.BeginTurn(f.ctx, f.newChat(), f.user, "next", next)
+	require.NoError(t, err)
+	assert.Equal(t, 1, f.repliesToday(next))
+	assert.Equal(t, 1, f.repliesToday(late), "the 4th keeps its own")
+}
+
+// The count shares its row with the spend: neither write touches the other's columns.
+func TestTheCountAndMeteringShareARow(t *testing.T) {
+	f := newChatFixture(t)
+	f.begun(f.newChat(), 1)
+	usage, err := agent.UsageOn(f.ctx, f.store.Q, f.user, f.now)
+	require.NoError(t, err)
+	assert.Equal(t, agent.Usage{}, usage, "a turn alone is no model spend")
+
+	require.NoError(t, agent.RecordUsage(f.ctx, f.store.Q, f.user, f.now, 10, 2, 7))
+	f.begun(f.newChat(), 1)
+
+	usage, err = agent.UsageOn(f.ctx, f.store.Q, f.user, f.now)
+	require.NoError(t, err)
+	assert.Equal(t, 1, usage.Requests)
+	assert.Equal(t, 10, usage.InputTokens)
+	assert.Equal(t, 2, f.repliesToday(f.now))
+}
+
+func TestDeletingTheAccountRemovesTheCount(t *testing.T) {
+	f := newChatFixture(t)
+	f.begun(f.newChat(), 1)
+	require.Equal(t, 1, f.count(`SELECT count(*)::int FROM agent_usage WHERE user_id = $1`, f.user))
+
+	f.exec(`DELETE FROM users WHERE id = $1`, f.user)
+
+	assert.Zero(t, f.count(`SELECT count(*)::int FROM agent_usage WHERE user_id = $1`, f.user))
 }
 
 func TestRepliesTodayShared(t *testing.T) {

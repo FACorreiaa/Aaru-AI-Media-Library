@@ -578,6 +578,21 @@ func TestRestingAtCap(t *testing.T) {
 	assert.Equal(t, "Aaru is resting. Try again later.", f.sent[0].Text)
 }
 
+// Thirty sends, a delete, and the day is still spent.
+func TestRestingAfterDeletingChats(t *testing.T) {
+	f := newTurnFixture(t, gate(true), says("never"))
+	f.begun(f.chat, 30)
+
+	require.NoError(t, f.store.DeleteAll(f.ctx, f.user))
+	f.chat = f.newChat()
+	f.ask("and again")
+
+	assert.Empty(t, f.model.calls(), "no gate and no model call")
+	assert.Equal(t, []string{"error"}, f.kinds())
+	assert.Equal(t, "resting", f.sent[0].Code)
+	assert.Zero(t, f.turnCount(), "a capped send stores nothing")
+}
+
 func TestRestingSharedWithMentions(t *testing.T) {
 	f := newTurnFixture(t, gate(true), says("no"))
 	for range 15 {

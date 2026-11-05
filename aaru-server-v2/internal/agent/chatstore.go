@@ -82,7 +82,8 @@ func (s *ChatStore) Chat(ctx context.Context, id, user uuid.UUID) (*Chat, error)
 	return &c, nil
 }
 
-// BeginTurn stores the user's turn as done and Aaru's as streaming, in one statement. A turn that
+// BeginTurn stores the user's turn as done and Aaru's as streaming, and adds one to the day's count
+// the cap reads, in one statement. A turn that
 // streamed past StaleTurnAfter is failed first; one still streaming is ErrChatBusy and nothing is
 // stored. A chat that is not the user's is ErrChatNotFound.
 func (s *ChatStore) BeginTurn(ctx context.Context, chat, user uuid.UUID, body string, now time.Time) (userTurn, agentTurn uuid.UUID, err error) {
@@ -145,7 +146,8 @@ func (s *ChatStore) RecentTurns(ctx context.Context, chat uuid.UUID, limit int) 
 	return out, nil
 }
 
-// RepliesToday counts the UTC day's replies the 30-a-day cap covers: `@aaru` replies plus chat turns.
+// RepliesToday counts the UTC day's replies the 30-a-day cap covers: `@aaru` replies plus the chat
+// turns the user sent, deleted or not.
 func (s *ChatStore) RepliesToday(ctx context.Context, user uuid.UUID, now time.Time) (int, error) {
 	y, m, d := now.UTC().Date()
 	n, err := s.Q.ChatRepliesToday(ctx, sqlc.ChatRepliesTodayParams{

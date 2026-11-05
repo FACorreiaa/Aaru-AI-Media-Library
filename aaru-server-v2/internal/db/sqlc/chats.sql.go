@@ -32,6 +32,11 @@ WITH mine AS (
 ), touched AS (
     UPDATE chats SET updated_at = $5::pg_catalog.timestamptz WHERE id IN (SELECT id FROM mine)
     RETURNING id
+), counted AS (
+    INSERT INTO agent_usage (user_id, day, chat_turns)
+    SELECT $2::uuid, ($5::pg_catalog.timestamptz AT TIME ZONE 'UTC')::date, 1 FROM mine
+    ON CONFLICT (user_id, day) DO UPDATE SET chat_turns = agent_usage.chat_turns + 1
+    RETURNING user_id
 )
 SELECT (SELECT count(*) FROM u)::int AS stored
 `
@@ -45,8 +50,9 @@ type BeginChatTurnParams struct {
 	AgentTurn uuid.UUID
 }
 
-// One statement, so the unique index on a streaming turn refuses the pair whole. The user turn is
-// stored done, the agent turn streaming. No row when the chat is not the user's.
+// One statement, so the unique index on a streaming turn refuses the pair whole, and the day's count
+// with it. The user turn is stored done, the agent turn streaming. No row when the chat is not the
+// user's.
 func (q *Queries) BeginChatTurn(ctx context.Context, arg BeginChatTurnParams) (int32, error) {
 	row := q.db.QueryRow(ctx, beginChatTurn,
 		arg.ChatID,
@@ -66,8 +72,8 @@ SELECT (
     (SELECT count(*) FROM agent_replies a WHERE a.tagger_id = $1::uuid
         AND a.created_at >= $2::pg_catalog.timestamptz
         AND a.state IN ('queued', 'running', 'done', 'failed'))
-    + (SELECT count(*) FROM chat_turns c WHERE c.user_id = $1::uuid AND c.role = 'user'
-        AND c.created_at >= $2::pg_catalog.timestamptz)
+    + COALESCE((SELECT u.chat_turns FROM agent_usage u WHERE u.user_id = $1::uuid
+        AND u.day = ($2::pg_catalog.timestamptz AT TIME ZONE 'UTC')::date), 0)
 )::bigint AS replies
 `
 
@@ -77,7 +83,8 @@ type ChatRepliesTodayParams struct {
 }
 
 // What counts toward the daily cap shared with @aaru: replies whose model was, or will be, called
-// (the states GroupAgentLoad counts), plus the user's chat turns.
+// (the states GroupAgentLoad counts), plus the turns the user sent today. That is the counter, not
+// the rows: deleting chats must not hand the day's sends back.
 func (q *Queries) ChatRepliesToday(ctx context.Context, arg ChatRepliesTodayParams) (int64, error) {
 	row := q.db.QueryRow(ctx, chatRepliesToday, arg.UserID, arg.DayStart)
 	var replies int64

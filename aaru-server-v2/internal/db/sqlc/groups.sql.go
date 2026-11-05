@@ -371,9 +371,10 @@ SELECT
     (SELECT count(*) FROM agent_replies a WHERE a.tagger_id = $1::uuid
         AND a.created_at >= $2::pg_catalog.timestamptz
         AND a.state IN ('queued', 'running', 'done', 'failed'))::bigint
-    -- The daily cap is shared with chat: every chat turn the user sent today counts too (ASK-009).
-    + (SELECT count(*) FROM chat_turns c WHERE c.user_id = $1::uuid AND c.role = 'user'
-        AND c.created_at >= $2::pg_catalog.timestamptz)::bigint AS user_today,
+    -- The daily cap is shared with chat: every chat turn the user sent today counts too, by the
+    -- counter, which outlives deleting chats (ASK-009).
+    + COALESCE((SELECT u.chat_turns FROM agent_usage u WHERE u.user_id = $1::uuid
+        AND u.day = ($2::pg_catalog.timestamptz AT TIME ZONE 'UTC')::date), 0)::bigint AS user_today,
     (SELECT count(*) FROM agent_replies a WHERE a.group_id = $3::uuid
         AND a.created_at >= $4::pg_catalog.timestamptz
         AND a.state IN ('queued', 'running', 'done', 'failed'))::bigint AS group_hour,

@@ -16,8 +16,9 @@ WHERE chat_id = sqlc.arg(chat_id)::uuid AND state = 'streaming'
   AND updated_at < sqlc.arg(cutoff)::pg_catalog.timestamptz;
 
 -- name: BeginChatTurn :one
--- One statement, so the unique index on a streaming turn refuses the pair whole. The user turn is
--- stored done, the agent turn streaming. No row when the chat is not the user's.
+-- One statement, so the unique index on a streaming turn refuses the pair whole, and the day's count
+-- with it. The user turn is stored done, the agent turn streaming. No row when the chat is not the
+-- user's.
 WITH mine AS (
     SELECT id FROM chats WHERE id = sqlc.arg(chat_id)::uuid AND user_id = sqlc.arg(user_id)::uuid
 ), u AS (
@@ -35,6 +36,11 @@ WITH mine AS (
 ), touched AS (
     UPDATE chats SET updated_at = sqlc.arg(now)::pg_catalog.timestamptz WHERE id IN (SELECT id FROM mine)
     RETURNING id
+), counted AS (
+    INSERT INTO agent_usage (user_id, day, chat_turns)
+    SELECT sqlc.arg(user_id)::uuid, (sqlc.arg(now)::pg_catalog.timestamptz AT TIME ZONE 'UTC')::date, 1 FROM mine
+    ON CONFLICT (user_id, day) DO UPDATE SET chat_turns = agent_usage.chat_turns + 1
+    RETURNING user_id
 )
 SELECT (SELECT count(*) FROM u)::int AS stored;
 
@@ -53,13 +59,14 @@ FROM (
 
 -- name: ChatRepliesToday :one
 -- What counts toward the daily cap shared with @aaru: replies whose model was, or will be, called
--- (the states GroupAgentLoad counts), plus the user's chat turns.
+-- (the states GroupAgentLoad counts), plus the turns the user sent today. That is the counter, not
+-- the rows: deleting chats must not hand the day's sends back.
 SELECT (
     (SELECT count(*) FROM agent_replies a WHERE a.tagger_id = sqlc.arg(user_id)::uuid
         AND a.created_at >= sqlc.arg(day_start)::pg_catalog.timestamptz
         AND a.state IN ('queued', 'running', 'done', 'failed'))
-    + (SELECT count(*) FROM chat_turns c WHERE c.user_id = sqlc.arg(user_id)::uuid AND c.role = 'user'
-        AND c.created_at >= sqlc.arg(day_start)::pg_catalog.timestamptz)
+    + COALESCE((SELECT u.chat_turns FROM agent_usage u WHERE u.user_id = sqlc.arg(user_id)::uuid
+        AND u.day = (sqlc.arg(day_start)::pg_catalog.timestamptz AT TIME ZONE 'UTC')::date), 0)
 )::bigint AS replies;
 
 -- name: DeleteAllChats :exec

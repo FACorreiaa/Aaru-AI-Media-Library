@@ -162,8 +162,9 @@ captures you made this month and how much text each used.
 **Your chats with Aaru.** When you ask Aaru something from the owl in the top bar, the
 question and Aaru's answer are kept as a chat. Chats stay until you delete them with "Delete my
 chats with Aaru" in Settings. They are in your export and are removed with your account. As
-with @aaru, Aaru keeps a daily count of its answers and how much text they used, to keep the
-service fair. That count stays when you delete your chats and is removed with your account.
+with @aaru, Aaru keeps a daily count of how much text its answers used, to keep the service fair.
+It also keeps a daily count of the questions you send it, with no text, to enforce the daily
+limit. Both counts stay when you delete your chats and are removed with your account.
 
 **Voice.** If you speak your question, the audio goes to Aaru's server and is transcribed there,
 on Aaru's own cluster. It is held in memory only while it is read, never stored, and never sent
@@ -279,7 +280,8 @@ within a year. Error reports are deleted within 90 days and product counts withi
 - **Delete your account:** Settings → Delete account, in the app or on the web.
 - **Export:** Settings → Export your data, in the app or on the web. JSON has everything; CSV
   opens in a spreadsheet and imports back into Aaru.
-- **Delete your chats:** Settings → Delete my chats with Aaru.
+- **Delete your chats:** Settings → Delete my chats with Aaru. The daily count of questions you
+  sent, which holds no text, stays to enforce the daily limit and is removed with your account.
 - **Questions or requests:** privacy@aaruapp.com.
 
 Aaru is run by an individual developer based in the European Union. You have the rights the
