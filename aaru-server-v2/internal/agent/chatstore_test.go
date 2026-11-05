@@ -214,24 +214,24 @@ func TestChatPlanSpendsCapture(t *testing.T) {
 			VALUES ($1, $2, 'aaru', 'pending', 's', '[]', '{}', '{}', '{}', $3, $4, $5)`,
 			uuid.New(), f.user, f.now, f.now.Add(time.Hour), spends)
 	}
-	before, err := captures.Captures(f.ctx, f.user, since)
+	before, err := captures.Captures(f.ctx, f.user, since, f.now)
 	require.NoError(t, err)
 
 	plan(false)
-	got, err := captures.Captures(f.ctx, f.user, since)
+	got, err := captures.Captures(f.ctx, f.user, since, f.now)
 	require.NoError(t, err)
 	assert.Equal(t, before, got, "a plan that spends nothing adds nothing")
 
 	plan(true)
-	got, err = captures.Captures(f.ctx, f.user, since)
+	got, err = captures.Captures(f.ctx, f.user, since, f.now)
 	require.NoError(t, err)
 	assert.Equal(t, before+1, got)
 
-	n, err := f.store.Q.BillingCapturesSince(f.ctx, sqlc.BillingCapturesSinceParams{UserID: f.user, CreatedAt: since})
+	n, err := f.store.Q.BillingCapturesSince(f.ctx, sqlc.BillingCapturesSinceParams{UserID: f.user, Since: since, Now: f.now})
 	require.NoError(t, err)
 	assert.EqualValues(t, before+1, n)
 
-	got, err = captures.Captures(f.ctx, f.user, f.now.Add(time.Minute))
+	got, err = captures.Captures(f.ctx, f.user, f.now.Add(time.Minute), f.now)
 	require.NoError(t, err)
 	assert.Equal(t, before, got, "counted from the plan's creation time")
 }

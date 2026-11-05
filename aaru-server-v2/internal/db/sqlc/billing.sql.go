@@ -61,20 +61,25 @@ func (q *Queries) ActiveEntitlement(ctx context.Context, arg ActiveEntitlementPa
 
 const billingCapturesSince = `-- name: BillingCapturesSince :one
 SELECT (
-    (SELECT count(*) FROM import_jobs j WHERE j.user_id = $1 AND j.source = 'capture' AND j.created_at >= $2)
-    + (SELECT count(*) FROM agent_plans p WHERE p.user_id = $1 AND p.spends_capture AND p.created_at >= $2)
+    (SELECT count(*) FROM import_jobs j WHERE j.user_id = $1 AND j.source = 'capture'
+        AND j.created_at >= $2::pg_catalog.timestamptz)
+    + (SELECT count(*) FROM agent_plans p WHERE p.user_id = $1 AND p.spends_capture
+        AND p.created_at >= $2::pg_catalog.timestamptz
+        AND (p.status = 'applied' OR (p.status = 'pending' AND p.expires_at > $3::pg_catalog.timestamptz)))
 )::int AS count
 `
 
 type BillingCapturesSinceParams struct {
-	UserID    uuid.UUID
-	CreatedAt time.Time
+	UserID uuid.UUID
+	Since  time.Time
+	Now    time.Time
 }
 
 // PostgresCaptureStore.captures: what the entitlement reports as this month's captures.
-// A chat's plan that spends a capture counts like a capture job (ASK-009).
+// A chat's plan that spends a capture counts like a capture job while it waits and once approved; a
+// plan denied, stale or expired gives its capture back (ASK-009).
 func (q *Queries) BillingCapturesSince(ctx context.Context, arg BillingCapturesSinceParams) (int32, error) {
-	row := q.db.QueryRow(ctx, billingCapturesSince, arg.UserID, arg.CreatedAt)
+	row := q.db.QueryRow(ctx, billingCapturesSince, arg.UserID, arg.Since, arg.Now)
 	var count int32
 	err := row.Scan(&count)
 	return count, err

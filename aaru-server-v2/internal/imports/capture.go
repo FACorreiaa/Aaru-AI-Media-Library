@@ -165,7 +165,7 @@ func (s *Service) CheckCaptureQuota(ctx context.Context, q *sqlc.Queries, user u
 	}
 	store := &capture.Store{Q: q}
 	if plus != nil {
-		today, err := store.Captures(ctx, user, DayStart(now))
+		today, err := store.Captures(ctx, user, DayStart(now), now)
 		if err != nil {
 			return err
 		}
@@ -176,7 +176,7 @@ func (s *Service) CheckCaptureQuota(ctx context.Context, q *sqlc.Queries, user u
 			"Aaru reads "+strconv.Itoa(PlusCapturesPerDay)+" captures a day. More tomorrow.")
 	}
 	start, next := billing.MonthStart(now)
-	used, err := store.Captures(ctx, user, start)
+	used, err := store.Captures(ctx, user, start, now)
 	if err != nil {
 		return err
 	}

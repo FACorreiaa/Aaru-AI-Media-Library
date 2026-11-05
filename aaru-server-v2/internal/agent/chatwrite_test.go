@@ -3,6 +3,7 @@ package agent_test
 import (
 	"aaru-go-api/internal/agent"
 	"aaru-go-api/internal/auth"
+	"aaru-go-api/internal/capture"
 	"aaru-go-api/internal/catalog"
 	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/db/sqlc"
@@ -417,6 +418,59 @@ func TestChatPatchQuotaRunsOnThePlanTransaction(t *testing.T) {
 	}
 	assert.Equal(t, callers-imports.FreeCapturesPerMonth, refused)
 	assert.Equal(t, imports.FreeCapturesPerMonth, f.count(`SELECT count(*)::int FROM agent_plans WHERE user_id = $1 AND spends_capture`, f.user))
+}
+
+// A waiting plan holds its capture; one refused, stale or run out gives it back.
+func TestCaptureCountFollowsThePlan(t *testing.T) {
+	setStatus := func(f *writeFixture, plan uuid.UUID, status string) {
+		f.exec(`UPDATE agent_plans SET status = $2 WHERE id = $1`, plan, status)
+	}
+	for name, tc := range map[string]struct {
+		settle  func(f *writeFixture, plan uuid.UUID)
+		counted bool
+	}{
+		"pending": {func(*writeFixture, uuid.UUID) {}, true},
+		"approved": {func(f *writeFixture, plan uuid.UUID) {
+			_, _, err := f.plans.Approve(f.ctx, plan, f.user)
+			require.NoError(f.t, err)
+		}, true},
+		"denied": {func(f *writeFixture, plan uuid.UUID) {
+			_, err := f.plans.Deny(f.ctx, plan, f.user)
+			require.NoError(f.t, err)
+		}, false},
+		"expired": {func(f *writeFixture, plan uuid.UUID) { setStatus(f, plan, "expired") }, false},
+		"stale":   {func(f *writeFixture, plan uuid.UUID) { setStatus(f, plan, "stale") }, false},
+		"pending past its expiry": {func(f *writeFixture, plan uuid.UUID) {
+			f.exec(`UPDATE agent_plans SET expires_at = now() - interval '1 minute' WHERE id = $1`, plan)
+		}, false},
+	} {
+		t.Run(name, func(t *testing.T) {
+			f := newWriteFixture(t)
+			f.tools.Quota = f.realQuota()
+			var last uuid.UUID
+			for i := range imports.FreeCapturesPerMonth {
+				res, err := f.tools.ChatPatch(f.ctx, bulk("2"+strconv.Itoa(i)), f.user)
+				require.NoError(t, err)
+				last = res.Plan.ID
+			}
+			_, err := f.tools.ChatPatch(f.ctx, bulk("29"), f.user)
+			require.ErrorIs(t, err, agent.ErrCaptureQuota, "the month's captures are all held")
+
+			tc.settle(f, last)
+
+			now := time.Now()
+			used, err := (&capture.Store{Q: sqlc.New(f.pool)}).Captures(f.ctx, f.user, now.Add(-time.Hour), now)
+			require.NoError(t, err)
+			_, err = f.tools.ChatPatch(f.ctx, bulk("29"), f.user)
+			if tc.counted {
+				assert.Equal(t, imports.FreeCapturesPerMonth, used)
+				require.ErrorIs(t, err, agent.ErrCaptureQuota)
+				return
+			}
+			assert.Equal(t, imports.FreeCapturesPerMonth-1, used)
+			require.NoError(t, err, "the slot came back")
+		})
+	}
 }
 
 // Parallel chats cannot pass the quota together (DB-004 for captures).

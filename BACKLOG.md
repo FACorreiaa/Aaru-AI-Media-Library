@@ -370,7 +370,7 @@ Friends and groups (design: `docs/superpowers/specs/2026-10-27-friends-groups-de
   | Surface | A floating card rising from the bottom over the dimmed current screen; grows with the reply; swipe down dismisses |
   | Input | Talk or type |
   | Context | Global: whichever screen, Aaru reads all of the user's own data (library, lists, stats, airing schedule, favorites, listens, followed sports) and the catalog. No friends' or groups' data |
-  | Access | Free for every account. A plan adding many titles counts as one capture against the free quota (3 a month); answers and one-item changes do not count |
+  | Access | Free for every account. A plan adding many titles counts as one capture against the free quota (3 a month) while it waits and once approved; denied or expired, it gives the capture back. Answers and one-item changes do not count |
   | Sequence | The owner merges open PR #223 (`fix/go-audit`) first; this work branches from the resulting `main` |
   | Replies | Written and read aloud |
   | Library changes | Yes: one item like a tap (journaled, undoable), anything larger a `PlanCard` (X-009) |

@@ -116,9 +116,10 @@ func (s *Store) Sweep(ctx context.Context, before time.Time) (int, error) {
 	return len(ids), nil
 }
 
-// Captures is the user's capture jobs started at or after since, failed ones included.
-func (s *Store) Captures(ctx context.Context, user uuid.UUID, since time.Time) (int, error) {
-	n, err := s.Q.BillingCapturesSince(ctx, sqlc.BillingCapturesSinceParams{UserID: user, CreatedAt: since})
+// Captures is the user's capture jobs started at or after since, failed ones included, and the chat
+// plans from then that spend one and are approved or, at now, still waiting.
+func (s *Store) Captures(ctx context.Context, user uuid.UUID, since, now time.Time) (int, error) {
+	n, err := s.Q.BillingCapturesSince(ctx, sqlc.BillingCapturesSinceParams{UserID: user, Since: since, Now: now})
 	if err != nil {
 		return 0, fmt.Errorf("count captures: %w", err)
 	}

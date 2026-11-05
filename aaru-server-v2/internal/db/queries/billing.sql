@@ -27,8 +27,12 @@ SELECT EXISTS (SELECT 1 FROM users WHERE id = $1);
 
 -- name: BillingCapturesSince :one
 -- PostgresCaptureStore.captures: what the entitlement reports as this month's captures.
--- A chat's plan that spends a capture counts like a capture job (ASK-009).
+-- A chat's plan that spends a capture counts like a capture job while it waits and once approved; a
+-- plan denied, stale or expired gives its capture back (ASK-009).
 SELECT (
-    (SELECT count(*) FROM import_jobs j WHERE j.user_id = $1 AND j.source = 'capture' AND j.created_at >= $2)
-    + (SELECT count(*) FROM agent_plans p WHERE p.user_id = $1 AND p.spends_capture AND p.created_at >= $2)
+    (SELECT count(*) FROM import_jobs j WHERE j.user_id = @user_id AND j.source = 'capture'
+        AND j.created_at >= @since::pg_catalog.timestamptz)
+    + (SELECT count(*) FROM agent_plans p WHERE p.user_id = @user_id AND p.spends_capture
+        AND p.created_at >= @since::pg_catalog.timestamptz
+        AND (p.status = 'applied' OR (p.status = 'pending' AND p.expires_at > @now::pg_catalog.timestamptz)))
 )::int AS count;
