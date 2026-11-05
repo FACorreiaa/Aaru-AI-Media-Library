@@ -50,9 +50,10 @@ struct DataPage: View {
                 Task { await model.deleteChats() }
             }
         } message: {
-            Text(
-                "This removes everything you and Aaru said. Changes Aaru made to your library stay, and your daily count of questions stays."
-            )
+            Text("""
+            This removes everything you and Aaru said. Changes Aaru made to your library stay, and \
+            your daily count of questions stays.
+            """)
         }
     }
 }

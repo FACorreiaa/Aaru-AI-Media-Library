@@ -12,8 +12,8 @@ public enum ChatFrame: Sendable {
 /// Turns the raw bytes of a chat turn's `text/event-stream` body into frames.
 ///
 /// Splits on `\n` at byte level and decodes UTF-8 only from a whole line, so a character
-/// split across chunks stays intact. Heartbeat comments, unknown events and malformed JSON
-/// are skipped without disturbing later frames.
+/// split across chunks stays intact. Heartbeat comments, unknown events, a line that is not
+/// UTF-8 and malformed JSON are skipped without disturbing later frames.
 public struct ChatFrameParser: Sendable {
     private var buffer: [UInt8] = []
     private var event: String?
@@ -30,7 +30,10 @@ public struct ChatFrameParser: Sendable {
             if end > start, buffer[end - 1] == 0x0D {
                 end -= 1
             }
-            let line = String(decoding: buffer[start ..< end], as: UTF8.self)
+            guard let line = String(bytes: buffer[start ..< end], encoding: .utf8) else {
+                start = newline + 1
+                continue
+            }
             start = newline + 1
             if let frame = handle(line) {
                 frames.append(frame)

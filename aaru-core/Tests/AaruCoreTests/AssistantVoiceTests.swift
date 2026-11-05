@@ -3,11 +3,18 @@ import Testing
 @testable import AaruCore
 
 struct AssistantVoiceTests {
+    /// What one run of the detector came to: the stop, the time it came at, and whether it heard speech.
+    private struct Outcome {
+        let stop: SilenceDetector.Stop?
+        let at: TimeInterval
+        let heard: Bool
+    }
+
     /// Feeds each (power, seconds) segment at 0.1 s steps; returns the stop and the time it came at.
     private func run(
         _ segments: [(Float, TimeInterval)],
         then tail: (Float, TimeInterval)? = nil
-    ) -> (stop: SilenceDetector.Stop?, at: TimeInterval, heard: Bool) {
+    ) -> Outcome {
         var detector = SilenceDetector()
         var step = 0
         var all = segments
@@ -19,12 +26,12 @@ struct AssistantVoiceTests {
             for _ in 0 ..< count {
                 let time = Double(step) / 10
                 if let stop = detector.feed(power: power, at: time) {
-                    return (stop, time, detector.heardSpeech)
+                    return Outcome(stop: stop, at: time, heard: detector.heardSpeech)
                 }
                 step += 1
             }
         }
-        return (nil, Double(step) / 10, detector.heardSpeech)
+        return Outcome(stop: nil, at: Double(step) / 10, heard: detector.heardSpeech)
     }
 
     @Test func stopsAfterSpeechAndAboutASecondAndAHalfOfQuiet() {

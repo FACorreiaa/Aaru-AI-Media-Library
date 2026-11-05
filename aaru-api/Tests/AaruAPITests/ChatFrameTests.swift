@@ -8,7 +8,8 @@ private func describe(_ frame: ChatFrame) -> String {
     case let .status(text): "status:\(text)"
     case let .delta(text): "delta:\(text)"
     case let .components(frame):
-        "components:\(frame.titles?.map(\.title) ?? []):\(frame.plan?.id ?? "-"):\(frame.actionId ?? "-"):\(frame.actionSummary ?? "-")"
+        "components:\(frame.titles?.map(\.title) ?? []):\(frame.plan?.id ?? "-"):"
+            + "\(frame.actionId ?? "-"):\(frame.actionSummary ?? "-")"
     case let .done(turnID): "done:\(turnID)"
     case let .error(code, message): "error:\(code.rawValue):\(message)"
     }
@@ -89,6 +90,12 @@ struct ChatFrameTests {
     @Test func skipsMalformedJSONAndKeepsGoing() {
         let text = "event: delta\ndata: {not json\n\nevent: delta\ndata: {\"text\":\"b\"}\n\n"
         #expect(parse([Array(text.utf8)]) == ["delta:b"])
+    }
+
+    @Test func skipsALineThatIsNotUTF8() {
+        let broken = Array("event: delta\ndata: {\"text\":\"".utf8) + [0xFF] + Array("\"}\n\n".utf8)
+        let next = Array("event: delta\ndata: {\"text\":\"b\"}\n\n".utf8)
+        #expect(parse([broken + next]) == ["delta:b"])
     }
 
     @Test func joinsMultipleDataLinesWithANewline() {
