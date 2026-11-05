@@ -160,3 +160,30 @@ export const ListAddIcon = (p: IconProps) => (
     <path d="M4 6.5h12M4 12h12M4 17.5h7M17 15v6M14 18h6" />
   </Icon>
 )
+
+export const MicIcon = (p: IconProps) => (
+  <Icon class={p.class}>
+    <rect x="9" y="3.5" width="6" height="11" rx="3" />
+    <path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v2.5" />
+  </Icon>
+)
+
+export const SpeakerIcon = (p: IconProps) => (
+  <Icon class={p.class}>
+    <path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" />
+    <path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" />
+  </Icon>
+)
+
+export const SpeakerOffIcon = (p: IconProps) => (
+  <Icon class={p.class}>
+    <path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" />
+    <path d="m16 9.5 5 5m0-5-5 5" />
+  </Icon>
+)
+
+export const CloseIcon = (p: IconProps) => (
+  <Icon class={p.class}>
+    <path d="M6 6l12 12M18 6 6 18" />
+  </Icon>
+)

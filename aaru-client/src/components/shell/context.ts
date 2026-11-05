@@ -18,6 +18,10 @@ export type AppShellContext = {
   setSearchHost: (host: SearchHost | null) => void
   previous: Accessor<Previous | null>
   setMentions: (count: number) => void
+  /** Opens the assistant's card (ASK-009); `listen` starts with the microphone. */
+  openAssistant: (listen?: boolean) => void
+  /** The title a title page is showing, so a question there is about it. Null off one. */
+  setAssistantTitle: (titleId: string | null) => void
 }
 
 export const ShellContext = createContext<AppShellContext>()
@@ -33,4 +37,11 @@ export function useSearchHost(host: SearchHost) {
   const shell = useAppShell()
   onMount(() => shell.setSearchHost(host))
   onCleanup(() => shell.setSearchHost(null))
+}
+
+/** Tells the assistant which title this page shows, while it is mounted. */
+export function useAssistantTitle(titleId: () => string) {
+  const shell = useAppShell()
+  onMount(() => shell.setAssistantTitle(titleId()))
+  onCleanup(() => shell.setAssistantTitle(null))
 }

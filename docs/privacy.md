@@ -170,6 +170,13 @@ limit. Both counts stay when you delete your chats and are removed with your acc
 **Voice.** If you speak your question, the audio goes to Aaru's server and is transcribed there,
 on Aaru's own cluster. It is held in memory only while it is read, never stored, and never sent
 to anyone else. Only the words it was turned into are kept, as part of the chat.
+On the web the recording passes through Aaru's web server on its way there and is not kept
+there either.
+
+**Read aloud.** After a spoken question Aaru reads its answer aloud, unless you mute it. On
+iPhone and Mac the system voice does this on the device. On the web Aaru reads aloud only with a
+voice your browser runs on your device; when the browser has only online voices, which would send
+the answer's text to the browser's maker, Aaru shows the answer and does not read it.
 
 **Aaru Plus.** Plus is bought through Apple in the Aaru app on iPhone, iPad or Mac; Aaru never
 sees your card or Apple ID. Apple sends Aaru a signed record of the subscription: which plan,

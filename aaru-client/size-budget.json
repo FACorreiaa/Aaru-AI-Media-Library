@@ -1,5 +1,5 @@
 {
-  "totalJs": 538100,
+  "totalJs": 547500,
   "css": 27137,
   "shared": 94600,
   "routes": {
@@ -35,7 +35,7 @@
     "/_shell/app_/settings/about": 100222,
     "/_shell/app_/settings/account": 118700,
     "/_shell/app_/settings/connections": 114694,
-    "/_shell/app_/settings/data": 100236,
+    "/_shell/app_/settings/data": 101900,
     "/_shell/app_/settings/delete": 100021,
     "/_shell/app_/settings/friends": 102500,
     "/_shell/app_/settings/import": 110800,
@@ -73,7 +73,7 @@
     "/connect/extension": 109800,
     "/i/$code": 118300,
     "/oauth/consent": 117000,
-    "/privacy": 105700,
+    "/privacy": 106100,
     "/s/$code": 116100,
     "/sign-in": 118100
   }
