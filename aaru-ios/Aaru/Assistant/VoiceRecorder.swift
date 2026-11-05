@@ -12,9 +12,7 @@ final class VoiceRecorder: NSObject {
 
     private static let maxSeconds: TimeInterval = 60
     private static let minSeconds: TimeInterval = 0.3
-
-    /// Called once if the system takes the mic away (a call). The recording is already discarded.
-    var onInterrupted: (@MainActor () -> Void)?
+    private static let filePrefix = "aaru-question-"
 
     private var recorder: AVAudioRecorder?
     private var fileURL: URL?
@@ -29,13 +27,14 @@ final class VoiceRecorder: NSObject {
 
     func start() throws {
         discard()
+        Self.sweepLeftovers()
         #if os(iOS)
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.record, mode: .default, options: [.allowBluetoothHFP])
             try session.setActive(true)
         #endif
         let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent("aaru-question-\(UUID().uuidString).m4a")
+            .appendingPathComponent("\(Self.filePrefix)\(UUID().uuidString).m4a")
         let settings: [String: Any] = [
             AVFormatIDKey: kAudioFormatMPEG4AAC,
             AVSampleRateKey: 16000,
@@ -82,6 +81,16 @@ final class VoiceRecorder: NSObject {
         return Recording(data: data, seconds: seconds)
     }
 
+    /// Deletes any question file a crash mid-recording left in tmp.
+    private static func sweepLeftovers() {
+        let files = FileManager.default
+        let tmp = files.temporaryDirectory
+        let names = (try? files.contentsOfDirectory(atPath: tmp.path)) ?? []
+        for name in names where name.hasPrefix(filePrefix) {
+            try? files.removeItem(at: tmp.appendingPathComponent(name))
+        }
+    }
+
     func discard() {
         recorder?.stop()
         recorder = nil
@@ -107,18 +116,13 @@ final class VoiceRecorder: NSObject {
                         let raw = note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt
                         return raw.flatMap(AVAudioSession.InterruptionType.init(rawValue:)) == .began ? true : nil
                     }
+                // The system took the mic (a call): the recording goes.
                 for await _ in began {
                     guard let self else { return }
-                    self.interrupted()
+                    discard()
                     return
                 }
             }
-        }
-
-        private func interrupted() {
-            let callback = onInterrupted
-            discard()
-            callback?()
         }
     #endif
 }
