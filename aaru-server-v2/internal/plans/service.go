@@ -10,6 +10,7 @@ import (
 	"aaru-go-api/internal/push"
 	"aaru-go-api/internal/telemetry"
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -23,10 +24,13 @@ import (
 const (
 	// Lifetime is how long a plan nobody decided on waits before it expires.
 	Lifetime = 24 * time.Hour
-	// MaxPendingPerToken is how many plans one token may have waiting at once.
+	// MaxPendingPerToken is how many plans one token, or one user's chats with Aaru, may have
+	// waiting at once.
 	MaxPendingPerToken = 20
 	// listLimit is how many plans a list returns.
 	listLimit = 50
+	// addsThatSpend is how many adds make a plan cost a capture, for an origin that pays for them.
+	addsThatSpend = 2
 )
 
 // Service is the plan rules (PlanService).
@@ -63,19 +67,26 @@ func (s *Service) log() *slog.Logger {
 	return s.Log
 }
 
-// Propose works out changes against the library as it is and stores them as a pending plan.
-// Changes that would do nothing are dropped; when none are left it is a ToolError.
+// Propose is ProposeFor an outside agent's token.
 func (s *Service) Propose(ctx context.Context, changes []AgentChange, caller auth.AgentCaller) (Plan, error) {
-	now := s.now()
 	tokenID := caller.Token.ID
-	pending, err := s.q.PlanPendingCount(ctx, sqlc.PlanPendingCountParams{AgentTokenID: &tokenID, Now: now})
+	return s.ProposeFor(ctx, changes, Origin{
+		UserID: caller.UserID, TokenID: &tokenID, Name: caller.Token.Name, Caller: library.AgentCaller(caller.Token),
+	})
+}
+
+// ProposeFor works out changes against the library as it is and stores them as a pending plan.
+// Changes that would do nothing are dropped; when none are left it is a ToolError.
+func (s *Service) ProposeFor(ctx context.Context, changes []AgentChange, origin Origin) (Plan, error) {
+	now := s.now()
+	pending, err := pendingCount(ctx, s.q, origin, now)
 	if err != nil {
 		return Plan{}, err
 	}
 	if pending >= MaxPendingPerToken {
-		return Plan{}, tooManyPending(pending)
+		return Plan{}, tooManyPending(origin, pending)
 	}
-	writes, err := s.prepare(ctx, changes, caller)
+	writes, err := s.prepare(ctx, changes, origin.UserID, origin.Caller)
 	if err != nil {
 		return Plan{}, err
 	}
@@ -94,29 +105,53 @@ func (s *Service) Propose(ctx context.Context, changes []AgentChange, caller aut
 		ops[i] = w.Op
 		lines[i] = changeLine(w)
 	}
-	versions, err := itemVersions(ctx, s.q, touched, caller.UserID, false)
+	versions, err := itemVersions(ctx, s.q, touched, origin.UserID, false)
 	if err != nil {
 		return Plan{}, err
 	}
 	if absent == nil {
 		absent = []uuid.UUID{}
 	}
+	counts := CountsOf(writes)
 	plan := Plan{
-		ID: uuid.New(), AgentTokenID: &tokenID, AgentName: caller.Token.Name, Status: StatusPending,
-		Summary: Summary(writes), Changes: lines, Counts: CountsOf(writes), Op: library.Batch(ops...),
+		ID: uuid.New(), AgentTokenID: origin.TokenID, AgentName: origin.Name, Status: StatusPending,
+		Summary: Summary(writes), Changes: lines, Counts: counts, Op: library.Batch(ops...),
 		Basis: Basis{Items: versions, AbsentTitles: absent}, CreatedAt: now, ExpiresAt: now.Add(Lifetime),
 	}
-	if err := s.create(ctx, plan, caller.UserID); err != nil {
+	spends := origin.SpendsCapture && counts.Adds >= addsThatSpend
+	if err := s.create(ctx, plan, origin, spends); err != nil {
 		return Plan{}, err
 	}
-	s.Push.Send(ctx, Message(plan), caller.UserID)
+	s.Push.Send(ctx, Message(plan), origin.UserID)
 	return plan, nil
 }
 
-// tooManyPending is the ToolError for a token already at MaxPendingPerToken.
-func tooManyPending(pending int32) *ToolError {
-	return &ToolError{Message: strconv.Itoa(int(pending)) +
-		" changes from this connection are already waiting for the user. Ask them to review those in Aaru first."}
+// pendingCount is how many plans the origin has waiting: by token, or a tokenless origin by name.
+func pendingCount(ctx context.Context, q *sqlc.Queries, origin Origin, now time.Time) (int32, error) {
+	var (
+		pending int32
+		err     error
+	)
+	if origin.TokenID != nil {
+		pending, err = q.PlanPendingCount(ctx, sqlc.PlanPendingCountParams{AgentTokenID: origin.TokenID, Now: now})
+	} else {
+		pending, err = q.PlanPendingCountByName(ctx, sqlc.PlanPendingCountByNameParams{UserID: origin.UserID, AgentName: origin.Name, Now: now})
+	}
+	if err != nil {
+		return 0, fmt.Errorf("pending plans: %w", err)
+	}
+	return pending, nil
+}
+
+// tooManyPending is the ToolError for an origin already at MaxPendingPerToken. A chat has no
+// connection, and its limit spans all the user's chats.
+func tooManyPending(origin Origin, pending int32) *ToolError {
+	from := "from this connection"
+	if origin.TokenID == nil {
+		from = "proposed in chats with Aaru"
+	}
+	return &ToolError{Message: strconv.Itoa(int(pending)) + " changes " + from +
+		" are already waiting for the user. Ask them to review those in Aaru first."}
 }
 
 // Plans are the user's plans, newest first: only pending ones (expired ones excluded), or all.
@@ -142,8 +177,8 @@ func (s *Service) Plan(ctx context.Context, id, user uuid.UUID) (Plan, error) {
 	return *p, nil
 }
 
-// Approve applies a pending plan as one action journaled as the agent that asked. A plan whose
-// library moved is stale, one past its expiry expired; both write nothing (409).
+// Approve applies a pending plan as one action journaled as the agent that asked (Aaru, for a
+// chat). A plan whose library moved is stale, one past its expiry expired; both write nothing (409).
 func (s *Service) Approve(ctx context.Context, id, user uuid.UUID) (Plan, library.ActionRecord, error) {
 	d, err := s.approveTx(ctx, id, user, s.now())
 	if err != nil {
@@ -197,9 +232,7 @@ func (s *Service) Deny(ctx context.Context, id, user uuid.UUID) (Plan, error) {
 // MARK: Working out a plan
 
 // prepare is each change as the write a tap would make now. Changes that would do nothing are dropped.
-func (s *Service) prepare(ctx context.Context, changes []AgentChange, caller auth.AgentCaller) ([]library.PreparedWrite, error) {
-	user := caller.UserID
-	agent := library.AgentCaller(caller.Token)
+func (s *Service) prepare(ctx context.Context, changes []AgentChange, user uuid.UUID, caller library.Caller) ([]library.PreparedWrite, error) {
 	lib := s.Library
 	var writes []library.PreparedWrite
 	adding := map[uuid.UUID]bool{}
@@ -218,13 +251,13 @@ func (s *Service) prepare(ctx context.Context, changes []AgentChange, caller aut
 				continue
 			}
 			adding[title.ID] = true
-			writes = append(writes, lib.PrepareAdd(title, c.Status, agent))
+			writes = append(writes, lib.PrepareAdd(title, c.Status, caller))
 		case ChangeUpdate:
 			current, err := lib.Entry(ctx, c.Item, user)
 			if err != nil {
 				return nil, err
 			}
-			w, err := lib.PreparePatch(current, c.Patch, agent)
+			w, err := lib.PreparePatch(current, c.Patch, caller)
 			if err != nil {
 				return nil, err
 			}

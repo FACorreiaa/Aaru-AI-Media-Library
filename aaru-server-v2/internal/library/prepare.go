@@ -48,7 +48,7 @@ func (s *Service) PrepareAdd(title core.Title, status *core.LibraryStatus, calle
 	}
 	now := s.now()
 	// A wishlist add says nothing yet; an import may still move it forward.
-	byHand := caller.Actor == ActorUser && st != core.StatusWishlist
+	byHand := caller.setsByHand() && st != core.StatusWishlist
 	fields := ItemFields{Status: st, StatusByHand: &byHand}
 	if st == core.StatusFinished {
 		fields.FinishedAt = &now
@@ -85,7 +85,7 @@ func (s *Service) PatchedFields(current Entry, patch ItemPatch, caller Caller) (
 			now := s.now()
 			fields.FinishedAt = &now
 		}
-		if caller.Actor == ActorUser {
+		if caller.setsByHand() {
 			byHand := true
 			fields.StatusByHand = &byHand
 		}
@@ -247,7 +247,7 @@ func (s *Service) PrepareShowWatched(ctx context.Context, show ShowContext, patc
 		fields.Status = core.StatusFinished
 		now := s.now()
 		fields.FinishedAt = &now
-		if caller.Actor == ActorUser {
+		if caller.setsByHand() {
 			byHand := true
 			fields.StatusByHand = &byHand
 		}

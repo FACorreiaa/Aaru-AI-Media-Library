@@ -52,6 +52,8 @@ This file is the working contract for anyone — human or agent — changing the
 | Observability | Grafana Cloud through the cluster's Alloy: Prometheus `/metrics` on an internal port, logs, probes, an "Apps / Aaru" board. Sentry for errors only (server, web, Apple apps, extension; no tracing, no replay, no PII). PostHog for a few server-side product events only; no client analytics SDK. Every claim lives in `docs/privacy.md`, which changes first (owner, 2026-10-21) |
 | User import — capture | Pasted text, an image, or a catalog link (TMDB, AniList, Open Library) as an import job (`source=capture`, AG-006, pulled forward 2026-10-22). Text and images are read by one `ModelProviding` call and deleted once read; links are parsed by id and never fetched. Free accounts get 3 a month |
 | Agent model | Pluggable `model.Provider` in `aaru-server-v2` (`internal/model`, `internal/agent`). Anthropic default, user key supported, spend metered daily |
+| Transcription | The cluster's own Whisper (`http://whisper.horus.svc.cluster.local:8000/v1`, `Systran/faster-whisper-small`, auto-detected language) behind an OpenAI-compatible provider, as Norviq does; audio held in memory, never stored, no paid speech API (ASK-009) |
+| Assistant | A card opened from the owl in the top bar, talk or type, on iPhone, Mac and web. A streaming chat turn in `aaru-server-v2` (`internal/agent/chat.go`) over `model.Provider`, reading only the signed-in user's own data and the catalog; one item changes like a tap, a larger plan is a `PlanCard`. Free for every account; chats stored until deleted in Settings (ASK-009, owner 2026-11-04) |
 | Billing | Aaru Plus on StoreKit 2, bought in the Apple apps only (BIL-001…004, pulled forward 2026-10-22). The server verifies Apple's signed transactions and notifications itself (`internal/billing`, against Apple's root) and keeps the entitlement; the web shows it and sells nothing. No Stripe, no web checkout |
 | Outbound agent access | App Intents in `aaru-ios`; MCP at `POST /v1/mcp` in `aaru-server-v2/internal/mcp`, with an OAuth front door (`internal/oauth`) so Claude can add Aaru as a custom connector. Not a second backend |
 
@@ -205,6 +207,7 @@ Use these words in code, APIs, and UI:
 - **Import job** — one run of Trakt or a CSV/list ingest
 - **Capture** — one-shot intake of pasted text, an image, or a URL. It is an *import source*,
   not a subsystem: it produces a `MatchTable` then a `PlanCard`, and never writes unplanned
+- **Assistant card** — the floating card the owl opens over the current screen: one chat with Aaru, typed or spoken, replies written (and read aloud after a spoken question). App chrome; the agent fills it with catalog components but never emits the card itself
 - **Discover** — provider-curated public rows (DISC-001: trending, on the air, new shows, in
   theaters, this season's anime, trending books; MUS-002: new albums, albums coming soon), the
   same for every user, plus the On air view (DISC-003): the week's airings by channel. Each row
@@ -307,7 +310,7 @@ the points ledger, levels, streaks, badges, the friends leaderboard and the stre
 imports (MNG-001…002) and profile favorites (FAV-001), 2026-10-23; the Sports tab (SPT-001…005),
 2026-10-24; faster friend finding (opt-in email, Trakt and AniList discovery, suggestions), a
 Friends tab, and group reactions, replies, images and presence (SOC-008…011, NAV-004,
-GRP-013…017), 2026-10-27).
+GRP-013…017), 2026-10-27; the Aaru assistant, a one-to-one chat with voice (ASK-009), 2026-11-04).
 
 ## Out of scope (do not add unless asked)
 

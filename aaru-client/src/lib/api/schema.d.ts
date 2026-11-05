@@ -2321,6 +2321,75 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/chats': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Start a Chat with Aaru (ASK-009), a one-to-one thread only its user can read. */
+    post: operations['createChat']
+    /** Delete all of the caller's chats with Aaru, their turns with them. */
+    delete: operations['deleteChats']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/chats/status': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Whether Aaru and voice are on, so clients hide the owl and the mic when the server has them off. */
+    get: operations['getChatStatus']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/chats/transcribe': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Turn a spoken question into text (ASK-009). The audio is held in memory while it is read and never stored. 413 `file_too_large` over 8 MB, 413 `audio_too_long` when `X-Audio-Seconds` says over 60, 422 `transcription_empty` when no words were heard, 429 `rate_limited` past 40 an hour, 503 `transcription_unavailable` when voice is off. */
+    post: operations['transcribeChatAudio']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/chats/{id}/turns': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Ask Aaru (ASK-009). The answer is a stream of server-sent events, each frame an `event:` line with its type and a `data:` line with JSON: `status` and `delta` carry ChatTextFrame, `components` ChatComponentsFrame, `done` ChatDoneFrame, `error` ChatErrorFrame. Lines starting with `:` are heartbeats. Once the stream has begun, a failure can only be an `error` frame: a send past the daily cap is a 200 with one `error` frame, code `resting`. Before it begins: 404 for a chat that is not the caller's, 409 `chat_busy` while the chat is still answering, 422 for a body that is blank or over 4000 characters, 503 `agent_unavailable` when Aaru is off. Hanging up stops the turn and keeps what was written. */
+    post: operations['createChatTurn']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/me/export': {
     parameters: {
       query?: never
@@ -4582,6 +4651,71 @@ export interface components {
        */
       watchedEpisodes?: components['schemas']['EpisodeRef'][]
     }
+    ChatCreated: {
+      /** Format: uuid */
+      id: string
+    }
+    ChatStatus: {
+      /** @description Aaru can answer. False hides the owl. */
+      assistant: boolean
+      /** @description Spoken questions can be read. False hides the mic. */
+      voice: boolean
+    }
+    /** @description Where the user is. A screen the server does not know and a title the catalog does not have are dropped. */
+    ChatHint: {
+      /** @description One of home, discover, library, calendar, lists, friends, groups, books, manga, music, sports, insights, title. */
+      screen: string
+      /** Format: uuid */
+      titleId?: string
+    }
+    ChatTurnRequest: {
+      body: string
+      hint?: components['schemas']['ChatHint']
+    }
+    ChatTranscript: {
+      text: string
+      /** @description The language the service detected. Empty when it did not say. */
+      language: string
+    }
+    /** @description The data of a `status` frame (what Aaru is doing) or a `delta` frame (the next words of the answer). */
+    ChatTextFrame: {
+      text: string
+    }
+    /** @description The data of a `components` frame, what the turn's tools left for the client. */
+    ChatComponentsFrame: {
+      titles?: components['schemas']['TitleSummary'][]
+      plan?: components['schemas']['AgentPlan']
+      /**
+       * Format: uuid
+       * @description A single change Aaru applied, undone at `/v1/actions/{id}/undo`.
+       */
+      actionId?: string
+      actionSummary?: string
+    }
+    /** @description The data of a `done` frame, the last of a turn that answered. */
+    ChatDoneFrame: {
+      /** Format: uuid */
+      turnId: string
+    }
+    /** @description The data of an `error` frame, the last of a turn that did not answer. */
+    ChatErrorFrame: {
+      /** @enum {string} */
+      code: 'resting' | 'try_again'
+      message: string
+    }
+    ChatExport: {
+      title?: string
+      /** Format: date-time */
+      createdAt: string
+      turns: components['schemas']['ChatExportTurn'][]
+    }
+    ChatExportTurn: {
+      /** @enum {string} */
+      role: 'user' | 'agent'
+      body: string
+      /** Format: date-time */
+      createdAt: string
+    }
     AccountExport: {
       /** Format: date-time */
       exportedAt: string
@@ -4618,6 +4752,8 @@ export interface components {
       listens?: components['schemas']['Listen'][]
       favorites?: components['schemas']['Favorites']
       sports?: components['schemas']['SportsExport']
+      /** @description Your chats with Aaru, oldest first, with their turns. */
+      chats?: components['schemas']['ChatExport'][]
     }
     LibraryPage: {
       items: components['schemas']['LibraryEntry'][]
@@ -9015,6 +9151,123 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['ImportList']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  createChat: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The new chat. */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ChatCreated']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  deleteChats: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Deleted. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getChatStatus: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description What is on. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ChatStatus']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  transcribeChatAudio: {
+    parameters: {
+      query?: never
+      header?: {
+        /** @description How long the recording is, as the client measured it. */
+        'X-Audio-Seconds'?: number
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/octet-stream': string
+        'audio/*': string
+      }
+    }
+    responses: {
+      /** @description What was said. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ChatTranscript']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  createChatTurn: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ChatTurnRequest']
+      }
+    }
+    responses: {
+      /** @description The answer, as it is written. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'text/event-stream': string
         }
       }
       default: components['responses']['Error']

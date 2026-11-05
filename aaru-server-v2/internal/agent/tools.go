@@ -10,6 +10,7 @@
 // The API other areas call:
 //
 //   - Tools.SearchTitles / ReadLibrary / ListAirs / ApplyLibraryPatch / PlanImport.
+//   - Tools.ChatPatch: apply_library_patch for the signed-in user's own chat with Aaru, no token.
 //   - ParseChanges: apply_library_patch's input as validated plans.AgentChanges.
 //   - Importer: what plan_import needs from the imports area (nil until it is wired).
 //
@@ -17,9 +18,11 @@
 package agent
 
 import (
+	"aaru-go-api/internal/apperr"
 	"aaru-go-api/internal/auth"
 	"aaru-go-api/internal/catalog"
 	"aaru-go-api/internal/core"
+	"aaru-go-api/internal/db/sqlc"
 	"aaru-go-api/internal/library"
 	"aaru-go-api/internal/plans"
 	"aaru-go-api/internal/push"
@@ -27,6 +30,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -79,6 +84,10 @@ type Tools struct {
 	Imports Importer
 	// Push tells the user an import is waiting; nil sends nothing.
 	Push *push.UserPush
+	// Quota refuses a chat plan that would spend a capture the user does not have, as the capture
+	// route's 402 or 429 (imports.Service.CheckCaptureQuota); any other error is a failure. Nil is
+	// no limit. q is the plan's transaction; read through it, not the pool.
+	Quota func(ctx context.Context, q *sqlc.Queries, user uuid.UUID) error
 	// Now defaults to time.Now.
 	Now func() time.Time
 }
@@ -377,14 +386,91 @@ func (t *Tools) ApplyLibraryPatch(ctx context.Context, in PatchInput, caller aut
 		}
 		return PatchResult{Plan: &plan}, nil
 	}
-	return t.apply(ctx, changes[0], caller)
+	return t.apply(ctx, changes[0], caller.UserID, library.AgentCaller(caller.Token))
 }
 
-// apply is one tap-sized change, journaled as the token.
-func (t *Tools) apply(ctx context.Context, c plans.AgentChange, caller auth.AgentCaller) (PatchResult, error) {
-	agent := library.AgentCaller(caller.Token)
+// ErrCaptureQuota is a chat plan that would spend a capture the user does not have. No plan was
+// stored. Its text carries the quota's message, which is for the user.
+var ErrCaptureQuota = errors.New("capture quota")
+
+// ChatPatchResult is a change applied at once (Item set, and ActionID when it wrote anything, for
+// Undo), or a plan waiting for the user (Plan set, nothing written).
+type ChatPatchResult struct {
+	Applied  bool
+	Item     *library.Entry
+	ActionID *uuid.UUID
+	Plan     *plans.Plan
+}
+
+// ChatPatch is apply_library_patch for the signed-in user's own chat with Aaru: one tap-sized
+// change applies at once, holding like a tap and journaled as Aaru; anything larger, and any
+// removal, becomes a plan the user approves. A plan adding many titles spends one capture.
+func (t *Tools) ChatPatch(ctx context.Context, in PatchInput, user uuid.UUID) (ChatPatchResult, error) {
+	changes, err := ParseChanges(in)
+	if err != nil {
+		return ChatPatchResult{}, err
+	}
+	if !tapSized(changes) {
+		plan, err := t.Plans.ProposeFor(ctx, changes, plans.Origin{
+			UserID: user, Name: library.ChatAgentName, Caller: library.ChatCaller, SpendsCapture: true,
+			Quota: func(ctx context.Context, q *sqlc.Queries) error { return t.captureQuota(ctx, q, user) },
+		})
+		if err != nil {
+			return ChatPatchResult{}, err
+		}
+		return ChatPatchResult{Plan: &plan}, nil
+	}
+	since, err := t.Library.Store.JournalClock(ctx)
+	if err != nil {
+		return ChatPatchResult{}, err
+	}
+	res, err := t.apply(ctx, changes[0], user, library.ChatCaller)
+	if err != nil {
+		return ChatPatchResult{}, err
+	}
+	out := ChatPatchResult{Applied: true, Item: res.Item}
+	if res.Item != nil {
+		// Since the write began: a change that wrote nothing must not offer an older action's Undo.
+		// The write stands if this fails, so the user only loses the Undo offer.
+		out.ActionID, err = t.Library.Store.LatestActionOnItem(ctx, user, res.Item.Item.ID, since)
+		if err != nil {
+			slog.WarnContext(ctx, "action of a chat write", "error", err)
+		}
+	}
+	return out, nil
+}
+
+// IsTapSizedPatch says whether ChatPatch would apply in at once rather than plan it.
+func IsTapSizedPatch(in PatchInput) (bool, error) {
+	changes, err := ParseChanges(in)
+	if err != nil {
+		return false, err
+	}
+	return tapSized(changes), nil
+}
+
+func tapSized(changes []plans.AgentChange) bool {
+	return len(changes) == 1 && changes[0].IsTapSized()
+}
+
+// captureQuota is Quota, with a refusal as ErrCaptureQuota.
+func (t *Tools) captureQuota(ctx context.Context, q *sqlc.Queries, user uuid.UUID) error {
+	if t.Quota == nil {
+		return nil
+	}
+	err := t.Quota(ctx, q, user)
+	if err == nil {
+		return nil
+	}
+	if e := apperr.From(err); e != nil && (e.Status == http.StatusPaymentRequired || e.Status == http.StatusTooManyRequests) {
+		return fmt.Errorf("%w: %s", ErrCaptureQuota, e.Message)
+	}
+	return fmt.Errorf("check capture quota: %w", err)
+}
+
+// apply is one tap-sized change, journaled as caller.
+func (t *Tools) apply(ctx context.Context, c plans.AgentChange, user uuid.UUID, agent library.Caller) (PatchResult, error) {
 	lib := t.Library
-	user := caller.UserID
 	var entry library.Entry
 	switch c.Kind {
 	case plans.ChangeAdd:

@@ -43,8 +43,8 @@ const (
 //
 // The model sees the channel's last messages, what the channel is about, and, through a
 // read-only tool, the tagger's own library and nobody else's. Every tool reads; none writes
-// (X-009). The reply is a group message with catalog cards only, and its card buttons are whoever
-// taps them, through the normal library routes.
+// (X-009; a Chat with Aaru has its own tools, ChatTools). The reply is a group message with
+// catalog cards only, and its card buttons are whoever taps them, through the normal library routes.
 type ReplyService struct {
 	Groups  *groups.Service
 	Catalog *catalog.Kit
@@ -231,7 +231,7 @@ func (s *ReplyService) Answer(ctx context.Context, job Job) error {
 	if err != nil {
 		return err
 	}
-	tools := &GroupTools{Service: s, Tagger: job.Tagger, refs: map[string]core.MediaRef{}}
+	tools := &GroupTools{titleReads: newTitleReads(s.Catalog, s.Library, job.Tagger, s.now)}
 	turns := []model.Turn{model.UserText(Prompt(summary.Name, *channel, about.Text, append(earlier, *mention), *tagger))}
 	reply := ""
 	for range MaxRounds {

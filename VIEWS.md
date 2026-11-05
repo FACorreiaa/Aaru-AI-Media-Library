@@ -226,6 +226,13 @@ Wording that follows from this: the user "pins a shelf", "adds to a list". Do no
 `SpoilerVeil`'s host rows. They are not in the catalog above and the agent never emits them: a
 Board post is written by a person, and `@aaru` on the Board waits for BOARD-004.
 
+## Assistant card (app chrome)
+
+The assistant card (ASK-009) and its owl entry, mic, composer and undo ribbon are app chrome,
+like the Board components above. They are not in the catalog and the agent never emits them:
+the chrome is the host's, and an answer fills the card only with components from the catalog
+(`TitleCard`, `Shelf`, `PlanCard` and the rest).
+
 ## Agent emission rules
 
 1. **Catalog only.** Names from the component table above. Unknown name → host refuses.

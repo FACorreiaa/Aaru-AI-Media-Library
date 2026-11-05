@@ -883,6 +883,17 @@ Rules:
 The agent layer is Phase 7 (formerly "phase 1.5"). It is built after the native client, on
 components that already work by direct touch. See M13 in `BACKLOG.md`.
 
+## Assistant chat (ASK-009)
+
+The assistant is a third caller of the same tool layer, and the only one-to-one chat. It is a
+transport inside `aaru-server-v2`, not a service: `chats` and `chat_turns` tables, a streaming
+turn endpoint, and `internal/agent/chat.go` running the loop `reply.go` uses. Its reads are
+scoped to the signed-in user and the catalog; friends' and groups' data are out of reach. A write
+goes through `ApplyLibraryPatch` like a tap: one item applies and is journaled, anything larger
+becomes a `PlanCard` the user approves in Aaru (X-009). Voice is transcribed by the cluster's
+Whisper and the audio is never stored. Closing the card cancels the turn. Clients render; they
+hold no rules.
+
 ## Outbound agent surfaces
 
 The tool layer above has two transports besides Aaru's own composer. Both are **skins over

@@ -356,6 +356,27 @@ Friends and groups (design: `docs/superpowers/specs/2026-10-27-friends-groups-de
   | Chat v1 | History and streaming, voice input (cluster Whisper), image upload, Share to Board |
   | LLM budget | The shared `haiku-trial` workspace ($20 cap). No fallback model; out of credit shows "resting" |
 
+- **Aaru assistant (owner, 2026-11-04, ASK-009).** Long-press the owl, talk or type, get an
+  answer; designed in `docs/superpowers/specs/2026-11-04-assistant-design.md`. It supersedes two
+  recorded decisions: "No new chat surface" (BRD-004, 2026-10-23) and the sparkle "Ask" button as
+  the chat entry (2026-10-22). ASK-001, ASK-005 and ASK-006 are delivered inside it. The
+  2026-10-22 budget line is out of date: Aaru uses its own `aaru` Console workspace, not the
+  shared `haiku-trial` one; `@aaru`, capture and the assistant all draw on that key.
+
+  | Topic | Decision |
+  | --- | --- |
+  | Order | Assistant first; Ask Aaru page later on the same engine |
+  | Entry | An owl in the top bar of every main screen, beside Search |
+  | Surface | A floating card rising from the bottom over the dimmed current screen; grows with the reply; swipe down dismisses |
+  | Input | Talk or type |
+  | Context | Global: whichever screen, Aaru reads all of the user's own data (library, lists, stats, airing schedule, favorites, listens, followed sports) and the catalog. No friends' or groups' data |
+  | Access | Free for every account. A plan adding many titles counts as one capture against the free quota (3 a month) while it waits and once approved; denied or expired, it gives the capture back. Answers and one-item changes do not count |
+  | Sequence | The owner merges open PR #223 (`fix/go-audit`) first; this work branches from the resulting `main` |
+  | Replies | Written and read aloud |
+  | Library changes | Yes: one item like a tap (journaled, undoable), anything larger a `PlanCard` (X-009) |
+  | Speech languages | Not English-only |
+  | Platforms | iPhone, Mac, web together |
+
 - **Board on Friends, post page, inline composer (owner, 2026-10-23, BOARD-002).** The spec's
   Social tab (Groups becoming Social with `Board | Groups`) is dropped. The Board lives on
   Friends: `/app/friends` opens on Board and `Board | Lately` is a segmented control, with no nav
@@ -3749,6 +3770,12 @@ search columns, `POST /v1/chats/{id}/turns` as `text/event-stream`.
 
 ### ASK-008 · Share to Board · S
 **Needs:** ASK-001, BOARD-002. A client tap that opens the composer prefilled; no agent write path.
+
+### ASK-009 · Aaru assistant: the owl card, voice and chat · L · owner, 2026-11-04
+**Needs:** the Go server (live), cluster Whisper (`allow-whisper` in the infra repo first).
+A streaming chat turn endpoint over the user's own data, voice through the cluster's Whisper,
+and a floating card opened from the owl on iPhone, Mac and web. Delivers ASK-001, ASK-005 and
+ASK-006; the Ask Aaru page (ASK-002, ASK-003) reuses the engine later.
 
 ---
 

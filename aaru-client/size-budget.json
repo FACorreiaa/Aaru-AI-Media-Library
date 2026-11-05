@@ -1,5 +1,5 @@
 {
-  "totalJs": 534000,
+  "totalJs": 535000,
   "css": 27137,
   "shared": 94600,
   "routes": {
@@ -73,7 +73,7 @@
     "/connect/extension": 109400,
     "/i/$code": 117900,
     "/oauth/consent": 116500,
-    "/privacy": 104600,
+    "/privacy": 105700,
     "/s/$code": 115700,
     "/sign-in": 117700
   }

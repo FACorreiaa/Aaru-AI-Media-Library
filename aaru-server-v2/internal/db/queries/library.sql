@@ -90,6 +90,16 @@ FROM actions a LEFT JOIN agent_tokens t ON t.id = a.agent_token_id
 WHERE a.user_id = @user_id
 ORDER BY a.created_at DESC, a.id DESC LIMIT @row_limit;
 
+-- The clock actions.created_at is stamped by.
+-- name: LibraryJournalClock :one
+SELECT now()::pg_catalog.timestamptz AS now;
+
+-- The user's newest action on an item since a time on the journal's clock.
+-- name: LibraryLatestActionOnItem :one
+SELECT id FROM actions
+WHERE user_id = @user_id AND @item_id::uuid = ANY(item_ids) AND created_at >= @since::pg_catalog.timestamptz
+ORDER BY created_at DESC, id DESC LIMIT 1;
+
 -- MARK: Reads
 
 -- name: LibraryTombstonesSince :many

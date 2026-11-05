@@ -56,7 +56,7 @@ func utc(t *time.Time) *time.Time {
 	return &u
 }
 
-func (s *Service) create(ctx context.Context, p Plan, user uuid.UUID) error {
+func (s *Service) create(ctx context.Context, p Plan, origin Origin, spends bool) error {
 	changes, err := encodeChanges(p.Changes)
 	if err != nil {
 		return err
@@ -74,35 +74,48 @@ func (s *Service) create(ctx context.Context, p Plan, user uuid.UUID) error {
 		return err
 	}
 	params := sqlc.PlanCreateParams{
-		ID: p.ID, UserID: user, AgentTokenID: p.AgentTokenID, AgentName: p.AgentName, Status: string(p.Status),
+		ID: p.ID, UserID: origin.UserID, AgentTokenID: p.AgentTokenID, AgentName: p.AgentName, Status: string(p.Status),
 		Summary: p.Summary, Changes: changes, Counts: counts, Op: op, Basis: basis, CreatedAt: p.CreatedAt,
-		ExpiresAt: p.ExpiresAt,
+		ExpiresAt: p.ExpiresAt, SpendsCapture: spends,
 	}
-	if p.AgentTokenID == nil {
-		if err := s.q.PlanCreate(ctx, params); err != nil {
-			return fmt.Errorf("create plan: %w", err)
-		}
-		return nil
-	}
-	// The token's pending count again, under its lock and with the insert, so parallel proposals
+	// The origin's pending count again, under its lock and with the insert, so parallel proposals
 	// cannot pass MaxPendingPerToken together (DB-008).
 	return pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
 		q := s.q.WithTx(tx)
-		if err := q.LockAgentTokenPlans(ctx, strings.ToUpper(p.AgentTokenID.String())); err != nil {
+		if err := q.LockAgentTokenPlans(ctx, pendingLockKey(origin)); err != nil {
 			return fmt.Errorf("lock pending plans: %w", err)
 		}
-		pending, err := q.PlanPendingCount(ctx, sqlc.PlanPendingCountParams{AgentTokenID: p.AgentTokenID, Now: p.CreatedAt})
+		pending, err := pendingCount(ctx, q, origin, p.CreatedAt)
 		if err != nil {
-			return fmt.Errorf("pending plans: %w", err)
+			return err
 		}
 		if pending >= MaxPendingPerToken {
-			return tooManyPending(pending)
+			return tooManyPending(origin, pending)
+		}
+		if spends {
+			// The lock a capture takes, so a plan and a capture cannot pass the quota together (DB-004).
+			if err := q.LockUserCaptures(ctx, strings.ToUpper(origin.UserID.String())); err != nil {
+				return fmt.Errorf("lock captures: %w", err)
+			}
+			if origin.Quota != nil {
+				if err := origin.Quota(ctx, q); err != nil {
+					return err
+				}
+			}
 		}
 		if err := q.PlanCreate(ctx, params); err != nil {
 			return fmt.Errorf("create plan: %w", err)
 		}
 		return nil
 	})
+}
+
+// pendingLockKey is the token's, or for a tokenless origin the user's and its name.
+func pendingLockKey(origin Origin) string {
+	if origin.TokenID != nil {
+		return strings.ToUpper(origin.TokenID.String())
+	}
+	return strings.ToUpper(origin.UserID.String()) + ":" + origin.Name
 }
 
 func plansFrom(rows []planRow) ([]Plan, error) {
@@ -217,8 +230,8 @@ func decide(ctx context.Context, q *sqlc.Queries, p Plan, status Status, now tim
 	return p, nil
 }
 
-// approveTx re-checks status, expiry and basis, then runs the op and journals it as the plan's
-// token, all in one transaction. Nil when the user has no such plan.
+// approveTx re-checks status, expiry and basis, then runs the op and journals it as whoever asked
+// (Plan.caller), all in one transaction. Nil when the user has no such plan.
 func (s *Service) approveTx(ctx context.Context, id, user uuid.UUID, now time.Time) (*decision, error) {
 	var out *decision
 	err := pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
@@ -245,7 +258,7 @@ func (s *Service) approveTx(ctx context.Context, id, user uuid.UUID, now time.Ti
 			out = &decision{kind: decidedStale, plan: decided}
 			return err
 		}
-		caller := library.Caller{Actor: library.ActorExternalAgent, AgentTokenID: p.AgentTokenID, AgentName: &p.AgentName}
+		caller := p.caller()
 		action, err := s.Library.Store.RunInTx(ctx, tx, p.Op, user, caller, "plan", caller.Summary(p.Summary))
 		if err != nil {
 			return err

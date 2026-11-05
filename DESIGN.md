@@ -1162,6 +1162,16 @@ Where each existing piece goes:
 
 ---
 
+## Assistant (the owl card, ASK-009)
+
+An owl in the top bar of every main screen, beside Search, and on title pages. Long press opens
+a card rising from the bottom over the dimmed screen, listening; tap opens it ready to type.
+The card grows with the reply and swipe down dismisses it, which cancels the turn. Written
+replies are read aloud only after a spoken question, with a mute button. A change Aaru applies
+shows the undo ribbon in the card. The card, owl, mic and composer are chrome and are never
+agent-emitted; replies carry only components from the catalog below. Colours and type follow the
+Brand section.
+
 ## Component catalog the agent may emit
 
 Build these as SwiftUI views. The model only returns their names and props.

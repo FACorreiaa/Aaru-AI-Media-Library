@@ -11,12 +11,15 @@ import (
 var isNoRows = db.IsNoRows
 
 // registerRawRoutes adds the routes outside the strict server: the three
-// imports whose bodies come in several binary types, and every transport that
-// is not in openapi.yaml. Each area registers its own here.
+// imports and the transcription whose bodies come in several binary types, the
+// Chat turn's event stream, and every transport that is not in openapi.yaml.
+// Each area registers its own here.
 func (s *Server) registerRawRoutes(e *echo.Echo) {
 	e.POST("/v1/imports/csv", s.createCSVImport)
 	e.POST("/v1/imports/cat", s.createCATImport)
 	e.POST("/v1/imports/capture", s.createCaptureImport)
+	e.POST("/v1/chats/:id/turns", s.chatTurn)
+	e.POST("/v1/chats/transcribe", s.chatTranscribe)
 	e.GET("/internal/metrics", s.internalMetrics)
 	s.registerOAuthRoutes(e)
 	// The realtime socket (GRP-006) signs itself in: a bearer token, or a browser ticket.

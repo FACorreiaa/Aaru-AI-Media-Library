@@ -34,10 +34,23 @@ type Caller struct {
 	// Scrobbled: the write came from a player (Stremio or the browser extension); it earns the
 	// scrobble bonus on top (GAM-001).
 	Scrobbled bool
+	// ByHand: a status this caller sets holds against imports, as the user's own tap does, whoever
+	// the journal names.
+	ByHand bool
 }
+
+// ChatAgentName is the name a chat with Aaru writes under (ASK-009).
+const ChatAgentName = "Aaru"
 
 // UserCaller is the signed-in user's own tap.
 var UserCaller = Caller{Actor: ActorUser}
+
+// ChatCaller is the signed-in user asking Aaru in a chat: their own say, so it holds like a tap,
+// shown in the journal as Aaru. There is no agent token.
+var ChatCaller = func() Caller {
+	name := ChatAgentName
+	return Caller{Actor: ActorAgent, ByHand: true, AgentName: &name}
+}()
 
 // AgentCaller is an outside caller through an agent token.
 func AgentCaller(token auth.AgentToken) Caller {
@@ -48,6 +61,9 @@ func AgentCaller(token auth.AgentToken) Caller {
 		Scrobbled: group == auth.GroupStremio || group == auth.GroupScrobble,
 	}
 }
+
+// setsByHand: a status this caller sets is the user's choice (`status_by_hand`).
+func (c Caller) setsByHand() bool { return c.Actor == ActorUser || c.ByHand }
 
 // Summary prefixes text with the agent's name: "Stremio: marked …".
 func (c Caller) Summary(text string) string {

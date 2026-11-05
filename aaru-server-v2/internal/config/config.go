@@ -259,6 +259,13 @@ type Anthropic struct {
 	PriceOutputPerMTok float64
 }
 
+// Transcription is the speech-to-text service, in the OpenAI wire format; nil leaves
+// voice input off. Model is required with the URL.
+type Transcription struct {
+	BaseURL *url.URL
+	Model   string
+}
+
 // Sentry is set when SENTRY_DSN is: server errors are reported, not just logged.
 type Sentry struct {
 	DSN         string
@@ -298,6 +305,7 @@ type App struct {
 	OAuthCookieDomain  *string
 	RealtimeOrigins    []string
 	Anthropic          *Anthropic
+	Transcription      *Transcription
 	TicketmasterAPIKey *string
 	TheSportsDBAPIKey  *string
 	LastFMAPIKey       *string
@@ -383,6 +391,9 @@ func Load(r *Reader) (*App, error) {
 		return nil, err
 	}
 	if cfg.Anthropic, err = loadAnthropic(r); err != nil {
+		return nil, err
+	}
+	if cfg.Transcription, err = loadTranscription(r); err != nil {
 		return nil, err
 	}
 	if dsn := r.Optional("sentry.dsn"); dsn != nil {
@@ -482,6 +493,22 @@ func loadPush(r *Reader) (*Push, error) {
 		return nil, err
 	}
 	return &Push{KeyID: keyID, TeamID: r.String("apns.team.id", "84X9WYBF36"), PrivateKeyPEM: key}, nil
+}
+
+func loadTranscription(r *Reader) (*Transcription, error) {
+	raw := r.Optional("transcription.base.url")
+	if raw == nil {
+		return nil, nil // unset leaves voice input off
+	}
+	base, err := httpURL(*raw, "TRANSCRIPTION_BASE_URL", "transcription.base.url")
+	if err != nil {
+		return nil, err
+	}
+	model := r.Optional("transcription.model")
+	if model == nil {
+		return nil, MissingError{Env: "TRANSCRIPTION_MODEL", Key: "transcription.model"}
+	}
+	return &Transcription{BaseURL: base, Model: strings.TrimSpace(*model)}, nil
 }
 
 func loadAnthropic(r *Reader) (*Anthropic, error) {
