@@ -20,6 +20,11 @@ func TestTranscriptionConfig(t *testing.T) {
 	require.ErrorAs(t, err, &missing)
 	assert.Equal(t, "TRANSCRIPTION_MODEL", missing.Env)
 
+	base["transcription.model"] = "  \t "
+	_, err = Load(NewReaderFrom(base))
+	require.ErrorAs(t, err, &missing, "blank is as missing as unset")
+	assert.Equal(t, "TRANSCRIPTION_MODEL", missing.Env)
+
 	base["transcription.model"] = "Systran/faster-whisper-small"
 	cfg, err = Load(NewReaderFrom(base))
 	require.NoError(t, err)

@@ -34,6 +34,8 @@ const (
 	RestingReply = "Aaru is resting. Try again later."
 	// UnknownDataReply is an in-scope question with no data behind it.
 	UnknownDataReply = "I can't see that yet."
+	// ThinkingStatus is a turn's first frame: it commits the stream before the model says anything.
+	ThinkingStatus = "Thinking"
 
 	chatRoleAgent = "agent"
 	maxChatTitle  = 80
@@ -147,6 +149,7 @@ func (s *ChatService) Turn(ctx context.Context, user, chat uuid.UUID, body strin
 	if err != nil {
 		return err
 	}
+	emit(ChatEvent{Type: ChatEventStatus, Text: ThinkingStatus})
 	if owned.Title == nil {
 		s.nameChat(ctx, chat, body)
 	}
@@ -159,7 +162,7 @@ func (s *ChatService) Turn(ctx context.Context, user, chat uuid.UUID, body strin
 	turnCtx, cancel := context.WithTimeout(ctx, ceiling)
 	defer cancel()
 	if s.Stop != nil {
-		defer context.AfterFunc(s.Stop, cancel)()
+		defer context.AfterFunc(s.Stop, cancel)() //nolint:contextcheck // Stop is the turn's second parent: the process, not the request
 	}
 	answerErr := safe.Step(func() error { return s.answer(turnCtx, run, recent, body, hint) })
 	s.settle(ctx, run, agentTurn, answerErr)
@@ -286,6 +289,11 @@ func (s *ChatService) settle(ctx context.Context, run *chatRun, turn uuid.UUID, 
 	case answerErr == nil:
 	case hungUp, s.Stop != nil && s.Stop.Err() != nil:
 		state = TurnStopped
+		if !errors.Is(answerErr, context.Canceled) && !errors.Is(answerErr, context.DeadlineExceeded) {
+			// It failed on its own as the turn ended. Never the words: only what went wrong.
+			s.log().WarnContext(ctx, "chat turn failed as it stopped", "turn", turn, "error", answerErr.Error(),
+				"errorType", rootErrorType(answerErr))
+		}
 	default:
 		state = TurnFailed
 		if outOfCredit(answerErr) {
@@ -312,6 +320,14 @@ func (s *ChatService) settle(ctx context.Context, run *chatRun, turn uuid.UUID, 
 		return
 	}
 	run.emit(failure)
+}
+
+// rootErrorType names what went wrong under its wrapping.
+func rootErrorType(err error) string {
+	for next := errors.Unwrap(err); next != nil; next = errors.Unwrap(err) {
+		err = next
+	}
+	return fmt.Sprintf("%T", err)
 }
 
 func outOfCredit(err error) bool {

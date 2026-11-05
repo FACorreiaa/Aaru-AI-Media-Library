@@ -36,6 +36,9 @@ const (
 	maxChatAudioSeconds = 60
 	// transcriptionsPerHour is each user's share of a CPU-only service.
 	transcriptionsPerHour = 40
+	// maxTranscriptionsInFlight keeps parallel 8 MB uploads off the pod's memory limit and off the
+	// CPU-only service. Per process, held across the body read and the service call.
+	maxTranscriptionsInFlight = 4
 	// maxVocabularyTitles is how many titles bias a transcription toward what the user watches.
 	maxVocabularyTitles = 30
 )
@@ -45,12 +48,13 @@ var (
 	errChatBusy           = apperr.New(http.StatusConflict, "chat_busy", "Aaru is still answering in this chat.")
 	errAgentUnavailable   = apperr.Unavailable("agent_unavailable", "Aaru isn't available right now.")
 	errChatBlank          = apperr.Validation("body", "Ask Aaru something first.")
-	errChatTooLong        = apperr.Validation("body", "That is longer than Aaru reads. Keep it under 4,000 characters.")
+	errChatTooLong        = apperr.Validation("body", "That is longer than Aaru reads. Keep it to 4,000 characters or fewer.")
 	errVoiceUnavailable   = apperr.Unavailable("transcription_unavailable", "Voice isn't available right now.")
 	errAudioTooLarge      = apperr.New(http.StatusRequestEntityTooLarge, "file_too_large", "That recording is larger than 8 MB.")
 	errAudioTooLong       = apperr.New(http.StatusRequestEntityTooLarge, "audio_too_long", "That recording is longer than 60 seconds.")
 	errTranscriptionEmpty = apperr.New(http.StatusUnprocessableEntity, "transcription_empty", "Aaru didn't hear any words.")
 	errTooManyVoice       = apperr.RateLimited("Too many spoken questions. Try again later.")
+	errVoiceBusy          = apperr.RateLimited("Voice is busy right now. Try again in a moment.")
 )
 
 func (s *Server) chats() *agent.ChatStore { return &agent.ChatStore{Q: s.q} }
@@ -274,6 +278,12 @@ func (s *Server) chatTranscribe(c echo.Context) error {
 	// What the client measured. A header that is no number says nothing; the size limit still holds.
 	if seconds, err := strconv.ParseFloat(c.Request().Header.Get("X-Audio-Seconds"), 64); err == nil && seconds > maxChatAudioSeconds {
 		return errAudioTooLong
+	}
+	select {
+	case s.transcribing <- struct{}{}:
+		defer func() { <-s.transcribing }()
+	default:
+		return errVoiceBusy // before Allow: a busy server does not spend the user's hour
 	}
 	if !s.transcriptions.Allow(user.String(), time.Now()) {
 		return errTooManyVoice

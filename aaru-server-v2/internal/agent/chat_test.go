@@ -6,6 +6,7 @@ import (
 	"aaru-go-api/internal/library"
 	"aaru-go-api/internal/model"
 	"aaru-go-api/internal/reqctx"
+	"bytes"
 	"context"
 	"encoding/json"
 	"log/slog"
@@ -244,17 +245,31 @@ func TestTurnEvents(t *testing.T) {
 	f.streaming()
 	f.ask("what's in my library?")
 
-	assert.Equal(t, []string{"status", "delta", "delta", "done"}, f.kinds())
-	assert.Equal(t, "Checking your library", f.sent[0].Text)
-	assert.Equal(t, "You have ", f.sent[1].Text)
-	assert.Equal(t, "nothing yet.", f.sent[2].Text)
+	assert.Equal(t, []string{"status", "status", "delta", "delta", "done"}, f.kinds())
+	assert.Equal(t, "Thinking", f.sent[0].Text)
+	assert.Equal(t, "Checking your library", f.sent[1].Text)
+	assert.Equal(t, "You have ", f.sent[2].Text)
+	assert.Equal(t, "nothing yet.", f.sent[3].Text)
 
 	stored := f.lastTurn()
 	assert.Equal(t, agent.TurnDone, stored.state)
 	assert.Equal(t, "You have nothing yet.", stored.body)
 	assert.Nil(t, stored.components)
-	require.NotNil(t, f.sent[3].TurnID)
-	assert.Equal(t, stored.id, *f.sent[3].TurnID)
+	require.NotNil(t, f.sent[4].TurnID)
+	assert.Equal(t, stored.id, *f.sent[4].TurnID)
+}
+
+// Thinking commits the stream before anything can take a while: the gate is the first model call.
+func TestThinkingComesBeforeTheGate(t *testing.T) {
+	var seen []string
+	f := newTurnFixture(t)
+	first := gate(true)
+	first.during = func() { seen = f.kinds() }
+	f.model.script = []step{first, says("Hi.")}
+	f.ask("hello")
+
+	assert.Equal(t, []string{"status"}, seen)
+	assert.Equal(t, "Thinking", f.sent[0].Text)
 }
 
 func TestTextAcrossRoundsMatchesTheStream(t *testing.T) {
@@ -275,9 +290,9 @@ func TestOffTopicNoMainCall(t *testing.T) {
 	f.ask("what will the stock market do?")
 
 	assert.Len(t, f.model.calls(), 1)
-	assert.Equal(t, []string{"delta", "done"}, f.kinds())
+	assert.Equal(t, []string{"status", "delta", "done"}, f.kinds())
 	const refused = "I can only help with films, shows, anime, books, music, sport and your Aaru library."
-	assert.Equal(t, refused, f.sent[0].Text)
+	assert.Equal(t, refused, f.sent[1].Text)
 	stored := f.lastTurn()
 	assert.Equal(t, agent.TurnDone, stored.state)
 	assert.Equal(t, refused, stored.body)
@@ -288,9 +303,9 @@ func TestGateErrorFailsClosed(t *testing.T) {
 	f.ask("what's airing?")
 
 	assert.Len(t, f.model.calls(), 1, "no main call")
-	assert.Equal(t, []string{"error"}, f.kinds())
-	assert.Equal(t, "try_again", f.sent[0].Code)
-	assert.NotEmpty(t, f.sent[0].Text)
+	assert.Equal(t, []string{"status", "error"}, f.kinds())
+	assert.Equal(t, "try_again", f.sent[1].Code)
+	assert.NotEmpty(t, f.sent[1].Text)
 	assert.Equal(t, agent.TurnFailed, f.lastTurn().state)
 }
 
@@ -467,6 +482,37 @@ func TestStopAfterAHangUpEmitsNothing(t *testing.T) {
 	assert.NotContains(t, f.kinds(), "error")
 }
 
+// A turn that broke on its own as the client left still says what broke, never in the user's words.
+func TestHangUpLogsARealFailure(t *testing.T) {
+	const secret = "my-very-private-question"
+	for name, tc := range map[string]struct {
+		err    error
+		logged bool
+	}{
+		"a provider error": {&model.ProviderError{Status: 500}, true},
+		"the hang-up":      {context.Canceled, false},
+	} {
+		t.Run(name, func(t *testing.T) {
+			ctx, cancel := context.WithCancel(t.Context())
+			defer cancel()
+			logged := &bytes.Buffer{}
+			f := newTurnFixture(t, gate(true), step{during: cancel, err: tc.err})
+			f.svc.Log = slog.New(slog.NewTextHandler(logged, nil))
+
+			require.NoError(t, f.send(ctx, secret, agent.Hint{}))
+
+			assert.Equal(t, agent.TurnStopped, f.lastTurn().state)
+			assert.NotContains(t, logged.String(), secret)
+			if tc.logged {
+				assert.Contains(t, logged.String(), "chat turn failed as it stopped")
+				assert.Contains(t, logged.String(), "ProviderError", "the type")
+				return
+			}
+			assert.NotContains(t, logged.String(), "chat turn failed")
+		})
+	}
+}
+
 func TestNoToolRunsAfterAHangUp(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
@@ -484,7 +530,7 @@ func TestNoToolRunsAfterAHangUp(t *testing.T) {
 	require.NoError(t, f.send(ctx, "add the hit", agent.Hint{}))
 
 	assert.Equal(t, agent.TurnStopped, f.lastTurn().state)
-	assert.Empty(t, f.sent, "not even a status: the tools never started")
+	assert.Equal(t, []string{"status"}, f.kinds(), "only Thinking: the tools never started")
 	assert.Equal(t, 0, f.count(`SELECT count(*)::int FROM library_items WHERE user_id = $1`, f.user))
 }
 
@@ -494,10 +540,12 @@ func TestTurnCeiling(t *testing.T) {
 
 	f := newTurnFixture(t, gate(true), step{deltas: []string{"Half an"}, block: true})
 	f.streaming()
-	f.svc.Ceiling = 50 * time.Millisecond
+	// The ceiling also covers the gate and its metering, so a shorter one fails before the first
+	// delta on a machine under load.
+	f.svc.Ceiling = 2 * time.Second
 	f.ask("what's airing?")
 
-	assert.Equal(t, []string{"delta", "error"}, f.kinds())
+	assert.Equal(t, []string{"status", "delta", "error"}, f.kinds())
 	assert.Equal(t, "try_again", f.event("error").Code)
 	stored := f.lastTurn()
 	assert.Equal(t, agent.TurnFailed, stored.state)
@@ -590,9 +638,9 @@ func TestOutOfCredit(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			f := newTurnFixture(t, script...)
 			f.ask("what's airing?")
-			assert.Equal(t, []string{"error"}, f.kinds())
-			assert.Equal(t, "resting", f.sent[0].Code)
-			assert.Equal(t, "Aaru is resting. Try again later.", f.sent[0].Text)
+			assert.Equal(t, []string{"status", "error"}, f.kinds())
+			assert.Equal(t, "resting", f.sent[1].Code)
+			assert.Equal(t, "Aaru is resting. Try again later.", f.sent[1].Text)
 			assert.Equal(t, agent.TurnFailed, f.lastTurn().state)
 		})
 	}
@@ -615,7 +663,7 @@ func TestComponentsEvent(t *testing.T) {
 	}
 	f.ask("what should I watch?")
 
-	assert.Equal(t, []string{"status", "delta", "components", "done"}, f.kinds())
+	assert.Equal(t, []string{"status", "status", "delta", "components", "done"}, f.kinds())
 	event := f.event("components")
 	require.Len(t, event.Titles, agent.MaxCards)
 	assert.Equal(t, "Title 901", event.Titles[0].Title)
@@ -757,6 +805,7 @@ func TestSystemPrompt(t *testing.T) {
 	assert.Contains(t, system, "films, shows, anime, books, music, sport and your Aaru library")
 	assert.Contains(t, system, "I can't see that yet")
 	assert.Contains(t, system, "call title_details", "the guard off the title page")
+	assert.Contains(t, system, "A private library and tracker", "what Aaru is, the only source for questions about the app")
 	assert.NotContains(t, f.model.everythingSeen(), "BBB", "another user's data")
 }
 

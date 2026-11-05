@@ -6,6 +6,7 @@ import (
 	"aaru-go-api/internal/apperr"
 	"aaru-go-api/internal/catalog"
 	"aaru-go-api/internal/config"
+	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/model"
 	"aaru-go-api/internal/telemetry"
 	"bufio"
@@ -277,9 +278,13 @@ func TestTurnSSE(t *testing.T) {
 
 	// The model is still holding its next piece: this frame can only be here if it was flushed.
 	frames := sseOf(res.Body)
+	thinking, ok := frames.next()
+	require.True(t, ok, "Thinking arrives first")
+	assert.Equal(t, "status", thinking.event)
+	assert.Equal(t, "Thinking", frameData[api.ChatTextFrame](t, thinking).Text)
 	first, ok := frames.next()
-	require.True(t, ok, "the first frame arrives while the model waits")
-	require.True(t, firstFrame.Stop(), "the first frame arrives within 5 s")
+	require.True(t, ok, "the first delta arrives while the model waits")
+	require.True(t, firstFrame.Stop(), "the first frames arrive within 5 s")
 	assert.Equal(t, "delta", first.event)
 	assert.Equal(t, "Hel", frameData[api.ChatTextFrame](t, first).Text)
 	close(release)
@@ -309,11 +314,12 @@ func TestTurnComponentsFrame(t *testing.T) {
 	}
 	res := e.openTurn(chatDeadline(t), e.listen(), e.newChat(e.bearer), e.bearer, map[string]any{"body": "add arrival"})
 	frames := sseOf(res.Body).rest()
-	require.Equal(t, []string{"status", "status", "delta", "components", "done"}, frameEvents(frames))
-	assert.Equal(t, "Searching the catalog", frameData[api.ChatTextFrame](t, frames[0]).Text)
-	assert.Equal(t, "Added Arrival.", frameData[api.ChatTextFrame](t, frames[2]).Text)
+	require.Equal(t, []string{"status", "status", "status", "delta", "components", "done"}, frameEvents(frames))
+	assert.Equal(t, "Thinking", frameData[api.ChatTextFrame](t, frames[0]).Text)
+	assert.Equal(t, "Searching the catalog", frameData[api.ChatTextFrame](t, frames[1]).Text)
+	assert.Equal(t, "Added Arrival.", frameData[api.ChatTextFrame](t, frames[3]).Text)
 
-	parts := frameData[api.ChatComponentsFrame](t, frames[3])
+	parts := frameData[api.ChatComponentsFrame](t, frames[4])
 	require.NotNil(t, parts.Titles)
 	require.Len(t, *parts.Titles, 1)
 	assert.Equal(t, "Arrival", (*parts.Titles)[0].Title)
@@ -345,9 +351,9 @@ func TestTurnPlanFrame(t *testing.T) {
 	}
 	res := e.openTurn(chatDeadline(t), e.listen(), e.newChat(e.bearer), e.bearer, map[string]any{"body": "add both"})
 	frames := sseOf(res.Body).rest()
-	require.Equal(t, []string{"status", "status", "delta", "components", "done"}, frameEvents(frames))
-	parts := frameData[api.ChatComponentsFrame](t, frames[3])
-	require.NotNil(t, parts.Plan, frames[3].data)
+	require.Equal(t, []string{"status", "status", "status", "delta", "components", "done"}, frameEvents(frames))
+	parts := frameData[api.ChatComponentsFrame](t, frames[4])
+	require.NotNil(t, parts.Plan, frames[4].data)
 	assert.Nil(t, parts.ActionId)
 	assert.Len(t, parts.Plan.Changes, 2)
 	got := e.send(http.MethodGet, "/v1/plans/"+parts.Plan.Id.String(), nil)
@@ -395,7 +401,7 @@ func TestTurnBusy(t *testing.T) {
 	assert.Equal(t, "chat_busy", body.Code)
 
 	close(release)
-	assert.Equal(t, []string{"delta", "done"}, frameEvents(frames.rest()))
+	assert.Equal(t, []string{"delta", "delta", "done"}, frameEvents(frames.rest()), "Thinking was read above")
 	gates, mains := m.counts()
 	assert.Equal(t, 1, gates, "the second send reached no model")
 	assert.Equal(t, 1, mains)
@@ -409,8 +415,12 @@ func TestTurnHangup(t *testing.T) {
 	ctx, hangUp := context.WithCancel(chatDeadline(t))
 	defer hangUp()
 	res := e.openTurn(ctx, e.listen(), chat, e.bearer, map[string]any{"body": "tell me"})
-	_, ok := sseOf(res.Body).next()
-	require.True(t, ok)
+	frames := sseOf(res.Body)
+	for _, event := range []string{"status", "delta"} {
+		f, ok := frames.next()
+		require.True(t, ok)
+		require.Equal(t, event, f.event)
+	}
 	hangUp()
 
 	require.Eventually(t, func() bool {
@@ -450,6 +460,37 @@ func TestShutdownStopsATurn(t *testing.T) {
 	assert.Equal(t, "Half an", body)
 }
 
+// Nothing free-form reaches the model: a known title and screen do, anything else is dropped.
+func TestTurnHint(t *testing.T) {
+	m := &chatModel{script: []chatMainCall{says("One."), says("Two.")}}
+	e := newChatEnv(t, m)
+	title, err := e.server.Catalog.Resolver().Resolve(context.Background(),
+		core.MediaRef{Type: core.MediaMovie, IDs: core.ExternalIDs{TMDB: e.captureFilm("Hinted Film")}}, nil)
+	require.NoError(t, err)
+	chat, srv := e.newChat(e.bearer), e.listen()
+	send := func(hint map[string]any) string {
+		t.Helper()
+		_, before := m.counts()
+		res := e.openTurn(chatDeadline(t), srv, chat, e.bearer, map[string]any{"body": "is this any good?", "hint": hint})
+		require.Equal(t, http.StatusOK, res.StatusCode)
+		frames := frameEvents(sseOf(res.Body).rest())
+		require.Equal(t, "done", frames[len(frames)-1])
+		m.mu.Lock()
+		defer m.mu.Unlock()
+		return m.requests[before].System
+	}
+
+	system := send(map[string]any{"screen": "title", "titleId": title.ID.String()})
+	assert.Contains(t, system, "They are looking at Hinted Film")
+	assert.Contains(t, system, "on the title screen")
+	assert.Contains(t, system, "They have not started it")
+
+	system = send(map[string]any{"screen": "evil screen", "titleId": "not-a-uuid"})
+	assert.NotContains(t, system, "looking at")
+	assert.NotContains(t, system, "evil")
+	assert.NotContains(t, system, " screen.", "no screen line at all")
+}
+
 func TestTurnNoDeadline(t *testing.T) {
 	slow := func(_ context.Context, onText func(string)) (model.Response, error) {
 		time.Sleep(2 * time.Second)
@@ -459,7 +500,7 @@ func TestTurnNoDeadline(t *testing.T) {
 	m := &chatModel{script: []chatMainCall{slow}}
 	e := newChatEnv(t, m, func(d *Deps) { d.Config.HTTP.RequestTimeoutSeconds = 1 })
 	res := e.openTurn(chatDeadline(t), e.listen(), e.newChat(e.bearer), e.bearer, map[string]any{"body": "take your time"})
-	assert.Equal(t, []string{"delta", "done"}, frameEvents(sseOf(res.Body).rest()))
+	assert.Equal(t, []string{"status", "delta", "done"}, frameEvents(sseOf(res.Body).rest()))
 }
 
 func TestTurnHeartbeat(t *testing.T) {
@@ -484,19 +525,25 @@ func TestTurnBodyIsChecked(t *testing.T) {
 	e := newChatEnv(t, m)
 	chat := e.newChat(e.bearer)
 	path := "/v1/chats/" + chat + "/turns"
-	for name, body := range map[string]string{
-		"missing":    ``,
-		"empty":      "",
-		"whitespace": "  \n\t ",
-		"too long":   strings.Repeat("é", 4001),
-		"NUL":        "a\x00b",
+	for name, tc := range map[string]struct {
+		body string
+		want int
+	}{
+		"missing":    {``, http.StatusUnprocessableEntity},
+		"empty":      {"", http.StatusUnprocessableEntity},
+		"whitespace": {"  \n\t ", http.StatusUnprocessableEntity},
+		"too long":   {strings.Repeat("é", 4001), http.StatusUnprocessableEntity},
+		"NUL":        {"a\x00b", http.StatusBadRequest},
 	} {
-		payload := map[string]any{"body": body}
+		payload := map[string]any{"body": tc.body}
 		if name == "missing" {
 			payload = map[string]any{"hint": map[string]any{"screen": "home"}}
 		}
 		rec := e.send(http.MethodPost, path, payload)
-		assert.Contains(t, []int{http.StatusBadRequest, http.StatusUnprocessableEntity}, rec.Code, name)
+		assert.Equal(t, tc.want, rec.Code, name)
+		if name == "too long" {
+			assert.Contains(t, rec.Body.String(), "4,000 characters or fewer", "4,000 itself is allowed, below")
+		}
 	}
 	assert.Equal(t, http.StatusUnprocessableEntity, e.send(http.MethodPost, path, map[string]any{"body": "   "}).Code)
 	assert.Equal(t, http.StatusUnsupportedMediaType, e.sendBytes(http.MethodPost, path, e.bearer, "text/plain", []byte(`{"body":"hi"}`), false).Code)
@@ -545,8 +592,8 @@ func TestTurnFailureIsAnErrorFrameAndKeepsTheWordsOutOfTheLog(t *testing.T) {
 	e := newChatEnv(t, m, func(d *Deps) { d.Log = slog.New(slog.NewTextHandler(logged, nil)) })
 	res := e.openTurn(chatDeadline(t), e.listen(), e.newChat(e.bearer), e.bearer, map[string]any{"body": secret})
 	frames := sseOf(res.Body).rest()
-	require.Equal(t, []string{"error"}, frameEvents(frames))
-	assert.Equal(t, api.ChatErrorFrameCodeTryAgain, frameData[api.ChatErrorFrame](t, frames[0]).Code)
+	require.Equal(t, []string{"status", "error"}, frameEvents(frames))
+	assert.Equal(t, api.ChatErrorFrameCodeTryAgain, frameData[api.ChatErrorFrame](t, frames[1]).Code)
 	assert.Contains(t, logged.String(), "chat turn failed", "the log was captured")
 	assert.NotContains(t, logged.String(), secret)
 }
@@ -587,6 +634,9 @@ type whisperStub struct {
 	status int
 	text   string
 	srv    *httptest.Server
+	// hold, when set, keeps each call open until it closes; entered is told each one that got there.
+	hold    <-chan struct{}
+	entered chan struct{}
 }
 
 func newWhisperStub(t *testing.T, text string) *whisperStub {
@@ -604,6 +654,13 @@ func newWhisperStub(t *testing.T, text string) *whisperStub {
 				call.audio, _ = io.ReadAll(file)
 				_ = file.Close()
 			}
+		}
+		w.mu.Lock()
+		hold, entered := w.hold, w.entered
+		w.mu.Unlock()
+		if hold != nil {
+			entered <- struct{}{}
+			<-hold
 		}
 		w.mu.Lock()
 		defer w.mu.Unlock()
@@ -633,7 +690,11 @@ func (w *whisperStub) on(t *testing.T) func(*Deps) {
 // transcribe posts audio with the given headers.
 func (e *chatEnv) transcribe(bearer, contentType string, audio []byte, seconds string) *httptest.ResponseRecorder {
 	e.t.Helper()
-	req := httptest.NewRequest(http.MethodPost, "/v1/chats/transcribe", bytes.NewReader(audio))
+	return e.transcribeFrom(bearer, contentType, bytes.NewReader(audio), seconds)
+}
+
+func (e *chatEnv) transcribeFrom(bearer, contentType string, audio io.Reader, seconds string) *httptest.ResponseRecorder {
+	req := httptest.NewRequest(http.MethodPost, "/v1/chats/transcribe", audio)
 	req.Header.Set("Content-Type", contentType)
 	if seconds != "" {
 		req.Header.Set("X-Audio-Seconds", seconds)
@@ -809,12 +870,84 @@ func TestChatStatus(t *testing.T) {
 	assert.Equal(t, api.ChatStatus{Assistant: false, Voice: true}, status(newChatEnv(t, nil, stub.on(t))))
 }
 
+// The whisper call holds a slot: parallel uploads must not pile onto a CPU-only service.
+func TestTranscribeInFlightHeldAcrossTheCall(t *testing.T) {
+	stub := newWhisperStub(t, "fine")
+	release := make(chan struct{})
+	stub.mu.Lock()
+	stub.hold, stub.entered = release, make(chan struct{}, 8)
+	stub.mu.Unlock()
+	e := newChatEnv(t, nil, stub.on(t))
+	const limit = 4
+	codes := make([]int, limit)
+	var running sync.WaitGroup
+	for i := range limit {
+		running.Go(func() { codes[i] = e.transcribe(e.bearer, "audio/mp4", []byte("a"), "").Code })
+	}
+	for range limit {
+		select {
+		case <-stub.entered:
+		case <-chatDeadline(t).Done():
+			require.Fail(t, "the first uploads reach the service")
+		}
+	}
+
+	rec := e.transcribe(e.bearer, "audio/mp4", []byte("a"), "")
+	assert.Equal(t, http.StatusTooManyRequests, rec.Code)
+	assert.Equal(t, "rate_limited", errorCode(t, rec))
+	_, other := e.signIn()
+	assert.Equal(t, http.StatusTooManyRequests, e.transcribe(other, "audio/mp4", []byte("a"), "").Code, "per process, not per user")
+
+	stub.mu.Lock()
+	stub.hold = nil
+	stub.mu.Unlock()
+	close(release)
+	running.Wait()
+	for _, code := range codes {
+		assert.Equal(t, http.StatusOK, code)
+	}
+	assert.Len(t, stub.seen(), limit, "the refused ones reached no service")
+	assert.Equal(t, http.StatusOK, e.transcribe(e.bearer, "audio/mp4", []byte("a"), "").Code, "the slots came back")
+	for range 40 - limit - 1 {
+		require.Equal(t, http.StatusOK, e.transcribe(e.bearer, "audio/mp4", []byte("a"), "").Code)
+	}
+	assert.Equal(t, http.StatusTooManyRequests, e.transcribe(e.bearer, "audio/mp4", []byte("a"), "").Code,
+		"being refused for busy spent none of the hour's 40")
+}
+
+// So does the body read: the memory limit is about uploads still arriving.
+func TestTranscribeInFlightHeldAcrossTheBodyRead(t *testing.T) {
+	stub := newWhisperStub(t, "fine")
+	e := newChatEnv(t, nil, stub.on(t))
+	const limit = 4
+	var running sync.WaitGroup
+	writers := make([]*io.PipeWriter, limit)
+	for i := range limit {
+		reader, writer := io.Pipe()
+		writers[i] = writer
+		running.Go(func() { e.transcribeFrom(e.bearer, "audio/mp4", reader, "") })
+	}
+	defer func() {
+		for _, w := range writers {
+			_ = w.Close()
+		}
+		running.Wait()
+	}()
+
+	// By its words: enough tries here would also use up the hour's 40, which is a 429 too.
+	assert.Eventually(t, func() bool {
+		rec := e.transcribe(e.bearer, "audio/mp4", []byte("a"), "")
+		return rec.Code == http.StatusTooManyRequests && strings.Contains(rec.Body.String(), "busy")
+	}, 10*time.Second, 20*time.Millisecond, "the fifth is refused while four bodies are still arriving")
+}
+
 func TestAgentTokenRefused(t *testing.T) {
 	stub := newWhisperStub(t, "never")
 	e := newChatEnv(t, &chatModel{}, stub.on(t))
 	chat := e.newChat(e.bearer)
 	for _, kind := range []string{"browser", "music", "stremio", "codex"} {
 		created := decode[api.AgentTokenCreated](t, e.send(http.MethodPost, "/v1/agent/tokens", map[string]any{"kind": kind}))
+		require.NotEmpty(t, created.Secret, kind)
 		for _, route := range [][2]string{
 			{http.MethodPost, "/v1/chats"},
 			{http.MethodDelete, "/v1/chats"},

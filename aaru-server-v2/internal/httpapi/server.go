@@ -161,6 +161,8 @@ type Server struct {
 	q *sqlc.Queries
 	// transcriptions limits each user's spoken questions.
 	transcriptions *ratelimit.FixedWindow
+	// transcribing holds one slot for each spoken question in flight in this process.
+	transcribing chan struct{}
 	// chatHeartbeat is how often a Chat turn's stream says it is alive.
 	chatHeartbeat time.Duration
 	// chatStop ends when the server shuts down, and every Chat turn with it (StopChats).
@@ -280,7 +282,7 @@ func New(deps Deps) *Server {
 	chatStop, stopChats := context.WithCancel(context.Background())
 	return &Server{
 		Deps: deps, q: q, transcriptions: ratelimit.New(transcriptionsPerHour, time.Hour), chatHeartbeat: chatHeartbeatEvery,
-		chatStop: chatStop, stopChats: stopChats,
+		transcribing: make(chan struct{}, maxTranscriptionsInFlight), chatStop: chatStop, stopChats: stopChats,
 	}
 }
 

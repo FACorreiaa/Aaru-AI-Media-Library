@@ -62,6 +62,30 @@ func TestEmpty(t *testing.T) {
 	assert.ErrorIs(t, err, ErrEmpty)
 }
 
+// A proxy's HTML page answered 200 is a failure of the service, not silence.
+func TestNonJSONIsAnError(t *testing.T) {
+	c := client(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`<html>gateway</html>`))
+	})
+	_, err := c.Transcribe(context.Background(), []byte("a"), "audio/webm", "")
+	require.Error(t, err)
+	assert.NotErrorIs(t, err, ErrEmpty)
+	assert.NotContains(t, err.Error(), "gateway", "no body in an error")
+}
+
+func TestBlankPromptIsOmitted(t *testing.T) {
+	for _, prompt := range []string{"", "  \n "} {
+		c := client(t, func(w http.ResponseWriter, r *http.Request) {
+			require.NoError(t, r.ParseMultipartForm(1<<20))
+			_, has := r.MultipartForm.Value["prompt"]
+			assert.False(t, has, "prompt %q", prompt)
+			_, _ = w.Write([]byte(`{"text":"hi"}`))
+		})
+		_, err := c.Transcribe(context.Background(), []byte("a"), "audio/webm", prompt)
+		require.NoError(t, err)
+	}
+}
+
 func TestServerError(t *testing.T) {
 	c := client(t, func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
