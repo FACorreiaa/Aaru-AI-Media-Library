@@ -62,17 +62,22 @@ type ChatTools struct {
 // NewChatTools builds the tools for one Chat turn of user.
 func NewChatTools(deps ChatDeps, user uuid.UUID) *ChatTools {
 	reads := newTitleReads(deps.Tools.Catalog, deps.Tools.Library, user, deps.Tools.Now)
-	reads.progress = func(ctx context.Context, title uuid.UUID) (string, error) {
+	reads.progress = func(ctx context.Context, title core.Title) (string, error) {
 		return spoilerGuard(ctx, deps.Q, title, user)
 	}
 	return &ChatTools{titleReads: reads, deps: deps}
 }
 
-// spoilerGuard says how far user is in a title and what that keeps the model from saying.
-func spoilerGuard(ctx context.Context, q *sqlc.Queries, title, user uuid.UUID) (string, error) {
-	progress, err := groups.ProgressOf(ctx, q, title, user)
+// spoilerGuard says how far user is in a title and what that keeps the model from saying. Only a title
+// with no library row is "not started": a book being read has a status and no episode to point at.
+func spoilerGuard(ctx context.Context, q *sqlc.Queries, title core.Title, user uuid.UUID) (string, error) {
+	progress, err := groups.ProgressOf(ctx, q, title.ID, user)
 	if err != nil {
 		return "", fmt.Errorf("chat title progress: %w", err)
+	}
+	if progress != nil && progress.Status != core.StatusFinished && progress.Furthest == nil {
+		return "Their library has it as \"" + library.StatusLabel(progress.Status, title.Type) + "\", with no point recorded. " +
+			"Do not reveal anything that happens in it unless they say how far they are.", nil
 	}
 	return "They have " + DescribeProgress(progress) + ". Do not reveal anything that happens after that point.", nil
 }

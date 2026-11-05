@@ -2,6 +2,7 @@ package agent_test
 
 import (
 	"aaru-go-api/internal/agent"
+	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/db/sqlc"
 	"aaru-go-api/internal/library"
 	"aaru-go-api/internal/model"
@@ -822,6 +823,20 @@ func TestSystemPrompt(t *testing.T) {
 	assert.Contains(t, system, "call title_details", "the guard off the title page")
 	assert.Contains(t, system, "A private library and tracker", "what Aaru is, the only source for questions about the app")
 	assert.NotContains(t, f.model.everythingSeen(), "BBB", "another user's data")
+}
+
+// The hint path is the same chat line.
+func TestHintNamesALibraryItemsStatus(t *testing.T) {
+	f := newTurnFixture(t, gate(true), says("Hi."))
+	reading := core.StatusInProgress
+	e, err := f.lib.Add(f.ctx, core.MediaRef{Type: core.MediaBook, IDs: core.ExternalIDs{TMDB: "931"}}, &reading, f.user, library.ChatCaller)
+	require.NoError(t, err)
+
+	require.NoError(t, f.send(f.ctx, "is this any good?", agent.Hint{TitleID: &e.Title.ID}))
+
+	system := f.model.calls()[1].System
+	assert.Contains(t, system, `Their library has it as "Reading"`)
+	assert.NotContains(t, system, "not started")
 }
 
 func TestSystemPromptDefaultsToUTC(t *testing.T) {

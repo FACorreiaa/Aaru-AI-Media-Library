@@ -5,6 +5,7 @@ import (
 	"aaru-go-api/internal/catalog"
 	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/db/sqlc"
+	"aaru-go-api/internal/groups"
 	"aaru-go-api/internal/imports"
 	"aaru-go-api/internal/library"
 	"aaru-go-api/internal/music"
@@ -351,6 +352,41 @@ func TestTitleDetailsGuardsSpoilersInAChat(t *testing.T) {
 	assert.Contains(t, out, "They have watched up to season 1 episode 2.")
 }
 
+// A library row with no episode to point at names its status, as the UI reads it for that kind.
+func TestTitleDetailsNamesALibraryItemsStatus(t *testing.T) {
+	for name, tc := range map[string]struct {
+		kind   core.MediaType
+		status core.LibraryStatus
+		label  string
+	}{
+		"book being read":   {core.MediaBook, core.StatusInProgress, "Reading"},
+		"manga planned":     {core.MediaManga, core.StatusWishlist, "Plan to read"},
+		"film in progress":  {core.MediaMovie, core.StatusInProgress, "Watching"},
+		"film planned":      {core.MediaMovie, core.StatusWishlist, "Plan to watch"},
+		"album in progress": {core.MediaAlbum, core.StatusInProgress, "Listening"},
+		"book on hold":      {core.MediaBook, core.StatusOnHold, "On hold"},
+		"film dropped":      {core.MediaMovie, core.StatusDropped, "Dropped"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			f := newChatToolsFixture(t)
+			ids := core.ExternalIDs{TMDB: "930"}
+			if tc.kind == core.MediaManga {
+				ids.AniList = "930" // manga resolves through AniList
+			}
+			_, err := f.lib.Add(f.ctx, core.MediaRef{Type: tc.kind, IDs: ids}, &tc.status, f.user, library.ChatCaller)
+			require.NoError(t, err)
+			c := f.chatTools(f.user)
+			out, isErr := run(t, c, "read_my_library", map[string]any{})
+			require.False(t, isErr, out)
+			out, isErr = run(t, c, "title_details", map[string]any{"ref": "r1"})
+			require.False(t, isErr, out)
+			assert.Contains(t, out, `Their library has it as "`+tc.label+`"`)
+			assert.Contains(t, out, "Do not reveal anything")
+			assert.NotContains(t, out, "not started")
+		})
+	}
+}
+
 func ptrTo[T any](v T) *T { return &v }
 
 // `@aaru` reads the same title and says nothing of anyone's progress: byte for byte what it said.
@@ -368,6 +404,18 @@ func TestTitleDetailsUnchangedInAGroup(t *testing.T) {
 
 	require.False(t, isErr, out)
 	assert.Equal(t, "Title 922 (2001) [movie]", out)
+
+	// A row DescribeProgress has no words for changes nothing here either.
+	reading := core.StatusInProgress
+	_, err = f.lib.Add(f.ctx, core.MediaRef{Type: core.MediaBook, IDs: core.ExternalIDs{TMDB: "923"}}, &reading, f.user, library.ChatCaller)
+	require.NoError(t, err)
+	tools = agent.NewGroupToolsForTest(f.kit, f.lib, f.user)
+	out, isErr = tools.Run(t.Context(), "read_my_library", json.RawMessage(`{"status":"in_progress"}`))
+	require.False(t, isErr, out)
+	out, isErr = tools.Run(t.Context(), "title_details", json.RawMessage(`{"ref":"r1"}`))
+	require.False(t, isErr, out)
+	assert.Equal(t, "Title 923 (2001) [book]", out)
+	assert.Equal(t, "not started it", agent.DescribeProgress(&groups.TitleProgress{Status: reading}), "what @aaru says of it, unchanged")
 	for _, d := range agent.GroupToolDefinitions {
 		if d.Name == "title_details" {
 			assert.Equal(t, "Facts about one title: year, synopsis, network, and for shows the status and episode count.", d.Description)

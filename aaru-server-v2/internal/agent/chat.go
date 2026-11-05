@@ -456,7 +456,7 @@ func (s *ChatService) system(ctx context.Context, user uuid.UUID, hint Hint) (st
 			return "", fmt.Errorf("chat hint title: %w", err)
 		}
 		if len(titles) > 0 {
-			guard, err := spoilerGuard(ctx, s.Store.Q, titles[0].ID, user)
+			guard, err := spoilerGuard(ctx, s.Store.Q, titles[0], user)
 			if err != nil {
 				return "", err
 			}

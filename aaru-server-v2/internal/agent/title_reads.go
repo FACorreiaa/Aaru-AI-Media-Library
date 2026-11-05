@@ -32,7 +32,7 @@ type titleReads struct {
 	// cards are the titles show_titles picked, in order, for the reply's cards.
 	cards []core.Title
 	// progress says how far User is in a title, for title_details. Nil leaves it out, as `@aaru` does.
-	progress func(ctx context.Context, title uuid.UUID) (string, error)
+	progress func(ctx context.Context, title core.Title) (string, error)
 }
 
 func newTitleReads(kit *catalog.Kit, lib *library.Service, user uuid.UUID, now func() time.Time) titleReads {
@@ -102,7 +102,7 @@ func (t *titleReads) details(ctx context.Context, args map[string]any) (string, 
 	lines := []string{DescribeTitle(title)}
 	if t.progress != nil {
 		// Read first: a synopsis must not go out with nothing to guard it.
-		line, err := t.progress(ctx, title.ID)
+		line, err := t.progress(ctx, title)
 		if err != nil {
 			return "", err
 		}
