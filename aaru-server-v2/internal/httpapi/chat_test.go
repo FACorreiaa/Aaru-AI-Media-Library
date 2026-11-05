@@ -957,11 +957,15 @@ func TestTranscribeInFlightHeldAcrossTheBodyRead(t *testing.T) {
 		running.Wait()
 	}()
 
-	// By its words: enough tries here would also use up the hour's 40, which is a 429 too.
-	assert.Eventually(t, func() bool {
-		rec := e.transcribe(e.bearer, "audio/mp4", []byte("a"), "")
-		return rec.Code == http.StatusTooManyRequests && strings.Contains(rec.Body.String(), "busy")
-	}, 10*time.Second, 20*time.Millisecond, "the fifth is refused while four bodies are still arriving")
+	// Watch the slots rather than probe for a refusal: a probe holds a slot for a moment, and an upload
+	// starting then is the one refused, leaving three held for good.
+	require.Eventually(t, func() bool { return len(e.server.transcribing) == limit },
+		20*time.Second, 10*time.Millisecond, "four bodies still arriving hold all four slots")
+
+	rec := e.transcribe(e.bearer, "audio/mp4", []byte("a"), "")
+	assert.Equal(t, http.StatusTooManyRequests, rec.Code)
+	assert.Contains(t, rec.Body.String(), "busy", "the slots, not the hour's 40")
+	assert.Empty(t, stub.seen())
 }
 
 func TestAgentTokenRefused(t *testing.T) {
