@@ -92,6 +92,7 @@ extension LibraryModel {
     /// touched so the shelf, and Home through the revision, show the state before it.
     func undo(_ actionID: String, api: Client?) async -> String? {
         guard let api else { return "Aaru could not reach the server." }
+        let generation = syncGeneration
         do {
             switch try await api.undoAction(path: .init(id: actionID)) {
             case let .ok(response):
@@ -100,10 +101,13 @@ extension LibraryModel {
                     if case let .ok(item) = try? await api.getLibraryItem(path: .init(id: id)),
                        var entry = try? item.body.json
                     {
+                        // Signed out meanwhile: the next account's shelf and cache stay untouched.
+                        guard generation == syncGeneration else { return nil }
                         entry.watchedEpisodes = nil
                         upsert(entry, restore: true)
                     }
                 }
+                guard generation == syncGeneration else { return nil }
                 Task { try? await WidgetSync.refresh(api: api) }
                 return nil
             case let .default(_, error):

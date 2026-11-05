@@ -34,9 +34,9 @@ final class LibraryModel {
     @ObservationIgnored private var runningSync: Task<Void, Never>?
     /// A sync was asked for mid-sync; the one running may have started before the write it is for.
     @ObservationIgnored private var syncAgain = false
-    /// Bumped by `reset()`. A pull from before it writes nothing: its answer belongs to the last
-    /// account, and cancelling can lose to a response already delivered.
-    @ObservationIgnored private var syncGeneration = 0
+    /// Bumped by `reset()`. A pull or single-row write from before it stores nothing: its answer
+    /// belongs to the last account, and cancelling can lose to a response already delivered.
+    @ObservationIgnored private(set) var syncGeneration = 0
     @ObservationIgnored private let cache: LibraryCache
     @ObservationIgnored private var knownKeys: Set<String> = []
     /// Progress made here counts toward asking for a rating; a sync never does.
@@ -169,10 +169,15 @@ final class LibraryModel {
     /// Adds a title by reference (a list member not yet in the library, UX-072).
     func add(_ ref: MediaRef, named name: String, status: LibraryStatus, api: Client?) async -> String? {
         guard let api else { return "Aaru could not reach the server." }
+        let generation = syncGeneration
         do {
             switch try await api.addLibraryItem(body: .json(.init(mediaRef: ref, status: status))) {
             case let .ok(response):
-                try upsert(response.body.json)
+                let entry = try response.body.json
+                // Signed out meanwhile: the next account's shelf and cache stay untouched.
+                if generation == syncGeneration {
+                    upsert(entry)
+                }
                 return nil
             case let .default(_, error):
                 return (try? error.body.json.message) ?? "\(name) could not be added."
@@ -187,9 +192,12 @@ final class LibraryModel {
     func remove(_ id: String, api: Client?) async -> String? {
         guard let api else { return "Aaru could not reach the server." }
         let name = entries[id]?.title.title ?? "The title"
+        let generation = syncGeneration
         do {
             switch try await api.deleteLibraryItem(path: .init(id: id)) {
             case .noContent:
+                // Signed out meanwhile: the next account's shelf and cache stay untouched.
+                guard generation == syncGeneration else { return nil }
                 entries[id] = nil
                 publish()
                 persist()
