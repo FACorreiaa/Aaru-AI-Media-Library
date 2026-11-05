@@ -259,6 +259,21 @@ export const discardImport = createServerFn({ method: 'POST' })
   })
 
 /** IMP-011: one unmatched row, matched by hand to the title the person picked. */
+/** IMP-021: a best guess for as many unmatched rows as fit in one call. */
+export const matchAllImportRows = createServerFn({ method: 'POST' })
+  .validator(z.object({ id }))
+  .handler(
+    async ({
+      data,
+    }): Promise<{ job: ImportJob; rows: ImportRow[]; remaining: number }> =>
+      check(
+        await api(sessionToken()).POST('/v1/imports/{id}/match-all', {
+          params: { path: { id: data.id } },
+        }),
+        'Match all did not finish.',
+      ),
+  )
+
 /** BOOK-001: a row of a planned capture ticked or unticked. */
 export const leaveOutImportRow = createServerFn({ method: 'POST' })
   .validator(
