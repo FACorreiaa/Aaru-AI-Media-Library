@@ -421,6 +421,35 @@ func TestTurnHangup(t *testing.T) {
 	assert.Equal(t, "Half an", body, "what was written stays")
 }
 
+// Shutdown cancels no request's context, and the server wires StopChats the same way (app.serve).
+func TestShutdownStopsATurn(t *testing.T) {
+	never := make(chan struct{})
+	m := &chatModel{script: []chatMainCall{waits("Half an", never, " answer"), says("Back.")}}
+	e := newChatEnv(t, m)
+	chat, srv := e.newChat(e.bearer), e.listen()
+	srv.Config.RegisterOnShutdown(e.server.StopChats)
+	res := e.openTurn(chatDeadline(t), srv, chat, e.bearer, map[string]any{"body": "tell me"})
+	frames := sseOf(res.Body)
+	for {
+		f, ok := frames.next()
+		require.True(t, ok, "a delta arrives while the model waits")
+		if f.event == "delta" {
+			break
+		}
+	}
+
+	shutdown, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	require.NoError(t, srv.Config.Shutdown(shutdown), "the turn does not hold the grace period")
+
+	rest := frames.rest()
+	require.Equal(t, []string{"error"}, frameEvents(rest))
+	assert.Equal(t, api.ChatErrorFrameCodeTryAgain, frameData[api.ChatErrorFrame](t, rest[0]).Code)
+	state, body := e.agentTurn(chat)
+	assert.Equal(t, agent.TurnStopped, state)
+	assert.Equal(t, "Half an", body)
+}
+
 func TestTurnNoDeadline(t *testing.T) {
 	slow := func(_ context.Context, onText func(string)) (model.Response, error) {
 		time.Sleep(2 * time.Second)

@@ -91,6 +91,10 @@ type ChatService struct {
 	Now   func() time.Time
 	// Ceiling bounds one turn; zero means TurnCeiling.
 	Ceiling time.Duration
+	// Stop ends this process's turns when it shuts down; nil never does. A SIGKILL past the grace
+	// period leaves a turn `streaming` until StaleTurnAfter; there is no sweep at startup, because in
+	// a rolling update the old pod can still be running one.
+	Stop context.Context
 }
 
 func (s *ChatService) now() time.Time {
@@ -112,7 +116,8 @@ func (s *ChatService) log() *slog.Logger {
 // emitted or stored. After that, everything arrives as events and the error is nil.
 //
 // A send over the daily cap (shared with `@aaru`) stores nothing and calls no model. The gate fails
-// closed. When ctx ends, the turn stays `stopped` with what was written so far.
+// closed. When ctx ends, the turn stays `stopped` with what was written so far. When Stop ends, it
+// stays `stopped` too, and the client, still there, gets an error event to try again.
 func (s *ChatService) Turn(ctx context.Context, user, chat uuid.UUID, body string, hint Hint, emit func(ChatEvent)) error {
 	now := s.now()
 	owned, err := s.Store.Chat(ctx, chat, user)
@@ -153,6 +158,9 @@ func (s *ChatService) Turn(ctx context.Context, user, chat uuid.UUID, body strin
 	}
 	turnCtx, cancel := context.WithTimeout(ctx, ceiling)
 	defer cancel()
+	if s.Stop != nil {
+		defer context.AfterFunc(s.Stop, cancel)()
+	}
 	answerErr := safe.Step(func() error { return s.answer(turnCtx, run, recent, body, hint) })
 	s.settle(ctx, run, agentTurn, answerErr)
 	return nil
@@ -269,14 +277,14 @@ func (s *ChatService) answer(ctx context.Context, run *chatRun, recent []ChatTur
 }
 
 // settle stores how the turn ended, whatever became of ctx, then tells the client. No event follows
-// a hang-up: nobody is there to read it.
+// a hang-up: nobody is there to read it. A shutdown's client is still there, and is told to try again.
 func (s *ChatService) settle(ctx context.Context, run *chatRun, turn uuid.UUID, answerErr error) {
 	hungUp := ctx.Err() != nil
 	state := TurnDone
 	failure := ChatEvent{Type: ChatEventError, Code: ChatCodeTryAgain, Text: FailureReply}
 	switch {
 	case answerErr == nil:
-	case hungUp:
+	case hungUp, s.Stop != nil && s.Stop.Err() != nil:
 		state = TurnStopped
 	default:
 		state = TurnFailed

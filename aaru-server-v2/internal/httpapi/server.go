@@ -163,6 +163,9 @@ type Server struct {
 	transcriptions *ratelimit.FixedWindow
 	// chatHeartbeat is how often a Chat turn's stream says it is alive.
 	chatHeartbeat time.Duration
+	// chatStop ends when the server shuts down, and every Chat turn with it (StopChats).
+	chatStop  context.Context
+	stopChats context.CancelFunc
 }
 
 // New builds the handlers.
@@ -274,10 +277,16 @@ func New(deps Deps) *Server {
 			Transport: provider.NewHTTPTransport(),
 		}
 	}
+	chatStop, stopChats := context.WithCancel(context.Background())
 	return &Server{
 		Deps: deps, q: q, transcriptions: ratelimit.New(transcriptionsPerHour, time.Hour), chatHeartbeat: chatHeartbeatEvery,
+		chatStop: chatStop, stopChats: stopChats,
 	}
 }
+
+// StopChats ends every Chat turn in flight, and any that starts after it, so a shutdown stores them
+// `stopped` instead of waiting out the grace period and leaving them `streaming`.
+func (s *Server) StopChats() { s.stopChats() }
 
 // chatService is Chat with Aaru over this server's own areas (ASK-009). A plan of many titles spends
 // one capture, so its quota is the capture route's: a nil Quota would mean no limit at all.
@@ -285,7 +294,7 @@ func (s *Server) chatService() *agent.ChatService {
 	tools := s.AgentTools()
 	tools.Quota = s.Imports.CheckCaptureQuota
 	return &agent.ChatService{
-		Store: s.chats(), Model: s.Model, Log: s.Log,
+		Store: s.chats(), Model: s.Model, Log: s.Log, Stop: s.chatStop,
 		Deps: agent.ChatDeps{
 			Tools: tools, Stats: s.Stats, Lists: s.Library.Store, Favorites: s.Social, Music: s.Listens, Sports: s.Sports,
 		},

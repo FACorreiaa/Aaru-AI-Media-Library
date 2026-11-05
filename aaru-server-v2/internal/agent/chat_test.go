@@ -29,6 +29,8 @@ type step struct {
 	during func()
 	// block waits for the call's context to end and answers with its error.
 	block bool
+	// ended is told that error: canceled, or the ceiling's deadline.
+	ended *error
 }
 
 // scriptedModel answers from a script and records what it was asked. Never a network call.
@@ -61,6 +63,9 @@ func (s step) answer(ctx context.Context) (model.Response, error) {
 	}
 	if s.block {
 		<-ctx.Done()
+		if s.ended != nil {
+			*s.ended = ctx.Err()
+		}
 		return model.Response{}, ctx.Err()
 	}
 	return s.response, s.err
@@ -389,6 +394,77 @@ func TestDisconnectStoresStopped(t *testing.T) {
 	assert.Equal(t, 1, f.count(`SELECT count(*)::int FROM library_items WHERE user_id = $1`, f.user))
 	assert.NotContains(t, f.kinds(), "error")
 	assert.NotContains(t, f.kinds(), "done")
+}
+
+// A shutdown must not leave a turn `streaming`: the chat would answer busy for StaleTurnAfter.
+func TestStopStoresStoppedAndFreesTheChat(t *testing.T) {
+	stop, shutDown := context.WithCancel(t.Context())
+	defer shutDown()
+	var ended error
+	f := newTurnFixture(t, gate(true), step{deltas: []string{"Half an"}, during: shutDown, block: true, ended: &ended},
+		gate(true), says("Back."))
+	f.streaming()
+	f.svc.Stop = stop
+	// Only a turn the signal did not reach ever waits for this.
+	f.svc.Ceiling = 20 * time.Second
+
+	f.ask("tell me")
+
+	require.ErrorIs(t, ended, context.Canceled, "the signal ended the call, not the ceiling")
+	stored := f.lastTurn()
+	assert.Equal(t, agent.TurnStopped, stored.state)
+	assert.Equal(t, "Half an", stored.body)
+	failure := f.event("error")
+	assert.Equal(t, "try_again", failure.Code, "the client is still there")
+	assert.Equal(t, "error", f.kinds()[len(f.sent)-1])
+	assert.NotContains(t, f.kinds(), "done")
+
+	// The next pod has its own stop signal.
+	f.svc.Stop = t.Context()
+	f.sent = nil
+	require.NoError(t, f.send(f.ctx, "again", agent.Hint{}), "a new send on that chat is not busy")
+	assert.Equal(t, agent.TurnDone, f.lastTurn().state)
+}
+
+// A write that went through before the stop keeps its Undo, on the event and on the stored turn.
+func TestStopKeepsAWrite(t *testing.T) {
+	stop, shutDown := context.WithCancel(t.Context())
+	defer shutDown()
+	f := newTurnFixture(t)
+	f.withHit("900")
+	f.model.script = []step{
+		gate(true),
+		{response: toolCalls(
+			call{"search_titles", map[string]any{"query": "hit", "kind": "movie"}, "a"},
+			call{"apply_library_patch", map[string]any{"changes": []any{
+				map[string]any{"op": "add", "ref": "r1", "status": "wishlist"},
+			}}, "b"},
+		)},
+		{during: shutDown, block: true},
+	}
+	f.svc.Stop = stop
+	f.svc.Ceiling = 20 * time.Second
+	f.ask("add the hit")
+
+	assert.Equal(t, agent.TurnStopped, f.lastTurn().state)
+	assert.Contains(t, string(f.lastTurn().components), "actionId")
+	require.NotNil(t, f.event("components").ActionID)
+	assert.Equal(t, "try_again", f.event("error").Code)
+}
+
+// A hang-up during a shutdown is still a hang-up: nobody is there to read an event.
+func TestStopAfterAHangUpEmitsNothing(t *testing.T) {
+	stop, shutDown := context.WithCancel(t.Context())
+	defer shutDown()
+	ctx, hangUp := context.WithCancel(t.Context())
+	defer hangUp()
+	f := newTurnFixture(t, gate(true), step{during: func() { hangUp(); shutDown() }, block: true})
+	f.svc.Stop = stop
+
+	require.NoError(t, f.send(ctx, "tell me", agent.Hint{}))
+
+	assert.Equal(t, agent.TurnStopped, f.lastTurn().state)
+	assert.NotContains(t, f.kinds(), "error")
 }
 
 func TestNoToolRunsAfterAHangUp(t *testing.T) {
