@@ -31,7 +31,7 @@ extension HomeModel {
             return one == two ? first.offset < second.offset : one > two
         }
         .map(\.element)
-        let shown = rows.filter { !$0.items.isEmpty }
+        let shown = rows.filter { !$0.items.isEmpty && $0.kindPageOnly != true }
         var picked: [DiscoverRow] = []
         func pick(_ row: DiscoverRow?) {
             guard let row, picked.count < discoverLimit, !picked.contains(where: { $0.id == row.id }) else { return }
