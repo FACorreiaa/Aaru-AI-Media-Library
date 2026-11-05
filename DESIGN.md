@@ -583,7 +583,7 @@ One page per kind, all in More (§18), built from one shape so they read alike:
   · Plan to read) that opens Insights and hides at all zeros; captures waiting, as on Home; and the
   import box while the shelf is empty, which reads books only from a pasted chat, up to five
   pictures or a photo, with a Goodreads shortcut under it. Once there are books the box moves to
-  the toolbar's `+`, in a sheet. Its shelf also has On hold and Read rows.
+  the toolbar's `+`, in a sheet (on the web, an "Import books" button and a dialog). Its shelf also has On hold and Read rows.
 - **A planned capture is chosen row by row** (BOOK-001): its rows come before Approve, each with a
   tick, all ticked to start, and the counts follow. Other imports keep their order and have no ticks.
 - **Credits** name only the providers on the page: Open Library; AniList; ListenBrainz,
