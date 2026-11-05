@@ -89,6 +89,22 @@ func (s *Server) ResolveImportRow(ctx context.Context, req api.ResolveImportRowR
 	return importResolvedJSON{Job: importJobOut(job), Row: ImportRowDTO(row)}, nil
 }
 
+// LeaveOutImportRow is BOOK-001: untick a row of a plan, or tick it again.
+func (s *Server) LeaveOutImportRow(ctx context.Context, req api.LeaveOutImportRowRequestObject) (api.LeaveOutImportRowResponseObject, error) {
+	user, err := currentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if req.Body == nil {
+		return nil, apperr.BadRequest()
+	}
+	job, row, err := s.Imports.LeaveOutRow(ctx, req.Id.ID(), req.Index, req.Body.LeftOut, user)
+	if err != nil {
+		return nil, err
+	}
+	return importResolvedJSON{Job: importJobOut(job), Row: ImportRowDTO(row)}, nil
+}
+
 func (s *Server) CreateAniListImport(ctx context.Context, req api.CreateAniListImportRequestObject) (api.CreateAniListImportResponseObject, error) {
 	user, err := currentUser(ctx)
 	if err != nil {
@@ -325,6 +341,10 @@ func (r importResolvedJSON) VisitResolveImportRowResponse(w http.ResponseWriter)
 	return writeJSON(w, r)
 }
 
+func (r importResolvedJSON) VisitLeaveOutImportRowResponse(w http.ResponseWriter) error {
+	return writeJSON(w, r)
+}
+
 // ImportRowDTO is a planned row on the wire.
 func ImportRowDTO(p imports.PlannedRow) api.ImportRow {
 	row := p.Row
@@ -332,7 +352,7 @@ func ImportRowDTO(p imports.PlannedRow) api.ImportRow {
 	out := api.ImportRow{
 		Index: p.Index, Title: row.Title, Year: row.Year, Author: row.Author, Type: api.MediaType(row.Type),
 		SourceKey: row.SourceKey, Ids: &ids, Rating: row.Rating, Outcome: api.ImportRowOutcome(p.Outcome),
-		Reason: p.Reason, TitleId: apiid.PtrOrNil(p.TitleID),
+		Reason: p.Reason, TitleId: apiid.PtrOrNil(p.TitleID), LeftOut: row.LeftOut,
 	}
 	if row.Status != nil {
 		status := api.LibraryStatus(*row.Status)

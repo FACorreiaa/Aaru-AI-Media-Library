@@ -233,6 +233,7 @@ Friends and groups (design: `docs/superpowers/specs/2026-10-27-friends-groups-de
 - **No paying plans for now** (owner, 2026-10-23). Plus (BIL-001…004) stays live in code, but
   nothing is set up in App Store Connect, so nothing can be bought. Until that changes, a free
   account hitting the capture limit must not land on an empty paywall: BIL-005.
+  Decided 2026-11-05: the monthly limit is lifted while Plus is off sale, 30 a day stays.
 - **Security audit run-1 documented, nothing scheduled** (owner, 2026-10-23). The parent-only
   pass at `cd4ea2f` found one low finding (a music token sent as `?token=` reaches request
   logs) and a hardening list; see `docs/audit/security.md` and SEC-001…003. The fixes and the
@@ -931,12 +932,13 @@ account or a stranger that has not happened yet.
 | AG-004 | Open | none | |
 | AG-005 | Built, unverified | Tonight/TonightService.swift, `/v1/tonight`; `Home/Tonight.swift`, `lib/home/tonight.ts` | Not seen on a device; reject never checked across a night |
 | AG-006 | Built, unverified | Imports/ImportService+Capture.swift, Capture/, `/v1/imports/capture`; `aaru-ios/Aaru/Capture`, `CaptureComposer.tsx` | Composer and review on web and Apple; no Share Extension yet; no library-reading tools for text. Not tried on a device |
+| BOOK-001 | Server built, unverified | `?kind=book`, `capture_images`, `ResolveBookByAuthor`, `/rows/{index}/left-out` | Clients come with BOOK-002. Not tried live |
 | AG-007 | Partial | Agent/ModelProviding.swift, `agent_usage.cost_micros` | Monthly spend metered per user; no own key yet |
 | BIL-001 | Built, unverified | Billing/AppleSignedData.swift, `entitlements`; BillingTests | Products and the notifications URL not set up in App Store Connect |
 | BIL-002 | Built, unverified | `/v1/billing/apple/transactions`, `/v1/billing/apple/notifications`; BillingService.swift | No sandbox purchase, renewal or expiry seen |
 | BIL-003 | Built, unverified | `aaru-ios/Aaru/Plus` | Paywall, Restore, `Transaction.updates`; no `.storekit` file; not on a device |
 | BIL-004 | Built, unverified | `/v1/me/entitlement`; Settings → Account on web and Apple; capture fair use | Not seen with a real subscription |
-| BIL-005 | Open | none | Paywall with Plus off sale |
+| BIL-005 | Server built | `checkCaptureQuota`, this PR; the Apple and web surfaces come with BOOK-002 | Monthly limit lifted, 30 a day kept (owner, 2026-11-05) |
 | OUT-001 | Partial | #36; AgentTokenService.swift, `/v1/agent/tokens` | Stremio and MCP kinds; `imports:write` not mintable |
 | OUT-002 | Partial | #36; ProvenanceTests, `agentName` on `/v1/actions` | No MCP; no client ribbon renders it |
 | OUT-003 | Partial | MarkEpisodeWatchedIntent.swift (widget/Live Activity) | No Shortcuts provider, "tonight", share URL |
@@ -4091,6 +4093,22 @@ Links are parsed by id and never fetched (owner, 2026-10-22). Text is read in on
 `report_titles` call; a text that refers to the library ("the Nolan films I haven't seen") is
 left for later.
 
+### BOOK-001 · A list of books from a chat, screenshots or a photo · M · owner 2026-11-05
+**Needs:** AG-006.
+Someone asks an assistant for books and wants what it recommended in Plan to read, from the whole
+conversation pasted or from screenshots of it.
+- `POST /v1/imports/capture?kind=book` reads books only and says "Aaru found no book in that
+  capture." when there are none.
+- The model reports each book's author. A book with an author and neither id nor year matches by
+  title and author (ARCHITECTURE "Books page"). Checked against live Open Library on 10 titles
+  (2026-11-05): 7 match; `1984` (their title is Nineteen Eighty-Four), Andrew/Andy Hunt and Liu
+  Cixin/Cixin Liu do not, and stay "Not matched" for the person to pick.
+- Text up to 100,000 characters; up to 5 images in one capture.
+- A planned row can be left out before approving (`/rows/{index}/left-out`).
+
+**Done when:** a real long chat, three screenshots and a photo of a printed list each plan the right
+books on a device, and only the ticked ones reach Plan to read.
+
 ### AG-007 · Model provider, own key, metering · M
 **Needs:** AG-001.
 `ModelProviding` protocol in `Server`, following the `CatalogSearching` /
@@ -4284,6 +4302,9 @@ day.
 **Done when:** the web and the app show the same Plus state for one account.
 
 ### BIL-005 · Capture limit while Plus is off sale · S
+**Decided (owner, 2026-11-05):** the second option. Free accounts have no monthly limit and the same
+30 a day as Plus. The Apple and web surfaces are BOOK-002's.
+
 **Needs:** BIL-003, BIL-004.
 The owner has no paying plans for now (2026-10-23), so the App Store has no Plus products. Today
 a free account's fourth capture in a month gets 402 `capture_quota`, and on Apple

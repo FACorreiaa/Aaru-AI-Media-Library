@@ -393,6 +393,42 @@ func (r Resolver) resolveByTitle(ctx context.Context, ref core.MediaRef, hint *s
 	}
 }
 
+// MARK: A book by its author
+
+// ResolveBookByAuthor finds a book known by its title and author, with no id or year, as a list
+// someone pasted names it (BOOK-001). The author has to be the hit's, which also keeps out the
+// summaries and workbooks that share the title. Open Library keeps a subtitle apart from the title
+// and buries the book when one is searched for, so it searches the part before a colon: the same
+// title first, else the same part before a colon. Several hits are duplicate works of one book, so
+// the search's order picks.
+func (r Resolver) ResolveBookByAuthor(ctx context.Context, name, author string) (core.Title, error) {
+	main := core.MainTitle(name)
+	wanted, short := core.NormalizeTitle(name), core.NormalizeTitle(main)
+	if short == "" {
+		return core.Title{}, ErrUnresolvable
+	}
+	hits, err := r.Providers.OpenLibrary.Search(ctx, main+" "+author, core.MediaBook)
+	if err != nil {
+		return core.Title{}, err
+	}
+	var near *Hit
+	for i, h := range hits {
+		if h.Byline == nil || !core.SameAuthor(author, *h.Byline) {
+			continue
+		}
+		if core.NormalizeTitle(h.Title) == wanted {
+			return r.resolveIDs(ctx, h.IDs, core.MediaBook)
+		}
+		if near == nil && core.NormalizeTitle(core.MainTitle(h.Title)) == short {
+			near = &hits[i]
+		}
+	}
+	if near == nil {
+		return core.Title{}, ErrUnresolvable
+	}
+	return r.resolveIDs(ctx, near.IDs, core.MediaBook)
+}
+
 // MARK: By name only
 
 // ResolveNamed finds a movie or show known only by its name (Pogdesign CAT, IMP-009;

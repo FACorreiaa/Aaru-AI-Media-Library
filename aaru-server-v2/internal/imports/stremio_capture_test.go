@@ -3,6 +3,7 @@ package imports
 import (
 	"aaru-go-api/internal/billing"
 	"aaru-go-api/internal/core"
+	"aaru-go-api/internal/model"
 	"aaru-go-api/internal/stremioapi"
 	"strings"
 	"testing"
@@ -83,7 +84,7 @@ func TestCaptureContentRefusals(t *testing.T) {
 		long[i] = 'é'
 	}
 	assert.Contains(t, code(CaptureRequest{Text: new(string(long))}), "413 capture_too_large: That is more text than a capture reads.")
-	assert.Equal(t, "415 capture_image_type: Send the image as a JPEG, PNG, GIF or WebP.", code(CaptureRequest{Image: []byte{1}, MediaType: "image/bmp"}))
+	assert.Equal(t, "415 capture_image_type: Send the image as a JPEG, PNG, GIF or WebP.", code(CaptureRequest{Images: []model.Image{{Data: []byte{1}, MediaType: "image/bmp"}}}))
 	rows, input, err := captureContent(CaptureRequest{Link: new(" https://www.themoviedb.org/movie/603 ")})
 	require.NoError(t, err)
 	assert.Nil(t, input)

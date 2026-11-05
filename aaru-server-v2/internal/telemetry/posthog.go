@@ -46,8 +46,6 @@ const (
 	CaptureSubmitted Event = "capture_submitted"
 	// CapturePlanDecided: `decision` (approved = applied, denied = a planned capture deleted).
 	CapturePlanDecided Event = "capture_plan_decided"
-	// PaywallShown: `reason` (capture_quota). The server refused and the apps offer Plus.
-	PaywallShown Event = "paywall_shown"
 	// PlusPurchased: `product` (the App Store product id). The first time a subscription is seen active.
 	PlusPurchased Event = "plus_purchased"
 	// ShareCreated: `kind` (title, sport_event, concert). Keyed by the sender, never the opener (SHR-002).

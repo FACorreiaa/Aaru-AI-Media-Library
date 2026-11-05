@@ -12,6 +12,56 @@ import (
 	"github.com/google/uuid"
 )
 
+const captureImageSave = `-- name: CaptureImageSave :exec
+INSERT INTO capture_images (job_id, position, image, media_type) VALUES ($1, $2, $3, $4)
+`
+
+type CaptureImageSaveParams struct {
+	JobID     uuid.UUID
+	Position  int32
+	Image     []byte
+	MediaType string
+}
+
+func (q *Queries) CaptureImageSave(ctx context.Context, arg CaptureImageSaveParams) error {
+	_, err := q.db.Exec(ctx, captureImageSave,
+		arg.JobID,
+		arg.Position,
+		arg.Image,
+		arg.MediaType,
+	)
+	return err
+}
+
+const captureImages = `-- name: CaptureImages :many
+SELECT image, media_type FROM capture_images WHERE job_id = $1 ORDER BY position
+`
+
+type CaptureImagesRow struct {
+	Image     []byte
+	MediaType string
+}
+
+func (q *Queries) CaptureImages(ctx context.Context, jobID uuid.UUID) ([]CaptureImagesRow, error) {
+	rows, err := q.db.Query(ctx, captureImages, jobID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []CaptureImagesRow{}
+	for rows.Next() {
+		var i CaptureImagesRow
+		if err := rows.Scan(&i.Image, &i.MediaType); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const captureInputDelete = `-- name: CaptureInputDelete :exec
 DELETE FROM capture_inputs WHERE job_id = $1
 `
@@ -22,7 +72,7 @@ func (q *Queries) CaptureInputDelete(ctx context.Context, jobID uuid.UUID) error
 }
 
 const captureInputGet = `-- name: CaptureInputGet :many
-SELECT user_id, text, image, media_type, created_at FROM capture_inputs WHERE job_id = $1
+SELECT user_id, text, image, media_type, only_type, created_at FROM capture_inputs WHERE job_id = $1
 `
 
 type CaptureInputGetRow struct {
@@ -30,6 +80,7 @@ type CaptureInputGetRow struct {
 	Text      *string
 	Image     []byte
 	MediaType *string
+	OnlyType  *string
 	CreatedAt time.Time
 }
 
@@ -47,6 +98,7 @@ func (q *Queries) CaptureInputGet(ctx context.Context, jobID uuid.UUID) ([]Captu
 			&i.Text,
 			&i.Image,
 			&i.MediaType,
+			&i.OnlyType,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -61,8 +113,8 @@ func (q *Queries) CaptureInputGet(ctx context.Context, jobID uuid.UUID) ([]Captu
 
 const captureInputSave = `-- name: CaptureInputSave :exec
 
-INSERT INTO capture_inputs (job_id, user_id, kind, text, image, media_type, created_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
+INSERT INTO capture_inputs (job_id, user_id, kind, text, image, media_type, only_type, created_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 `
 
 type CaptureInputSaveParams struct {
@@ -72,6 +124,7 @@ type CaptureInputSaveParams struct {
 	Text      *string
 	Image     []byte
 	MediaType *string
+	OnlyType  *string
 	CreatedAt time.Time
 }
 
@@ -84,6 +137,7 @@ func (q *Queries) CaptureInputSave(ctx context.Context, arg CaptureInputSavePara
 		arg.Text,
 		arg.Image,
 		arg.MediaType,
+		arg.OnlyType,
 		arg.CreatedAt,
 	)
 	return err

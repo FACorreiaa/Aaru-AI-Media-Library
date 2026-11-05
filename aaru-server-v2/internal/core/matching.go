@@ -142,6 +142,12 @@ func CanMergeBook(lhs MediaRef, author *string, rhs MediaRef, byline *string) bo
 	return d >= -1 && d <= 1
 }
 
+// MainTitle is a title without its subtitle: the part before the first colon.
+func MainTitle(title string) string {
+	main, _, _ := strings.Cut(title, ":")
+	return strings.TrimSpace(main)
+}
+
 // SameAuthor is whether author is one of the names in byline (comma separated, as
 // a catalog lists them). Case, accents, punctuation and spacing are ignored, so
 // "James S.A. Corey" is "James S. A. Corey"; anything else must be the same letters.
