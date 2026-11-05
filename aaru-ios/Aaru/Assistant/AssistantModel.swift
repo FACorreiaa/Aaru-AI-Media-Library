@@ -104,7 +104,8 @@ final class AssistantModel {
             if !continues, phase == .idle {
                 turns = []
             }
-            guard started == flowToken, presentation.listening, voiceAvailable else { return }
+            // From idle only: while listening, toggling would stop the recording.
+            guard started == flowToken, presentation.listening, voiceAvailable, phase == .idle else { return }
             toggleListening()
         }
     }
@@ -149,6 +150,9 @@ final class AssistantModel {
         if let problem = await library.undo(actionID, api: api) {
             return problem
         }
+        guard started == accountToken else { return nil }
+        // Undoing an add deletes the item, which only a sync takes off the shelf.
+        await library.sync(api: api)
         guard started == accountToken else { return nil }
         if let index = turns.firstIndex(where: { $0.id == turnID }) {
             turns[index].undone = true
@@ -239,12 +243,14 @@ final class AssistantModel {
         }
     }
 
-    /// Unstructured: the flow that asked may be cancelled, which would cancel the request.
+    /// Unstructured: the flow that asked may be cancelled, which would cancel the request. A turn
+    /// closed mid-answer has no `actionID` even if it wrote, so the sync's own changes count too.
     private func syncLibrary(changed: Bool) {
         let account = accountToken
         Task { [weak self, library, api] in
+            let before = library.revision
             await library.sync(api: api)
-            guard changed, let self, account == accountToken else { return }
+            guard let self, account == accountToken, changed || library.revision != before else { return }
             libraryChanges += 1
         }
     }
@@ -274,6 +280,8 @@ private extension AssistantModel {
     }
 
     func listen(_ started: Int, api: Client) async {
+        // The flow before may have taken long enough for the card to close: no mic prompt then.
+        guard started == flowToken else { return }
         let granted = await VoiceRecorder.requestPermission()
         guard started == flowToken else { return }
         guard granted else {
