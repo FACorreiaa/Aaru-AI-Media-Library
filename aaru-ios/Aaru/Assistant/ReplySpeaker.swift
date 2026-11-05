@@ -49,6 +49,8 @@ final class ReplySpeaker: NSObject {
     fileprivate func finished() {
         guard !synthesizer.isSpeaking else { return }
         #if os(iOS)
+            // A stale callback must not deactivate a session the recorder has since taken.
+            guard AVAudioSession.sharedInstance().category == .playback else { return }
             try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         #endif
     }
