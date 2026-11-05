@@ -3776,6 +3776,7 @@ search columns, `POST /v1/chats/{id}/turns` as `text/event-stream`.
 A streaming chat turn endpoint over the user's own data, voice through the cluster's Whisper,
 and a floating card opened from the owl on iPhone, Mac and web. Delivers ASK-001, ASK-005 and
 ASK-006; the Ask Aaru page (ASK-002, ASK-003) reuses the engine later.
+**Status (2026-11-05):** server live; iOS and Mac done (owl, card, voice, Settings delete); web next.
 
 ---
 
