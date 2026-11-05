@@ -28,17 +28,20 @@ struct ListsScreen: View {
                     .navigationSplitViewColumnWidth(min: 240, ideal: 280, max: 360)
             } detail: {
                 NavigationStack {
-                    if let selection {
-                        ListDetailView(listID: selection, lists: lists, library: library, api: api)
-                            .id(selection)
-                    } else {
-                        OwlUnavailableView(
-                            title: "Choose a list",
-                            message: "Pick one from the lists, or make a new one."
-                        )
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(Color(.paper))
+                    Group {
+                        if let selection {
+                            ListDetailView(listID: selection, lists: lists, library: library, api: api)
+                                .id(selection)
+                        } else {
+                            OwlUnavailableView(
+                                title: "Choose a list",
+                                message: "Pick one from the lists, or make a new one."
+                            )
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .background(Color(.paper))
+                        }
                     }
+                    .assistantButton()
                 }
             }
             .onChange(of: lists.lists.map(\.id)) { _, ids in
@@ -50,6 +53,7 @@ struct ListsScreen: View {
         } else {
             NavigationStack {
                 ListsView(lists: lists, library: library, api: api)
+                    .assistantButton()
             }
         }
     }

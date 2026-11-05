@@ -71,6 +71,7 @@ struct FriendsContent: View {
                     }
                 }
             }
+            .assistantButton()
             .background(Color(.paper))
             .navigationDestination(for: PostRoute.self) { route in
                 PostScreen(

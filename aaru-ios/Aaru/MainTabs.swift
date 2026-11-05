@@ -17,6 +17,7 @@ struct MainTabs: View {
     @Environment(AppRouter.self) private var router
     @Environment(ProgressModel.self) private var progress: ProgressModel?
     @Environment(PlusModel.self) private var plus: PlusModel?
+    @Environment(AssistantModel.self) private var assistant: AssistantModel?
     @Environment(\.scenePhase) private var scenePhase
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var sizeClass
@@ -88,6 +89,7 @@ struct MainTabs: View {
         #if os(macOS)
             .frame(minWidth: 760, minHeight: 520)
         #endif
+            .assistantHost(api: api, library: library, lists: lists, isSheet: false)
             .sheet(item: $linkedPlan) { link in
                 if let api {
                     PlanSheet(api: api, id: link.id) { linkedPlan = nil }
@@ -112,9 +114,11 @@ struct MainTabs: View {
                             }
                         }
                 }
+                .assistantHost(api: api, library: library, lists: lists, isSheet: true)
             }
             .sheet(isPresented: $router.showsSearch) {
                 SearchView(api: api, library: library, lists: lists)
+                    .assistantHost(api: api, library: library, lists: lists, isSheet: true)
             }
             .onChange(of: router.closeSheetsRequest) {
                 linkedPlan = nil
@@ -159,6 +163,7 @@ struct MainTabs: View {
             // Badges earned elsewhere (an import, another device) toast on return (GAM-004).
             .task(id: scenePhase) {
                 if scenePhase == .active {
+                    await assistant?.refreshStatus()
                     await progress?.refresh()
                     // MyAnimeList changes come back on each open; the server spaces the reads (SCR-010).
                     _ = try? await api?.requestMALPull()
@@ -172,6 +177,9 @@ struct MainTabs: View {
             .task(id: scenePhase) {
                 if scenePhase == .background {
                     realtime.stop()
+                    router.closeAssistant()
+                    // The change above may not run before suspension, and the mic must not outlive it.
+                    assistant?.closed()
                 } else {
                     realtime.start()
                 }
@@ -185,16 +193,19 @@ struct MainTabs: View {
             // PushInbox; this view only exists signed in, so it reads it on appear too (UX-012).
             .onChange(of: PushInbox.shared.planID, initial: true) { _, id in
                 guard let id else { return }
+                router.closeAssistant()
                 linkedPlan = LinkedTitle(id: id)
                 PushInbox.shared.planID = nil
             }
             .onChange(of: PushInbox.shared.importID, initial: true) { _, id in
                 guard let id else { return }
+                router.closeAssistant()
                 linkedImport = LinkedTitle(id: id)
                 PushInbox.shared.importID = nil
             }
             .onChange(of: PushInbox.shared.libraryItemID, initial: true) { _, id in
                 guard let id else { return }
+                router.closeAssistant()
                 linkedTitle = LinkedTitle(id: id)
                 PushInbox.shared.libraryItemID = nil
             }
@@ -204,28 +215,6 @@ struct MainTabs: View {
                 PushInbox.shared.groupLink = nil
             }
             .onOpenURL(perform: open)
-    }
-
-    private func open(_ url: URL) {
-        // RootView opens friend invites and share links, signed in or out.
-        if InviteLink(url) != nil || SharedLink(url) != nil {
-            return
-        }
-        if let id = WidgetLink.libraryItemId(in: url) {
-            linkedTitle = LinkedTitle(id: id)
-        } else if !router.open(url) {
-            openGroup(url)
-        }
-    }
-
-    /// A group alert or link: the channel it names, or the Groups tab (GRP-012).
-    private func openGroup(_ url: URL) {
-        switch GroupLink(url) {
-        case .groups?: router.tab = .groups
-        // The Groups tab opens itself for a channel request.
-        case let .channel(request)?: groups.openRequest = request
-        case nil: break
-        }
     }
 
     /// One destination's tab. The Groups mention badge rides on its tab in the sidebar, and on
@@ -294,6 +283,32 @@ struct MainTabs: View {
 
     struct LinkedTitle: Identifiable {
         let id: String
+    }
+}
+
+private extension MainTabs {
+    func open(_ url: URL) {
+        // Whatever a link opens would otherwise cover a live card, mic and all.
+        router.closeAssistant()
+        // RootView opens friend invites and share links, signed in or out.
+        if InviteLink(url) != nil || SharedLink(url) != nil {
+            return
+        }
+        if let id = WidgetLink.libraryItemId(in: url) {
+            linkedTitle = LinkedTitle(id: id)
+        } else if !router.open(url) {
+            openGroup(url)
+        }
+    }
+
+    /// A group alert or link: the channel it names, or the Groups tab (GRP-012).
+    func openGroup(_ url: URL) {
+        switch GroupLink(url) {
+        case .groups?: router.tab = .groups
+        // The Groups tab opens itself for a channel request.
+        case let .channel(request)?: groups.openRequest = request
+        case nil: break
+        }
     }
 }
 

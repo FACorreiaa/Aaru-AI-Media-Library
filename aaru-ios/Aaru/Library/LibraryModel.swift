@@ -31,6 +31,12 @@ final class LibraryModel {
 
     @ObservationIgnored private var entries: [String: LibraryEntry] = [:]
     @ObservationIgnored private var token: String?
+    @ObservationIgnored private var runningSync: Task<Void, Never>?
+    /// A sync was asked for mid-sync; the one running may have started before the write it is for.
+    @ObservationIgnored private var syncAgain = false
+    /// Bumped by `reset()`. A pull from before it writes nothing: its answer belongs to the last
+    /// account, and cancelling can lose to a response already delivered.
+    @ObservationIgnored private var syncGeneration = 0
     @ObservationIgnored private let cache: LibraryCache
     @ObservationIgnored private var knownKeys: Set<String> = []
     /// Progress made here counts toward asking for a rating; a sync never does.
@@ -85,13 +91,42 @@ final class LibraryModel {
         return entries.values.first { $0.title._type == hit._type && !$0.title.ids.keys.isDisjoint(with: keys) }
     }
 
-    /// Pulls what changed since the last sync (everything the first time).
+    /// Pulls what changed since the last sync (everything the first time). A call that arrives
+    /// mid-sync gets one more pull and returns once it is done. Unstructured, so a pull owed to
+    /// that call does not die with the first caller's cancelled task.
     func sync(api: Client?) async {
-        guard let api, !isSyncing else { return }
+        guard let api else { return }
+        if let runningSync {
+            syncAgain = true
+            await runningSync.value
+            return
+        }
         isSyncing = true
-        defer { isSyncing = false }
+        let generation = syncGeneration
+        let run = Task {
+            while generation == syncGeneration {
+                syncAgain = false
+                await pull(api)
+                if !syncAgain {
+                    break
+                }
+            }
+            // After a reset these belong to the run that started since.
+            if generation == syncGeneration {
+                isSyncing = false
+                runningSync = nil
+            }
+        }
+        runningSync = run
+        await run.value
+    }
+
+    private func pull(_ api: Client) async {
+        let generation = syncGeneration
         do {
-            switch try await api.syncLibrary(query: .init(since: token)) {
+            let output = try await api.syncLibrary(query: .init(since: token))
+            guard generation == syncGeneration else { return }
+            switch output {
             case let .ok(response):
                 let changes = try response.body.json
                 for entry in changes.items {
@@ -113,6 +148,7 @@ final class LibraryModel {
                 syncProblem = (try? error.body.json.message) ?? "The library could not be updated."
             }
         } catch {
+            guard generation == syncGeneration else { return }
             syncProblem = rows.isEmpty
                 ? "Aaru could not reach the server."
                 : "Offline. Showing your library from the last sync."
@@ -190,6 +226,11 @@ final class LibraryModel {
         hasSynced = false
         syncProblem = nil
         lastRemoval = nil
+        syncGeneration += 1
+        runningSync?.cancel()
+        runningSync = nil
+        isSyncing = false
+        syncAgain = false
         cache.clear()
         publish()
     }

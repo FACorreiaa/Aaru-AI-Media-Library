@@ -19,6 +19,8 @@ struct TitleDetailView: View {
     /// Nil in previews and outside the signed-in app.
     @Environment(GroupsModel.self) private var groups: GroupsModel?
     @Environment(ToastCenter.self) private var toasts: ToastCenter?
+    /// Nil in previews and outside the signed-in app.
+    @Environment(AssistantModel.self) private var assistant: AssistantModel?
     @State private var openEpisode: EpisodeKey?
     @State private var expandedSeasons: Set<Int> = []
     @Environment(\.dismiss) private var dismiss
@@ -90,6 +92,14 @@ struct TitleDetailView: View {
             }
             ToolbarItem(placement: .secondaryAction) { moreMenu }
         }
+        .assistantButton(titleID: entry.title.id)
+        // Aaru ticked an episode or changed a status behind the card: show it.
+        .onChange(of: assistant?.libraryChanges) {
+            Task {
+                // Not `load()`: that would collapse the seasons the person opened.
+                await reloadKeepingEdits()
+            }
+        }
         // Outside the menu: a dialog attached inside one closes with it.
         .confirmationDialog(
             "Remove “\(entry.title.title)” from your library?",
@@ -111,6 +121,7 @@ struct TitleDetailView: View {
                 model: SocialModel(api: model.api),
                 title: (MediaRef(titleId: entry.title.id, _type: entry.title._type), entry.title.title)
             )
+            .closesOnSheetsRequest()
         }
         .sheet(isPresented: $shares) {
             ShareComposerSheet(
@@ -118,10 +129,12 @@ struct TitleDetailView: View {
                 target: .title(MediaRef(titleId: entry.title.id, _type: entry.title._type)),
                 name: entry.title.title
             )
+            .closesOnSheetsRequest()
         }
         .sheet(isPresented: $discusses) {
             if let groups {
                 DiscussInGroupSheet(groups: groups, title: entry.title)
+                    .closesOnSheetsRequest()
             }
         }
         .sheet(isPresented: $showsListPicker) {
@@ -130,9 +143,11 @@ struct TitleDetailView: View {
                 titleName: entry.title.title,
                 lists: lists
             )
+            .closesOnSheetsRequest()
         }
         .sheet(item: $openEpisode) { key in
             EpisodeSheet(key: key, model: model)
+                .closesOnSheetsRequest()
         }
         .background { FieldBackground(seed: entry.title.id) }
         .navigationTitle(entry.title.title)
@@ -141,10 +156,33 @@ struct TitleDetailView: View {
         #endif
             .task {
                 model.toasts = toasts
-                notes = entry.notes ?? ""
-                page = entry.bookProgress?.page.map(String.init) ?? ""
+                notes = entryNotes
+                page = entryPage
                 await load()
             }
+    }
+
+    private var entryNotes: String {
+        entry.notes ?? ""
+    }
+
+    private var entryPage: String {
+        entry.bookProgress?.page.map(String.init) ?? ""
+    }
+
+    /// After a reload (Aaru may have written a note or a page): a field that still shows what the
+    /// entry held before the reload (it tracks saves) takes the fresh value. One the person has
+    /// edited and not saved keeps their words, so Save never overwrites Aaru's change with stale text.
+    private func reloadKeepingEdits() async {
+        let previousNotes = entryNotes
+        let previousPage = entryPage
+        await model.load()
+        if notes == previousNotes {
+            notes = entryNotes
+        }
+        if page == previousPage {
+            page = entryPage
+        }
     }
 
     private func load() async {

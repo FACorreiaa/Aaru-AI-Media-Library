@@ -8,6 +8,7 @@ struct DataPage: View {
     let api: Client?
 
     @State private var recap: RecapPeriod?
+    @State private var confirmingDeleteChats = false
 
     var body: some View {
         @Bindable var model = model
@@ -29,8 +30,30 @@ struct DataPage: View {
                 Text("Every change to your library, newest first: yours, an import's or a connection's, with Undo.")
             }
             ExportDataSection(model: model)
+            Section {
+                Button("Delete my chats with Aaru", role: .destructive) {
+                    confirmingDeleteChats = true
+                }
+                .disabled(model.deletingChats || !model.isAvailable)
+            } footer: {
+                Text("Aaru keeps your chats until you delete them.")
+            }
         }
         .settingsPage("Your data", problem: $model.problem)
         .recapStory($recap, api: api)
+        .confirmationDialog(
+            "Delete your chats with Aaru?",
+            isPresented: $confirmingDeleteChats,
+            titleVisibility: .visible
+        ) {
+            Button("Delete my chats", role: .destructive) {
+                Task { await model.deleteChats() }
+            }
+        } message: {
+            Text("""
+            This removes everything you and Aaru said. Changes Aaru made to your library stay, \
+            and your daily count of questions stays.
+            """)
+        }
     }
 }

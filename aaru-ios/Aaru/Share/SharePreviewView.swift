@@ -53,6 +53,7 @@ struct SharePreviewView: View {
                 LibraryEntryDestination(id: id, api: api, library: library, lists: lists)
             }
         }
+        .assistantHost(api: api, library: library, lists: lists, isSheet: true)
         .sheet(item: $openEvent) { event in
             SportEventDetailView(model: SportsModel(api: api), id: event.id)
         }

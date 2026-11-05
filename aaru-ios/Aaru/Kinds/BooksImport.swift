@@ -190,6 +190,7 @@ struct BooksImportPresenter: ViewModifier {
                 }
         }
         .presentationDetents([.medium, .large])
+        .closesOnSheetsRequest()
     }
 
     private func afterSheet() {

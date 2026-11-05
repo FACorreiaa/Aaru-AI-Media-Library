@@ -136,6 +136,7 @@ struct ImportDetailView: View {
         .task(id: id) { await poll() }
         .sheet(item: $finding) { row in
             SearchView(api: api, library: library, lists: lists, pick: pick(for: row))
+                .closesOnSheetsRequest()
         }
     }
 

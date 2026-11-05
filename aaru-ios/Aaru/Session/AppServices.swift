@@ -8,6 +8,8 @@ final class AppServices {
     /// Where the app is: the destination, Settings' page, and menu-bar requests.
     let router = AppRouter()
     let library = LibraryModel()
+    /// The Assistant card's Chat (ASK-009), one for the whole app.
+    let assistant: AssistantModel
     let lists: ListsModel
     let imports: ImportsModel
     /// The models behind Settings' pages.
@@ -41,6 +43,7 @@ final class AppServices {
                 )
             )
         }
+        assistant = AssistantModel(api: api, library: library)
         avatars = AvatarLoader(api: api)
         lists = ListsModel(api: api)
         imports = ImportsModel(api: api)

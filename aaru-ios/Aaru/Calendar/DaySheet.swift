@@ -38,7 +38,7 @@ struct DaySheet: View {
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
         .sheet(isPresented: $feed.openedID.isPresent) {
-            CalendarEpisodeSheet(feed: feed, onOpenShow: onOpenShow)
+            CalendarEpisodeSheet(feed: feed, onOpenShow: onOpenShow).closesOnSheetsRequest()
         }
         .onAppear { feed.isDaySheetOpen = true }
         .onDisappear { feed.isDaySheetOpen = false }

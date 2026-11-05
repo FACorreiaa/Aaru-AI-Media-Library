@@ -59,6 +59,7 @@ struct ListsView: View {
                     case let .rename(list): await lists.rename(list.id, to: name) != nil
                     }
                 }
+                .closesOnSheetsRequest()
             }
             .confirmationDialog(
                 "Delete “\(deleting?.name ?? "")”?",

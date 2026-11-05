@@ -53,8 +53,9 @@ struct ProfileView: View {
                 .recapStory($recap, api: api)
                 .background(Color(.paper))
         }
+        .assistantHost(api: api, library: library, lists: lists, isSheet: true)
         #if os(macOS)
-        .frame(minWidth: 520, idealWidth: 640, minHeight: 640, idealHeight: 760)
+            .frame(minWidth: 520, idealWidth: 640, minHeight: 640, idealHeight: 760)
         #endif
     }
 
