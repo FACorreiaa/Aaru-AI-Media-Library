@@ -12,7 +12,7 @@ struct AaruCommands: Commands {
         ToolbarCommands()
         CommandGroup(replacing: .newItem) {
             Button("New List") {
-                // A live card is an overlay: the list sheet would open dead beneath it.
+                // A live card is an overlay: the list sheet would open over it, dead.
                 router.closeAssistant()
                 router.showLists(startingNew: true)
             }
@@ -21,7 +21,7 @@ struct AaruCommands: Commands {
         }
         CommandGroup(after: .textEditing) {
             Button("Ask Aaru") {
-                // A second ⌘K closes the card, as Spotlight do.
+                // A second ⌘K closes the card, as Spotlight does.
                 if router.assistant != nil {
                     router.closeAssistant()
                 } else {

@@ -56,6 +56,7 @@ struct MonthView: View {
                     self.openDay = nil
                     onOpenShow(id)
                 }
+                .closesOnSheetsRequest()
             }
         }
     }

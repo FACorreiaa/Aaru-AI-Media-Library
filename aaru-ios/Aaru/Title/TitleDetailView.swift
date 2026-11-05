@@ -11,9 +11,6 @@ struct TitleDetailView: View {
     @State private var model: TitleDetailModel
     @State private var notes = ""
     @State private var page = ""
-    /// What `notes` and `page` were set from, so a reload can tell a field the person edited.
-    @State private var loadedNotes = ""
-    @State private var loadedPage = ""
     @State private var showsListPicker = false
     @State private var discusses = false
     @State private var recommends = false
@@ -100,8 +97,7 @@ struct TitleDetailView: View {
         .onChange(of: assistant?.libraryChanges) {
             Task {
                 // Not `load()`: that would collapse the seasons the person opened.
-                await model.load()
-                refreshOwnLayer()
+                await reloadKeepingEdits()
             }
         }
         // Outside the menu: a dialog attached inside one closes with it.
@@ -160,26 +156,33 @@ struct TitleDetailView: View {
         #endif
             .task {
                 model.toasts = toasts
-                setOwnLayer(notes: true, page: true)
+                notes = entryNotes
+                page = entryPage
                 await load()
             }
     }
 
-    private func setOwnLayer(notes setsNotes: Bool, page setsPage: Bool) {
-        if setsNotes {
-            loadedNotes = entry.notes ?? ""
-            notes = loadedNotes
-        }
-        if setsPage {
-            loadedPage = entry.bookProgress?.page.map(String.init) ?? ""
-            page = loadedPage
-        }
+    private var entryNotes: String {
+        entry.notes ?? ""
     }
 
-    /// After a reload (Aaru may have written a note or a page): a field the person has not touched
-    /// takes the fresh value, so Save never offers to overwrite it with stale text.
-    private func refreshOwnLayer() {
-        setOwnLayer(notes: notes == loadedNotes, page: page == loadedPage)
+    private var entryPage: String {
+        entry.bookProgress?.page.map(String.init) ?? ""
+    }
+
+    /// After a reload (Aaru may have written a note or a page): a field that still shows what the
+    /// entry held before the reload (it tracks saves) takes the fresh value. One the person has
+    /// edited and not saved keeps their words, so Save never overwrites Aaru's change with stale text.
+    private func reloadKeepingEdits() async {
+        let previousNotes = entryNotes
+        let previousPage = entryPage
+        await model.load()
+        if notes == previousNotes {
+            notes = entryNotes
+        }
+        if page == previousPage {
+            page = entryPage
+        }
     }
 
     private func load() async {

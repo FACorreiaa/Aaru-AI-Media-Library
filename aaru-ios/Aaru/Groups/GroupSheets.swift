@@ -54,7 +54,9 @@ struct GroupPresentation: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .sheet(item: $sheet, onDismiss: openPendingSettings) { sheet in sheetContent(sheet) }
+            .sheet(item: $sheet, onDismiss: openPendingSettings) { sheet in
+                sheetContent(sheet).closesOnSheetsRequest()
+            }
             .confirmationDialog(
                 confirmTitle,
                 isPresented: Binding(get: { confirm != nil }, set: {
