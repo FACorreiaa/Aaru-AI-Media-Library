@@ -15,6 +15,9 @@ import type { JSX } from 'solid-js'
 import { requestMALPull } from '../../lib/mal/server'
 import { avatarSrc } from '../../lib/profile/avatar-src'
 import { Wordmark } from '../Brand'
+import { OwlButton } from '../assistant/OwlButton'
+import { getAssistantStatus } from '../../lib/assistant/server'
+import { hintFor } from '../../lib/assistant/hint'
 import type { Scope } from '../SearchPanel'
 import {
   Avatar,
@@ -88,6 +91,11 @@ const SearchPanel = lazy(() =>
 )
 
 // GAM-004's unlock toast and card: its own chunk, after the page, never on a first load's path.
+const AssistantCard = lazy(() =>
+  import('../assistant/AssistantCard').then((m) => ({
+    default: m.AssistantCard,
+  })),
+)
 const UnlockWatcher = lazy(() =>
   import('../achievements/UnlockWatcher').then((m) => ({
     default: m.UnlockWatcher,
@@ -145,6 +153,16 @@ export function AppShell(props: {
   const [previous, setPrevious] = createSignal<Previous | null>(null)
   const [mentions, setMentions] = createSignal(0)
   const [sportsOn, setSportsOn] = createSignal(false)
+  // ASK-009: the owl shows while the server has the assistant on; the mic while voice is.
+  const [assistant, setAssistant] = createSignal({
+    assistant: false,
+    voice: false,
+  })
+  const [askOpen, setAskOpen] = createSignal(false)
+  const [askMounted, setAskMounted] = createSignal(false)
+  const [askListening, setAskListening] = createSignal(false)
+  const [askTitle, setAskTitle] = createSignal<string | null>(null)
+  const location = useLocation()
   // Esc or Done returns focus to the control that opened Search.
   const focusReturn = createFocusReturn()
   let ownRequested = false
@@ -173,6 +191,18 @@ export function AppShell(props: {
     if (!host()) loadOwnLibrary()
   }
 
+  function openAssistant(listen = false) {
+    if (!assistant().assistant) return
+    setSearchOpen(false)
+    setAskListening(listen)
+    setAskMounted(true)
+    setAskOpen(true)
+  }
+  const checkAssistant = () =>
+    void getAssistantStatus()
+      .then(setAssistant)
+      .catch(() => undefined)
+
   const entries = () => host()?.entries() ?? ownEntries()
   function added(entry: LibraryEntry) {
     setOwnEntries((list) => upsert(list, entry))
@@ -194,6 +224,13 @@ export function AppShell(props: {
         event.preventDefault()
         openSearch()
       }
+      // ⌘J asks Aaru; with the card open it closes it, as ⌘K does for Search.
+      if (event.key.toLowerCase() === 'j' && (event.metaKey || event.ctrlKey)) {
+        if (!assistant().assistant) return
+        event.preventDefault()
+        if (askOpen()) setAskOpen(false)
+        else openAssistant()
+      }
     }
     // MyAnimeList changes come back on each open (SCR-010); the server ignores asks too close
     // together and accounts without MAL.
@@ -211,12 +248,14 @@ export function AppShell(props: {
       if (document.visibilityState !== 'visible') return
       void refreshMentions()
       checkSports(true)
+      checkAssistant()
       askMAL()
     }
     window.addEventListener('keydown', keydown)
     document.addEventListener('visibilitychange', visible)
     void refreshMentions()
     checkSports(false)
+    checkAssistant()
     askMAL()
     // The page you leave is the one a detail page's back link names.
     const unsubscribe = router.subscribe('onBeforeNavigate', (event) => {
@@ -238,6 +277,8 @@ export function AppShell(props: {
     setSearchHost: setHost,
     previous,
     setMentions,
+    openAssistant,
+    setAssistantTitle: setAskTitle,
   }
 
   return (
@@ -254,11 +295,13 @@ export function AppShell(props: {
           mentions={mentions()}
           sports={sportsOn()}
           onSearch={(from) => openSearch(undefined, from)}
+          onAsk={assistant().assistant ? openAssistant : undefined}
         />
         <SidebarInset class="min-w-0">
           <TopBar
             session={props.session}
             onSearch={(from) => openSearch(undefined, from)}
+            onAsk={assistant().assistant ? openAssistant : undefined}
           />
           <div
             id="content"
@@ -303,6 +346,18 @@ export function AppShell(props: {
           </DialogContent>
         </DialogPortal>
       </Dialog>
+      <Show when={askMounted()}>
+        <Suspense>
+          <AssistantCard
+            open={askOpen()}
+            listen={askListening()}
+            voice={assistant().voice}
+            hint={() => hintFor(location().pathname, askTitle())}
+            onOpenChange={setAskOpen}
+            onWrote={() => void router.invalidate()}
+          />
+        </Suspense>
+      </Show>
       <Toaster />
       {/* Its own boundary, so loading it never suspends the page around it. */}
       <Suspense>
@@ -414,6 +469,7 @@ function AppSidebar(props: {
   mentions: number
   sports: boolean
   onSearch: (from: Element) => void
+  onAsk?: (listen: boolean) => void
 }) {
   const sidebar = useSidebar()
   const location = useLocation()
@@ -465,6 +521,21 @@ function AppSidebar(props: {
               </Kbd>
             </SidebarMenuButton>
           </SidebarMenuItem>
+          <Show when={props.onAsk}>
+            {(ask) => (
+              <SidebarMenuItem>
+                <OwlButton
+                  label={!rail()}
+                  onAsk={ask()}
+                  class="h-10 w-full justify-start gap-3 rounded-full px-1.5 text-md text-muted hover:bg-stone/70 hover:text-ink group-data-[collapsible=icon]:size-10! group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-1.5!"
+                >
+                  <Show when={!rail()}>
+                    <Kbd class="bg-surface">⌘J</Kbd>
+                  </Show>
+                </OwlButton>
+              </SidebarMenuItem>
+            )}
+          </Show>
         </SidebarMenu>
       </SidebarHeader>
 
@@ -544,6 +615,7 @@ function AccountAvatar(props: { session: ShellSession; initial: string }) {
 function TopBar(props: {
   session: ShellSession
   onSearch: (from: Element) => void
+  onAsk?: (listen: boolean) => void
 }) {
   const sidebar = useSidebar()
   const initial = () =>
@@ -554,6 +626,9 @@ function TopBar(props: {
     <header class="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-line bg-paper/95 px-4 backdrop-blur-sm lg:hidden">
       <Wordmark to="/app" class="h-7 w-auto" />
       <div class="ml-auto flex items-center gap-1">
+        <Show when={props.onAsk}>
+          {(ask) => <OwlButton onAsk={ask()} class="size-10 rounded-full" />}
+        </Show>
         <Button
           variant="ghost"
           size="icon"

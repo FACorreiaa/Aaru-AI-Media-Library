@@ -915,6 +915,13 @@ becomes a `PlanCard` the user approves in Aaru (X-009). Voice is transcribed by 
 Whisper and the audio is never stored. Closing the card cancels the turn. Clients render; they
 hold no rules.
 
+The web's session cookie is HttpOnly, so the browser cannot call `/v1/chats/{id}/turns` or
+`/v1/chats/transcribe` itself. Two Worker routes, `POST /app/assistant/turn?chat=` and
+`POST /app/assistant/voice`, check the Origin and the session cookie, add the bearer token and
+`X-Timezone`, and pipe the request and the server-sent events through unchanged
+(`aaru-client/src/lib/assistant/proxy.ts`). They hold no rules; creating and deleting chats and
+the status check are ordinary server functions.
+
 ## Outbound agent surfaces
 
 The tool layer above has two transports besides Aaru's own composer. Both are **skins over

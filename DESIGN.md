@@ -1187,6 +1187,13 @@ shows the undo ribbon in the card. The card, owl, mic and composer are chrome an
 agent-emitted; replies carry only components from the catalog below. Colours and type follow the
 Brand section.
 
+On the web the owl sits in the top bar and the sidebar has an "Ask Aaru" row; ⌘J (Ctrl+J)
+toggles the card, since ⌘K is Search. The card is a bottom drawer, as wide as the reading column.
+Long press on the owl opens it listening; tap the mic again to send early, and silence sends on
+its own. Enter sends, Shift+Enter starts a new line. A reply that made a capture shows "Review
+the list", which opens that import's review, on every client. Read aloud on the web uses only an
+on-device browser voice (privacy).
+
 ## Component catalog the agent may emit
 
 Build these as SwiftUI views. The model only returns their names and props.

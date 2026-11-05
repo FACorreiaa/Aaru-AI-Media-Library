@@ -12,6 +12,9 @@ import { actionBy, canUndo, whenLabel } from '../lib/history/model'
 import type { Action } from '../lib/history/model'
 import { listActions, undoAction } from '../lib/history/server'
 import { periodLabel, recapShortcuts } from '../lib/recap/model'
+import { deleteChats } from '../lib/assistant/server'
+import { resetAssistantChat } from '../lib/assistant/session'
+import { ConfirmDialog } from '../components/ConfirmDialog'
 
 export const Route = createFileRoute('/_shell/app_/settings/data')({
   head: () => ({ meta: [{ title: 'Your data · Settings · Aaru' }] }),
@@ -162,6 +165,76 @@ function YourData() {
           </a>
         </div>
       </SettingsSection>
+
+      <ChatsSection />
     </>
+  )
+}
+
+/** ASK-009: Delete my chats with Aaru. Changes Aaru made stay; so does the daily count. */
+function ChatsSection() {
+  const [asking, setAsking] = createSignal(false)
+  const [busy, setBusy] = createSignal(false)
+  const [done, setDone] = createSignal(false)
+  const [problem, setProblem] = createSignal<string | null>(null)
+
+  async function remove() {
+    setBusy(true)
+    setProblem(null)
+    try {
+      await deleteChats()
+      resetAssistantChat()
+      setDone(true)
+      setAsking(false)
+    } catch (error) {
+      setProblem(
+        error instanceof Error ? error.message : 'Your chats were not deleted.',
+      )
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <SettingsSection
+      id="chats"
+      title="Chats with Aaru"
+      description="What you asked Aaru from the owl, and its answers. They stay until you delete them."
+    >
+      <div class="flex flex-wrap items-center gap-3">
+        <Button
+          variant="danger-outline"
+          size="sm"
+          disabled={busy()}
+          onClick={() => {
+            setDone(false)
+            setAsking(true)
+          }}
+        >
+          Delete my chats with Aaru
+        </Button>
+        <Show when={done()}>
+          <p role="status" class="text-sm text-muted">
+            Deleted.
+          </p>
+        </Show>
+      </div>
+      <Show when={problem()}>
+        {(line) => (
+          <p role="alert" class="mt-3 text-sm text-danger">
+            {line()}
+          </p>
+        )}
+      </Show>
+      <ConfirmDialog
+        open={asking()}
+        title="Delete your chats with Aaru?"
+        description="This removes everything you and Aaru said. Changes Aaru made to your library stay, and your daily count of questions stays."
+        confirmLabel="Delete chats"
+        busy={busy()}
+        onConfirm={() => void remove()}
+        onCancel={() => setAsking(false)}
+      />
+    </SettingsSection>
   )
 }

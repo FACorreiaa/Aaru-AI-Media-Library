@@ -82,6 +82,7 @@ import {
   ratingLabel,
   showStatusLabel,
 } from '../lib/title/model'
+import { useAssistantTitle } from '../components/shell/context'
 import type { Episode, LibraryItemPatch, Season } from '../lib/title/model'
 
 // APP-005 on the web: the Title room, at parity with the Apple apps' `TitleDetailView`. An album
@@ -119,6 +120,8 @@ function TitleRoom() {
   const navigate = useNavigate()
   const title = () => page().title ?? undefined
   const [entry, setEntry] = createSignal<LibraryEntry>(page().entry)
+  // ASK-009: a question asked from here is about this title.
+  useAssistantTitle(() => entry().title.id)
   const [watched, setWatched] = createSignal(watchedSet(page().entry))
   const [pending, setPending] = createSignal<Set<string>>(new Set())
   const [problem, setProblem] = createSignal<string | null>(null)
