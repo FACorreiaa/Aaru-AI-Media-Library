@@ -17,6 +17,7 @@ struct MainTabs: View {
     @Environment(AppRouter.self) private var router
     @Environment(ProgressModel.self) private var progress: ProgressModel?
     @Environment(PlusModel.self) private var plus: PlusModel?
+    @Environment(AssistantModel.self) private var assistant: AssistantModel?
     @Environment(\.scenePhase) private var scenePhase
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var sizeClass
@@ -160,6 +161,7 @@ struct MainTabs: View {
             // Badges earned elsewhere (an import, another device) toast on return (GAM-004).
             .task(id: scenePhase) {
                 if scenePhase == .active {
+                    await assistant?.refreshStatus()
                     await progress?.refresh()
                     // MyAnimeList changes come back on each open; the server spaces the reads (SCR-010).
                     _ = try? await api?.requestMALPull()
@@ -173,6 +175,7 @@ struct MainTabs: View {
             .task(id: scenePhase) {
                 if scenePhase == .background {
                     realtime.stop()
+                    router.closeAssistant()
                 } else {
                     realtime.start()
                 }
@@ -205,28 +208,6 @@ struct MainTabs: View {
                 PushInbox.shared.groupLink = nil
             }
             .onOpenURL(perform: open)
-    }
-
-    private func open(_ url: URL) {
-        // RootView opens friend invites and share links, signed in or out.
-        if InviteLink(url) != nil || SharedLink(url) != nil {
-            return
-        }
-        if let id = WidgetLink.libraryItemId(in: url) {
-            linkedTitle = LinkedTitle(id: id)
-        } else if !router.open(url) {
-            openGroup(url)
-        }
-    }
-
-    /// A group alert or link: the channel it names, or the Groups tab (GRP-012).
-    private func openGroup(_ url: URL) {
-        switch GroupLink(url) {
-        case .groups?: router.tab = .groups
-        // The Groups tab opens itself for a channel request.
-        case let .channel(request)?: groups.openRequest = request
-        case nil: break
-        }
     }
 
     /// One destination's tab. The Groups mention badge rides on its tab: in the sidebar, and on
@@ -296,6 +277,30 @@ struct MainTabs: View {
 
     struct LinkedTitle: Identifiable {
         let id: String
+    }
+}
+
+private extension MainTabs {
+    func open(_ url: URL) {
+        // RootView opens friend invites and share links, signed in or out.
+        if InviteLink(url) != nil || SharedLink(url) != nil {
+            return
+        }
+        if let id = WidgetLink.libraryItemId(in: url) {
+            linkedTitle = LinkedTitle(id: id)
+        } else if !router.open(url) {
+            openGroup(url)
+        }
+    }
+
+    /// A group alert or link: the channel it names, or the Groups tab (GRP-012).
+    func openGroup(_ url: URL) {
+        switch GroupLink(url) {
+        case .groups?: router.tab = .groups
+        // The Groups tab opens itself for a channel request.
+        case let .channel(request)?: groups.openRequest = request
+        case nil: break
+        }
     }
 }
 

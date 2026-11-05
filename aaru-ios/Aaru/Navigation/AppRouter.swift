@@ -1,3 +1,4 @@
+import AaruAPI
 import Foundation
 import Observation
 
@@ -88,6 +89,14 @@ enum AppTab: String, CaseIterable, Identifiable {
     }
 }
 
+/// The open Assistant card (ASK-009): where it is mounted and what the Chat turns are told.
+struct AssistantPresentation: Equatable {
+    /// The sheet hosting the card; nil is the root host on the tab view.
+    let hostID: UUID?
+    let listening: Bool
+    let hint: Components.Schemas.ChatHint?
+}
+
 /// One place that says where the app is: the selected destination, what Settings shows, and the
 /// requests the menu bar and keyboard send (⌘N, ⌘F, ⌘R, ⌘,). Shared by the main window and the
 /// Mac Settings scene.
@@ -122,6 +131,9 @@ final class AppRouter {
     /// Bumped when a share link opens (SHR-002): the sheets the app shows from the top close, so
     /// the share sheet can take their place. One sheet can't be shown over another from here.
     private(set) var closeSheetsRequest = 0
+
+    /// The Assistant card (ASK-009); nil is closed.
+    var assistant: AssistantPresentation?
 
     /// Bumped by ⌘R; the selected destination reloads (`refreshesOnCommand`).
     private(set) var refreshTick = 0
@@ -255,6 +267,23 @@ final class AppRouter {
         closeSheetsRequest += 1
     }
 
+    /// Opens the Assistant card over `hostID`, telling the server where the user is. Settings
+    /// sends no screen.
+    func openAssistant(listening: Bool, titleID: String?, onTitlePage: Bool, hostID: UUID?) {
+        let hint: Components.Schemas.ChatHint? = if onTitlePage {
+            .init(screen: "title", titleId: titleID)
+        } else if tab == .settings {
+            nil
+        } else {
+            .init(screen: tab.rawValue, titleId: titleID)
+        }
+        assistant = AssistantPresentation(hostID: hostID, listening: listening, hint: hint)
+    }
+
+    func closeAssistant() {
+        assistant = nil
+    }
+
     /// Signed out: back to Home with nothing of the last user's place.
     func reset() {
         tab = .home
@@ -269,5 +298,6 @@ final class AppRouter {
         settingsPath = []
         showsSettingsSheet = false
         settingsPane = .account
+        assistant = nil
     }
 }
