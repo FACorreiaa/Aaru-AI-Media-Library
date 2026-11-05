@@ -2861,6 +2861,16 @@ and Music; Music has Albums · Concerts · Listens. The Discover toolbar's Sport
 ### NAV-003 · Docs · S
 DESIGN.md §13a, §13c, §13d and §18; VIEWS.md; CLAUDE.md's Discover; ARCHITECTURE.md.
 
+### NAV-005 · iPhone: one bar under More · S · owner, 2026-11-05
+Under iOS's generated More, Books, Manga, Music and Groups showed two navigation bars and two back
+buttons, because More's navigation controller held a page that had its own stack. Sports had
+dropped its stack, which only works for a page that pushes nothing. More is now Aaru's own fifth tab:
+`MoreScreen`, a list with one `NavigationStack` on `AppRouter.morePath`, the destination at the
+bottom and whatever it pushes above. `router.tab` still names the destination, so links keep working.
+iPad and Mac sidebars keep one stack per destination.
+
+**Done when:** every page under More, and everything it pushes, has one bar and one back button.
+
 ### NAV-004 · A Friends tab; Groups at the top · M
 **Needs:** NAV-002. Owner, 2026-10-27.
 - **iPhone:** the tab bar becomes Home · Discover · Library · Friends · More.

@@ -1,12 +1,28 @@
 import AaruAPI
 import SwiftUI
 
+/// A kind page in its own stack: a sidebar destination on iPad and Mac. On iPhone `MoreScreen`'s
+/// stack holds `KindContent` instead (NAV-005).
+struct KindScreen: View {
+    let kind: MediaKind
+    let api: Client?
+    let library: LibraryModel
+    let lists: ListsModel
+    let discover: DiscoverModel
+
+    var body: some View {
+        NavigationStack {
+            KindContent(kind: kind, api: api, library: library, lists: lists, discover: discover)
+        }
+    }
+}
+
 /// NAV-002: Books, Manga and Music, one page per kind. At the top the user's shelf for the kind
 /// (`KindShelf`), below it the kind's Discover rows with the same cards as Discover, credited to
 /// the providers shown. The rows come from the Discover model the app shares, so `/v1/discover`
 /// loads once. Music adds a segmented control for Concerts (MUS-003, while the server has them
 /// on) and Listens (MUS-008).
-struct KindScreen: View {
+struct KindContent: View {
     let kind: MediaKind
     let api: Client?
     let library: LibraryModel
@@ -51,68 +67,66 @@ struct KindScreen: View {
     }
 
     var body: some View {
-        NavigationStack {
-            Group {
-                switch pane {
-                case .albums: page
-                case .concerts: concertsPane
-                case .listens: ListensContent(api: api, library: library)
+        Group {
+            switch pane {
+            case .albums: page
+            case .concerts: concertsPane
+            case .listens: ListensContent(api: api, library: library)
+            }
+        }
+        .navigationTitle(tab.title)
+        #if os(iOS)
+            .safeAreaInset(edge: .top, spacing: 0) {
+                if kind == .music {
+                    musicPicker
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 8)
+                        .background(.bar)
                 }
             }
-            .navigationTitle(tab.title)
-            #if os(iOS)
-                .safeAreaInset(edge: .top, spacing: 0) {
+        #endif
+            .toolbar {
+                #if os(macOS)
                     if kind == .music {
-                        musicPicker
-                            .padding(.horizontal, 16)
-                            .padding(.bottom, 8)
-                            .background(.bar)
+                        ToolbarItem(placement: .principal) { musicPicker.fixedSize() }
                     }
+                #endif
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Search", systemImage: "magnifyingglass") { router.showsSearch = true }
                 }
-            #endif
-                .toolbar {
-                    #if os(macOS)
-                        if kind == .music {
-                            ToolbarItem(placement: .principal) { musicPicker.fixedSize() }
-                        }
-                    #endif
-                    ToolbarItem(placement: .primaryAction) {
-                        Button("Search", systemImage: "magnifyingglass") { router.showsSearch = true }
-                    }
+            }
+            .task { await discover.loadIfNeeded() }
+            .task {
+                if kind == .music {
+                    await concerts.loadSetting()
                 }
-                .task { await discover.loadIfNeeded() }
-                .task {
-                    if kind == .music {
-                        await concerts.loadSetting()
-                    }
+            }
+            .onChange(of: concerts.available) { _, available in
+                if !available, router.musicPane == .concerts {
+                    router.musicPane = .albums
                 }
-                .onChange(of: concerts.available) { _, available in
-                    if !available, router.musicPane == .concerts {
-                        router.musicPane = .albums
-                    }
+            }
+            // View → Refresh (⌘R) reloads the view on screen.
+            .refreshesOnCommand(tab) { await reload() }
+            .navigationDestination(for: String.self) { id in
+                LibraryEntryDestination(id: id, api: api, library: library, lists: lists)
+            }
+            .catalogDestination(api: api, library: library, lists: lists)
+            .sheet(item: $listTarget) { hit in
+                ListPickerSheet(
+                    ref: .init(_type: hit._type, ids: hit.ids, title: hit.title, year: hit.year),
+                    titleName: hit.title,
+                    lists: lists
+                )
+            }
+            .safeAreaInset(edge: .bottom) {
+                switch pane {
+                case .albums: ProblemBanner(message: discover.problem) { discover.problem = nil }
+                case .concerts: ProblemBanner(message: concerts.problem) { concerts.problem = nil }
+                case .listens: EmptyView()
                 }
-                // View → Refresh (⌘R) reloads the view on screen.
-                .refreshesOnCommand(tab) { await reload() }
-                .navigationDestination(for: String.self) { id in
-                    LibraryEntryDestination(id: id, api: api, library: library, lists: lists)
-                }
-                .catalogDestination(api: api, library: library, lists: lists)
-                .sheet(item: $listTarget) { hit in
-                    ListPickerSheet(
-                        ref: .init(_type: hit._type, ids: hit.ids, title: hit.title, year: hit.year),
-                        titleName: hit.title,
-                        lists: lists
-                    )
-                }
-                .safeAreaInset(edge: .bottom) {
-                    switch pane {
-                    case .albums: ProblemBanner(message: discover.problem) { discover.problem = nil }
-                    case .concerts: ProblemBanner(message: concerts.problem) { concerts.problem = nil }
-                    case .listens: EmptyView()
-                    }
-                }
-                .background(Color(.paper))
-        }
+            }
+            .background(Color(.paper))
     }
 
     private func reload() async {
