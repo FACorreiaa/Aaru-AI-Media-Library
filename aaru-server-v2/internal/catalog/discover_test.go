@@ -103,6 +103,34 @@ func TestRowKinds(t *testing.T) {
 	assert.Equal(t, RowAlbum, ListMusicUpcoming.Kind())
 }
 
+func TestOpenLibrarySubjectRow(t *testing.T) {
+	stub := routes(map[string]string{"/subjects/popular_science.json": `{"key":"/subjects/popular_science","works":[
+	  {"key":"/works/OL1W","title":"A Brief History of Time","first_publish_year":1988,"cover_id":11,
+	   "authors":[{"key":"/authors/OL1A","name":"Stephen Hawking"}]},
+	  {"key":"/works/OL2W","title":"The Golem at Large\n   \n   Canto Classics","first_publish_year":0,"cover_id":12,
+	   "authors":[{"name":"Trevor Pinch"},{"name":"Harry Collins"}]},
+	  {"key":"/works/OL3W","title":"No Cover","first_publish_year":2001,"authors":[{"name":"Someone"}]}]}`})
+	hits, err := (&OpenLibrary{Client: testClient(stub, "openlibrary"), UserAgent: "test"}).List(context.Background(), ListBooksScience, discoverNow)
+	require.NoError(t, err)
+	require.Len(t, hits, 2)
+	assert.Equal(t, "OL1W", hits[0].IDs.OpenLibrary)
+	assert.Equal(t, "Stephen Hawking", *hits[0].Byline)
+	assert.Equal(t, 1988, *hits[0].Year)
+	assert.Equal(t, "https://covers.openlibrary.org/b/id/11-L.jpg", *hits[0].PosterURL)
+	assert.Equal(t, "The Golem at Large Canto Classics", hits[1].Title)
+	assert.Nil(t, hits[1].Year)
+	assert.Equal(t, "Trevor Pinch, Harry Collins", *hits[1].Byline)
+}
+
+func TestBookRowsStayOffHome(t *testing.T) {
+	for _, list := range []DiscoverList{ListBooksClassics, ListBooksSciFi, ListBooksScience, ListBooksBusiness} {
+		assert.Equal(t, RowBook, list.Kind(), list)
+		assert.True(t, list.KindPageOnly(), list)
+		assert.NotEqual(t, string(list), list.Title(discoverNow), "%s has a title", list)
+	}
+	assert.False(t, ListBooksTrending.KindPageOnly())
+}
+
 func TestOpenLibraryTrending(t *testing.T) {
 	stub := routes(map[string]string{"/trending/weekly.json": `{"works":[{"key":"/works/OL17930368W","title":"Atomic Habits",
 	  "author_name":["James Clear"],"first_publish_year":2016,"cover_i":12539702}]}`})

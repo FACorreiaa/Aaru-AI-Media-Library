@@ -26,6 +26,10 @@ const (
 	ListTVNew            DiscoverList = "tv_new"
 	ListMoviesInTheaters DiscoverList = "movies_in_theaters"
 	ListBooksTrending    DiscoverList = "books_trending"
+	ListBooksClassics    DiscoverList = "books_classics"
+	ListBooksSciFi       DiscoverList = "books_science_fiction"
+	ListBooksScience     DiscoverList = "books_science"
+	ListBooksBusiness    DiscoverList = "books_business"
 	ListMangaTrending    DiscoverList = "manga_trending"
 	ListMangaPublishing  DiscoverList = "manga_publishing"
 	ListMusicNew         DiscoverList = "music_new"
@@ -35,13 +39,15 @@ const (
 // AllDiscoverLists are every list, in display order.
 var AllDiscoverLists = []DiscoverList{
 	ListTVTrending, ListAnimeSeason, ListMoviesTrending, ListTVOnAir, ListAnimeTrending, ListTVNew,
-	ListMoviesInTheaters, ListBooksTrending, ListMangaTrending, ListMangaPublishing, ListMusicNew, ListMusicUpcoming,
+	ListMoviesInTheaters, ListBooksTrending, ListBooksClassics, ListBooksSciFi, ListBooksScience, ListBooksBusiness,
+	ListMangaTrending, ListMangaPublishing, ListMusicNew, ListMusicUpcoming,
 }
 
 var discoverTitles = map[DiscoverList]string{
 	ListTVTrending: "Trending shows", ListMoviesTrending: "Trending movies", ListTVOnAir: "On the air",
 	ListAnimeTrending: "Trending anime", ListTVNew: "New shows", ListMoviesInTheaters: "In theaters",
-	ListBooksTrending: "Trending books", ListMangaTrending: "Trending manga", ListMangaPublishing: "Publishing now",
+	ListBooksTrending: "Trending books", ListBooksClassics: "Classics", ListBooksSciFi: "Science fiction",
+	ListBooksScience: "Science", ListBooksBusiness: "Business", ListMangaTrending: "Trending manga", ListMangaPublishing: "Publishing now",
 	ListMusicNew: "New albums", ListMusicUpcoming: "Coming soon",
 }
 
@@ -78,12 +84,22 @@ func (l DiscoverList) Kind() RowKind {
 		return RowFilm
 	case ListAnimeSeason, ListAnimeTrending:
 		return RowAnime
-	case ListBooksTrending:
+	case ListBooksTrending, ListBooksClassics, ListBooksSciFi, ListBooksScience, ListBooksBusiness:
 		return RowBook
 	case ListMangaTrending, ListMangaPublishing:
 		return RowManga
 	}
 	return RowAlbum
+}
+
+// KindPageOnly is a row its kind's page shows and Home does not: Home keeps one trending row per
+// kind, and a shelf of subject rows would crowd it out for someone who mostly reads (BOOK-002).
+func (l DiscoverList) KindPageOnly() bool {
+	switch l {
+	case ListBooksClassics, ListBooksSciFi, ListBooksScience, ListBooksBusiness:
+		return true
+	}
+	return false
 }
 
 // DiscoverLister is a provider that serves some of the Discover lists.

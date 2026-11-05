@@ -33,7 +33,7 @@ This file is the working contract for anyone — human or agent — changing the
 | Catalog — air times | TVmaze (no key, CC BY-SA): exact air times and network for TMDB shows, and the next episode's time on Discover's On air (DISC-003); TMDB stays the episode source |
 | Where to watch | TMDB `watch/providers` (JustWatch data, credited): flat-rate services per country on Discover's On air (DISC-003, CAT-014 in part). The country comes from the device language, per request, never stored |
 | Catalog — manga | AniList GraphQL, type MANGA (any format: manga, manhwa, manhua, one-shot, light novel), with MAL ids; no fallback while AniList is down (MNG-001, pulled forward 2026-10-23) |
-| Catalog — books | Open Library (Google Books only if Open Library is insufficient); weekly trending for Discover |
+| Catalog — books | Open Library (Google Books only if Open Library is insufficient); weekly trending for Discover; Classics, Science fiction, Science and Business rows from its subjects on the Books page (BOOK-002) |
 | Catalog — music | MusicBrainz release groups (albums, EPs) and tracklists, Cover Art Archive covers; no key, 1 req/s with a contact User-Agent (MUS-001). ListenBrainz fresh releases + sitewide stats for Discover's New albums / Coming soon (MUS-002) |
 | Catalog — sports | TheSportsDB (`THESPORTSDB_API_KEY`, premium, 100 req/min) behind `SportsListing`: leagues, teams, players, fixtures, 2-minute livescores, TV listings for the Sports tab only; off without the key (SPT-001) |
 | Concerts | Ticketmaster Discovery API v2 (`TICKETMASTER_API_KEY`, free, 5,000 calls/day; Aaru stops at 4,500), behind `ConcertListing`; off without the key. Tickets link out (MUS-003) |
@@ -213,7 +213,8 @@ Use these words in code, APIs, and UI:
   same for every user, plus the On air view (DISC-003): the week's airings by channel. Each row
   says its kind (DISC-004): the Discover page shows shows, films and anime; the Books, Manga and
   Music pages show their own rows under the user's shelf, and Music holds Concerts. Home shows
-  three rows, picked by the kinds the user keeps (2026-10-28). Catalog data like search, never a
+  three rows, picked by the kinds the user keeps (2026-10-28), never a row marked `kindPageOnly`
+  (Books' subject rows, BOOK-002). Catalog data like search, never a
   recommendation
 - **Agent token** — a per-user, scoped, revocable credential an outside agent uses to reach
   Aaru's tool layer. Not an API key for a third-party developer

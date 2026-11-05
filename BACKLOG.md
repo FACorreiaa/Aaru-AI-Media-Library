@@ -815,6 +815,7 @@ account or a stranger that has not happened yet.
 | DISC-001 | Built, unverified | #38 eaeb15e; DiscoverService.swift; deployed | No recorded new-account run on 3 clients |
 | DISC-003 | Built, unverified | OnAirGuideTests, `lib/discover/onAir.test.ts`; `Catalog/OnAirGuide.swift`, `TMDBCatalog+OnAir.swift`, `OnAirGuide.tsx`, `OnAirView.swift` | TMDB, TVmaze and JustWatch checked with stubs only; not run against live providers or on a device |
 | DISC-002 | Built, unverified | #84; DiscoverSeasonTests, season model tests; deployed f5dcb8c (infra #412) | Not run on a device |
+| BOOK-002 | Server built, unverified | `books_classics`, `books_science_fiction`, `books_science`, `books_business`, `kindPageOnly` | Clients to come |
 | MUS-001 | Built, unverified | #93; MusicTests, StatsTests; deployed f5dcb8c (infra #412) | Not run on a device |
 | MUS-002 | Built, unverified | #98; ListenBrainzReleasesTests; deployed 8b3f017 (infra #413) | Not run on a device |
 | MUS-003 | Built, unverified | #105; ConcertTests; deployed f0525f0 (infra #415, key #414) | Not run on a device; Ticketmaster lists nothing in Portugal (MUS-009) |
@@ -2867,6 +2868,20 @@ See the 2026-10-25 decision. Same destinations, same order, on every client.
 `DiscoverList.kind`, so each page shows its own rows without guessing from ids. Two AniList rows,
 type MANGA, no adult works: Trending manga and Publishing now. No stand-in while AniList is down:
 the manga rows are simply absent.
+
+### BOOK-002 · A useful Books page · M · owner 2026-11-05
+**Needs:** BOOK-001, DISC-004.
+Books was a shelf note and one catalog row. It gets the import box from BOOK-001, a Goodreads
+shortcut, Read and On hold rows, a "this year's reading" strip, and more catalog rows.
+- Rows: Open Library subjects, 30 books with covers, the same for everyone, cached like the other
+  rows. A subject comes in order of edition count and `published_in` does nothing, so only subjects
+  that read well have a row (checked live 2026-11-05): `classics`, `science_fiction`, `business`,
+  and `popular_science` for Science, because `science` opens with Romeo and Juliet.
+- A subject row has `kindPageOnly`, so Home keeps `books_trending` as its one book row. Clients
+  older than this flag can show a subject row on Home for someone who mostly reads.
+
+**Done when:** on iPhone, Mac and the web the Books page has all of the above, and Home shows no
+subject row.
 
 ### NAV-001 · Web: Books, Manga, Music and a More group · M
 **Needs:** DISC-004.

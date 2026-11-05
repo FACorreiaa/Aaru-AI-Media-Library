@@ -515,6 +515,8 @@ protocol UserLibraryImporting: Sendable {
 - Search and detail for `book`
 - ISBN and cover URL
 - Discover's books row: `trending/weekly.json` (DISC-001)
+- Books page rows: `subjects/{classics,science_fiction,popular_science,business}.json`, marked
+  `kindPageOnly` so Home leaves them out (BOOK-002)
 
 ### MusicBrainz (MUS-001)
 
