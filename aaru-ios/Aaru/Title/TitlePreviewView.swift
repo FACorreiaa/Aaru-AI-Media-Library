@@ -44,6 +44,7 @@ struct TitlePreviewView: View {
             LibraryEntryDestination(id: itemID, api: api, library: library, lists: lists)
         } else if let title {
             page(title)
+                .assistantButton(titleID: title.id)
                 .toolbar {
                     ToolbarItem(placement: .primaryAction) {
                         Button("Share", systemImage: "square.and.arrow.up") { shares = true }
@@ -55,15 +56,18 @@ struct TitlePreviewView: View {
                         target: .title(MediaRef(_type: hit._type, ids: hit.ids, title: hit.title, year: hit.year)),
                         name: hit.title
                     )
+                    .closesOnSheetsRequest()
                 }
         } else if loadFailed {
             LoadFailedView(title: "This title didn't load", message: "Aaru could not reach the server.") {
                 await load()
             }
+            .assistantButton(titleID: nil)
         } else {
             ProgressView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .task { await load() }
+                .assistantButton(titleID: nil)
         }
     }
 
@@ -105,6 +109,7 @@ struct TitlePreviewView: View {
                     titleName: hit.title,
                     lists: lists
                 )
+                .closesOnSheetsRequest()
             }
             .background(Color(.paper))
     }

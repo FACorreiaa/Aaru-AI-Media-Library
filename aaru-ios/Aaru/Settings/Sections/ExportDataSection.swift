@@ -27,7 +27,10 @@ struct ExportDataSection: View {
         } header: {
             Text("Export")
         } footer: {
-            Text("JSON has everything. The CSV opens in Numbers or Excel and can be imported back into Aaru.")
+            Text("""
+            JSON has your account, library, lists, shelves, favorites, friends, blocks, groups, listens, \
+            followed sports and chats. The CSV opens in Numbers or Excel and can be imported back into Aaru.
+            """)
         }
         .fileExporter(
             isPresented: $file.isPresent,

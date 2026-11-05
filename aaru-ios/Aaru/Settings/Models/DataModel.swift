@@ -11,6 +11,8 @@ import UniformTypeIdentifiers
 final class DataModel {
     /// The format being made, so its row shows progress.
     private(set) var exporting: ExportFormat?
+    /// True while "Delete my chats with Aaru" is in flight, so its row is disabled.
+    private(set) var deletingChats = false
     var problem: String?
 
     @ObservationIgnored private let api: Client?
@@ -45,6 +47,25 @@ final class DataModel {
             problem = "The export could not be made. Aaru could not reach the server."
         }
         return nil
+    }
+
+    /// Deletes every Chat with Aaru (DELETE /v1/chats). On 204 the Assistant card is told, so a
+    /// card that was open and the next one start empty.
+    func deleteChats() async {
+        guard let api else { return }
+        deletingChats = true
+        problem = nil
+        defer { deletingChats = false }
+        do {
+            switch try await api.deleteChats(.init()) {
+            case .noContent:
+                NotificationCenter.default.post(name: .aaruChatsDeleted, object: nil)
+            case let .default(_, error):
+                problem = (try? error.body.json.message) ?? "Your chats could not be deleted."
+            }
+        } catch {
+            problem = "Your chats could not be deleted. Aaru could not reach the server."
+        }
     }
 
     /// Pretty-printed with ISO dates, so the file is readable as well as complete.

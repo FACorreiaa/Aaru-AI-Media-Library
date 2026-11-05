@@ -83,6 +83,7 @@ struct ListDetailView: View {
         .sheet(isPresented: $showsSearch) {
             if let list = Binding($detail) {
                 SearchView(api: api, library: library, lists: lists, intoList: list)
+                    .closesOnSheetsRequest()
             }
         }
         .task(id: listID) { await load() }

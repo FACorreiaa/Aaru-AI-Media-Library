@@ -1,4 +1,5 @@
 import AaruAPI
+import WidgetKit
 
 /// What the app shares with every screen: the session, the `/v1` client bound to it, and the
 /// signed-in user's library.
@@ -8,6 +9,8 @@ final class AppServices {
     /// Where the app is: the destination, Settings' page, and menu-bar requests.
     let router = AppRouter()
     let library = LibraryModel()
+    /// The Assistant card's Chat (ASK-009), one for the whole app.
+    let assistant: AssistantModel
     let lists: ListsModel
     let imports: ImportsModel
     /// The models behind Settings' pages.
@@ -41,6 +44,7 @@ final class AppServices {
                 )
             )
         }
+        assistant = AssistantModel(api: api, library: library)
         avatars = AvatarLoader(api: api)
         lists = ListsModel(api: api)
         imports = ImportsModel(api: api)
@@ -60,12 +64,50 @@ final class AppServices {
     }
 
     /// What Settings' pages need, for the Mac Settings scene (the main window builds its own).
+    /// Signing out (or deleting the account) here resets the models itself: with the main window
+    /// closed, no `RootView` is there to see the session change.
     var settingsContext: SettingsContext {
         let flow = AuthFlow(api: api, session: session)
         return SettingsContext(
             api: api, imports: imports, models: settings, library: library, lists: lists,
-            onSignOut: { Task { await flow.signOut() } },
-            onDeleteAccount: { await flow.deleteAccount() }
+            onSignOut: { [weak self] in
+                Task {
+                    await flow.signOut()
+                    self?.signedOut()
+                }
+            },
+            onDeleteAccount: { [weak self] in
+                let problem = await flow.deleteAccount()
+                if problem == nil {
+                    self?.signedOut()
+                }
+                return problem
+            }
         )
+    }
+
+    /// A signed-out device keeps nothing of the last user's data. Every reset is safe to run
+    /// twice: the Mac's Settings scene and `RootView` may both call this for one sign-out.
+    func signedOut() {
+        library.reset()
+        Task { await assistant.reset() }
+        lists.reset()
+        imports.reset()
+        settings.reset()
+        groups.reset()
+        progress.reset()
+        plus.reset()
+        realtime.reset()
+        router.reset()
+        HomeCache().clear()
+        WidgetSnapshotStore.clear()
+        WidgetCenter.shared.reloadAllTimelines()
+        #if os(iOS)
+            Task {
+                await NowWatching.endAll()
+                await NowPlayingActivity.endAll()
+                NowPlayingArtwork.clear()
+            }
+        #endif
     }
 }

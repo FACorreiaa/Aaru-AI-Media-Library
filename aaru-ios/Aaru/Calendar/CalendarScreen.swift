@@ -84,6 +84,7 @@ struct CalendarScreen: View {
                     }
                     ToolbarItem(placement: .secondaryAction) { filterMenu }
                 }
+                .assistantButton()
                 .safeAreaInset(edge: .top, spacing: 0) {
                     VStack(spacing: 0) {
                         if switchUnderBar {
@@ -105,6 +106,7 @@ struct CalendarScreen: View {
                     }
                 )) {
                     CalendarEpisodeSheet(feed: feed) { path.append($0) }
+                        .closesOnSheetsRequest()
                 }
                 .onChange(of: currentFilter, initial: true) { feed.filter = currentFilter }
                 .task(id: mode) { await loadIfNeeded() }

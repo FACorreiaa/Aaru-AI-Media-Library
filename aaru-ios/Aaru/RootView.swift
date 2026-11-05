@@ -1,7 +1,6 @@
 import AaruAPI
 import AuthenticationServices
 import SwiftUI
-import WidgetKit
 
 /// Routes on the session: welcome when signed out, the app when signed in.
 struct RootView: View {
@@ -12,10 +11,10 @@ struct RootView: View {
     let settings: SettingsServices
     let groups: GroupsModel
     let realtime: RealtimeClient
+    /// `AppServices.signedOut()`: resets every model when the session ends.
+    let onSignedOut: @MainActor () -> Void
     @Environment(SessionStore.self) private var session
     @Environment(AppRouter.self) private var router
-    @Environment(ProgressModel.self) private var progress: ProgressModel?
-    @Environment(PlusModel.self) private var plus: PlusModel?
     @Environment(\.webAuthenticationSession) private var webAuthenticationSession
     @State private var showsEmailSignIn = false
     @State private var errorMessage: String?
@@ -95,25 +94,7 @@ struct RootView: View {
             if !signedIn {
                 openShare = nil
                 pendingShare = nil
-                library.reset()
-                lists.reset()
-                imports.reset()
-                settings.reset()
-                groups.reset()
-                progress?.reset()
-                plus?.reset()
-                realtime.reset()
-                router.reset()
-                HomeCache().clear()
-                WidgetSnapshotStore.clear()
-                WidgetCenter.shared.reloadAllTimelines()
-                #if os(iOS)
-                    Task {
-                        await NowWatching.endAll()
-                        await NowPlayingActivity.endAll()
-                        NowPlayingArtwork.clear()
-                    }
-                #endif
+                onSignedOut()
                 toasts.dismiss()
             }
         }
@@ -170,7 +151,7 @@ struct RootView: View {
     RootView(
         api: nil, library: LibraryModel(), lists: ListsModel(api: nil), imports: ImportsModel(api: nil),
         settings: SettingsServices(api: nil), groups: GroupsModel(api: nil, realtime: nil),
-        realtime: RealtimeClient(baseURL: nil) { nil }
+        realtime: RealtimeClient(baseURL: nil) { nil }, onSignedOut: {}
     )
     .environment(SessionStore(keychain: SessionKeychain(service: "preview")))
     .environment(AppRouter())

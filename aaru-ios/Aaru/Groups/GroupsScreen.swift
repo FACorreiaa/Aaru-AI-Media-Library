@@ -63,6 +63,7 @@ private struct GroupsStack: View {
             }
         }
         #endif
+        .assistantButton()
         .navigationDestination(for: GroupRoute.self) { route in
             switch route {
             case .friends:
@@ -241,6 +242,7 @@ private struct GroupsSplit: View {
                 Button("New group", systemImage: "plus") { sheet = .create }.disabled(groups.needsHandle)
             }
         }
+        .assistantButton()
         .refreshable {
             await groups.load()
             await groups.loadAllDetails()

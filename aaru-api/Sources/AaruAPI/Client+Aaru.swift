@@ -10,6 +10,10 @@ public extension Client {
         timeZone: TimeZoneMiddleware = TimeZoneMiddleware(),
         transport: any ClientTransport = URLSessionTransport()
     ) -> Client {
-        Client(serverURL: baseURL, transport: transport, middlewares: [session, timeZone])
+        Client(
+            serverURL: baseURL,
+            transport: transport,
+            middlewares: [session, timeZone, ChatAudioContentTypeMiddleware()]
+        )
     }
 }

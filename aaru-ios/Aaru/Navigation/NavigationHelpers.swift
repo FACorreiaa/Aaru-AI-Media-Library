@@ -12,6 +12,17 @@ extension View {
         #endif
     }
 
+    /// The owl in the top bar (ASK-009): opens the Assistant card over this screen. Beside Search,
+    /// on every main screen; shown only while the server has the Assistant on.
+    func assistantButton() -> some View {
+        modifier(AssistantButtonModifier(titleID: nil, onTitlePage: false))
+    }
+
+    /// The owl on a title page: the card is told which title the user is looking at.
+    func assistantButton(titleID: String?) -> some View {
+        modifier(AssistantButtonModifier(titleID: titleID, onTitlePage: true))
+    }
+
     /// Reloads when ⌘R (View → Refresh) is chosen while `tab` is the selected destination.
     func refreshesOnCommand(_ tab: AppTab, perform action: @escaping () async -> Void) -> some View {
         modifier(RefreshCommandModifier(tab: tab, action: action))
@@ -34,6 +45,72 @@ extension View {
         }
     }
 #endif
+
+private struct AssistantButtonModifier: ViewModifier {
+    let titleID: String?
+    let onTitlePage: Bool
+    /// Nil in previews.
+    @Environment(AppRouter.self) private var router: AppRouter?
+    @Environment(AssistantModel.self) private var model: AssistantModel?
+    /// The host this screen is under: a sheet's, or nil for the root.
+    @Environment(\.assistantHostID) private var hostID
+    #if os(iOS)
+        @State private var didLongPress = false
+        @State private var longPresses = 0
+    #endif
+
+    func body(content: Content) -> some View {
+        content.toolbar {
+            if model?.isAvailable == true {
+                ToolbarItem(placement: .primaryAction) { owl }
+            }
+        }
+    }
+
+    private var owl: some View {
+        let button = Button(action: tapped) {
+            OwlHead(size: 28)
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+        }
+        .accessibilityLabel("Ask Aaru")
+        .accessibilityAction(named: "Talk to Aaru") { open(listening: model?.voiceAvailable == true) }
+        .help("Ask Aaru (⌘K)")
+        #if os(iOS)
+            // Holding the owl opens the card listening; the flag keeps the lift from also being a tap.
+            return button
+                .simultaneousGesture(LongPressGesture(minimumDuration: 0.4).onEnded { _ in
+                    didLongPress = true
+                    longPresses += 1
+                    open(listening: model?.voiceAvailable == true)
+                    // A lift the button never reports must not swallow the next tap.
+                    Task {
+                        try? await Task.sleep(for: .milliseconds(500))
+                        didLongPress = false
+                    }
+                })
+                .sensoryFeedback(.impact, trigger: longPresses)
+        #else
+            return button
+        #endif
+    }
+
+    private func tapped() {
+        // A long hold's release must not replace the card the hold opened.
+        guard router?.assistant == nil else { return }
+        #if os(iOS)
+            if didLongPress {
+                didLongPress = false
+                return
+            }
+        #endif
+        open(listening: false)
+    }
+
+    private func open(listening: Bool) {
+        router?.openAssistant(listening: listening, titleID: titleID, onTitlePage: onTitlePage, hostID: hostID)
+    }
+}
 
 private struct RefreshCommandModifier: ViewModifier {
     let tab: AppTab
