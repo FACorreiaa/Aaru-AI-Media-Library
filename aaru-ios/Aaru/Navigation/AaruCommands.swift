@@ -16,6 +16,18 @@ struct AaruCommands: Commands {
                 .disabled(!session.isSignedIn)
         }
         CommandGroup(after: .textEditing) {
+            Button("Ask Aaru") {
+                // A second ⌘K closes the card, as Spotify-style launchers do.
+                if router.assistant != nil {
+                    router.closeAssistant()
+                } else {
+                    // The root host's card would sit behind a sheet; this closes every level first.
+                    router.closeSheets()
+                    router.openAssistant(listening: false, titleID: nil, onTitlePage: false, hostID: nil)
+                }
+            }
+            .keyboardShortcut("k", modifiers: .command)
+            .disabled(!session.isSignedIn)
             Button("Search Titles") {
                 // The card is an overlay, so this stays active and Search would cover a live card.
                 router.closeAssistant()

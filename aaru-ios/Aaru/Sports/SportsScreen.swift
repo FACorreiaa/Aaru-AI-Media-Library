@@ -79,6 +79,7 @@ struct SportsView: View {
                     Button("Find leagues and teams", systemImage: "magnifyingglass") { showsSearch = true }
                 }
             }
+            .assistantButton()
             .task(id: refreshKey) {
                 guard refreshKey.active else { return }
                 model.rollDays()

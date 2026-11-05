@@ -89,6 +89,7 @@ struct HomeScreen: View {
                         }
                     #endif
                 }
+                .assistantButton()
                 .accountButton()
                 // Each appearance: the first load, or a refetch if the library changed while away.
                 .task {

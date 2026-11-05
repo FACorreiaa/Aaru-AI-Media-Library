@@ -66,6 +66,7 @@ struct LibraryView: View {
                 .onChange(of: query) { shown = Paging.pageSize }
                 .onChange(of: filter) { shown = Paging.pageSize }
                 .toolbar { toolbar }
+                .assistantButton()
                 .accountButton()
                 .refreshable { await library.sync(api: api) }
                 .refreshesOnCommand(.library) { await library.sync(api: api) }

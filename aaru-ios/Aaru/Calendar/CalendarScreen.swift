@@ -84,6 +84,7 @@ struct CalendarScreen: View {
                     }
                     ToolbarItem(placement: .secondaryAction) { filterMenu }
                 }
+                .assistantButton()
                 .safeAreaInset(edge: .top, spacing: 0) {
                     VStack(spacing: 0) {
                         if switchUnderBar {

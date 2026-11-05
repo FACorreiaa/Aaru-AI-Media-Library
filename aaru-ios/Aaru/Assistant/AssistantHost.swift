@@ -49,6 +49,9 @@ private struct AssistantHost: ViewModifier {
 
     func body(content: Content) -> some View {
         content
+            // The card is an overlay, so a Mac window toolbar above it would stay live: the screen
+            // under an open card takes no input. The overlay is added below, outside this.
+            .disabled(isOpen)
             .environment(\.assistantHostID, hostID)
             // The card's own swipe must not take the sheet under it along.
             .interactiveDismissDisabled(isSheet && isOpen)
@@ -65,7 +68,7 @@ private struct AssistantHost: ViewModifier {
                     model.closed()
                 }
             }
-            // A share link or ⌘K: every host level goes, so the next sheet or the root card can show.
+            // A share link, History or ⌘K: every host level goes, so the next sheet or card can show.
             .onChange(of: router?.closeSheetsRequest) {
                 openedTitle = nil
                 if isSheet {

@@ -19,6 +19,8 @@ struct TitleDetailView: View {
     /// Nil in previews and outside the signed-in app.
     @Environment(GroupsModel.self) private var groups: GroupsModel?
     @Environment(ToastCenter.self) private var toasts: ToastCenter?
+    /// Nil in previews and outside the signed-in app.
+    @Environment(AssistantModel.self) private var assistant: AssistantModel?
     @State private var openEpisode: EpisodeKey?
     @State private var expandedSeasons: Set<Int> = []
     @Environment(\.dismiss) private var dismiss
@@ -90,6 +92,9 @@ struct TitleDetailView: View {
             }
             ToolbarItem(placement: .secondaryAction) { moreMenu }
         }
+        .assistantButton(titleID: entry.title.id)
+        // Aaru ticked an episode or changed a status behind the card: show it.
+        .onChange(of: assistant?.libraryChanges) { Task { await load() } }
         // Outside the menu: a dialog attached inside one closes with it.
         .confirmationDialog(
             "Remove “\(entry.title.title)” from your library?",

@@ -46,6 +46,7 @@ struct InsightsView: View {
                 }
             }
         }
+        .assistantButton()
         .task(id: model.period) { await model.load() }
         .refreshable { await model.load() }
         // View → Refresh (⌘R) while Insights is showing.

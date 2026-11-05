@@ -128,8 +128,9 @@ final class AppRouter {
     var showsHistoryPane = false
     /// Mac: bumped to ask the main window to open the Settings scene.
     private(set) var settingsWindowRequest = 0
-    /// Bumped when a share link opens (SHR-002): the sheets the app shows from the top close, so
-    /// the share sheet can take their place. One sheet can't be shown over another from here.
+    /// Bumped by `closeSheets()`, which a share link (SHR-002), History and ⌘K call: the sheets the
+    /// app shows from the top close, so what opens next can take their place. One sheet can't be
+    /// shown over another from here.
     private(set) var closeSheetsRequest = 0
 
     /// The Assistant card (ASK-009); nil is closed.

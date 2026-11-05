@@ -44,6 +44,7 @@ struct TitlePreviewView: View {
             LibraryEntryDestination(id: itemID, api: api, library: library, lists: lists)
         } else if let title {
             page(title)
+                .assistantButton(titleID: title.id)
                 .toolbar {
                     ToolbarItem(placement: .primaryAction) {
                         Button("Share", systemImage: "square.and.arrow.up") { shares = true }

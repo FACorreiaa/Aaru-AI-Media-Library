@@ -80,6 +80,7 @@ struct KindScreen: View {
                         Button("Search", systemImage: "magnifyingglass") { router.showsSearch = true }
                     }
                 }
+                .assistantButton()
                 .task { await discover.loadIfNeeded() }
                 .task {
                     if kind == .music {
