@@ -34,51 +34,50 @@ private enum GroupRoute: Hashable {
     case channel(group: String, channel: String)
 }
 
-/// iPhone: one column, pushed. The path is a `NavigationPath`, not `[GroupRoute]`, so Friends'
-/// post screen (`PostRoute`, registered in `FriendsContent`) can push onto it too.
+/// iPhone: one column, pushed on More's stack (NAV-005), where `AppTab.groups` sits at the bottom.
+/// That path is a `NavigationPath`, so Friends' post screen (`PostRoute`, registered in
+/// `FriendsContent`) can push onto it too.
 private struct GroupsStack: View {
     let groups: GroupsModel
     let social: SocialModel?
     let board: BoardModel?
     @Environment(AppRouter.self) private var router
-    @State private var path = NavigationPath()
-    /// The bottom of `path` (Friends or a group): a `NavigationPath` cannot be read back.
+    /// The route just above Groups on the stack (Friends or a group): a `NavigationPath` cannot be
+    /// read back.
     @State private var root: GroupRoute?
     @State private var sheet: GroupSheet?
     @State private var confirm: GroupConfirm?
 
     var body: some View {
-        NavigationStack(path: $path) {
-            GroupsHome(
-                groups: groups,
-                onOpen: { show([.group($0.id)]) },
-                onCreate: { sheet = .create }
-            )
-            #if os(iOS)
-            .toolbar {
-                if social != nil, board != nil {
-                    ToolbarItem(placement: .topBarLeading) {
-                        Button("Friends", systemImage: "person.2") { router.showsFriendsInGroups = true }
-                    }
+        GroupsHome(
+            groups: groups,
+            onOpen: { show([.group($0.id)]) },
+            onCreate: { sheet = .create }
+        )
+        #if os(iOS)
+        .toolbar {
+            if social != nil, board != nil {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Friends", systemImage: "person.2") { router.showsFriendsInGroups = true }
                 }
             }
-            #endif
-            .navigationDestination(for: GroupRoute.self) { route in
-                switch route {
-                case .friends:
-                    if let social, let board {
-                        FriendsContent(model: social, board: board)
-                    }
-                case let .group(groupID):
-                    ChannelListView(
-                        groups: groups, groupID: groupID,
-                        present: { sheet = $0 }, confirm: { confirm = $0 },
-                        onOpen: { path.append(GroupRoute.channel(group: groupID, channel: $0.id)) }
-                    )
-                case let .channel(groupID, channelID):
-                    ChannelDestination(groups: groups, groupID: groupID, channelID: channelID) {
-                        sheet = .members(groupID)
-                    }
+        }
+        #endif
+        .navigationDestination(for: GroupRoute.self) { route in
+            switch route {
+            case .friends:
+                if let social, let board {
+                    FriendsContent(model: social, board: board)
+                }
+            case let .group(groupID):
+                ChannelListView(
+                    groups: groups, groupID: groupID,
+                    present: { sheet = $0 }, confirm: { confirm = $0 },
+                    onOpen: { router.morePath.append(GroupRoute.channel(group: groupID, channel: $0.id)) }
+                )
+            case let .channel(groupID, channelID):
+                ChannelDestination(groups: groups, groupID: groupID, channelID: channelID) {
+                    sheet = .members(groupID)
                 }
             }
         }
@@ -90,7 +89,7 @@ private struct GroupsStack: View {
                 show([.group(id), .channel(group: id, channel: detail.group.defaultChannelId)])
             },
             onChannelCreated: { groupID, channel in
-                path.append(GroupRoute.channel(group: groupID, channel: channel.id))
+                router.morePath.append(GroupRoute.channel(group: groupID, channel: channel.id))
             },
             onShowMembers: { sheet = .members($0) }
         ))
@@ -115,8 +114,9 @@ private struct GroupsStack: View {
                 show([])
             }
         }
-        .onChange(of: path.isEmpty) { _, empty in
-            guard empty else { return }
+        // Back at Groups' own page, with only Groups left on the stack.
+        .onChange(of: router.morePath.count) { _, count in
+            guard count <= 1 else { return }
             if root == .friends {
                 router.showsFriendsInGroups = false
             }
@@ -124,9 +124,11 @@ private struct GroupsStack: View {
         }
     }
 
-    /// Replaces the whole stack, remembering what sits at its bottom.
+    /// Replaces everything above Groups, remembering what sits just above it.
     private func show(_ routes: [GroupRoute]) {
-        path = NavigationPath(routes)
+        var path = NavigationPath([AppTab.groups])
+        routes.forEach { path.append($0) }
+        router.morePath = path
         root = routes.first
         if root != .friends, router.showsFriendsInGroups {
             router.showsFriendsInGroups = false

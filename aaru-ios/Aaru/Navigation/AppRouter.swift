@@ -1,12 +1,16 @@
 import Foundation
 import Observation
+import SwiftUI
 
 /// The app's destinations (DESIGN.md §18), in sidebar order. iPhone's tab bar shows the first
-/// four and More, which iOS builds from the rest of the compact tabs: Groups, Books, Manga, Music
-/// and Sports. Lists, Friends, Insights and Settings have no tab there and are reached from
-/// Library (Lists, Insights), Groups and Friends & privacy (Friends), and the account button.
+/// four and More, Aaru's own list (`MoreScreen`) of Groups, Books, Manga, Music and Sports, each
+/// pushed on More's one stack (NAV-005). Lists, Friends, Insights and Settings have no tab there
+/// and are reached from Library (Lists, Insights), Groups and Friends & privacy (Friends), and
+/// the account button.
 enum AppTab: String, CaseIterable, Identifiable {
     case home, discover, library, calendar, lists, friends, groups, books, manga, music, sports, insights, settings
+    /// iPhone's fifth tab: the list of the `more` destinations. Never in a sidebar.
+    case moreMenu
 
     var id: String {
         rawValue
@@ -27,6 +31,7 @@ enum AppTab: String, CaseIterable, Identifiable {
         case .sports: "Sports"
         case .insights: "Insights"
         case .settings: "Settings"
+        case .moreMenu: "More"
         }
     }
 
@@ -45,6 +50,7 @@ enum AppTab: String, CaseIterable, Identifiable {
         case .sports: "sportscourt"
         case .insights: "chart.bar"
         case .settings: "gearshape"
+        case .moreMenu: "ellipsis"
         }
     }
 
@@ -79,12 +85,12 @@ enum AppTab: String, CaseIterable, Identifiable {
     /// The Mac's Go menu, in sidebar order; ⌘1…⌘9 go to the first nine.
     static let goMenu: [AppTab] = primary + more + [.insights]
 
-    /// iPhone's tabs, in order: the first four sit in the bar and iOS gathers the rest under More.
-    static let compact: [AppTab] = [.home, .discover, .library, .calendar] + more
+    /// iPhone's tabs, in order. The `more` destinations are pushed from the last (NAV-005).
+    static let compact: [AppTab] = [.home, .discover, .library, .calendar, .moreMenu]
 
-    /// Has a tab on iPhone, in the bar or under More. The rest are sidebar-only (§18, UX-001).
+    /// Has a place on iPhone, in the bar or under More. The rest are sidebar-only (§18, UX-001).
     var isInCompactTabBar: Bool {
-        Self.compact.contains(self)
+        Self.compact.contains(self) || Self.more.contains(self)
     }
 }
 
@@ -94,7 +100,27 @@ enum AppTab: String, CaseIterable, Identifiable {
 @MainActor
 @Observable
 final class AppRouter {
-    var tab: AppTab = .home
+    var tab: AppTab = .home {
+        didSet { showInMore() }
+    }
+
+    /// iPhone: More's one stack (NAV-005). A `more` destination sits at the bottom, with whatever
+    /// that destination pushed above it. Emptied by a pop or the tab bar, it goes back to the list.
+    var morePath = NavigationPath() {
+        didSet {
+            guard morePath.isEmpty, moreRoot != nil else { return }
+            moreRoot = nil
+            // Friends lives on this stack on iPhone, so it left with it.
+            showsFriendsInGroups = false
+            if AppTab.more.contains(tab) {
+                tab = .moreMenu
+            }
+        }
+    }
+
+    /// The bottom of `morePath`: a `NavigationPath` cannot be read back.
+    private(set) var moreRoot: AppTab?
+
     /// Library's kind and status filter, here so Home's count chips can set it.
     var libraryFilter = LibraryFilter()
     /// Search over the catalog, as a sheet over whichever destination is showing (⌘F).
@@ -127,13 +153,27 @@ final class AppRouter {
     private(set) var refreshTick = 0
 
     /// Whether the main window is in a compact width right now (set by the root view).
-    var isCompact = false
+    var isCompact = false {
+        didSet {
+            if isCompact {
+                showInMore()
+            } else {
+                closeMore()
+                if tab == .moreMenu {
+                    tab = .home
+                }
+            }
+        }
+    }
 
     /// Whether this server has Sports on (`getSportSettings`); the Sports tab shows only then.
     var sportsAvailable = false {
         didSet {
             if !sportsAvailable, tab == .sports {
                 tab = .home
+            }
+            if !sportsAvailable, moreRoot == .sports {
+                closeMore()
             }
         }
     }
@@ -207,6 +247,29 @@ final class AppRouter {
         select(.sports)
     }
 
+    /// iPhone: a `more` destination shows on More's stack, from wherever it was asked for. One
+    /// already there keeps what it pushed.
+    private func showInMore() {
+        guard isCompact, AppTab.more.contains(tab), moreRoot != tab else { return }
+        moreRoot = tab
+        morePath = NavigationPath([tab])
+    }
+
+    private func closeMore() {
+        moreRoot = nil
+        morePath = NavigationPath()
+    }
+
+    /// The tab bar's selection on iPhone. A `more` destination lights up More.
+    var tabBarSelection: AppTab {
+        AppTab.more.contains(tab) ? .moreMenu : tab
+    }
+
+    /// A tap in the tab bar on iPhone. More shows what it showed last.
+    func selectInTabBar(_ selection: AppTab) {
+        tab = selection == .moreMenu ? moreRoot ?? .moreMenu : selection
+    }
+
     func select(_ destination: AppTab) {
         switch destination {
         case .lists: showLists()
@@ -269,5 +332,6 @@ final class AppRouter {
         settingsPath = []
         showsSettingsSheet = false
         settingsPane = .account
+        closeMore()
     }
 }

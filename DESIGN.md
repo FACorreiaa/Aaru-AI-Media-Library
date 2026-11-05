@@ -566,7 +566,7 @@ colour. A segmented control switches **Favorites** and **Schedule**.
 - **Refresh.** Every 90 s while the tab is visible and a live game is on screen; never a spinner
   over content that is already there. "Data: TheSportsDB" closes the tab, small and muted.
 - **Settings.** A Sports section holds the "Where to watch" country.
-- **Where.** In More (§18) on every client: iOS's More tab on iPhone, the More section of the
+- **Where.** In More (§18) on every client: the More tab on iPhone, the More section of the
   sidebar on iPad, Mac and the web. Hidden everywhere while the server has no sports provider.
 
 ## 13d. Books, Manga, Music (NAV-001…002, owner 2026-10-25)
@@ -1036,9 +1036,11 @@ bottom, Insights and Settings (owner, 2026-10-25).
   Insights and Settings. The floating tab bar holds Home, Discover, Library and Calendar.
 - **Mac.** The same sidebar without Settings: Settings is the Settings scene (⌘, and the app
   menu) and nothing else. A Go menu switches the rows in order, ⌘1…⌘9 for the first nine.
-- **iPhone.** The tab bar: Home · Discover · Library · Calendar · More. iOS's More lists Groups,
-  Books, Manga, Music and Sports; the Groups mention count shows on its row there (owner,
-  2026-10-25, reversing the five-tab call below). Lists opens from Library (a "Lists" row on
+- **iPhone.** The tab bar: Home · Discover · Library · Calendar · More. More lists Groups, Books,
+  Manga, Music and Sports; the Groups mention count shows on its row there and on the tab (owner,
+  2026-10-25, reversing the five-tab call below). More is Aaru's own list with one navigation
+  stack (`MoreScreen`, NAV-005), not iOS's generated More: that one wraps each page in its own
+  navigation controller, so any page with a stack showed two bars and two back buttons. Lists opens from Library (a "Lists" row on
   top and in the toolbar) and from Home's lists; Friends from a Friends button in Groups'
   toolbar and from Settings → Friends & privacy; Insights from Home's Last 7 days and Library's
   More menu; Settings from an account button (`person.crop.circle`, top trailing on Home and
@@ -1116,7 +1118,7 @@ Where each existing piece goes:
 
 **Apple, as built (audit, 2026-10-21, `docs/audit/apple.md`).**
 
-- **Shell.** iPhone: Home, Discover, Library, Calendar and iOS's More (Groups, Books, Manga,
+- **Shell.** iPhone: Home, Discover, Library, Calendar and More (Groups, Books, Manga,
   Music, Sports; since 2026-10-25), with Lists inside Library and Friends inside Groups, an account button (`person.crop.circle`, top trailing on
   Home and Library) that presents Settings as a sheet with Done. iPad and Mac:
   `.sidebarAdaptable` with every destination, Insights (and Settings on iPad) in a bottom

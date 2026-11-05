@@ -44,10 +44,9 @@ struct MainTabs: View {
         _discover = State(initialValue: DiscoverModel(api: api, library: library))
     }
 
-    /// iPhone and a compact iPad window: no sidebar, and only the compact tabs (NAV-002). iOS
-    /// shows the first four in the bar and turns the fifth into More, which lists Groups, Books,
-    /// Manga, Music and Sports; the sidebar-only destinations are left out, since a hidden
-    /// `.sidebarOnly` tab would still be counted there.
+    /// iPhone and a compact iPad window: no sidebar, and only the compact tabs (NAV-002). The
+    /// fifth is `MoreScreen`, not iOS's generated More: that one holds each destination in its own
+    /// navigation controller, so a stack inside it stacks two bars (NAV-005).
     private var compactTabBar: Bool {
         #if os(iOS)
             sizeClass == .compact
@@ -63,9 +62,9 @@ struct MainTabs: View {
 
     var body: some View {
         @Bindable var router = router
-        TabView(selection: $router.tab) {
+        TabView(selection: tabSelection) {
             if compactTabBar {
-                ForEach(AppTab.compact.filter(isAvailable)) { destination in
+                ForEach(AppTab.compact) { destination in
                     tab(for: destination, placement: .automatic)
                 }
             } else {
@@ -229,13 +228,13 @@ struct MainTabs: View {
         }
     }
 
-    /// One destination's tab. The Groups mention badge rides on its tab: in the sidebar, and on
-    /// its row under More on iPhone.
+    /// One destination's tab. The Groups mention badge rides on its tab in the sidebar, and on
+    /// More on iPhone (with its row in the list).
     private func tab(for destination: AppTab, placement: TabPlacement) -> some TabContent<AppTab> {
         Tab(destination.title, systemImage: destination.symbol, value: destination) {
             screen(for: destination)
         }
-        .badge(destination == .groups ? groups.mentionTotal : 0)
+        .badge(destination == .groups || destination == .moreMenu ? groups.mentionTotal : 0)
         .tabPlacement(placement)
     }
 
@@ -259,6 +258,10 @@ struct MainTabs: View {
             ListsScreen(lists: lists, library: library, api: api)
         case .friends:
             FriendsScreen(social: settings.models.social, board: settings.models.board)
+        case .moreMenu:
+            MoreScreen(destinations: AppTab.more.filter(isAvailable), mentions: groups.mentionTotal) { destination in
+                onMoreStack(destination)
+            }
         default:
             moreScreen(for: destination)
         }
@@ -275,12 +278,7 @@ struct MainTabs: View {
                 KindScreen(kind: kind, api: api, library: library, lists: lists, discover: discover)
             }
         case .sports:
-            // Under iPhone's More, More's navigation bar is the stack: a second one stacks two bars.
-            if compactTabBar {
-                SportsView(api: api)
-            } else {
-                SportsScreen(api: api)
-            }
+            SportsScreen(api: api)
         case .insights:
             NavigationStack {
                 InsightsView(api: api, library: library)
@@ -309,6 +307,42 @@ private struct OptionalUnlockToast: ViewModifier {
             content.unlockToast(model)
         } else {
             content
+        }
+    }
+}
+
+// MARK: iPhone's More (NAV-005)
+
+private extension MainTabs {
+    /// The TabView's selection: on iPhone a `more` destination selects More.
+    var tabSelection: Binding<AppTab> {
+        Binding(
+            get: { compactTabBar ? router.tabBarSelection : router.tab },
+            set: { selection in
+                if compactTabBar {
+                    router.selectInTabBar(selection)
+                } else {
+                    router.tab = selection
+                }
+            }
+        )
+    }
+
+    /// A `more` destination on More's one stack (NAV-005): the same pages without a stack of their
+    /// own. Groups' iPhone layout is already that.
+    @ViewBuilder
+    func onMoreStack(_ destination: AppTab) -> some View {
+        switch destination {
+        case .groups:
+            GroupsScreen(groups: groups, social: settings.models.social, board: settings.models.board)
+        case .books, .manga, .music:
+            if let kind = destination.kind {
+                KindContent(kind: kind, api: api, library: library, lists: lists, discover: discover)
+            }
+        case .sports:
+            SportsView(api: api)
+        default:
+            EmptyView()
         }
     }
 }
