@@ -92,6 +92,12 @@ struct ChatFrameTests {
         #expect(parse([Array(text.utf8)]) == ["delta:b"])
     }
 
+    @Test func skipsALineThatIsNotUTF8() {
+        let broken = Array("event: delta\ndata: {\"text\":\"".utf8) + [0xFF] + Array("\"}\n\n".utf8)
+        let next = Array("event: delta\ndata: {\"text\":\"b\"}\n\n".utf8)
+        #expect(parse([broken + next]) == ["delta:b"])
+    }
+
     @Test func joinsMultipleDataLinesWithANewline() {
         let text = "event: delta\ndata: {\"text\":\ndata: \"a\"}\n\n"
         #expect(parse([Array(text.utf8)]) == ["delta:a"])

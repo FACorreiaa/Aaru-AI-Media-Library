@@ -56,6 +56,8 @@ final class AssistantModel {
     private static let mutedKey = "assistant.muted"
     static let maxQuestionScalars = 4000
     private static let notHeard = "I didn't catch that. Try again, or type."
+    /// A recorder that stops itself from here on has reached its 60 s limit.
+    private static let capSeconds: Double = 59
 
     @ObservationIgnored private let api: Client?
     @ObservationIgnored private let library: LibraryModel
@@ -78,9 +80,7 @@ final class AssistantModel {
         Task { [weak self] in
             for await _ in NotificationCenter.default.notifications(named: .aaruChatsDeleted) {
                 guard let self else { return }
-                await reset()
-                // Only the chats went: this account is still signed in, so the owl comes back.
-                await refreshStatus()
+                await chatsDeleted()
             }
         }
     }
@@ -174,8 +174,17 @@ final class AssistantModel {
         libraryChanges += 1
     }
 
-    /// Sign-out and Delete my chats: everything `closed()` does, plus the turns and the thread.
-    /// All of it but the thread is done before the first suspension, so nothing can race it.
+    /// Delete my chats: the turns, the plans answered in them and the thread. Availability stays:
+    /// this account is still signed in, and offline a fresh status read would hide the owl.
+    func chatsDeleted() async {
+        turns = []
+        decidedPlans = [:]
+        await thread?.reset()
+    }
+
+    /// Sign-out: everything `closed()` does, plus the turns and the thread. All of it but the
+    /// thread is done before the first suspension, so nothing can race it. Running it twice is
+    /// harmless.
     func reset() async {
         closed()
         accountToken += 1
@@ -329,10 +338,12 @@ private extension AssistantModel {
         var detector = SilenceDetector()
         let began = ContinuousClock.now
         while phase == .listening, started == flowToken {
-            // Nil power: the recorder stopped itself at its limit, or the system took the mic.
-            guard let power = recorder.power() else { return .cap }
+            let elapsed = (ContinuousClock.now - began) / .seconds(1)
+            // Nil power: the recorder stopped. At its 60 s limit that is the whole question; any
+            // earlier the system paused it (a call), and half a question is not sent.
+            guard let power = recorder.power() else { return elapsed >= Self.capSeconds ? .cap : .noSpeech }
             level = Self.meterLevel(power)
-            if let stop = detector.feed(power: power, at: (ContinuousClock.now - began) / .seconds(1)) {
+            if let stop = detector.feed(power: power, at: elapsed) {
                 return stop
             }
             try? await Task.sleep(for: .milliseconds(100))
