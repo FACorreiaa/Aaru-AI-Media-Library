@@ -16,9 +16,13 @@ struct AaruCommands: Commands {
                 .disabled(!session.isSignedIn)
         }
         CommandGroup(after: .textEditing) {
-            Button("Search Titles") { router.showsSearch = true }
-                .keyboardShortcut("f", modifiers: .command)
-                .disabled(!session.isSignedIn)
+            Button("Search Titles") {
+                // The card is an overlay, so this stays active and Search would cover a live card.
+                router.closeAssistant()
+                router.showsSearch = true
+            }
+            .keyboardShortcut("f", modifiers: .command)
+            .disabled(!session.isSignedIn)
         }
         CommandGroup(before: .toolbar) {
             Button("Refresh") { router.refresh() }

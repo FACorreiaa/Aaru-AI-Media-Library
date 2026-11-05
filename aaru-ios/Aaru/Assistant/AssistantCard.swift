@@ -28,7 +28,8 @@ struct AssistantCard: View {
 
     /// Its own, so a Plan's Undo toast shows in the card and not dimmed behind it.
     @State private var toasts = ToastCenter()
-    @State private var dragOffset: CGFloat = 0
+    /// Back to zero when the swipe ends, however it ends: a cancelled gesture never calls `onEnded`.
+    @GestureState private var dragOffset: CGFloat = 0
     @State private var contentHeight: CGFloat = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     #if os(iOS)
@@ -55,12 +56,18 @@ struct AssistantCard: View {
                 .padding(.horizontal, AaruSpace.medium)
                 .padding(.bottom, AaruSpace.small)
                 .offset(y: dragOffset)
+                // Follows the finger as it is; only the way back to rest is animated.
+                .animation(dragOffset == 0 ? settle : nil, value: dragOffset)
                 .frame(maxHeight: Self.maxHeight(in: container.size.height), alignment: .bottom)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
         }
         // This order: the toast reads the center from outside it, and the Plan's from inside.
         .undoToast()
         .toastCenter(toasts)
+    }
+
+    private var settle: Animation? {
+        reduceMotion ? nil : .spring(duration: AaruMotion.base)
     }
 
     /// 70% of the container, which the keyboard has already taken its share of. A phone on its side
@@ -152,17 +159,16 @@ struct AssistantCard: View {
             .contentShape(.rect)
     }
 
-    /// On the grabber and header only: the turns' scroll view keeps its own drag.
+    /// On the grabber and header only: the turns' scroll view keeps its own drag. Global, because
+    /// the offset moves the card and a local space would move with it.
     private var swipeToClose: some Gesture {
-        DragGesture()
-            .onChanged { dragOffset = max(0, $0.translation.height) }
+        DragGesture(coordinateSpace: .global)
+            .updating($dragOffset) { drag, offset, _ in
+                offset = max(0, drag.translation.height)
+            }
             .onEnded { drag in
                 if drag.translation.height > Self.closeDistance || drag.velocity.height > Self.closeSpeed {
                     onClose()
-                } else {
-                    withAnimation(reduceMotion ? nil : .spring(duration: AaruMotion.base)) {
-                        dragOffset = 0
-                    }
                 }
             }
     }

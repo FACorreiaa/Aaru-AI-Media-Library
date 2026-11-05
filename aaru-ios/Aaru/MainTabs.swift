@@ -194,16 +194,19 @@ struct MainTabs: View {
             // PushInbox; this view only exists signed in, so it reads it on appear too (UX-012).
             .onChange(of: PushInbox.shared.planID, initial: true) { _, id in
                 guard let id else { return }
+                router.closeAssistant()
                 linkedPlan = LinkedTitle(id: id)
                 PushInbox.shared.planID = nil
             }
             .onChange(of: PushInbox.shared.importID, initial: true) { _, id in
                 guard let id else { return }
+                router.closeAssistant()
                 linkedImport = LinkedTitle(id: id)
                 PushInbox.shared.importID = nil
             }
             .onChange(of: PushInbox.shared.libraryItemID, initial: true) { _, id in
                 guard let id else { return }
+                router.closeAssistant()
                 linkedTitle = LinkedTitle(id: id)
                 PushInbox.shared.libraryItemID = nil
             }

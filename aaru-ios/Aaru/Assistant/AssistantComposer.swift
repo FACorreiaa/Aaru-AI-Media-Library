@@ -11,13 +11,27 @@ struct AssistantComposer: View {
     @FocusState private var isFocused: Bool
     @Environment(\.openURL) private var openURL
 
+    private var question: String {
+        text.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var isTooLong: Bool {
+        question.unicodeScalars.count > AssistantModel.maxQuestionScalars
+    }
+
     private var canSend: Bool {
-        model.phase == .idle && !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        model.phase == .idle && !question.isEmpty && !isTooLong
+    }
+
+    /// One muted line above the field. The words stay, so they can be cut down.
+    private var problem: String? {
+        let showsField = model.phase != .listening && model.phase != .reading
+        return showsField && isTooLong ? "That's too long for Aaru. Try something shorter." : model.voiceProblem
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: AaruSpace.small) {
-            if let problem = model.voiceProblem {
+            if let problem {
                 Text(problem)
                     .font(.footnote)
                     .foregroundStyle(Color(.muted))
@@ -143,7 +157,7 @@ struct AssistantComposer: View {
         #endif
     }
 
-    /// Keeps the words when the model refused them, so a question over the limit is not lost.
+    /// Keeps the words if the model refused them.
     private func send() {
         guard canSend else { return }
         model.send(text)

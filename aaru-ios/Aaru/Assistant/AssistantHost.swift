@@ -65,12 +65,14 @@ private struct AssistantHost: ViewModifier {
                     model.closed()
                 }
             }
-            // A sheet can go with the card still up (a share link closes sheets): nothing would
-            // close it then, and the mic would stay on.
-            .onDisappear {
-                guard isSheet, isOpen else { return }
-                router?.closeAssistant()
+            // A share link or ⌘K: every host level goes, so the next sheet or the root card can show.
+            .onChange(of: router?.closeSheetsRequest) {
+                openedTitle = nil
+                if isSheet {
+                    dismiss()
+                }
             }
+            .onDisappear(perform: hostDisappeared)
     }
 
     private var overlay: some View {
@@ -95,6 +97,18 @@ private struct AssistantHost: ViewModifier {
         .animation(rise, value: isOpen)
     }
 
+    /// A sheet can go with the card still up: nothing else would close it, and the mic would stay
+    /// on. The root goes with its window, and `onChange` goes with it, so it closes the model itself;
+    /// the model and the router outlive the window.
+    private func hostDisappeared() {
+        if !isSheet {
+            router?.closeAssistant()
+            model?.closed()
+        } else if isOpen {
+            router?.closeAssistant()
+        }
+    }
+
     private func open(_ title: TitleSummary) {
         router?.closeAssistant()
         openedTitle = CatalogHit(title)
@@ -102,13 +116,11 @@ private struct AssistantHost: ViewModifier {
 
     private func showHistory() {
         guard let router else { return }
-        router.closeAssistant()
         #if os(iOS)
             // History is in a sheet on iPhone and a tab on iPad, and one sheet can't show over
-            // another from the root: this one closes first, as `PlanSheet` does.
+            // another from the root: every level closes first, as a share link does.
             if isSheet {
                 router.closeSheets()
-                dismiss()
                 Task {
                     try? await Task.sleep(for: .milliseconds(450))
                     router.openHistory()
@@ -116,6 +128,7 @@ private struct AssistantHost: ViewModifier {
                 return
             }
         #endif
+        router.closeAssistant()
         router.openHistory()
     }
 }

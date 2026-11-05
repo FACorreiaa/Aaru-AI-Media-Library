@@ -260,8 +260,11 @@ final class AppRouter {
         return true
     }
 
-    /// Closes Search, the Settings sheet and the linked sheets MainTabs shows (`closeSheetsRequest`).
+    /// Closes the Assistant card, Search, the Settings sheet, the linked sheets MainTabs shows and
+    /// every card host's sheets (`closeSheetsRequest`). The card first: whatever opens next would
+    /// leave it live behind a sheet, mic and all.
     func closeSheets() {
+        assistant = nil
         showsSearch = false
         showsSettingsSheet = false
         closeSheetsRequest += 1

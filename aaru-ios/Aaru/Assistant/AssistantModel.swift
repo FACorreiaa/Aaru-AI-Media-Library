@@ -54,7 +54,7 @@ final class AssistantModel {
     }
 
     private static let mutedKey = "assistant.muted"
-    private static let maxQuestionScalars = 4000
+    static let maxQuestionScalars = 4000
     private static let notHeard = "I didn't catch that. Try again, or type."
 
     @ObservationIgnored private let api: Client?
