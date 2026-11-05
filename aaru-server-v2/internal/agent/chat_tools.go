@@ -50,6 +50,7 @@ type ChatTools struct {
 	deps ChatDeps
 
 	plan          *plans.Plan
+	applied       bool
 	actionID      *uuid.UUID
 	actionSummary string
 }
@@ -118,7 +119,8 @@ func (t *ChatTools) Definitions() []model.Tool {
 	return append(out, model.Tool{
 		Name: "apply_library_patch",
 		Description: "Change the user's library. One item and at most one episode applies at once, as a tap does " +
-			"and the user can undo it; anything larger, and any removal, becomes a request the user approves in Aaru. " +
+			"and the user can undo it, once per reply; anything larger, and any removal, becomes a request the user " +
+			"approves in Aaru. Put everything the user asked for in one call. " +
 			"Never say something changed unless the answer says Applied. Add by a ref from search_titles; " +
 			"update, episodes and remove take a ref from read_my_library.",
 		InputSchema: schema(map[string]any{
@@ -475,10 +477,25 @@ func (t *ChatTools) patchInput(raw json.RawMessage) (PatchInput, error) {
 	return in, nil
 }
 
+// errOneTapPerTurn is a second tap-sized change in one turn. A turn offers one Undo, so "mark A, B
+// and C as watched" must not become three writes with an Undo for the last.
+var errOneTapPerTurn = toolError("Nothing was changed by this call: one single change already went through in this " +
+	"reply, and only one can. Put all the remaining changes in one apply_library_patch call so the user can " +
+	"approve them together. If only one remains, tell the user it was not made and that they can ask again.")
+
 func (t *ChatTools) patch(ctx context.Context, raw json.RawMessage) (string, error) {
 	in, err := t.patchInput(raw)
 	if err != nil {
 		return "", err
+	}
+	if t.applied {
+		tap, err := IsTapSizedPatch(in)
+		if err != nil {
+			return "", err
+		}
+		if tap {
+			return "", errOneTapPerTurn
+		}
 	}
 	res, err := t.deps.Tools.ChatPatch(ctx, in, t.User)
 	if err != nil {
@@ -489,6 +506,7 @@ func (t *ChatTools) patch(ctx context.Context, raw json.RawMessage) (string, err
 		return "This needs approval in Aaru: " + res.Plan.Summary +
 			". Nothing has changed yet. Tell the user to review the request in Aaru.", nil
 	}
+	t.applied = true
 	if res.ActionID != nil {
 		t.actionID = res.ActionID
 		t.actionSummary = t.summaryOf(ctx, *res.ActionID)

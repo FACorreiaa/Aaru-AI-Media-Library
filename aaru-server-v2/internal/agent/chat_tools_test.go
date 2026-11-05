@@ -187,6 +187,81 @@ func TestPatchToolUpdatesByLibraryRef(t *testing.T) {
 	assert.Equal(t, 1, f.count(`SELECT count(*)::int FROM library_items WHERE user_id = $1 AND status = 'dropped'`, f.user))
 }
 
+// A turn offers one Undo, so it applies one tap: "mark A, B and C" must not become three writes.
+func TestPatchToolAppliesOnePerTurn(t *testing.T) {
+	add := func(ref string) map[string]any {
+		return map[string]any{"changes": []any{map[string]any{"op": "add", "ref": ref, "status": "wishlist"}}}
+	}
+	setup := func(t *testing.T) (*chatToolsFixture, *agent.ChatTools) {
+		t.Helper()
+		f := newChatToolsFixture(t)
+		f.withHit("905")
+		f.withHit("906")
+		f.withHit("907")
+		c := f.chatTools(f.user)
+		out, isErr := run(t, c, "search_titles", map[string]any{"query": "hit", "kind": "movie"})
+		require.False(t, isErr, out)
+		out, isErr = run(t, c, "apply_library_patch", add("r1"))
+		require.False(t, isErr, out)
+		require.Contains(t, out, "Applied")
+		return f, c
+	}
+	actions := func(f *chatToolsFixture) []uuid.UUID {
+		list, err := f.lib.Store.Actions(f.ctx, f.user, 10)
+		require.NoError(f.t, err)
+		ids := make([]uuid.UUID, len(list))
+		for i, a := range list {
+			ids[i] = a.ID
+		}
+		return ids
+	}
+
+	t.Run("a second single change is refused", func(t *testing.T) {
+		f, c := setup(t)
+		first := *c.ActionID()
+		summary := c.ActionSummary()
+		assert.Contains(t, summary, "Title 905")
+
+		out, isErr := run(t, c, "apply_library_patch", add("r2"))
+
+		assert.True(t, isErr, "a tool error the model can read")
+		assert.Contains(t, out, "Nothing was changed")
+		assert.Contains(t, out, "one apply_library_patch call")
+		assert.NotContains(t, out, "Applied")
+		assert.Equal(t, 1, f.count(`SELECT count(*)::int FROM library_items WHERE user_id = $1`, f.user))
+		assert.Equal(t, []uuid.UUID{first}, actions(f), "one write in the journal")
+		assert.Equal(t, first, *c.ActionID(), "the Undo stays the first write's")
+		assert.Equal(t, summary, c.ActionSummary())
+		assert.Nil(t, c.Plan())
+	})
+
+	t.Run("a larger change still becomes a plan", func(t *testing.T) {
+		f, c := setup(t)
+		first := *c.ActionID()
+
+		out, isErr := run(t, c, "apply_library_patch", map[string]any{"changes": []any{
+			map[string]any{"op": "add", "ref": "r2"}, map[string]any{"op": "add", "ref": "r3"},
+		}})
+
+		require.False(t, isErr, out)
+		assert.Contains(t, out, "needs approval in Aaru")
+		require.NotNil(t, c.Plan())
+		assert.Equal(t, 1, f.count(`SELECT count(*)::int FROM library_items WHERE user_id = $1`, f.user))
+		assert.Equal(t, first, *c.ActionID())
+	})
+
+	t.Run("a next turn applies again", func(t *testing.T) {
+		f, c := setup(t)
+		next := f.chatTools(f.user)
+		out, isErr := run(t, next, "search_titles", map[string]any{"query": "hit", "kind": "movie"})
+		require.False(t, isErr, out)
+		out, isErr = run(t, next, "apply_library_patch", add("r2"))
+		require.False(t, isErr, out)
+		assert.Contains(t, out, "Applied")
+		assert.NotEqual(t, *c.ActionID(), *next.ActionID())
+	})
+}
+
 func TestPatchToolPlan(t *testing.T) {
 	f := newChatToolsFixture(t)
 	f.withHit("901")

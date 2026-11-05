@@ -410,7 +410,7 @@ func (t *Tools) ChatPatch(ctx context.Context, in PatchInput, user uuid.UUID) (C
 	if err != nil {
 		return ChatPatchResult{}, err
 	}
-	if len(changes) != 1 || !changes[0].IsTapSized() {
+	if !tapSized(changes) {
 		plan, err := t.Plans.ProposeFor(ctx, changes, plans.Origin{
 			UserID: user, Name: library.ChatAgentName, Caller: library.ChatCaller, SpendsCapture: true,
 			Quota: func(ctx context.Context, q *sqlc.Queries) error { return t.captureQuota(ctx, q, user) },
@@ -438,6 +438,19 @@ func (t *Tools) ChatPatch(ctx context.Context, in PatchInput, user uuid.UUID) (C
 		}
 	}
 	return out, nil
+}
+
+// IsTapSizedPatch says whether ChatPatch would apply in at once rather than plan it.
+func IsTapSizedPatch(in PatchInput) (bool, error) {
+	changes, err := ParseChanges(in)
+	if err != nil {
+		return false, err
+	}
+	return tapSized(changes), nil
+}
+
+func tapSized(changes []plans.AgentChange) bool {
+	return len(changes) == 1 && changes[0].IsTapSized()
 }
 
 // captureQuota is Quota, with a refusal as ErrCaptureQuota.

@@ -581,6 +581,40 @@ func TestWriteInComponents(t *testing.T) {
 	assert.Equal(t, event.ActionSummary, stored.ActionSummary)
 }
 
+// The whole turn, whichever way the model spreads the calls.
+func TestTurnAppliesOneChange(t *testing.T) {
+	search := call{"search_titles", map[string]any{"query": "hit", "kind": "movie"}, "a"}
+	add := func(ref, id string) call {
+		return call{"apply_library_patch", map[string]any{"changes": []any{
+			map[string]any{"op": "add", "ref": ref, "status": "finished"},
+		}}, id}
+	}
+	for name, script := range map[string][]step{
+		"in one round": {
+			gate(true), {response: toolCalls(search, add("r1", "b"), add("r2", "c"))}, says("One done."),
+		},
+		"across rounds": {
+			gate(true), {response: toolCalls(search, add("r1", "b"))}, {response: toolCalls(add("r2", "c"))}, says("One done."),
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			f := newTurnFixture(t, script...)
+			f.withHits("910", "911")
+			f.ask("mark both as watched")
+
+			assert.Equal(t, 1, f.count(`SELECT count(*)::int FROM library_items WHERE user_id = $1`, f.user))
+			actions, err := f.lib.Store.Actions(f.ctx, f.user, 10)
+			require.NoError(t, err)
+			require.Len(t, actions, 1, "one write in the journal")
+			event := f.event("components")
+			require.NotNil(t, event.ActionID)
+			assert.Equal(t, actions[0].ID, *event.ActionID, "the Undo is the first write's")
+			assert.Contains(t, event.ActionSummary, "Title 910")
+			assert.Contains(t, f.model.everythingSeen(), "Nothing was changed", "the model is told")
+		})
+	}
+}
+
 func TestPlanInComponents(t *testing.T) {
 	f := newTurnFixture(t)
 	f.withHits("901", "902")
