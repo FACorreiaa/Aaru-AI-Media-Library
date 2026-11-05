@@ -290,6 +290,8 @@ struct MainTabs: View {
 
 private extension MainTabs {
     func open(_ url: URL) {
+        // Whatever a link opens would otherwise cover a live card, mic and all.
+        router.closeAssistant()
         // RootView opens friend invites and share links, signed in or out.
         if InviteLink(url) != nil || SharedLink(url) != nil {
             return
