@@ -4739,6 +4739,10 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/ImportRow/guessable`.
             public var guessable: Swift.Bool?
+            /// Lists this row joins once approved. A capture's order keeps its rows in order (BOOK-003).
+            ///
+            /// - Remark: Generated from `#/components/schemas/ImportRow/lists`.
+            public var lists: [Swift.String]?
             /// - Remark: Generated from `#/components/schemas/ImportRow/type`.
             public var _type: Components.Schemas.MediaType
             /// - Remark: Generated from `#/components/schemas/ImportRow/sourceKey`.
@@ -4773,6 +4777,7 @@ public enum Components {
             ///   - leftOut: Unticked in the review; the plan does not write it.
             ///   - guess:
             ///   - guessable: Match all has yet to try this unmatched row.
+            ///   - lists: Lists this row joins once approved. A capture's order keeps its rows in order (BOOK-003).
             ///   - _type:
             ///   - sourceKey:
             ///   - ids:
@@ -4789,6 +4794,7 @@ public enum Components {
                 leftOut: Swift.Bool? = nil,
                 guess: Components.Schemas.ImportRowGuess? = nil,
                 guessable: Swift.Bool? = nil,
+                lists: [Swift.String]? = nil,
                 _type: Components.Schemas.MediaType,
                 sourceKey: Swift.String? = nil,
                 ids: Components.Schemas.ExternalIds? = nil,
@@ -4805,6 +4811,7 @@ public enum Components {
                 self.leftOut = leftOut
                 self.guess = guess
                 self.guessable = guessable
+                self.lists = lists
                 self._type = _type
                 self.sourceKey = sourceKey
                 self.ids = ids
@@ -4822,6 +4829,7 @@ public enum Components {
                 case leftOut
                 case guess
                 case guessable
+                case lists
                 case _type = "type"
                 case sourceKey
                 case ids
@@ -11408,6 +11416,10 @@ public enum Components {
             public var titles: [Components.Schemas.TitleSummary]?
             /// - Remark: Generated from `#/components/schemas/ChatComponentsFrame/plan`.
             public var plan: Components.Schemas.AgentPlan?
+            /// A list Aaru sent to be matched (BOOK-003), reviewed at `/v1/imports/{id}` like any capture.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ChatComponentsFrame/importId`.
+            public var importId: Swift.String?
             /// A single change Aaru applied, undone at `/v1/actions/{id}/undo`.
             ///
             /// - Remark: Generated from `#/components/schemas/ChatComponentsFrame/actionId`.
@@ -11419,22 +11431,26 @@ public enum Components {
             /// - Parameters:
             ///   - titles:
             ///   - plan:
+            ///   - importId: A list Aaru sent to be matched (BOOK-003), reviewed at `/v1/imports/{id}` like any capture.
             ///   - actionId: A single change Aaru applied, undone at `/v1/actions/{id}/undo`.
             ///   - actionSummary:
             public init(
                 titles: [Components.Schemas.TitleSummary]? = nil,
                 plan: Components.Schemas.AgentPlan? = nil,
+                importId: Swift.String? = nil,
                 actionId: Swift.String? = nil,
                 actionSummary: Swift.String? = nil
             ) {
                 self.titles = titles
                 self.plan = plan
+                self.importId = importId
                 self.actionId = actionId
                 self.actionSummary = actionSummary
             }
             public enum CodingKeys: String, CodingKey {
                 case titles
                 case plan
+                case importId
                 case actionId
                 case actionSummary
             }

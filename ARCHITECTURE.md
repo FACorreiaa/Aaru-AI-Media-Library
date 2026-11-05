@@ -796,6 +796,10 @@ not in the merge order, and it plans and applies like every other import (one pl
 - **Spend:** every model call records tokens and `cost_micros` in `agent_usage`, priced from
   `ANTHROPIC_PRICE_INPUT` / `ANTHROPIC_PRICE_OUTPUT` (dollars per million tokens).
 - A planned capture pushes "N ready · M need a pick" to the user's devices.
+- **Requests and orders (BOOK-003):** text that asks for titles is answered in `report_titles`, with
+  `list_name` when it wants an order, which fills `Row.Lists`. The owl's `plan_title_list`
+  (`agent.TitleListPlanner`, `imports.AgentImporter`) inserts the rows at once, as a link does, so the
+  worker plans them with no model call. Same quota, same review; the components frame carries `importId`.
 - **Match all (IMP-021):** `POST /v1/imports/{id}/match-all` searches outside any transaction, three at
   a time for 15 seconds, then saves under the job's lock; the client calls again while `remaining`
   falls. A guess joins the plan like a pick (`Row.Guess`, `Row.GuessTried`, in the row's JSON, so no

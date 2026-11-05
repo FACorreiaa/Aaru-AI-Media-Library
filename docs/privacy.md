@@ -153,10 +153,11 @@ or progress. Aaru's answer is posted in the channel like any message. Aaru keeps
 many questions you asked each day and how much text they used, to keep the service fair.
 
 **Capture.** If you paste text or send pictures to Aaru to find titles in them, Aaru sends that
-text or those pictures to Anthropic (below) to read the names of films, shows, anime and books. It is
-kept only until it has been read, and never longer than an hour, then deleted. What it found
-becomes an import you review like any other; nothing is added to your library until you approve
-it. A link you send is read for the title it names and is never opened. Aaru counts how many
+text or those pictures to Anthropic (below) to read the names of films, shows, anime and books, or,
+if your text asks for titles, to answer with some. It is kept only until it has been read, and never
+longer than an hour, then deleted. What it found becomes an import you review like any other; nothing
+is added to your library until you approve it. If you ask Aaru from the owl to add several titles, the
+titles it names become the same kind of import, and count as a capture. A link you send is read for the title it names and is never opened. Aaru counts how many
 captures you made today and how much text each used.
 
 **Your chats with Aaru.** When you ask Aaru something from the owl in the top bar, the

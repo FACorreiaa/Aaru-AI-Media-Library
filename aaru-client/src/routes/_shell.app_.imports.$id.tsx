@@ -247,8 +247,21 @@ function ImportPage() {
     </div>
   )
 
+  // BOOK-003: a capture that asked for an order saves one list.
+  const orderList = () =>
+    detail().rows.find((row) => row.lists?.length)?.lists?.[0]
+
   const rowLists = () => (
     <>
+      <Show when={orderList()}>
+        {(list) => (
+          <p class="mt-10 max-w-[56rem] text-sm text-muted">
+            {planned()
+              ? `Approve also saves these in order as the list “${list()}”.`
+              : `Saved in order as the list “${list()}”.`}
+          </p>
+        )}
+      </Show>
       <For
         each={
           [
