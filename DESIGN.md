@@ -566,7 +566,7 @@ colour. A segmented control switches **Favorites** and **Schedule**.
 - **Refresh.** Every 90 s while the tab is visible and a live game is on screen; never a spinner
   over content that is already there. "Data: TheSportsDB" closes the tab, small and muted.
 - **Settings.** A Sports section holds the "Where to watch" country.
-- **Where.** In More (§18) on every client: iOS's More tab on iPhone, the More section of the
+- **Where.** In More (§18) on every client: the More tab on iPhone, the More section of the
   sidebar on iPad, Mac and the web. Hidden everywhere while the server has no sports provider.
 
 ## 13d. Books, Manga, Music (NAV-001…002, owner 2026-10-25)
@@ -576,8 +576,21 @@ One page per kind, all in More (§18), built from one shape so they read alike:
 - **Your shelf first.** In progress, then Planned, each a short poster row in the kind's words
   (Reading / Plan to read for books and manga; Listening / Plan to listen for albums) with "See
   all" into Library filtered to that kind and status. An empty shelf says so in one quiet line.
-- **Then the kind's Discover rows** (§13a, by `kind`): Trending books; Trending manga and
-  Publishing now; New albums and Coming soon. Same cards, same Add, same "On your shelf".
+- **Then the kind's Discover rows** (§13a, by `kind`): Trending books, Classics, Science fiction,
+  Science and Business; Trending manga and Publishing now; New albums and Coming soon. Same cards,
+  same Add, same "On your shelf". A row marked `kindPageOnly` never shows on Home.
+- **Books adds** (BOOK-002), above its shelf: a card of this year's reading (Read this year · Reading
+  · Plan to read) that opens Insights and hides at all zeros; captures waiting, as on Home; and the
+  import box while the shelf is empty, which reads books only from a pasted chat, up to five
+  pictures or a photo, with a Goodreads shortcut under it. Once there are books the box moves to
+  the toolbar's `+`, in a sheet (on the web, an "Import books" button and a dialog). Its shelf also has On hold and Read rows.
+- **A planned capture is chosen row by row** (BOOK-001): its rows come before Approve, each with a
+  tick, all ticked to start, and the counts follow. Other imports keep their order and have no ticks.
+- **An order** (BOOK-003): when a capture named a list, the review says above its rows "Approve also saves
+  these in order as the list "X-Men reading order"." The Books box says it takes a request too.
+- **Match all** (IMP-021) sits on the Not matched heading of any plan still waiting, and reads "Matching
+  12 of 30" while it runs. A filled row moves to Will be added: small cover, what the catalog calls it,
+  its author, `Best guess for "what the list said"`, a tick and Change. Rows it could not fill keep Find it.
 - **Credits** name only the providers on the page: Open Library; AniList; ListenBrainz,
   MusicBrainz and the Cover Art Archive, with Ticketmaster for concerts.
 - **Music** has three views, Albums · Concerts · Listens: Albums is the shelf and rows above,
@@ -1036,9 +1049,11 @@ bottom, Insights and Settings (owner, 2026-10-25).
   Insights and Settings. The floating tab bar holds Home, Discover, Library and Calendar.
 - **Mac.** The same sidebar without Settings: Settings is the Settings scene (⌘, and the app
   menu) and nothing else. A Go menu switches the rows in order, ⌘1…⌘9 for the first nine.
-- **iPhone.** The tab bar: Home · Discover · Library · Calendar · More. iOS's More lists Groups,
-  Books, Manga, Music and Sports; the Groups mention count shows on its row there (owner,
-  2026-10-25, reversing the five-tab call below). Lists opens from Library (a "Lists" row on
+- **iPhone.** The tab bar: Home · Discover · Library · Calendar · More. More lists Groups, Books,
+  Manga, Music and Sports; the Groups mention count shows on its row there and on the tab (owner,
+  2026-10-25, reversing the five-tab call below). More is Aaru's own list with one navigation
+  stack (`MoreScreen`, NAV-005), not iOS's generated More: that one wraps each page in its own
+  navigation controller, so any page with a stack showed two bars and two back buttons. Lists opens from Library (a "Lists" row on
   top and in the toolbar) and from Home's lists; Friends from a Friends button in Groups'
   toolbar and from Settings → Friends & privacy; Insights from Home's Last 7 days and Library's
   More menu; Settings from an account button (`person.crop.circle`, top trailing on Home and
@@ -1116,7 +1131,7 @@ Where each existing piece goes:
 
 **Apple, as built (audit, 2026-10-21, `docs/audit/apple.md`).**
 
-- **Shell.** iPhone: Home, Discover, Library, Calendar and iOS's More (Groups, Books, Manga,
+- **Shell.** iPhone: Home, Discover, Library, Calendar and More (Groups, Books, Manga,
   Music, Sports; since 2026-10-25), with Lists inside Library and Friends inside Groups, an account button (`person.crop.circle`, top trailing on
   Home and Library) that presents Settings as a sheet with Done. iPad and Mac:
   `.sidebarAdaptable` with every destination, Insights (and Settings on iPad) in a bottom

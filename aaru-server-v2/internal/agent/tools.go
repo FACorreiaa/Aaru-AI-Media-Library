@@ -85,7 +85,7 @@ type Tools struct {
 	// Push tells the user an import is waiting; nil sends nothing.
 	Push *push.UserPush
 	// Quota refuses a chat plan that would spend a capture the user does not have, as the capture
-	// route's 402 or 429 (imports.Service.CheckCaptureQuota); any other error is a failure. Nil is
+	// route's 429 (imports.Service.CheckCaptureQuota); any other error is a failure. Nil is
 	// no limit. q is the plan's transaction; read through it, not the pool.
 	Quota func(ctx context.Context, q *sqlc.Queries, user uuid.UUID) error
 	// Now defaults to time.Now.
@@ -462,7 +462,7 @@ func (t *Tools) captureQuota(ctx context.Context, q *sqlc.Queries, user uuid.UUI
 	if err == nil {
 		return nil
 	}
-	if e := apperr.From(err); e != nil && (e.Status == http.StatusPaymentRequired || e.Status == http.StatusTooManyRequests) {
+	if e := apperr.From(err); e != nil && e.Status == http.StatusTooManyRequests {
 		return fmt.Errorf("%w: %s", ErrCaptureQuota, e.Message)
 	}
 	return fmt.Errorf("check capture quota: %w", err)

@@ -4,11 +4,11 @@ import ImageIO
 import UniformTypeIdentifiers
 
 /// AG-006: what one capture sends. A link alone goes as a link (the server reads it by id and
-/// never opens it); anything else typed is text; a picture goes as a JPEG.
+/// never opens it); anything else typed is text; pictures go as JPEGs, up to five (BOOK-001).
 enum CaptureContent: Equatable {
     case text(String)
     case link(String)
-    case image(Data)
+    case images([Data])
 
     init?(typed: String) {
         let text = typed.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -27,9 +27,66 @@ enum CaptureContent: Equatable {
 /// app shrinks it, turns it upright and sends a JPEG.
 enum CaptureImage {
     static let longEdge = 1568
+    /// What one capture sends at most; the server holds the same limit.
+    static let maxPictures = 5
+
+    /// What one picked picture becomes.
+    enum Pieces {
+        case jpegs([Data])
+        case tooLong
+        case unreadable
+    }
 
     static func jpeg(_ data: Data) -> Data? {
         thumbnail(data, maxPixels: longEdge).flatMap(encode)
+    }
+
+    /// The JPEGs one picture sends. A tall scrolling screenshot is cut into overlapping pieces:
+    /// shrunk whole to `longEdge` it would be about 250 px wide and unreadable (BOOK-002).
+    static func pieces(_ data: Data) -> Pieces {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+              let width = properties[kCGImagePropertyPixelWidth] as? Int,
+              let height = properties[kCGImagePropertyPixelHeight] as? Int
+        else { return .unreadable }
+        // A photo stays one picture, and is never decoded at full size. EXIF may swap the sides.
+        guard slices(width: min(width, height), height: max(width, height)).count > 1,
+              let upright = thumbnail(data, maxPixels: max(width, height))
+        else { return jpeg(data).map { .jpegs([$0]) } ?? .unreadable }
+        let rects = slices(width: upright.width, height: upright.height)
+        guard rects.count <= maxPictures else { return .tooLong }
+        let jpegs = rects.compactMap { upright.cropping(to: $0).flatMap(shrunk).flatMap(encode) }
+        return jpegs.count == rects.count ? .jpegs(jpegs) : .unreadable
+    }
+
+    /// Where to cut a picture of this size: whole up to 12:5, else pieces of 11:5 with a tenth of a
+    /// piece shared, so a line cut at one edge is whole in the next.
+    static func slices(width: Int, height: Int) -> [CGRect] {
+        guard width > 0, height * 5 > width * 12 else {
+            return [CGRect(x: 0, y: 0, width: width, height: height)]
+        }
+        let piece = width * 11 / 5
+        let step = piece - piece / 10
+        return stride(from: 0, to: height - piece / 10, by: step).map { top in
+            CGRect(x: 0, y: top, width: width, height: min(piece, height - top))
+        }
+    }
+
+    /// At most `longEdge` on its long edge.
+    private static func shrunk(_ image: CGImage) -> CGImage? {
+        let long = max(image.width, image.height)
+        guard long > longEdge else { return image }
+        let width = image.width * longEdge / long
+        let height = image.height * longEdge / long
+        guard let space = CGColorSpace(name: CGColorSpace.sRGB),
+              let context = CGContext(
+                  data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0, space: space,
+                  bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue
+              )
+        else { return nil }
+        context.interpolationQuality = .high
+        context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        return context.makeImage()
     }
 
     /// A JPEG at quality 0.85.
@@ -68,7 +125,8 @@ extension ImportJob {
             stats.unmatched == 1 ? "1 needs a pick" : nil,
             stats.unmatched > 1 ? "\(stats.unmatched) need a pick" : nil,
         ].compactMap(\.self)
-        return parts.isEmpty ? "Already in your library" : parts.joined(separator: " · ")
+        guard parts.isEmpty else { return parts.joined(separator: " · ") }
+        return stats.skipped > 0 ? "Already in your library" : "Nothing chosen"
     }
 
     /// Being read, or a plan to approve: it waits on Home.

@@ -1,21 +1,42 @@
 import AaruAPI
 import SwiftUI
 
-/// NAV-002: Books, Manga and Music, one page per kind. At the top the user's shelf for the kind
-/// (`KindShelf`), below it the kind's Discover rows with the same cards as Discover, credited to
-/// the providers shown. The rows come from the Discover model the app shares, so `/v1/discover`
-/// loads once. Music adds a segmented control for Concerts (MUS-003, while the server has them
-/// on) and Listens (MUS-008).
+/// A kind page in its own stack: a sidebar destination on iPad and Mac. On iPhone `MoreScreen`'s
+/// stack holds `KindContent` instead (NAV-005).
 struct KindScreen: View {
     let kind: MediaKind
     let api: Client?
     let library: LibraryModel
     let lists: ListsModel
     let discover: DiscoverModel
+    var imports: ImportsModel?
+
+    var body: some View {
+        NavigationStack {
+            KindContent(kind: kind, api: api, library: library, lists: lists, discover: discover, imports: imports)
+        }
+    }
+}
+
+/// NAV-002: Books, Manga and Music, one page per kind. At the top the user's shelf for the kind
+/// (`KindShelf`), below it the kind's Discover rows with the same cards as Discover, credited to
+/// the providers shown. The rows come from the Discover model the app shares, so `/v1/discover`
+/// loads once. Music adds a segmented control for Concerts (MUS-003, while the server has them
+/// on) and Listens (MUS-008).
+struct KindContent: View {
+    let kind: MediaKind
+    let api: Client?
+    let library: LibraryModel
+    let lists: ListsModel
+    let discover: DiscoverModel
+    /// Books' import box (BOOK-002). Nil in previews.
+    let imports: ImportsModel?
 
     /// Music only: Concerts, moved here from Discover.
     @State private var concerts: ConcertsModel
     @State private var listTarget: CatalogHit?
+    /// Books: the capture whose review is open.
+    @State private var openedCapture: ImportJob?
     @Environment(AppRouter.self) private var router
     @Environment(\.dynamicTypeSize) private var dynamicType
 
@@ -28,12 +49,16 @@ struct KindScreen: View {
         private let compact = false
     #endif
 
-    init(kind: MediaKind, api: Client?, library: LibraryModel, lists: ListsModel, discover: DiscoverModel) {
+    init(
+        kind: MediaKind, api: Client?, library: LibraryModel, lists: ListsModel, discover: DiscoverModel,
+        imports: ImportsModel? = nil
+    ) {
         self.kind = kind
         self.api = api
         self.library = library
         self.lists = lists
         self.discover = discover
+        self.imports = imports
         _concerts = State(initialValue: ConcertsModel(api: api))
     }
 
@@ -51,70 +76,71 @@ struct KindScreen: View {
     }
 
     var body: some View {
-        NavigationStack {
-            Group {
-                switch pane {
-                case .albums: page
-                case .concerts: concertsPane
-                case .listens: ListensContent(api: api, library: library)
+        Group {
+            switch pane {
+            case .albums: page
+            case .concerts: concertsPane
+            case .listens: ListensContent(api: api, library: library)
+            }
+        }
+        .navigationTitle(tab.title)
+        #if os(iOS)
+            .safeAreaInset(edge: .top, spacing: 0) {
+                if kind == .music {
+                    musicPicker
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 8)
+                        .background(.bar)
                 }
             }
-            .navigationTitle(tab.title)
-            #if os(iOS)
-                .safeAreaInset(edge: .top, spacing: 0) {
+        #endif
+            .toolbar {
+                #if os(macOS)
                     if kind == .music {
-                        musicPicker
-                            .padding(.horizontal, 16)
-                            .padding(.bottom, 8)
-                            .background(.bar)
+                        ToolbarItem(placement: .principal) { musicPicker.fixedSize() }
                     }
+                #endif
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Search", systemImage: "magnifyingglass") { router.showsSearch = true }
                 }
-            #endif
-                .toolbar {
-                    #if os(macOS)
-                        if kind == .music {
-                            ToolbarItem(placement: .principal) { musicPicker.fixedSize() }
-                        }
-                    #endif
-                    ToolbarItem(placement: .primaryAction) {
-                        Button("Search", systemImage: "magnifyingglass") { router.showsSearch = true }
-                    }
+            }
+            .assistantButton()
+            .modifier(BooksImportPresenter(
+                imports: kind == .book ? imports : nil, api: api, library: library, lists: lists, opened: $openedCapture
+            ))
+            .task { await discover.loadIfNeeded() }
+            .task {
+                if kind == .music {
+                    await concerts.loadSetting()
                 }
-                .assistantButton()
-                .task { await discover.loadIfNeeded() }
-                .task {
-                    if kind == .music {
-                        await concerts.loadSetting()
-                    }
+            }
+            .onChange(of: concerts.available) { _, available in
+                if !available, router.musicPane == .concerts {
+                    router.musicPane = .albums
                 }
-                .onChange(of: concerts.available) { _, available in
-                    if !available, router.musicPane == .concerts {
-                        router.musicPane = .albums
-                    }
+            }
+            // View → Refresh (⌘R) reloads the view on screen.
+            .refreshesOnCommand(tab) { await reload() }
+            .navigationDestination(for: String.self) { id in
+                LibraryEntryDestination(id: id, api: api, library: library, lists: lists)
+            }
+            .catalogDestination(api: api, library: library, lists: lists)
+            .sheet(item: $listTarget) { hit in
+                ListPickerSheet(
+                    ref: .init(_type: hit._type, ids: hit.ids, title: hit.title, year: hit.year),
+                    titleName: hit.title,
+                    lists: lists
+                )
+                .closesOnSheetsRequest()
+            }
+            .safeAreaInset(edge: .bottom) {
+                switch pane {
+                case .albums: ProblemBanner(message: discover.problem) { discover.problem = nil }
+                case .concerts: ProblemBanner(message: concerts.problem) { concerts.problem = nil }
+                case .listens: EmptyView()
                 }
-                // View → Refresh (⌘R) reloads the view on screen.
-                .refreshesOnCommand(tab) { await reload() }
-                .navigationDestination(for: String.self) { id in
-                    LibraryEntryDestination(id: id, api: api, library: library, lists: lists)
-                }
-                .catalogDestination(api: api, library: library, lists: lists)
-                .sheet(item: $listTarget) { hit in
-                    ListPickerSheet(
-                        ref: .init(_type: hit._type, ids: hit.ids, title: hit.title, year: hit.year),
-                        titleName: hit.title,
-                        lists: lists
-                    )
-                    .closesOnSheetsRequest()
-                }
-                .safeAreaInset(edge: .bottom) {
-                    switch pane {
-                    case .albums: ProblemBanner(message: discover.problem) { discover.problem = nil }
-                    case .concerts: ProblemBanner(message: concerts.problem) { concerts.problem = nil }
-                    case .listens: EmptyView()
-                    }
-                }
-                .background(Color(.paper))
-        }
+            }
+            .background(Color(.paper))
     }
 
     private func reload() async {
@@ -150,6 +176,9 @@ struct KindScreen: View {
         let rows = discover.visibleRows(of: [kind.discoverKind])
         return ScrollView {
             LazyVStack(alignment: .leading, spacing: AaruSpace.section) {
+                if kind == .book {
+                    BooksTop(api: api, imports: imports, library: library, lists: lists) { openedCapture = $0 }
+                }
                 KindShelf(kind: kind, library: library, compact: compact) { status in
                     router.showLibrary(LibraryFilter(kind: kind, status: status))
                 }

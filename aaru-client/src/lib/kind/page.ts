@@ -10,8 +10,12 @@ export type PageKind = 'book' | 'manga' | 'album'
 /** How many titles a shelf row shows before "See all". */
 export const SHELF_LIMIT = 12
 
-/** In progress first, then Planned: the two shelves a kind page leads with. */
-const SHELF_STATUSES: LibraryStatus[] = ['in_progress', 'wishlist']
+/** In progress first, then Planned: the shelves a kind page leads with. Books also keep what is
+ * paused and what was read (BOOK-002). */
+const shelfStatuses = (kind: PageKind): LibraryStatus[] =>
+  kind === 'book'
+    ? ['in_progress', 'wishlist', 'on_hold', 'finished']
+    : ['in_progress', 'wishlist']
 
 export type KindShelf = {
   status: LibraryStatus
@@ -23,12 +27,12 @@ export type KindShelf = {
   total: number
 }
 
-/** The kind's two shelves, each possibly empty. */
+/** The kind's shelves, each possibly empty. */
 export function kindShelves(
   entries: LibraryEntry[],
   kind: PageKind,
 ): KindShelf[] {
-  return SHELF_STATUSES.map((status) => {
+  return shelfStatuses(kind).map((status) => {
     const rows = shelf(entries, kind, status)
     return {
       status,

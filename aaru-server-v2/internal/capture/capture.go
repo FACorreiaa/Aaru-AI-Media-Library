@@ -7,6 +7,7 @@ package capture
 import (
 	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/db/sqlc"
+	"aaru-go-api/internal/model"
 	"context"
 	"fmt"
 	"time"
@@ -14,13 +15,22 @@ import (
 	"github.com/google/uuid"
 )
 
-// Content is what a capture sent: text, or one image (JPEG, PNG, GIF or WebP) as uploaded.
+// Content is what a capture sent: text, or images (JPEG, PNG, GIF or WebP) as uploaded.
 type Content struct {
 	// Text is set for a text capture.
 	Text string
-	// Image and MediaType are set for an image capture.
+	// Image and MediaType are set for an image capture: its first picture.
 	Image     []byte
 	MediaType string
+	// More are an image capture's other pictures, in order.
+	More []model.Image
+	// Only narrows what is read to one kind, as the Books page asks (BOOK-001). Empty reads all.
+	Only core.MediaType
+}
+
+// Images are an image capture's pictures, in order.
+func (c Content) Images() []model.Image {
+	return append([]model.Image{{Data: c.Image, MediaType: c.MediaType}}, c.More...)
 }
 
 // IsImage is whether the content is an image.
@@ -43,12 +53,13 @@ type Input struct {
 }
 
 // Title is one title a capture names, as the import plans it: always a wishlist add (the
-// import's row). SourceKey is set for a link.
+// import's row). SourceKey is set for a link; Author, when named, narrows a book's search.
 type Title struct {
 	SourceKey *string
 	Type      core.MediaType
 	Title     string
 	Year      *int
+	Author    *string
 	IDs       core.ExternalIDs
 }
 
@@ -73,8 +84,20 @@ func (s *Store) Save(ctx context.Context, in Input) error {
 	} else {
 		params.Text = &in.Content.Text
 	}
+	if in.Content.Only != "" {
+		only := string(in.Content.Only)
+		params.OnlyType = &only
+	}
 	if err := s.Q.CaptureInputSave(ctx, params); err != nil {
 		return fmt.Errorf("save capture input: %w", err)
+	}
+	for i, image := range in.Content.More {
+		err := s.Q.CaptureImageSave(ctx, sqlc.CaptureImageSaveParams{
+			JobID: in.JobID, Position: int32(i + 1), Image: image.Data, MediaType: image.MediaType,
+		})
+		if err != nil {
+			return fmt.Errorf("save capture image: %w", err)
+		}
 	}
 	return nil
 }
@@ -95,6 +118,18 @@ func (s *Store) Input(ctx context.Context, jobID uuid.UUID) (*Input, error) {
 		in.Content = Content{Image: r.Image, MediaType: *r.MediaType}
 	case r.Text != nil:
 		in.Content = Content{Text: *r.Text}
+	}
+	if r.OnlyType != nil {
+		in.Content.Only = core.MediaType(*r.OnlyType)
+	}
+	if in.Content.IsImage() {
+		more, err := s.Q.CaptureImages(ctx, jobID)
+		if err != nil {
+			return nil, fmt.Errorf("capture images: %w", err)
+		}
+		for _, image := range more {
+			in.Content.More = append(in.Content.More, model.Image{Data: image.Image, MediaType: image.MediaType})
+		}
 	}
 	return in, nil
 }

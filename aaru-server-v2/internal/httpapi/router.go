@@ -34,7 +34,7 @@ const (
 var ownBodyLimits = map[string]int64{
 	"POST /v1/imports/csv":                         imports.MaxListenUploadBytes, // listening history; exports 5 MB
 	"POST /v1/imports/cat":                         imports.MaxUploadBytes,
-	"POST /v1/imports/capture":                     imports.MaxUploadBytes, // an image; JSON has captureJSONLimit
+	"POST /v1/imports/capture":                     captureBodyLimit, // images; each form has its own limit
 	"POST /v1/chats/transcribe":                    maxChatAudioBytes,
 	"PUT /v1/me/avatar":                            social.MaxAvatarBytes,
 	"POST " + listenBrainzPath + "/submit-listens": listenBrainzMaxBody,

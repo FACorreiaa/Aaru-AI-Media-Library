@@ -33,7 +33,7 @@ This file is the working contract for anyone — human or agent — changing the
 | Catalog — air times | TVmaze (no key, CC BY-SA): exact air times and network for TMDB shows, and the next episode's time on Discover's On air (DISC-003); TMDB stays the episode source |
 | Where to watch | TMDB `watch/providers` (JustWatch data, credited): flat-rate services per country on Discover's On air (DISC-003, CAT-014 in part). The country comes from the device language, per request, never stored |
 | Catalog — manga | AniList GraphQL, type MANGA (any format: manga, manhwa, manhua, one-shot, light novel), with MAL ids; no fallback while AniList is down (MNG-001, pulled forward 2026-10-23) |
-| Catalog — books | Open Library (Google Books only if Open Library is insufficient); weekly trending for Discover |
+| Catalog — books | Open Library (Google Books only if Open Library is insufficient); weekly trending for Discover; Classics, Science fiction, Science and Business rows from its subjects on the Books page (BOOK-002) |
 | Catalog — music | MusicBrainz release groups (albums, EPs) and tracklists, Cover Art Archive covers; no key, 1 req/s with a contact User-Agent (MUS-001). ListenBrainz fresh releases + sitewide stats for Discover's New albums / Coming soon (MUS-002) |
 | Catalog — sports | TheSportsDB (`THESPORTSDB_API_KEY`, premium, 100 req/min) behind `SportsListing`: leagues, teams, players, fixtures, 2-minute livescores, TV listings for the Sports tab only; off without the key (SPT-001) |
 | Concerts | Ticketmaster Discovery API v2 (`TICKETMASTER_API_KEY`, free, 5,000 calls/day; Aaru stops at 4,500), behind `ConcertListing`; off without the key. Tickets link out (MUS-003) |
@@ -50,7 +50,7 @@ This file is the working contract for anyone — human or agent — changing the
 | Push | APNSwift, per-device environment; web push (VAPID, `swift-webpush`) to browsers. Airing alerts pulled into P2 (2026-10-15, web 2026-10-20); group mention and invite alerts with groups (GRP-012); the "Now watching" Live Activity pushed from scrobbles (push-to-start, update, end; SCR-008) |
 | Deploy | API: GHCR image → promote PR in `~/Work/production/platform/infra` → ArgoCD on `maat` (`horus` namespace). Web: Wrangler to Workers |
 | Observability | Grafana Cloud through the cluster's Alloy: Prometheus `/metrics` on an internal port, logs, probes, an "Apps / Aaru" board. Sentry for errors only (server, web, Apple apps, extension; no tracing, no replay, no PII). PostHog for a few server-side product events only; no client analytics SDK. Every claim lives in `docs/privacy.md`, which changes first (owner, 2026-10-21) |
-| User import — capture | Pasted text, an image, or a catalog link (TMDB, AniList, Open Library) as an import job (`source=capture`, AG-006, pulled forward 2026-10-22). Text and images are read by one `ModelProviding` call and deleted once read; links are parsed by id and never fetched. Free accounts get 3 a month |
+| User import — capture | Pasted text, an image, or a catalog link (TMDB, AniList, Open Library) as an import job (`source=capture`, AG-006, pulled forward 2026-10-22). Text (up to 100,000 characters, so a whole chat) and up to 5 images are read by one `ModelProviding` call and deleted once read; links are parsed by id and never fetched. `?kind=book` reads books only (BOOK-001). Text that asks for titles ("X-Men books in reading order") is answered with titles to review, and an order becomes a list on approve; the owl's `plan_title_list` makes the same job without a second model call (BOOK-003). 30 a day for every account, no monthly limit while Plus is off sale (BIL-005) |
 | Agent model | Pluggable `model.Provider` in `aaru-server-v2` (`internal/model`, `internal/agent`). Anthropic default, user key supported, spend metered daily |
 | Transcription | The cluster's own Whisper (`http://whisper.horus.svc.cluster.local:8000/v1`, `Systran/faster-whisper-small`, auto-detected language) behind an OpenAI-compatible provider, as Norviq does; audio held in memory, never stored, no paid speech API (ASK-009) |
 | Assistant | A card opened from the owl in the top bar, talk or type, on iPhone, Mac and web. A streaming chat turn in `aaru-server-v2` (`internal/agent/chat.go`) over `model.Provider`, reading only the signed-in user's own data and the catalog; one item changes like a tap, a larger plan is a `PlanCard`. Free for every account; chats stored until deleted in Settings (ASK-009, owner 2026-11-04) |
@@ -205,15 +205,17 @@ Use these words in code, APIs, and UI:
   group page. Derived on the server (`inBacklog`), never stored, never a status (APP-018)
 - **Action** — one journaled, undoable library write, whether the user or the agent made it
 - **Import job** — one run of Trakt or a CSV/list ingest
-- **Capture** — one-shot intake of pasted text, an image, or a URL. It is an *import source*,
-  not a subsystem: it produces a `MatchTable` then a `PlanCard`, and never writes unplanned
+- **Capture** — one-shot intake of pasted text, an image, or a URL, or a list Aaru named in a chat.
+  It is an *import source*, not a subsystem: it produces a `MatchTable` then a `PlanCard`, and never
+  writes unplanned
 - **Assistant card** — the floating card the owl opens over the current screen: one chat with Aaru, typed or spoken, replies written (and read aloud after a spoken question). App chrome; the agent fills it with catalog components but never emits the card itself
 - **Discover** — provider-curated public rows (DISC-001: trending, on the air, new shows, in
   theaters, this season's anime, trending books; MUS-002: new albums, albums coming soon), the
   same for every user, plus the On air view (DISC-003): the week's airings by channel. Each row
   says its kind (DISC-004): the Discover page shows shows, films and anime; the Books, Manga and
   Music pages show their own rows under the user's shelf, and Music holds Concerts. Home shows
-  three rows, picked by the kinds the user keeps (2026-10-28). Catalog data like search, never a
+  three rows, picked by the kinds the user keeps (2026-10-28), never a row marked `kindPageOnly`
+  (Books' subject rows, BOOK-002). Catalog data like search, never a
   recommendation
 - **Agent token** — a per-user, scoped, revocable credential an outside agent uses to reach
   Aaru's tool layer. Not an API key for a third-party developer
@@ -317,7 +319,9 @@ GRP-013…017), 2026-10-27; the Aaru assistant, a one-to-one chat with voice (AS
 - Two-way sync with any provider, or a conflict engine (MyAnimeList's read-back, SCR-010, is the one exception)
 - A documented public API with third-party clients, quotas, and a deprecation policy
 - Recommendations engine. Provider-curated public rows on Home and the Discover tab
-  (trending, this season, DISC-001) are allowed; anything personalised is not
+  (trending, this season, DISC-001) are allowed; anything personalised is not. Asking is the
+  exception: suggestions in the assistant, and titles a pasted request asks for (BOOK-003, owner
+  2026-11-05), always reviewed before anything is added
 - A global or public activity feed; public profile pages indexed by search engines
 - Serializd / SIMKL integrations
 - Phone-number matching (deferred 2026-10-27: verifying a number needs paid SMS) and
@@ -354,7 +358,7 @@ Scrobbles are not in this order either: they are live events, applied as they ar
 Listening-history imports (MUS-004) are not in it either: they fill the listening log, never the
 library.
 
-Matching key: external IDs first, then normalized title + year + type. Never merge two titles that only share a similar name.
+Matching key: external IDs first, then normalized title + year + type. Never merge two titles that only share a similar name. A book with an author and neither id nor year goes by title + author instead: same author always, same title or the one such book by that author (BOOK-001). Match all's best guesses (IMP-021) are looser, and only ever a proposal the user sees before approving.
 
 Merging sources (owner, 2026-10-20): an import fills empty fields and adds missing ticks, and may
 move a status forward (`wishlist` → `in_progress` → `finished`). It never moves one backward, never

@@ -89,6 +89,39 @@ func (s *Server) ResolveImportRow(ctx context.Context, req api.ResolveImportRowR
 	return importResolvedJSON{Job: importJobOut(job), Row: ImportRowDTO(row)}, nil
 }
 
+// LeaveOutImportRow is BOOK-001: untick a row of a plan, or tick it again.
+func (s *Server) LeaveOutImportRow(ctx context.Context, req api.LeaveOutImportRowRequestObject) (api.LeaveOutImportRowResponseObject, error) {
+	user, err := currentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if req.Body == nil {
+		return nil, apperr.BadRequest()
+	}
+	job, row, err := s.Imports.LeaveOutRow(ctx, req.Id.ID(), req.Index, req.Body.LeftOut, user)
+	if err != nil {
+		return nil, err
+	}
+	return importResolvedJSON{Job: importJobOut(job), Row: ImportRowDTO(row)}, nil
+}
+
+// MatchAllImportRows is the review's Match all (IMP-021).
+func (s *Server) MatchAllImportRows(ctx context.Context, req api.MatchAllImportRowsRequestObject) (api.MatchAllImportRowsResponseObject, error) {
+	user, err := currentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result, err := s.Imports.MatchAll(ctx, req.Id.ID(), user)
+	if err != nil {
+		return nil, err
+	}
+	rows := make([]api.ImportRow, len(result.Rows))
+	for i, row := range result.Rows {
+		rows[i] = ImportRowDTO(row)
+	}
+	return importMatchedJSON{Job: importJobOut(result.Job), Rows: rows, Remaining: result.Remaining}, nil
+}
+
 func (s *Server) CreateAniListImport(ctx context.Context, req api.CreateAniListImportRequestObject) (api.CreateAniListImportResponseObject, error) {
 	user, err := currentUser(ctx)
 	if err != nil {
@@ -316,12 +349,27 @@ type importDetailJSON struct {
 
 func (d importDetailJSON) VisitGetImportResponse(w http.ResponseWriter) error { return writeJSON(w, d) }
 
+// importMatchedJSON is Match all's answer, with the job in its own shape.
+type importMatchedJSON struct {
+	Job       importJobJSON   `json:"job"`
+	Rows      []api.ImportRow `json:"rows"`
+	Remaining int             `json:"remaining"`
+}
+
+func (r importMatchedJSON) VisitMatchAllImportRowsResponse(w http.ResponseWriter) error {
+	return writeJSON(w, r)
+}
+
 type importResolvedJSON struct {
 	Job importJobJSON `json:"job"`
 	Row api.ImportRow `json:"row"`
 }
 
 func (r importResolvedJSON) VisitResolveImportRowResponse(w http.ResponseWriter) error {
+	return writeJSON(w, r)
+}
+
+func (r importResolvedJSON) VisitLeaveOutImportRowResponse(w http.ResponseWriter) error {
 	return writeJSON(w, r)
 }
 
@@ -332,11 +380,22 @@ func ImportRowDTO(p imports.PlannedRow) api.ImportRow {
 	out := api.ImportRow{
 		Index: p.Index, Title: row.Title, Year: row.Year, Author: row.Author, Type: api.MediaType(row.Type),
 		SourceKey: row.SourceKey, Ids: &ids, Rating: row.Rating, Outcome: api.ImportRowOutcome(p.Outcome),
-		Reason: p.Reason, TitleId: apiid.PtrOrNil(p.TitleID),
+		Reason: p.Reason, TitleId: apiid.PtrOrNil(p.TitleID), LeftOut: row.LeftOut,
 	}
 	if row.Status != nil {
 		status := api.LibraryStatus(*row.Status)
 		out.Status = &status
+	}
+	if len(row.Lists) > 0 {
+		lists := row.Lists
+		out.Lists = &lists
+	}
+	if row.Guess != nil {
+		out.Guess = &api.ImportRowGuess{Byline: row.Guess.Byline, PosterUrl: row.Guess.PosterURL, Title: row.Guess.Title}
+	}
+	if imports.Guessable(p) {
+		guessable := true
+		out.Guessable = &guessable
 	}
 	return out
 }

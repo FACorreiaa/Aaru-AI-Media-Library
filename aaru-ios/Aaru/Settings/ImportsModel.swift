@@ -270,7 +270,7 @@ final class ImportsModel {
         problem = nil
     }
 
-    private func replace(_ job: ImportJob) {
+    func replace(_ job: ImportJob) {
         if let index = jobs.firstIndex(where: { $0.id == job.id }) {
             jobs[index] = job
         } else {

@@ -12,8 +12,12 @@ struct KindShelf: View {
 
     @Environment(\.dynamicTypeSize) private var dynamicType
 
-    /// In progress first: what the user is in the middle of leads.
-    private static let statuses: [LibraryStatus] = [.inProgress, .wishlist]
+    /// In progress first: what the user is in the middle of leads. Books also keep what is paused
+    /// and what was read (BOOK-002).
+    private var statuses: [LibraryStatus] {
+        kind == .book ? [.inProgress, .wishlist, .onHold, .finished] : [.inProgress, .wishlist]
+    }
+
     /// A short row; "See all" holds the rest.
     private static let rowLimit = 12
 
@@ -23,7 +27,7 @@ struct KindShelf: View {
     }
 
     private var shelves: [Shelf] {
-        Self.statuses
+        statuses
             .map { Shelf(status: $0, rows: library.rows(kind: kind, status: $0)) }
             .filter { !$0.rows.isEmpty }
     }
@@ -59,7 +63,7 @@ struct KindShelf: View {
         switch kind {
         case .music: "No albums on your shelf yet. Add one from the rows below, or search."
         case .manga: "No manga on your shelf yet. Add one from the rows below, or search."
-        default: "No books on your shelf yet. Add one from the rows below, or search."
+        default: "No books on your shelf yet. Import a list above, or add one from the rows below."
         }
     }
 }

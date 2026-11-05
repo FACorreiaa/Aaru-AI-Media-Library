@@ -94,12 +94,15 @@ struct ImportDetailView: View {
                         LabeledContent("Not matched", value: "\(job.stats.unmatched)")
                     }
                 }
+                if choosing(job) {
+                    rowLists(job)
+                }
                 if job.state == .planned, !job.isListens {
                     Section {
                         Button(applying ? "Adding…" : job.isCapture ? "Approve" : "Approve and import") {
                             Task { await apply() }
                         }
-                        .disabled(applying)
+                        .disabled(applying || everyRowLeftOut)
                         Button(job.isCapture ? "Not this" : "Discard", role: .destructive) { confirmsDiscard = true }
                     } footer: {
                         Text("One step to undo: it lands in History, in Your data, as a single action.")
@@ -112,9 +115,9 @@ struct ImportDetailView: View {
                         Text("Undo the whole import there in one step.")
                     }
                 }
-                rows(.unmatched, title: "Not matched")
-                rows(.create, title: job.state == .planned ? "Will be added" : "Added")
-                rows(.update, title: job.state == .planned ? "Will be filled in" : "Filled in")
+                if !choosing(job) {
+                    rowLists(job)
+                }
             } else {
                 ProgressView().frame(maxWidth: .infinity)
             }
@@ -133,6 +136,7 @@ struct ImportDetailView: View {
         .task(id: id) { await poll() }
         .sheet(item: $finding) { row in
             SearchView(api: api, library: library, lists: lists, pick: pick(for: row))
+                .closesOnSheetsRequest()
         }
     }
 
@@ -153,29 +157,32 @@ struct ImportDetailView: View {
     private func rows(_ outcome: Components.Schemas.ImportRow.OutcomePayload, title: String) -> some View {
         let matching = detail?.rows.filter { $0.outcome == outcome } ?? []
         let findable = outcome == .unmatched && canFind
+        let guessable = matching.count(where: { $0.guessable == true })
         if !matching.isEmpty {
             Section {
                 ForEach(matching.prefix(Self.shownRows), id: \.index) { row in
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(row.label)
-                            if let reason = row.reason {
-                                Text(reason).font(.caption).foregroundStyle(Color(.muted))
-                            }
-                        }
-                        if findable {
-                            Spacer(minLength: 8)
-                            Button("Find it") { finding = row }
-                                .buttonStyle(.borderless)
-                                .frame(minHeight: 44)
-                                .accessibilityLabel("Find \(row.title)")
-                        }
-                    }
+                    ImportReviewRow(
+                        row: row,
+                        canTick: canTick(row),
+                        canChange: job?.state == .planned && row.guess != nil,
+                        canFind: findable,
+                        onTick: { leftOut in Task { await setLeftOut(row, leftOut) } },
+                        onFind: { finding = row }
+                    )
                 }
             } header: {
-                Text("\(title) (\(matching.count.formatted()))")
+                HStack {
+                    Text("\(title) (\(matching.filter { $0.leftOut != true }.count.formatted()))")
+                    if job?.state == .planned, guessable > 0 {
+                        Spacer()
+                        MatchAllButton(id: id, imports: imports, guessable: guessable, onBatch: applyMatches)
+                    }
+                }
             } footer: {
                 VStack(alignment: .leading, spacing: 4) {
+                    if matching.contains(where: canTick) {
+                        Text("Untick anything you don't want.")
+                    }
                     if findable {
                         Text(
                             job?.state == .planned
@@ -190,38 +197,6 @@ struct ImportDetailView: View {
                 }
             }
         }
-    }
-
-    /// The search for one unmatched row: its name, in its kind. MAL and AniList rows are anime.
-    private func pick(for row: ImportRow) -> SearchPick {
-        let isAnime = job?.source == .malXml || job?.source == .anilist
-            || row.ids?.anilist != nil || row.ids?.mal != nil
-        let kind = MediaKind(type: row._type, isAnime: isAnime)
-        return SearchPick(
-            query: row.title,
-            scope: SearchScope(rawValue: kind.rawValue) ?? .all,
-            year: row.year,
-            navigationTitle: "Find a title",
-            note: "\u{201C}\(row.label)\u{201D} in your import. Choose the title it means.",
-            choose: { hit in await resolve(row, with: hit) }
-        )
-    }
-
-    /// Saves the pick and updates the row and the counts in place. After approval it was written
-    /// to the library, so the library catches up behind the closing sheet.
-    private func resolve(_ row: ImportRow, with hit: CatalogHit) async -> String? {
-        guard let resolved = await imports.resolve(id, row: row.index, with: hit) else {
-            defer { imports.problem = nil }
-            return imports.problem ?? "\(hit.title) could not be matched to that row."
-        }
-        detail?.job = resolved.job
-        if let position = detail?.rows.firstIndex(where: { $0.index == resolved.row.index }) {
-            detail?.rows[position] = resolved.row
-        }
-        if resolved.job.state != .planned {
-            Task { await onApplied() }
-        }
-        return nil
     }
 
     private func discard() async {
@@ -323,9 +298,88 @@ extension ImportRow: @retroactive Identifiable {
     }
 }
 
-private extension ImportRow {
-    /// "Dune (2021)": the name as the import file had it.
-    var label: String {
-        [title, year.map { "(\($0))" }].compactMap(\.self).joined(separator: " ")
+// MARK: Choosing and finding rows
+
+private extension ImportDetailView {
+    /// A planned capture is chosen row by row, so its rows come before Approve (BOOK-001).
+    func choosing(_ job: ImportJob) -> Bool {
+        job.isCapture && job.state == .planned
+    }
+
+    @ViewBuilder
+    func rowLists(_ job: ImportJob) -> some View {
+        if let list = detail?.rows.lazy.compactMap({ $0.lists?.first }).first {
+            Text(job.state == .planned
+                ? "Approve also saves these in order as the list \u{201C}\(list)\u{201D}."
+                : "Saved in order as the list \u{201C}\(list)\u{201D}.")
+                .font(.subheadline)
+                .foregroundStyle(Color(.muted))
+        }
+        rows(.unmatched, title: "Not matched")
+        rows(.create, title: job.state == .planned ? "Will be added" : "Added")
+        rows(.update, title: job.state == .planned ? "Will be filled in" : "Filled in")
+    }
+
+    /// BOOK-001: a planned capture's rows can each be left out. So can a guess in any import, which
+    /// is always the person's to check (IMP-021). Other imports look as they did.
+    func canTick(_ row: ImportRow) -> Bool {
+        job?.state == .planned && (row.outcome == .create || row.outcome == .update)
+            && (job?.isCapture == true || row.guess != nil)
+    }
+
+    /// Match all's batch: the counts and the rows it changed, in place.
+    func applyMatches(_ answer: MatchedImportRows) {
+        detail?.job = answer.job
+        for row in answer.rows {
+            if let position = detail?.rows.firstIndex(where: { $0.index == row.index }) {
+                detail?.rows[position] = row
+            }
+        }
+    }
+
+    var everyRowLeftOut: Bool {
+        let rows = detail?.rows.filter(canTick) ?? []
+        return !rows.isEmpty && rows.allSatisfy { $0.leftOut == true }
+    }
+
+    /// Updates the row and the counts in place.
+    func setLeftOut(_ row: ImportRow, _ leftOut: Bool) async {
+        guard let answer = await imports.leaveOut(id, row: row.index, leftOut: leftOut) else { return }
+        detail?.job = answer.job
+        if let position = detail?.rows.firstIndex(where: { $0.index == answer.row.index }) {
+            detail?.rows[position] = answer.row
+        }
+    }
+
+    /// The search for one unmatched row: its name, in its kind. MAL and AniList rows are anime.
+    func pick(for row: ImportRow) -> SearchPick {
+        let isAnime = job?.source == .malXml || job?.source == .anilist
+            || row.ids?.anilist != nil || row.ids?.mal != nil
+        let kind = MediaKind(type: row._type, isAnime: isAnime)
+        return SearchPick(
+            query: row.title,
+            scope: SearchScope(rawValue: kind.rawValue) ?? .all,
+            year: row.year,
+            navigationTitle: "Find a title",
+            note: "\u{201C}\(row.label)\u{201D} in your import. Choose the title it means.",
+            choose: { hit in await resolve(row, with: hit) }
+        )
+    }
+
+    /// Saves the pick and updates the row and the counts in place. After approval it was written
+    /// to the library, so the library catches up behind the closing sheet.
+    func resolve(_ row: ImportRow, with hit: CatalogHit) async -> String? {
+        guard let resolved = await imports.resolve(id, row: row.index, with: hit) else {
+            defer { imports.problem = nil }
+            return imports.problem ?? "\(hit.title) could not be matched to that row."
+        }
+        detail?.job = resolved.job
+        if let position = detail?.rows.firstIndex(where: { $0.index == resolved.row.index }) {
+            detail?.rows[position] = resolved.row
+        }
+        if resolved.job.state != .planned {
+            Task { await onApplied() }
+        }
+        return nil
     }
 }

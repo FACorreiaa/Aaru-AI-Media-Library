@@ -244,12 +244,15 @@ func chatFrameData(e agent.ChatEvent) any {
 type componentsFrameJSON struct {
 	Titles        []api.TitleSummary `json:"titles,omitempty"`
 	Plan          *planJSON          `json:"plan,omitempty"`
+	ImportID      *apiid.UUID        `json:"importId,omitempty"`
 	ActionID      *apiid.UUID        `json:"actionId,omitempty"`
 	ActionSummary string             `json:"actionSummary,omitempty"`
 }
 
 func chatComponentsFrame(e agent.ChatEvent) componentsFrameJSON {
-	frame := componentsFrameJSON{ActionID: apiid.PtrOrNil(e.ActionID), ActionSummary: e.ActionSummary}
+	frame := componentsFrameJSON{
+		ImportID: apiid.PtrOrNil(e.ImportID), ActionID: apiid.PtrOrNil(e.ActionID), ActionSummary: e.ActionSummary,
+	}
 	for _, t := range e.Titles {
 		frame.Titles = append(frame.Titles, TitleSummaryDTO(t))
 	}

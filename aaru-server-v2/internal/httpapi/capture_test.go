@@ -24,7 +24,7 @@ import (
 )
 
 // AG-006 · capture as an import source: links by id, text and images through the model, the
-// monthly quota, and nothing written before the plan is approved (CaptureTests).
+// daily fair use, and nothing written before the plan is approved (CaptureTests).
 
 // captureCatalog is the library fake plus name search (FakeCatalog.stubSearch).
 type captureCatalog struct {
@@ -115,7 +115,7 @@ func newCaptureEnv(t *testing.T, m model.Provider, usage capture.UsageRecorder) 
 	t.Helper()
 	fake := &libraryFake{episodes: map[string]catalog.Episodes{}}
 	search := &captureCatalog{libraryFake: fake, hits: map[string][]catalog.Hit{}}
-	providers := catalog.Providers{TMDB: search, AniList: fake, OpenLibrary: fake, Music: fake}
+	providers := catalog.Providers{TMDB: search, AniList: fake, OpenLibrary: search, Music: fake}
 	h := newHarness(t, func(d *Deps) { d.Catalog = catalog.NewKit(d.Pool, providers, d.Log) })
 	h.server.Imports.Capture.Model = m
 	h.server.Imports.Capture.Usage = usage
@@ -260,24 +260,21 @@ func TestCaptureLinksPlanWithoutTheModelAndOtherLinksAreRefused(t *testing.T) {
 	assert.Equal(t, 422, neither.Code)
 }
 
-func TestCaptureFreeAccountGetsThreeAMonthTheFourthIs402(t *testing.T) {
+func TestCaptureFreeAccountHasNoMonthlyLimitAndThirtyADay(t *testing.T) {
 	env := newCaptureEnv(t, nil, nil)
 	tmdb := env.captureFilm("Quota " + uuid.NewString())
 	link := map[string]any{"url": "https://www.themoviedb.org/movie/" + tmdb}
-	for range 3 {
+	for range 30 {
 		require.Equal(t, 202, env.send("POST", "/v1/imports/capture", link).Code)
 	}
 	refused := env.send("POST", "/v1/imports/capture", link)
-	assert.Equal(t, 402, refused.Code)
+	assert.Equal(t, 429, refused.Code)
 	body := decode[map[string]any](t, refused)
-	assert.Equal(t, "capture_quota", body["code"])
-	now := time.Now().UTC()
-	next := time.Date(now.Year(), now.Month()+1, 1, 0, 0, 0, 0, time.UTC)
-	assert.Equal(t, "You have used this month's 3 captures. More come on "+next.Format("January 2")+
-		", or Aaru Plus lifts the limit.", body["message"])
+	assert.Equal(t, "capture_fair_use", body["code"])
+	assert.Equal(t, "Aaru reads 30 captures a day. More tomorrow.", body["message"])
 }
 
-func TestCapturePlusLiftsTheMonthButKeepsThirtyADay(t *testing.T) {
+func TestCapturePlusKeepsThirtyADay(t *testing.T) {
 	env := newCaptureEnv(t, nil, nil)
 	ctx := context.Background()
 	now := time.Now()

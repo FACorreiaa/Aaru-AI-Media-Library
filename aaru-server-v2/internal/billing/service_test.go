@@ -65,7 +65,7 @@ func code(err error) string {
 	return ""
 }
 
-func TestPurchaseLiftsTheCaptureLimit(t *testing.T) {
+func TestPurchaseRecordsTheEntitlement(t *testing.T) {
 	pool := testdb.New(t)
 	ctx := context.Background()
 	user := uuid.New()
@@ -83,14 +83,11 @@ func TestPurchaseLiftsTheCaptureLimit(t *testing.T) {
 	free, err := billing.State(ctx, user)
 	require.NoError(t, err)
 	assert.Nil(t, free.Plus)
-	require.NotNil(t, free.CaptureLimit)
-	assert.Equal(t, FreeCapturesPerMonth, *free.CaptureLimit)
 
 	bought, err := billing.RecordPurchase(ctx, "mine", user)
 	require.NoError(t, err)
 	require.NotNil(t, bought.Plus)
 	assert.Equal(t, "orig-1", bought.Plus.OriginalTransactionID)
-	assert.Nil(t, bought.CaptureLimit)
 	// A restore sends it again: nothing changes, and the purchase is counted once.
 	again, err := billing.RecordPurchase(ctx, "mine", user)
 	require.NoError(t, err)

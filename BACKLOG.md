@@ -233,6 +233,7 @@ Friends and groups (design: `docs/superpowers/specs/2026-10-27-friends-groups-de
 - **No paying plans for now** (owner, 2026-10-23). Plus (BIL-001…004) stays live in code, but
   nothing is set up in App Store Connect, so nothing can be bought. Until that changes, a free
   account hitting the capture limit must not land on an empty paywall: BIL-005.
+  Decided 2026-11-05: the monthly limit is lifted while Plus is off sale, 30 a day stays.
 - **Security audit run-1 documented, nothing scheduled** (owner, 2026-10-23). The parent-only
   pass at `cd4ea2f` found one low finding (a music token sent as `?token=` reaches request
   logs) and a hardening list; see `docs/audit/security.md` and SEC-001…003. The fixes and the
@@ -351,7 +352,7 @@ Friends and groups (design: `docs/superpowers/specs/2026-10-27-friends-groups-de
   | Review of a title not in the library | Allowed. A rating adds the title as finished with that rating (a show lands as finished with aired episodes ticked, PROG-005; a running one moves back to `in_progress` when its next episode airs); a title already there keeps its status and gets the rating |
   | Chat writes | Like a tap: one item applies at once, journaled and undoable; anything bigger is a `PlanCard` approved in Aaru (X-009) |
   | Web search | Media topics only (films, shows, anime, books, music, sport). Off-topic is refused before any search |
-  | Suggestions | Owner exception: personal suggestions in chat only, when asked. No "because you watched" rows anywhere else |
+  | Suggestions | Owner exception: personal suggestions in chat only, when asked, and in a capture whose text asks for them (BOOK-003, 2026-11-05). No "because you watched" rows anywhere else |
   | Chat entry | An Ask Aaru page opened by a sparkle "Ask" button beside the medallion; "Ask Aaru about this" on title pages |
   | Chat v1 | History and streaming, voice input (cluster Whisper), image upload, Share to Board |
   | LLM budget | The shared `haiku-trial` workspace ($20 cap). No fallback model; out of credit shows "resting" |
@@ -814,6 +815,7 @@ account or a stranger that has not happened yet.
 | DISC-001 | Built, unverified | #38 eaeb15e; DiscoverService.swift; deployed | No recorded new-account run on 3 clients |
 | DISC-003 | Built, unverified | OnAirGuideTests, `lib/discover/onAir.test.ts`; `Catalog/OnAirGuide.swift`, `TMDBCatalog+OnAir.swift`, `OnAirGuide.tsx`, `OnAirView.swift` | TMDB, TVmaze and JustWatch checked with stubs only; not run against live providers or on a device |
 | DISC-002 | Built, unverified | #84; DiscoverSeasonTests, season model tests; deployed f5dcb8c (infra #412) | Not run on a device |
+| BOOK-002 | Built, unverified | `books_classics`, `books_science_fiction`, `books_science`, `books_business`, `kindPageOnly`; `aaru-ios/Aaru/Kinds/BooksImport.swift`, `aaru-client/src/components/kind/BooksTop.tsx` | Needs the API promoted. Web looked at locally against a stub model; not on a device |
 | MUS-001 | Built, unverified | #93; MusicTests, StatsTests; deployed f5dcb8c (infra #412) | Not run on a device |
 | MUS-002 | Built, unverified | #98; ListenBrainzReleasesTests; deployed 8b3f017 (infra #413) | Not run on a device |
 | MUS-003 | Built, unverified | #105; ConcertTests; deployed f0525f0 (infra #415, key #414) | Not run on a device; Ticketmaster lists nothing in Portugal (MUS-009) |
@@ -857,6 +859,8 @@ account or a stranger that has not happened yet.
 | IMP-018 | Built, unverified | `feat/netflix-import`; NetflixCSVParser, EpisodeNameMatcher, NetflixImportTests | No real export run yet |
 | IMP-019 | Open | BACKLOG IMP-019 | Bingers has an API only for paid plans; owner decides |
 | IMP-020 | Built, unverified | #172; CSVImportParser, TitleResolver, GoodreadsImportTests, BookYearToleranceTests; deployed f6cc317 (infra #456) | Stub catalog only; no real Goodreads export run yet |
+| BOOK-003 | Built, unverified | `plan_title_list`, `capture.ListName`, `imports.titleRows`, `ImportRow.lists`, components frame `importId` | Stub model only. The owl's "Review" button waits for the Assistant clients; until then the waiting capture card and the push lead to the review |
+| IMP-021 | Built, unverified | `POST /v1/imports/{id}/match-all`, `catalog/guess.go`, `imports/matchall.go`, `aaru-ios/Aaru/Capture/MatchAllButton.swift` | Web run locally: real Open Library, stub model, 8 of 10 rows filled in about 12 seconds. iOS builds and has not been tapped. Needs the API promoted |
 | PRV-001 | Done | #27 8d5ddc3; docs/providers.md, AboutView.swift | privacy@ routing not set up |
 | CAT-011 | Done | #24 7edc80c; TVmazeAirTimes.swift | |
 | CAT-012 | Open | no Google Books code | |
@@ -952,12 +956,13 @@ account or a stranger that has not happened yet.
 | AG-004 | Open | none | |
 | AG-005 | Built, unverified | Tonight/TonightService.swift, `/v1/tonight`; `Home/Tonight.swift`, `lib/home/tonight.ts` | Not seen on a device; reject never checked across a night |
 | AG-006 | Built, unverified | Imports/ImportService+Capture.swift, Capture/, `/v1/imports/capture`; `aaru-ios/Aaru/Capture`, `CaptureComposer.tsx` | Composer and review on web and Apple; no Share Extension yet; no library-reading tools for text. Not tried on a device |
+| BOOK-001 | Built, unverified | `?kind=book`, `capture_images`, `ResolveBookByAuthor`, `/rows/{index}/left-out` | Clients with BOOK-002. Not tried against the real model |
 | AG-007 | Partial | Agent/ModelProviding.swift, `agent_usage.cost_micros` | Monthly spend metered per user; no own key yet |
 | BIL-001 | Built, unverified | Billing/AppleSignedData.swift, `entitlements`; BillingTests | Products and the notifications URL not set up in App Store Connect |
 | BIL-002 | Built, unverified | `/v1/billing/apple/transactions`, `/v1/billing/apple/notifications`; BillingService.swift | No sandbox purchase, renewal or expiry seen |
 | BIL-003 | Built, unverified | `aaru-ios/Aaru/Plus` | Paywall, Restore, `Transaction.updates`; no `.storekit` file; not on a device |
 | BIL-004 | Built, unverified | `/v1/me/entitlement`; Settings → Account on web and Apple; capture fair use | Not seen with a real subscription |
-| BIL-005 | Open | none | Paywall with Plus off sale |
+| BIL-005 | Built | `CheckCaptureQuota`, `PlusSection`, `AccountPage` | Monthly limit lifted, 30 a day kept (owner, 2026-11-05) |
 | OUT-001 | Partial | #36; AgentTokenService.swift, `/v1/agent/tokens` | Stremio and MCP kinds; `imports:write` not mintable |
 | OUT-002 | Partial | #36; ProvenanceTests, `agentName` on `/v1/actions` | No MCP; no client ribbon renders it |
 | OUT-003 | Partial | MarkEpisodeWatchedIntent.swift (widget/Live Activity) | No Shortcuts provider, "tonight", share URL |
@@ -2479,6 +2484,48 @@ has; and the tile tells the person how to get the file.
 **Progress 2026-10-23:** built and tested with a stub catalog (parser, flow and core matching
 tests). Not run on a real export yet.
 
+### BOOK-003 · Ask for books, and keep the order · M · owner 2026-11-05
+**Needs:** BOOK-001, IMP-021, ASK-009.
+Owner, 2026-11-05: "Ask the AI to recommend me XMen books and order to read and also add them to the
+library", from inside Aaru instead of going through ChatGPT. Asked from the owl and from the Books box.
+
+- **Books box:** text that is itself a request, naming no titles to report, is answered: real titles, at
+  most 30, in the order asked. Text only, and everything else in a capture stays data.
+- **Owl:** `plan_title_list` takes the same shape as `report_titles` and makes a capture from the titles
+  the chat model already named: no second model call, the same quota, one a reply. It writes nothing. The
+  components frame carries `importId`, for the Assistant clients' "Review N books".
+- **Order:** `list_name` on `report_titles` puts every row in that list (`Row.Lists`), so the list keeps
+  row order, leaves out unticked rows, and takes in a book already in the library. Undo removes the books
+  and the list with them. A list of that name that already exists gains the new titles at its end.
+- Books land in Plan to read, as every capture. Comics stay books on Open Library (owner, 2026-11-05).
+
+**Done when:** asking for X-Men books in reading order, from the owl and from Books, ends in a review
+with sensible rows, and Approve leaves them in Plan to read and in a list in that order.
+
+### IMP-021 · Match all in an import's review · M · owner 2026-11-05
+**Needs:** IMP-011, BOOK-001.
+Owner, 2026-11-05: a capture of an X-Men reading list left 30 rows not matched, each needing its own
+Find it. One button finds a best guess for all of them, and the review shows each guess with its
+cover, title and author, ticked, to untick or change before Approve.
+
+- The strict match does not loosen: "never merge two titles that only share a similar name" still
+  holds for anything written without a person looking. A guess is a proposal.
+- A book needs a hit by the same author (the same name, the same words in another order, or the same
+  last name) that shares at least half of the title's words. A book with no author, a film, a show or
+  a manga needs the exact title. Other rows keep Find it. Open Library's subtitle counts.
+- `POST /v1/imports/{id}/match-all` does what fits in 15 seconds, three searches at a time, and
+  answers `remaining`; the client calls again while it goes down. No job state, because nothing is
+  written and leaving the page loses nothing. Only while the plan waits: after Approve a guess could
+  not be reviewed.
+- Comics stay books on Open Library for now (owner, 2026-11-05), so some rows stay on Find it and some
+  guesses are another edition.
+- Also fixed: `ResolveBookByAuthor` took the first same-author hit whose title matched before the
+  colon, so "X-Men: Days of Future Past" became whichever "X-Men" by Chris Claremont came first. Several
+  such hits are now no match; one is still the book.
+
+**Done when:** on iPhone, Mac and the web one tap fills a review's unmatched rows, a wrong guess can be
+unticked or changed, and nothing reaches the library before Approve.
+
 ### IMP-009 · CAT show list · M
 **Needs:** IMP-005, CAT-002.
 `POST /v1/imports/cat` with a plain text list of show names. TMDB search, first
@@ -2866,6 +2913,20 @@ See the 2026-10-25 decision. Same destinations, same order, on every client.
 type MANGA, no adult works: Trending manga and Publishing now. No stand-in while AniList is down:
 the manga rows are simply absent.
 
+### BOOK-002 · A useful Books page · M · owner 2026-11-05
+**Needs:** BOOK-001, DISC-004.
+Books was a shelf note and one catalog row. It gets the import box from BOOK-001, a Goodreads
+shortcut, Read and On hold rows, a "this year's reading" strip, and more catalog rows.
+- Rows: Open Library subjects, 30 books with covers, the same for everyone, cached like the other
+  rows. A subject comes in order of edition count and `published_in` does nothing, so only subjects
+  that read well have a row (checked live 2026-11-05): `classics`, `science_fiction`, `business`,
+  and `popular_science` for Science, because `science` opens with Romeo and Juliet.
+- A subject row has `kindPageOnly`, so Home keeps `books_trending` as its one book row. Clients
+  older than this flag can show a subject row on Home for someone who mostly reads.
+
+**Done when:** on iPhone, Mac and the web the Books page has all of the above, and Home shows no
+subject row.
+
 ### NAV-001 · Web: Books, Manga, Music and a More group · M
 **Needs:** DISC-004.
 The sidebar: Home, Discover, Library, Calendar, Lists, Friends, then a collapsible More (Groups,
@@ -2881,6 +2942,16 @@ and Music; Music has Albums · Concerts · Listens. The Discover toolbar's Sport
 
 ### NAV-003 · Docs · S
 DESIGN.md §13a, §13c, §13d and §18; VIEWS.md; CLAUDE.md's Discover; ARCHITECTURE.md.
+
+### NAV-005 · iPhone: one bar under More · S · owner, 2026-11-05
+Under iOS's generated More, Books, Manga, Music and Groups showed two navigation bars and two back
+buttons, because More's navigation controller held a page that had its own stack. Sports had
+dropped its stack, which only works for a page that pushes nothing. More is now Aaru's own fifth tab:
+`MoreScreen`, a list with one `NavigationStack` on `AppRouter.morePath`, the destination at the
+bottom and whatever it pushes above. `router.tab` still names the destination, so links keep working.
+iPad and Mac sidebars keep one stack per destination.
+
+**Done when:** every page under More, and everything it pushes, has one bar and one back button.
 
 ### NAV-004 · A Friends tab; Groups at the top · M
 **Needs:** NAV-002. Owner, 2026-10-27.
@@ -4119,6 +4190,22 @@ Links are parsed by id and never fetched (owner, 2026-10-22). Text is read in on
 `report_titles` call; a text that refers to the library ("the Nolan films I haven't seen") is
 left for later.
 
+### BOOK-001 · A list of books from a chat, screenshots or a photo · M · owner 2026-11-05
+**Needs:** AG-006.
+Someone asks an assistant for books and wants what it recommended in Plan to read, from the whole
+conversation pasted or from screenshots of it.
+- `POST /v1/imports/capture?kind=book` reads books only and says "Aaru found no book in that
+  capture." when there are none.
+- The model reports each book's author. A book with an author and neither id nor year matches by
+  title and author (ARCHITECTURE "Books page"). Checked against live Open Library on 10 titles
+  (2026-11-05): 7 match; `1984` (their title is Nineteen Eighty-Four), Andrew/Andy Hunt and Liu
+  Cixin/Cixin Liu do not, and stay "Not matched" for the person to pick.
+- Text up to 100,000 characters; up to 5 images in one capture.
+- A planned row can be left out before approving (`/rows/{index}/left-out`).
+
+**Done when:** a real long chat, three screenshots and a photo of a printed list each plan the right
+books on a device, and only the ticked ones reach Plan to read.
+
 ### AG-007 · Model provider, own key, metering · M
 **Needs:** AG-001.
 `ModelProviding` protocol in `Server`, following the `CatalogSearching` /
@@ -4312,6 +4399,9 @@ day.
 **Done when:** the web and the app show the same Plus state for one account.
 
 ### BIL-005 · Capture limit while Plus is off sale · S
+**Decided (owner, 2026-11-05):** the second option. Free accounts have no monthly limit and the same
+30 a day as Plus. The Apple and web surfaces are BOOK-002's.
+
 **Needs:** BIL-003, BIL-004.
 The owner has no paying plans for now (2026-10-23), so the App Store has no Plus products. Today
 a free account's fourth capture in a month gets 402 `capture_quota`, and on Apple

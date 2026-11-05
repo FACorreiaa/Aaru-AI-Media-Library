@@ -12,6 +12,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
+	"strings"
 	"sync"
 
 	"github.com/google/uuid"
@@ -231,8 +233,11 @@ func numberNamedEpisodes(ctx context.Context, row *Row, title core.Title, resolv
 // resolveByIDs is ids first. A row that also allows its name (TV Time's old TVDB ids, which TMDB
 // may not know) falls back to the exact-name match when the ids find nothing. A book whose ISBN
 // Open Library does not know falls back to its title, year and author, as a row without an ISBN
-// would (IMP-020).
+// would (IMP-020). A book with an author and neither id nor year goes by the two (BOOK-001).
 func resolveByIDs(ctx context.Context, row Row, resolver catalog.Resolver) (core.Title, error) {
+	if row.Type == core.MediaBook && row.IDs.IsEmpty() && row.Year == nil && row.Author != nil && strings.TrimSpace(*row.Author) != "" {
+		return resolver.ResolveBookByAuthor(ctx, row.Title, *row.Author)
+	}
 	title, err := resolver.Resolve(ctx, row.MediaRef(), row.Author)
 	if re, ok := catalog.IsResolutionError(err); ok && re == catalog.ErrUnresolvable {
 		if isTrue(row.NameOnly) && !row.IDs.IsEmpty() && row.Year == nil {
@@ -271,6 +276,10 @@ func (s *Service) Apply(ctx context.Context, id, user uuid.UUID) (core.ImportJob
 	ops, err := s.writes(ctx, rows, user)
 	if err != nil {
 		return core.ImportJob{}, err
+	}
+	if len(ops) == 0 && slices.ContainsFunc(rows, func(r PlannedRow) bool { return isTrue(r.Row.LeftOut) }) {
+		return core.ImportJob{}, apperr.New(http.StatusUnprocessableEntity, "import_nothing_chosen",
+			"Every title is unticked. Tick one to add it, or discard this plan.")
 	}
 	job.Stats = Stats(rows)
 	batch := library.Batch(ops...)
@@ -342,7 +351,7 @@ func (s *Service) writes(ctx context.Context, rows []PlannedRow, user uuid.UUID)
 	var ops []library.Op
 	listMembers := map[string][]uuid.UUID{}
 	for _, r := range rows {
-		if r.Outcome == OutcomeUnmatched || r.TitleID == nil {
+		if r.Outcome == OutcomeUnmatched || r.TitleID == nil || isTrue(r.Row.LeftOut) {
 			continue
 		}
 		for _, list := range r.Row.Lists {
@@ -354,6 +363,12 @@ func (s *Service) writes(ctx context.Context, rows []PlannedRow, user uuid.UUID)
 		return nil, err
 	}
 	for _, g := range groups(rows) {
+		// Left out by hand, with whatever merged into it.
+		if isTrue(rows[g.indices[0]].Row.LeftOut) {
+			rows[g.indices[0]].Outcome = OutcomeSkip
+			rows[g.indices[0]].Reason = ptr("Left out.")
+			continue
+		}
 		group := make([]PlannedRow, len(g.indices))
 		for i, idx := range g.indices {
 			group[i] = rows[idx]

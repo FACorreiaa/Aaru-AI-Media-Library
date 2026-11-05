@@ -53,6 +53,7 @@ struct AccountPage: View {
         .settingsPage("Account", problem: $account.problem)
         .task {
             await account.load()
+            await plus?.load()
             await social.load()
         }
     }

@@ -1,5 +1,5 @@
 {
-  "originHash" : "c74e7d16affb1726f6e405446290ecf5f21acb0ae2b2fe885c689d0caf2370c7",
+  "originHash" : "a950397662018a6f0d1a269623d8c7068518604f8d62c9c5f06ca0885d00553d",
   "pins" : [
     {
       "identity" : "sentry-cocoa",
@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-collections",
       "state" : {
-        "revision" : "844289ac455816e193f1dbbe014f3c4dbe429410",
-        "version" : "1.7.4"
+        "revision" : "f96b909e1a9e469620bc5037c1e24e00153f376f",
+        "version" : "1.7.5"
       }
     },
     {
@@ -51,8 +51,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-openapi-runtime.git",
       "state" : {
-        "revision" : "6927ad435adf4d00fe55fc61b9a07a04673c79c8",
-        "version" : "1.13.3"
+        "revision" : "b9ebb3f06f1dac717156a04f0919ad444cbcf8f5",
+        "version" : "1.13.4"
       }
     },
     {

@@ -30,7 +30,13 @@ type Row struct {
 	Year      *int
 	// Author is the authors, for books: narrows a title search when there is no ISBN.
 	Author *string
-	IDs    core.ExternalIDs
+	// LeftOut is the person unticking this row in the review (BOOK-001): the plan does not write it.
+	LeftOut *bool
+	// Guess is what Match all chose for this row (IMP-021), for the person to check.
+	Guess *RowGuess
+	// GuessTried is Match all having looked for this row, found or not, so it does not look twice.
+	GuessTried *bool
+	IDs        core.ExternalIDs
 	// Status is what the source says about the user's relationship. nil says nothing.
 	Status *core.LibraryStatus
 	// Rating is on Aaru's 1–10 scale.
@@ -101,6 +107,13 @@ const (
 	OutcomeUnmatched Outcome = "unmatched"
 )
 
+// RowGuess is the title a guess found, as the review shows it.
+type RowGuess struct {
+	Title     string  `json:"title"`
+	Byline    *string `json:"byline,omitempty"`
+	PosterURL *string `json:"posterUrl,omitempty"`
+}
+
 // PlannedRow is a stored row with its plan.
 type PlannedRow struct {
 	Index   int
@@ -150,6 +163,9 @@ type rowJSON struct {
 	Title          string              `json:"title"`
 	Year           *int                `json:"year,omitempty"`
 	Author         *string             `json:"author,omitempty"`
+	LeftOut        *bool               `json:"leftOut,omitempty"`
+	Guess          *RowGuess           `json:"guess,omitempty"`
+	GuessTried     *bool               `json:"guessTried,omitempty"`
 	IDs            core.ExternalIDs    `json:"ids"`
 	Status         *core.LibraryStatus `json:"status,omitempty"`
 	Rating         *float64            `json:"rating,omitempty"`
@@ -174,7 +190,7 @@ type rowJSON struct {
 // `ids` and `lists` always present, dates as seconds since 2001.
 func (r Row) MarshalJSON() ([]byte, error) {
 	out := rowJSON{
-		SourceKey: r.SourceKey, Type: r.Type, Title: r.Title, Year: r.Year, Author: r.Author, IDs: r.IDs,
+		SourceKey: r.SourceKey, Type: r.Type, Title: r.Title, Year: r.Year, Author: r.Author, LeftOut: r.LeftOut, Guess: r.Guess, GuessTried: r.GuessTried, IDs: r.IDs,
 		Status: r.Status, Rating: r.Rating, Lists: r.Lists, Unsupported: r.Unsupported,
 		MangaChapter: r.MangaChapter, MangaVolume: r.MangaVolume, ListOnly: r.ListOnly,
 		StremioWatched: r.StremioWatched, NameOnly: r.NameOnly, Airing: r.Airing, NotAfter: r.NotAfter,
@@ -203,7 +219,7 @@ func (r *Row) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("import row: %w", err)
 	}
 	*r = Row{
-		SourceKey: in.SourceKey, Type: in.Type, Title: in.Title, Year: in.Year, Author: in.Author, IDs: in.IDs,
+		SourceKey: in.SourceKey, Type: in.Type, Title: in.Title, Year: in.Year, Author: in.Author, LeftOut: in.LeftOut, Guess: in.Guess, GuessTried: in.GuessTried, IDs: in.IDs,
 		Status: in.Status, Rating: in.Rating, Lists: in.Lists, Unsupported: in.Unsupported,
 		MangaChapter: in.MangaChapter, MangaVolume: in.MangaVolume, ListOnly: in.ListOnly,
 		StremioWatched: in.StremioWatched, NameOnly: in.NameOnly, Airing: in.Airing, NotAfter: in.NotAfter,

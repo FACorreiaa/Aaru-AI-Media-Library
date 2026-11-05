@@ -40,10 +40,15 @@ func (s *Server) GetDiscover(ctx context.Context, _ api.GetDiscoverRequestObject
 	}
 	out := make([]api.DiscoverRow, 0, len(rows))
 	for _, row := range rows {
-		out = append(out, api.DiscoverRow{
+		dto := api.DiscoverRow{
 			Id: string(row.List), Kind: api.DiscoverRowKind(row.List.Kind()), Title: row.Title,
 			Items: discoverHits(row.Items), Note: row.Note,
-		})
+		}
+		if row.List.KindPageOnly() {
+			only := true
+			dto.KindPageOnly = &only
+		}
+		out = append(out, dto)
 	}
 	return api.GetDiscover200JSONResponse(api.DiscoverRows{Rows: out}), nil
 }

@@ -6,7 +6,6 @@ package imports
 
 import (
 	"aaru-go-api/internal/apperr"
-	"aaru-go-api/internal/billing"
 	"aaru-go-api/internal/capture"
 	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/db/sqlc"
@@ -14,7 +13,6 @@ import (
 	"aaru-go-api/internal/push"
 	"aaru-go-api/internal/telemetry"
 	"context"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -35,30 +33,41 @@ type CaptureDeps struct {
 
 // The capture limits Swift's ImportService kept.
 const (
-	// FreeCapturesPerMonth is billing's: captures a free account may start in one UTC month.
-	FreeCapturesPerMonth = billing.FreeCapturesPerMonth
-	// PlusCapturesPerDay is Plus's fair use: captures one account may start in a UTC day.
-	PlusCapturesPerDay = 30
-	// MaxCaptureText is the longest pasted text a capture reads, in characters.
-	MaxCaptureText = 20000
+	// CapturesPerDay is fair use: captures one account may start in a UTC day. It keeps one account
+	// from running up the bill. There is no monthly limit while Plus is off sale (BIL-005).
+	CapturesPerDay = 30
+	// MaxCaptureText is the longest pasted text a capture reads, in characters: a long chat fits.
+	MaxCaptureText = 100000
+	// MaxCaptureImages is how many pictures one capture reads (BOOK-001).
+	MaxCaptureImages = 5
+	// MaxCaptureImageBytes is one capture's pictures together. In base64 it stays well inside the
+	// Messages API's 32 MB request limit.
+	MaxCaptureImageBytes = 15 * 1024 * 1024
 )
 
 // CaptureImageTypes are the image types the model reads. Clients send JPEG; the others are what
 // the Messages API also takes.
 var CaptureImageTypes = map[string]bool{"image/jpeg": true, "image/png": true, "image/gif": true, "image/webp": true}
 
-// CaptureRequest is what a capture sent: exactly one of text, a link, or an image.
+// CaptureRequest is what a capture sent: exactly one of text, a link, or images.
 type CaptureRequest struct {
 	Text *string
 	Link *string
-	// Image and MediaType are set for an image.
-	Image     []byte
-	MediaType string
+	// Images are set for pictures: at least one, in order.
+	Images []model.Image
+	// Only narrows text and images to one kind (BOOK-001). A link names its own kind.
+	Only core.MediaType
+	// Titles are a list Aaru chose in a chat (BOOK-003), planned as they are with no second model call.
+	Titles []capture.Title
+	// ListName is the list those titles also join, in order. Empty for none.
+	ListName string
 }
 
 // kind is the product event's `kind`.
 func (r CaptureRequest) kind() string {
 	switch {
+	case r.Titles != nil:
+		return "chat"
 	case r.Text != nil:
 		return "text"
 	case r.Link != nil:
@@ -113,6 +122,12 @@ func (s *Service) CreateCapture(ctx context.Context, user uuid.UUID, req Capture
 // captureContent is a link's row, read from the URL now; or the text or image for the worker.
 func captureContent(req CaptureRequest) ([]Row, *capture.Content, error) {
 	switch {
+	case req.Titles != nil:
+		if len(req.Titles) == 0 {
+			return nil, nil, apperr.Validation("titles", "There is nothing to add.").
+				WithDetails(map[string]string{"titles": "Empty."})
+		}
+		return titleRows(req.Titles, req.ListName), nil, nil
 	case req.Link != nil:
 		link := capture.ParseLink(strings.TrimSpace(*req.Link))
 		switch link.Kind {
@@ -137,56 +152,59 @@ func captureContent(req CaptureRequest) ([]Row, *capture.Content, error) {
 			return nil, nil, apperr.New(http.StatusRequestEntityTooLarge, "capture_too_large",
 				"That is more text than a capture reads. Paste a shorter list, or use an import.")
 		}
-		return nil, &capture.Content{Text: text}, nil
+		return nil, &capture.Content{Text: text, Only: req.Only}, nil
 	}
-	if !CaptureImageTypes[req.MediaType] {
-		return nil, nil, apperr.New(http.StatusUnsupportedMediaType, "capture_image_type",
-			"Send the image as a JPEG, PNG, GIF or WebP.")
+	if len(req.Images) == 0 {
+		return nil, nil, apperr.Validation("image", "There is nothing to read.").
+			WithDetails(map[string]string{"image": "No picture."})
 	}
-	return nil, &capture.Content{Image: req.Image, MediaType: req.MediaType}, nil
+	for _, image := range req.Images {
+		if !CaptureImageTypes[image.MediaType] {
+			return nil, nil, apperr.New(http.StatusUnsupportedMediaType, "capture_image_type",
+				"Send the image as a JPEG, PNG, GIF or WebP.")
+		}
+	}
+	first := req.Images[0]
+	return nil, &capture.Content{Image: first.Data, MediaType: first.MediaType, More: req.Images[1:], Only: req.Only}, nil
 }
 
-// captureRow is a captured title as a row to plan: always a wishlist add.
+// captureRow is a captured title as a row to plan: always a wishlist add. A book's author says more
+// than its year, which is often an edition's where the catalog has the first (BOOK-001).
 func captureRow(t capture.Title) Row {
+	year := t.Year
+	if t.Type == core.MediaBook && t.Author != nil {
+		year = nil
+	}
 	return Row{
-		SourceKey: t.SourceKey, Type: t.Type, Title: t.Title, Year: t.Year, IDs: t.IDs,
+		SourceKey: t.SourceKey, Type: t.Type, Title: t.Title, Year: year, IDs: t.IDs, Author: t.Author,
 		Status: ptr(core.StatusWishlist), Lists: []string{},
 	}
 }
 
-// CheckCaptureQuota refuses a capture past the quota. Free accounts get FreeCapturesPerMonth; past
-// it, a 402 the apps answer with Plus. Plus lifts the month's limit; PlusCapturesPerDay keeps one
-// account from running up the bill.
+// titleRows are captured titles in their order, each joining list once approved (BOOK-003).
+func titleRows(titles []capture.Title, list string) []Row {
+	rows := make([]Row, len(titles))
+	for i, t := range titles {
+		rows[i] = captureRow(t)
+		if list != "" {
+			rows[i].Lists = []string{list}
+		}
+	}
+	return rows
+}
+
+// CheckCaptureQuota is fair use, for every account: past CapturesPerDay in a UTC day, a 429.
 func (s *Service) CheckCaptureQuota(ctx context.Context, q *sqlc.Queries, user uuid.UUID) error {
 	now := s.now()
-	plus, err := (&billing.Service{Q: q}).Active(ctx, user, now)
+	today, err := (&capture.Store{Q: q}).Captures(ctx, user, DayStart(now), now)
 	if err != nil {
 		return err
 	}
-	store := &capture.Store{Q: q}
-	if plus != nil {
-		today, err := store.Captures(ctx, user, DayStart(now), now)
-		if err != nil {
-			return err
-		}
-		if today < PlusCapturesPerDay {
-			return nil
-		}
-		return apperr.New(http.StatusTooManyRequests, "capture_fair_use",
-			"Aaru reads "+strconv.Itoa(PlusCapturesPerDay)+" captures a day. More tomorrow.")
-	}
-	start, next := billing.MonthStart(now)
-	used, err := store.Captures(ctx, user, start, now)
-	if err != nil {
-		return err
-	}
-	if used < FreeCapturesPerMonth {
+	if today < CapturesPerDay {
 		return nil
 	}
-	telemetry.Capture(telemetry.PaywallShown, user, map[string]string{"reason": "capture_quota"})
-	return apperr.New(http.StatusPaymentRequired, "capture_quota",
-		fmt.Sprintf("You have used this month's %d captures. More come on %s, or Aaru Plus lifts the limit.",
-			FreeCapturesPerMonth, next.UTC().Format("January 2")))
+	return apperr.New(http.StatusTooManyRequests, "capture_fair_use",
+		"Aaru reads "+strconv.Itoa(CapturesPerDay)+" captures a day. More tomorrow.")
 }
 
 // DayStart is the start of t's UTC day.
@@ -225,14 +243,12 @@ func (s *Service) fetchCapture(ctx context.Context, job *core.ImportJob) ([]Row,
 	switch {
 	case outcome.Refused:
 		return nil, s.fail(ctx, job, "Aaru could not read that capture.")
+	case len(outcome.Titles) == 0 && input.Content.Only == core.MediaBook:
+		return nil, s.fail(ctx, job, "Aaru found no book in that capture.")
 	case len(outcome.Titles) == 0:
 		return nil, s.fail(ctx, job, "Aaru found no film, show, anime or book in that capture.")
 	}
-	rows := make([]Row, len(outcome.Titles))
-	for i, t := range outcome.Titles {
-		rows[i] = captureRow(t)
-	}
-	return rows, nil
+	return titleRows(outcome.Titles, outcome.ListName), nil
 }
 
 // deleteCaptureInput forgets what a capture sent.

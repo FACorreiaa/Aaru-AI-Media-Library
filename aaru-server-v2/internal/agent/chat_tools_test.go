@@ -14,7 +14,6 @@ import (
 	"aaru-go-api/internal/stats"
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -284,10 +283,7 @@ func TestPatchToolQuota(t *testing.T) {
 	f := newChatToolsFixture(t)
 	f.withHit("903")
 	f.withHit("904")
-	for i := range imports.FreeCapturesPerMonth {
-		_, err := f.tools.ChatPatch(f.ctx, bulk("8"+strconv.Itoa(i)), f.user)
-		require.NoError(t, err)
-	}
+	f.spendCaptures(imports.CapturesPerDay)
 	c := f.chatTools(f.user)
 	run(t, c, "search_titles", map[string]any{"query": "hit", "kind": "movie"})
 	out, isErr := run(t, c, "apply_library_patch", map[string]any{"changes": []any{

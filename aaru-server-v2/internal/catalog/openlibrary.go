@@ -14,7 +14,7 @@ import (
 // OpenLibraryBaseURL is Open Library's API root.
 const OpenLibraryBaseURL = "https://openlibrary.org"
 
-const openLibraryFields = "key,title,first_publish_year,isbn,cover_i,author_name,number_of_pages_median"
+const openLibraryFields = "key,title,subtitle,first_publish_year,isbn,cover_i,author_name,number_of_pages_median"
 
 // OpenLibrary is the Open Library adapter (CAT-003): book search and detail, ISBN
 // normalized to ISBN-13, cover URLs referenced, never downloaded. Also Discover's
@@ -70,11 +70,27 @@ func (o *OpenLibrary) Hydrate(ctx context.Context, ids core.ExternalIDs, _ core.
 	return &Record{Hit: hit, Genres: []string{}}, nil
 }
 
-// DiscoverLists are the rows Open Library serves.
-func (o *OpenLibrary) DiscoverLists() []DiscoverList { return []DiscoverList{ListBooksTrending} }
+// openLibrarySubjects are the subject each book row reads (BOOK-002). A subject comes in order of
+// edition count, so the old and much-reprinted lead, and `published_in` changes nothing: `science`
+// opens with Romeo and Juliet, where `popular_science` opens with Hawking and Bryson. History,
+// biography and fantasy were no better than `science`, so they have no row.
+var openLibrarySubjects = map[DiscoverList]string{
+	ListBooksClassics: "classics",
+	ListBooksSciFi:    "science_fiction",
+	ListBooksScience:  "popular_science",
+	ListBooksBusiness: "business",
+}
 
-// List is the weekly trending books.
+// DiscoverLists are the rows Open Library serves.
+func (o *OpenLibrary) DiscoverLists() []DiscoverList {
+	return []DiscoverList{ListBooksTrending, ListBooksClassics, ListBooksSciFi, ListBooksScience, ListBooksBusiness}
+}
+
+// List is the weekly trending books, or a subject's books.
 func (o *OpenLibrary) List(ctx context.Context, list DiscoverList, _ time.Time) ([]Hit, error) {
+	if subject, ok := openLibrarySubjects[list]; ok {
+		return o.subject(ctx, subject)
+	}
 	if list != ListBooksTrending {
 		return nil, provider.NewError("openlibrary", provider.KindNotFound)
 	}
@@ -85,6 +101,41 @@ func (o *OpenLibrary) List(ctx context.Context, list DiscoverList, _ time.Time) 
 		return nil, err
 	}
 	return openLibraryPage{}.hits(page.Works), nil
+}
+
+// subject is a subject's books that have a cover. Its works differ from a search's docs: `cover_id`
+// and `authors[].name`. Some titles hold newlines, and some years are 0.
+func (o *OpenLibrary) subject(ctx context.Context, subject string) ([]Hit, error) {
+	var page struct {
+		Works []struct {
+			Key              string  `json:"key"`
+			Title            *string `json:"title"`
+			FirstPublishYear *int    `json:"first_publish_year"`
+			CoverID          *int    `json:"cover_id"`
+			Authors          []struct {
+				Name string `json:"name"`
+			} `json:"authors"`
+		} `json:"works"`
+	}
+	if err := o.get(ctx, "subjects/"+subject+".json", map[string]string{"limit": "30"}, &page); err != nil {
+		return nil, err
+	}
+	docs := make([]openLibraryDoc, 0, len(page.Works))
+	for _, w := range page.Works {
+		if w.CoverID == nil || w.Title == nil {
+			continue
+		}
+		title := strings.Join(strings.Fields(*w.Title), " ")
+		doc := openLibraryDoc{Key: w.Key, Title: &title, CoverI: w.CoverID}
+		if w.FirstPublishYear != nil && *w.FirstPublishYear > 0 {
+			doc.FirstPublishYear = w.FirstPublishYear
+		}
+		for _, a := range w.Authors {
+			doc.AuthorName = append(doc.AuthorName, a.Name)
+		}
+		docs = append(docs, doc)
+	}
+	return openLibraryPage{}.hits(docs), nil
 }
 
 func (o *OpenLibrary) get(ctx context.Context, path string, query map[string]string, v any) error {
@@ -109,6 +160,7 @@ func (openLibraryPage) hits(docs []openLibraryDoc) []Hit {
 type openLibraryDoc struct {
 	Key                 string   `json:"key"`
 	Title               *string  `json:"title"`
+	Subtitle            *string  `json:"subtitle"`
 	FirstPublishYear    *int     `json:"first_publish_year"`
 	ISBN                []string `json:"isbn"`
 	CoverI              *int     `json:"cover_i"`
@@ -137,7 +189,8 @@ func (d openLibraryDoc) hit() (Hit, bool) {
 		}
 	}
 	return Hit{
-		Type: core.MediaBook, Title: *title, Year: d.FirstPublishYear, PosterURL: poster, Byline: byline,
+		Type: core.MediaBook, Title: *title, Subtitle: nilIfBlank(d.Subtitle), Year: d.FirstPublishYear,
+		PosterURL: poster, Byline: byline,
 		IDs:       core.ExternalIDs{ISBN: isbn, OpenLibrary: strings.TrimPrefix(d.Key, "/works/")},
 		PageCount: positive(d.NumberOfPagesMedian),
 	}, true

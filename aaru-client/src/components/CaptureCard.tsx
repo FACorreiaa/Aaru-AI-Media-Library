@@ -7,11 +7,12 @@ import { AgentPresence } from './AgentPresence'
 
 // AG-006: a capture waiting under "Waiting for you", beside agents' requests. While Aaru reads
 // it, the owl; once planned, what it adds and what needs a pick. The review is the import page.
-export function CaptureCard(props: { job: ImportJob }) {
+export function CaptureCard(props: { job: ImportJob; from?: 'books' }) {
   return (
     <Link
       to="/app/imports/$id"
       params={{ id: props.job.id }}
+      search={{ from: props.from }}
       class="edge-lit block rounded-card bg-surface p-5 hover:bg-surface/80"
     >
       <span class="flex items-center gap-2 eyebrow">
