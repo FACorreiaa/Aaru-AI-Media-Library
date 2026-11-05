@@ -161,7 +161,9 @@ captures you made this month and how much text each used.
 
 **Your chats with Aaru.** When you ask Aaru something from the owl in the top bar, the
 question and Aaru's answer are kept as a chat. Chats stay until you delete them with "Delete my
-chats with Aaru" in Settings. They are in your export and are removed with your account.
+chats with Aaru" in Settings. They are in your export and are removed with your account. As
+with @aaru, Aaru keeps a daily count of its answers and how much text they used, to keep the
+service fair. That count stays when you delete your chats and is removed with your account.
 
 **Voice.** If you speak your question, the audio goes to Aaru's server and is transcribed there,
 on Aaru's own cluster. It is held in memory only while it is read, never stored, and never sent
@@ -236,10 +238,11 @@ Aaru only uses these services, and only for the purpose listed:
 - **Anthropic**, only when someone tags @aaru in a group, to write Aaru's answer, when you
   send a capture, to read the titles in it, or when you ask Aaru from the owl, to write the
   answer. It receives what is described under "Aaru in groups" and "Capture" above. When you ask
-  Aaru, it receives your question, the recent turns of that chat, and the parts of your own
-  library, lists, stats, favorites, listens and followed sports that Aaru reads to answer. It
-  never receives your friends' or groups' data. It gets all of this through its API and does
-  not train on it.
+  Aaru, it receives your question, the recent turns of that chat, the name of the screen you are
+  on, your time zone, the title you are looking at or asking about with how far you are in it,
+  and the parts of your own library, lists, stats, favorites, listens and followed sports that
+  Aaru reads to answer. It never receives your friends' or groups' data. It gets all of this
+  through its API and does not train on it.
 - **Stremio**, only if you connect it. Your Stremio app asks Aaru for your rows and reports
   what you play. If you import your Stremio history, Aaru's server reads your Stremio library
   once with the code you approved, then signs out. Aaru also asks Stremio's public catalog
@@ -276,6 +279,7 @@ within a year. Error reports are deleted within 90 days and product counts withi
 - **Delete your account:** Settings → Delete account, in the app or on the web.
 - **Export:** Settings → Export your data, in the app or on the web. JSON has everything; CSV
   opens in a spreadsheet and imports back into Aaru.
+- **Delete your chats:** Settings → Delete my chats with Aaru.
 - **Questions or requests:** privacy@aaruapp.com.
 
 Aaru is run by an individual developer based in the European Union. You have the rights the
