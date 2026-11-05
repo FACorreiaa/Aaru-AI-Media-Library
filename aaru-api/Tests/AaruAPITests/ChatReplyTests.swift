@@ -86,6 +86,14 @@ struct ChatReplyTests {
         #expect(reply.actionID == "act1")
     }
 
+    @Test func importIsKept() {
+        var reply = ChatReply()
+        reply.apply(.components(.init(importId: "imp1")))
+        reply.apply(.components(.init(titles: [title("a")])))
+        #expect(reply.importID == "imp1")
+        #expect(reply.actionID == nil)
+    }
+
     @Test func cancelledKeepsWhatWasWritten() {
         var reply = ChatReply()
         reply.apply(.delta("So far"))

@@ -44,6 +44,11 @@ struct AssistantTurnView: View {
                 )
                 .id(plan.id)
             }
+            if let importID = reply.importID {
+                // BOOK-003: the list waits in an ordinary review, opened as a capture's push opens it.
+                Button("Review the list") { PushInbox.shared.importID = importID }
+                    .buttonStyle(.borderedProminent)
+            }
             if let actionID = reply.actionID {
                 UndoRibbon(turn: turn, actionID: actionID, model: model)
             }

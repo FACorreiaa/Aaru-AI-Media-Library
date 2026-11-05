@@ -13,6 +13,8 @@ public struct ChatReply: Sendable {
     public private(set) var status: String?
     public private(set) var titles: [Components.Schemas.TitleSummary] = []
     public private(set) var plan: Components.Schemas.AgentPlan?
+    /// A list Aaru sent to be matched (BOOK-003): a capture the person reviews like any other.
+    public private(set) var importID: String?
     public private(set) var actionID: String?
     public private(set) var actionSummary: String?
     public private(set) var state: State = .working
@@ -67,6 +69,7 @@ public struct ChatReply: Sendable {
             titles.append(title)
         }
         plan = components.plan ?? plan
+        importID = components.importId ?? importID
         actionID = components.actionId ?? actionID
         actionSummary = components.actionSummary ?? actionSummary
     }

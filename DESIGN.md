@@ -587,7 +587,8 @@ One page per kind, all in More (§18), built from one shape so they read alike:
 - **A planned capture is chosen row by row** (BOOK-001): its rows come before Approve, each with a
   tick, all ticked to start, and the counts follow. Other imports keep their order and have no ticks.
 - **An order** (BOOK-003): when a capture named a list, the review says above its rows "Approve also saves
-  these in order as the list "X-Men reading order"." The Books box says it takes a request too.
+  these in order as the list "X-Men reading order"." The Books box says it takes a request too. When the owl
+  sends a list, its reply has a "Review the list" button that opens that review.
 - **Match all** (IMP-021) sits on the Not matched heading of any plan still waiting, and reads "Matching
   12 of 30" while it runs. A filled row moves to Will be added: small cover, what the catalog calls it,
   its author, `Best guess for "what the list said"`, a tick and Change. Rows it could not fill keep Find it.
