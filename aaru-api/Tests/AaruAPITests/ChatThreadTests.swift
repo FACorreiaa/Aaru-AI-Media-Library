@@ -9,7 +9,7 @@ import Testing
 
 private let baseURL = URL(string: "https://api.aaru.test")!
 
-private func makeClient(_ transport: ScriptedTransport) -> Client {
+private func makeClient(_ transport: some ClientTransport) -> Client {
     Client.aaru(
         baseURL: baseURL,
         session: SessionMiddleware(token: { "abc" }, onUnauthorized: {}),
@@ -56,6 +56,62 @@ private func paths(_ transport: ScriptedTransport) -> [String] {
 
 private func thread(_ transport: ScriptedTransport, clock: Clock = Clock()) -> ChatThread {
     ChatThread(client: makeClient(transport), busyRetryDelay: .zero, now: { clock.now })
+}
+
+/// Holds the request at index `holding` until `release()`, then answers it from `inner`.
+private final class HoldingTransport: ClientTransport, @unchecked Sendable {
+    // @unchecked: test-only; `lock` guards `count` and `waiter`.
+    private let lock = NSLock()
+    private let inner: ScriptedTransport
+    private let holding: Int
+    private var count = 0
+    private var released = false
+    private var waiter: CheckedContinuation<Void, Never>?
+
+    init(_ inner: ScriptedTransport, holding: Int) {
+        self.inner = inner
+        self.holding = holding
+    }
+
+    var arrived: Bool {
+        lock.withLock { count > holding }
+    }
+
+    func release() {
+        let continuation: CheckedContinuation<Void, Never>? = lock.withLock {
+            released = true
+            defer { waiter = nil }
+            return waiter
+        }
+        continuation?.resume()
+    }
+
+    func send(
+        _ request: HTTPRequest,
+        body: HTTPBody?,
+        baseURL: URL,
+        operationID: String
+    ) async throws -> (HTTPResponse, HTTPBody?) {
+        let index = lock.withLock {
+            defer { count += 1 }
+            return count
+        }
+        if index == holding {
+            await withCheckedContinuation { continuation in
+                let resumeNow = lock.withLock {
+                    if released {
+                        return true
+                    }
+                    waiter = continuation
+                    return false
+                }
+                if resumeNow {
+                    continuation.resume()
+                }
+            }
+        }
+        return try await inner.send(request, body: body, baseURL: baseURL, operationID: operationID)
+    }
 }
 
 private func plain(_ reply: ChatReply) async {}
@@ -252,5 +308,65 @@ struct ChatThreadTests {
         await chat.reset()
         _ = await chat.send("two", hint: nil, onUpdate: plain)
         #expect(paths(transport).filter { $0 == "POST /v1/chats" }.count == 2)
+    }
+
+    @Test func aResetDuringTheCreateStopsTheOldSend() async {
+        let scripted = ScriptedTransport([created, created, answered])
+        let holding = HoldingTransport(scripted, holding: 0)
+        let chat = ChatThread(client: makeClient(holding), busyRetryDelay: .zero)
+        let old = Task { await chat.send("deleted question", hint: nil, onUpdate: plain) }
+        while !holding.arrived {
+            await Task.yield()
+        }
+        await chat.reset()
+        holding.release()
+        let oldReply = await old.value
+        #expect(oldReply.state == .cancelled)
+        #expect(paths(scripted) == ["POST /v1/chats"])
+        let next = await chat.send("fresh", hint: nil, onUpdate: plain)
+        #expect(next.state == .answered)
+        #expect(paths(scripted) == ["POST /v1/chats", "POST /v1/chats", "POST /v1/chats/c1/turns"])
+    }
+
+    @Test func aResetDuringTheTurnStopsTheOldSend() async {
+        let scripted = ScriptedTransport([created, answered])
+        let holding = HoldingTransport(scripted, holding: 1)
+        let chat = ChatThread(client: makeClient(holding), busyRetryDelay: .zero)
+        let old = Task { await chat.send("deleted question", hint: nil, onUpdate: plain) }
+        while !holding.arrived {
+            await Task.yield()
+        }
+        await chat.reset()
+        holding.release()
+        #expect(await old.value.state == .cancelled)
+        #expect(paths(scripted).filter { $0 == "POST /v1/chats" }.count == 1)
+        _ = await chat.send("fresh", hint: nil, onUpdate: plain)
+        #expect(paths(scripted).filter { $0 == "POST /v1/chats" }.count == 2)
+    }
+
+    @Test func aStale404DoesNotEraseANewerChat() async {
+        let gone = ScriptedResponse(status: .notFound, json: #"{"code":"not_found","message":"gone"}"#)
+        let scripted = ScriptedTransport([
+            created, // A: chat c1
+            ScriptedResponse(status: .created, json: #"{"id":"c2"}"#), // B, after the chat expired
+            answered, // B's turn
+            gone, // A's turn, held until B is done
+            answered,
+        ])
+        let holding = HoldingTransport(scripted, holding: 1)
+        let clock = Clock()
+        let chat = ChatThread(client: makeClient(holding), busyRetryDelay: .zero, now: { clock.now })
+        let old = Task { await chat.send("old", hint: nil, onUpdate: plain) }
+        while !holding.arrived {
+            await Task.yield()
+        }
+        clock.advance(16 * 60)
+        #expect(await chat.reopen() == false)
+        let next = await chat.send("new", hint: nil, onUpdate: plain)
+        #expect(next.state == .answered)
+        holding.release()
+        _ = await old.value
+        _ = await chat.send("again", hint: nil, onUpdate: plain)
+        #expect(paths(scripted).filter { $0 == "POST /v1/chats" }.count == 2)
     }
 }

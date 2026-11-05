@@ -18,6 +18,8 @@ public actor ChatThread {
     private let now: @Sendable () -> Date
     private var chatID: String?
     private var lastUsed: Date
+    /// Bumped by `reset()`; a send that started before it must not touch the chat afterwards.
+    private var generation = 0
 
     public init(
         client: Client,
@@ -43,6 +45,7 @@ public actor ChatThread {
 
     /// Forgets the chat: sign-out and Delete my chats.
     public func reset() {
+        generation += 1
         chatID = nil
     }
 
@@ -66,10 +69,11 @@ public actor ChatThread {
         reply: inout ChatReply,
         onUpdate: @Sendable (ChatReply) async -> Void
     ) async {
+        let started = generation
         var recreated = false
         var busyAttempts = 0
         while true {
-            if Task.isCancelled {
+            if Task.isCancelled || generation != started {
                 reply.cancel()
                 return
             }
@@ -79,6 +83,10 @@ public actor ChatThread {
             } else {
                 switch await createChat() {
                 case let .id(created):
+                    if generation != started {
+                        reply.cancel()
+                        return
+                    }
                     chatID = created
                     id = created
                 case .cancelled:
@@ -97,11 +105,15 @@ public actor ChatThread {
                     body: .json(.init(body: body, hint: hint))
                 )
             } catch {
-                if Self.isCancellation(error) {
+                if Self.isCancellation(error) || generation != started {
                     reply.cancel()
                 } else {
                     reply.fail(Self.unreachable)
                 }
+                return
+            }
+            if generation != started {
+                reply.cancel()
                 return
             }
 
@@ -114,7 +126,9 @@ public actor ChatThread {
                 switch status {
                 case 404 where !recreated:
                     recreated = true
-                    chatID = nil
+                    if chatID == id {
+                        chatID = nil
+                    }
                 case 409:
                     busyAttempts += 1
                     if busyAttempts >= Self.busyTries {
@@ -127,6 +141,7 @@ public actor ChatThread {
                         reply.cancel()
                         return
                     }
+                // The loop head stops if a reset ran during the wait.
                 default:
                     reply.fail(message)
                     return
