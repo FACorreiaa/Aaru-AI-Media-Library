@@ -5006,6 +5006,11 @@ components:
         note:
           type: string
           description: Where a stand-in row came from, e.g. TMDB while AniList is down.
+        kindPageOnly:
+          type: boolean
+          description: >-
+            True when only the kind's own page shows this row, never Home (BOOK-002). Absent
+            otherwise.
     DiscoverRows:
       type: object
       required: [rows]

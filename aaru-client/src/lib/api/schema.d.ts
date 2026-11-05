@@ -4197,6 +4197,8 @@ export interface components {
       items: components['schemas']['CatalogHit'][]
       /** @description Where a stand-in row came from, e.g. TMDB while AniList is down. */
       note?: string
+      /** @description True when only the kind's own page shows this row, never Home (BOOK-002). Absent otherwise. */
+      kindPageOnly?: boolean
     }
     DiscoverRows: {
       rows: components['schemas']['DiscoverRow'][]

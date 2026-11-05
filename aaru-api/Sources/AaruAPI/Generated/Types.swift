@@ -9003,6 +9003,10 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/DiscoverRow/note`.
             public var note: Swift.String?
+            /// True when only the kind's own page shows this row, never Home (BOOK-002). Absent otherwise.
+            ///
+            /// - Remark: Generated from `#/components/schemas/DiscoverRow/kindPageOnly`.
+            public var kindPageOnly: Swift.Bool?
             /// Creates a new `DiscoverRow`.
             ///
             /// - Parameters:
@@ -9011,18 +9015,21 @@ public enum Components {
             ///   - title: Display title, e.g. "Fall 2026 anime".
             ///   - items:
             ///   - note: Where a stand-in row came from, e.g. TMDB while AniList is down.
+            ///   - kindPageOnly: True when only the kind's own page shows this row, never Home (BOOK-002). Absent otherwise.
             public init(
                 id: Swift.String,
                 kind: Components.Schemas.DiscoverRowKind,
                 title: Swift.String,
                 items: [Components.Schemas.CatalogHit],
-                note: Swift.String? = nil
+                note: Swift.String? = nil,
+                kindPageOnly: Swift.Bool? = nil
             ) {
                 self.id = id
                 self.kind = kind
                 self.title = title
                 self.items = items
                 self.note = note
+                self.kindPageOnly = kindPageOnly
             }
             public enum CodingKeys: String, CodingKey {
                 case id
@@ -9030,6 +9037,7 @@ public enum Components {
                 case title
                 case items
                 case note
+                case kindPageOnly
             }
         }
         /// - Remark: Generated from `#/components/schemas/DiscoverRows`.
