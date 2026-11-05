@@ -28,7 +28,9 @@ import (
 	"aaru-go-api/internal/music"
 	"aaru-go-api/internal/oauth"
 	"aaru-go-api/internal/plans"
+	"aaru-go-api/internal/provider"
 	"aaru-go-api/internal/push"
+	"aaru-go-api/internal/ratelimit"
 	"aaru-go-api/internal/realtime"
 	"aaru-go-api/internal/reqctx"
 	"aaru-go-api/internal/schedule"
@@ -41,8 +43,10 @@ import (
 	"aaru-go-api/internal/telemetry"
 	"aaru-go-api/internal/tonight"
 	"aaru-go-api/internal/trakt"
+	"aaru-go-api/internal/transcription"
 	"context"
 	"log/slog"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -123,6 +127,8 @@ type Deps struct {
 	// Model is the agent's language model; nil when ANTHROPIC_API_KEY is unset (`@aaru` and
 	// capture reading stay off).
 	Model model.Provider
+	// Transcription is voice for Chat with Aaru; New builds it from Config, nil when voice is off.
+	Transcription *transcription.OpenAICompatible
 	// Plans is remote approval of an outside agent's larger changes (AG-003, OUT-004). New builds
 	// one over Pool and Library when unset.
 	Plans *plans.Service
@@ -153,6 +159,15 @@ type Deps struct {
 type Server struct {
 	Deps
 	q *sqlc.Queries
+	// transcriptions limits each user's spoken questions.
+	transcriptions *ratelimit.FixedWindow
+	// transcribing holds one slot for each spoken question in flight in this process.
+	transcribing chan struct{}
+	// chatHeartbeat is how often a Chat turn's stream says it is alive.
+	chatHeartbeat time.Duration
+	// chatStop ends when the server shuts down, and every Chat turn with it (StopChats).
+	chatStop  context.Context
+	stopChats context.CancelFunc
 }
 
 // New builds the handlers.
@@ -258,7 +273,34 @@ func New(deps Deps) *Server {
 			deps.Stremio.EpisodeMap = stremio.NewEpisodeMap(deps.StremioSeries)
 		}
 	}
-	return &Server{Deps: deps, q: q}
+	if deps.Transcription == nil && deps.Config != nil && deps.Config.Transcription != nil {
+		deps.Transcription = &transcription.OpenAICompatible{
+			BaseURL: deps.Config.Transcription.BaseURL, Model: deps.Config.Transcription.Model,
+			Transport: provider.NewHTTPTransport(),
+		}
+	}
+	chatStop, stopChats := context.WithCancel(context.Background())
+	return &Server{
+		Deps: deps, q: q, transcriptions: ratelimit.New(transcriptionsPerHour, time.Hour), chatHeartbeat: chatHeartbeatEvery,
+		transcribing: make(chan struct{}, maxTranscriptionsInFlight), chatStop: chatStop, stopChats: stopChats,
+	}
+}
+
+// StopChats ends every Chat turn in flight, and any that starts after it, so a shutdown stores them
+// `stopped` instead of waiting out the grace period and leaving them `streaming`.
+func (s *Server) StopChats() { s.stopChats() }
+
+// chatService is Chat with Aaru over this server's own areas (ASK-009). A plan of many titles spends
+// one capture, so its quota is the capture route's: a nil Quota would mean no limit at all.
+func (s *Server) chatService() *agent.ChatService {
+	tools := s.AgentTools()
+	tools.Quota = s.Imports.CheckCaptureQuota
+	return &agent.ChatService{
+		Store: s.chats(), Model: s.Model, Log: s.Log, Stop: s.chatStop,
+		Deps: agent.ChatDeps{
+			Q: s.q, Tools: tools, Stats: s.Stats, Lists: s.Library.Store, Favorites: s.Social, Music: s.Listens, Sports: s.Sports,
+		},
+	}
 }
 
 // webBaseURL is the web origin invite and share links open on.

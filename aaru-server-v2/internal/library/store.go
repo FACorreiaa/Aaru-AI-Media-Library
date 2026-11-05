@@ -529,6 +529,28 @@ func (s *Store) Actions(ctx context.Context, user uuid.UUID, limit int) ([]Actio
 	return out, nil
 }
 
+// JournalClock is the time on the clock the journal stamps actions by: the database's.
+func (s *Store) JournalClock(ctx context.Context) (time.Time, error) {
+	now, err := s.q.LibraryJournalClock(ctx)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("journal clock: %w", err)
+	}
+	return now, nil
+}
+
+// LatestActionOnItem is the user's newest action on item at or after since (JournalClock); nil
+// when there is none.
+func (s *Store) LatestActionOnItem(ctx context.Context, user, item uuid.UUID, since time.Time) (*uuid.UUID, error) {
+	id, err := s.q.LibraryLatestActionOnItem(ctx, sqlc.LibraryLatestActionOnItemParams{UserID: user, ItemID: item, Since: since})
+	if db.IsNoRows(err) {
+		return nil, nil // nothing was journaled
+	}
+	if err != nil {
+		return nil, fmt.Errorf("latest action: %w", err)
+	}
+	return &id, nil
+}
+
 // Watched is an item's episode ticks.
 func (s *Store) Watched(ctx context.Context, item uuid.UUID) (map[core.EpisodeKey]bool, error) {
 	return watchedKeys(ctx, s.q, item)

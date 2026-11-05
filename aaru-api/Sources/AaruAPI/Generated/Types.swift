@@ -809,6 +809,31 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /v1/imports`.
     /// - Remark: Generated from `#/paths//v1/imports/get(listImports)`.
     func listImports(_ input: Operations.ListImports.Input) async throws -> Operations.ListImports.Output
+    /// Start a Chat with Aaru (ASK-009), a one-to-one thread only its user can read.
+    ///
+    /// - Remark: HTTP `POST /v1/chats`.
+    /// - Remark: Generated from `#/paths//v1/chats/post(createChat)`.
+    func createChat(_ input: Operations.CreateChat.Input) async throws -> Operations.CreateChat.Output
+    /// Delete all of the caller's chats with Aaru, their turns with them.
+    ///
+    /// - Remark: HTTP `DELETE /v1/chats`.
+    /// - Remark: Generated from `#/paths//v1/chats/delete(deleteChats)`.
+    func deleteChats(_ input: Operations.DeleteChats.Input) async throws -> Operations.DeleteChats.Output
+    /// Whether Aaru and voice are on, so clients hide the owl and the mic when the server has them off.
+    ///
+    /// - Remark: HTTP `GET /v1/chats/status`.
+    /// - Remark: Generated from `#/paths//v1/chats/status/get(getChatStatus)`.
+    func getChatStatus(_ input: Operations.GetChatStatus.Input) async throws -> Operations.GetChatStatus.Output
+    /// Turn a spoken question into text (ASK-009). The audio is held in memory while it is read and never stored. 413 `file_too_large` over 8 MB, 413 `audio_too_long` when `X-Audio-Seconds` says over 60, 422 `transcription_empty` when no words were heard, 429 `rate_limited` past 40 an hour, 503 `transcription_unavailable` when voice is off.
+    ///
+    /// - Remark: HTTP `POST /v1/chats/transcribe`.
+    /// - Remark: Generated from `#/paths//v1/chats/transcribe/post(transcribeChatAudio)`.
+    func transcribeChatAudio(_ input: Operations.TranscribeChatAudio.Input) async throws -> Operations.TranscribeChatAudio.Output
+    /// Ask Aaru (ASK-009). The answer is a stream of server-sent events, each frame an `event:` line with its type and a `data:` line with JSON: `status` and `delta` carry ChatTextFrame, `components` ChatComponentsFrame, `done` ChatDoneFrame, `error` ChatErrorFrame. Lines starting with `:` are heartbeats. Once the stream has begun, a failure can only be an `error` frame: a send past the daily cap is a 200 with one `error` frame, code `resting`. Before it begins: 404 for a chat that is not the caller's, 409 `chat_busy` while the chat is still answering, 422 for a body that is blank or over 4000 characters, 503 `agent_unavailable` when Aaru is off. Hanging up stops the turn and keeps what was written.
+    ///
+    /// - Remark: HTTP `POST /v1/chats/{id}/turns`.
+    /// - Remark: Generated from `#/paths//v1/chats/{id}/turns/post(createChatTurn)`.
+    func createChatTurn(_ input: Operations.CreateChatTurn.Input) async throws -> Operations.CreateChatTurn.Output
     /// Everything Aaru holds for the caller, to keep or move elsewhere (GDPR portability).
     ///
     /// `json` (default) is complete: account, every library item with ratings, notes and every watched episode, lists and shelves. `csv` is one row per library item in the column layout Aaru's own "Any site" import reads, so it can be re-imported here or opened in a spreadsheet.
@@ -2944,6 +2969,55 @@ extension APIProtocol {
     /// - Remark: Generated from `#/paths//v1/imports/get(listImports)`.
     public func listImports(headers: Operations.ListImports.Input.Headers = .init()) async throws -> Operations.ListImports.Output {
         try await listImports(Operations.ListImports.Input(headers: headers))
+    }
+    /// Start a Chat with Aaru (ASK-009), a one-to-one thread only its user can read.
+    ///
+    /// - Remark: HTTP `POST /v1/chats`.
+    /// - Remark: Generated from `#/paths//v1/chats/post(createChat)`.
+    public func createChat(headers: Operations.CreateChat.Input.Headers = .init()) async throws -> Operations.CreateChat.Output {
+        try await createChat(Operations.CreateChat.Input(headers: headers))
+    }
+    /// Delete all of the caller's chats with Aaru, their turns with them.
+    ///
+    /// - Remark: HTTP `DELETE /v1/chats`.
+    /// - Remark: Generated from `#/paths//v1/chats/delete(deleteChats)`.
+    public func deleteChats(headers: Operations.DeleteChats.Input.Headers = .init()) async throws -> Operations.DeleteChats.Output {
+        try await deleteChats(Operations.DeleteChats.Input(headers: headers))
+    }
+    /// Whether Aaru and voice are on, so clients hide the owl and the mic when the server has them off.
+    ///
+    /// - Remark: HTTP `GET /v1/chats/status`.
+    /// - Remark: Generated from `#/paths//v1/chats/status/get(getChatStatus)`.
+    public func getChatStatus(headers: Operations.GetChatStatus.Input.Headers = .init()) async throws -> Operations.GetChatStatus.Output {
+        try await getChatStatus(Operations.GetChatStatus.Input(headers: headers))
+    }
+    /// Turn a spoken question into text (ASK-009). The audio is held in memory while it is read and never stored. 413 `file_too_large` over 8 MB, 413 `audio_too_long` when `X-Audio-Seconds` says over 60, 422 `transcription_empty` when no words were heard, 429 `rate_limited` past 40 an hour, 503 `transcription_unavailable` when voice is off.
+    ///
+    /// - Remark: HTTP `POST /v1/chats/transcribe`.
+    /// - Remark: Generated from `#/paths//v1/chats/transcribe/post(transcribeChatAudio)`.
+    public func transcribeChatAudio(
+        headers: Operations.TranscribeChatAudio.Input.Headers = .init(),
+        body: Operations.TranscribeChatAudio.Input.Body
+    ) async throws -> Operations.TranscribeChatAudio.Output {
+        try await transcribeChatAudio(Operations.TranscribeChatAudio.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Ask Aaru (ASK-009). The answer is a stream of server-sent events, each frame an `event:` line with its type and a `data:` line with JSON: `status` and `delta` carry ChatTextFrame, `components` ChatComponentsFrame, `done` ChatDoneFrame, `error` ChatErrorFrame. Lines starting with `:` are heartbeats. Once the stream has begun, a failure can only be an `error` frame: a send past the daily cap is a 200 with one `error` frame, code `resting`. Before it begins: 404 for a chat that is not the caller's, 409 `chat_busy` while the chat is still answering, 422 for a body that is blank or over 4000 characters, 503 `agent_unavailable` when Aaru is off. Hanging up stops the turn and keeps what was written.
+    ///
+    /// - Remark: HTTP `POST /v1/chats/{id}/turns`.
+    /// - Remark: Generated from `#/paths//v1/chats/{id}/turns/post(createChatTurn)`.
+    public func createChatTurn(
+        path: Operations.CreateChatTurn.Input.Path,
+        headers: Operations.CreateChatTurn.Input.Headers = .init(),
+        body: Operations.CreateChatTurn.Input.Body
+    ) async throws -> Operations.CreateChatTurn.Output {
+        try await createChatTurn(Operations.CreateChatTurn.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
     }
     /// Everything Aaru holds for the caller, to keep or move elsewhere (GDPR portability).
     ///
@@ -11121,6 +11195,289 @@ public enum Components {
                 case watchedEpisodes
             }
         }
+        /// - Remark: Generated from `#/components/schemas/ChatCreated`.
+        public struct ChatCreated: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ChatCreated/id`.
+            public var id: Swift.String
+            /// Creates a new `ChatCreated`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            public init(id: Swift.String) {
+                self.id = id
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ChatStatus`.
+        public struct ChatStatus: Codable, Hashable, Sendable {
+            /// Aaru can answer. False hides the owl.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ChatStatus/assistant`.
+            public var assistant: Swift.Bool
+            /// Spoken questions can be read. False hides the mic.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ChatStatus/voice`.
+            public var voice: Swift.Bool
+            /// Creates a new `ChatStatus`.
+            ///
+            /// - Parameters:
+            ///   - assistant: Aaru can answer. False hides the owl.
+            ///   - voice: Spoken questions can be read. False hides the mic.
+            public init(
+                assistant: Swift.Bool,
+                voice: Swift.Bool
+            ) {
+                self.assistant = assistant
+                self.voice = voice
+            }
+            public enum CodingKeys: String, CodingKey {
+                case assistant
+                case voice
+            }
+        }
+        /// Where the user is. A screen the server does not know and a title the catalog does not have are dropped.
+        ///
+        /// - Remark: Generated from `#/components/schemas/ChatHint`.
+        public struct ChatHint: Codable, Hashable, Sendable {
+            /// One of home, discover, library, calendar, lists, friends, groups, books, manga, music, sports, insights, title.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ChatHint/screen`.
+            public var screen: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ChatHint/titleId`.
+            public var titleId: Swift.String?
+            /// Creates a new `ChatHint`.
+            ///
+            /// - Parameters:
+            ///   - screen: One of home, discover, library, calendar, lists, friends, groups, books, manga, music, sports, insights, title.
+            ///   - titleId:
+            public init(
+                screen: Swift.String,
+                titleId: Swift.String? = nil
+            ) {
+                self.screen = screen
+                self.titleId = titleId
+            }
+            public enum CodingKeys: String, CodingKey {
+                case screen
+                case titleId
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ChatTurnRequest`.
+        public struct ChatTurnRequest: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ChatTurnRequest/body`.
+            public var body: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ChatTurnRequest/hint`.
+            public var hint: Components.Schemas.ChatHint?
+            /// Creates a new `ChatTurnRequest`.
+            ///
+            /// - Parameters:
+            ///   - body:
+            ///   - hint:
+            public init(
+                body: Swift.String,
+                hint: Components.Schemas.ChatHint? = nil
+            ) {
+                self.body = body
+                self.hint = hint
+            }
+            public enum CodingKeys: String, CodingKey {
+                case body
+                case hint
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ChatTranscript`.
+        public struct ChatTranscript: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ChatTranscript/text`.
+            public var text: Swift.String
+            /// The language the service detected. Empty when it did not say.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ChatTranscript/language`.
+            public var language: Swift.String
+            /// Creates a new `ChatTranscript`.
+            ///
+            /// - Parameters:
+            ///   - text:
+            ///   - language: The language the service detected. Empty when it did not say.
+            public init(
+                text: Swift.String,
+                language: Swift.String
+            ) {
+                self.text = text
+                self.language = language
+            }
+            public enum CodingKeys: String, CodingKey {
+                case text
+                case language
+            }
+        }
+        /// The data of a `status` frame (what Aaru is doing) or a `delta` frame (the next words of the answer).
+        ///
+        /// - Remark: Generated from `#/components/schemas/ChatTextFrame`.
+        public struct ChatTextFrame: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ChatTextFrame/text`.
+            public var text: Swift.String
+            /// Creates a new `ChatTextFrame`.
+            ///
+            /// - Parameters:
+            ///   - text:
+            public init(text: Swift.String) {
+                self.text = text
+            }
+            public enum CodingKeys: String, CodingKey {
+                case text
+            }
+        }
+        /// The data of a `components` frame, what the turn's tools left for the client.
+        ///
+        /// - Remark: Generated from `#/components/schemas/ChatComponentsFrame`.
+        public struct ChatComponentsFrame: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ChatComponentsFrame/titles`.
+            public var titles: [Components.Schemas.TitleSummary]?
+            /// - Remark: Generated from `#/components/schemas/ChatComponentsFrame/plan`.
+            public var plan: Components.Schemas.AgentPlan?
+            /// A single change Aaru applied, undone at `/v1/actions/{id}/undo`.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ChatComponentsFrame/actionId`.
+            public var actionId: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ChatComponentsFrame/actionSummary`.
+            public var actionSummary: Swift.String?
+            /// Creates a new `ChatComponentsFrame`.
+            ///
+            /// - Parameters:
+            ///   - titles:
+            ///   - plan:
+            ///   - actionId: A single change Aaru applied, undone at `/v1/actions/{id}/undo`.
+            ///   - actionSummary:
+            public init(
+                titles: [Components.Schemas.TitleSummary]? = nil,
+                plan: Components.Schemas.AgentPlan? = nil,
+                actionId: Swift.String? = nil,
+                actionSummary: Swift.String? = nil
+            ) {
+                self.titles = titles
+                self.plan = plan
+                self.actionId = actionId
+                self.actionSummary = actionSummary
+            }
+            public enum CodingKeys: String, CodingKey {
+                case titles
+                case plan
+                case actionId
+                case actionSummary
+            }
+        }
+        /// The data of a `done` frame, the last of a turn that answered.
+        ///
+        /// - Remark: Generated from `#/components/schemas/ChatDoneFrame`.
+        public struct ChatDoneFrame: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ChatDoneFrame/turnId`.
+            public var turnId: Swift.String
+            /// Creates a new `ChatDoneFrame`.
+            ///
+            /// - Parameters:
+            ///   - turnId:
+            public init(turnId: Swift.String) {
+                self.turnId = turnId
+            }
+            public enum CodingKeys: String, CodingKey {
+                case turnId
+            }
+        }
+        /// The data of an `error` frame, the last of a turn that did not answer.
+        ///
+        /// - Remark: Generated from `#/components/schemas/ChatErrorFrame`.
+        public struct ChatErrorFrame: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ChatErrorFrame/code`.
+            @frozen public enum CodePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case resting = "resting"
+                case tryAgain = "try_again"
+            }
+            /// - Remark: Generated from `#/components/schemas/ChatErrorFrame/code`.
+            public var code: Components.Schemas.ChatErrorFrame.CodePayload
+            /// - Remark: Generated from `#/components/schemas/ChatErrorFrame/message`.
+            public var message: Swift.String
+            /// Creates a new `ChatErrorFrame`.
+            ///
+            /// - Parameters:
+            ///   - code:
+            ///   - message:
+            public init(
+                code: Components.Schemas.ChatErrorFrame.CodePayload,
+                message: Swift.String
+            ) {
+                self.code = code
+                self.message = message
+            }
+            public enum CodingKeys: String, CodingKey {
+                case code
+                case message
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ChatExport`.
+        public struct ChatExport: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ChatExport/title`.
+            public var title: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ChatExport/createdAt`.
+            public var createdAt: Foundation.Date
+            /// - Remark: Generated from `#/components/schemas/ChatExport/turns`.
+            public var turns: [Components.Schemas.ChatExportTurn]
+            /// Creates a new `ChatExport`.
+            ///
+            /// - Parameters:
+            ///   - title:
+            ///   - createdAt:
+            ///   - turns:
+            public init(
+                title: Swift.String? = nil,
+                createdAt: Foundation.Date,
+                turns: [Components.Schemas.ChatExportTurn]
+            ) {
+                self.title = title
+                self.createdAt = createdAt
+                self.turns = turns
+            }
+            public enum CodingKeys: String, CodingKey {
+                case title
+                case createdAt
+                case turns
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ChatExportTurn`.
+        public struct ChatExportTurn: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ChatExportTurn/role`.
+            @frozen public enum RolePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case user = "user"
+                case agent = "agent"
+            }
+            /// - Remark: Generated from `#/components/schemas/ChatExportTurn/role`.
+            public var role: Components.Schemas.ChatExportTurn.RolePayload
+            /// - Remark: Generated from `#/components/schemas/ChatExportTurn/body`.
+            public var body: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ChatExportTurn/createdAt`.
+            public var createdAt: Foundation.Date
+            /// Creates a new `ChatExportTurn`.
+            ///
+            /// - Parameters:
+            ///   - role:
+            ///   - body:
+            ///   - createdAt:
+            public init(
+                role: Components.Schemas.ChatExportTurn.RolePayload,
+                body: Swift.String,
+                createdAt: Foundation.Date
+            ) {
+                self.role = role
+                self.body = body
+                self.createdAt = createdAt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case role
+                case body
+                case createdAt
+            }
+        }
         /// - Remark: Generated from `#/components/schemas/AccountExport`.
         public struct AccountExport: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/AccountExport/exportedAt`.
@@ -11252,6 +11609,10 @@ public enum Components {
             public var favorites: Components.Schemas.Favorites?
             /// - Remark: Generated from `#/components/schemas/AccountExport/sports`.
             public var sports: Components.Schemas.SportsExport?
+            /// Your chats with Aaru, oldest first, with their turns.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AccountExport/chats`.
+            public var chats: [Components.Schemas.ChatExport]?
             /// Creates a new `AccountExport`.
             ///
             /// - Parameters:
@@ -11268,6 +11629,7 @@ public enum Components {
             ///   - listens: Every listen in your listening log, newest first (MUS-005).
             ///   - favorites:
             ///   - sports:
+            ///   - chats: Your chats with Aaru, oldest first, with their turns.
             public init(
                 exportedAt: Foundation.Date,
                 account: Components.Schemas.Me,
@@ -11281,7 +11643,8 @@ public enum Components {
                 groupMessages: Components.Schemas.AccountExport.GroupMessagesPayload? = nil,
                 listens: [Components.Schemas.Listen]? = nil,
                 favorites: Components.Schemas.Favorites? = nil,
-                sports: Components.Schemas.SportsExport? = nil
+                sports: Components.Schemas.SportsExport? = nil,
+                chats: [Components.Schemas.ChatExport]? = nil
             ) {
                 self.exportedAt = exportedAt
                 self.account = account
@@ -11296,6 +11659,7 @@ public enum Components {
                 self.listens = listens
                 self.favorites = favorites
                 self.sports = sports
+                self.chats = chats
             }
             public enum CodingKeys: String, CodingKey {
                 case exportedAt
@@ -11311,6 +11675,7 @@ public enum Components {
                 case listens
                 case favorites
                 case sports
+                case chats
             }
         }
         /// - Remark: Generated from `#/components/schemas/LibraryPage`.
@@ -37149,6 +37514,690 @@ public enum Operations {
             }
             public static var allCases: [Self] {
                 [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Start a Chat with Aaru (ASK-009), a one-to-one thread only its user can read.
+    ///
+    /// - Remark: HTTP `POST /v1/chats`.
+    /// - Remark: Generated from `#/paths//v1/chats/post(createChat)`.
+    public enum CreateChat {
+        public static let id: Swift.String = "createChat"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/chats/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateChat.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateChat.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.CreateChat.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.CreateChat.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Created: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/chats/POST/responses/201/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/chats/POST/responses/201/content/application\/json`.
+                    case json(Components.Schemas.ChatCreated)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ChatCreated {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.CreateChat.Output.Created.Body
+                /// Creates a new `Created`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.CreateChat.Output.Created.Body) {
+                    self.body = body
+                }
+            }
+            /// The new chat.
+            ///
+            /// - Remark: Generated from `#/paths//v1/chats/post(createChat)/responses/201`.
+            ///
+            /// HTTP response code: `201 created`.
+            case created(Operations.CreateChat.Output.Created)
+            /// The associated value of the enum case if `self` is `.created`.
+            ///
+            /// - Throws: An error if `self` is not `.created`.
+            /// - SeeAlso: `.created`.
+            public var created: Operations.CreateChat.Output.Created {
+                get throws {
+                    switch self {
+                    case let .created(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "created",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/chats/post(createChat)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Delete all of the caller's chats with Aaru, their turns with them.
+    ///
+    /// - Remark: HTTP `DELETE /v1/chats`.
+    /// - Remark: Generated from `#/paths//v1/chats/delete(deleteChats)`.
+    public enum DeleteChats {
+        public static let id: Swift.String = "deleteChats"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/chats/DELETE/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DeleteChats.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DeleteChats.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.DeleteChats.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.DeleteChats.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Deleted.
+            ///
+            /// - Remark: Generated from `#/paths//v1/chats/delete(deleteChats)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.DeleteChats.Output.NoContent)
+            /// Deleted.
+            ///
+            /// - Remark: Generated from `#/paths//v1/chats/delete(deleteChats)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.DeleteChats.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/chats/delete(deleteChats)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Whether Aaru and voice are on, so clients hide the owl and the mic when the server has them off.
+    ///
+    /// - Remark: HTTP `GET /v1/chats/status`.
+    /// - Remark: Generated from `#/paths//v1/chats/status/get(getChatStatus)`.
+    public enum GetChatStatus {
+        public static let id: Swift.String = "getChatStatus"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/chats/status/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetChatStatus.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetChatStatus.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetChatStatus.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.GetChatStatus.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/chats/status/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/chats/status/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.ChatStatus)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ChatStatus {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetChatStatus.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetChatStatus.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// What is on.
+            ///
+            /// - Remark: Generated from `#/paths//v1/chats/status/get(getChatStatus)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetChatStatus.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetChatStatus.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/chats/status/get(getChatStatus)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Turn a spoken question into text (ASK-009). The audio is held in memory while it is read and never stored. 413 `file_too_large` over 8 MB, 413 `audio_too_long` when `X-Audio-Seconds` says over 60, 422 `transcription_empty` when no words were heard, 429 `rate_limited` past 40 an hour, 503 `transcription_unavailable` when voice is off.
+    ///
+    /// - Remark: HTTP `POST /v1/chats/transcribe`.
+    /// - Remark: Generated from `#/paths//v1/chats/transcribe/post(transcribeChatAudio)`.
+    public enum TranscribeChatAudio {
+        public static let id: Swift.String = "transcribeChatAudio"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/chats/transcribe/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                /// How long the recording is, as the client measured it.
+                ///
+                /// - Remark: Generated from `#/paths/v1/chats/transcribe/POST/header/X-Audio-Seconds`.
+                public var xAudioSeconds: Swift.Double?
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.TranscribeChatAudio.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - xAudioSeconds: How long the recording is, as the client measured it.
+                ///   - accept:
+                public init(
+                    xAudioSeconds: Swift.Double? = nil,
+                    accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.TranscribeChatAudio.AcceptableContentType>] = .defaultValues()
+                ) {
+                    self.xAudioSeconds = xAudioSeconds
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.TranscribeChatAudio.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/chats/transcribe/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/chats/transcribe/POST/requestBody/content/application\/octet-stream`.
+                case binary(OpenAPIRuntime.HTTPBody)
+                /// - Remark: Generated from `#/paths/v1/chats/transcribe/POST/requestBody/content/audio\/*`.
+                case audio_Ast_(OpenAPIRuntime.HTTPBody)
+            }
+            public var body: Operations.TranscribeChatAudio.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.TranscribeChatAudio.Input.Headers = .init(),
+                body: Operations.TranscribeChatAudio.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/chats/transcribe/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/chats/transcribe/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.ChatTranscript)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ChatTranscript {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.TranscribeChatAudio.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.TranscribeChatAudio.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// What was said.
+            ///
+            /// - Remark: Generated from `#/paths//v1/chats/transcribe/post(transcribeChatAudio)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.TranscribeChatAudio.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.TranscribeChatAudio.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/chats/transcribe/post(transcribeChatAudio)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Ask Aaru (ASK-009). The answer is a stream of server-sent events, each frame an `event:` line with its type and a `data:` line with JSON: `status` and `delta` carry ChatTextFrame, `components` ChatComponentsFrame, `done` ChatDoneFrame, `error` ChatErrorFrame. Lines starting with `:` are heartbeats. Once the stream has begun, a failure can only be an `error` frame: a send past the daily cap is a 200 with one `error` frame, code `resting`. Before it begins: 404 for a chat that is not the caller's, 409 `chat_busy` while the chat is still answering, 422 for a body that is blank or over 4000 characters, 503 `agent_unavailable` when Aaru is off. Hanging up stops the turn and keeps what was written.
+    ///
+    /// - Remark: HTTP `POST /v1/chats/{id}/turns`.
+    /// - Remark: Generated from `#/paths//v1/chats/{id}/turns/post(createChatTurn)`.
+    public enum CreateChatTurn {
+        public static let id: Swift.String = "createChatTurn"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/chats/{id}/turns/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/chats/{id}/turns/POST/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.CreateChatTurn.Input.Path
+            /// - Remark: Generated from `#/paths/v1/chats/{id}/turns/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateChatTurn.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateChatTurn.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.CreateChatTurn.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/chats/{id}/turns/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/chats/{id}/turns/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.ChatTurnRequest)
+            }
+            public var body: Operations.CreateChatTurn.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.CreateChatTurn.Input.Path,
+                headers: Operations.CreateChatTurn.Input.Headers = .init(),
+                body: Operations.CreateChatTurn.Input.Body
+            ) {
+                self.path = path
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/chats/{id}/turns/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/chats/{id}/turns/POST/responses/200/content/text\/event-stream`.
+                    case textEventStream(OpenAPIRuntime.HTTPBody)
+                    /// The associated value of the enum case if `self` is `.textEventStream`.
+                    ///
+                    /// - Throws: An error if `self` is not `.textEventStream`.
+                    /// - SeeAlso: `.textEventStream`.
+                    public var textEventStream: OpenAPIRuntime.HTTPBody {
+                        get throws {
+                            switch self {
+                            case let .textEventStream(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.CreateChatTurn.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.CreateChatTurn.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The answer, as it is written.
+            ///
+            /// - Remark: Generated from `#/paths//v1/chats/{id}/turns/post(createChatTurn)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.CreateChatTurn.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.CreateChatTurn.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/chats/{id}/turns/post(createChatTurn)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case textEventStream
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "text/event-stream":
+                    self = .textEventStream
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .textEventStream:
+                    return "text/event-stream"
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .textEventStream,
                     .json
                 ]
             }

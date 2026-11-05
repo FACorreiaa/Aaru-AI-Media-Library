@@ -1,6 +1,6 @@
 # Privacy policy
 
-_Last updated 27 October 2026._
+_Last updated 4 November 2026._
 
 Aaru is a private media library: what you watch and read, kept for you. This page says what
 Aaru stores, who else sees any of it, and how to delete it. If anything here stops matching
@@ -157,7 +157,18 @@ text or those pictures to Anthropic (below) to read the names of films, shows, a
 kept only until it has been read, and never longer than an hour, then deleted. What it found
 becomes an import you review like any other; nothing is added to your library until you approve
 it. A link you send is read for the title it names and is never opened. Aaru counts how many
-captures you made this month and how much text each used.
+captures you made today and how much text each used.
+
+**Your chats with Aaru.** When you ask Aaru something from the owl in the top bar, the
+question and Aaru's answer are kept as a chat. Chats stay until you delete them with "Delete my
+chats with Aaru" in Settings. They are in your export and are removed with your account. As
+with @aaru, Aaru keeps a daily count of how much text its answers used, to keep the service fair.
+It also keeps a daily count of the questions you send it, with no text, to enforce the daily
+limit. Both counts stay when you delete your chats and are removed with your account.
+
+**Voice.** If you speak your question, the audio goes to Aaru's server and is transcribed there,
+on Aaru's own cluster. It is held in memory only while it is read, never stored, and never sent
+to anyone else. Only the words it was turned into are kept, as part of the chat.
 
 **Aaru Plus.** Plus is bought through Apple in the Aaru app on iPhone, iPad or Mac; Aaru never
 sees your card or Apple ID. Apple sends Aaru a signed record of the subscription: which plan,
@@ -204,8 +215,9 @@ group was created, a friend was added, an agent's request was approved or declin
 strip showed something today, one of its picks was started within six hours, or you answered a
 pick with "not tonight" or "not for me", a capture was sent (as text, a link or a picture) and its
 plan approved or discarded, Aaru Plus was bought
-(and which plan), or a share link was made or opened (and whether it points to a title, a match or
-a concert). A share link's events carry the sender's random id, never the id of whoever opened it. Each event
+(and which plan), a share link was made or opened (and whether it points to a title, a match or
+a concert), or you asked Aaru something from the owl (a count only, with no text of the question
+or the reply). A share link's events carry the sender's random id, never the id of whoever opened it. Each event
 carries only those words and your account's random id, never a title, a name, an email, text or
 your IP address, and no profile is built from them. They go to PostHog. The apps and the website
 send nothing of this kind themselves.
@@ -224,9 +236,14 @@ Aaru only uses these services, and only for the purpose listed:
 - **Resend** sends sign-in emails, so it receives your email address and that email.
 - **Trakt**, only if you connect it, for importing your history.
 - **MyAnimeList**, only if you connect it, to keep your anime list there in step with Aaru.
-- **Anthropic**, only when someone tags @aaru in a group, to write Aaru's answer, or when you
-  send a capture, to read the titles in it. It receives what is described under "Aaru in
-  groups" and "Capture" above, through its API, and does not train on it.
+- **Anthropic**, only when someone tags @aaru in a group, to write Aaru's answer, when you
+  send a capture, to read the titles in it, or when you ask Aaru from the owl, to write the
+  answer. It receives what is described under "Aaru in groups" and "Capture" above. When you ask
+  Aaru, it receives your question, the recent turns of that chat, the name of the screen you are
+  on, your time zone, the title you are looking at or asking about with how far you are in it,
+  and the parts of your own library, lists, stats, favorites, listens and followed sports that
+  Aaru reads to answer. It never receives your friends' or groups' data. It gets all of this
+  through its API and does not train on it.
 - **Stremio**, only if you connect it. Your Stremio app asks Aaru for your rows and reports
   what you play. If you import your Stremio history, Aaru's server reads your Stremio library
   once with the code you approved, then signs out. Aaru also asks Stremio's public catalog
@@ -261,8 +278,12 @@ within a year. Error reports are deleted within 90 days and product counts withi
 ## Your choices
 
 - **Delete your account:** Settings → Delete account, in the app or on the web.
-- **Export:** Settings → Export your data, in the app or on the web. JSON has everything; CSV
-  opens in a spreadsheet and imports back into Aaru.
+- **Export:** Settings → Export your data, in the app or on the web. JSON has your account, library,
+  lists, shelves, favorites, friends, blocks, groups, listens, followed sports and chats. It leaves
+  out daily usage counts, the history behind Undo, plans Aaru proposed and import records. CSV opens
+  in a spreadsheet and imports back into Aaru.
+- **Delete your chats:** Settings → Delete my chats with Aaru. The daily count of questions you
+  sent, which holds no text, stays to enforce the daily limit and is removed with your account.
 - **Questions or requests:** privacy@aaruapp.com.
 
 Aaru is run by an individual developer based in the European Union. You have the rights the

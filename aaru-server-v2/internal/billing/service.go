@@ -116,7 +116,7 @@ func (s *Service) State(ctx context.Context, userID uuid.UUID) (State, error) {
 		return State{}, err
 	}
 	start, next := MonthStart(now)
-	used, err := s.Q.BillingCapturesSince(ctx, sqlc.BillingCapturesSinceParams{UserID: userID, CreatedAt: start})
+	used, err := s.Q.BillingCapturesSince(ctx, sqlc.BillingCapturesSinceParams{UserID: userID, Since: start, Now: now})
 	if err != nil {
 		return State{}, fmt.Errorf("captures: %w", err)
 	}

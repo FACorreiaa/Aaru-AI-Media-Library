@@ -170,6 +170,8 @@ func serve(ctx context.Context, reader *config.Reader, log *slog.Logger) error {
 		// by a read deadline per request (middleware.BodyRule.ReadTimeout).
 		IdleTimeout: 120 * time.Second,
 	}
+	// Shutdown waits for handlers and cancels nothing: a Chat turn must be told to stop.
+	api.RegisterOnShutdown(server.StopChats)
 	group, ctx := safe.WithContext(ctx)
 	group.Go(func() error {
 		log.Info("Server started and listening", "address", api.Addr)

@@ -95,7 +95,7 @@ func (s *Service) CreateCapture(ctx context.Context, user uuid.UUID, req Capture
 			return err
 		}
 		q := s.Store.Q.WithTx(tx)
-		if err := s.checkCaptureQuota(ctx, q, user); err != nil {
+		if err := s.CheckCaptureQuota(ctx, q, user); err != nil {
 			return err
 		}
 		if input != nil {
@@ -169,9 +169,10 @@ func captureRow(t capture.Title) Row {
 	}
 }
 
-// checkCaptureQuota is fair use, for every account: past CapturesPerDay in a UTC day, a 429.
-func (s *Service) checkCaptureQuota(ctx context.Context, q *sqlc.Queries, user uuid.UUID) error {
-	today, err := (&capture.Store{Q: q}).Captures(ctx, user, DayStart(s.now()))
+// CheckCaptureQuota is fair use, for every account: past CapturesPerDay in a UTC day, a 429.
+func (s *Service) CheckCaptureQuota(ctx context.Context, q *sqlc.Queries, user uuid.UUID) error {
+	now := s.now()
+	today, err := (&capture.Store{Q: q}).Captures(ctx, user, DayStart(now), now)
 	if err != nil {
 		return err
 	}

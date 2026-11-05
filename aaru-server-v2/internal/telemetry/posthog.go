@@ -52,6 +52,8 @@ const (
 	ShareCreated Event = "share_created"
 	// ShareOpened: `kind`. Keyed by the sender, never the opener; none once the sender's account is gone.
 	ShareOpened Event = "share_opened"
+	// AssistantTurn: no properties. Someone asked Aaru from the owl; a count, never the words (ASK-009).
+	AssistantTurn Event = "assistant_turn"
 )
 
 // Sink is where product events go: PostHog in production, nothing until one is installed.
