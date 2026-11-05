@@ -1,5 +1,5 @@
 {
-  "totalJs": 537300,
+  "totalJs": 538100,
   "css": 27137,
   "shared": 94600,
   "routes": {
@@ -19,7 +19,7 @@
     "/_shell/app_/groups/$groupId": 112300,
     "/_shell/app_/groups/$groupId/": 95000,
     "/_shell/app_/groups/$groupId/$channelId": 115500,
-    "/_shell/app_/imports/$id": 114100,
+    "/_shell/app_/imports/$id": 114800,
     "/_shell/app_/insights": 110800,
     "/_shell/app_/library": 142000,
     "/_shell/app_/library_/now/$group": 136500,

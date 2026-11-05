@@ -7,6 +7,7 @@ import {
   CheckboxControl,
   CheckboxInput,
 } from '~/components/ui'
+import { Poster } from '../components/Poster'
 import { ResolveRowDialog } from '../components/ResolveRowDialog'
 import { lastShown } from '../lib/presence'
 import { offerUndo } from '../components/undo-toast'
@@ -26,9 +27,11 @@ import {
   getImport,
   leaveOutImportRow,
   listImports,
+  matchAllImportRows,
 } from '../lib/imports/server'
 import { undoListenImport } from '../lib/imports/listens-server'
 import type { ImportDetail, ImportRow } from '../lib/imports/server'
+import { kindOf } from '../lib/library/model'
 import { captureHeadline } from '../lib/capture/model'
 
 // APP-007 on the web: one import. A ledger of steps while it is matched (IMP-017), then the
@@ -167,9 +170,58 @@ function ImportPage() {
   const choosing = () => capture() && planned()
   const tickable = (outcome: Outcome) =>
     choosing() && (outcome === 'create' || outcome === 'update')
+  /** A guess is always the person's to check, whatever the import (IMP-021). */
+  const rowTickable = (row: ImportRow) =>
+    tickable(row.outcome) ||
+    (planned() &&
+      row.guess !== undefined &&
+      (row.outcome === 'create' || row.outcome === 'update'))
   const everyRowLeftOut = () => {
-    const chosen = detail().rows.filter((r) => tickable(r.outcome))
+    const chosen = detail().rows.filter(rowTickable)
     return chosen.length > 0 && chosen.every((r) => r.leftOut)
+  }
+
+  /** IMP-021: one call does what fits in a few seconds, so ask again while the count falls. */
+  const [matching, setMatching] = createSignal<{
+    done: number
+    total: number
+  } | null>(null)
+  const guessable = () => rows('unmatched').filter((r) => r.guessable).length
+
+  async function matchAll() {
+    const total = guessable()
+    setProblem(null)
+    setNotice(null)
+    setMatching({ done: 0, total })
+    try {
+      let left = total
+      while (left > 0) {
+        const answer = await matchAllImportRows({ data: { id: job().id } })
+        const changed = new Map(answer.rows.map((r) => [r.index, r]))
+        setDetail({
+          job: answer.job,
+          rows: detail().rows.map((r) => changed.get(r.index) ?? r),
+        })
+        setMatching({ done: total - answer.remaining, total })
+        if (answer.remaining >= left) {
+          setProblem('The catalog did not answer. Try again in a moment.')
+          break
+        }
+        left = answer.remaining
+      }
+      const unfound = rows('unmatched').length
+      setNotice(
+        unfound > 0
+          ? `Check the guesses below. ${count.format(unfound)} still need Find it.`
+          : 'Check the guesses below.',
+      )
+    } catch (error) {
+      setProblem(
+        error instanceof Error ? error.message : 'Match all did not finish.',
+      )
+    } finally {
+      setMatching(null)
+    }
   }
 
   async function setLeftOut(row: ImportRow, leftOut: boolean) {
@@ -195,8 +247,21 @@ function ImportPage() {
     </div>
   )
 
+  // BOOK-003: a capture that asked for an order saves one list.
+  const orderList = () =>
+    detail().rows.find((row) => row.lists?.length)?.lists?.[0]
+
   const rowLists = () => (
     <>
+      <Show when={orderList()}>
+        {(list) => (
+          <p class="mt-10 max-w-[56rem] text-sm text-muted">
+            {planned()
+              ? `Approve also saves these in order as the list “${list()}”.`
+              : `Saved in order as the list “${list()}”.`}
+          </p>
+        )}
+      </Show>
       <For
         each={
           [
@@ -209,14 +274,31 @@ function ImportPage() {
         {([outcome, title]) => (
           <Show when={!isWorking(job()) && rows(outcome).length > 0}>
             <section class="mt-10">
-              <h2 class="font-display text-xl font-medium">
-                {title} ({rows(outcome).filter((r) => !r.leftOut).length})
-              </h2>
+              <div class="flex max-w-[56rem] items-center justify-between gap-4">
+                <h2 class="font-display text-xl font-medium">
+                  {title} ({rows(outcome).filter((r) => !r.leftOut).length})
+                </h2>
+                <Show
+                  when={outcome === 'unmatched' && planned() && guessable() > 0}
+                >
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    class="shrink-0 tabular-nums"
+                    disabled={matching() !== null}
+                    onClick={() => void matchAll()}
+                  >
+                    {matching()
+                      ? `Matching ${matching()?.done} of ${matching()?.total}`
+                      : 'Match all'}
+                  </Button>
+                </Show>
+              </div>
               <ul class="mt-3 max-w-[56rem] divide-y divide-line">
                 <For each={rows(outcome).slice(0, SHOWN)}>
                   {(row) => (
                     <li class="flex items-start gap-3 py-2.5">
-                      <Show when={tickable(outcome)}>
+                      <Show when={rowTickable(row)}>
                         <Checkbox
                           class="mt-1 shrink-0"
                           checked={!row.leftOut}
@@ -232,15 +314,54 @@ function ImportPage() {
                           <CheckboxControl />
                         </Checkbox>
                       </Show>
+                      <Show when={row.guess}>
+                        <div class="w-10 shrink-0">
+                          <Poster
+                            url={row.guess?.posterUrl}
+                            kind={kindOf(row.type, false)}
+                            radius="thumb"
+                          />
+                        </div>
+                      </Show>
                       <div class="min-w-0 flex-1">
-                        <p
-                          class="font-medium"
-                          classList={{ 'text-muted': row.leftOut === true }}
+                        <Show
+                          when={row.guess}
+                          fallback={
+                            <p
+                              class="font-medium"
+                              classList={{
+                                'text-muted': row.leftOut === true,
+                              }}
+                            >
+                              {row.title}
+                              {row.year ? ` (${row.year})` : ''}
+                            </p>
+                          }
                         >
-                          {row.title}
-                          {row.year ? ` (${row.year})` : ''}
-                        </p>
-                        <Show when={tickable(outcome) && row.author}>
+                          {(guess) => (
+                            <>
+                              <p
+                                class="font-medium"
+                                classList={{
+                                  'text-muted': row.leftOut === true,
+                                }}
+                              >
+                                {guess().title}
+                              </p>
+                              <Show when={guess().byline}>
+                                <p class="text-sm text-muted">
+                                  {guess().byline}
+                                </p>
+                              </Show>
+                              <p class="text-sm text-muted">
+                                Best guess for “{row.title}”
+                              </p>
+                            </>
+                          )}
+                        </Show>
+                        <Show
+                          when={tickable(outcome) && !row.guess && row.author}
+                        >
                           <p class="text-sm text-muted">{row.author}</p>
                         </Show>
                         <Show when={row.reason}>
@@ -257,11 +378,21 @@ function ImportPage() {
                           Find it
                         </Button>
                       </Show>
+                      <Show when={planned() && row.guess}>
+                        <Button
+                          variant="quiet"
+                          size="sm"
+                          class="shrink-0"
+                          onClick={() => setFinding(row)}
+                        >
+                          Change
+                        </Button>
+                      </Show>
                     </li>
                   )}
                 </For>
               </ul>
-              <Show when={tickable(outcome)}>
+              <Show when={rows(outcome).some(rowTickable)}>
                 <p class="mt-3 text-sm text-muted">
                   Untick anything you don't want.
                 </p>

@@ -19,7 +19,7 @@ struct CaptureComposer: View {
 
     private var placeholder: String {
         switch (kind == .book, pictures.isEmpty) {
-        case (true, true): "Paste a chat or book list"
+        case (true, true): "Paste a chat or list, or ask for books"
         case (true, false): "Aaru reads the books in the picture"
         case (false, true): "Paste titles, a link or a screenshot"
         case (false, false): "Aaru reads the titles in the picture"
@@ -28,7 +28,8 @@ struct CaptureComposer: View {
 
     private var hint: String {
         kind == .book
-            ? "A whole ChatGPT chat, screenshots or a photo of a list. Nothing is added until you approve."
+            ? "A whole ChatGPT chat, screenshots, a photo of a list, or a request like "
+            + "\u{201C}X-Men books in reading order\u{201D}. Nothing is added until you approve."
             : "Nothing is added until you approve what Aaru found."
     }
 

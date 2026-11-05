@@ -352,7 +352,7 @@ Friends and groups (design: `docs/superpowers/specs/2026-10-27-friends-groups-de
   | Review of a title not in the library | Allowed. A rating adds the title as finished with that rating (a show lands as finished with aired episodes ticked, PROG-005; a running one moves back to `in_progress` when its next episode airs); a title already there keeps its status and gets the rating |
   | Chat writes | Like a tap: one item applies at once, journaled and undoable; anything bigger is a `PlanCard` approved in Aaru (X-009) |
   | Web search | Media topics only (films, shows, anime, books, music, sport). Off-topic is refused before any search |
-  | Suggestions | Owner exception: personal suggestions in chat only, when asked. No "because you watched" rows anywhere else |
+  | Suggestions | Owner exception: personal suggestions in chat only, when asked, and in a capture whose text asks for them (BOOK-003, 2026-11-05). No "because you watched" rows anywhere else |
   | Chat entry | An Ask Aaru page opened by a sparkle "Ask" button beside the medallion; "Ask Aaru about this" on title pages |
   | Chat v1 | History and streaming, voice input (cluster Whisper), image upload, Share to Board |
   | LLM budget | The shared `haiku-trial` workspace ($20 cap). No fallback model; out of credit shows "resting" |
@@ -859,7 +859,8 @@ account or a stranger that has not happened yet.
 | IMP-018 | Built, unverified | `feat/netflix-import`; NetflixCSVParser, EpisodeNameMatcher, NetflixImportTests | No real export run yet |
 | IMP-019 | Open | BACKLOG IMP-019 | Bingers has an API only for paid plans; owner decides |
 | IMP-020 | Built, unverified | #172; CSVImportParser, TitleResolver, GoodreadsImportTests, BookYearToleranceTests; deployed f6cc317 (infra #456) | Stub catalog only; no real Goodreads export run yet |
-| IMP-021 | Server built, unverified | `POST /v1/imports/{id}/match-all`, `catalog/guess.go`, `imports/matchall.go` | Clients to come. Rules checked against live Open Library with a script; the endpoint itself only on a stub catalog |
+| BOOK-003 | Built, unverified | `plan_title_list`, `capture.ListName`, `imports.titleRows`, `ImportRow.lists`, components frame `importId` | Stub model only. The owl's "Review" button waits for the Assistant clients; until then the waiting capture card and the push lead to the review |
+| IMP-021 | Built, unverified | `POST /v1/imports/{id}/match-all`, `catalog/guess.go`, `imports/matchall.go`, `aaru-ios/Aaru/Capture/MatchAllButton.swift` | Web run locally: real Open Library, stub model, 8 of 10 rows filled in about 12 seconds. iOS builds and has not been tapped. Needs the API promoted |
 | PRV-001 | Done | #27 8d5ddc3; docs/providers.md, AboutView.swift | privacy@ routing not set up |
 | CAT-011 | Done | #24 7edc80c; TVmazeAirTimes.swift | |
 | CAT-012 | Open | no Google Books code | |
@@ -2482,6 +2483,24 @@ has; and the tile tells the person how to get the file.
 
 **Progress 2026-10-23:** built and tested with a stub catalog (parser, flow and core matching
 tests). Not run on a real export yet.
+
+### BOOK-003 · Ask for books, and keep the order · M · owner 2026-11-05
+**Needs:** BOOK-001, IMP-021, ASK-009.
+Owner, 2026-11-05: "Ask the AI to recommend me XMen books and order to read and also add them to the
+library", from inside Aaru instead of going through ChatGPT. Asked from the owl and from the Books box.
+
+- **Books box:** text that is itself a request, naming no titles to report, is answered: real titles, at
+  most 30, in the order asked. Text only, and everything else in a capture stays data.
+- **Owl:** `plan_title_list` takes the same shape as `report_titles` and makes a capture from the titles
+  the chat model already named: no second model call, the same quota, one a reply. It writes nothing. The
+  components frame carries `importId`, for the Assistant clients' "Review N books".
+- **Order:** `list_name` on `report_titles` puts every row in that list (`Row.Lists`), so the list keeps
+  row order, leaves out unticked rows, and takes in a book already in the library. Undo removes the books
+  and the list with them. A list of that name that already exists gains the new titles at its end.
+- Books land in Plan to read, as every capture. Comics stay books on Open Library (owner, 2026-11-05).
+
+**Done when:** asking for X-Men books in reading order, from the owl and from Books, ends in a review
+with sensible rows, and Approve leaves them in Plan to read and in a list in that order.
 
 ### IMP-021 · Match all in an import's review · M · owner 2026-11-05
 **Needs:** IMP-011, BOOK-001.
