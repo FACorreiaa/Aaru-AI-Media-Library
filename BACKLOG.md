@@ -815,7 +815,7 @@ account or a stranger that has not happened yet.
 | DISC-001 | Built, unverified | #38 eaeb15e; DiscoverService.swift; deployed | No recorded new-account run on 3 clients |
 | DISC-003 | Built, unverified | OnAirGuideTests, `lib/discover/onAir.test.ts`; `Catalog/OnAirGuide.swift`, `TMDBCatalog+OnAir.swift`, `OnAirGuide.tsx`, `OnAirView.swift` | TMDB, TVmaze and JustWatch checked with stubs only; not run against live providers or on a device |
 | DISC-002 | Built, unverified | #84; DiscoverSeasonTests, season model tests; deployed f5dcb8c (infra #412) | Not run on a device |
-| BOOK-002 | Server and Apple built, unverified | `books_classics`, `books_science_fiction`, `books_science`, `books_business`, `kindPageOnly`; `aaru-ios/Aaru/Kinds/BooksImport.swift` | Web to come. Seen on a simulator with sample data, not on a device |
+| BOOK-002 | Built, unverified | `books_classics`, `books_science_fiction`, `books_science`, `books_business`, `kindPageOnly`; `aaru-ios/Aaru/Kinds/BooksImport.swift`, `aaru-client/src/components/kind/BooksTop.tsx` | Needs the API promoted. Web looked at locally against a stub model; not on a device |
 | MUS-001 | Built, unverified | #93; MusicTests, StatsTests; deployed f5dcb8c (infra #412) | Not run on a device |
 | MUS-002 | Built, unverified | #98; ListenBrainzReleasesTests; deployed 8b3f017 (infra #413) | Not run on a device |
 | MUS-003 | Built, unverified | #105; ConcertTests; deployed f0525f0 (infra #415, key #414) | Not run on a device; Ticketmaster lists nothing in Portugal (MUS-009) |
@@ -954,13 +954,13 @@ account or a stranger that has not happened yet.
 | AG-004 | Open | none | |
 | AG-005 | Built, unverified | Tonight/TonightService.swift, `/v1/tonight`; `Home/Tonight.swift`, `lib/home/tonight.ts` | Not seen on a device; reject never checked across a night |
 | AG-006 | Built, unverified | Imports/ImportService+Capture.swift, Capture/, `/v1/imports/capture`; `aaru-ios/Aaru/Capture`, `CaptureComposer.tsx` | Composer and review on web and Apple; no Share Extension yet; no library-reading tools for text. Not tried on a device |
-| BOOK-001 | Server built, unverified | `?kind=book`, `capture_images`, `ResolveBookByAuthor`, `/rows/{index}/left-out` | Clients come with BOOK-002. Not tried live |
+| BOOK-001 | Built, unverified | `?kind=book`, `capture_images`, `ResolveBookByAuthor`, `/rows/{index}/left-out` | Clients with BOOK-002. Not tried against the real model |
 | AG-007 | Partial | Agent/ModelProviding.swift, `agent_usage.cost_micros` | Monthly spend metered per user; no own key yet |
 | BIL-001 | Built, unverified | Billing/AppleSignedData.swift, `entitlements`; BillingTests | Products and the notifications URL not set up in App Store Connect |
 | BIL-002 | Built, unverified | `/v1/billing/apple/transactions`, `/v1/billing/apple/notifications`; BillingService.swift | No sandbox purchase, renewal or expiry seen |
 | BIL-003 | Built, unverified | `aaru-ios/Aaru/Plus` | Paywall, Restore, `Transaction.updates`; no `.storekit` file; not on a device |
 | BIL-004 | Built, unverified | `/v1/me/entitlement`; Settings → Account on web and Apple; capture fair use | Not seen with a real subscription |
-| BIL-005 | Server and Apple built | `CheckCaptureQuota`, `PlusSection`; the web comes with BOOK-002 | Monthly limit lifted, 30 a day kept (owner, 2026-11-05) |
+| BIL-005 | Built | `CheckCaptureQuota`, `PlusSection`, `AccountPage` | Monthly limit lifted, 30 a day kept (owner, 2026-11-05) |
 | OUT-001 | Partial | #36; AgentTokenService.swift, `/v1/agent/tokens` | Stremio and MCP kinds; `imports:write` not mintable |
 | OUT-002 | Partial | #36; ProvenanceTests, `agentName` on `/v1/actions` | No MCP; no client ribbon renders it |
 | OUT-003 | Partial | MarkEpisodeWatchedIntent.swift (widget/Live Activity) | No Shortcuts provider, "tonight", share URL |
