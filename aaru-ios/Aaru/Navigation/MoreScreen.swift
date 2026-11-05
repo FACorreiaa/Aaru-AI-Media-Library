@@ -36,6 +36,7 @@ struct MoreScreen<Destination: View>: View {
             }
             .paperPage()
             .navigationTitle("More")
+            .assistantButton()
             .accountButton()
             .navigationDestination(for: AppTab.self) { item in
                 destination(item)

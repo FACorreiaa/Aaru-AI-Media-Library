@@ -859,7 +859,7 @@ account or a stranger that has not happened yet.
 | IMP-018 | Built, unverified | `feat/netflix-import`; NetflixCSVParser, EpisodeNameMatcher, NetflixImportTests | No real export run yet |
 | IMP-019 | Open | BACKLOG IMP-019 | Bingers has an API only for paid plans; owner decides |
 | IMP-020 | Built, unverified | #172; CSVImportParser, TitleResolver, GoodreadsImportTests, BookYearToleranceTests; deployed f6cc317 (infra #456) | Stub catalog only; no real Goodreads export run yet |
-| BOOK-003 | Built, unverified | `plan_title_list`, `capture.ListName`, `imports.titleRows`, `ImportRow.lists`, components frame `importId` | Stub model only. The owl's "Review" button waits for the Assistant clients; until then the waiting capture card and the push lead to the review |
+| BOOK-003 | Built, unverified | `plan_title_list`, `capture.ListName`, `imports.titleRows`, `ImportRow.lists`, components frame `importId` | Stub model only. The owl's "Review the list" button is on iPhone and Mac; the web card is not built yet |
 | IMP-021 | Built, unverified | `POST /v1/imports/{id}/match-all`, `catalog/guess.go`, `imports/matchall.go`, `aaru-ios/Aaru/Capture/MatchAllButton.swift` | Web run locally: real Open Library, stub model, 8 of 10 rows filled in about 12 seconds. iOS builds and has not been tapped. Needs the API promoted |
 | PRV-001 | Done | #27 8d5ddc3; docs/providers.md, AboutView.swift | privacy@ routing not set up |
 | CAT-011 | Done | #24 7edc80c; TVmazeAirTimes.swift | |
@@ -3847,6 +3847,7 @@ search columns, `POST /v1/chats/{id}/turns` as `text/event-stream`.
 A streaming chat turn endpoint over the user's own data, voice through the cluster's Whisper,
 and a floating card opened from the owl on iPhone, Mac and web. Delivers ASK-001, ASK-005 and
 ASK-006; the Ask Aaru page (ASK-002, ASK-003) reuses the engine later.
+**Status (2026-11-05):** server live; iOS and Mac done (owl, card, voice, Settings delete); web next.
 
 ---
 

@@ -16,6 +16,7 @@ struct RootView: View {
     @Environment(AppRouter.self) private var router
     @Environment(ProgressModel.self) private var progress: ProgressModel?
     @Environment(PlusModel.self) private var plus: PlusModel?
+    @Environment(AssistantModel.self) private var assistant: AssistantModel?
     @Environment(\.webAuthenticationSession) private var webAuthenticationSession
     @State private var showsEmailSignIn = false
     @State private var errorMessage: String?
@@ -96,6 +97,7 @@ struct RootView: View {
                 openShare = nil
                 pendingShare = nil
                 library.reset()
+                Task { await assistant?.reset() }
                 lists.reset()
                 imports.reset()
                 settings.reset()

@@ -95,6 +95,7 @@ struct DiscoverScreen: View {
                         Button("Search", systemImage: "magnifyingglass") { router.showsSearch = true }
                     }
                 }
+                .assistantButton()
                 .task { await model.loadIfNeeded() }
                 // View → Refresh (⌘R) reloads the section on screen.
                 .refreshesOnCommand(.discover) { await reload() }
@@ -109,6 +110,7 @@ struct DiscoverScreen: View {
                         titleName: hit.title,
                         lists: lists
                     )
+                    .closesOnSheetsRequest()
                 }
                 .safeAreaInset(edge: .bottom) {
                     switch section {

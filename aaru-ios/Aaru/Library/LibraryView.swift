@@ -66,6 +66,7 @@ struct LibraryView: View {
                 .onChange(of: query) { shown = Paging.pageSize }
                 .onChange(of: filter) { shown = Paging.pageSize }
                 .toolbar { toolbar }
+                .assistantButton()
                 .accountButton()
                 .refreshable { await library.sync(api: api) }
                 .refreshesOnCommand(.library) { await library.sync(api: api) }
@@ -79,6 +80,7 @@ struct LibraryView: View {
                 }
                 .navigationDestination(isPresented: $router.showsListsInLibrary) {
                     ListsView(lists: lists, library: library, api: api)
+                        .assistantButton()
                 }
                 .navigationDestination(isPresented: $showsInsights) { InsightsView(api: api, library: library) }
                 .sheet(item: $listTarget) { row in
@@ -88,6 +90,7 @@ struct LibraryView: View {
                             titleName: entry.title.title,
                             lists: lists
                         )
+                        .closesOnSheetsRequest()
                     }
                 }
                 .confirmationDialog(

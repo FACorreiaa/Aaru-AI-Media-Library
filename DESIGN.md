@@ -587,7 +587,8 @@ One page per kind, all in More (§18), built from one shape so they read alike:
 - **A planned capture is chosen row by row** (BOOK-001): its rows come before Approve, each with a
   tick, all ticked to start, and the counts follow. Other imports keep their order and have no ticks.
 - **An order** (BOOK-003): when a capture named a list, the review says above its rows "Approve also saves
-  these in order as the list "X-Men reading order"." The Books box says it takes a request too.
+  these in order as the list "X-Men reading order"." The Books box says it takes a request too. When the owl
+  sends a list, its reply has a "Review the list" button that opens that review.
 - **Match all** (IMP-021) sits on the Not matched heading of any plan still waiting, and reads "Matching
   12 of 30" while it runs. A filled row moves to Will be added: small cover, what the catalog calls it,
   its author, `Best guess for "what the list said"`, a tick and Change. Rows it could not fill keep Find it.
@@ -1179,13 +1180,38 @@ Where each existing piece goes:
 
 ## Assistant (the owl card, ASK-009)
 
-An owl in the top bar of every main screen, beside Search, and on title pages. Long press opens
-a card rising from the bottom over the dimmed screen, listening; tap opens it ready to type.
-The card grows with the reply and swipe down dismisses it, which cancels the turn. Written
-replies are read aloud only after a spoken question, with a mute button. A change Aaru applies
-shows the undo ribbon in the card. The card, owl, mic and composer are chrome and are never
-agent-emitted; replies carry only components from the catalog below. Colours and type follow the
-Brand section.
+**The owl.** The owl's head sits in the top bar of every main screen, beside Search, and on title
+pages (where the card is told which title is open). It shows only while the server has the
+assistant on. Tap opens the card ready to type, with the keyboard up. Long press (0.4 s, with a
+haptic on iPhone) opens it listening, so the user can talk at once; with no mic permission or no
+voice on the server it opens ready to type. On the Mac it is a click, and ⌘K (Ask Aaru, in the
+menu bar and on an iPad keyboard) opens it. ⌘K with a card open closes it, as Spotlight does.
+
+**The card.** A floating card (`.lift()`, the one floating layer) rising from the bottom over the
+current screen, which dims. The content behind an open card is disabled: the card is the only
+thing that takes input. Sheets and in-screen sheets close for it, or the card mounts above them
+(a title opened from Search), so it never sits behind something that takes no input. The card
+grows with the reply; swipe down, the close button or ⌘K dismisses it, and closing cancels the
+turn (a write already applied stays journaled). Tapping a title card closes it and opens the
+title. Under Reduce Motion the card fades in and out: no rise, no breathing.
+
+**Mic states.** Listening (the field becomes "Listening…" and a level meter, which moves in steps
+under Reduce Motion), then Reading what you said (the words go up once Aaru has read them), then
+the answer. Silence says "I didn't catch that" and uploads nothing. Audio is held in a temp file
+that is deleted when the recording ends, sent or not. With the mic denied typing still works and a
+line opens Settings. Written replies are read aloud only after a spoken question, in the
+language the user spoke, with an on-device voice; a mute button stops it and is remembered on the
+device.
+
+**The undo ribbon.** A change Aaru applies to one item shows a ribbon in the card with Undo, which
+reverts the library and the screen behind it together. A larger change is a Plan card with
+Approve; its Undo toast also shows inside the card, not dimmed behind it.
+
+**Chats.** Settings → Your data → Delete my chats with Aaru (confirmed) empties them, and the
+open card with them. They are kept until then.
+
+The card, owl, mic and composer are chrome and are never agent-emitted; replies carry only
+components from the catalog below. Colours and type follow the Brand section.
 
 ## Component catalog the agent may emit
 

@@ -104,6 +104,7 @@ struct KindContent: View {
                     Button("Search", systemImage: "magnifyingglass") { router.showsSearch = true }
                 }
             }
+            .assistantButton()
             .modifier(BooksImportPresenter(
                 imports: kind == .book ? imports : nil, api: api, library: library, lists: lists, opened: $openedCapture
             ))
@@ -130,6 +131,7 @@ struct KindContent: View {
                     titleName: hit.title,
                     lists: lists
                 )
+                .closesOnSheetsRequest()
             }
             .safeAreaInset(edge: .bottom) {
                 switch pane {
