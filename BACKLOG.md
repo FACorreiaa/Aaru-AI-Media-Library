@@ -859,6 +859,7 @@ account or a stranger that has not happened yet.
 | IMP-018 | Built, unverified | `feat/netflix-import`; NetflixCSVParser, EpisodeNameMatcher, NetflixImportTests | No real export run yet |
 | IMP-019 | Open | BACKLOG IMP-019 | Bingers has an API only for paid plans; owner decides |
 | IMP-020 | Built, unverified | #172; CSVImportParser, TitleResolver, GoodreadsImportTests, BookYearToleranceTests; deployed f6cc317 (infra #456) | Stub catalog only; no real Goodreads export run yet |
+| IMP-021 | Server built, unverified | `POST /v1/imports/{id}/match-all`, `catalog/guess.go`, `imports/matchall.go` | Clients to come. Rules checked against live Open Library with a script; the endpoint itself only on a stub catalog |
 | PRV-001 | Done | #27 8d5ddc3; docs/providers.md, AboutView.swift | privacy@ routing not set up |
 | CAT-011 | Done | #24 7edc80c; TVmazeAirTimes.swift | |
 | CAT-012 | Open | no Google Books code | |
@@ -2481,6 +2482,30 @@ has; and the tile tells the person how to get the file.
 
 **Progress 2026-10-23:** built and tested with a stub catalog (parser, flow and core matching
 tests). Not run on a real export yet.
+
+### IMP-021 · Match all in an import's review · M · owner 2026-11-05
+**Needs:** IMP-011, BOOK-001.
+Owner, 2026-11-05: a capture of an X-Men reading list left 30 rows not matched, each needing its own
+Find it. One button finds a best guess for all of them, and the review shows each guess with its
+cover, title and author, ticked, to untick or change before Approve.
+
+- The strict match does not loosen: "never merge two titles that only share a similar name" still
+  holds for anything written without a person looking. A guess is a proposal.
+- A book needs a hit by the same author (the same name, the same words in another order, or the same
+  last name) that shares at least half of the title's words. A book with no author, a film, a show or
+  a manga needs the exact title. Other rows keep Find it. Open Library's subtitle counts.
+- `POST /v1/imports/{id}/match-all` does what fits in 15 seconds, three searches at a time, and
+  answers `remaining`; the client calls again while it goes down. No job state, because nothing is
+  written and leaving the page loses nothing. Only while the plan waits: after Approve a guess could
+  not be reviewed.
+- Comics stay books on Open Library for now (owner, 2026-11-05), so some rows stay on Find it and some
+  guesses are another edition.
+- Also fixed: `ResolveBookByAuthor` took the first same-author hit whose title matched before the
+  colon, so "X-Men: Days of Future Past" became whichever "X-Men" by Chris Claremont came first. Several
+  such hits are now no match; one is still the book.
+
+**Done when:** on iPhone, Mac and the web one tap fills a review's unmatched rows, a wrong guess can be
+unticked or changed, and nothing reaches the library before Approve.
 
 ### IMP-009 · CAT show list · M
 **Needs:** IMP-005, CAT-002.

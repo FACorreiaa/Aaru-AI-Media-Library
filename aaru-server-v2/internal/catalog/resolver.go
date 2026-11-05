@@ -411,22 +411,24 @@ func (r Resolver) ResolveBookByAuthor(ctx context.Context, name, author string) 
 	if err != nil {
 		return core.Title{}, err
 	}
-	var near *Hit
-	for i, h := range hits {
+	var near []Hit
+	for _, h := range hits {
 		if h.Byline == nil || !core.SameAuthor(author, *h.Byline) {
 			continue
 		}
-		if core.NormalizeTitle(h.Title) == wanted {
+		if core.NormalizeTitle(h.Title) == wanted || core.NormalizeTitle(fullTitle(h)) == wanted {
 			return r.resolveIDs(ctx, h.IDs, core.MediaBook)
 		}
-		if near == nil && core.NormalizeTitle(core.MainTitle(h.Title)) == short {
-			near = &hits[i]
+		if core.NormalizeTitle(core.MainTitle(h.Title)) == short {
+			near = append(near, h)
 		}
 	}
-	if near == nil {
+	// One book by this author with that name is the book. Several are a series ("X-Men" by Chris
+	// Claremont, many volumes), and picking one would be a guess (IMP-021 makes those, reviewed).
+	if len(near) != 1 {
 		return core.Title{}, ErrUnresolvable
 	}
-	return r.resolveIDs(ctx, near.IDs, core.MediaBook)
+	return r.resolveIDs(ctx, near[0].IDs, core.MediaBook)
 }
 
 // MARK: By name only

@@ -15136,6 +15136,85 @@ public struct Client: APIProtocol {
             }
         )
     }
+    /// Find a best guess for the plan's unmatched rows (IMP-021): the "Match all" button. A guess joins the plan like a pick and shows what it found, so the person checks it before approving; nothing is written here. One call does what fits in a few seconds, so a client calls again while `remaining` goes down, and stops when it does not. Only while the plan waits.
+    ///
+    /// - Remark: HTTP `POST /v1/imports/{id}/match-all`.
+    /// - Remark: Generated from `#/paths//v1/imports/{id}/match-all/post(matchAllImportRows)`.
+    public func matchAllImportRows(_ input: Operations.MatchAllImportRows.Input) async throws -> Operations.MatchAllImportRows.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.MatchAllImportRows.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/imports/{}/match-all",
+                    parameters: [
+                        input.path.id
+                    ]
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .post
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.MatchAllImportRows.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Operations.MatchAllImportRows.Output.Ok.Body.JsonPayload.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                default:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(body: body)
+                    )
+                }
+            }
+        )
+    }
     /// Untick one row of a plan before approving it, or tick it again (BOOK-001). Only a row the plan would write, and only while the plan waits. The job's counts follow. Approving with every row unticked is refused with `import_nothing_chosen`.
     ///
     /// - Remark: HTTP `POST /v1/imports/{id}/rows/{index}/left-out`.

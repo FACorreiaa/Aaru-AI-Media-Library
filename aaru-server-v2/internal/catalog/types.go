@@ -19,8 +19,11 @@ import (
 
 // Hit is one search result: a catalog projection, never a library row.
 type Hit struct {
-	Type          core.MediaType
-	Title         string
+	Type  core.MediaType
+	Title string
+	// Subtitle is Open Library's, kept apart from Title. It helps tell a comic's volumes apart, many
+	// of them titled just "X-Men" (IMP-021).
+	Subtitle      *string
 	OriginalTitle *string
 	Year          *int
 	PosterURL     *string
