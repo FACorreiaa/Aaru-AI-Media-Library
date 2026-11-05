@@ -307,6 +307,13 @@ private extension ImportDetailView {
 
     @ViewBuilder
     func rowLists(_ job: ImportJob) -> some View {
+        if let list = detail?.rows.lazy.compactMap({ $0.lists?.first }).first {
+            Text(job.state == .planned
+                ? "Approve also saves these in order as the list \u{201C}\(list)\u{201D}."
+                : "Saved in order as the list \u{201C}\(list)\u{201D}.")
+                .font(.subheadline)
+                .foregroundStyle(Color(.muted))
+        }
         rows(.unmatched, title: "Not matched")
         rows(.create, title: job.state == .planned ? "Will be added" : "Added")
         rows(.update, title: job.state == .planned ? "Will be filled in" : "Filled in")

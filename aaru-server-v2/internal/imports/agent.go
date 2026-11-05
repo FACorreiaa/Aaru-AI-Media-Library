@@ -1,6 +1,7 @@
 package imports
 
 import (
+	"aaru-go-api/internal/capture"
 	"aaru-go-api/internal/core"
 	"context"
 
@@ -25,6 +26,16 @@ func (a AgentImporter) IsCATCalendar(text string) bool { return IsCATCalendar(te
 // CreateFileImport is ImportService.createCSVImport; it returns the queued job's id.
 func (a AgentImporter) CreateFileImport(ctx context.Context, user uuid.UUID, source core.ImportSource, filename *string, text string) (uuid.UUID, error) {
 	job, err := a.Service.CreateCSVImport(ctx, user, source, filename, text)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	return job.ID, nil
+}
+
+// CreateTitleList is BOOK-003: titles Aaru chose in a chat, as an ordinary capture the user reviews in
+// Aaru. It spends one capture and returns the job's id.
+func (a AgentImporter) CreateTitleList(ctx context.Context, user uuid.UUID, titles []capture.Title, list string) (uuid.UUID, error) {
+	job, err := a.Service.CreateCapture(ctx, user, CaptureRequest{Titles: titles, ListName: list})
 	if err != nil {
 		return uuid.Nil, err
 	}

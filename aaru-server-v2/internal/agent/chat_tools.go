@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"aaru-go-api/internal/capture"
 	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/db/sqlc"
 	"aaru-go-api/internal/groups"
@@ -44,6 +45,14 @@ type ChatDeps struct {
 	Favorites *social.Service
 	Music     *music.Service
 	Sports    *sports.Service
+	// TitleLists plans a list the user asked for (BOOK-003). Nil leaves the tool out.
+	TitleLists TitleListPlanner
+}
+
+// TitleListPlanner turns titles chosen in a chat into a capture the user reviews in Aaru, matched and
+// shown like any other. It never writes the library. Implemented by imports.AgentImporter.
+type TitleListPlanner interface {
+	CreateTitleList(ctx context.Context, user uuid.UUID, titles []capture.Title, list string) (uuid.UUID, error)
 }
 
 // ChatTools are the tools a signed-in user's Chat with Aaru may call: the shared title reads, a
@@ -54,6 +63,7 @@ type ChatTools struct {
 	deps ChatDeps
 
 	plan          *plans.Plan
+	importID      *uuid.UUID
 	applied       bool
 	actionID      *uuid.UUID
 	actionSummary string
@@ -84,6 +94,9 @@ func spoilerGuard(ctx context.Context, q *sqlc.Queries, title core.Title, user u
 
 // Plan is the plan apply_library_patch proposed this turn, for the user to approve in Aaru.
 func (t *ChatTools) Plan() *plans.Plan { return t.plan }
+
+// ImportID is the capture this turn's plan_title_list started, for its review.
+func (t *ChatTools) ImportID() *uuid.UUID { return t.importID }
 
 // ActionID is the journaled action of this turn's applied write, for Undo.
 func (t *ChatTools) ActionID() *uuid.UUID { return t.actionID }
@@ -136,6 +149,15 @@ func (t *ChatTools) Definitions() []model.Tool {
 			Name:        "read_my_sports",
 			Description: "The leagues, teams and players the user follows, with what is live and next.",
 			InputSchema: schema(map[string]any{}, []string{}),
+		})
+	}
+	if t.deps.TitleLists != nil {
+		out = append(out, model.Tool{
+			Name: "plan_title_list",
+			Description: "Send several titles the user asked to have added, or an order to read or watch them in, as one " +
+				"list: real, published titles, at most 30, in order, with list_name when there is an order. Aaru matches " +
+				"them and the user reviews them in Aaru; nothing is added until they approve. Once per reply.",
+			InputSchema: capture.Tool.InputSchema,
 		})
 	}
 	return append(out, model.Tool{
@@ -210,6 +232,11 @@ func (t *ChatTools) Run(ctx context.Context, name string, input json.RawMessage)
 			return "No tool called " + name + ".", true
 		}
 		out, err = t.readSports(ctx)
+	case "plan_title_list":
+		if t.deps.TitleLists == nil {
+			return "No tool called " + name + ".", true
+		}
+		out, err = t.planTitleList(ctx, input)
 	case "apply_library_patch":
 		out, err = t.patch(ctx, input)
 	default:
@@ -433,6 +460,26 @@ func describeSportEvent(e sports.Event) string {
 		name += " " + e.Day
 	}
 	return name
+}
+
+// MARK: plan_title_list
+
+// planTitleList is BOOK-003: the titles as a capture to review. One a reply.
+func (t *ChatTools) planTitleList(ctx context.Context, input json.RawMessage) (string, error) {
+	if t.importID != nil {
+		return "These titles are already waiting for the user's review. Tell them that.", nil
+	}
+	titles := capture.Rows(input)
+	if len(titles) == 0 {
+		return "No titles to plan. Send at least one.", nil
+	}
+	id, err := t.deps.TitleLists.CreateTitleList(ctx, t.User, titles, capture.ListName(input))
+	if err != nil {
+		return "", err
+	}
+	t.importID = &id
+	return plural(len(titles), "title", "titles") + " sent. Aaru is matching them, then they wait for the user's review. " +
+		"Nothing is added until they approve. Tell them that.", nil
 }
 
 // MARK: apply_library_patch

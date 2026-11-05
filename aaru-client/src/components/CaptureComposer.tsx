@@ -30,7 +30,7 @@ export function CaptureComposer(props: { kind?: 'book'; class?: string }) {
         ? 'Aaru reads the books in the picture'
         : 'Aaru reads the titles in the picture'
     return books()
-      ? 'Paste a ChatGPT chat or a list of books'
+      ? 'Paste a chat or a list of books, or ask for books'
       : 'Paste titles, a link or a screenshot'
   }
 
@@ -196,7 +196,7 @@ export function CaptureComposer(props: { kind?: 'book'; class?: string }) {
       </div>
       <p class="mt-2 text-sm text-muted">
         {books()
-          ? 'A whole ChatGPT chat, screenshots or a photo of a list. Nothing is added until you approve.'
+          ? 'A whole ChatGPT chat, screenshots, a photo of a list, or a request like “X-Men books in reading order”. Nothing is added until you approve.'
           : 'Nothing is added until you approve what Aaru found.'}
       </p>
       <Show when={problem()}>

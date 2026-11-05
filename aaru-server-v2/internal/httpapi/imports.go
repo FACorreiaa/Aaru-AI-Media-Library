@@ -386,6 +386,10 @@ func ImportRowDTO(p imports.PlannedRow) api.ImportRow {
 		status := api.LibraryStatus(*row.Status)
 		out.Status = &status
 	}
+	if len(row.Lists) > 0 {
+		lists := row.Lists
+		out.Lists = &lists
+	}
 	if row.Guess != nil {
 		out.Guess = &api.ImportRowGuess{Byline: row.Guess.Byline, PosterUrl: row.Guess.PosterURL, Title: row.Guess.Title}
 	}

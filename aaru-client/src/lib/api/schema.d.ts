@@ -3211,6 +3211,8 @@ export interface components {
       guess?: components['schemas']['ImportRowGuess']
       /** @description Match all has yet to try this unmatched row. */
       guessable?: boolean
+      /** @description Lists this row joins once approved. A capture's order keeps its rows in order (BOOK-003). */
+      lists?: string[]
       type: components['schemas']['MediaType']
       sourceKey?: string
       ids?: components['schemas']['ExternalIds']
@@ -4732,6 +4734,11 @@ export interface components {
     ChatComponentsFrame: {
       titles?: components['schemas']['TitleSummary'][]
       plan?: components['schemas']['AgentPlan']
+      /**
+       * Format: uuid
+       * @description A list Aaru sent to be matched (BOOK-003), reviewed at `/v1/imports/{id}` like any capture.
+       */
+      importId?: string
       /**
        * Format: uuid
        * @description A single change Aaru applied, undone at `/v1/actions/{id}/undo`.

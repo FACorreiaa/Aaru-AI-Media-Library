@@ -3844,6 +3844,10 @@ components:
         leftOut: {type: boolean, description: Unticked in the review; the plan does not write it.}
         guess: {$ref: '#/components/schemas/ImportRowGuess'}
         guessable: {type: boolean, description: Match all has yet to try this unmatched row.}
+        lists:
+          description: Lists this row joins once approved. A capture's order keeps its rows in order (BOOK-003).
+          type: array
+          items: {type: string}
         type: {$ref: '#/components/schemas/MediaType'}
         sourceKey: {type: string}
         ids: {$ref: '#/components/schemas/ExternalIds'}
@@ -5750,6 +5754,10 @@ components:
           type: array
           items: {$ref: '#/components/schemas/TitleSummary'}
         plan: {$ref: '#/components/schemas/AgentPlan'}
+        importId:
+          type: string
+          format: uuid
+          description: A list Aaru sent to be matched (BOOK-003), reviewed at `/v1/imports/{id}` like any capture.
         actionId:
           type: string
           format: uuid

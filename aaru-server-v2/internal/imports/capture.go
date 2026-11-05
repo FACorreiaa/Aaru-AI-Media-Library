@@ -57,11 +57,17 @@ type CaptureRequest struct {
 	Images []model.Image
 	// Only narrows text and images to one kind (BOOK-001). A link names its own kind.
 	Only core.MediaType
+	// Titles are a list Aaru chose in a chat (BOOK-003), planned as they are with no second model call.
+	Titles []capture.Title
+	// ListName is the list those titles also join, in order. Empty for none.
+	ListName string
 }
 
 // kind is the product event's `kind`.
 func (r CaptureRequest) kind() string {
 	switch {
+	case r.Titles != nil:
+		return "chat"
 	case r.Text != nil:
 		return "text"
 	case r.Link != nil:
@@ -116,6 +122,12 @@ func (s *Service) CreateCapture(ctx context.Context, user uuid.UUID, req Capture
 // captureContent is a link's row, read from the URL now; or the text or image for the worker.
 func captureContent(req CaptureRequest) ([]Row, *capture.Content, error) {
 	switch {
+	case req.Titles != nil:
+		if len(req.Titles) == 0 {
+			return nil, nil, apperr.Validation("titles", "There is nothing to add.").
+				WithDetails(map[string]string{"titles": "Empty."})
+		}
+		return titleRows(req.Titles, req.ListName), nil, nil
 	case req.Link != nil:
 		link := capture.ParseLink(strings.TrimSpace(*req.Link))
 		switch link.Kind {
@@ -167,6 +179,18 @@ func captureRow(t capture.Title) Row {
 		SourceKey: t.SourceKey, Type: t.Type, Title: t.Title, Year: year, IDs: t.IDs, Author: t.Author,
 		Status: ptr(core.StatusWishlist), Lists: []string{},
 	}
+}
+
+// titleRows are captured titles in their order, each joining list once approved (BOOK-003).
+func titleRows(titles []capture.Title, list string) []Row {
+	rows := make([]Row, len(titles))
+	for i, t := range titles {
+		rows[i] = captureRow(t)
+		if list != "" {
+			rows[i].Lists = []string{list}
+		}
+	}
+	return rows
 }
 
 // CheckCaptureQuota is fair use, for every account: past CapturesPerDay in a UTC day, a 429.
@@ -224,11 +248,7 @@ func (s *Service) fetchCapture(ctx context.Context, job *core.ImportJob) ([]Row,
 	case len(outcome.Titles) == 0:
 		return nil, s.fail(ctx, job, "Aaru found no film, show, anime or book in that capture.")
 	}
-	rows := make([]Row, len(outcome.Titles))
-	for i, t := range outcome.Titles {
-		rows[i] = captureRow(t)
-	}
-	return rows, nil
+	return titleRows(outcome.Titles, outcome.ListName), nil
 }
 
 // deleteCaptureInput forgets what a capture sent.
