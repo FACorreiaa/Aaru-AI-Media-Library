@@ -11,7 +11,7 @@ import (
 
 const (
 	scopeToolName  = "record_scope"
-	scopeMaxTokens = 64
+	scopeMaxTokens = 256
 	// scopeTurns is how many earlier turns the gate reads, enough for "and season two?" to pass.
 	scopeTurns = 6
 	// scopeTurnLength is how much of each earlier turn the gate reads.

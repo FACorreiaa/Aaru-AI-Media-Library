@@ -27,7 +27,7 @@ func TestScopeForcesItsToolAndSendsNoSampling(t *testing.T) {
 	require.NoError(t, err)
 	req := m.calls()[0]
 	assert.Equal(t, "record_scope", req.ToolChoice)
-	assert.Equal(t, 64, req.MaxTokens)
+	assert.Equal(t, 256, req.MaxTokens)
 	require.Len(t, req.Tools, 1)
 	assert.Equal(t, "record_scope", req.Tools[0].Name)
 
