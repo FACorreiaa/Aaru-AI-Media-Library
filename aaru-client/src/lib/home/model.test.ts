@@ -524,6 +524,14 @@ describe('homeDiscover', () => {
     ])
   })
 
+  it('leaves a row that belongs on its kind page off Home', () => {
+    const classics = { ...row('books_classics', 'book'), kindPageOnly: true }
+    const library = [entry('a', 'book')]
+    expect(ids(homeDiscover([classics, ...rows], library))).toEqual(
+      ids(homeDiscover(rows, library)),
+    )
+  })
+
   it('fills from the same kinds before reaching for others', () => {
     expect(ids(homeDiscover(rows, [entry('a', 'show')]))).toEqual([
       'tv_trending',

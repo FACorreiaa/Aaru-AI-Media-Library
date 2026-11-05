@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { captureHeadline, captureSend, waitingCaptures } from './model'
+import {
+  captureHeadline,
+  captureSend,
+  captureSlices,
+  waitingCaptures,
+} from './model'
 import type { components } from '../api/schema'
 
 type Job = components['schemas']['ImportJob']
@@ -56,5 +61,23 @@ describe('capture', () => {
       job('planned', { id: 'e', source: 'letterboxd_csv' }),
     ]
     expect(waitingCaptures(jobs).map((j) => j.id)).toEqual(['a', 'b'])
+  })
+})
+
+describe('captureSlices', () => {
+  it('keeps an ordinary screenshot or photo whole', () => {
+    expect(captureSlices(1206, 2622)).toEqual([{ top: 0, height: 2622 }])
+    expect(captureSlices(4032, 3024)).toEqual([{ top: 0, height: 3024 }])
+  })
+
+  it('cuts a tall screenshot into overlapping pieces that reach the bottom', () => {
+    const slices = captureSlices(1179, 8000)
+    expect(slices).toHaveLength(4)
+    const last = slices[slices.length - 1]
+    expect(last.top + last.height).toBe(8000)
+    for (let i = 1; i < slices.length; i++)
+      expect(slices[i].top).toBeLessThan(
+        slices[i - 1].top + slices[i - 1].height,
+      )
   })
 })

@@ -259,6 +259,21 @@ export const discardImport = createServerFn({ method: 'POST' })
   })
 
 /** IMP-011: one unmatched row, matched by hand to the title the person picked. */
+/** BOOK-001: a row of a planned capture ticked or unticked. */
+export const leaveOutImportRow = createServerFn({ method: 'POST' })
+  .validator(
+    z.object({ id, index: z.number().int().min(0), leftOut: z.boolean() }),
+  )
+  .handler(async ({ data }): Promise<{ job: ImportJob; row: ImportRow }> =>
+    check(
+      await api(sessionToken()).POST('/v1/imports/{id}/rows/{index}/left-out', {
+        params: { path: { id: data.id, index: data.index } },
+        body: { leftOut: data.leftOut },
+      }),
+      'That row could not be changed.',
+    ),
+  )
+
 export const resolveImportRow = createServerFn({ method: 'POST' })
   .validator(
     z.object({

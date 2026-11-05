@@ -38,9 +38,25 @@ describe('kind shelves', () => {
 
   it('leads with In progress, then Planned, labelled for the kind', () => {
     const shelves = kindShelves(entries, 'book')
-    expect(shelves.map((s) => s.label)).toEqual(['Reading', 'Plan to read'])
+    expect(shelves[0].label).toBe('Reading')
+    expect(shelves[1].label).toBe('Plan to read')
     expect(shelves[0].rows.map((r) => r.id)).toEqual(['b2', 'b1'])
     expect(shelves[1].rows.map((r) => r.id)).toEqual(['b3'])
+  })
+
+  it('keeps paused and read books too, for books only', () => {
+    const shelves = kindShelves(entries, 'book')
+    expect(shelves.map((s) => s.label)).toEqual([
+      'Reading',
+      'Plan to read',
+      'On hold',
+      'Read',
+    ])
+    expect(shelves[3].rows.map((r) => r.id)).toEqual(['b4'])
+    expect(kindShelves(entries, 'manga').map((s) => s.label)).toEqual([
+      'Reading',
+      'Plan to read',
+    ])
   })
 
   it('keeps each kind to its own titles', () => {
