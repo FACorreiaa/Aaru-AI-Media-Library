@@ -3206,8 +3206,9 @@ paths:
                     type: array
                     items: {$ref: '#/components/schemas/ImportRow'}
                   remaining: {type: integer}
-        '404': {description: No such import.}
-        '409': {description: 'The plan has been applied (`import_not_planned`).'}
+        default:
+          $ref: '#/components/responses/Error'
+
   /v1/imports/{id}/rows/{index}/left-out:
     post:
       operationId: leaveOutImportRow

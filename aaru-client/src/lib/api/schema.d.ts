@@ -9890,20 +9890,7 @@ export interface operations {
           }
         }
       }
-      /** @description No such import. */
-      404: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      /** @description The plan has been applied (`import_not_planned`). */
-      409: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
+      default: components['responses']['Error']
     }
   }
   leaveOutImportRow: {

@@ -41605,80 +41605,29 @@ public enum Operations {
                     }
                 }
             }
-            public struct NotFound: Sendable, Hashable {
-                /// Creates a new `NotFound`.
-                public init() {}
-            }
-            /// No such import.
+            /// Any error, in the shared shape.
             ///
-            /// - Remark: Generated from `#/paths//v1/imports/{id}/match-all/post(matchAllImportRows)/responses/404`.
+            /// - Remark: Generated from `#/paths//v1/imports/{id}/match-all/post(matchAllImportRows)/responses/default`.
             ///
-            /// HTTP response code: `404 notFound`.
-            case notFound(Operations.MatchAllImportRows.Output.NotFound)
-            /// No such import.
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
             ///
-            /// - Remark: Generated from `#/paths//v1/imports/{id}/match-all/post(matchAllImportRows)/responses/404`.
-            ///
-            /// HTTP response code: `404 notFound`.
-            public static var notFound: Self {
-                .notFound(.init())
-            }
-            /// The associated value of the enum case if `self` is `.notFound`.
-            ///
-            /// - Throws: An error if `self` is not `.notFound`.
-            /// - SeeAlso: `.notFound`.
-            public var notFound: Operations.MatchAllImportRows.Output.NotFound {
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
                 get throws {
                     switch self {
-                    case let .notFound(response):
+                    case let .`default`(_, response):
                         return response
                     default:
                         try throwUnexpectedResponseStatus(
-                            expectedStatus: "notFound",
+                            expectedStatus: "default",
                             response: self
                         )
                     }
                 }
             }
-            public struct Conflict: Sendable, Hashable {
-                /// Creates a new `Conflict`.
-                public init() {}
-            }
-            /// The plan has been applied (`import_not_planned`).
-            ///
-            /// - Remark: Generated from `#/paths//v1/imports/{id}/match-all/post(matchAllImportRows)/responses/409`.
-            ///
-            /// HTTP response code: `409 conflict`.
-            case conflict(Operations.MatchAllImportRows.Output.Conflict)
-            /// The plan has been applied (`import_not_planned`).
-            ///
-            /// - Remark: Generated from `#/paths//v1/imports/{id}/match-all/post(matchAllImportRows)/responses/409`.
-            ///
-            /// HTTP response code: `409 conflict`.
-            public static var conflict: Self {
-                .conflict(.init())
-            }
-            /// The associated value of the enum case if `self` is `.conflict`.
-            ///
-            /// - Throws: An error if `self` is not `.conflict`.
-            /// - SeeAlso: `.conflict`.
-            public var conflict: Operations.MatchAllImportRows.Output.Conflict {
-                get throws {
-                    switch self {
-                    case let .conflict(response):
-                        return response
-                    default:
-                        try throwUnexpectedResponseStatus(
-                            expectedStatus: "conflict",
-                            response: self
-                        )
-                    }
-                }
-            }
-            /// Undocumented response.
-            ///
-            /// A response with a code that is not documented in the OpenAPI document.
-            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
         }
         @frozen public enum AcceptableContentType: AcceptableProtocol {
             case json
