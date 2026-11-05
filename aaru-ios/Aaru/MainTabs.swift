@@ -90,6 +90,7 @@ struct MainTabs: View {
         #if os(macOS)
             .frame(minWidth: 760, minHeight: 520)
         #endif
+            .assistantHost(api: api, library: library, lists: lists, isSheet: false)
             .sheet(item: $linkedPlan) { link in
                 if let api {
                     PlanSheet(api: api, id: link.id) { linkedPlan = nil }
@@ -114,9 +115,11 @@ struct MainTabs: View {
                             }
                         }
                 }
+                .assistantHost(api: api, library: library, lists: lists, isSheet: true)
             }
             .sheet(isPresented: $router.showsSearch) {
                 SearchView(api: api, library: library, lists: lists)
+                    .assistantHost(api: api, library: library, lists: lists, isSheet: true)
             }
             .onChange(of: router.closeSheetsRequest) {
                 linkedPlan = nil
@@ -176,6 +179,8 @@ struct MainTabs: View {
                 if scenePhase == .background {
                     realtime.stop()
                     router.closeAssistant()
+                    // The change above may not run before suspension, and the mic must not outlive it.
+                    assistant?.closed()
                 } else {
                     realtime.start()
                 }

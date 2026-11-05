@@ -20,17 +20,23 @@ struct AaruAvatar: View {
         .frame(width: size, height: size)
         .clipShape(Circle())
         .scaleEffect(inhale && !reduceMotion ? 1.06 : 1)
-        .onAppear {
-            guard breathing, !reduceMotion else { return }
-            withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) { inhale = true }
-        }
+        .onAppear(perform: updateBreath)
+        // The Assistant card starts answering long after its owl appeared.
+        .onChange(of: breathing, updateBreath)
         // Turning Reduce Motion on mid-breath stops it at rest.
-        .onChange(of: reduceMotion) { _, reduce in
-            if reduce {
-                inhale = false
-            }
-        }
+        .onChange(of: reduceMotion, updateBreath)
         .accessibilityHidden(true)
+    }
+
+    private func updateBreath() {
+        if reduceMotion {
+            inhale = false
+        } else if breathing {
+            withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) { inhale = true }
+        } else {
+            // A new animation is what ends the repeating one.
+            withAnimation(AaruMotion.ease()) { inhale = false }
+        }
     }
 }
 
@@ -125,6 +131,8 @@ struct AgentTitleCard: View {
     let title: TitleSummary
     /// Nil when added, else why not.
     let onAdd: (TitleSummary) async -> String?
+    /// Opens the title from the poster and name. Nil in a channel, where they do nothing.
+    var onOpen: ((TitleSummary) -> Void)?
     @State private var state = AddState.idle
 
     enum AddState: Equatable {
@@ -132,15 +140,23 @@ struct AgentTitleCard: View {
         case failed(String)
     }
 
+    init(
+        title: TitleSummary,
+        onAdd: @escaping (TitleSummary) async -> String?,
+        onOpen: ((TitleSummary) -> Void)? = nil
+    ) {
+        self.title = title
+        self.onAdd = onAdd
+        self.onOpen = onOpen
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            PosterView(url: title.posterURL, kind: title.mediaKind)
-                .frame(width: 96)
-                .clipShape(RoundedRectangle(cornerRadius: AaruRadius.thumb, style: .continuous))
-                .accessibilityLabel(title.title)
-            Text(title.title).font(.caption.weight(.medium)).lineLimit(3)
-            if let year = title.year {
-                Text(String(year)).font(.caption2).foregroundStyle(Color(.muted))
+            if let onOpen {
+                Button { onOpen(title) } label: { face }
+                    .buttonStyle(.plain)
+            } else {
+                face
             }
             switch state {
             case .added:
@@ -156,6 +172,10 @@ struct AgentTitleCard: View {
                     .font(.caption2.weight(.medium))
                     .buttonStyle(.bordered)
                     .controlSize(.small)
+                #if os(macOS)
+                    // The Mac's button holds one line, and the icon would cut the words.
+                    .labelStyle(.titleOnly)
+                #endif
             }
         }
         .frame(width: 104, alignment: .leading)
@@ -163,6 +183,19 @@ struct AgentTitleCard: View {
         .contextMenu {
             if state == .idle {
                 Button("Add to my library", systemImage: "plus") { Task { await add() } }
+            }
+        }
+    }
+
+    private var face: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            PosterView(url: title.posterURL, kind: title.mediaKind)
+                .frame(width: 96)
+                .clipShape(RoundedRectangle(cornerRadius: AaruRadius.thumb, style: .continuous))
+                .accessibilityLabel(title.title)
+            Text(title.title).font(.caption.weight(.medium)).lineLimit(3)
+            if let year = title.year {
+                Text(String(year)).font(.caption2).foregroundStyle(Color(.muted))
             }
         }
     }

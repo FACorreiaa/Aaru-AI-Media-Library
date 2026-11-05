@@ -34,6 +34,9 @@ final class AssistantModel {
     private(set) var voiceAvailable = false
     private(set) var phase = Phase.idle
     private(set) var turns: [AssistantTurn] = []
+    /// Plans answered in the card, by id, as the server left them. A reply freezes when it ends, so
+    /// a card closed and reopened would otherwise offer Approve again.
+    private(set) var decidedPlans: [String: AgentPlan] = [:]
     private(set) var micDenied = false
     private(set) var voiceProblem: String?
     /// 0…1, for the mic's meter.
@@ -103,6 +106,7 @@ final class AssistantModel {
             // Even if the card closed again: the chat has expired either way.
             if !continues, phase == .idle {
                 turns = []
+                decidedPlans = [:]
             }
             // From idle only: while listening, toggling would stop the recording.
             guard started == flowToken, presentation.listening, voiceAvailable, phase == .idle else { return }
@@ -162,6 +166,7 @@ final class AssistantModel {
     }
 
     func planDecided(_ plan: AgentPlan) async {
+        decidedPlans[plan.id] = plan
         guard plan.status == .applied else { return }
         let started = accountToken
         await library.sync(api: api)
@@ -176,6 +181,7 @@ final class AssistantModel {
         accountToken += 1
         hint = nil
         turns = []
+        decidedPlans = [:]
         isAvailable = false
         voiceAvailable = false
         await thread?.reset()
