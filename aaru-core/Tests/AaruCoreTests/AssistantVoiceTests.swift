@@ -6,7 +6,7 @@ struct AssistantVoiceTests {
     /// What one run of the detector came to: the stop, the time it came at, and whether it heard speech.
     private struct Outcome {
         let stop: SilenceDetector.Stop?
-        let at: TimeInterval
+        let time: TimeInterval
         let heard: Bool
     }
 
@@ -26,18 +26,18 @@ struct AssistantVoiceTests {
             for _ in 0 ..< count {
                 let time = Double(step) / 10
                 if let stop = detector.feed(power: power, at: time) {
-                    return Outcome(stop: stop, at: time, heard: detector.heardSpeech)
+                    return Outcome(stop: stop, time: time, heard: detector.heardSpeech)
                 }
                 step += 1
             }
         }
-        return Outcome(stop: nil, at: Double(step) / 10, heard: detector.heardSpeech)
+        return Outcome(stop: nil, time: Double(step) / 10, heard: detector.heardSpeech)
     }
 
     @Test func stopsAfterSpeechAndAboutASecondAndAHalfOfQuiet() {
         let result = run([(-55, 1), (-25, 2)], then: (-55, 10))
         #expect(result.stop == .silence)
-        #expect(abs(result.at - 4.5) <= 0.1)
+        #expect(abs(result.time - 4.5) <= 0.1)
     }
 
     @Test func keepsGoingThroughAPauseBetweenWords() {
@@ -48,13 +48,13 @@ struct AssistantVoiceTests {
     @Test func hearsSomeoneTalkingFromTheFirstInstant() {
         let result = run([(-20, 2)], then: (-55, 10))
         #expect(result.stop == .silence)
-        #expect(abs(result.at - 3.5) <= 0.1)
+        #expect(abs(result.time - 3.5) <= 0.1)
     }
 
     @Test func nobodySpeakingStopsWithoutAnUpload() {
         let result = run([(-55, 20)])
         #expect(result.stop == .noSpeech)
-        #expect(abs(result.at - 8) <= 0.1)
+        #expect(abs(result.time - 8) <= 0.1)
         #expect(result.heard == false)
     }
 
@@ -72,7 +72,7 @@ struct AssistantVoiceTests {
     @Test func capsAtSixtySeconds() {
         let result = run([(-25, 70)])
         #expect(result.stop == .cap)
-        #expect(abs(result.at - 60) <= 0.1)
+        #expect(abs(result.time - 60) <= 0.1)
     }
 
     @Test(arguments: [
