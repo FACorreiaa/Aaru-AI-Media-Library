@@ -4,6 +4,7 @@ import type { JSX } from 'solid-js'
 import { Button } from '~/components/ui'
 import { DiscoverRows } from '../DiscoverRows'
 import { Row } from '../HomeRows'
+import { BooksImportButton, BooksTop } from './BooksTop'
 import { Poster } from '../Poster'
 import { useAppShell, useSearchHost } from '../shell/context'
 import { localDayKey } from '../../lib/calendar/model'
@@ -17,7 +18,7 @@ import type { LibraryEntry, LibraryRow } from '../../lib/library/model'
 
 /** What the empty shelf says, per kind. */
 const EMPTY: Record<PageKind, string> = {
-  book: 'Nothing on your reading shelf yet. Add a book from the rows below, or search for one.',
+  book: 'Nothing on your reading shelf yet. Import a list above, or add a book from the rows below.',
   manga:
     'Nothing on your manga shelf yet. Add a series from the rows below, or search for one.',
   album:
@@ -79,12 +80,17 @@ export function KindPage(props: {
             </h1>
             <p class="mt-2 text-muted">{props.blurb}</p>
           </div>
-          <Button
-            variant="outline"
-            onClick={() => shell.openSearch(props.kind)}
-          >
-            {SEARCH_LABEL[props.kind]}
-          </Button>
+          <div class="flex flex-wrap gap-2">
+            <Show when={props.kind === 'book' && !shelfEmpty()}>
+              <BooksImportButton />
+            </Show>
+            <Button
+              variant="outline"
+              onClick={() => shell.openSearch(props.kind)}
+            >
+              {SEARCH_LABEL[props.kind]}
+            </Button>
+          </div>
         </div>
 
         <Show when={problem()}>
@@ -93,6 +99,10 @@ export function KindPage(props: {
               {message()}
             </p>
           )}
+        </Show>
+
+        <Show when={props.kind === 'book'}>
+          <BooksTop entries={entries()} shelfEmpty={shelfEmpty()} />
         </Show>
 
         <Show

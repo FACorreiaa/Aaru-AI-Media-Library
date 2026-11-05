@@ -292,7 +292,7 @@ export function homeDiscover(
   const kinds = [...counts.keys()].sort(
     (a, b) => (counts.get(b) ?? 0) - (counts.get(a) ?? 0),
   )
-  const shown = rows.filter((row) => row.items.length > 0)
+  const shown = rows.filter((row) => row.items.length > 0 && !row.kindPageOnly)
   const picked: DiscoverRow[] = []
   const pick = (row: DiscoverRow | undefined) => {
     if (row && picked.length < HOME_DISCOVER_ROWS && !picked.includes(row))

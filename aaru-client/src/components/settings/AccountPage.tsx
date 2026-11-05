@@ -101,17 +101,10 @@ export function AccountPage(props: { data: AccountPageData }) {
         </Show>
       </SettingsSection>
 
-      <Show when={props.data.plus}>
+      {/* BIL-005: with Plus off sale a free account has nothing here to read or buy. */}
+      <Show when={props.data.plus?.plus ? props.data.plus : null}>
         {(plus) => (
-          <SettingsSection title="Aaru Plus" description={plusLine(plus())}>
-            <Show when={!plus().plus}>
-              <p class="max-w-prose text-sm text-muted">
-                Plus lifts the monthly limit on captures. It is bought in the
-                Aaru app on iPhone, iPad or Mac, and works here as soon as it
-                is.
-              </p>
-            </Show>
-          </SettingsSection>
+          <SettingsSection title="Aaru Plus" description={plusLine(plus())} />
         )}
       </Show>
 
