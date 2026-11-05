@@ -89,9 +89,11 @@ struct SportsView: View {
             .refreshesOnCommand(.sports) { await model.reload() }
             .sheet(isPresented: $showsSearch) {
                 SportsSearchView(model: model)
+                    .closesOnSheetsRequest()
             }
             .sheet(item: $openEvent) { link in
                 SportEventDetailView(model: model, id: link.id)
+                    .closesOnSheetsRequest()
             }
             .safeAreaInset(edge: .bottom) {
                 ProblemBanner(message: model.problem) { model.problem = nil }

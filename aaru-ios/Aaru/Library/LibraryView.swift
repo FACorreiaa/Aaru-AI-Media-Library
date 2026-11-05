@@ -80,6 +80,7 @@ struct LibraryView: View {
                 }
                 .navigationDestination(isPresented: $router.showsListsInLibrary) {
                     ListsView(lists: lists, library: library, api: api)
+                        .assistantButton()
                 }
                 .navigationDestination(isPresented: $showsInsights) { InsightsView(api: api, library: library) }
                 .sheet(item: $listTarget) { row in
@@ -89,6 +90,7 @@ struct LibraryView: View {
                             titleName: entry.title.title,
                             lists: lists
                         )
+                        .closesOnSheetsRequest()
                     }
                 }
                 .confirmationDialog(

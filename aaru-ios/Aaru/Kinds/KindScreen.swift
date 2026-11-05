@@ -104,6 +104,7 @@ struct KindScreen: View {
                         titleName: hit.title,
                         lists: lists
                     )
+                    .closesOnSheetsRequest()
                 }
                 .safeAreaInset(edge: .bottom) {
                     switch pane {

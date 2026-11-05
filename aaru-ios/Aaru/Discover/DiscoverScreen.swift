@@ -110,6 +110,7 @@ struct DiscoverScreen: View {
                         titleName: hit.title,
                         lists: lists
                     )
+                    .closesOnSheetsRequest()
                 }
                 .safeAreaInset(edge: .bottom) {
                     switch section {

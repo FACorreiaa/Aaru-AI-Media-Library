@@ -139,6 +139,7 @@ struct HomeScreen: View {
                         titleName: hit.title,
                         lists: lists
                     )
+                    .closesOnSheetsRequest()
                 }
                 // "Airing soon" opens the episode, as the calendar does, with "Open show" in it (UX-092).
                 .sheet(
@@ -151,7 +152,10 @@ struct HomeScreen: View {
                         }
                     ),
                     onDismiss: { Task { await model.shelfChanged() } },
-                    content: { CalendarEpisodeSheet(feed: model.airingFeed) { path.append($0) } }
+                    content: {
+                        CalendarEpisodeSheet(feed: model.airingFeed) { path.append($0) }
+                            .closesOnSheetsRequest()
+                    }
                 )
                 .recapStory($recap, api: api)
                 .safeAreaInset(edge: .bottom) {

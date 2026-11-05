@@ -106,6 +106,7 @@ struct CalendarScreen: View {
                     }
                 )) {
                     CalendarEpisodeSheet(feed: feed) { path.append($0) }
+                        .closesOnSheetsRequest()
                 }
                 .onChange(of: currentFilter, initial: true) { feed.filter = currentFilter }
                 .task(id: mode) { await loadIfNeeded() }

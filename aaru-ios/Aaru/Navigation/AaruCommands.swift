@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// The menu bar on the Mac, and the ⌘ shortcuts a hardware keyboard shows on iPad: New List
-/// (⌘N), Search (⌘F), Refresh (⌘R), the Go menu (⌘1…⌘9 for its first nine rows), and the
+/// (⌘N), Search (⌘F), Ask Aaru (⌘K), Refresh (⌘R), the Go menu (⌘1…⌘9 for its first nine rows), and the
 /// standard sidebar and toolbar commands. ⌘, comes from the Settings scene.
 struct AaruCommands: Commands {
     let router: AppRouter
@@ -11,13 +11,17 @@ struct AaruCommands: Commands {
         SidebarCommands()
         ToolbarCommands()
         CommandGroup(replacing: .newItem) {
-            Button("New List") { router.showLists(startingNew: true) }
-                .keyboardShortcut("n", modifiers: .command)
-                .disabled(!session.isSignedIn)
+            Button("New List") {
+                // A live card is an overlay: the list sheet would open dead beneath it.
+                router.closeAssistant()
+                router.showLists(startingNew: true)
+            }
+            .keyboardShortcut("n", modifiers: .command)
+            .disabled(!session.isSignedIn)
         }
         CommandGroup(after: .textEditing) {
             Button("Ask Aaru") {
-                // A second ⌘K closes the card, as Spotify-style launchers do.
+                // A second ⌘K closes the card, as Spotlight do.
                 if router.assistant != nil {
                     router.closeAssistant()
                 } else {
@@ -44,8 +48,11 @@ struct AaruCommands: Commands {
         }
         CommandMenu("Go") {
             ForEach(Array(router.goMenu.enumerated()), id: \.element) { index, destination in
-                Button(destination.title) { router.select(destination) }
-                    .keyboardShortcut(Self.goShortcut(at: index))
+                Button(destination.title) {
+                    router.closeAssistant()
+                    router.select(destination)
+                }
+                .keyboardShortcut(Self.goShortcut(at: index))
             }
             .disabled(!session.isSignedIn)
             #if os(iOS)

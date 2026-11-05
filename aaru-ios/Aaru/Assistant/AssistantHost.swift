@@ -14,6 +14,23 @@ extension View {
     }
 }
 
+extension View {
+    /// For the root of a sheet a screen presents itself: ⌘K, a share link or History close it, so
+    /// the card can show instead of sitting behind a sheet that takes no input.
+    func closesOnSheetsRequest() -> some View {
+        modifier(ClosesOnSheetsRequest())
+    }
+}
+
+private struct ClosesOnSheetsRequest: ViewModifier {
+    @Environment(AppRouter.self) private var router: AppRouter?
+    @Environment(\.dismiss) private var dismiss
+
+    func body(content: Content) -> some View {
+        content.onChange(of: router?.closeSheetsRequest) { dismiss() }
+    }
+}
+
 private struct AssistantHost: ViewModifier {
     let api: Client?
     let library: LibraryModel

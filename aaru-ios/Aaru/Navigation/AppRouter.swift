@@ -98,7 +98,7 @@ struct AssistantPresentation: Equatable {
 }
 
 /// One place that says where the app is: the selected destination, what Settings shows, and the
-/// requests the menu bar and keyboard send (⌘N, ⌘F, ⌘R, ⌘,). Shared by the main window and the
+/// requests the menu bar and keyboard send (⌘N, ⌘F, ⌘K, ⌘R, ⌘,). Shared by the main window and the
 /// Mac Settings scene.
 @MainActor
 @Observable

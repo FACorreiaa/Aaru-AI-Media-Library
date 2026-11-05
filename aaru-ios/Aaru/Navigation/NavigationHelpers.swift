@@ -74,7 +74,7 @@ private struct AssistantButtonModifier: ViewModifier {
                 .contentShape(Rectangle())
         }
         .accessibilityLabel("Ask Aaru")
-        .accessibilityAction(named: "Talk to Aaru") { open(listening: true) }
+        .accessibilityAction(named: "Talk to Aaru") { open(listening: model?.voiceAvailable == true) }
         .help("Ask Aaru (⌘K)")
         #if os(iOS)
             // Holding the owl opens the card listening; the flag keeps the lift from also being a tap.
@@ -82,7 +82,7 @@ private struct AssistantButtonModifier: ViewModifier {
                 .simultaneousGesture(LongPressGesture(minimumDuration: 0.4).onEnded { _ in
                     didLongPress = true
                     longPresses += 1
-                    open(listening: true)
+                    open(listening: model?.voiceAvailable == true)
                     // A lift the button never reports must not swallow the next tap.
                     Task {
                         try? await Task.sleep(for: .milliseconds(500))
@@ -96,6 +96,8 @@ private struct AssistantButtonModifier: ViewModifier {
     }
 
     private func tapped() {
+        // A long hold's release must not replace the card the hold opened.
+        guard router?.assistant == nil else { return }
         #if os(iOS)
             if didLongPress {
                 didLongPress = false
