@@ -50,8 +50,8 @@ public extension Client {
             return .failed("Aaru could not reach the server.")
         }
         switch output {
-        case let .ok(ok):
-            guard let transcript = try? ok.body.json else {
+        case let .ok(answer):
+            guard let transcript = try? answer.body.json else {
                 return .failed("Aaru could not read that.")
             }
             return .text(transcript.text, language: transcript.language)

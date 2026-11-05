@@ -30,6 +30,8 @@ public struct ChatFrameParser: Sendable {
             if end > start, buffer[end - 1] == 0x0D {
                 end -= 1
             }
+            // Lossy on purpose: one bad byte must not drop a whole frame.
+            // swiftlint:disable:next optional_data_string_conversion
             let line = String(decoding: buffer[start ..< end], as: UTF8.self)
             start = newline + 1
             if let frame = handle(line) {

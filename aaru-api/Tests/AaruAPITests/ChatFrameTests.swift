@@ -8,7 +8,8 @@ private func describe(_ frame: ChatFrame) -> String {
     case let .status(text): "status:\(text)"
     case let .delta(text): "delta:\(text)"
     case let .components(frame):
-        "components:\(frame.titles?.map(\.title) ?? []):\(frame.plan?.id ?? "-"):\(frame.actionId ?? "-"):\(frame.actionSummary ?? "-")"
+        "components:\(frame.titles?.map(\.title) ?? []):\(frame.plan?.id ?? "-"):"
+            + "\(frame.actionId ?? "-"):\(frame.actionSummary ?? "-")"
     case let .done(turnID): "done:\(turnID)"
     case let .error(code, message): "error:\(code.rawValue):\(message)"
     }

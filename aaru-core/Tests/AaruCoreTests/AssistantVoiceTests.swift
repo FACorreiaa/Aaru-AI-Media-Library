@@ -3,11 +3,18 @@ import Testing
 @testable import AaruCore
 
 struct AssistantVoiceTests {
+    /// What one run of the detector came to.
+    private struct Outcome {
+        let stop: SilenceDetector.Stop?
+        let time: TimeInterval
+        let heard: Bool
+    }
+
     /// Feeds each (power, seconds) segment at 0.1 s steps; returns the stop and the time it came at.
     private func run(
         _ segments: [(Float, TimeInterval)],
         then tail: (Float, TimeInterval)? = nil
-    ) -> (stop: SilenceDetector.Stop?, at: TimeInterval, heard: Bool) {
+    ) -> Outcome {
         var detector = SilenceDetector()
         var step = 0
         var all = segments
@@ -19,18 +26,18 @@ struct AssistantVoiceTests {
             for _ in 0 ..< count {
                 let time = Double(step) / 10
                 if let stop = detector.feed(power: power, at: time) {
-                    return (stop, time, detector.heardSpeech)
+                    return Outcome(stop: stop, time: time, heard: detector.heardSpeech)
                 }
                 step += 1
             }
         }
-        return (nil, Double(step) / 10, detector.heardSpeech)
+        return Outcome(stop: nil, time: Double(step) / 10, heard: detector.heardSpeech)
     }
 
     @Test func stopsAfterSpeechAndAboutASecondAndAHalfOfQuiet() {
         let result = run([(-55, 1), (-25, 2)], then: (-55, 10))
         #expect(result.stop == .silence)
-        #expect(abs(result.at - 4.5) <= 0.1)
+        #expect(abs(result.time - 4.5) <= 0.1)
     }
 
     @Test func keepsGoingThroughAPauseBetweenWords() {
@@ -41,13 +48,13 @@ struct AssistantVoiceTests {
     @Test func hearsSomeoneTalkingFromTheFirstInstant() {
         let result = run([(-20, 2)], then: (-55, 10))
         #expect(result.stop == .silence)
-        #expect(abs(result.at - 3.5) <= 0.1)
+        #expect(abs(result.time - 3.5) <= 0.1)
     }
 
     @Test func nobodySpeakingStopsWithoutAnUpload() {
         let result = run([(-55, 20)])
         #expect(result.stop == .noSpeech)
-        #expect(abs(result.at - 8) <= 0.1)
+        #expect(abs(result.time - 8) <= 0.1)
         #expect(result.heard == false)
     }
 
@@ -65,7 +72,7 @@ struct AssistantVoiceTests {
     @Test func capsAtSixtySeconds() {
         let result = run([(-25, 70)])
         #expect(result.stop == .cap)
-        #expect(abs(result.at - 60) <= 0.1)
+        #expect(abs(result.time - 60) <= 0.1)
     }
 
     @Test(arguments: [

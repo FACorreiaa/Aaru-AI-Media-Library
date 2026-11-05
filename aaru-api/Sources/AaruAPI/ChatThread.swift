@@ -63,6 +63,12 @@ public actor ChatThread {
         return reply
     }
 
+    /// A turn's retries so far: one new chat after a 404, a few waits on a busy one.
+    private struct Retries {
+        var recreated = false
+        var busyAttempts = 0
+    }
+
     private func run(
         _ body: String,
         hint: Components.Schemas.ChatHint?,
@@ -70,94 +76,121 @@ public actor ChatThread {
         onUpdate: @Sendable (ChatReply) async -> Void
     ) async {
         let started = generation
-        var recreated = false
-        var busyAttempts = 0
+        var retries = Retries()
         while true {
             if Task.isCancelled || generation != started {
                 reply.cancel()
                 return
             }
-            let id: String
-            if let known = chatID {
-                id = known
-            } else {
-                switch await createChat() {
-                case let .id(created):
-                    if generation != started {
-                        reply.cancel()
-                        return
-                    }
-                    chatID = created
-                    id = created
-                case .cancelled:
-                    reply.cancel()
-                    return
-                case let .failed(problem):
-                    reply.fail(problem)
-                    return
-                }
-            }
-
-            let output: Operations.CreateChatTurn.Output
-            do {
-                output = try await client.createChatTurn(
-                    path: .init(id: id),
-                    body: .json(.init(body: body, hint: hint))
-                )
-            } catch {
-                if Self.isCancellation(error) || generation != started {
-                    reply.cancel()
-                } else {
-                    reply.fail(Self.unreachable)
-                }
-                return
-            }
-            if generation != started {
-                reply.cancel()
-                return
-            }
-
+            guard let id = await turnChatID(started: started, reply: &reply),
+                  let output = await sendTurn(chat: id, body: body, hint: hint, started: started, reply: &reply)
+            else { return }
             switch output {
-            case let .ok(ok):
-                await read(ok, into: &reply, onUpdate: onUpdate)
+            case let .ok(answer):
+                await read(answer, into: &reply, onUpdate: onUpdate)
                 return
             case let .default(status, response):
                 let message = (try? response.body.json.message) ?? Self.unreachable
-                switch status {
-                case 404 where !recreated:
-                    recreated = true
-                    if chatID == id {
-                        chatID = nil
-                    }
-                case 409:
-                    busyAttempts += 1
-                    if busyAttempts >= Self.busyTries {
-                        reply.fail("Aaru is still finishing the last answer. Try again in a moment.")
-                        return
-                    }
-                    do {
-                        try await Task.sleep(for: busyRetryDelay)
-                    } catch {
-                        reply.cancel()
-                        return
-                    }
-                // The loop head stops if a reset ran during the wait.
-                default:
-                    reply.fail(message)
-                    return
-                }
+                guard await retry(status: status, chat: id, message: message, retries: &retries, reply: &reply)
+                else { return }
             }
         }
     }
 
+    /// The chat this turn goes to, made first when there is none; nil when the reply has ended.
+    private func turnChatID(started: Int, reply: inout ChatReply) async -> String? {
+        if let known = chatID {
+            return known
+        }
+        switch await createChat() {
+        case let .id(created):
+            if generation != started {
+                reply.cancel()
+                return nil
+            }
+            chatID = created
+            return created
+        case .cancelled:
+            reply.cancel()
+            return nil
+        case let .failed(problem):
+            reply.fail(problem)
+            return nil
+        }
+    }
+
+    /// The turn's request; nil when it failed or a reset ran meanwhile, with the reply ended.
+    private func sendTurn(
+        chat id: String,
+        body: String,
+        hint: Components.Schemas.ChatHint?,
+        started: Int,
+        reply: inout ChatReply
+    ) async -> Operations.CreateChatTurn.Output? {
+        let output: Operations.CreateChatTurn.Output
+        do {
+            output = try await client.createChatTurn(
+                path: .init(id: id),
+                body: .json(.init(body: body, hint: hint))
+            )
+        } catch {
+            if Self.isCancellation(error) || generation != started {
+                reply.cancel()
+            } else {
+                reply.fail(Self.unreachable)
+            }
+            return nil
+        }
+        if generation != started {
+            reply.cancel()
+            return nil
+        }
+        return output
+    }
+
+    /// Whether to try the turn again after this refusal; false ends the reply.
+    private func retry(
+        status: Int,
+        chat id: String,
+        message: String,
+        retries: inout Retries,
+        reply: inout ChatReply
+    ) async -> Bool {
+        switch status {
+        case 404 where !retries.recreated:
+            retries.recreated = true
+            if chatID == id {
+                chatID = nil
+            }
+            return true
+        case 409:
+            retries.busyAttempts += 1
+            if retries.busyAttempts >= Self.busyTries {
+                reply.fail("Aaru is still finishing the last answer. Try again in a moment.")
+                return false
+            }
+            do {
+                try await Task.sleep(for: busyRetryDelay)
+            } catch {
+                reply.cancel()
+                return false
+            }
+            // The loop head stops if a reset ran during the wait.
+            return true
+        default:
+            reply.fail(message)
+            return false
+        }
+    }
+
     private func read(
-        _ ok: Operations.CreateChatTurn.Output.Ok,
+        _ answer: Operations.CreateChatTurn.Output.Ok,
         into reply: inout ChatReply,
         onUpdate: @Sendable (ChatReply) async -> Void
     ) async {
         var parser = ChatFrameParser()
         do {
-            for try await chunk in try ok.body.textEventStream {
+            for try await chunk in try answer.body.textEventStream {
                 for frame in parser.consume(chunk) {
                     reply.apply(frame)
                     await onUpdate(reply)
