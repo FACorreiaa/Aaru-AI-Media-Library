@@ -2,6 +2,8 @@ package agent
 
 import (
 	"aaru-go-api/internal/core"
+	"aaru-go-api/internal/db/sqlc"
+	"aaru-go-api/internal/groups"
 	"aaru-go-api/internal/library"
 	"aaru-go-api/internal/model"
 	"aaru-go-api/internal/music"
@@ -34,6 +36,8 @@ const (
 // ChatDeps are the services a Chat with Aaru reads and writes through. A nil Sports leaves
 // read_my_sports out; every other one is required.
 type ChatDeps struct {
+	// Q reads the caller's progress in a title.
+	Q         *sqlc.Queries
 	Tools     *Tools
 	Stats     *stats.Service
 	Lists     *library.Store
@@ -57,10 +61,20 @@ type ChatTools struct {
 
 // NewChatTools builds the tools for one Chat turn of user.
 func NewChatTools(deps ChatDeps, user uuid.UUID) *ChatTools {
-	return &ChatTools{
-		titleReads: newTitleReads(deps.Tools.Catalog, deps.Tools.Library, user, deps.Tools.Now),
-		deps:       deps,
+	reads := newTitleReads(deps.Tools.Catalog, deps.Tools.Library, user, deps.Tools.Now)
+	reads.progress = func(ctx context.Context, title uuid.UUID) (string, error) {
+		return spoilerGuard(ctx, deps.Q, title, user)
 	}
+	return &ChatTools{titleReads: reads, deps: deps}
+}
+
+// spoilerGuard says how far user is in a title and what that keeps the model from saying.
+func spoilerGuard(ctx context.Context, q *sqlc.Queries, title, user uuid.UUID) (string, error) {
+	progress, err := groups.ProgressOf(ctx, q, title, user)
+	if err != nil {
+		return "", fmt.Errorf("chat title progress: %w", err)
+	}
+	return "They have " + DescribeProgress(progress) + ". Do not reveal anything that happens after that point.", nil
 }
 
 // Plan is the plan apply_library_patch proposed this turn, for the user to approve in Aaru.
@@ -76,9 +90,12 @@ func (t *ChatTools) ActionSummary() string { return t.actionSummary }
 func (t *ChatTools) Definitions() []model.Tool {
 	out := make([]model.Tool, 0, len(GroupToolDefinitions)+6)
 	for _, d := range GroupToolDefinitions {
-		if d.Name == "read_my_library" {
+		switch d.Name {
+		case "read_my_library":
 			d.Description = "The signed-in user's own library: titles with status and progress. " +
 				"A line's ref also names its library item for apply_library_patch."
+		case "title_details":
+			d.Description += " Also how far the user is in it."
 		}
 		out = append(out, d)
 	}

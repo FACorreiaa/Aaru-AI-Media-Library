@@ -860,6 +860,7 @@ func TestChatToolsHaveTheCaptureQuota(t *testing.T) {
 	e := newChatEnv(t, &chatModel{})
 	quota := e.server.chatService().Deps.Tools.Quota
 	require.NotNil(t, quota)
+	assert.NotNil(t, e.server.chatService().Deps.Q, "title_details reads the caller's progress through it")
 	ctx := context.Background()
 	require.NoError(t, quota(ctx, e.server.q, e.user))
 

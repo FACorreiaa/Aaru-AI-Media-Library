@@ -756,6 +756,7 @@ func TestSystemPrompt(t *testing.T) {
 	assert.Contains(t, system, "not started it", "the spoiler guard reads the user's own progress")
 	assert.Contains(t, system, "films, shows, anime, books, music, sport and your Aaru library")
 	assert.Contains(t, system, "I can't see that yet")
+	assert.Contains(t, system, "call title_details", "the guard off the title page")
 	assert.NotContains(t, f.model.everythingSeen(), "BBB", "another user's data")
 }
 

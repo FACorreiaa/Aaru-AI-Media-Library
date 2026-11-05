@@ -296,7 +296,7 @@ func (s *Server) chatService() *agent.ChatService {
 	return &agent.ChatService{
 		Store: s.chats(), Model: s.Model, Log: s.Log, Stop: s.chatStop,
 		Deps: agent.ChatDeps{
-			Tools: tools, Stats: s.Stats, Lists: s.Library.Store, Favorites: s.Social, Music: s.Listens, Sports: s.Sports,
+			Q: s.q, Tools: tools, Stats: s.Stats, Lists: s.Library.Store, Favorites: s.Social, Music: s.Listens, Sports: s.Sports,
 		},
 	}
 }

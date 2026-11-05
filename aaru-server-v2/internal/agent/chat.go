@@ -440,12 +440,11 @@ func (s *ChatService) system(ctx context.Context, user uuid.UUID, hint Hint) (st
 			return "", fmt.Errorf("chat hint title: %w", err)
 		}
 		if len(titles) > 0 {
-			progress, err := groups.ProgressOf(ctx, s.Store.Q, titles[0].ID, user)
+			guard, err := spoilerGuard(ctx, s.Store.Q, titles[0].ID, user)
 			if err != nil {
-				return "", fmt.Errorf("chat hint progress: %w", err)
+				return "", err
 			}
-			lookingAt = "They are looking at " + DescribeTitle(titles[0]) + ", so \"this\" means that title. They have " +
-				DescribeProgress(progress) + ". Do not reveal anything that happens after that point."
+			lookingAt = "They are looking at " + DescribeTitle(titles[0]) + ", so \"this\" means that title. " + guard
 		}
 	}
 	return chatSystem(s.now().In(zone), zone.String(), screen, lookingAt), nil
@@ -473,8 +472,8 @@ func chatSystem(now time.Time, zone, screen, lookingAt string) string {
 		"- Never invent an answer. If no tool or fact here backs an in-scope question, say \"" + UnknownDataReply + "\"",
 		"- Suggest titles only when asked. When you name titles to watch, read or hear, call show_titles with their " +
 			"refs so they appear as cards, at most " + strconv.Itoa(MaxCards) + ".",
-		"- Before saying what happens in a title, check how far the user is with read_my_library. Do not reveal " +
-			"anything that happens after that point.",
+		"- Before saying what happens in a title, call title_details for it, which says how far the user is. " +
+			"Do not reveal anything that happens after that point.",
 		"- You can read only this user's data. You know nothing about their friends' or groups' data; never claim to.",
 		"- Change the library only with apply_library_patch, and only when asked. Never say something changed " +
 			"unless its answer says Applied.",

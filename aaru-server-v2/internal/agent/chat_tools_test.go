@@ -40,7 +40,7 @@ func newChatToolsFixture(t *testing.T) *chatToolsFixture {
 
 func (f *chatToolsFixture) deps(withSports bool) agent.ChatDeps {
 	d := agent.ChatDeps{
-		Tools: f.tools, Stats: stats.New(f.pool), Lists: f.lib.Store,
+		Q: sqlc.New(f.pool), Tools: f.tools, Stats: stats.New(f.pool), Lists: f.lib.Store,
 		Favorites: social.New(social.NewStore(f.pool), nil, f.kit, f.lib, nil, ""),
 		Music:     &music.Service{Store: music.NewStore(f.pool)},
 	}
@@ -305,6 +305,74 @@ func TestPatchToolUnknownRef(t *testing.T) {
 	}})
 	assert.True(t, isErr)
 	assert.Contains(t, out, "ref")
+}
+
+// From Home there is no hint: title_details is what the spoiler guard has to go on.
+func TestTitleDetailsGuardsSpoilersInAChat(t *testing.T) {
+	f := newChatToolsFixture(t)
+	f.withHit("920")
+	details := func(user uuid.UUID) string {
+		c := f.chatTools(user)
+		out, isErr := run(t, c, "search_titles", map[string]any{"query": "hit", "kind": "movie"})
+		require.False(t, isErr, out)
+		out, isErr = run(t, c, "title_details", map[string]any{"ref": "r1"})
+		require.False(t, isErr, out)
+		return out
+	}
+	stranger := f.newUser()
+	finished := core.StatusFinished
+	_, err := f.lib.Add(f.ctx, *movieRef("920"), &finished, stranger, library.ChatCaller)
+	require.NoError(t, err)
+
+	assert.Contains(t, details(stranger), "They have finished it. Do not reveal anything that happens after that point.")
+	got := details(f.user)
+	assert.Contains(t, got, "They have not started it.", "the caller's progress, not another user's")
+	assert.NotContains(t, got, "finished")
+
+	// A show, up to an episode.
+	aired := f.now.Add(-48 * time.Hour)
+	f.fake.episodes["921"] = catalog.Episodes{Episodes: []catalog.Episode{
+		{Season: 1, Episode: 1, AirsAt: &aired}, {Season: 1, Episode: 2, AirsAt: &aired},
+	}}
+	show := &core.MediaRef{Type: core.MediaShow, IDs: core.ExternalIDs{TMDB: "921"}}
+	inProgress := core.StatusInProgress
+	entry, err := f.lib.Add(f.ctx, *show, &inProgress, f.user, library.ChatCaller)
+	require.NoError(t, err)
+	_, err = f.tools.ChatPatch(f.ctx, patch(agent.PatchChange{
+		Op: "episodes", LibraryItemID: ptrTo(entry.Item.ID.String()), Watched: ptrTo(true),
+		Episodes: []agent.EpisodeInput{{Season: 1, Episode: 2}},
+	}), f.user)
+	require.NoError(t, err)
+	c := f.chatTools(f.user)
+	_, isErr := run(t, c, "read_my_library", map[string]any{})
+	require.False(t, isErr)
+	out, isErr := run(t, c, "title_details", map[string]any{"ref": "r1"})
+	require.False(t, isErr, out)
+	assert.Contains(t, out, "They have watched up to season 1 episode 2.")
+}
+
+func ptrTo[T any](v T) *T { return &v }
+
+// `@aaru` reads the same title and says nothing of anyone's progress: byte for byte what it said.
+func TestTitleDetailsUnchangedInAGroup(t *testing.T) {
+	f := newChatToolsFixture(t)
+	f.withHit("922")
+	finished := core.StatusFinished
+	_, err := f.lib.Add(f.ctx, *movieRef("922"), &finished, f.user, library.ChatCaller)
+	require.NoError(t, err)
+	tools := agent.NewGroupToolsForTest(f.kit, f.lib, f.user)
+	out, isErr := tools.Run(t.Context(), "search_titles", json.RawMessage(`{"query":"hit","kind":"movie"}`))
+	require.False(t, isErr, out)
+
+	out, isErr = tools.Run(t.Context(), "title_details", json.RawMessage(`{"ref":"r1"}`))
+
+	require.False(t, isErr, out)
+	assert.Equal(t, "Title 922 (2001) [movie]", out)
+	for _, d := range agent.GroupToolDefinitions {
+		if d.Name == "title_details" {
+			assert.Equal(t, "Facts about one title: year, synopsis, network, and for shows the status and episode count.", d.Description)
+		}
+	}
 }
 
 func TestGroupToolsStillReadOnly(t *testing.T) {
