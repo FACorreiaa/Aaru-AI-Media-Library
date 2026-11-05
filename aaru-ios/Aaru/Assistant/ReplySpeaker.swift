@@ -43,7 +43,10 @@ final class ReplySpeaker: NSObject {
         if let voice = AVSpeechSynthesisVoice(language: code) {
             return voice
         }
-        return AVSpeechSynthesisVoice.speechVoices().first { $0.language.lowercased().hasPrefix(code) }
+        return AVSpeechSynthesisVoice.speechVoices().first {
+            let language = $0.language.lowercased()
+            return language == code || language.hasPrefix(code + "-")
+        }
     }
 
     fileprivate func finished() {

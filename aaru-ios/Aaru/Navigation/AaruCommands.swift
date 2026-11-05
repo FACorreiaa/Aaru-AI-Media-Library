@@ -57,9 +57,12 @@ struct AaruCommands: Commands {
             .disabled(!session.isSignedIn)
             #if os(iOS)
                 Divider()
-                Button("Settings") { router.openSettings() }
-                    .keyboardShortcut(",", modifiers: .command)
-                    .disabled(!session.isSignedIn)
+                Button("Settings") {
+                    router.closeAssistant()
+                    router.openSettings()
+                }
+                .keyboardShortcut(",", modifiers: .command)
+                .disabled(!session.isSignedIn)
             #endif
         }
     }

@@ -36,7 +36,8 @@ struct AaruApp: App {
         let scene = WindowGroup {
             RootView(
                 api: services.api, library: services.library, lists: services.lists, imports: services.imports,
-                settings: services.settings, groups: services.groups, realtime: services.realtime
+                settings: services.settings, groups: services.groups, realtime: services.realtime,
+                onSignedOut: services.signedOut
             )
             .environment(services.session)
             .environment(services.router)

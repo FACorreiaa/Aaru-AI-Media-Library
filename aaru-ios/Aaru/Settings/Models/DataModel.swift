@@ -11,7 +11,7 @@ import UniformTypeIdentifiers
 final class DataModel {
     /// The format being made, so its row shows progress.
     private(set) var exporting: ExportFormat?
-    /// True while "Delete my chats with Aaru" is in flight, so its row shows progress.
+    /// True while "Delete my chats with Aaru" is in flight, so its row is disabled.
     private(set) var deletingChats = false
     var problem: String?
 
