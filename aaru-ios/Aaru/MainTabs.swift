@@ -275,7 +275,7 @@ struct MainTabs: View {
             GroupsScreen(groups: groups, social: settings.models.social, board: settings.models.board)
         case .books, .manga, .music:
             if let kind = destination.kind {
-                KindScreen(kind: kind, api: api, library: library, lists: lists, discover: discover)
+                KindScreen(kind: kind, api: api, library: library, lists: lists, discover: discover, imports: imports)
             }
         case .sports:
             SportsScreen(api: api)
@@ -337,7 +337,7 @@ private extension MainTabs {
             GroupsScreen(groups: groups, social: settings.models.social, board: settings.models.board)
         case .books, .manga, .music:
             if let kind = destination.kind {
-                KindContent(kind: kind, api: api, library: library, lists: lists, discover: discover)
+                KindContent(kind: kind, api: api, library: library, lists: lists, discover: discover, imports: imports)
             }
         case .sports:
             SportsView(api: api)

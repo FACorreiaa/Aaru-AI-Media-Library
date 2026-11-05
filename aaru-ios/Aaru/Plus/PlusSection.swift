@@ -1,7 +1,8 @@
 import StoreKit
 import SwiftUI
 
-/// Settings → Account: Plus, or the free month's captures and the way to Plus (BIL-004).
+/// Settings → Account: Plus, or the way to it (BIL-004). While the App Store has no product to
+/// sell there is nothing to offer, so a free account sees no section at all (BIL-005).
 struct PlusSection: View {
     let plus: PlusModel
     @State private var showsPaywall = false
@@ -10,28 +11,22 @@ struct PlusSection: View {
     #endif
 
     var body: some View {
-        Section {
-            if plus.isPlus {
-                LabeledContent("Aaru Plus", value: "Active")
-                #if os(iOS)
-                    Button("Manage subscription") { managing = true }
-                #endif
-            } else {
-                LabeledContent("Aaru Plus", value: "Not subscribed")
-                if let capture = plus.entitlement?.capture, let limit = capture.limit {
-                    LabeledContent("Captures this month", value: "\(capture.used) of \(limit)")
+        if plus.isPlus || !plus.products.isEmpty {
+            Section("Aaru Plus") {
+                if plus.isPlus {
+                    LabeledContent("Aaru Plus", value: "Active")
+                    #if os(iOS)
+                        Button("Manage subscription") { managing = true }
+                    #endif
+                } else {
+                    LabeledContent("Aaru Plus", value: "Not subscribed")
+                    Button("Get Aaru Plus") { showsPaywall = true }
                 }
-                Button("Get Aaru Plus") { showsPaywall = true }
             }
-        } header: {
-            Text("Aaru Plus")
-        } footer: {
-            Text(plus.isPlus ? "Captures without a monthly limit." : "Plus lifts the monthly limit on captures.")
+            .sheet(isPresented: $showsPaywall) { PlusPaywall(plus: plus) }
+            #if os(iOS)
+                .manageSubscriptionsSheet(isPresented: $managing)
+            #endif
         }
-        .task { await plus.refresh() }
-        .sheet(isPresented: $showsPaywall) { PlusPaywall(plus: plus) }
-        #if os(iOS)
-            .manageSubscriptionsSheet(isPresented: $managing)
-        #endif
     }
 }

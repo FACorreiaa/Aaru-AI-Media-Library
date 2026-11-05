@@ -94,12 +94,15 @@ struct ImportDetailView: View {
                         LabeledContent("Not matched", value: "\(job.stats.unmatched)")
                     }
                 }
+                if choosing(job) {
+                    rowLists(job)
+                }
                 if job.state == .planned, !job.isListens {
                     Section {
                         Button(applying ? "Adding…" : job.isCapture ? "Approve" : "Approve and import") {
                             Task { await apply() }
                         }
-                        .disabled(applying)
+                        .disabled(applying || everyRowLeftOut)
                         Button(job.isCapture ? "Not this" : "Discard", role: .destructive) { confirmsDiscard = true }
                     } footer: {
                         Text("One step to undo: it lands in History, in Your data, as a single action.")
@@ -112,9 +115,9 @@ struct ImportDetailView: View {
                         Text("Undo the whole import there in one step.")
                     }
                 }
-                rows(.unmatched, title: "Not matched")
-                rows(.create, title: job.state == .planned ? "Will be added" : "Added")
-                rows(.update, title: job.state == .planned ? "Will be filled in" : "Filled in")
+                if !choosing(job) {
+                    rowLists(job)
+                }
             } else {
                 ProgressView().frame(maxWidth: .infinity)
             }
@@ -153,12 +156,20 @@ struct ImportDetailView: View {
     private func rows(_ outcome: Components.Schemas.ImportRow.OutcomePayload, title: String) -> some View {
         let matching = detail?.rows.filter { $0.outcome == outcome } ?? []
         let findable = outcome == .unmatched && canFind
+        let tickable = canTick(outcome)
         if !matching.isEmpty {
             Section {
                 ForEach(matching.prefix(Self.shownRows), id: \.index) { row in
                     HStack {
+                        if tickable {
+                            tick(row)
+                        }
                         VStack(alignment: .leading, spacing: 2) {
                             Text(row.label)
+                                .foregroundStyle(row.leftOut == true ? Color(.muted) : Color(.ink))
+                            if tickable, let author = row.author {
+                                Text(author).font(.caption).foregroundStyle(Color(.muted))
+                            }
                             if let reason = row.reason {
                                 Text(reason).font(.caption).foregroundStyle(Color(.muted))
                             }
@@ -173,9 +184,12 @@ struct ImportDetailView: View {
                     }
                 }
             } header: {
-                Text("\(title) (\(matching.count.formatted()))")
+                Text("\(title) (\(matching.filter { $0.leftOut != true }.count.formatted()))")
             } footer: {
                 VStack(alignment: .leading, spacing: 4) {
+                    if tickable {
+                        Text("Untick anything you don't want.")
+                    }
                     if findable {
                         Text(
                             job?.state == .planned
@@ -190,38 +204,6 @@ struct ImportDetailView: View {
                 }
             }
         }
-    }
-
-    /// The search for one unmatched row: its name, in its kind. MAL and AniList rows are anime.
-    private func pick(for row: ImportRow) -> SearchPick {
-        let isAnime = job?.source == .malXml || job?.source == .anilist
-            || row.ids?.anilist != nil || row.ids?.mal != nil
-        let kind = MediaKind(type: row._type, isAnime: isAnime)
-        return SearchPick(
-            query: row.title,
-            scope: SearchScope(rawValue: kind.rawValue) ?? .all,
-            year: row.year,
-            navigationTitle: "Find a title",
-            note: "\u{201C}\(row.label)\u{201D} in your import. Choose the title it means.",
-            choose: { hit in await resolve(row, with: hit) }
-        )
-    }
-
-    /// Saves the pick and updates the row and the counts in place. After approval it was written
-    /// to the library, so the library catches up behind the closing sheet.
-    private func resolve(_ row: ImportRow, with hit: CatalogHit) async -> String? {
-        guard let resolved = await imports.resolve(id, row: row.index, with: hit) else {
-            defer { imports.problem = nil }
-            return imports.problem ?? "\(hit.title) could not be matched to that row."
-        }
-        detail?.job = resolved.job
-        if let position = detail?.rows.firstIndex(where: { $0.index == resolved.row.index }) {
-            detail?.rows[position] = resolved.row
-        }
-        if resolved.job.state != .planned {
-            Task { await onApplied() }
-        }
-        return nil
     }
 
     private func discard() async {
@@ -327,5 +309,87 @@ private extension ImportRow {
     /// "Dune (2021)": the name as the import file had it.
     var label: String {
         [title, year.map { "(\($0))" }].compactMap(\.self).joined(separator: " ")
+    }
+}
+
+// MARK: Choosing and finding rows
+
+private extension ImportDetailView {
+    /// A planned capture is chosen row by row, so its rows come before Approve (BOOK-001).
+    func choosing(_ job: ImportJob) -> Bool {
+        job.isCapture && job.state == .planned
+    }
+
+    @ViewBuilder
+    func rowLists(_ job: ImportJob) -> some View {
+        rows(.unmatched, title: "Not matched")
+        rows(.create, title: job.state == .planned ? "Will be added" : "Added")
+        rows(.update, title: job.state == .planned ? "Will be filled in" : "Filled in")
+    }
+
+    /// BOOK-001: a planned capture's rows can each be left out. Other imports look as they did.
+    func canTick(_ outcome: Components.Schemas.ImportRow.OutcomePayload) -> Bool {
+        job?.isCapture == true && job?.state == .planned && (outcome == .create || outcome == .update)
+    }
+
+    var everyRowLeftOut: Bool {
+        let rows = detail?.rows.filter { canTick($0.outcome) } ?? []
+        return !rows.isEmpty && rows.allSatisfy { $0.leftOut == true }
+    }
+
+    func tick(_ row: ImportRow) -> some View {
+        let ticked = row.leftOut != true
+        return Button(
+            ticked ? "Leave out \(row.title)" : "Add \(row.title)",
+            systemImage: ticked ? "checkmark.circle.fill" : "circle"
+        ) {
+            Task { await setLeftOut(row, ticked) }
+        }
+        .labelStyle(.iconOnly)
+        .font(.title3)
+        .foregroundStyle(ticked ? Color(.accent) : Color(.muted))
+        .buttonStyle(.borderless)
+        .frame(minWidth: 44, minHeight: 44)
+    }
+
+    /// Updates the row and the counts in place.
+    func setLeftOut(_ row: ImportRow, _ leftOut: Bool) async {
+        guard let answer = await imports.leaveOut(id, row: row.index, leftOut: leftOut) else { return }
+        detail?.job = answer.job
+        if let position = detail?.rows.firstIndex(where: { $0.index == answer.row.index }) {
+            detail?.rows[position] = answer.row
+        }
+    }
+
+    /// The search for one unmatched row: its name, in its kind. MAL and AniList rows are anime.
+    func pick(for row: ImportRow) -> SearchPick {
+        let isAnime = job?.source == .malXml || job?.source == .anilist
+            || row.ids?.anilist != nil || row.ids?.mal != nil
+        let kind = MediaKind(type: row._type, isAnime: isAnime)
+        return SearchPick(
+            query: row.title,
+            scope: SearchScope(rawValue: kind.rawValue) ?? .all,
+            year: row.year,
+            navigationTitle: "Find a title",
+            note: "\u{201C}\(row.label)\u{201D} in your import. Choose the title it means.",
+            choose: { hit in await resolve(row, with: hit) }
+        )
+    }
+
+    /// Saves the pick and updates the row and the counts in place. After approval it was written
+    /// to the library, so the library catches up behind the closing sheet.
+    func resolve(_ row: ImportRow, with hit: CatalogHit) async -> String? {
+        guard let resolved = await imports.resolve(id, row: row.index, with: hit) else {
+            defer { imports.problem = nil }
+            return imports.problem ?? "\(hit.title) could not be matched to that row."
+        }
+        detail?.job = resolved.job
+        if let position = detail?.rows.firstIndex(where: { $0.index == resolved.row.index }) {
+            detail?.rows[position] = resolved.row
+        }
+        if resolved.job.state != .planned {
+            Task { await onApplied() }
+        }
+        return nil
     }
 }

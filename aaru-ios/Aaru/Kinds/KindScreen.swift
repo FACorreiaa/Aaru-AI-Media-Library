@@ -9,10 +9,11 @@ struct KindScreen: View {
     let library: LibraryModel
     let lists: ListsModel
     let discover: DiscoverModel
+    var imports: ImportsModel?
 
     var body: some View {
         NavigationStack {
-            KindContent(kind: kind, api: api, library: library, lists: lists, discover: discover)
+            KindContent(kind: kind, api: api, library: library, lists: lists, discover: discover, imports: imports)
         }
     }
 }
@@ -28,10 +29,14 @@ struct KindContent: View {
     let library: LibraryModel
     let lists: ListsModel
     let discover: DiscoverModel
+    /// Books' import box (BOOK-002). Nil in previews.
+    let imports: ImportsModel?
 
     /// Music only: Concerts, moved here from Discover.
     @State private var concerts: ConcertsModel
     @State private var listTarget: CatalogHit?
+    /// Books: the capture whose review is open.
+    @State private var openedCapture: ImportJob?
     @Environment(AppRouter.self) private var router
     @Environment(\.dynamicTypeSize) private var dynamicType
 
@@ -44,12 +49,16 @@ struct KindContent: View {
         private let compact = false
     #endif
 
-    init(kind: MediaKind, api: Client?, library: LibraryModel, lists: ListsModel, discover: DiscoverModel) {
+    init(
+        kind: MediaKind, api: Client?, library: LibraryModel, lists: ListsModel, discover: DiscoverModel,
+        imports: ImportsModel? = nil
+    ) {
         self.kind = kind
         self.api = api
         self.library = library
         self.lists = lists
         self.discover = discover
+        self.imports = imports
         _concerts = State(initialValue: ConcertsModel(api: api))
     }
 
@@ -95,6 +104,9 @@ struct KindContent: View {
                     Button("Search", systemImage: "magnifyingglass") { router.showsSearch = true }
                 }
             }
+            .modifier(BooksImportPresenter(
+                imports: kind == .book ? imports : nil, api: api, library: library, lists: lists, opened: $openedCapture
+            ))
             .task { await discover.loadIfNeeded() }
             .task {
                 if kind == .music {
@@ -162,6 +174,9 @@ struct KindContent: View {
         let rows = discover.visibleRows(of: [kind.discoverKind])
         return ScrollView {
             LazyVStack(alignment: .leading, spacing: AaruSpace.section) {
+                if kind == .book {
+                    BooksTop(api: api, imports: imports, library: library, lists: lists) { openedCapture = $0 }
+                }
                 KindShelf(kind: kind, library: library, compact: compact) { status in
                     router.showLibrary(LibraryFilter(kind: kind, status: status))
                 }

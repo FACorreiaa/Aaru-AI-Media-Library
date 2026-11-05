@@ -576,8 +576,16 @@ One page per kind, all in More (§18), built from one shape so they read alike:
 - **Your shelf first.** In progress, then Planned, each a short poster row in the kind's words
   (Reading / Plan to read for books and manga; Listening / Plan to listen for albums) with "See
   all" into Library filtered to that kind and status. An empty shelf says so in one quiet line.
-- **Then the kind's Discover rows** (§13a, by `kind`): Trending books; Trending manga and
-  Publishing now; New albums and Coming soon. Same cards, same Add, same "On your shelf".
+- **Then the kind's Discover rows** (§13a, by `kind`): Trending books, Classics, Science fiction,
+  Science and Business; Trending manga and Publishing now; New albums and Coming soon. Same cards,
+  same Add, same "On your shelf". A row marked `kindPageOnly` never shows on Home.
+- **Books adds** (BOOK-002), above its shelf: a card of this year's reading (Read this year · Reading
+  · Plan to read) that opens Insights and hides at all zeros; captures waiting, as on Home; and the
+  import box while the shelf is empty, which reads books only from a pasted chat, up to five
+  pictures or a photo, with a Goodreads shortcut under it. Once there are books the box moves to
+  the toolbar's `+`, in a sheet. Its shelf also has On hold and Read rows.
+- **A planned capture is chosen row by row** (BOOK-001): its rows come before Approve, each with a
+  tick, all ticked to start, and the counts follow. Other imports keep their order and have no ticks.
 - **Credits** name only the providers on the page: Open Library; AniList; ListenBrainz,
   MusicBrainz and the Cover Art Archive, with Ticketmaster for concerts.
 - **Music** has three views, Albums · Concerts · Listens: Albums is the shelf and rows above,
