@@ -18,6 +18,8 @@ type ListDetail struct {
 	List    core.AaruList
 	Titles  []core.Title
 	Members []ListMember
+	// Roadmap is the list's steps (GRAPH-003) as it stands now; nil for a plain list.
+	Roadmap *Roadmap
 }
 
 // ListMember is one list row (LST-003): the title, the caller's library entry when there is one,
@@ -82,7 +84,15 @@ func (l *Lists) Detail(ctx context.Context, id, user uuid.UUID) (ListDetail, err
 		}
 		members = append(members, m)
 	}
-	return ListDetail{List: *list, Titles: titles, Members: members}, nil
+	roadmap, err := l.store().ListRoadmap(ctx, list.ID)
+	if err != nil {
+		return ListDetail{}, err
+	}
+	if roadmap != nil {
+		showing := roadmap.Showing(list.TitleIDs)
+		roadmap = &showing
+	}
+	return ListDetail{List: *list, Titles: titles, Members: members, Roadmap: roadmap}, nil
 }
 
 func (l *Lists) apply(ctx context.Context, op Op, user uuid.UUID, summary string) (ActionRecord, error) {

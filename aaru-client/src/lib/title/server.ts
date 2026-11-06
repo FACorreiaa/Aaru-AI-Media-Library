@@ -257,3 +257,25 @@ export const loadRelations = createServerFn({ method: 'GET' })
       )
     return graph
   })
+
+/** GRAPH-003: "Add the chain": the graph's main chain as a capture to review. Its job id. */
+export const planChain = createServerFn({ method: 'POST' })
+  .validator(
+    z.object({
+      titleId: z.string().uuid(),
+      order: z.enum(['release', 'story']).optional(),
+    }),
+  )
+  .handler(async ({ data }): Promise<{ id: string }> => {
+    const {
+      data: job,
+      error,
+      response,
+    } = await api(sessionToken()).POST('/v1/titles/{id}/relations/chain', {
+      params: { path: { id: data.titleId }, query: { order: data.order } },
+    })
+    if (response.status === 401) sessionRejected()
+    if (!job)
+      throw new Error(errorMessage(error, 'The chain could not be planned.'))
+    return { id: job.id }
+  })

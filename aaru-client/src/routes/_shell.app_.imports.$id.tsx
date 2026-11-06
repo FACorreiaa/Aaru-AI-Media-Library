@@ -367,6 +367,13 @@ function ImportPage() {
                         <Show when={row.reason}>
                           <p class="text-sm text-muted">{row.reason}</p>
                         </Show>
+                        <Show when={row.roadmap}>
+                          {(place) => (
+                            <p class="text-sm text-muted">
+                              {roadmapLine(place())}
+                            </p>
+                          )}
+                        </Show>
                       </div>
                       <Show when={outcome === 'unmatched' && resolvable()}>
                         <Button
@@ -676,4 +683,18 @@ function Ledger(props: { steps: ImportStep[] }) {
       </For>
     </ol>
   )
+}
+
+/** GRAPH-003: where a row sits in the roadmap it came with ("Step 1 · Hickman FF · FF #1-5 ·
+ * Optional"), so the review shows the order before Approve. */
+function roadmapLine(place: NonNullable<ImportRow['roadmap']>): string {
+  return [
+    place.step > 0 ? `Step ${place.step}` : null,
+    place.heading,
+    place.note,
+    place.optional ? 'Optional: joins the list only' : null,
+    place.pair ? 'Read side by side' : null,
+  ]
+    .filter(Boolean)
+    .join(' · ')
 }

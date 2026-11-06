@@ -185,7 +185,7 @@ func captureRow(t capture.Title) Row {
 	}
 	return Row{
 		SourceKey: t.SourceKey, Type: t.Type, Title: t.Title, Year: year, IDs: t.IDs, Author: t.Author,
-		Status: ptr(core.StatusWishlist), Lists: []string{},
+		Status: ptr(core.StatusWishlist), Lists: []string{}, Roadmap: t.Place,
 	}
 }
 
@@ -196,6 +196,12 @@ func titleRows(titles []capture.Title, list string) []Row {
 		rows[i] = captureRow(t)
 		if list != "" {
 			rows[i].Lists = []string{list}
+			// A roadmap's optional title joins the list, not Plan to read (GRAPH-003).
+			if t.Place != nil && t.Place.Optional {
+				rows[i].ListOnly = ptr(true)
+			}
+		} else {
+			rows[i].Roadmap = nil // a roadmap needs a list to live in
 		}
 	}
 	return rows

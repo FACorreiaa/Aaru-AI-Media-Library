@@ -416,5 +416,32 @@ func ImportRowDTO(p imports.PlannedRow) api.ImportRow {
 		guessable := true
 		out.Guessable = &guessable
 	}
+	if r := row.Roadmap; r != nil {
+		out.Roadmap = &api.RoadmapPlace{
+			Step: r.Step, Heading: nonEmpty(r.Heading), StepNote: nonEmpty(r.StepNote), Note: nonEmpty(r.Note),
+			Optional: trueOrNil(r.Optional), Pair: positiveOrNil(r.Pair),
+		}
+	}
 	return out
+}
+
+func nonEmpty(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
+func trueOrNil(b bool) *bool {
+	if !b {
+		return nil
+	}
+	return &b
+}
+
+func positiveOrNil(n int) *int {
+	if n <= 0 {
+		return nil
+	}
+	return &n
 }

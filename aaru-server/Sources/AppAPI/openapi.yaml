@@ -2358,6 +2358,32 @@ paths:
               schema: {$ref: '#/components/schemas/RelationGraph'}
         default:
           $ref: '#/components/responses/Error'
+  /v1/titles/{id}/relations/chain:
+    post:
+      operationId: planRelationChain
+      summary: >-
+        "Add the chain" (GRAPH-003): the main chain of the title's relation graph, in the graph's
+        order, as a capture to review, with exact ids. Approving adds what is not in the library to
+        Plan to watch or read and makes a list in that order. Spends one capture, as any capture
+        does; writes nothing to the library by itself.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: order
+          in: query
+          schema: {$ref: '#/components/schemas/RelationOrder'}
+      responses:
+        '202':
+          description: Queued for review.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ImportJob'}
+        default:
+          $ref: '#/components/responses/Error'
   /v1/titles/{id}/posts:
     get:
       operationId: listTitlePosts
@@ -3935,6 +3961,21 @@ components:
           enum: [pending, create, update, skip, unmatched]
         reason: {type: string}
         titleId: {type: string, format: uuid}
+        roadmap: {$ref: '#/components/schemas/RoadmapPlace'}
+    RoadmapPlace:
+      type: object
+      description: >-
+        A row's place in a roadmap the owl planned (GRAPH-003): its numbered step with that step's
+        heading and note, its own note, whether it is optional (it joins the list, not Plan to read)
+        and the pair it is read side by side with.
+      required: [step]
+      properties:
+        step: {type: integer, description: 'From 1; 0 when the title belongs to no step.'}
+        heading: {type: string}
+        stepNote: {type: string}
+        note: {type: string}
+        optional: {type: boolean}
+        pair: {type: integer}
     ImportRowGuess:
       type: object
       required: [title]
@@ -6101,6 +6142,38 @@ components:
           items: {$ref: '#/components/schemas/ListItem'}
         createdAt: {type: string, format: date-time}
         updatedAt: {type: string, format: date-time}
+        roadmap: {$ref: '#/components/schemas/ListRoadmap'}
+    ListRoadmap:
+      type: object
+      description: >-
+        A list the owl planned in steps (GRAPH-003). Steps are in order; inside a step the list's own
+        order decides. A member not named in any step was added by hand. `missing` are titles Aaru
+        could not find, as the plan wrote them.
+      required: [steps]
+      properties:
+        steps:
+          type: array
+          items: {$ref: '#/components/schemas/ListRoadmapStep'}
+    ListRoadmapStep:
+      type: object
+      required: [heading, items]
+      properties:
+        heading: {type: string}
+        note: {type: string}
+        missing:
+          type: array
+          items: {type: string}
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/ListRoadmapItem'}
+    ListRoadmapItem:
+      type: object
+      required: [titleId]
+      properties:
+        titleId: {type: string, format: uuid}
+        note: {type: string}
+        optional: {type: boolean}
+        pair: {type: integer, description: Titles with the same pair are read or watched side by side.}
     ListItem:
       type: object
       description: >-

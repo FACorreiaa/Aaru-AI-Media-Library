@@ -164,10 +164,35 @@ func ListDetailDTO(d library.ListDetail) api.ListDetail {
 	for i, m := range d.Members {
 		items[i] = ListItemDTO(m)
 	}
-	return api.ListDetail{
+	out := api.ListDetail{
 		Id: apiid.From(d.List.ID), Name: d.List.Name, Titles: titles, Items: items,
 		CreatedAt: apitime.From(d.List.CreatedAt), UpdatedAt: apitime.From(d.List.UpdatedAt),
 	}
+	if d.Roadmap != nil {
+		out.Roadmap = ListRoadmapDTO(*d.Roadmap)
+	}
+	return out
+}
+
+// ListRoadmapDTO is a list's steps on the wire (GRAPH-003).
+func ListRoadmapDTO(r library.Roadmap) *api.ListRoadmap {
+	steps := make([]api.ListRoadmapStep, 0, len(r.Steps))
+	for _, s := range r.Steps {
+		items := make([]api.ListRoadmapItem, 0, len(s.Items))
+		for _, it := range s.Items {
+			items = append(items, api.ListRoadmapItem{
+				TitleId: apiid.From(it.TitleID), Note: nonEmpty(it.Note), Optional: trueOrNil(it.Optional),
+				Pair: positiveOrNil(it.Pair),
+			})
+		}
+		step := api.ListRoadmapStep{Heading: s.Heading, Note: nonEmpty(s.Note), Items: items}
+		if len(s.Missing) > 0 {
+			missing := s.Missing
+			step.Missing = &missing
+		}
+		steps = append(steps, step)
+	}
+	return &api.ListRoadmap{Steps: steps}
 }
 
 // ListItemDTO is one list row: the title, the caller's entry, and a show's status and next airing.

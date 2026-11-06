@@ -881,6 +881,7 @@ account or a stranger that has not happened yet.
 | BOOK-003 | Built, unverified | `plan_title_list`, `capture.ListName`, `imports.titleRows`, `ImportRow.lists`, components frame `importId` | Stub model only. "Review the list" in the Assistant card on iPhone, Mac and web opens the review; the waiting capture card and the push still lead there too |
 | GRAPH-001 | Built, unverified | `GET /v1/titles/{id}/relations`, `catalog/relations*.go`, `catalog/wikidata.go`, migration 00007 `catalog_relations` | Stub providers only; not run against live AniList, TMDB or Wikidata from the server yet |
 | GRAPH-002 | Built, unverified | `RelatedTitles.tsx`, `_shell.app_.graph.$titleId.tsx`, `TitleRelated.swift` | Builds and tests pass; not looked at on a screen; "Add the chain" moved to GRAPH-003 |
+| GRAPH-003 | Built, unverified | `list_roadmaps`, `capture.Place`, `RoadmapSteps.tsx`, `RoadmapSteps.swift`, `POST /v1/titles/{id}/relations/chain` | Stub model only; not looked at on a screen |
 | IMP-021 | Built, unverified | `POST /v1/imports/{id}/match-all`, `catalog/guess.go`, `imports/matchall.go`, `aaru-ios/Aaru/Capture/MatchAllButton.swift` | Web run locally: real Open Library, stub model, 8 of 10 rows filled in about 12 seconds. iOS builds and has not been tapped. Needs the API promoted |
 | PRV-001 | Done | #27 8d5ddc3; docs/providers.md, AboutView.swift | privacy@ routing not set up |
 | CAT-011 | Done | #24 7edc80c; TVmazeAirTimes.swift | |
@@ -3037,6 +3038,16 @@ iOS and macOS builds pass. Not yet looked at on a screen.
 - Lists gain steps (heading, note), and each title a note, an optional flag and a side-by-side pair.
   `plan_title_list` carries them; optional titles join the List only; unmatched rows stay as text in
   their step.
+- Built as `list_roadmaps` beside the membership (not columns on `list_items`): list writes, the
+  journal, Undo, MCP and group lists are untouched. A member removed by hand drops out of its step;
+  Undo of the import deletes the list and its steps.
+- "Add the chain" (from GRAPH-002): `POST /v1/titles/{id}/relations/chain` makes a capture of the
+  graph's main chain by exact ids, list "<title> in release order", for the same review.
+
+**Progress 2026-11-06:** server (`capture.Place`, `imports.roadmapSteps`, `library/roadmap.go`,
+migration 00008), web (`RoadmapSteps.tsx`, the review's step line, Add the chain) and Apple
+(`RoadmapSteps.swift`, the review line, Add the chain) built; Go, web and Apple checks pass. Stub model
+only: not yet asked of the real model.
 
 ### GRAPH-004 · Roadmap graph and grounding · S
 **Needs:** GRAPH-002, GRAPH-003.

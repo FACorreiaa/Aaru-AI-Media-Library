@@ -102,6 +102,9 @@ struct ImportReviewRow: View {
                     if let reason = row.reason {
                         Text(reason).font(.caption).foregroundStyle(Color(.muted))
                     }
+                    if let place = row.roadmap {
+                        Text(place.line).font(.caption).foregroundStyle(Color(.muted))
+                    }
                 }
             }
             if canChange {

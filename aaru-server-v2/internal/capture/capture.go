@@ -61,6 +61,21 @@ type Title struct {
 	Year      *int
 	Author    *string
 	IDs       core.ExternalIDs
+	// Place is the title's step in a roadmap (GRAPH-003); nil in a plain list.
+	Place *Place
+}
+
+// Place is a title's place in a roadmap (GRAPH-003): the numbered step it belongs to, with that
+// step's heading and note, and its own note ("FF #570-588"), whether it is optional, and the pair it
+// is read side by side with. Kept on the import row and written to the list on approval.
+type Place struct {
+	Step     int    `json:"step"`
+	Heading  string `json:"heading,omitempty"`
+	StepNote string `json:"stepNote,omitempty"`
+	Note     string `json:"note,omitempty"`
+	Optional bool   `json:"optional,omitempty"`
+	// Pair numbers the titles read side by side within the roadmap; 0 for none.
+	Pair int `json:"pair,omitempty"`
 }
 
 // InputLifetime is how long an input the worker never got to is kept.

@@ -726,6 +726,11 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /v1/titles/{id}/relations`.
     /// - Remark: Generated from `#/paths//v1/titles/{id}/relations/get(getTitleRelations)`.
     func getTitleRelations(_ input: Operations.GetTitleRelations.Input) async throws -> Operations.GetTitleRelations.Output
+    /// "Add the chain" (GRAPH-003): the main chain of the title's relation graph, in the graph's order, as a capture to review, with exact ids. Approving adds what is not in the library to Plan to watch or read and makes a list in that order. Spends one capture, as any capture does; writes nothing to the library by itself.
+    ///
+    /// - Remark: HTTP `POST /v1/titles/{id}/relations/chain`.
+    /// - Remark: Generated from `#/paths//v1/titles/{id}/relations/chain/post(planRelationChain)`.
+    func planRelationChain(_ input: Operations.PlanRelationChain.Input) async throws -> Operations.PlanRelationChain.Output
     /// Posts about this title by you and your friends, newest first.
     ///
     /// - Remark: HTTP `GET /v1/titles/{id}/posts`.
@@ -2742,6 +2747,21 @@ extension APIProtocol {
         headers: Operations.GetTitleRelations.Input.Headers = .init()
     ) async throws -> Operations.GetTitleRelations.Output {
         try await getTitleRelations(Operations.GetTitleRelations.Input(
+            path: path,
+            query: query,
+            headers: headers
+        ))
+    }
+    /// "Add the chain" (GRAPH-003): the main chain of the title's relation graph, in the graph's order, as a capture to review, with exact ids. Approving adds what is not in the library to Plan to watch or read and makes a list in that order. Spends one capture, as any capture does; writes nothing to the library by itself.
+    ///
+    /// - Remark: HTTP `POST /v1/titles/{id}/relations/chain`.
+    /// - Remark: Generated from `#/paths//v1/titles/{id}/relations/chain/post(planRelationChain)`.
+    public func planRelationChain(
+        path: Operations.PlanRelationChain.Input.Path,
+        query: Operations.PlanRelationChain.Input.Query = .init(),
+        headers: Operations.PlanRelationChain.Input.Headers = .init()
+    ) async throws -> Operations.PlanRelationChain.Output {
+        try await planRelationChain(Operations.PlanRelationChain.Input(
             path: path,
             query: query,
             headers: headers
@@ -4827,6 +4847,8 @@ public enum Components {
             public var reason: Swift.String?
             /// - Remark: Generated from `#/components/schemas/ImportRow/titleId`.
             public var titleId: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ImportRow/roadmap`.
+            public var roadmap: Components.Schemas.RoadmapPlace?
             /// Creates a new `ImportRow`.
             ///
             /// - Parameters:
@@ -4846,6 +4868,7 @@ public enum Components {
             ///   - outcome:
             ///   - reason:
             ///   - titleId:
+            ///   - roadmap:
             public init(
                 index: Swift.Int,
                 title: Swift.String,
@@ -4862,7 +4885,8 @@ public enum Components {
                 rating: Swift.Double? = nil,
                 outcome: Components.Schemas.ImportRow.OutcomePayload,
                 reason: Swift.String? = nil,
-                titleId: Swift.String? = nil
+                titleId: Swift.String? = nil,
+                roadmap: Components.Schemas.RoadmapPlace? = nil
             ) {
                 self.index = index
                 self.title = title
@@ -4880,6 +4904,7 @@ public enum Components {
                 self.outcome = outcome
                 self.reason = reason
                 self.titleId = titleId
+                self.roadmap = roadmap
             }
             public enum CodingKeys: String, CodingKey {
                 case index
@@ -4898,6 +4923,58 @@ public enum Components {
                 case outcome
                 case reason
                 case titleId
+                case roadmap
+            }
+        }
+        /// A row's place in a roadmap the owl planned (GRAPH-003): its numbered step with that step's heading and note, its own note, whether it is optional (it joins the list, not Plan to read) and the pair it is read side by side with.
+        ///
+        /// - Remark: Generated from `#/components/schemas/RoadmapPlace`.
+        public struct RoadmapPlace: Codable, Hashable, Sendable {
+            /// From 1; 0 when the title belongs to no step.
+            ///
+            /// - Remark: Generated from `#/components/schemas/RoadmapPlace/step`.
+            public var step: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/RoadmapPlace/heading`.
+            public var heading: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/RoadmapPlace/stepNote`.
+            public var stepNote: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/RoadmapPlace/note`.
+            public var note: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/RoadmapPlace/optional`.
+            public var optional: Swift.Bool?
+            /// - Remark: Generated from `#/components/schemas/RoadmapPlace/pair`.
+            public var pair: Swift.Int?
+            /// Creates a new `RoadmapPlace`.
+            ///
+            /// - Parameters:
+            ///   - step: From 1; 0 when the title belongs to no step.
+            ///   - heading:
+            ///   - stepNote:
+            ///   - note:
+            ///   - optional:
+            ///   - pair:
+            public init(
+                step: Swift.Int,
+                heading: Swift.String? = nil,
+                stepNote: Swift.String? = nil,
+                note: Swift.String? = nil,
+                optional: Swift.Bool? = nil,
+                pair: Swift.Int? = nil
+            ) {
+                self.step = step
+                self.heading = heading
+                self.stepNote = stepNote
+                self.note = note
+                self.optional = optional
+                self.pair = pair
+            }
+            public enum CodingKeys: String, CodingKey {
+                case step
+                case heading
+                case stepNote
+                case note
+                case optional
+                case pair
             }
         }
         /// The title Match all chose for a row (IMP-021), for the person to check. Absent on a row they matched themselves.
@@ -12321,6 +12398,8 @@ public enum Components {
             public var createdAt: Foundation.Date
             /// - Remark: Generated from `#/components/schemas/ListDetail/updatedAt`.
             public var updatedAt: Foundation.Date
+            /// - Remark: Generated from `#/components/schemas/ListDetail/roadmap`.
+            public var roadmap: Components.Schemas.ListRoadmap?
             /// Creates a new `ListDetail`.
             ///
             /// - Parameters:
@@ -12330,13 +12409,15 @@ public enum Components {
             ///   - items: The members in list order.
             ///   - createdAt:
             ///   - updatedAt:
+            ///   - roadmap:
             public init(
                 id: Swift.String,
                 name: Swift.String,
                 titles: [Components.Schemas.TitleSummary],
                 items: [Components.Schemas.ListItem],
                 createdAt: Foundation.Date,
-                updatedAt: Foundation.Date
+                updatedAt: Foundation.Date,
+                roadmap: Components.Schemas.ListRoadmap? = nil
             ) {
                 self.id = id
                 self.name = name
@@ -12344,6 +12425,7 @@ public enum Components {
                 self.items = items
                 self.createdAt = createdAt
                 self.updatedAt = updatedAt
+                self.roadmap = roadmap
             }
             public enum CodingKeys: String, CodingKey {
                 case id
@@ -12352,6 +12434,96 @@ public enum Components {
                 case items
                 case createdAt
                 case updatedAt
+                case roadmap
+            }
+        }
+        /// A list the owl planned in steps (GRAPH-003). Steps are in order; inside a step the list's own order decides. A member not named in any step was added by hand. `missing` are titles Aaru could not find, as the plan wrote them.
+        ///
+        /// - Remark: Generated from `#/components/schemas/ListRoadmap`.
+        public struct ListRoadmap: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ListRoadmap/steps`.
+            public var steps: [Components.Schemas.ListRoadmapStep]
+            /// Creates a new `ListRoadmap`.
+            ///
+            /// - Parameters:
+            ///   - steps:
+            public init(steps: [Components.Schemas.ListRoadmapStep]) {
+                self.steps = steps
+            }
+            public enum CodingKeys: String, CodingKey {
+                case steps
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ListRoadmapStep`.
+        public struct ListRoadmapStep: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ListRoadmapStep/heading`.
+            public var heading: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ListRoadmapStep/note`.
+            public var note: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ListRoadmapStep/missing`.
+            public var missing: [Swift.String]?
+            /// - Remark: Generated from `#/components/schemas/ListRoadmapStep/items`.
+            public var items: [Components.Schemas.ListRoadmapItem]
+            /// Creates a new `ListRoadmapStep`.
+            ///
+            /// - Parameters:
+            ///   - heading:
+            ///   - note:
+            ///   - missing:
+            ///   - items:
+            public init(
+                heading: Swift.String,
+                note: Swift.String? = nil,
+                missing: [Swift.String]? = nil,
+                items: [Components.Schemas.ListRoadmapItem]
+            ) {
+                self.heading = heading
+                self.note = note
+                self.missing = missing
+                self.items = items
+            }
+            public enum CodingKeys: String, CodingKey {
+                case heading
+                case note
+                case missing
+                case items
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ListRoadmapItem`.
+        public struct ListRoadmapItem: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ListRoadmapItem/titleId`.
+            public var titleId: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ListRoadmapItem/note`.
+            public var note: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ListRoadmapItem/optional`.
+            public var optional: Swift.Bool?
+            /// Titles with the same pair are read or watched side by side.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ListRoadmapItem/pair`.
+            public var pair: Swift.Int?
+            /// Creates a new `ListRoadmapItem`.
+            ///
+            /// - Parameters:
+            ///   - titleId:
+            ///   - note:
+            ///   - optional:
+            ///   - pair: Titles with the same pair are read or watched side by side.
+            public init(
+                titleId: Swift.String,
+                note: Swift.String? = nil,
+                optional: Swift.Bool? = nil,
+                pair: Swift.Int? = nil
+            ) {
+                self.titleId = titleId
+                self.note = note
+                self.optional = optional
+                self.pair = pair
+            }
+            public enum CodingKeys: String, CodingKey {
+                case titleId
+                case note
+                case optional
+                case pair
             }
         }
         /// One list member. `entry` is the caller's library row when the title is in the library. Shows carry `showStatus` and `nextAiring` (the first episode not aired yet) once their episodes are loaded.
@@ -34768,6 +34940,169 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/titles/{id}/relations/get(getTitleRelations)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// "Add the chain" (GRAPH-003): the main chain of the title's relation graph, in the graph's order, as a capture to review, with exact ids. Approving adds what is not in the library to Plan to watch or read and makes a list in that order. Spends one capture, as any capture does; writes nothing to the library by itself.
+    ///
+    /// - Remark: HTTP `POST /v1/titles/{id}/relations/chain`.
+    /// - Remark: Generated from `#/paths//v1/titles/{id}/relations/chain/post(planRelationChain)`.
+    public enum PlanRelationChain {
+        public static let id: Swift.String = "planRelationChain"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/titles/{id}/relations/chain/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/titles/{id}/relations/chain/POST/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.PlanRelationChain.Input.Path
+            /// - Remark: Generated from `#/paths/v1/titles/{id}/relations/chain/POST/query`.
+            public struct Query: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/titles/{id}/relations/chain/POST/query/order`.
+                public var order: Components.Schemas.RelationOrder?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - order:
+                public init(order: Components.Schemas.RelationOrder? = nil) {
+                    self.order = order
+                }
+            }
+            public var query: Operations.PlanRelationChain.Input.Query
+            /// - Remark: Generated from `#/paths/v1/titles/{id}/relations/chain/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.PlanRelationChain.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.PlanRelationChain.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.PlanRelationChain.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - query:
+            ///   - headers:
+            public init(
+                path: Operations.PlanRelationChain.Input.Path,
+                query: Operations.PlanRelationChain.Input.Query = .init(),
+                headers: Operations.PlanRelationChain.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Accepted: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/titles/{id}/relations/chain/POST/responses/202/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/titles/{id}/relations/chain/POST/responses/202/content/application\/json`.
+                    case json(Components.Schemas.ImportJob)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ImportJob {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.PlanRelationChain.Output.Accepted.Body
+                /// Creates a new `Accepted`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.PlanRelationChain.Output.Accepted.Body) {
+                    self.body = body
+                }
+            }
+            /// Queued for review.
+            ///
+            /// - Remark: Generated from `#/paths//v1/titles/{id}/relations/chain/post(planRelationChain)/responses/202`.
+            ///
+            /// HTTP response code: `202 accepted`.
+            case accepted(Operations.PlanRelationChain.Output.Accepted)
+            /// The associated value of the enum case if `self` is `.accepted`.
+            ///
+            /// - Throws: An error if `self` is not `.accepted`.
+            /// - SeeAlso: `.accepted`.
+            public var accepted: Operations.PlanRelationChain.Output.Accepted {
+                get throws {
+                    switch self {
+                    case let .accepted(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "accepted",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/titles/{id}/relations/chain/post(planRelationChain)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

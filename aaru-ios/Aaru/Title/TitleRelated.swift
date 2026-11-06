@@ -128,6 +128,7 @@ struct RelationGraphSheet: View {
     let lists: ListsModel
 
     @State private var model: TitleRelationsModel
+    @State private var planning = false
     @State private var zoom: CGFloat = 1
     @State private var settledZoom: CGFloat = 1
     @Environment(\.dismiss) private var dismiss
@@ -159,6 +160,12 @@ struct RelationGraphSheet: View {
                     if model.graph?.storyOrderAvailable == true {
                         ToolbarItem(placement: .primaryAction) { orderPicker }
                     }
+                    if model.hasChain {
+                        ToolbarItem(placement: .primaryAction) {
+                            Button("Add the chain", systemImage: "text.badge.plus") { Task { await addChain() } }
+                                .disabled(planning)
+                        }
+                    }
                 }
                 .navigationDestination(for: String.self) { id in
                     LibraryEntryDestination(id: id, api: api, library: library, lists: lists)
@@ -169,6 +176,17 @@ struct RelationGraphSheet: View {
         #if os(macOS)
             .frame(minWidth: 720, minHeight: 520)
         #endif
+    }
+
+    /// The chain becomes a capture to review; the sheet closes so the review can open (the same
+    /// way a review opens from a notification or the owl).
+    private func addChain() async {
+        planning = true
+        defer { planning = false }
+        guard let id = await model.planChain() else { return }
+        dismiss()
+        try? await Task.sleep(for: .milliseconds(400))
+        PushInbox.shared.importID = id
     }
 
     private var orderPicker: some View {

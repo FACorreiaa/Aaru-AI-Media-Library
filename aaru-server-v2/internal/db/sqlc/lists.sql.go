@@ -31,6 +31,23 @@ func (q *Queries) ListDelete(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
+const listIDByName = `-- name: ListIDByName :one
+SELECT id FROM lists WHERE user_id = $1 AND lower(name) = lower($2) ORDER BY created_at LIMIT 1
+`
+
+type ListIDByNameParams struct {
+	UserID uuid.UUID
+	Name   string
+}
+
+// The user's list of this name, the oldest first, as an import's list ops pick it.
+func (q *Queries) ListIDByName(ctx context.Context, arg ListIDByNameParams) (uuid.UUID, error) {
+	row := q.db.QueryRow(ctx, listIDByName, arg.UserID, arg.Name)
+	var id uuid.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
 const listInsert = `-- name: ListInsert :exec
 
 
@@ -146,6 +163,19 @@ func (q *Queries) ListRename(ctx context.Context, arg ListRenameParams) error {
 	return err
 }
 
+const listRoadmap = `-- name: ListRoadmap :one
+
+SELECT roadmap FROM list_roadmaps WHERE list_id = $1
+`
+
+// MARK: Roadmaps (GRAPH-003)
+func (q *Queries) ListRoadmap(ctx context.Context, listID uuid.UUID) (json.RawMessage, error) {
+	row := q.db.QueryRow(ctx, listRoadmap, listID)
+	var roadmap json.RawMessage
+	err := row.Scan(&roadmap)
+	return roadmap, err
+}
+
 const listTouch = `-- name: ListTouch :exec
 UPDATE lists SET updated_at = now() WHERE id = $1
 `
@@ -218,6 +248,21 @@ func (q *Queries) ListsOfUser(ctx context.Context, arg ListsOfUserParams) ([]Lis
 		return nil, err
 	}
 	return items, nil
+}
+
+const putListRoadmap = `-- name: PutListRoadmap :exec
+INSERT INTO list_roadmaps (list_id, roadmap) VALUES ($1, $2)
+ON CONFLICT (list_id) DO UPDATE SET roadmap = EXCLUDED.roadmap, updated_at = now()
+`
+
+type PutListRoadmapParams struct {
+	ListID  uuid.UUID
+	Roadmap json.RawMessage
+}
+
+func (q *Queries) PutListRoadmap(ctx context.Context, arg PutListRoadmapParams) error {
+	_, err := q.db.Exec(ctx, putListRoadmap, arg.ListID, arg.Roadmap)
+	return err
 }
 
 const shelfByID = `-- name: ShelfByID :one
