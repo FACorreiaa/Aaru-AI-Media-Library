@@ -189,7 +189,9 @@ its titles with their notes, an Optional tag on the strong extras (they join the
 read), a thin accent bar down titles read side by side, and Start here on the first one not done.
 What Aaru could not find stays as text in its step, so the order is never lost. Comics are their
 collected editions, with the issues as the note. From any graph, **Add the chain** sends the main
-chain, in the chosen order, to the same review.
+chain, in the chosen order, to the same review. A roadmap list's **Graph** draws it the way a title's
+graph is drawn (GRAPH-004): a column per title in step order, titles read side by side stacked in
+one column, optional ones hanging under the title before them.
 
 ## 5. Tonight
 

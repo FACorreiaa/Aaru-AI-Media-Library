@@ -143,8 +143,33 @@ func TestSportsAbsentWhenOff(t *testing.T) {
 	assert.True(t, isErr, out)
 	assert.ElementsMatch(t, []string{
 		"search_titles", "title_details", "list_airs", "read_my_library", "show_titles", "read_my_stats",
-		"read_my_lists", "read_my_favorites", "read_my_listens", "apply_library_patch",
+		"read_my_lists", "read_my_favorites", "read_my_listens", "title_relations", "apply_library_patch",
 	}, names(off))
+}
+
+// GRAPH-004: title_relations reads the title's graph with the caller's own status and a start.
+func TestTitleRelationsReadsTheChainAndWhereToStart(t *testing.T) {
+	f := newChatToolsFixture(t)
+	f.withHit("951")
+	c := f.chatTools(f.user)
+	_, isErr := run(t, c, "search_titles", map[string]any{"query": "hit", "kind": "movie"})
+	require.False(t, isErr)
+	out, isErr := run(t, c, "title_relations", map[string]any{"ref": "r1"})
+	require.False(t, isErr, out)
+	assert.Contains(t, out, "Main chain in release order:")
+	assert.Contains(t, out, "1. Title 951 (2001; movie) ref r2 ← the title asked about")
+	assert.Contains(t, out, "Start here: Title 951")
+
+	finished := core.StatusFinished
+	_, err := f.lib.Add(f.ctx, *movieRef("951"), &finished, f.user, library.ChatCaller)
+	require.NoError(t, err)
+	again := f.chatTools(f.user)
+	_, isErr = run(t, again, "search_titles", map[string]any{"query": "hit", "kind": "movie"})
+	require.False(t, isErr)
+	out, isErr = run(t, again, "title_relations", map[string]any{"ref": "r1"})
+	require.False(t, isErr, out)
+	assert.Contains(t, out, "the user's status: finished")
+	assert.Contains(t, out, "The user has finished or dropped the whole chain.")
 }
 
 func (f *chatToolsFixture) withHit(tmdb string) {

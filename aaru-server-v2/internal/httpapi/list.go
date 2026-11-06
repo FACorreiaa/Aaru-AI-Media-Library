@@ -228,3 +228,16 @@ func (s *Server) ListShelfItems(ctx context.Context, req api.ListShelfItemsReque
 		Items: LibraryEntriesDTO(entries), Page: api.PageInfo{NextCursor: next},
 	}), nil
 }
+
+// GetListGraph is GET /v1/lists/{id}/graph (GRAPH-004): the list, often a roadmap, as a graph.
+func (s *Server) GetListGraph(ctx context.Context, req api.GetListGraphRequestObject) (api.GetListGraphResponseObject, error) {
+	user, err := currentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	detail, err := s.Lists.Detail(ctx, req.Id.ID(), user)
+	if err != nil {
+		return nil, err
+	}
+	return api.GetListGraph200JSONResponse(RelationGraphDTO(detail.Graph(), detail.Marks())), nil
+}

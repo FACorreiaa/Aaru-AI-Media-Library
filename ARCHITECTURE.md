@@ -258,6 +258,8 @@ GET    /v1/search?q=&type=all|movie|show|anime|book   # all: CAT-019
 GET    /v1/titles/{id}
 POST   /v1/titles/resolve                 # LIB-006: a MediaRef's page; catalog only, never the library
 GET    /v1/titles/{id}/relations          # GRAPH-001: the relation graph, marked with the caller's library
+POST   /v1/titles/{id}/relations/chain    # GRAPH-003: the main chain as a capture to review
+GET    /v1/lists/{id}/graph               # GRAPH-004: a list (a roadmap) in the relation graph's shape
 
 GET    /v1/calendar?from=&to=             # CAL-001
 GET    /v1/up-next                        # UPN-001; counts + unfinished UPN-002
@@ -434,7 +436,8 @@ order (a numbered Wikidata series, else the sequel links), and each other title 
 the column of the chain title it relates to, or a step from the title it continues, in the first
 free lane. Clients draw `rank` and `lane` as they come. Each source's answer is cached 30 days in
 `catalog_relations` (catalog data, no user); the caller's marks and "Start here" are read from the
-library after the graph is built.
+library after the graph is built. The owl reads the same graph through the read-only
+`title_relations` chat tool (GRAPH-004) and checks a roadmap against it before proposing one.
 
 ### Discover (DISC-001)
 

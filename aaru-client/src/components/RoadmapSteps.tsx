@@ -1,5 +1,6 @@
 import { For, Show } from 'solid-js'
-import { Badge } from '~/components/ui'
+import { Link } from '@tanstack/solid-router'
+import { Badge, buttonVariants } from '~/components/ui'
 import { Poster } from './Poster'
 import { Segmented } from './Segmented'
 import { TitleLink } from './TitleLink'
@@ -120,22 +121,31 @@ export function roadmapStartHere(
 
 /** The Steps / Order switch and, on Steps, the steps: loaded only by a list that has a roadmap. */
 export function RoadmapView(props: {
+  listId: string
   sections: RoadmapSection[]
   view: 'steps' | 'order'
   onView: (view: 'steps' | 'order') => void
 }) {
   return (
     <>
-      <Segmented
-        label="View"
-        class="mt-8"
-        value={props.view}
-        onChange={props.onView}
-        options={[
-          { value: 'steps', label: 'Steps' },
-          { value: 'order', label: 'Order' },
-        ]}
-      />
+      <div class="mt-8 flex flex-wrap items-center gap-3">
+        <Segmented
+          label="View"
+          value={props.view}
+          onChange={props.onView}
+          options={[
+            { value: 'steps', label: 'Steps' },
+            { value: 'order', label: 'Order' },
+          ]}
+        />
+        <Link
+          to="/app/lists/$id/graph"
+          params={{ id: props.listId }}
+          class={buttonVariants({ variant: 'outline', size: 'sm' })}
+        >
+          Graph
+        </Link>
+      </div>
       <Show when={props.view === 'steps'}>
         <RoadmapSteps
           sections={props.sections}

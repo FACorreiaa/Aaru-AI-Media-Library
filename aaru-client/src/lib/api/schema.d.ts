@@ -2289,6 +2289,25 @@ export interface paths {
     patch: operations['renameList']
     trace?: never
   }
+  '/v1/lists/{id}/graph': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    /** The list drawn as a graph (GRAPH-004), in the relation graph's shape: its steps left to right (a column per title), titles read side by side in one column, optional titles hanging under the title before them off the main chain, and "Start here" on the first main-chain title not finished or dropped. A plain list is its titles in order. */
+    get: operations['getListGraph']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/lists/{id}/items': {
     parameters: {
       query?: never
@@ -9330,6 +9349,29 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['ListDetail']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getListGraph: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['RelationGraph']
         }
       }
       default: components['responses']['Error']

@@ -122,3 +122,15 @@ export const reorderList = createServerFn({ method: 'POST' })
       'The new order was not saved.',
     ),
   )
+
+/** GRAPH-004: the list (often a roadmap) as a graph, in the relation graph's shape. */
+export const getListGraph = createServerFn({ method: 'GET' })
+  .validator(z.object({ id }))
+  .handler(async ({ data }): Promise<components['schemas']['RelationGraph']> =>
+    check(
+      await api(sessionToken()).GET('/v1/lists/{id}/graph', {
+        params: { path: { id: data.id } },
+      }),
+      'The graph could not be loaded.',
+    ),
+  )

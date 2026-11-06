@@ -269,6 +269,7 @@ function ListPage() {
             {(steps) => (
               <Suspense>
                 <RoadmapView
+                  listId={detail().id}
                   sections={steps()}
                   view={view()}
                   onView={setView}

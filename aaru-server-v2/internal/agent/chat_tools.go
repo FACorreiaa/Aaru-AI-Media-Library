@@ -158,6 +158,18 @@ func (t *ChatTools) Definitions() []model.Tool {
 			InputSchema: schema(map[string]any{}, []string{}),
 		})
 	}
+	if t.Catalog != nil && t.Catalog.Relations != nil {
+		out = append(out, model.Tool{
+			Name: "title_relations",
+			Description: "A title's relation graph from the catalog (GRAPH-004): its prequels and sequels in order, " +
+				"what it is based on and adapted into, side stories, and where the user should start. Check a " +
+				"roadmap or a watch order against it. Returns refs for the related titles.",
+			InputSchema: schema(map[string]any{
+				"ref":   map[string]any{"type": "string"},
+				"order": map[string]any{"type": "string", "enum": []string{"release", "story"}},
+			}, []string{"ref"}),
+		})
+	}
 	if t.deps.TitleLists != nil {
 		out = append(out, model.Tool{
 			Name: "plan_title_list",
@@ -225,6 +237,8 @@ func (t *ChatTools) Run(ctx context.Context, name string, input json.RawMessage)
 		out, err = t.search(ctx, args)
 	case "title_details":
 		out, err = t.details(ctx, args)
+	case "title_relations":
+		out, err = t.relations(ctx, args)
 	case "list_airs":
 		out, err = t.airs(ctx, args)
 	case "read_my_library":
