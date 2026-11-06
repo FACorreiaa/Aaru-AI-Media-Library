@@ -1,6 +1,7 @@
 package imports
 
 import (
+	"aaru-go-api/internal/capture"
 	"aaru-go-api/internal/catalog"
 	"aaru-go-api/internal/core"
 	"encoding/json"
@@ -53,8 +54,11 @@ type Row struct {
 	// forward on update, never back.
 	MangaChapter *int
 	MangaVolume  *int
-	// ListOnly is set on a source list only: the row joins that list, never the library.
+	// ListOnly is set on a source list only: the row joins that list, never the library. A roadmap's
+	// optional title is list-only too (GRAPH-003).
 	ListOnly *bool
+	// Roadmap is the row's step in a roadmap list (GRAPH-003): written to its list on approval.
+	Roadmap *capture.Place
 	// StremioWatched is Stremio's compressed watched-episode bitfield, still undecoded. The
 	// worker turns it into Watched once it has the show's episode list, then clears it.
 	StremioWatched *string
@@ -184,6 +188,7 @@ type rowJSON struct {
 	Notes          *string             `json:"notes,omitempty"`
 	IsOwned        *bool               `json:"isOwned,omitempty"`
 	KnowsOnHold    *bool               `json:"knowsOnHold,omitempty"`
+	Roadmap        *capture.Place      `json:"roadmap,omitempty"`
 }
 
 // MarshalJSON writes the row as Swift's synthesized Codable did: absent optionals left out,
@@ -194,7 +199,7 @@ func (r Row) MarshalJSON() ([]byte, error) {
 		Status: r.Status, Rating: r.Rating, Lists: r.Lists, Unsupported: r.Unsupported,
 		MangaChapter: r.MangaChapter, MangaVolume: r.MangaVolume, ListOnly: r.ListOnly,
 		StremioWatched: r.StremioWatched, NameOnly: r.NameOnly, Airing: r.Airing, NotAfter: r.NotAfter,
-		Notes: r.Notes, IsOwned: r.IsOwned, KnowsOnHold: r.KnowsOnHold,
+		Notes: r.Notes, IsOwned: r.IsOwned, KnowsOnHold: r.KnowsOnHold, Roadmap: r.Roadmap,
 	}
 	if out.Lists == nil {
 		out.Lists = []string{}
@@ -223,7 +228,7 @@ func (r *Row) UnmarshalJSON(data []byte) error {
 		Status: in.Status, Rating: in.Rating, Lists: in.Lists, Unsupported: in.Unsupported,
 		MangaChapter: in.MangaChapter, MangaVolume: in.MangaVolume, ListOnly: in.ListOnly,
 		StremioWatched: in.StremioWatched, NameOnly: in.NameOnly, Airing: in.Airing, NotAfter: in.NotAfter,
-		Notes: in.Notes, IsOwned: in.IsOwned, KnowsOnHold: in.KnowsOnHold,
+		Notes: in.Notes, IsOwned: in.IsOwned, KnowsOnHold: in.KnowsOnHold, Roadmap: in.Roadmap,
 	}
 	if r.Lists == nil {
 		r.Lists = []string{}

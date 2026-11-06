@@ -4,7 +4,7 @@ import { Button } from '~/components/ui'
 import { BackLink } from '../components/shell/BackLink'
 import { RelatedCard } from '../components/RelatedTitles'
 import { Segmented } from '../components/Segmented'
-import { loadRelations, resolveTitle } from '../lib/title/server'
+import { loadRelations, planChain, resolveTitle } from '../lib/title/server'
 import { previewParams } from '../lib/title/preview'
 import { centreOf, edgeLabel } from '../lib/title/relations'
 import type {
@@ -64,6 +64,24 @@ function GraphPage() {
       replace: true,
     })
 
+  const [planning, setPlanning] = createSignal(false)
+  const hasChain = () => graph().nodes.filter((n) => n.mainChain).length > 1
+  /** GRAPH-003: the main chain as a capture to review; nothing is added until Approve. */
+  const addChain = async () => {
+    setPlanning(true)
+    setProblem(null)
+    try {
+      const job = await planChain({
+        data: { titleId: params().titleId, order: graph().order },
+      })
+      await navigate({ to: '/app/imports/$id', params: { id: job.id } })
+    } catch (error) {
+      setProblem(error instanceof Error ? error.message : String(error))
+    } finally {
+      setPlanning(false)
+    }
+  }
+
   const centreOn = async (node: RelationNode) => {
     const preview = previewParams({
       type: node.ref.type,
@@ -96,17 +114,28 @@ function GraphPage() {
               {centreOf(graph())?.ref.title ?? 'Related titles'}
             </h1>
           </div>
-          <Show when={graph().storyOrderAvailable}>
-            <Segmented
-              label="Order"
-              value={graph().order}
-              onChange={setOrder}
-              options={[
-                { value: 'release', label: 'Release order' },
-                { value: 'story', label: 'Story order' },
-              ]}
-            />
-          </Show>
+          <div class="flex flex-wrap items-center gap-3">
+            <Show when={hasChain()}>
+              <Button
+                variant="outline"
+                disabled={planning()}
+                onClick={() => void addChain()}
+              >
+                {planning() ? 'Planning…' : 'Add the chain'}
+              </Button>
+            </Show>
+            <Show when={graph().storyOrderAvailable}>
+              <Segmented
+                label="Order"
+                value={graph().order}
+                onChange={setOrder}
+                options={[
+                  { value: 'release', label: 'Release order' },
+                  { value: 'story', label: 'Story order' },
+                ]}
+              />
+            </Show>
+          </div>
         </div>
         <Show when={graph().partial}>
           <p class="mt-3 text-sm text-muted">

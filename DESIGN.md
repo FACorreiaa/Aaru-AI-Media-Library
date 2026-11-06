@@ -181,6 +181,16 @@ dashed with a small label. The centre is ringed. A title opens its page; Centre 
 from it. Relations are catalog data: the graph never adds anything, and says so quietly when it is
 still finding titles. Credit: "Relations from AniList, TMDB and Wikidata."
 
+**Roadmaps (GRAPH-003, 2026-11-06, web, iPhone, iPad, Mac).** Ask the owl what to read before
+Secret Wars and the answer is a roadmap: numbered steps in the reply, and the same steps sent for
+review, every row showing its step, note, Optional and side-by-side pair. Approve makes a list that
+opens on its steps (Order, the plain editable list, is a switch away): each step's heading and note,
+its titles with their notes, an Optional tag on the strong extras (they join the list, not Plan to
+read), a thin accent bar down titles read side by side, and Start here on the first one not done.
+What Aaru could not find stays as text in its step, so the order is never lost. Comics are their
+collected editions, with the issues as the note. From any graph, **Add the chain** sends the main
+chain, in the chosen order, to the same review.
+
 ## 5. Tonight
 
 A nightly composed view. Not recommendations-as-a-product — a **short plan**.

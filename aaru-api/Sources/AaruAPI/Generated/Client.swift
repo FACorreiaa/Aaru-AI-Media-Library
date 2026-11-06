@@ -11200,6 +11200,92 @@ public struct Client: APIProtocol {
             }
         )
     }
+    /// "Add the chain" (GRAPH-003): the main chain of the title's relation graph, in the graph's order, as a capture to review, with exact ids. Approving adds what is not in the library to Plan to watch or read and makes a list in that order. Spends one capture, as any capture does; writes nothing to the library by itself.
+    ///
+    /// - Remark: HTTP `POST /v1/titles/{id}/relations/chain`.
+    /// - Remark: Generated from `#/paths//v1/titles/{id}/relations/chain/post(planRelationChain)`.
+    public func planRelationChain(_ input: Operations.PlanRelationChain.Input) async throws -> Operations.PlanRelationChain.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.PlanRelationChain.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/titles/{}/relations/chain",
+                    parameters: [
+                        input.path.id
+                    ]
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .post
+                )
+                suppressMutabilityWarning(&request)
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "order",
+                    value: input.query.order
+                )
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 202:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.PlanRelationChain.Output.Accepted.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ImportJob.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .accepted(.init(body: body))
+                default:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(body: body)
+                    )
+                }
+            }
+        )
+    }
     /// Posts about this title by you and your friends, newest first.
     ///
     /// - Remark: HTTP `GET /v1/titles/{id}/posts`.

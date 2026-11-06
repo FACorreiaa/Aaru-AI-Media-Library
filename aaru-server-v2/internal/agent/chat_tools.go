@@ -162,8 +162,10 @@ func (t *ChatTools) Definitions() []model.Tool {
 		out = append(out, model.Tool{
 			Name: "plan_title_list",
 			Description: "Send several titles the user asked to have added, or an order to read or watch them in, as one " +
-				"list: real, published titles, at most 30, in order, with list_name when there is an order. Aaru matches " +
-				"them and the user reviews them in Aaru; nothing is added until they approve. Once per reply.",
+				"list: real, published titles, at most 50, in order, with list_name when there is an order. For a roadmap " +
+				"(\"what should I read before X\"), give steps with a heading each, put every title in its step, give " +
+				"issue or episode ranges as its note, mark extras optional, and give titles read side by side the same " +
+				"pair. Aaru matches them and the user reviews them in Aaru; nothing is added until they approve. Once per reply.",
 			InputSchema: capture.Tool.InputSchema,
 		})
 	}

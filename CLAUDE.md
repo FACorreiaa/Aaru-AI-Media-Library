@@ -200,7 +200,10 @@ Use these words in code, APIs, and UI:
   book, album), any catalog title. Profile data shown on the profile: not a library write, not
   journaled, not a List
 - **Progress** — episode ticks for TV; page/percentage optional for books
-- **List** — user-curated collection of library items, stored as membership rows
+- **List** — user-curated collection of library items, stored as membership rows. A list the owl
+  planned in stages carries *steps* (a roadmap, GRAPH-003, `list_roadmaps`): a heading and note per
+  step, a note, Optional and a side-by-side pair per title, and the titles Aaru could not find as
+  text. Steps sit beside membership, never in `list_items`; the list's order still rules inside a step
 - **Shelf** — a *saved query* over library items (`saved_queries`), not membership. Shares a
   renderer with List; never shares a table. Users "pin a shelf" and "add to a list"
 - **Anime backlog** — an anime in progress the user never touched in Aaru: status from an

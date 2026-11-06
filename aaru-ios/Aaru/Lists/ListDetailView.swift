@@ -24,6 +24,8 @@ struct ListDetailView: View {
     @State private var problem: String?
     @State private var query = ""
     @State private var shown = Paging.pageSize
+    /// GRAPH-003: a list the owl planned in steps opens on them; Order is the editable list.
+    @State private var showsSteps = true
 
     private var matching: [ListItem] {
         (detail?.items ?? []).filter { Paging.matches(query, $0.title.title, $0.title.byline) }
@@ -34,25 +36,15 @@ struct ListDetailView: View {
     }
 
     var body: some View {
-        List {
-            ForEach(visible, id: \.title.id) { item in
-                row(for: item)
-                    .listRowBackground(Color.clear)
-                    .moveDisabled(!query.isEmpty)
-                    .contextMenu {
-                        Button("Remove from list", systemImage: "minus.circle", role: .destructive) {
-                            Task { await remove([item.title.id]) }
-                        }
-                    }
+        Group {
+            if let roadmap = detail?.roadmap, showsSteps {
+                RoadmapStepsList(
+                    sections: RoadmapSection.sections(roadmap, items: detail?.items ?? []),
+                    library: library
+                )
+            } else {
+                editableList
             }
-            .onDelete { offsets in
-                let ids = offsets.map { visible[$0].title.id }
-                Task { await remove(ids) }
-            }
-            .onMove(perform: move)
-            LoadMore(shown: $shown, total: matching.count)
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
@@ -68,6 +60,15 @@ struct ListDetailView: View {
         .searchable(text: $query, prompt: "Filter this list")
         .onChange(of: query) { shown = Paging.pageSize }
         .toolbar {
+            if detail?.roadmap != nil {
+                ToolbarItem(placement: .principal) {
+                    Picker("View", selection: $showsSteps) {
+                        Text("Steps").tag(true)
+                        Text("Order").tag(false)
+                    }
+                    .pickerStyle(.segmented)
+                }
+            }
             ToolbarItem(placement: .primaryAction) {
                 Button("Add titles", systemImage: "plus") { showsSearch = true }
                     .disabled(detail == nil)
@@ -88,6 +89,30 @@ struct ListDetailView: View {
         }
         .task(id: listID) { await load() }
         .refreshable { await load() }
+    }
+
+    /// The list in order, to remove from and reorder.
+    private var editableList: some View {
+        List {
+            ForEach(visible, id: \.title.id) { item in
+                row(for: item)
+                    .listRowBackground(Color.clear)
+                    .moveDisabled(!query.isEmpty)
+                    .contextMenu {
+                        Button("Remove from list", systemImage: "minus.circle", role: .destructive) {
+                            Task { await remove([item.title.id]) }
+                        }
+                    }
+            }
+            .onDelete { offsets in
+                let ids = offsets.map { visible[$0].title.id }
+                Task { await remove(ids) }
+            }
+            .onMove(perform: move)
+            LoadMore(shown: $shown, total: matching.count)
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+        }
     }
 
     /// Loading, a first load that failed (with Try again, UX-063), or an empty list.

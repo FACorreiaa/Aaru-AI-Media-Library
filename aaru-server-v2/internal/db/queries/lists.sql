@@ -60,3 +60,16 @@ WHERE saved_queries.user_id = @user_id;
 
 -- name: ShelfDelete :many
 DELETE FROM saved_queries WHERE id = @id AND user_id = @user_id RETURNING id;
+
+-- MARK: Roadmaps (GRAPH-003)
+
+-- name: ListRoadmap :one
+SELECT roadmap FROM list_roadmaps WHERE list_id = @list_id;
+
+-- name: PutListRoadmap :exec
+INSERT INTO list_roadmaps (list_id, roadmap) VALUES (@list_id, @roadmap)
+ON CONFLICT (list_id) DO UPDATE SET roadmap = EXCLUDED.roadmap, updated_at = now();
+
+-- name: ListIDByName :one
+-- The user's list of this name, the oldest first, as an import's list ops pick it.
+SELECT id FROM lists WHERE user_id = @user_id AND lower(name) = lower(@name) ORDER BY created_at LIMIT 1;

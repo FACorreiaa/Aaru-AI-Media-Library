@@ -14,6 +14,7 @@ import {
 import { AddControl } from '../components/AddControl'
 import { Poster } from '../components/Poster'
 import { TitleLink } from '../components/TitleLink'
+import { roadmapSections } from '../lib/lists/roadmap'
 import { Button, Dialog, DialogContent, DialogPortal } from '~/components/ui'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { KINDS, statusLabel } from '../lib/library/model'
@@ -36,6 +37,12 @@ import { optionalInt, optionalString } from '../lib/search-params'
 // Search loads only when it is first opened: it is not part of the page's first paint.
 // LIB-005: a filter over the members and 20 to a page (`?q=`, `?page=`). Moving a row waits
 // for an empty filter, so ↑ and ↓ always swap with the row you can see.
+// GRAPH-003: only a list the owl planned in steps loads its Steps view.
+const RoadmapView = lazy(() =>
+  import('../components/RoadmapSteps').then((m) => ({
+    default: m.RoadmapView,
+  })),
+)
 const SearchPanel = lazy(() =>
   import('../components/SearchPanel').then((m) => ({ default: m.SearchPanel })),
 )
@@ -79,6 +86,14 @@ function ListPage() {
   const rowById = createMemo(
     () => new Map(rows().map((row) => [row.titleId, row])),
   )
+  // GRAPH-003: a list the owl planned in steps opens on them; Order is the editable list.
+  const [view, setView] = createSignal<'steps' | 'order'>(
+    loaded().roadmap ? 'steps' : 'order',
+  )
+  const sections = createMemo(() => {
+    const roadmap = detail().roadmap
+    return roadmap ? roadmapSections(roadmap, rows()) : null
+  })
   // Rows are keyed by title id, so a server answer keeps their elements and a move or a
   // removal can slide the others (FLIP) instead of redrawing the list.
   const ids = createMemo(() => rows().map((row) => row.titleId))
@@ -250,152 +265,170 @@ function ListPage() {
             />
           }
         >
-          <FilterField
-            label="Filter this list"
-            placeholder="Filter this list"
-            value={query()}
-            onChange={filter}
-            class="mt-8"
-          />
-          <Show when={matching().length === 0}>
-            <div class="mt-12 max-w-sm">
-              <p class="text-muted">No titles match “{query()}” here.</p>
-              <Button variant="outline" class="mt-6" onClick={() => filter('')}>
-                Clear filter
-              </Button>
-            </div>
+          <Show when={sections()}>
+            {(steps) => (
+              <Suspense>
+                <RoadmapView
+                  sections={steps()}
+                  view={view()}
+                  onView={setView}
+                />
+              </Suspense>
+            )}
           </Show>
-          {/* An ordered list reads top to bottom: one column, at a width rows can be read. */}
-          <ol ref={list} class="mt-6 max-w-[56rem] divide-y divide-line">
-            <For each={shown()}>
-              {(id) => {
-                const index = () => position().get(id) ?? 0
-                // The last known row: it stays drawn while a removed one is torn down.
-                const row = createMemo<ListRow>(
-                  (last) => rowById().get(id) ?? last,
-                  rowById().get(id)!,
-                )
-                onCleanup(() => rowEls.delete(id))
-                return (
-                  <li
-                    ref={(el) => rowEls.set(id, el)}
-                    class="flex items-center gap-4 py-3"
-                  >
-                    <TitleLink
-                      hit={row().hit}
-                      libraryItemId={row().libraryItemId}
-                      class="flex min-w-0 flex-1 items-center gap-4"
+          <Show when={view() === 'order' || !sections()}>
+            <FilterField
+              label="Filter this list"
+              placeholder="Filter this list"
+              value={query()}
+              onChange={filter}
+              class="mt-8"
+            />
+            <Show when={matching().length === 0}>
+              <div class="mt-12 max-w-sm">
+                <p class="text-muted">No titles match “{query()}” here.</p>
+                <Button
+                  variant="outline"
+                  class="mt-6"
+                  onClick={() => filter('')}
+                >
+                  Clear filter
+                </Button>
+              </div>
+            </Show>
+            {/* An ordered list reads top to bottom: one column, at a width rows can be read. */}
+            <ol ref={list} class="mt-6 max-w-[56rem] divide-y divide-line">
+              <For each={shown()}>
+                {(id) => {
+                  const index = () => position().get(id) ?? 0
+                  // The last known row: it stays drawn while a removed one is torn down.
+                  const row = createMemo<ListRow>(
+                    (last) => rowById().get(id) ?? last,
+                    rowById().get(id)!,
+                  )
+                  onCleanup(() => rowEls.delete(id))
+                  return (
+                    <li
+                      ref={(el) => rowEls.set(id, el)}
+                      class="flex items-center gap-4 py-3"
                     >
-                      <Poster
-                        url={row().posterUrl}
-                        kind={row().kind}
-                        class="w-11 shrink-0"
-                      />
-                      <div class="min-w-0 flex-1">
-                        <p class="line-clamp-2 font-medium">{row().title}</p>
-                        <p class="truncate text-sm text-muted">
-                          {(row().kind === 'album'
-                            ? [row().byline, row().year]
-                            : [
-                                row().year,
-                                KINDS.find((k) => k.kind === row().kind)?.label,
-                                row().network,
-                              ]
-                          )
-                            .filter(Boolean)
-                            .join(' · ')}
-                        </p>
-                        <Show
-                          when={
-                            row().status || row().showStatus || row().airing
-                          }
-                        >
-                          <p class="flex flex-wrap items-center gap-x-2 text-sm text-muted">
-                            <Show when={row().showStatus}>
-                              {(label) => (
-                                <span class="rounded-full border border-line px-2 text-xs">
-                                  {label()}
-                                </span>
-                              )}
-                            </Show>
-                            <Show when={row().airing}>
-                              {(label) => (
-                                <span class="text-accent">{label()}</span>
-                              )}
-                            </Show>
-                            <Show when={row().status}>
-                              {(status) => (
-                                <span>
-                                  {[
-                                    statusLabel(status(), row().kind),
-                                    row().detail,
-                                  ]
-                                    .filter(Boolean)
-                                    .join(' · ')}
-                                </span>
-                              )}
-                            </Show>
-                          </p>
-                        </Show>
-                      </div>
-                    </TitleLink>
-                    <div class="flex items-center gap-1 text-sm">
-                      <Show when={row().hit}>
-                        {(hit) => (
-                          <div class="mr-2">
-                            <AddControl
-                              hit={hit()}
-                              adding={adding().has(id)}
-                              idPrefix="list"
-                              onAdd={(status) =>
-                                void addMember(id, hit(), status)
-                              }
-                            />
-                          </div>
-                        )}
-                      </Show>
-                      <Show when={!query()}>
-                        <Button
-                          variant="soft"
-                          size="bare"
-                          aria-label={`Move ${row().title} up`}
-                          disabled={index() === 0}
-                          class="px-2 py-1"
-                          onClick={() => move(index(), -1)}
-                        >
-                          ↑
-                        </Button>
-                        <Button
-                          variant="soft"
-                          size="bare"
-                          aria-label={`Move ${row().title} down`}
-                          disabled={index() === rows().length - 1}
-                          class="px-2 py-1"
-                          onClick={() => move(index(), 1)}
-                        >
-                          ↓
-                        </Button>
-                      </Show>
-                      <Button
-                        variant="ghost"
-                        size="bare"
-                        class="ml-2 min-h-9 px-1.5 text-sm hover:text-danger"
-                        onClick={() => setPending(row())}
+                      <TitleLink
+                        hit={row().hit}
+                        libraryItemId={row().libraryItemId}
+                        class="flex min-w-0 flex-1 items-center gap-4"
                       >
-                        Remove
-                      </Button>
-                    </div>
-                  </li>
-                )
-              }}
-            </For>
-          </ol>
-          <PageControls
-            page={page()}
-            total={matching().length}
-            label="List pages"
-            onPage={setPage}
-          />
+                        <Poster
+                          url={row().posterUrl}
+                          kind={row().kind}
+                          class="w-11 shrink-0"
+                        />
+                        <div class="min-w-0 flex-1">
+                          <p class="line-clamp-2 font-medium">{row().title}</p>
+                          <p class="truncate text-sm text-muted">
+                            {(row().kind === 'album'
+                              ? [row().byline, row().year]
+                              : [
+                                  row().year,
+                                  KINDS.find((k) => k.kind === row().kind)
+                                    ?.label,
+                                  row().network,
+                                ]
+                            )
+                              .filter(Boolean)
+                              .join(' · ')}
+                          </p>
+                          <Show
+                            when={
+                              row().status || row().showStatus || row().airing
+                            }
+                          >
+                            <p class="flex flex-wrap items-center gap-x-2 text-sm text-muted">
+                              <Show when={row().showStatus}>
+                                {(label) => (
+                                  <span class="rounded-full border border-line px-2 text-xs">
+                                    {label()}
+                                  </span>
+                                )}
+                              </Show>
+                              <Show when={row().airing}>
+                                {(label) => (
+                                  <span class="text-accent">{label()}</span>
+                                )}
+                              </Show>
+                              <Show when={row().status}>
+                                {(status) => (
+                                  <span>
+                                    {[
+                                      statusLabel(status(), row().kind),
+                                      row().detail,
+                                    ]
+                                      .filter(Boolean)
+                                      .join(' · ')}
+                                  </span>
+                                )}
+                              </Show>
+                            </p>
+                          </Show>
+                        </div>
+                      </TitleLink>
+                      <div class="flex items-center gap-1 text-sm">
+                        <Show when={row().hit}>
+                          {(hit) => (
+                            <div class="mr-2">
+                              <AddControl
+                                hit={hit()}
+                                adding={adding().has(id)}
+                                idPrefix="list"
+                                onAdd={(status) =>
+                                  void addMember(id, hit(), status)
+                                }
+                              />
+                            </div>
+                          )}
+                        </Show>
+                        <Show when={!query()}>
+                          <Button
+                            variant="soft"
+                            size="bare"
+                            aria-label={`Move ${row().title} up`}
+                            disabled={index() === 0}
+                            class="px-2 py-1"
+                            onClick={() => move(index(), -1)}
+                          >
+                            ↑
+                          </Button>
+                          <Button
+                            variant="soft"
+                            size="bare"
+                            aria-label={`Move ${row().title} down`}
+                            disabled={index() === rows().length - 1}
+                            class="px-2 py-1"
+                            onClick={() => move(index(), 1)}
+                          >
+                            ↓
+                          </Button>
+                        </Show>
+                        <Button
+                          variant="ghost"
+                          size="bare"
+                          class="ml-2 min-h-9 px-1.5 text-sm hover:text-danger"
+                          onClick={() => setPending(row())}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    </li>
+                  )
+                }}
+              </For>
+            </ol>
+            <PageControls
+              page={page()}
+              total={matching().length}
+              label="List pages"
+              onPage={setPage}
+            />
+          </Show>
         </Show>
         <ConfirmDialog
           open={pending() !== null}

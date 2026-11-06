@@ -152,7 +152,9 @@ PostgreSQL. Suggested tables:
 - `library_items` (unique `(user_id, title_id)`)
 - `episode_progress` (unique `(library_item_id, season, episode)`; `watched_at_known` is false
   for ticks an import or an undo wrote, whose `watched_at` is the write, not the watch)
-- `lists`, `list_items`
+- `lists`, `list_items`; `list_roadmaps` (GRAPH-003): one row per list the owl planned in steps,
+  a JSON roadmap beside the membership, written in the import's approval transaction and deleted
+  with the list
 - `saved_queries` (shelves — a stored filter, never membership rows)
 - `import_jobs`, `import_job_events` (optional log lines)
 - `actions` (action journal: one row per mutating library write, with its inverse)

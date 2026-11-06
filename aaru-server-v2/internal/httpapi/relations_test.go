@@ -111,6 +111,17 @@ func TestTitleRelationsRoute(t *testing.T) {
 	require.Equal(t, http.StatusOK, h.do(http.MethodGet, "/v1/titles/"+titleID+"/relations?order=story", bearer, nil).Code)
 	assert.Equal(t, reads, collectionReads.Load(), "the second graph is read from the cache")
 
+	// GRAPH-003: Add the chain is a capture of the three films, by id, to review; nothing is added yet.
+	rec = h.do(http.MethodPost, "/v1/titles/"+titleID+"/relations/chain", bearer, nil)
+	require.Equal(t, http.StatusAccepted, rec.Code, rec.Body.String())
+	jobID := decode[map[string]any](t, rec)["id"].(string)
+	var rows int
+	require.NoError(t, h.pool.QueryRow(context.Background(),
+		`SELECT count(*) FROM import_rows WHERE job_id = $1`, uuid.MustParse(jobID)).Scan(&rows))
+	assert.Equal(t, 3, rows, "the main chain, not the book")
+	require.NoError(t, h.pool.QueryRow(context.Background(), `SELECT count(*) FROM library_items`).Scan(&items))
+	assert.Equal(t, 1, items, "planning the chain adds nothing")
+
 	assert.Equal(t, http.StatusNotFound, h.do(http.MethodGet, "/v1/titles/"+uuid.NewString()+"/relations", bearer, nil).Code)
 	assert.Equal(t, http.StatusUnauthorized, h.do(http.MethodGet, "/v1/titles/"+titleID+"/relations", "", nil).Code)
 }

@@ -72,6 +72,31 @@ final class TitleRelationsModel {
         }
     }
 
+    /// "Add the chain" (GRAPH-003): the main chain as a capture to review. Its id, or nil after
+    /// saying why not.
+    func planChain() async -> String? {
+        guard let api else { return nil }
+        do {
+            let output = try await api.planRelationChain(
+                path: .init(id: titleID),
+                query: .init(order: graph?.order == .story ? .story : nil)
+            )
+            guard case let .accepted(response) = output else {
+                problem = "Aaru could not plan the chain."
+                return nil
+            }
+            return try response.body.json.id
+        } catch {
+            problem = "Aaru could not reach the server."
+            return nil
+        }
+    }
+
+    /// True when the main chain has more than one title.
+    var hasChain: Bool {
+        (graph?.nodes.filter(\.mainChain).count ?? 0) > 1
+    }
+
     var centre: RelationNode? {
         graph?.nodes.first(where: \.centre)
     }

@@ -2067,6 +2067,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/titles/{id}/relations/chain': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** "Add the chain" (GRAPH-003): the main chain of the title's relation graph, in the graph's order, as a capture to review, with exact ids. Approving adds what is not in the library to Plan to watch or read and makes a list in that order. Spends one capture, as any capture does; writes nothing to the library by itself. */
+    post: operations['planRelationChain']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/titles/{id}/posts': {
     parameters: {
       query?: never
@@ -3274,6 +3291,17 @@ export interface components {
       reason?: string
       /** Format: uuid */
       titleId?: string
+      roadmap?: components['schemas']['RoadmapPlace']
+    }
+    /** @description A row's place in a roadmap the owl planned (GRAPH-003): its numbered step with that step's heading and note, its own note, whether it is optional (it joins the list, not Plan to read) and the pair it is read side by side with. */
+    RoadmapPlace: {
+      /** @description From 1; 0 when the title belongs to no step. */
+      step: number
+      heading?: string
+      stepNote?: string
+      note?: string
+      optional?: boolean
+      pair?: number
     }
     /** @description The title Match all chose for a row (IMP-021), for the person to check. Absent on a row they matched themselves. */
     ImportRowGuess: {
@@ -4989,6 +5017,25 @@ export interface components {
       createdAt: string
       /** Format: date-time */
       updatedAt: string
+      roadmap?: components['schemas']['ListRoadmap']
+    }
+    /** @description A list the owl planned in steps (GRAPH-003). Steps are in order; inside a step the list's own order decides. A member not named in any step was added by hand. `missing` are titles Aaru could not find, as the plan wrote them. */
+    ListRoadmap: {
+      steps: components['schemas']['ListRoadmapStep'][]
+    }
+    ListRoadmapStep: {
+      heading: string
+      note?: string
+      missing?: string[]
+      items: components['schemas']['ListRoadmapItem'][]
+    }
+    ListRoadmapItem: {
+      /** Format: uuid */
+      titleId: string
+      note?: string
+      optional?: boolean
+      /** @description Titles with the same pair are read or watched side by side. */
+      pair?: number
     }
     /** @description One list member. `entry` is the caller's library row when the title is in the library. Shows carry `showStatus` and `nextAiring` (the first episode not aired yet) once their episodes are loaded. */
     ListItem: {
@@ -8817,6 +8864,31 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['RelationGraph']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  planRelationChain: {
+    parameters: {
+      query?: {
+        order?: components['schemas']['RelationOrder']
+      }
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Queued for review. */
+      202: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ImportJob']
         }
       }
       default: components['responses']['Error']

@@ -11,6 +11,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"net/http"
 	"slices"
 	"strings"
@@ -296,6 +297,13 @@ func (s *Service) Apply(ctx context.Context, id, user uuid.UUID) (core.ImportJob
 				return err
 			}
 			actionID = &action.ID
+			// A roadmap's steps go with the list they belong to; undoing the import deletes it.
+			roadmaps := roadmapSteps(rows)
+			for _, list := range slices.Sorted(maps.Keys(roadmaps)) {
+				if err := library.AppendRoadmapTx(ctx, tx, user, list, roadmaps[list]); err != nil {
+					return err
+				}
+			}
 		}
 		job.State = core.JobSucceeded
 		if job.Stats.Unmatched > 0 {
@@ -413,4 +421,46 @@ func (s *Service) rowWrites(row *PlannedRow, merged Row, titleID uuid.UUID, item
 		return ops
 	}
 	return nil
+}
+
+// roadmapSteps are each list's roadmap steps (GRAPH-003), in the order the rows first name them:
+// every matched title in its step with its note, optional flag and pair, and every title Aaru could
+// not find as text in its step, so the order keeps it. Rows left out are not in the roadmap.
+func roadmapSteps(rows []PlannedRow) map[string][]library.RoadmapStep {
+	out := map[string][]library.RoadmapStep{}
+	index := map[string]map[int]int{}
+	for _, r := range rows {
+		place := r.Row.Roadmap
+		if place == nil || isTrue(r.Row.LeftOut) {
+			continue
+		}
+		for _, list := range r.Row.Lists {
+			if index[list] == nil {
+				index[list] = map[int]int{}
+			}
+			i, ok := index[list][place.Step]
+			if !ok {
+				out[list] = append(out[list], library.RoadmapStep{
+					Heading: place.Heading, Note: place.StepNote, Items: []library.RoadmapItem{},
+				})
+				i = len(out[list]) - 1
+				index[list][place.Step] = i
+			}
+			step := &out[list][i]
+			if r.Outcome == OutcomeUnmatched || r.TitleID == nil {
+				text := r.Row.Title
+				if place.Note != "" {
+					text += " (" + place.Note + ")"
+				}
+				step.Missing = append(step.Missing, text)
+				continue
+			}
+			if !slices.ContainsFunc(step.Items, func(it library.RoadmapItem) bool { return it.TitleID == *r.TitleID }) {
+				step.Items = append(step.Items, library.RoadmapItem{
+					TitleID: *r.TitleID, Note: place.Note, Optional: place.Optional, Pair: place.Pair,
+				})
+			}
+		}
+	}
+	return out
 }
