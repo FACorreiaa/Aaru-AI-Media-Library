@@ -1207,6 +1207,15 @@ device.
 reverts the library and the screen behind it together. A larger change is a Plan card with
 Approve; its Undo toast also shows inside the card, not dimmed behind it.
 
+**Files (ASK-010).** A paperclip beside the field picks photos or files; on the Mac and the web a
+file can be dropped on the composer, and a picture pasted. A paste longer than a question
+(4,000 characters, such as a whole ChatGPT answer) becomes a file instead of filling the field.
+Each file is a chip above the field: its name, then what Aaru read it as ("a Letterboxd export
+of 412 rows", "a picture"), or "Reading…" while the server checks it, with a remove button. A
+file the server refuses leaves no chip and one muted line saying why. Up to five go with one
+question, which may then be empty. The question bubble lists the files it carried. A reply
+that made an import shows "Review the import".
+
 **Chats.** Settings → Your data → Delete my chats with Aaru (confirmed) empties them, and the
 open card with them. They are kept until then.
 
@@ -1216,8 +1225,8 @@ components from the catalog below. Colours and type follow the Brand section.
 On the web the owl sits in the top bar and the sidebar has an "Ask Aaru" row; ⌘J (Ctrl+J)
 toggles the card, since ⌘K is Search. The card is a bottom drawer, as wide as the reading column.
 Long press on the owl opens it listening; tap the mic again to send early, and silence sends on
-its own. Enter sends, Shift+Enter starts a new line. A reply that made a capture shows "Review
-the list", which opens that import's review, on every client. Read aloud on the web uses only an
+its own. Enter sends, Shift+Enter starts a new line. A reply that made a capture or an
+import shows "Review the import", which opens that import's review, on every client. Read aloud on the web uses only an
 on-device browser voice (privacy).
 
 ## Component catalog the agent may emit
