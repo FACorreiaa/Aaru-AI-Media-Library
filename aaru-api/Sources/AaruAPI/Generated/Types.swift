@@ -829,11 +829,21 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/chats/transcribe`.
     /// - Remark: Generated from `#/paths//v1/chats/transcribe/post(transcribeChatAudio)`.
     func transcribeChatAudio(_ input: Operations.TranscribeChatAudio.Input) async throws -> Operations.TranscribeChatAudio.Output
-    /// Ask Aaru (ASK-009). The answer is a stream of server-sent events, each frame an `event:` line with its type and a `data:` line with JSON: `status` and `delta` carry ChatTextFrame, `components` ChatComponentsFrame, `done` ChatDoneFrame, `error` ChatErrorFrame. Lines starting with `:` are heartbeats. Once the stream has begun, a failure can only be an `error` frame: a send past the daily cap is a 200 with one `error` frame, code `resting`. Before it begins: 404 for a chat that is not the caller's, 409 `chat_busy` while the chat is still answering, 422 for a body that is blank or over 4000 characters, 503 `agent_unavailable` when Aaru is off. Hanging up stops the turn and keeps what was written.
+    /// Ask Aaru (ASK-009). The answer is a stream of server-sent events, each frame an `event:` line with its type and a `data:` line with JSON: `status` and `delta` carry ChatTextFrame, `components` ChatComponentsFrame, `done` ChatDoneFrame, `error` ChatErrorFrame. Lines starting with `:` are heartbeats. Once the stream has begun, a failure can only be an `error` frame: a send past the daily cap is a 200 with one `error` frame, code `resting`. Before it begins: 404 for a chat that is not the caller's, 409 `chat_busy` while the chat is still answering, 422 for a body that is over 4000 characters or blank with no attachments, 422 `attachment_gone` when an attachment is no longer kept, 503 `agent_unavailable` when Aaru is off. Hanging up stops the turn and keeps what was written.
     ///
     /// - Remark: HTTP `POST /v1/chats/{id}/turns`.
     /// - Remark: Generated from `#/paths//v1/chats/{id}/turns/post(createChatTurn)`.
     func createChatTurn(_ input: Operations.CreateChatTurn.Input) async throws -> Operations.CreateChatTurn.Output
+    /// Attach one file to a chat (ASK-010), for the next turn to carry by id. The body is the file itself, sent with its own Content-Type (application/octet-stream when unknown); the server reads its bytes, not its name or type, to decide what it is. Pictures (JPEG, PNG, GIF, WebP, 5 MB), PDFs (10 MB, 100 pages, no encryption or active content), text and Markdown, the import exports (CSV, MAL XML or .xml.gz, iCal; 5 MB) and listening histories (JSON, 24 MB). Anything else, a program, an archive, or a file whose name disagrees with its bytes, is 422 `validation_failed` with the reason. 413 `file_too_large`, 404 for a chat that is not the caller's, 409 `chat_attachments_full` past 20 files in a chat, 429 `rate_limited` past 40 files an hour. A file is kept for an hour, then deleted.
+    ///
+    /// - Remark: HTTP `POST /v1/chats/{id}/attachments`.
+    /// - Remark: Generated from `#/paths//v1/chats/{id}/attachments/post(createChatAttachment)`.
+    func createChatAttachment(_ input: Operations.CreateChatAttachment.Input) async throws -> Operations.CreateChatAttachment.Output
+    /// Remove a file from a chat before it is sent, or after (ASK-010).
+    ///
+    /// - Remark: HTTP `DELETE /v1/chats/{id}/attachments/{attachmentId}`.
+    /// - Remark: Generated from `#/paths//v1/chats/{id}/attachments/{attachmentId}/delete(deleteChatAttachment)`.
+    func deleteChatAttachment(_ input: Operations.DeleteChatAttachment.Input) async throws -> Operations.DeleteChatAttachment.Output
     /// Everything Aaru holds for the caller, to keep or move elsewhere (GDPR portability).
     ///
     /// `json` (default) is complete: account, every library item with ratings, notes and every watched episode, lists and shelves. `csv` is one row per library item in the column layout Aaru's own "Any site" import reads, so it can be re-imported here or opened in a spreadsheet.
@@ -3009,7 +3019,7 @@ extension APIProtocol {
             body: body
         ))
     }
-    /// Ask Aaru (ASK-009). The answer is a stream of server-sent events, each frame an `event:` line with its type and a `data:` line with JSON: `status` and `delta` carry ChatTextFrame, `components` ChatComponentsFrame, `done` ChatDoneFrame, `error` ChatErrorFrame. Lines starting with `:` are heartbeats. Once the stream has begun, a failure can only be an `error` frame: a send past the daily cap is a 200 with one `error` frame, code `resting`. Before it begins: 404 for a chat that is not the caller's, 409 `chat_busy` while the chat is still answering, 422 for a body that is blank or over 4000 characters, 503 `agent_unavailable` when Aaru is off. Hanging up stops the turn and keeps what was written.
+    /// Ask Aaru (ASK-009). The answer is a stream of server-sent events, each frame an `event:` line with its type and a `data:` line with JSON: `status` and `delta` carry ChatTextFrame, `components` ChatComponentsFrame, `done` ChatDoneFrame, `error` ChatErrorFrame. Lines starting with `:` are heartbeats. Once the stream has begun, a failure can only be an `error` frame: a send past the daily cap is a 200 with one `error` frame, code `resting`. Before it begins: 404 for a chat that is not the caller's, 409 `chat_busy` while the chat is still answering, 422 for a body that is over 4000 characters or blank with no attachments, 422 `attachment_gone` when an attachment is no longer kept, 503 `agent_unavailable` when Aaru is off. Hanging up stops the turn and keeps what was written.
     ///
     /// - Remark: HTTP `POST /v1/chats/{id}/turns`.
     /// - Remark: Generated from `#/paths//v1/chats/{id}/turns/post(createChatTurn)`.
@@ -3022,6 +3032,36 @@ extension APIProtocol {
             path: path,
             headers: headers,
             body: body
+        ))
+    }
+    /// Attach one file to a chat (ASK-010), for the next turn to carry by id. The body is the file itself, sent with its own Content-Type (application/octet-stream when unknown); the server reads its bytes, not its name or type, to decide what it is. Pictures (JPEG, PNG, GIF, WebP, 5 MB), PDFs (10 MB, 100 pages, no encryption or active content), text and Markdown, the import exports (CSV, MAL XML or .xml.gz, iCal; 5 MB) and listening histories (JSON, 24 MB). Anything else, a program, an archive, or a file whose name disagrees with its bytes, is 422 `validation_failed` with the reason. 413 `file_too_large`, 404 for a chat that is not the caller's, 409 `chat_attachments_full` past 20 files in a chat, 429 `rate_limited` past 40 files an hour. A file is kept for an hour, then deleted.
+    ///
+    /// - Remark: HTTP `POST /v1/chats/{id}/attachments`.
+    /// - Remark: Generated from `#/paths//v1/chats/{id}/attachments/post(createChatAttachment)`.
+    public func createChatAttachment(
+        path: Operations.CreateChatAttachment.Input.Path,
+        query: Operations.CreateChatAttachment.Input.Query = .init(),
+        headers: Operations.CreateChatAttachment.Input.Headers = .init(),
+        body: Operations.CreateChatAttachment.Input.Body
+    ) async throws -> Operations.CreateChatAttachment.Output {
+        try await createChatAttachment(Operations.CreateChatAttachment.Input(
+            path: path,
+            query: query,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Remove a file from a chat before it is sent, or after (ASK-010).
+    ///
+    /// - Remark: HTTP `DELETE /v1/chats/{id}/attachments/{attachmentId}`.
+    /// - Remark: Generated from `#/paths//v1/chats/{id}/attachments/{attachmentId}/delete(deleteChatAttachment)`.
+    public func deleteChatAttachment(
+        path: Operations.DeleteChatAttachment.Input.Path,
+        headers: Operations.DeleteChatAttachment.Input.Headers = .init()
+    ) async throws -> Operations.DeleteChatAttachment.Output {
+        try await deleteChatAttachment(Operations.DeleteChatAttachment.Input(
+            path: path,
+            headers: headers
         ))
     }
     /// Everything Aaru holds for the caller, to keep or move elsewhere (GDPR portability).
@@ -11345,25 +11385,106 @@ public enum Components {
         }
         /// - Remark: Generated from `#/components/schemas/ChatTurnRequest`.
         public struct ChatTurnRequest: Codable, Hashable, Sendable {
+            /// The question. May be blank only when the turn carries attachments.
+            ///
             /// - Remark: Generated from `#/components/schemas/ChatTurnRequest/body`.
             public var body: Swift.String
             /// - Remark: Generated from `#/components/schemas/ChatTurnRequest/hint`.
             public var hint: Components.Schemas.ChatHint?
+            /// Files attached to this chat with createChatAttachment, sent with this turn.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ChatTurnRequest/attachments`.
+            public var attachments: [Swift.String]?
             /// Creates a new `ChatTurnRequest`.
             ///
             /// - Parameters:
-            ///   - body:
+            ///   - body: The question. May be blank only when the turn carries attachments.
             ///   - hint:
+            ///   - attachments: Files attached to this chat with createChatAttachment, sent with this turn.
             public init(
                 body: Swift.String,
-                hint: Components.Schemas.ChatHint? = nil
+                hint: Components.Schemas.ChatHint? = nil,
+                attachments: [Swift.String]? = nil
             ) {
                 self.body = body
                 self.hint = hint
+                self.attachments = attachments
             }
             public enum CodingKeys: String, CodingKey {
                 case body
                 case hint
+                case attachments
+            }
+        }
+        /// One file in a chat (ASK-010). `kind` is what Aaru does with it: a picture, PDF or text is read with the question; an export or a listening history is read on Aaru's server, and Aaru can turn it into an import the user reviews.
+        ///
+        /// - Remark: Generated from `#/components/schemas/ChatAttachment`.
+        public struct ChatAttachment: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ChatAttachment/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ChatAttachment/kind`.
+            @frozen public enum KindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case image = "image"
+                case pdf = "pdf"
+                case text = "text"
+                case export = "export"
+                case listens = "listens"
+            }
+            /// - Remark: Generated from `#/components/schemas/ChatAttachment/kind`.
+            public var kind: Components.Schemas.ChatAttachment.KindPayload
+            /// - Remark: Generated from `#/components/schemas/ChatAttachment/name`.
+            public var name: Swift.String
+            /// Bytes.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ChatAttachment/size`.
+            public var size: Swift.Int
+            /// What an export or a listening history is, as an import source (`letterboxd_csv`, `spotify_json`, …).
+            ///
+            /// - Remark: Generated from `#/components/schemas/ChatAttachment/source`.
+            public var source: Swift.String?
+            /// An export's rows or a history's plays.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ChatAttachment/rows`.
+            public var rows: Swift.Int?
+            /// What the chip says, such as "a Letterboxd export of 412 rows".
+            ///
+            /// - Remark: Generated from `#/components/schemas/ChatAttachment/summary`.
+            public var summary: Swift.String
+            /// Creates a new `ChatAttachment`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - kind:
+            ///   - name:
+            ///   - size: Bytes.
+            ///   - source: What an export or a listening history is, as an import source (`letterboxd_csv`, `spotify_json`, …).
+            ///   - rows: An export's rows or a history's plays.
+            ///   - summary: What the chip says, such as "a Letterboxd export of 412 rows".
+            public init(
+                id: Swift.String,
+                kind: Components.Schemas.ChatAttachment.KindPayload,
+                name: Swift.String,
+                size: Swift.Int,
+                source: Swift.String? = nil,
+                rows: Swift.Int? = nil,
+                summary: Swift.String
+            ) {
+                self.id = id
+                self.kind = kind
+                self.name = name
+                self.size = size
+                self.source = source
+                self.rows = rows
+                self.summary = summary
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case kind
+                case name
+                case size
+                case source
+                case rows
+                case summary
             }
         }
         /// - Remark: Generated from `#/components/schemas/ChatTranscript`.
@@ -38128,7 +38249,7 @@ public enum Operations {
             }
         }
     }
-    /// Ask Aaru (ASK-009). The answer is a stream of server-sent events, each frame an `event:` line with its type and a `data:` line with JSON: `status` and `delta` carry ChatTextFrame, `components` ChatComponentsFrame, `done` ChatDoneFrame, `error` ChatErrorFrame. Lines starting with `:` are heartbeats. Once the stream has begun, a failure can only be an `error` frame: a send past the daily cap is a 200 with one `error` frame, code `resting`. Before it begins: 404 for a chat that is not the caller's, 409 `chat_busy` while the chat is still answering, 422 for a body that is blank or over 4000 characters, 503 `agent_unavailable` when Aaru is off. Hanging up stops the turn and keeps what was written.
+    /// Ask Aaru (ASK-009). The answer is a stream of server-sent events, each frame an `event:` line with its type and a `data:` line with JSON: `status` and `delta` carry ChatTextFrame, `components` ChatComponentsFrame, `done` ChatDoneFrame, `error` ChatErrorFrame. Lines starting with `:` are heartbeats. Once the stream has begun, a failure can only be an `error` frame: a send past the daily cap is a 200 with one `error` frame, code `resting`. Before it begins: 404 for a chat that is not the caller's, 409 `chat_busy` while the chat is still answering, 422 for a body that is over 4000 characters or blank with no attachments, 422 `attachment_gone` when an attachment is no longer kept, 503 `agent_unavailable` when Aaru is off. Hanging up stops the turn and keeps what was written.
     ///
     /// - Remark: HTTP `POST /v1/chats/{id}/turns`.
     /// - Remark: Generated from `#/paths//v1/chats/{id}/turns/post(createChatTurn)`.
@@ -38285,6 +38406,320 @@ public enum Operations {
             public static var allCases: [Self] {
                 [
                     .textEventStream,
+                    .json
+                ]
+            }
+        }
+    }
+    /// Attach one file to a chat (ASK-010), for the next turn to carry by id. The body is the file itself, sent with its own Content-Type (application/octet-stream when unknown); the server reads its bytes, not its name or type, to decide what it is. Pictures (JPEG, PNG, GIF, WebP, 5 MB), PDFs (10 MB, 100 pages, no encryption or active content), text and Markdown, the import exports (CSV, MAL XML or .xml.gz, iCal; 5 MB) and listening histories (JSON, 24 MB). Anything else, a program, an archive, or a file whose name disagrees with its bytes, is 422 `validation_failed` with the reason. 413 `file_too_large`, 404 for a chat that is not the caller's, 409 `chat_attachments_full` past 20 files in a chat, 429 `rate_limited` past 40 files an hour. A file is kept for an hour, then deleted.
+    ///
+    /// - Remark: HTTP `POST /v1/chats/{id}/attachments`.
+    /// - Remark: Generated from `#/paths//v1/chats/{id}/attachments/post(createChatAttachment)`.
+    public enum CreateChatAttachment {
+        public static let id: Swift.String = "createChatAttachment"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/chats/{id}/attachments/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/chats/{id}/attachments/POST/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.CreateChatAttachment.Input.Path
+            /// - Remark: Generated from `#/paths/v1/chats/{id}/attachments/POST/query`.
+            public struct Query: Sendable, Hashable {
+                /// The file's name, shown on its chip and checked against its bytes. Empty for pasted text.
+                ///
+                /// - Remark: Generated from `#/paths/v1/chats/{id}/attachments/POST/query/filename`.
+                public var filename: Swift.String?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - filename: The file's name, shown on its chip and checked against its bytes. Empty for pasted text.
+                public init(filename: Swift.String? = nil) {
+                    self.filename = filename
+                }
+            }
+            public var query: Operations.CreateChatAttachment.Input.Query
+            /// - Remark: Generated from `#/paths/v1/chats/{id}/attachments/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateChatAttachment.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateChatAttachment.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.CreateChatAttachment.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/chats/{id}/attachments/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/chats/{id}/attachments/POST/requestBody/content/application\/octet-stream`.
+                case binary(OpenAPIRuntime.HTTPBody)
+                /// - Remark: Generated from `#/paths/v1/chats/{id}/attachments/POST/requestBody/content/*\/*`.
+                case any(OpenAPIRuntime.HTTPBody)
+            }
+            public var body: Operations.CreateChatAttachment.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - query:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.CreateChatAttachment.Input.Path,
+                query: Operations.CreateChatAttachment.Input.Query = .init(),
+                headers: Operations.CreateChatAttachment.Input.Headers = .init(),
+                body: Operations.CreateChatAttachment.Input.Body
+            ) {
+                self.path = path
+                self.query = query
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Created: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/chats/{id}/attachments/POST/responses/201/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/chats/{id}/attachments/POST/responses/201/content/application\/json`.
+                    case json(Components.Schemas.ChatAttachment)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ChatAttachment {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.CreateChatAttachment.Output.Created.Body
+                /// Creates a new `Created`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.CreateChatAttachment.Output.Created.Body) {
+                    self.body = body
+                }
+            }
+            /// The file, as the chat will use it.
+            ///
+            /// - Remark: Generated from `#/paths//v1/chats/{id}/attachments/post(createChatAttachment)/responses/201`.
+            ///
+            /// HTTP response code: `201 created`.
+            case created(Operations.CreateChatAttachment.Output.Created)
+            /// The associated value of the enum case if `self` is `.created`.
+            ///
+            /// - Throws: An error if `self` is not `.created`.
+            /// - SeeAlso: `.created`.
+            public var created: Operations.CreateChatAttachment.Output.Created {
+                get throws {
+                    switch self {
+                    case let .created(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "created",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/chats/{id}/attachments/post(createChatAttachment)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Remove a file from a chat before it is sent, or after (ASK-010).
+    ///
+    /// - Remark: HTTP `DELETE /v1/chats/{id}/attachments/{attachmentId}`.
+    /// - Remark: Generated from `#/paths//v1/chats/{id}/attachments/{attachmentId}/delete(deleteChatAttachment)`.
+    public enum DeleteChatAttachment {
+        public static let id: Swift.String = "deleteChatAttachment"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/chats/{id}/attachments/{attachmentId}/DELETE/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/chats/{id}/attachments/{attachmentId}/DELETE/path/id`.
+                public var id: Swift.String
+                /// - Remark: Generated from `#/paths/v1/chats/{id}/attachments/{attachmentId}/DELETE/path/attachmentId`.
+                public var attachmentId: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                ///   - attachmentId:
+                public init(
+                    id: Swift.String,
+                    attachmentId: Swift.String
+                ) {
+                    self.id = id
+                    self.attachmentId = attachmentId
+                }
+            }
+            public var path: Operations.DeleteChatAttachment.Input.Path
+            /// - Remark: Generated from `#/paths/v1/chats/{id}/attachments/{attachmentId}/DELETE/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DeleteChatAttachment.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DeleteChatAttachment.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.DeleteChatAttachment.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.DeleteChatAttachment.Input.Path,
+                headers: Operations.DeleteChatAttachment.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Removed, or already gone.
+            ///
+            /// - Remark: Generated from `#/paths//v1/chats/{id}/attachments/{attachmentId}/delete(deleteChatAttachment)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.DeleteChatAttachment.Output.NoContent)
+            /// Removed, or already gone.
+            ///
+            /// - Remark: Generated from `#/paths//v1/chats/{id}/attachments/{attachmentId}/delete(deleteChatAttachment)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.DeleteChatAttachment.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/chats/{id}/attachments/{attachmentId}/delete(deleteChatAttachment)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
                     .json
                 ]
             }

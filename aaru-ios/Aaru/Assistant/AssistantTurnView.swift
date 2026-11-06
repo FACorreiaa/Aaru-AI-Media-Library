@@ -46,7 +46,7 @@ struct AssistantTurnView: View {
             }
             if let importID = reply.importID {
                 // BOOK-003: the list waits in an ordinary review, opened as a capture's push opens it.
-                Button("Review the list") { PushInbox.shared.importID = importID }
+                Button("Review the import") { PushInbox.shared.importID = importID }
                     .buttonStyle(.borderedProminent)
             }
             if let actionID = reply.actionID {
@@ -62,18 +62,28 @@ struct AssistantTurnView: View {
     }
 
     private var question: some View {
-        Text(turn.question)
-            .font(.body)
-            .foregroundStyle(Color(.ink))
-            .textSelection(.enabled)
-            .padding(.horizontal, AaruSpace.medium)
-            .padding(.vertical, AaruSpace.small)
-            .background(
-                Color(.accent).opacity(AaruAlpha.wash),
-                in: .rect(cornerRadius: AaruRadius.panel, style: .continuous)
-            )
-            .padding(.leading, AaruSpace.block)
-            .frame(maxWidth: .infinity, alignment: .trailing)
+        VStack(alignment: .trailing, spacing: AaruSpace.xsmall) {
+            if !turn.question.isEmpty {
+                Text(turn.question)
+                    .font(.body)
+                    .foregroundStyle(Color(.ink))
+                    .textSelection(.enabled)
+                    .padding(.horizontal, AaruSpace.medium)
+                    .padding(.vertical, AaruSpace.small)
+                    .background(
+                        Color(.accent).opacity(AaruAlpha.wash),
+                        in: .rect(cornerRadius: AaruRadius.panel, style: .continuous)
+                    )
+            }
+            ForEach(Array(turn.files.enumerated()), id: \.offset) { _, name in
+                Label(name, systemImage: "paperclip")
+                    .font(.footnote)
+                    .foregroundStyle(Color(.muted))
+                    .lineLimit(1)
+            }
+        }
+        .padding(.leading, AaruSpace.block)
+        .frame(maxWidth: .infinity, alignment: .trailing)
     }
 
     /// The server's line while it works; before its first frame, the words the group channels use.

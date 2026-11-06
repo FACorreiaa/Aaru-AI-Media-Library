@@ -49,18 +49,26 @@ public actor ChatThread {
         chatID = nil
     }
 
-    /// Sends one Chat turn. `onUpdate` gets the reply after every frame. Returns the final reply;
-    /// never throws.
+    /// Sends one Chat turn, with the files attached to it. `onUpdate` gets the reply after every
+    /// frame. Returns the final reply; never throws.
     public func send(
         _ body: String,
         hint: Components.Schemas.ChatHint?,
+        attachments: [String] = [],
         onUpdate: @escaping @Sendable (ChatReply) async -> Void
     ) async -> ChatReply {
         lastUsed = now()
         var reply = ChatReply()
-        await run(body, hint: hint, reply: &reply, onUpdate: onUpdate)
+        await run(Turn(body: body, hint: hint, attachments: attachments), reply: &reply, onUpdate: onUpdate)
         lastUsed = now()
         return reply
+    }
+
+    /// What one turn sends.
+    private struct Turn {
+        let body: String
+        let hint: Components.Schemas.ChatHint?
+        let attachments: [String]
     }
 
     /// A turn's retries so far: one new chat after a 404, a few waits on a busy one.
@@ -70,8 +78,7 @@ public actor ChatThread {
     }
 
     private func run(
-        _ body: String,
-        hint: Components.Schemas.ChatHint?,
+        _ turn: Turn,
         reply: inout ChatReply,
         onUpdate: @Sendable (ChatReply) async -> Void
     ) async {
@@ -83,7 +90,7 @@ public actor ChatThread {
                 return
             }
             guard let id = await turnChatID(started: started, reply: &reply),
-                  let output = await sendTurn(chat: id, body: body, hint: hint, started: started, reply: &reply)
+                  let output = await sendTurn(chat: id, turn: turn, started: started, reply: &reply)
             else { return }
             switch output {
             case let .ok(answer):
@@ -91,6 +98,11 @@ public actor ChatThread {
                 return
             case let .default(status, response):
                 let message = (try? response.body.json.message) ?? Self.unreachable
+                // Files belong to the chat they went into: a new chat would not have them.
+                if status == 404, !turn.attachments.isEmpty {
+                    reply.fail(Self.filesGone)
+                    return
+                }
                 guard await retry(status: status, chat: id, message: message, retries: &retries, reply: &reply)
                 else { return }
             }
@@ -122,8 +134,7 @@ public actor ChatThread {
     /// The turn's request; nil when it failed or a reset ran meanwhile, with the reply ended.
     private func sendTurn(
         chat id: String,
-        body: String,
-        hint: Components.Schemas.ChatHint?,
+        turn: Turn,
         started: Int,
         reply: inout ChatReply
     ) async -> Operations.CreateChatTurn.Output? {
@@ -131,7 +142,9 @@ public actor ChatThread {
         do {
             output = try await client.createChatTurn(
                 path: .init(id: id),
-                body: .json(.init(body: body, hint: hint))
+                body: .json(.init(
+                    body: turn.body, hint: turn.hint, attachments: turn.attachments.isEmpty ? nil : turn.attachments
+                ))
             )
         } catch {
             if Self.isCancellation(error) || generation != started {
@@ -237,6 +250,7 @@ public actor ChatThread {
     }
 
     private static let unreachable = "Aaru could not reach the server."
+    private static let filesGone = "Those files are no longer here. Attach them again."
 
     private static func isCancellation(_ error: any Error) -> Bool {
         if Task.isCancelled || error is CancellationError {
@@ -249,5 +263,58 @@ public actor ChatThread {
             return isCancellation(wrapped)
         }
         return false
+    }
+}
+
+// MARK: - Files (ASK-010)
+
+public extension ChatThread {
+    /// The chat files were attached to, or nil when there is none now.
+    func current() -> String? {
+        chatID
+    }
+
+    /// One file into the chat (ASK-010), made first when there is none, for the next turn to
+    /// carry. The server reads the bytes and decides what the file is; a refusal says why.
+    func attach(_ data: Data, name: String) async -> ChatAttachResult {
+        lastUsed = now()
+        let started = generation
+        let chat: String
+        if let known = chatID {
+            chat = known
+        } else {
+            switch await createChat() {
+            case let .id(created):
+                guard generation == started else { return .refused(Self.unreachable) }
+                chatID = created
+                chat = created
+            case .cancelled:
+                return .refused(Self.unreachable)
+            case let .failed(problem):
+                return .refused(problem)
+            }
+        }
+        let output: Operations.CreateChatAttachment.Output
+        do {
+            output = try await client.createChatAttachment(
+                path: .init(id: chat),
+                query: .init(filename: name.isEmpty ? nil : name),
+                body: .binary(HTTPBody(data))
+            )
+        } catch {
+            return .refused(Self.unreachable)
+        }
+        switch output {
+        case let .created(created):
+            guard let file = try? created.body.json else { return .refused(Self.unreachable) }
+            return .attached(chat: chat, file: ChatFile(file))
+        case let .default(_, response):
+            return .refused((try? response.body.json.message) ?? Self.unreachable)
+        }
+    }
+
+    /// A file taken back off before sending. A failure only leaves it to expire in an hour.
+    func detach(chat: String, id: String) async {
+        _ = try? await client.deleteChatAttachment(path: .init(id: chat, attachmentId: id))
     }
 }

@@ -7,6 +7,8 @@ import Observation
 struct AssistantTurn: Identifiable {
     let id: UUID
     let question: String
+    /// The names of the files it carried (ASK-010).
+    var files: [String] = []
     let spoken: Bool
     var reply: ChatReply
     var undone: Bool
@@ -43,6 +45,8 @@ final class AssistantModel {
     private(set) var level: Float = 0
     /// Bumped after any applied change or undo; title pages reload on it.
     private(set) var libraryChanges = 0
+    /// The files the next turn carries (ASK-010).
+    let files: AssistantFiles
     /// Persists on this device. Muting stops speech now.
     var isMuted: Bool {
         didSet {
@@ -75,7 +79,9 @@ final class AssistantModel {
     init(api: Client?, library: LibraryModel) {
         self.api = api
         self.library = library
-        thread = api.map { ChatThread(client: $0) }
+        let thread = api.map { ChatThread(client: $0) }
+        self.thread = thread
+        files = AssistantFiles(thread: thread)
         isMuted = UserDefaults.standard.bool(forKey: Self.mutedKey)
         Task { [weak self] in
             for await _ in NotificationCenter.default.notifications(named: .aaruChatsDeleted) {
@@ -107,6 +113,7 @@ final class AssistantModel {
             if !continues, phase == .idle {
                 turns = []
                 decidedPlans = [:]
+                files.clear()
             }
             // From idle only: while listening, toggling would stop the recording.
             guard started == flowToken, presentation.listening, voiceAvailable, phase == .idle else { return }
@@ -130,7 +137,7 @@ final class AssistantModel {
         micDenied = false
     }
 
-    /// Trims. Blank or over 4000 scalars does nothing, as does a flow already running.
+    /// Trims. Blank with no files, or over 4000 scalars, does nothing, as does a flow already running.
     func send(_ text: String) {
         _ = ask(text, language: nil)
     }
@@ -179,6 +186,7 @@ final class AssistantModel {
     func chatsDeleted() async {
         turns = []
         decidedPlans = [:]
+        files.clear()
         await thread?.reset()
     }
 
@@ -191,6 +199,7 @@ final class AssistantModel {
         hint = nil
         turns = []
         decidedPlans = [:]
+        files.clear()
         isAvailable = false
         voiceAvailable = false
         await thread?.reset()
@@ -212,21 +221,23 @@ final class AssistantModel {
     /// no turn started.
     private func ask(_ text: String, language: String?) -> Bool {
         let question = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard phase == .idle, let thread, !question.isEmpty,
+        guard phase == .idle, let thread, !files.isReading, !question.isEmpty || !files.ready.isEmpty,
               question.unicodeScalars.count <= Self.maxQuestionScalars
         else { return false }
         speaker.stop()
         voiceProblem = nil
+        let sent = files.take()
         let turnID = UUID()
         turns.append(AssistantTurn(
-            id: turnID, question: question, spoken: language != nil, reply: ChatReply(), undone: false
+            id: turnID, question: question, files: sent.map(\.name), spoken: language != nil, reply: ChatReply(),
+            undone: false
         ))
         phase = .answering
         let started = flowToken
         let account = accountToken
         let hint = hint
         startFlow { [weak self] in
-            let reply = await thread.send(question, hint: hint) { [weak self] reply in
+            let reply = await thread.send(question, hint: hint, attachments: sent.map(\.id)) { [weak self] reply in
                 await self?.update(turnID, with: reply, started)
             }
             self?.turnEnded(turnID, reply: reply, flow: started, account: account, language: language)
