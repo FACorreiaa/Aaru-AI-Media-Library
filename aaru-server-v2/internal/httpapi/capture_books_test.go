@@ -7,8 +7,11 @@ import (
 	"aaru-go-api/internal/model"
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"image"
+	"image/jpeg"
 	"math/rand/v2"
 	"mime/multipart"
 	"net/http"
@@ -46,6 +49,22 @@ func (e *captureEnv) captureBook(name, author string) {
 	e.search.searchMu.Lock()
 	e.search.hits[name] = append(e.search.hits[name], hit)
 	e.search.searchMu.Unlock()
+}
+
+// testPicture is a real JPEG of one grey, at least size bytes long: a 2×2 picture, then padding
+// past its end that a header read never reaches. Capture checks a picture's bytes (ASK-010).
+func testPicture(t testing.TB, grey byte, size int) []byte {
+	t.Helper()
+	img := image.NewGray(image.Rect(0, 0, 2, 2))
+	for i := range img.Pix {
+		img.Pix[i] = grey
+	}
+	var b bytes.Buffer
+	require.NoError(t, jpeg.Encode(&b, img, nil))
+	if pad := size - b.Len(); pad > 0 {
+		b.Write(make([]byte, pad))
+	}
+	return b.Bytes()
 }
 
 // capturePictures posts a multipart form of images, one part per entry.
@@ -202,7 +221,8 @@ func TestCaptureSeveralPicturesReachTheModelInOrderAndAreDeletedOnceRead(t *test
 	env := newCaptureEnv(t, m, nil)
 	env.captureBook(name, "Frank Herbert")
 
-	code, body := env.capturePictures("/v1/imports/capture?kind=book", []byte{1}, []byte{2}, []byte{3})
+	pictures := [][]byte{testPicture(t, 1, 0), testPicture(t, 2, 0), testPicture(t, 3, 0)}
+	code, body := env.capturePictures("/v1/imports/capture?kind=book", pictures...)
 	require.Equal(t, 202, code, body)
 	id := body["id"].(string)
 	input := env.captureInput(id)
@@ -214,8 +234,8 @@ func TestCaptureSeveralPicturesReachTheModelInOrderAndAreDeletedOnceRead(t *test
 	require.Len(t, m.requests, 1)
 	content := m.requests[0].Turns[0].Content
 	require.Len(t, content, 4, "three pictures, then the text")
-	for i, want := range []string{"AQ==", "Ag==", "Aw=="} {
-		assert.Contains(t, string(content[i]), want, "picture %d", i)
+	for i, picture := range pictures {
+		assert.Contains(t, string(content[i]), base64.StdEncoding.EncodeToString(picture), "picture %d", i)
 	}
 	assert.Nil(t, env.captureInput(id))
 	var left int
@@ -227,7 +247,8 @@ func TestCaptureSeveralPicturesReachTheModelInOrderAndAreDeletedOnceRead(t *test
 func TestCapturePictureLimits(t *testing.T) {
 	env := newCaptureEnv(t, &captureModel{}, nil)
 
-	code, body := env.capturePictures("/v1/imports/capture", []byte{1}, []byte{2}, []byte{3}, []byte{4}, []byte{5}, []byte{6})
+	one := testPicture(t, 1, 0)
+	code, body := env.capturePictures("/v1/imports/capture", one, one, one, one, one, one)
 	assert.Equal(t, 422, code)
 	assert.Equal(t, "capture_too_many_images", body["code"])
 
@@ -235,7 +256,7 @@ func TestCapturePictureLimits(t *testing.T) {
 	assert.Equal(t, http.StatusRequestEntityTooLarge, code)
 	assert.Equal(t, "file_too_large", body["code"])
 
-	four := bytes.Repeat([]byte{1}, 4*1024*1024)
+	four := testPicture(t, 4, 4*1024*1024)
 	code, body = env.capturePictures("/v1/imports/capture", four, four, four, four)
 	assert.Equal(t, http.StatusRequestEntityTooLarge, code)
 	assert.Equal(t, "file_too_large", body["code"])

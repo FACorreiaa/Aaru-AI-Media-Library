@@ -5,6 +5,7 @@ import (
 	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/imports"
 	"aaru-go-api/internal/model"
+	"aaru-go-api/internal/upload"
 	"encoding/json"
 	"errors"
 	"io"
@@ -79,11 +80,15 @@ func (s *Server) createCaptureImport(c *echo.Context) error {
 				WithDetails(map[string]string{"body": "Exactly one of text and url."})
 		}
 	case "image/jpeg", "image/png", "image/gif", "image/webp":
-		image, err := readUpload(c, imports.MaxUploadBytes, errImageTooLarge)
+		data, err := readUpload(c, imports.MaxUploadBytes, errImageTooLarge)
 		if err != nil {
 			return err
 		}
-		req.Images = []model.Image{{Data: image, MediaType: mediaType}}
+		image, err := checkCaptureImage(data, mediaType)
+		if err != nil {
+			return err
+		}
+		req.Images = []model.Image{image}
 	case "multipart/form-data":
 		images, err := readCaptureImages(c)
 		if err != nil {
@@ -153,9 +158,33 @@ func readCaptureImages(c *echo.Context) ([]model.Image, error) {
 		if err != nil {
 			return nil, errUnreadable
 		}
-		images = append(images, model.Image{Data: data, MediaType: strings.ToLower(mediaType)})
+		image, err := checkCaptureImage(data, strings.ToLower(mediaType))
+		if err != nil {
+			return nil, err
+		}
+		images = append(images, image)
 	}
 }
+
+// pictureDoor is what capture's pictures go through (ASK-010).
+var pictureDoor = upload.Door{Accept: []upload.Kind{upload.KindImage}}
+
+// checkCaptureImage is a picture sent as a type capture reads, whose bytes say it is that type and
+// whose header declares a size a decoder can hold.
+func checkCaptureImage(data []byte, declared string) (model.Image, error) {
+	if !imports.CaptureImageTypes[declared] {
+		return model.Image{}, errCaptureImageType
+	}
+	file, err := upload.Check("", declared, data, pictureDoor)
+	if err != nil {
+		return model.Image{}, err
+	}
+	return model.Image{Data: file.Data, MediaType: file.MediaType}, nil
+}
+
+// errCaptureImageType is a picture capture does not read, as imports refuses it.
+var errCaptureImageType = apperr.New(http.StatusUnsupportedMediaType, "capture_image_type",
+	"Send the image as a JPEG, PNG, GIF or WebP.")
 
 // tooLargeOrBad is a body the middleware cut off past its limit, or one that is not a form.
 func tooLargeOrBad(err error) error {
