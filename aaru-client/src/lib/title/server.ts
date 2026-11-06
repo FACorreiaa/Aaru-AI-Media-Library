@@ -6,6 +6,7 @@ import { errorMessage } from '../api/errors'
 import { sessionRejected, sessionToken } from '../session/guard'
 import type { LibraryEntry } from '../library/model'
 import type { ShowWatched, TitleDetail } from './model'
+import type { RelationGraph } from './relations'
 import { MEDIA_TYPES } from '../media'
 import { PREVIEW_PROVIDERS } from './preview'
 
@@ -231,3 +232,28 @@ export const resolveTitle = createServerFn({ method: 'GET' })
       return preview
     },
   )
+
+/** GRAPH-002: the title's relation graph, marked with the caller's library. A graph the server
+ * cut short says `partial`; asking again a few seconds later finds the rest cached. */
+export const loadRelations = createServerFn({ method: 'GET' })
+  .validator(
+    z.object({
+      titleId: z.string().uuid(),
+      order: z.enum(['release', 'story']).optional(),
+    }),
+  )
+  .handler(async ({ data }): Promise<RelationGraph> => {
+    const {
+      data: graph,
+      error,
+      response,
+    } = await api(sessionToken()).GET('/v1/titles/{id}/relations', {
+      params: { path: { id: data.titleId }, query: { order: data.order } },
+    })
+    if (response.status === 401) sessionRejected()
+    if (!graph)
+      throw new Error(
+        errorMessage(error, 'Related titles could not be loaded.'),
+      )
+    return graph
+  })

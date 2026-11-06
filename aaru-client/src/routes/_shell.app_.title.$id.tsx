@@ -24,6 +24,7 @@ import { RecommendDialog } from '../components/Recommendations'
 import { ShareDialog } from '../components/ShareDialog'
 import { EpisodeSheet } from '../components/EpisodeSheet'
 import { PostCard } from '../components/board/PostCard'
+import { RelatedTitles } from '../components/RelatedTitles'
 import { Poster } from '../components/Poster'
 import { SeasonMap } from '../components/SeasonMap'
 import { Segmented } from '../components/Segmented'
@@ -584,6 +585,8 @@ function TitleRoom() {
             <Show when={isAlbum()}>
               <Tracklist tracks={title()?.tracks} />
             </Show>
+
+            <RelatedTitles titleId={entry().title.id} />
 
             <Show when={entry().title.type === 'show'}>
               <Show when={page().titleError}>

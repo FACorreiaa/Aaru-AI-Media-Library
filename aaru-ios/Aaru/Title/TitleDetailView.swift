@@ -26,6 +26,7 @@ struct TitleDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) private var typeSize
     private let lists: ListsModel
+    private let library: LibraryModel
 
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var sizeClass
@@ -40,6 +41,7 @@ struct TitleDetailView: View {
     init(entry: LibraryEntry, api: Client?, library: LibraryModel, lists: ListsModel, title: TitleDetail? = nil) {
         _model = State(initialValue: TitleDetailModel(entry: entry, api: api, library: library, title: title))
         self.lists = lists
+        self.library = library
     }
 
     private var entry: LibraryEntry {
@@ -281,6 +283,7 @@ extension TitleDetailView {
         if model.isShow {
             TitleSeasons(model: model, expanded: $expandedSeasons, onOpen: { openEpisode = $0 }, retry: load)
         }
+        TitleRelated(api: model.api, titleID: entry.title.id, library: library, lists: lists)
         TitleFromFriends(api: model.api, summary: entry.title)
     }
 }

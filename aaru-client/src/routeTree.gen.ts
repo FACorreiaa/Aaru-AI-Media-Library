@@ -42,6 +42,7 @@ import { Route as AppAssistantVoiceRouteImport } from './routes/app_.assistant.v
 import { Route as AppAvatarsUserIdRouteImport } from './routes/app_.avatars.$userId'
 import { Route as ShellAppFriendsIndexRouteImport } from './routes/_shell.app_.friends.index'
 import { Route as ShellAppFriendsHandleRouteImport } from './routes/_shell.app_.friends.$handle'
+import { Route as ShellAppGraphTitleIdRouteImport } from './routes/_shell.app_.graph.$titleId'
 import { Route as ShellAppGroupsIndexRouteImport } from './routes/_shell.app_.groups.index'
 import { Route as ShellAppGroupsGroupIdRouteImport } from './routes/_shell.app_.groups.$groupId'
 import { Route as ShellAppImportsIdRouteImport } from './routes/_shell.app_.imports.$id'
@@ -232,6 +233,11 @@ const ShellAppFriendsHandleRoute = ShellAppFriendsHandleRouteImport.update({
   path: '/app/friends/$handle',
   getParentRoute: () => ShellRoute,
 } as any)
+const ShellAppGraphTitleIdRoute = ShellAppGraphTitleIdRouteImport.update({
+  id: '/app_/graph/$titleId',
+  path: '/app/graph/$titleId',
+  getParentRoute: () => ShellRoute,
+} as any)
 const ShellAppGroupsIndexRoute = ShellAppGroupsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -392,6 +398,7 @@ export interface FileRoutesByFullPath {
   '/app/assistant/voice': typeof AppAssistantVoiceRoute
   '/app/avatars/$userId': typeof AppAvatarsUserIdRoute
   '/app/friends/$handle': typeof ShellAppFriendsHandleRoute
+  '/app/graph/$titleId': typeof ShellAppGraphTitleIdRoute
   '/app/groups/$groupId': typeof ShellAppGroupsGroupIdRouteWithChildren
   '/app/imports/$id': typeof ShellAppImportsIdRoute
   '/app/lists/$id': typeof ShellAppListsIdRoute
@@ -448,6 +455,7 @@ export interface FileRoutesByTo {
   '/app/assistant/voice': typeof AppAssistantVoiceRoute
   '/app/avatars/$userId': typeof AppAvatarsUserIdRoute
   '/app/friends/$handle': typeof ShellAppFriendsHandleRoute
+  '/app/graph/$titleId': typeof ShellAppGraphTitleIdRoute
   '/app/imports/$id': typeof ShellAppImportsIdRoute
   '/app/lists/$id': typeof ShellAppListsIdRoute
   '/app/plans/$id': typeof ShellAppPlansIdRoute
@@ -507,6 +515,7 @@ export interface FileRoutesById {
   '/app_/assistant/voice': typeof AppAssistantVoiceRoute
   '/app_/avatars/$userId': typeof AppAvatarsUserIdRoute
   '/_shell/app_/friends/$handle': typeof ShellAppFriendsHandleRoute
+  '/_shell/app_/graph/$titleId': typeof ShellAppGraphTitleIdRoute
   '/_shell/app_/groups/$groupId': typeof ShellAppGroupsGroupIdRouteWithChildren
   '/_shell/app_/imports/$id': typeof ShellAppImportsIdRoute
   '/_shell/app_/lists/$id': typeof ShellAppListsIdRoute
@@ -567,6 +576,7 @@ export interface FileRouteTypes {
     | '/app/assistant/voice'
     | '/app/avatars/$userId'
     | '/app/friends/$handle'
+    | '/app/graph/$titleId'
     | '/app/groups/$groupId'
     | '/app/imports/$id'
     | '/app/lists/$id'
@@ -623,6 +633,7 @@ export interface FileRouteTypes {
     | '/app/assistant/voice'
     | '/app/avatars/$userId'
     | '/app/friends/$handle'
+    | '/app/graph/$titleId'
     | '/app/imports/$id'
     | '/app/lists/$id'
     | '/app/plans/$id'
@@ -681,6 +692,7 @@ export interface FileRouteTypes {
     | '/app_/assistant/voice'
     | '/app_/avatars/$userId'
     | '/_shell/app_/friends/$handle'
+    | '/_shell/app_/graph/$titleId'
     | '/_shell/app_/groups/$groupId'
     | '/_shell/app_/imports/$id'
     | '/_shell/app_/lists/$id'
@@ -960,6 +972,13 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof ShellAppFriendsHandleRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_shell/app_/graph/$titleId': {
+      id: '/_shell/app_/graph/$titleId'
+      path: '/app/graph/$titleId'
+      fullPath: '/app/graph/$titleId'
+      preLoaderRoute: typeof ShellAppGraphTitleIdRouteImport
+      parentRoute: typeof ShellRoute
+    }
     '/_shell/app_/groups/': {
       id: '/_shell/app_/groups/'
       path: '/'
@@ -1210,6 +1229,7 @@ interface ShellRouteChildren {
   ShellAppSportsRoute: typeof ShellAppSportsRoute
   ShellAppWeekRoute: typeof ShellAppWeekRoute
   ShellAppFriendsHandleRoute: typeof ShellAppFriendsHandleRoute
+  ShellAppGraphTitleIdRoute: typeof ShellAppGraphTitleIdRoute
   ShellAppImportsIdRoute: typeof ShellAppImportsIdRoute
   ShellAppListsIdRoute: typeof ShellAppListsIdRoute
   ShellAppPlansIdRoute: typeof ShellAppPlansIdRoute
@@ -1238,6 +1258,7 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellAppSportsRoute: ShellAppSportsRoute,
   ShellAppWeekRoute: ShellAppWeekRoute,
   ShellAppFriendsHandleRoute: ShellAppFriendsHandleRoute,
+  ShellAppGraphTitleIdRoute: ShellAppGraphTitleIdRoute,
   ShellAppImportsIdRoute: ShellAppImportsIdRoute,
   ShellAppListsIdRoute: ShellAppListsIdRoute,
   ShellAppPlansIdRoute: ShellAppPlansIdRoute,
