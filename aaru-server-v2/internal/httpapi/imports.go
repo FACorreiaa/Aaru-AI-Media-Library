@@ -14,7 +14,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 // ImportHandlers.swift: file and account imports, the plan, approval and row triage.
@@ -160,7 +160,7 @@ var errFileTooLarge = apperr.New(http.StatusRequestEntityTooLarge, "file_too_lar
 	"That file is larger than 5 MB. Exports are usually much smaller; check it is the right file.")
 
 // contentType is the request's media type, lowercased, without parameters.
-func contentType(c echo.Context) string {
+func contentType(c *echo.Context) string {
 	mt, _, err := mime.ParseMediaType(c.Request().Header.Get("Content-Type"))
 	if err != nil {
 		return ""
@@ -170,7 +170,7 @@ func contentType(c echo.Context) string {
 
 // readUpload is an upload's bytes up to limit. An oversized one is refused from its declared
 // length, before a byte is read; one that turns out larger is refused once limit is passed.
-func readUpload(c echo.Context, limit int64, tooLarge error) ([]byte, error) {
+func readUpload(c *echo.Context, limit int64, tooLarge error) ([]byte, error) {
 	req := c.Request()
 	if req.ContentLength > limit {
 		return nil, tooLarge
@@ -191,7 +191,7 @@ func readUpload(c echo.Context, limit int64, tooLarge error) ([]byte, error) {
 
 // uploadText is an upload's text, decoded as UTF-8 with invalid bytes replaced, as Swift's
 // String(decoding:as:) did.
-func uploadText(c echo.Context) (string, error) {
+func uploadText(c *echo.Context) (string, error) {
 	data, err := readUpload(c, imports.MaxUploadBytes, errFileTooLarge)
 	if err != nil {
 		return "", err
@@ -199,7 +199,7 @@ func uploadText(c echo.Context) (string, error) {
 	return strings.ToValidUTF8(string(data), "�"), nil
 }
 
-func optionalQuery(c echo.Context, name string) *string {
+func optionalQuery(c *echo.Context, name string) *string {
 	if _, ok := c.QueryParams()[name]; !ok {
 		return nil
 	}
@@ -209,7 +209,7 @@ func optionalQuery(c echo.Context, name string) *string {
 
 // createCSVImport is `POST /v1/imports/csv`: a text export (text/csv, application/xml) or, as
 // application/octet-stream, a listening history file (MUS-004).
-func (s *Server) createCSVImport(c echo.Context) error {
+func (s *Server) createCSVImport(c *echo.Context) error {
 	ctx := c.Request().Context()
 	user, err := currentUser(ctx)
 	if err != nil {
@@ -275,7 +275,7 @@ func fileSource(asked, text string) (core.ImportSource, error) {
 
 // createCATImport is `POST /v1/imports/cat`: a pasted CAT list (text/plain) or its calendar file
 // (text/calendar).
-func (s *Server) createCATImport(c echo.Context) error {
+func (s *Server) createCATImport(c *echo.Context) error {
 	ctx := c.Request().Context()
 	user, err := currentUser(ctx)
 	if err != nil {

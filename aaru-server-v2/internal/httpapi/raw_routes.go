@@ -5,7 +5,7 @@ import (
 	"aaru-go-api/internal/middleware"
 	"net/http"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 var isNoRows = db.IsNoRows
@@ -34,7 +34,7 @@ func (s *Server) registerRawRoutes(e *echo.Echo) {
 // internalMetrics is `GET /internal/metrics` → `{"users": N}` for the board at
 // facorreia.com/apps, called in-cluster with METRICS_SECRET. Bearer only,
 // compared in constant time; an empty secret turns the route off (404).
-func (s *Server) internalMetrics(c echo.Context) error {
+func (s *Server) internalMetrics(c *echo.Context) error {
 	secret := s.Config.MetricsSecret
 	if secret == "" {
 		return c.NoContent(http.StatusNotFound)

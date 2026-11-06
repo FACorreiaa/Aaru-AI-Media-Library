@@ -127,7 +127,7 @@ func TestASaturatedPoolAnswers503WithinThePoolTimeout(t *testing.T) {
 func TestBodyLimitAndDeadlineTablesNameRealRoutes(t *testing.T) {
 	h := newHarness(t)
 	routes := map[string]bool{}
-	for _, r := range h.echo.Routes() {
+	for _, r := range h.echo.Router().Routes() {
 		routes[r.Method+" "+r.Path] = true
 	}
 	for key := range ownBodyLimits {

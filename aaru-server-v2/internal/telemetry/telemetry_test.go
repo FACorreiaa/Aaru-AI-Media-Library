@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -73,8 +73,8 @@ func TestServerErrorReachesSentryWithNothingFromTheRequest(t *testing.T) {
 
 	e := echo.New()
 	e.Use(middleware.Errors(quiet, sentry))
-	e.GET("/v1/titles/:id", func(echo.Context) error { return leaky{} })
-	e.GET("/v1/missing", func(echo.Context) error { return echo.ErrNotFound })
+	e.GET("/v1/titles/:id", func(*echo.Context) error { return leaky{} })
+	e.GET("/v1/missing", func(*echo.Context) error { return echo.ErrNotFound })
 	for _, path := range []string{"/v1/missing", "/v1/titles/0b6a2f63-id?q=private"} {
 		req := httptest.NewRequest(http.MethodGet, path, nil)
 		req.Header.Set("Authorization", "Bearer session-token")

@@ -997,7 +997,7 @@ func TestChatRoutesInSpec(t *testing.T) {
 	require.NoError(t, err)
 	e := newChatEnv(t, nil)
 	routes := map[string]bool{}
-	for _, r := range e.echo.Routes() {
+	for _, r := range e.echo.Router().Routes() {
 		routes[r.Method+" "+r.Path] = true
 	}
 	for _, route := range []struct{ method, path, echo, operation string }{

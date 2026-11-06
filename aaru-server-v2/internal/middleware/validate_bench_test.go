@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 // BenchmarkValidate is PERF-005's measurement: what the request validator costs per request,
@@ -23,7 +23,7 @@ func BenchmarkValidate(b *testing.B) {
 		b.Fatal(err)
 	}
 	e := echo.New()
-	handler := validate(func(echo.Context) error { return nil })
+	handler := validate(func(*echo.Context) error { return nil })
 	cases := []struct {
 		name, method, path, body string
 	}{

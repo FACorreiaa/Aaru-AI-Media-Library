@@ -12,7 +12,7 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 // errListenFileTooLarge is a listening file over 24 MB.
@@ -22,7 +22,7 @@ var errListenFileTooLarge = apperr.New(http.StatusRequestEntityTooLarge, "file_t
 
 // createListenFileImport is a Spotify or YouTube listening history file (application/octet-stream
 // on `POST /v1/imports/csv`). Bigger than an export, so its own limit.
-func (s *Server) createListenFileImport(c echo.Context, user uuid.UUID, asked string, filename *string) error {
+func (s *Server) createListenFileImport(c *echo.Context, user uuid.UUID, asked string, filename *string) error {
 	var source *core.ImportSource
 	switch asked {
 	case "spotify":

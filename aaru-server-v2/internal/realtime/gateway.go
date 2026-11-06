@@ -14,7 +14,7 @@ import (
 
 	"github.com/coder/websocket"
 	"github.com/google/uuid"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 // Gateway limits (RealtimeRoutes.swift).
@@ -70,7 +70,7 @@ var (
 )
 
 // authenticate signs in an upgrade by bearer token, or by ticket from an allowed Origin.
-func (g *Gateway) authenticate(c echo.Context) (uuid.UUID, error) {
+func (g *Gateway) authenticate(c *echo.Context) (uuid.UUID, error) {
 	req := c.Request()
 	if bearer := middleware.BearerToken(req.Header.Get("Authorization")); bearer != "" {
 		user, ok, err := g.Sessions.UserIDForTokenHash(req.Context(), token.Hash(bearer), time.Now())
@@ -96,7 +96,7 @@ func (g *Gateway) authenticate(c echo.Context) (uuid.UUID, error) {
 }
 
 // Handle is the upgrade route.
-func (g *Gateway) Handle(c echo.Context) error {
+func (g *Gateway) Handle(c *echo.Context) error {
 	user, err := g.authenticate(c)
 	if err != nil {
 		return err

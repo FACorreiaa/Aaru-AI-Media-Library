@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 // RequestLog writes one line per request, when it is answered (HLT-005); the line as it
@@ -16,7 +16,7 @@ import (
 // carry `code` and `state`.
 func RequestLog(log *slog.Logger) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
+		return func(c *echo.Context) error {
 			req := c.Request()
 			ctx := req.Context()
 			path := Redacted(req.URL.Path, req.URL.RawQuery)
@@ -26,7 +26,7 @@ func RequestLog(log *slog.Logger) echo.MiddlewareFunc {
 			log.InfoContext(ctx, "Response",
 				"hb.request.path", path,
 				"hb.request.method", req.Method,
-				"hb.response.status", c.Response().Status,
+				"hb.response.status", Status(c),
 				"hb.response.ms", time.Since(started).Milliseconds(),
 			)
 			return err

@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 // defaultBodyLimit bounds every request body but those in ownBodyLimits (HTTP-001): the
@@ -70,10 +70,10 @@ var noDeadline = map[string]bool{
 	"DELETE /v1/me":                                true,
 }
 
-func routeKey(c echo.Context) string { return c.Request().Method + " " + c.Path() }
+func routeKey(c *echo.Context) string { return c.Request().Method + " " + c.Path() }
 
 // bodyRule is the request's body bound: its route's own, capture's JSON limit, or the default.
-func bodyRule(c echo.Context) middleware.BodyRule {
+func bodyRule(c *echo.Context) middleware.BodyRule {
 	key := routeKey(c)
 	if key == "POST /v1/imports/capture" && contentType(c) == "application/json" {
 		return middleware.BodyRule{Limit: captureJSONLimit, TooLarge: errCaptureTooLarge, ReadTimeout: bodyReadTimeout}
@@ -94,11 +94,10 @@ func bodyRule(c echo.Context) middleware.BodyRule {
 // panic recovery, body limits, the request deadline, auth, client time zone, avatar cache headers, then the generated `/v1` handlers and
 // the routes outside openapi.yaml.
 func (s *Server) Router(reporter middleware.Reporter) *echo.Echo {
+	// No banner to hide: echo v5 prints nothing unless it starts the server, and app.serve does.
 	e := echo.New()
-	e.HideBanner = true
-	e.HidePort = true
-	e.HTTPErrorHandler = func(err error, c echo.Context) {
-		if c.Response().Committed {
+	e.HTTPErrorHandler = func(c *echo.Context, err error) {
+		if middleware.Committed(c) {
 			return
 		}
 		_ = middleware.Write(c, middleware.Map(err))
@@ -120,7 +119,7 @@ func (s *Server) Router(reporter middleware.Reporter) *echo.Echo {
 		// Inside Errors, so a panic is answered, logged and reported as a 500 (REL-001).
 		middleware.Recover(),
 		middleware.BodyLimit(bodyRule),
-		middleware.Deadline(requestTimeout, func(c echo.Context) bool { return noDeadline[routeKey(c)] }),
+		middleware.Deadline(requestTimeout, func(c *echo.Context) bool { return noDeadline[routeKey(c)] }),
 		middleware.Auth(sessionLookup{s.q}, s.Config.WebClientSecret, s.Config.HTTP.TrustedProxyHops),
 		middleware.ClientTimeZone(),
 		middleware.AvatarCache(),

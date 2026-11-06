@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"runtime/debug"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 // PanicError is a panic turned into an error, with the goroutine's stack where it happened: a
@@ -18,7 +18,7 @@ type PanicError = safe.PanicError
 // http.ErrAbortHandler is net/http's deliberate abort and is panicked on.
 func Recover() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) (err error) {
+		return func(c *echo.Context) (err error) {
 			defer func() {
 				r := recover()
 				if r == nil {

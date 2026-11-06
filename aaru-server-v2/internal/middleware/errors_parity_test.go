@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -26,7 +26,7 @@ func errorsRouterParity(logs *bytes.Buffer) *echo.Echo {
 // APITests.validationShape: a validation failure returns 422 naming the field.
 func TestAValidationFailureIs422NamingTheField(t *testing.T) {
 	e := errorsRouterParity(&bytes.Buffer{})
-	e.GET("/test/rating", func(echo.Context) error {
+	e.GET("/test/rating", func(*echo.Context) error {
 		_, err := core.NewRating(11)
 		return err
 	})
@@ -49,7 +49,7 @@ func (secretErrorParity) Error() string { return "Secret" }
 // APITests.internalErrorIsOpaque: an unexpected error is an opaque 500.
 func TestAnUnexpectedErrorIsAnOpaque500(t *testing.T) {
 	e := errorsRouterParity(&bytes.Buffer{})
-	e.GET("/test/boom", func(echo.Context) error { return secretErrorParity{} })
+	e.GET("/test/boom", func(*echo.Context) error { return secretErrorParity{} })
 	rec := httptest.NewRecorder()
 	e.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/test/boom", nil))
 	assert.Equal(t, http.StatusInternalServerError, rec.Code)
@@ -62,7 +62,7 @@ func TestAnUnexpectedErrorIsAnOpaque500(t *testing.T) {
 func TestA5xxLogLineNeverCarriesTheRequest(t *testing.T) {
 	var logs bytes.Buffer
 	e := errorsRouterParity(&logs)
-	e.POST("/v1/search", func(echo.Context) error {
+	e.POST("/v1/search", func(*echo.Context) error {
 		return provider.NewError("tmdb", provider.KindUnavailable)
 	})
 	req := httptest.NewRequest(http.MethodPost, "/v1/search?q=private-query", strings.NewReader(`{"secret":"body-secret"}`))

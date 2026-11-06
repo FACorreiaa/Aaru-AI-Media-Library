@@ -20,7 +20,7 @@ import (
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/oapi-codegen/runtime"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
@@ -5233,601 +5233,601 @@ type SaveWebPushSubscriptionJSONRequestBody = WebPushSubscription
 type ServerInterface interface {
 	// ListActions The action journal, newest first. Backs the undo ribbon.
 	// (GET /v1/actions)
-	ListActions(ctx echo.Context, params ListActionsParams) error
+	ListActions(ctx *echo.Context, params ListActionsParams) error
 	// UndoAction Apply an action's inverse. Journaled as its own action; undoing twice is 409.
 	// (POST /v1/actions/{id}/undo)
-	UndoAction(ctx echo.Context, id apiid.UUID) error
+	UndoAction(ctx *echo.Context, id apiid.UUID) error
 	// ListFriendActivity Your friends' last two weeks, newest first, one row per friend, title and day. Only dated episode ticks and finishes; imports never show. Friends who hide their library are left out.
 	// (GET /v1/activity)
-	ListFriendActivity(ctx echo.Context, params ListFriendActivityParams) error
+	ListFriendActivity(ctx *echo.Context, params ListFriendActivityParams) error
 
 	// (DELETE /v1/activity/{id}/reaction)
-	ClearActivityReaction(ctx echo.Context, id string) error
+	ClearActivityReaction(ctx *echo.Context, id string) error
 	// SetActivityReaction React to a friend's activity row with one of six emoji; reacting again replaces it. Your own rows take none. 404 unless you can see the row.
 	// (PUT /v1/activity/{id}/reaction)
-	SetActivityReaction(ctx echo.Context, id string) error
+	SetActivityReaction(ctx *echo.Context, id string) error
 	// GetAgentSetup How to connect one MCP client (OUT-004), with a placeholder where the secret goes, so Settings can show the steps before a token exists.
 	// (GET /v1/agent/setup/{kind})
-	GetAgentSetup(ctx echo.Context, kind AgentMCPKind) error
+	GetAgentSetup(ctx *echo.Context, kind AgentMCPKind) error
 	// ListAgentTokens The user's live agent tokens (OUT-001), newest first. Secrets are never returned.
 	// (GET /v1/agent/tokens)
-	ListAgentTokens(ctx echo.Context, params ListAgentTokensParams) error
+	ListAgentTokens(ctx *echo.Context, params ListAgentTokensParams) error
 	// CreateAgentToken Mint a token for an outside caller. A Stremio token's answer carries the addon's install links; an MCP client's carries its setup, with the secret filled in. The secret is shown once.
 	// (POST /v1/agent/tokens)
-	CreateAgentToken(ctx echo.Context) error
+	CreateAgentToken(ctx *echo.Context) error
 	// RevokeAgentToken Revoke a token. Its addon stops answering at once.
 	// (DELETE /v1/agent/tokens/{id})
-	RevokeAgentToken(ctx echo.Context, id apiid.UUID) error
+	RevokeAgentToken(ctx *echo.Context, id apiid.UUID) error
 	// SignInWithApple Exchange a Sign in with Apple identity token for a session.
 	// (POST /v1/auth/apple)
-	SignInWithApple(ctx echo.Context) error
+	SignInWithApple(ctx *echo.Context) error
 	// RequestMagicLink Email a one-time sign-in link. Same answer whether or not an account exists.
 	// (POST /v1/auth/email/link)
-	RequestMagicLink(ctx echo.Context) error
+	RequestMagicLink(ctx *echo.Context) error
 	// VerifyMagicLink Exchange a magic-link token, or the email and its 6-digit code, for a session. Creates the account on first use.
 	// (POST /v1/auth/email/verify)
-	VerifyMagicLink(ctx echo.Context) error
+	VerifyMagicLink(ctx *echo.Context) error
 	// SignInWithGoogle Exchange a Google ID token for a session. Creates the account on first use.
 	// (POST /v1/auth/google)
-	SignInWithGoogle(ctx echo.Context) error
+	SignInWithGoogle(ctx *echo.Context) error
 	// SignOut End the current session.
 	// (DELETE /v1/auth/session)
-	SignOut(ctx echo.Context) error
+	SignOut(ctx *echo.Context) error
 	// ReceiveAppleNotification App Store Server Notifications v2 (BIL-003): renewals, expiries, refunds. Unauthenticated; the payload is verified up to Apple's root certificate.
 	// (POST /v1/billing/apple/notifications)
-	ReceiveAppleNotification(ctx echo.Context) error
+	ReceiveAppleNotification(ctx *echo.Context) error
 	// RecordAppleTransaction A purchase or a restore, from the Apple app that made it (BIL-002). The signed transaction must carry this account's `appAccountToken`; 409 `plus_other_account` when it names another, 422 `invalid_transaction` when it does not verify.
 	// (POST /v1/billing/apple/transactions)
-	RecordAppleTransaction(ctx echo.Context) error
+	RecordAppleTransaction(ctx *echo.Context) error
 	// ListBoard The Board feed. Posts by you and your friends. `top` is this week's most upvoted, at most 10.
 	// (GET /v1/board)
-	ListBoard(ctx echo.Context, params ListBoardParams) error
+	ListBoard(ctx *echo.Context, params ListBoardParams) error
 	// CreateBoardPost Post to the Board. Needs a handle.
 	// (POST /v1/board/posts)
-	CreateBoardPost(ctx echo.Context) error
+	CreateBoardPost(ctx *echo.Context) error
 	// DeleteBoardPost Delete your own post.
 	// (DELETE /v1/board/posts/{postId})
-	DeleteBoardPost(ctx echo.Context, postId apiid.UUID) error
+	DeleteBoardPost(ctx *echo.Context, postId apiid.UUID) error
 	// GetBoardPost One post. 404 unless it is yours or a friend's.
 	// (GET /v1/board/posts/{postId})
-	GetBoardPost(ctx echo.Context, postId apiid.UUID) error
+	GetBoardPost(ctx *echo.Context, postId apiid.UUID) error
 	// EditBoardPost Edit your own post.
 	// (PATCH /v1/board/posts/{postId})
-	EditBoardPost(ctx echo.Context, postId apiid.UUID) error
+	EditBoardPost(ctx *echo.Context, postId apiid.UUID) error
 	// ListBoardComments Comments on a post, oldest first, minus anyone blocked either way with you. A deleted comment with replies stays as an empty row; one without is dropped. A page can come back shorter than the limit.
 	// (GET /v1/board/posts/{postId}/comments)
-	ListBoardComments(ctx echo.Context, postId apiid.UUID, params ListBoardCommentsParams) error
+	ListBoardComments(ctx *echo.Context, postId apiid.UUID, params ListBoardCommentsParams) error
 	// CreateBoardComment Comment on a post. A reply to a reply hangs off the top-level comment. 404 unless the post is yours or a friend's.
 	// (POST /v1/board/posts/{postId}/comments)
-	CreateBoardComment(ctx echo.Context, postId apiid.UUID) error
+	CreateBoardComment(ctx *echo.Context, postId apiid.UUID) error
 	// DeleteBoardComment Delete a comment. Its author or the post's author can.
 	// (DELETE /v1/board/posts/{postId}/comments/{commentId})
-	DeleteBoardComment(ctx echo.Context, postId apiid.UUID, commentId apiid.UUID) error
+	DeleteBoardComment(ctx *echo.Context, postId apiid.UUID, commentId apiid.UUID) error
 	// RemoveBoardPostUpvote Take your upvote back. Fine if you never gave one.
 	// (DELETE /v1/board/posts/{postId}/upvote)
-	RemoveBoardPostUpvote(ctx echo.Context, postId apiid.UUID) error
+	RemoveBoardPostUpvote(ctx *echo.Context, postId apiid.UUID) error
 	// UpvoteBoardPost Upvote a post. Upvoting twice counts once. 404 unless the post is yours or a friend's.
 	// (PUT /v1/board/posts/{postId}/upvote)
-	UpvoteBoardPost(ctx echo.Context, postId apiid.UUID) error
+	UpvoteBoardPost(ctx *echo.Context, postId apiid.UUID) error
 	// ListBoardPostUpvoters Who upvoted a post, minus anyone blocked either way with you.
 	// (GET /v1/board/posts/{postId}/upvotes)
-	ListBoardPostUpvoters(ctx echo.Context, postId apiid.UUID) error
+	ListBoardPostUpvoters(ctx *echo.Context, postId apiid.UUID) error
 	// GetCalendar Episodes of tracked shows airing in [from, to), at most 42 days (a month grid). Times are UTC.
 	// (GET /v1/calendar)
-	GetCalendar(ctx echo.Context, params GetCalendarParams) error
+	GetCalendar(ctx *echo.Context, params GetCalendarParams) error
 	// DeleteChats Delete all of the caller's chats with Aaru, their turns with them.
 	// (DELETE /v1/chats)
-	DeleteChats(ctx echo.Context) error
+	DeleteChats(ctx *echo.Context) error
 	// CreateChat Start a Chat with Aaru (ASK-009), a one-to-one thread only its user can read.
 	// (POST /v1/chats)
-	CreateChat(ctx echo.Context) error
+	CreateChat(ctx *echo.Context) error
 	// GetChatStatus Whether Aaru and voice are on, so clients hide the owl and the mic when the server has them off.
 	// (GET /v1/chats/status)
-	GetChatStatus(ctx echo.Context) error
+	GetChatStatus(ctx *echo.Context) error
 	// GetArtistConcerts Upcoming concerts by the artists of the user's albums (MUS-003).
 	// (GET /v1/concerts/artists)
-	GetArtistConcerts(ctx echo.Context) error
+	GetArtistConcerts(ctx *echo.Context) error
 	// GetConcertsNear Music events around a point or the saved "Concerts near" city (MUS-003), soonest first.
 	// (POST /v1/concerts/near)
-	GetConcertsNear(ctx echo.Context) error
+	GetConcertsNear(ctx *echo.Context) error
 	// SearchConcertPerformers Performers whose name matches what the user typed, to pick one before a search (MUS-010).
 	// (POST /v1/concerts/performers)
-	SearchConcertPerformers(ctx echo.Context) error
+	SearchConcertPerformers(ctx *echo.Context) error
 	// SearchConcertPlaces Cities matching what the user typed, for the "Concerts near" picker (MUS-003).
 	// (GET /v1/concerts/places)
-	SearchConcertPlaces(ctx echo.Context, params SearchConcertPlacesParams) error
+	SearchConcertPlaces(ctx *echo.Context, params SearchConcertPlacesParams) error
 	// SearchConcerts Music events matching an artist's name, near a place or anywhere (MUS-010), soonest first.
 	// (POST /v1/concerts/search)
-	SearchConcerts(ctx echo.Context) error
+	SearchConcerts(ctx *echo.Context) error
 	// DisconnectMAL Forget the MyAnimeList tokens. Nothing more is pushed; the MAL list and the library stay as they are.
 	// (DELETE /v1/connections/mal)
-	DisconnectMAL(ctx echo.Context) error
+	DisconnectMAL(ctx *echo.Context) error
 
 	// (GET /v1/connections/mal)
-	GetMALConnection(ctx echo.Context) error
+	GetMALConnection(ctx *echo.Context) error
 	// ConnectMAL Start connecting MyAnimeList (PKCE, `plain`, the only method MAL accepts). Open the returned address in a browser. MAL then redirects to GET /v1/connections/mal/callback (a plain redirect route outside this spec), which sends the browser on to `returnTo` with `mal=connected|denied|failed`. Once connected, anime progress written from then on is pushed to the MAL list (SCR-005).
 	// (POST /v1/connections/mal/connect)
-	ConnectMAL(ctx echo.Context) error
+	ConnectMAL(ctx *echo.Context) error
 	// RequestMALPull A client opened Aaru: read the MyAnimeList list back on the next pass (SCR-010). Ignored when MAL is not connected or was read in the last 10 minutes, so clients call it on every open.
 	// (POST /v1/connections/mal/pull)
-	RequestMALPull(ctx echo.Context) error
+	RequestMALPull(ctx *echo.Context) error
 	// RegisterDevice Register this device for pushes. A token registered again moves to this user.
 	// (PUT /v1/devices)
-	RegisterDevice(ctx echo.Context) error
+	RegisterDevice(ctx *echo.Context) error
 	// RegisterLiveActivityToken Hand over an ActivityKit push token (SCR-008, SCR-009): the device's push-to-start token for `NowPlayingActivityAttributes` (`start`), or the running "Now playing" activity's own token (`update`). The server then starts, updates and ends the activity from what plays.
 	// (PUT /v1/devices/live-activity)
-	RegisterLiveActivityToken(ctx echo.Context) error
+	RegisterLiveActivityToken(ctx *echo.Context) error
 
 	// (DELETE /v1/devices/{token})
-	UnregisterDevice(ctx echo.Context, token string) error
+	UnregisterDevice(ctx *echo.Context, token string) error
 	// GetDiscover Provider-curated public rows for Home (trending, airing, this season).
 	// (GET /v1/discover)
-	GetDiscover(ctx echo.Context) error
+	GetDiscover(ctx *echo.Context) error
 	// GetDiscoverOnAir Shows airing this week, grouped by channel or streamer (DISC-003).
 	// (GET /v1/discover/on-air)
-	GetDiscoverOnAir(ctx echo.Context, params GetDiscoverOnAirParams) error
+	GetDiscoverOnAir(ctx *echo.Context, params GetDiscoverOnAirParams) error
 	// GetDiscoverSeason One season's titles for the Seasons view (DISC-002), a page at a time.
 	// (GET /v1/discover/season)
-	GetDiscoverSeason(ctx echo.Context, params GetDiscoverSeasonParams) error
+	GetDiscoverSeason(ctx *echo.Context, params GetDiscoverSeasonParams) error
 	// DeclineGroupInvite Decline an invite to you, or cancel one you sent.
 	// (DELETE /v1/group-invites/{id})
-	DeclineGroupInvite(ctx echo.Context, id apiid.UUID) error
+	DeclineGroupInvite(ctx *echo.Context, id apiid.UUID) error
 	// AcceptGroupInvite Join the group.
 	// (POST /v1/group-invites/{id}/accept)
-	AcceptGroupInvite(ctx echo.Context, id apiid.UUID) error
+	AcceptGroupInvite(ctx *echo.Context, id apiid.UUID) error
 	// ListGroups Your groups, in the order you joined them, with unread and mention counts.
 	// (GET /v1/groups)
-	ListGroups(ctx echo.Context) error
+	ListGroups(ctx *echo.Context) error
 	// CreateGroup Create a group you own, with a
 	// (POST /v1/groups)
-	CreateGroup(ctx echo.Context) error
+	CreateGroup(ctx *echo.Context) error
 	// DeleteGroup Delete the group, its channels and every message. Owner only.
 	// (DELETE /v1/groups/{groupId})
-	DeleteGroup(ctx echo.Context, groupId apiid.UUID) error
+	DeleteGroup(ctx *echo.Context, groupId apiid.UUID) error
 	// GetGroup A group you are in, with its channels, members and pending invites. 404 to anyone else.
 	// (GET /v1/groups/{groupId})
-	GetGroup(ctx echo.Context, groupId apiid.UUID) error
+	GetGroup(ctx *echo.Context, groupId apiid.UUID) error
 	// UpdateGroup Rename the group. Owner and admins.
 	// (PATCH /v1/groups/{groupId})
-	UpdateGroup(ctx echo.Context, groupId apiid.UUID) error
+	UpdateGroup(ctx *echo.Context, groupId apiid.UUID) error
 	// CreateChannel Add a text channel. Owner and admins.
 	// (POST /v1/groups/{groupId}/channels)
-	CreateChannel(ctx echo.Context, groupId apiid.UUID) error
+	CreateChannel(ctx *echo.Context, groupId apiid.UUID) error
 	// DeleteChannel Delete a channel and its messages. The first channel stays. Owner and admins.
 	// (DELETE /v1/groups/{groupId}/channels/{channelId})
-	DeleteChannel(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
+	DeleteChannel(ctx *echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
 	// UpdateChannel Rename a channel or set its topic. Owner and admins.
 	// (PATCH /v1/groups/{groupId}/channels/{channelId})
-	UpdateChannel(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
+	UpdateChannel(ctx *echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
 	// ListChannelItems A shelf channel's titles, with your own library status for each.
 	// (GET /v1/groups/{groupId}/channels/{channelId}/items)
-	ListChannelItems(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
+	ListChannelItems(ctx *echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
 	// AddChannelItem Add a title to a shelf channel. Any member can; adding one already there changes nothing.
 	// (POST /v1/groups/{groupId}/channels/{channelId}/items)
-	AddChannelItem(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
+	AddChannelItem(ctx *echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
 	// RemoveChannelItem Take a title off a shelf channel. Any member can.
 	// (DELETE /v1/groups/{groupId}/channels/{channelId}/items/{titleId})
-	RemoveChannelItem(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID, titleId apiid.UUID) error
+	RemoveChannelItem(ctx *echo.Context, groupId apiid.UUID, channelId apiid.UUID, titleId apiid.UUID) error
 	// ListMessages Messages oldest first. Without a cursor, the latest page.
 	// (GET /v1/groups/{groupId}/channels/{channelId}/messages)
-	ListMessages(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID, params ListMessagesParams) error
+	ListMessages(ctx *echo.Context, groupId apiid.UUID, channelId apiid.UUID, params ListMessagesParams) error
 	// PostMessage Post a message. A retry with the same clientNonce returns the first message.
 	// (POST /v1/groups/{groupId}/channels/{channelId}/messages)
-	PostMessage(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
+	PostMessage(ctx *echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
 	// DeleteMessage Delete your message, or any message as owner or admin. The row stays, empty.
 	// (DELETE /v1/groups/{groupId}/channels/{channelId}/messages/{messageId})
-	DeleteMessage(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID, messageId apiid.UUID) error
+	DeleteMessage(ctx *echo.Context, groupId apiid.UUID, channelId apiid.UUID, messageId apiid.UUID) error
 	// EditMessage Edit your own message.
 	// (PATCH /v1/groups/{groupId}/channels/{channelId}/messages/{messageId})
-	EditMessage(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID, messageId apiid.UUID) error
+	EditMessage(ctx *echo.Context, groupId apiid.UUID, channelId apiid.UUID, messageId apiid.UUID) error
 	// GetWatchParty A watch channel's newest party, ended or not, and the server's clock for the countdown.
 	// (GET /v1/groups/{groupId}/channels/{channelId}/party)
-	GetWatchParty(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
+	GetWatchParty(ctx *echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
 	// OpenWatchParty Open a party in the lobby. A show needs the episode. One open party per channel (409).
 	// (POST /v1/groups/{groupId}/channels/{channelId}/party)
-	OpenWatchParty(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
+	OpenWatchParty(ctx *echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
 	// EndWatchParty End the party. The host or an admin.
 	// (POST /v1/groups/{groupId}/channels/{channelId}/party/end)
-	EndWatchParty(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
+	EndWatchParty(ctx *echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
 	// SetWatchPartyReady Say you are ready, or not.
 	// (POST /v1/groups/{groupId}/channels/{channelId}/party/ready)
-	SetWatchPartyReady(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
+	SetWatchPartyReady(ctx *echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
 	// StartWatchParty Start the countdown. The host or an admin.
 	// (POST /v1/groups/{groupId}/channels/{channelId}/party/start)
-	StartWatchParty(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
+	StartWatchParty(ctx *echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
 	// MarkWatchPartyWatched Mark the party's episode, film or book watched in your own library. Nobody else's.
 	// (POST /v1/groups/{groupId}/channels/{channelId}/party/watched)
-	MarkWatchPartyWatched(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
+	MarkWatchPartyWatched(ctx *echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
 	// GetChannelProgress A title channel's title, your progress, and the progress of members who share theirs in this group.
 	// (GET /v1/groups/{groupId}/channels/{channelId}/progress)
-	GetChannelProgress(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
+	GetChannelProgress(ctx *echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
 	// MarkChannelRead Mark the channel read up to a message. The read point never moves back.
 	// (POST /v1/groups/{groupId}/channels/{channelId}/read)
-	MarkChannelRead(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
+	MarkChannelRead(ctx *echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
 	// InviteToGroup Invite a friend. Inviting again, or someone already in, changes nothing.
 	// (POST /v1/groups/{groupId}/invites)
-	InviteToGroup(ctx echo.Context, groupId apiid.UUID) error
+	InviteToGroup(ctx *echo.Context, groupId apiid.UUID) error
 	// UpdateMyMembership Your own settings in a group. shareProgress shows your progress in its title channels; muted stops its mention alerts. Both are off by default.
 	// (PUT /v1/groups/{groupId}/me)
-	UpdateMyMembership(ctx echo.Context, groupId apiid.UUID) error
+	UpdateMyMembership(ctx *echo.Context, groupId apiid.UUID) error
 	// RemoveGroupMember Remove a member, or yourself to leave. Admins remove members; the owner removes anyone and cannot leave.
 	// (DELETE /v1/groups/{groupId}/members/{userId})
-	RemoveGroupMember(ctx echo.Context, groupId apiid.UUID, userId apiid.UUID) error
+	RemoveGroupMember(ctx *echo.Context, groupId apiid.UUID, userId apiid.UUID) error
 	// UpdateGroupMember Make a member an admin, or an admin a member. Owner only.
 	// (PATCH /v1/groups/{groupId}/members/{userId})
-	UpdateGroupMember(ctx echo.Context, groupId apiid.UUID, userId apiid.UUID) error
+	UpdateGroupMember(ctx *echo.Context, groupId apiid.UUID, userId apiid.UUID) error
 	// TransferGroup Make another member the owner. You become an admin.
 	// (POST /v1/groups/{groupId}/transfer)
-	TransferGroup(ctx echo.Context, groupId apiid.UUID) error
+	TransferGroup(ctx *echo.Context, groupId apiid.UUID) error
 	// GetHealth Liveness and database reachability. Unauthenticated.
 	// (GET /v1/health)
-	GetHealth(ctx echo.Context) error
+	GetHealth(ctx *echo.Context) error
 	// ListImports The user's imports, newest first.
 	// (GET /v1/imports)
-	ListImports(ctx echo.Context) error
+	ListImports(ctx *echo.Context) error
 	// CreateAniListImport Import a public AniList anime and manga list by username. Read and matched in the background, written only after approval.
 	// (POST /v1/imports/anilist)
-	CreateAniListImport(ctx echo.Context) error
+	CreateAniListImport(ctx *echo.Context) error
 	// CreateCATFeedImport Import shows from the user's CAT iCal link (https://www.pogdesign.co.uk/cat/download_ics/… or generate_ics/…). The calendar is read once, now; the link holds the user's CAT key and is not kept.
 	// (POST /v1/imports/cat/feed)
-	CreateCATFeedImport(ctx echo.Context) error
+	CreateCATFeedImport(ctx *echo.Context) error
 	// CreateLastFMImport Import a Last.fm account's scrobbles by username (MUS-004). Read in the background into the listening log, written only after approval. A second import of the same account reads only what came after the last one. 503 `lastfm_unavailable` when the server has no Last.fm key.
 	// (POST /v1/imports/lastfm)
-	CreateLastFMImport(ctx echo.Context) error
+	CreateLastFMImport(ctx *echo.Context) error
 	// CreateListenBrainzImport Import a ListenBrainz account's listens by username (MUS-004). Read in the background into the listening log, written only after approval. A second import of the same account reads only what came after the last one.
 	// (POST /v1/imports/listenbrainz)
-	CreateListenBrainzImport(ctx echo.Context) error
+	CreateListenBrainzImport(ctx *echo.Context) error
 	// StartStremioLink Start a Stremio history import. Show the user `link` (or `qrcode`) to approve on stremio.com, then poll POST /v1/imports/stremio/link/{code}. No password reaches Aaru; the session the code opens is used for one library read, then logged out.
 	// (POST /v1/imports/stremio/link)
-	StartStremioLink(ctx echo.Context) error
+	StartStremioLink(ctx *echo.Context) error
 	// PollStremioLink Ask whether the code was approved. 204 while pending (ask again in a few seconds); 202 with the queued import once approved; 410 `stremio_link_expired` when the code ran out.
 	// (POST /v1/imports/stremio/link/{code})
-	PollStremioLink(ctx echo.Context, code string) error
+	PollStremioLink(ctx *echo.Context, code string) error
 	// CreateTraktImport Import the connected Trakt account. Read and matched in the background, written only after approval.
 	// (POST /v1/imports/trakt)
-	CreateTraktImport(ctx echo.Context) error
+	CreateTraktImport(ctx *echo.Context) error
 	// ConnectTrakt Start connecting Trakt (PKCE). Open the returned address in a browser. Trakt then redirects to GET /v1/imports/trakt/callback (a plain redirect route outside this spec: its Location must not be percent-encoded), which sends the browser on to `returnTo` with `trakt=connected|denied|failed`.
 	// (POST /v1/imports/trakt/connect)
-	ConnectTrakt(ctx echo.Context) error
+	ConnectTrakt(ctx *echo.Context) error
 	// DisconnectTrakt Revoke the Trakt tokens on Trakt, then forget them. Imported items stay.
 	// (DELETE /v1/imports/trakt/connection)
-	DisconnectTrakt(ctx echo.Context) error
+	DisconnectTrakt(ctx *echo.Context) error
 
 	// (GET /v1/imports/trakt/connection)
-	GetTraktConnection(ctx echo.Context) error
+	GetTraktConnection(ctx *echo.Context) error
 	// DeleteImport Discard an import. Library items it already created stay; undo the import action for those.
 	// (DELETE /v1/imports/{id})
-	DeleteImport(ctx echo.Context, id apiid.UUID) error
+	DeleteImport(ctx *echo.Context, id apiid.UUID) error
 	// GetImport One import with every row and what its plan does with it.
 	// (GET /v1/imports/{id})
-	GetImport(ctx echo.Context, id apiid.UUID) error
+	GetImport(ctx *echo.Context, id apiid.UUID) error
 	// ApplyImport Approve the plan. Writes it as one undoable action.
 	// (POST /v1/imports/{id}/apply)
-	ApplyImport(ctx echo.Context, id apiid.UUID) error
+	ApplyImport(ctx *echo.Context, id apiid.UUID) error
 	// MatchAllImportRows Find a best guess for the plan's unmatched rows (IMP-021): the "Match all" button. A guess joins the plan like a pick and shows what it found, so the person checks it before approving; nothing is written here. One call does what fits in a few seconds, so a client calls again while `remaining` goes down, and stops when it does not. Only while the plan waits.
 	// (POST /v1/imports/{id}/match-all)
-	MatchAllImportRows(ctx echo.Context, id apiid.UUID) error
+	MatchAllImportRows(ctx *echo.Context, id apiid.UUID) error
 	// LeaveOutImportRow Untick one row of a plan before approving it, or tick it again (BOOK-001). Only a row the plan would write, and only while the plan waits. The job's counts follow. Approving with every row unticked is refused with `import_nothing_chosen`.
 	// (POST /v1/imports/{id}/rows/{index}/left-out)
-	LeaveOutImportRow(ctx echo.Context, id apiid.UUID, index int) error
+	LeaveOutImportRow(ctx *echo.Context, id apiid.UUID, index int) error
 	// ResolveImportRow Match one unmatched row by hand (IMP-011), with a title the person picked from a search. Before the plan is approved the pick joins the plan; after it, the row is written at once as its own undoable action. The source's status, rating and ticks come with it, merged like any import row.
 	// (POST /v1/imports/{id}/rows/{index}/resolve)
-	ResolveImportRow(ctx echo.Context, id apiid.UUID, index int) error
+	ResolveImportRow(ctx *echo.Context, id apiid.UUID, index int) error
 	// UndoListenImport Undo an applied listening-history import (MUS-004): deletes the listens it wrote and the import. 409 `import_not_listens` for a library import (undo its action instead), 409 `import_not_applied` before it is applied (delete it instead).
 	// (POST /v1/imports/{id}/undo)
-	UndoListenImport(ctx echo.Context, id apiid.UUID) error
+	UndoListenImport(ctx *echo.Context, id apiid.UUID) error
 	// GetInvitePreview What an invite link shows, signed in or not. Unauthenticated. 404 for any code that is unknown, spent, revoked, expired, or from someone who blocked you or whom you blocked.
 	// (GET /v1/invites/{code})
-	GetInvitePreview(ctx echo.Context, code string) error
+	GetInvitePreview(ctx *echo.Context, code string) error
 	// ListLibraryItems The user's library, most recently updated first. Shelves use the same filters.
 	// (GET /v1/library/items)
-	ListLibraryItems(ctx echo.Context, params ListLibraryItemsParams) error
+	ListLibraryItems(ctx *echo.Context, params ListLibraryItemsParams) error
 	// AddLibraryItem Add a title to the library. Adding the same title again returns the existing item.
 	// (POST /v1/library/items)
-	AddLibraryItem(ctx echo.Context) error
+	AddLibraryItem(ctx *echo.Context) error
 
 	// (DELETE /v1/library/items/{id})
-	DeleteLibraryItem(ctx echo.Context, id apiid.UUID) error
+	DeleteLibraryItem(ctx *echo.Context, id apiid.UUID) error
 
 	// (GET /v1/library/items/{id})
-	GetLibraryItem(ctx echo.Context, id apiid.UUID) error
+	GetLibraryItem(ctx *echo.Context, id apiid.UUID) error
 
 	// (PATCH /v1/library/items/{id})
-	UpdateLibraryItem(ctx echo.Context, id apiid.UUID) error
+	UpdateLibraryItem(ctx *echo.Context, id apiid.UUID) error
 
 	// (PUT /v1/library/items/{id}/episodes/{season}/{episode})
-	SetEpisodeWatched(ctx echo.Context, id apiid.UUID, season int, episode int) error
+	SetEpisodeWatched(ctx *echo.Context, id apiid.UUID, season int, episode int) error
 	// MarkSeasonWatched Mark every aired episode of a season watched, as one undoable action.
 	// (POST /v1/library/items/{id}/seasons/{season}/watched)
-	MarkSeasonWatched(ctx echo.Context, id apiid.UUID, season int) error
+	MarkSeasonWatched(ctx *echo.Context, id apiid.UUID, season int) error
 	// MarkShowWatched Mark a whole show watched (PROG-005): every aired regular episode, as one undoable action with the watch dates unknown, so the Recap and Insights do not count them as today. The show becomes finished; a running one moves back to in progress when an episode it has not ticked airs. 422 for anything but a show.
 	// (POST /v1/library/items/{id}/watched)
-	MarkShowWatched(ctx echo.Context, id apiid.UUID) error
+	MarkShowWatched(ctx *echo.Context, id apiid.UUID) error
 	// SyncLibrary Items changed and ids deleted since a previous sync token (all items when absent).
 	// (GET /v1/library/sync)
-	SyncLibrary(ctx echo.Context, params SyncLibraryParams) error
+	SyncLibrary(ctx *echo.Context, params SyncLibraryParams) error
 	// ListWatching Films, shows and anime in progress with what Library's Watching page shows (APP-018): the next episode to watch with its name and what is left, and a show's status and next airing. Anime in the backlog are included with `entry.inBacklog`. Newest change first.
 	// (GET /v1/library/watching)
-	ListWatching(ctx echo.Context) error
+	ListWatching(ctx *echo.Context) error
 
 	// (GET /v1/lists)
-	ListLists(ctx echo.Context) error
+	ListLists(ctx *echo.Context) error
 
 	// (POST /v1/lists)
-	CreateList(ctx echo.Context) error
+	CreateList(ctx *echo.Context) error
 
 	// (DELETE /v1/lists/{id})
-	DeleteList(ctx echo.Context, id apiid.UUID) error
+	DeleteList(ctx *echo.Context, id apiid.UUID) error
 
 	// (GET /v1/lists/{id})
-	GetList(ctx echo.Context, id apiid.UUID) error
+	GetList(ctx *echo.Context, id apiid.UUID) error
 
 	// (PATCH /v1/lists/{id})
-	RenameList(ctx echo.Context, id apiid.UUID) error
+	RenameList(ctx *echo.Context, id apiid.UUID) error
 	// AddListItem Add a title to a list. It need not be in the library.
 	// (POST /v1/lists/{id}/items)
-	AddListItem(ctx echo.Context, id apiid.UUID) error
+	AddListItem(ctx *echo.Context, id apiid.UUID) error
 
 	// (DELETE /v1/lists/{id}/items/{titleId})
-	RemoveListItem(ctx echo.Context, id apiid.UUID, titleId apiid.UUID) error
+	RemoveListItem(ctx *echo.Context, id apiid.UUID, titleId apiid.UUID) error
 
 	// (PUT /v1/lists/{id}/order)
-	ReorderList(ctx echo.Context, id apiid.UUID) error
+	ReorderList(ctx *echo.Context, id apiid.UUID) error
 	// DeleteAccount Delete the account and everything that belongs to it.
 	// (DELETE /v1/me)
-	DeleteAccount(ctx echo.Context) error
+	DeleteAccount(ctx *echo.Context) error
 	// GetMe The signed-in account.
 	// (GET /v1/me)
-	GetMe(ctx echo.Context) error
+	GetMe(ctx *echo.Context) error
 	// DeleteAvatar Remove your avatar. Your monogram shows again everywhere.
 	// (DELETE /v1/me/avatar)
-	DeleteAvatar(ctx echo.Context) error
+	DeleteAvatar(ctx *echo.Context) error
 	// UploadAvatar Replace your avatar (SOC-001b) with one square JPEG of at most 1 MB; apps send 512px. Anything that is not a JPEG is refused with 415 `avatar_image_type`, a larger file with 413 `file_too_large`. It is seen by signed-in accounts wherever your name is, never signed out and never across a block.
 	// (PUT /v1/me/avatar)
-	UploadAvatar(ctx echo.Context) error
+	UploadAvatar(ctx *echo.Context) error
 	// ListBadges Every badge in the catalog with what you have of it. A hidden badge you have not earned comes back with only its id, family and `hidden`: no name, rule or progress.
 	// (GET /v1/me/badges)
-	ListBadges(ctx echo.Context) error
+	ListBadges(ctx *echo.Context) error
 	// MarkBadgesSeen Marks earned badges (by award id) as seen, so they leave `unseen`.
 	// (POST /v1/me/badges/seen)
-	MarkBadgesSeen(ctx echo.Context) error
+	MarkBadgesSeen(ctx *echo.Context) error
 	// DeleteConcertPlace Forgets the "Concerts near" city.
 	// (DELETE /v1/me/concert-place)
-	DeleteConcertPlace(ctx echo.Context) error
+	DeleteConcertPlace(ctx *echo.Context) error
 	// GetConcertPlace The saved "Concerts near" city, and whether concerts are on at all.
 	// (GET /v1/me/concert-place)
-	GetConcertPlace(ctx echo.Context) error
+	GetConcertPlace(ctx *echo.Context) error
 	// SaveConcertPlace Saves the "Concerts near" city, rounded to two decimals.
 	// (PUT /v1/me/concert-place)
-	SaveConcertPlace(ctx echo.Context) error
+	SaveConcertPlace(ctx *echo.Context) error
 	// GetEntitlement Aaru Plus and this month's captures (BIL-001). The same on every client; Plus is bought in the Apple apps only.
 	// (GET /v1/me/entitlement)
-	GetEntitlement(ctx echo.Context) error
+	GetEntitlement(ctx *echo.Context) error
 	// ExportAccount Everything Aaru holds for the caller, to keep or move elsewhere (GDPR portability).
 	// (GET /v1/me/export)
-	ExportAccount(ctx echo.Context, params ExportAccountParams) error
+	ExportAccount(ctx *echo.Context, params ExportAccountParams) error
 	// GetMyFavorites Your favorites, an ordered top 10 per kind (FAV-001). Profile data, not your library.
 	// (GET /v1/me/favorites)
-	GetMyFavorites(ctx echo.Context) error
+	GetMyFavorites(ctx *echo.Context) error
 	// SetMyFavorites Replace one kind's favorites with these titles, in this order: add, remove and reorder are all this call. Any catalog title, at most 10, each once, each of this kind; else 422. Not journaled.
 	// (PUT /v1/me/favorites/{kind})
-	SetMyFavorites(ctx echo.Context, kind FavoriteKind) error
+	SetMyFavorites(ctx *echo.Context, kind FavoriteKind) error
 	// ListGroupInvites Invites waiting for you, newest first.
 	// (GET /v1/me/group-invites)
-	ListGroupInvites(ctx echo.Context) error
+	ListGroupInvites(ctx *echo.Context) error
 	// LinkGoogle Link a Google account to the signed-in account. Refused if it belongs to another account.
 	// (POST /v1/me/identities/google)
-	LinkGoogle(ctx echo.Context) error
+	LinkGoogle(ctx *echo.Context) error
 	// ListListens Your listening log, newest first (MUS-005): what music scrobblers sent with your music token over ListenBrainz's protocol at `/listenbrainz/1/submit-listens`.
 	// (GET /v1/me/listens)
-	ListListens(ctx echo.Context, params ListListensParams) error
+	ListListens(ctx *echo.Context, params ListListensParams) error
 	// GetTopListens Your most played artists, tracks or albums over a period (MUS-005). The period is chosen as for `/v1/me/stats`: a year, a month of it, or a span.
 	// (GET /v1/me/listens/top)
-	GetTopListens(ctx echo.Context, params GetTopListensParams) error
+	GetTopListens(ctx *echo.Context, params GetTopListensParams) error
 
 	// (GET /v1/me/notifications)
-	GetNotificationSettings(ctx echo.Context) error
+	GetNotificationSettings(ctx *echo.Context) error
 	// UpdateNotificationSettings Changes the switches sent; any left out keep their value.
 	// (PUT /v1/me/notifications)
-	UpdateNotificationSettings(ctx echo.Context) error
+	UpdateNotificationSettings(ctx *echo.Context) error
 	// GetNowPlaying What players are playing for you now: Stremio and streaming sites through the browser extension (SCR-008), a music scrobbler's `playing_now` and YouTube videos (SCR-009). `positionMs` is where a player was at `updatedAt`; a client adds the time since while `state` is `playing`. A report too old to believe no longer counts.
 	// (GET /v1/me/now-playing)
-	GetNowPlaying(ctx echo.Context) error
+	GetNowPlaying(ctx *echo.Context) error
 	// ListPoints The points ledger, newest first, a page at a time ("How you earned it").
 	// (GET /v1/me/points)
-	ListPoints(ctx echo.Context, params ListPointsParams) error
+	ListPoints(ctx *echo.Context, params ListPointsParams) error
 	// UpdateProfile Claim or change your handle, and your first and last name (SOC-001b). Handles are how friends find you; others see the two names joined. Every field is optional: one left out keeps its value. At most 10 handle changes a user per hour, a taken handle included (429).
 	// (PUT /v1/me/profile)
-	UpdateProfile(ctx echo.Context) error
+	UpdateProfile(ctx *echo.Context) error
 	// GetProfileStats All-time numbers for the profile (GAM-006b), from the library as it is: every ticked episode counts, imported and undated ones too, so these can exceed `/v1/me/stats?span=all`, which counts dated activity only.
 	// (GET /v1/me/profile/stats)
-	GetProfileStats(ctx echo.Context) error
+	GetProfileStats(ctx *echo.Context) error
 	// GetProgress Your points, level, streak and the badges you have not seen yet (GAM-001…004). Days are counted in the zone from `X-Timezone`, else the zone you last sent, else UTC. Clients read this after a write to show what was earned: one toast for a live unlock, one summary when `unseen.origin` is `batch` (an import or approved plan) or `backfill` (the first run).
 	// (GET /v1/me/progress)
-	GetProgress(ctx echo.Context) error
+	GetProgress(ctx *echo.Context) error
 	// ListRecommendations Titles friends sent you that you have not added or dismissed, newest first. Only from people who are still your friends.
 	// (GET /v1/me/recommendations)
-	ListRecommendations(ctx echo.Context) error
+	ListRecommendations(ctx *echo.Context) error
 
 	// (DELETE /v1/me/recommendations/{id})
-	DismissRecommendation(ctx echo.Context, id apiid.UUID) error
+	DismissRecommendation(ctx *echo.Context, id apiid.UUID) error
 	// AddRecommendation Put the title on your Plan to watch, as a tap would. A title you already have keeps its status. Either way it leaves your recommendations.
 	// (POST /v1/me/recommendations/{id}/add)
-	AddRecommendation(ctx echo.Context, id apiid.UUID) error
+	AddRecommendation(ctx *echo.Context, id apiid.UUID) error
 	// GetSocialSettings What your friends may see. Strangers never see anything, whatever is set here.
 	// (GET /v1/me/social-settings)
-	GetSocialSettings(ctx echo.Context) error
+	GetSocialSettings(ctx *echo.Context) error
 
 	// (PUT /v1/me/social-settings)
-	UpdateSocialSettings(ctx echo.Context) error
+	UpdateSocialSettings(ctx *echo.Context) error
 	// ListSportFollows The leagues, teams and players the user follows in Sports, oldest first.
 	// (GET /v1/me/sport-follows)
-	ListSportFollows(ctx echo.Context) error
+	ListSportFollows(ctx *echo.Context) error
 	// UnfollowSport Stops following. Idempotent.
 	// (DELETE /v1/me/sport-follows/{kind}/{providerId})
-	UnfollowSport(ctx echo.Context, kind SportEntityKind, providerId string) error
+	UnfollowSport(ctx *echo.Context, kind SportEntityKind, providerId string) error
 	// FollowSport Follows a league, team or player by the sports provider's id. Idempotent.
 	// (PUT /v1/me/sport-follows/{kind}/{providerId})
-	FollowSport(ctx echo.Context, kind SportEntityKind, providerId string) error
+	FollowSport(ctx *echo.Context, kind SportEntityKind, providerId string) error
 	// GetSportSettings The country "Where to watch" looks at, and whether Sports are on at all.
 	// (GET /v1/me/sport-settings)
-	GetSportSettings(ctx echo.Context) error
+	GetSportSettings(ctx *echo.Context) error
 	// SaveSportSettings Saves the "Where to watch" country; absent or null clears it.
 	// (PUT /v1/me/sport-settings)
-	SaveSportSettings(ctx echo.Context) error
+	SaveSportSettings(ctx *echo.Context) error
 	// GetStats What the user watched and read in one calendar year or month of their time zone (GAM-006a), in all time (GAM-006c), or in the last 7 or 30 days (GAM-006d). Derived only from their own library. Imported history counts only where it carries a real date.
 	// (GET /v1/me/stats)
-	GetStats(ctx echo.Context, params GetStatsParams) error
+	GetStats(ctx *echo.Context, params GetStatsParams) error
 	// GetOAuthRequest A connection an app asked for over OAuth (Claude's custom connector), for the consent page. Expires ten minutes after the app asked.
 	// (GET /v1/oauth/requests/{id})
-	GetOAuthRequest(ctx echo.Context, id apiid.UUID) error
+	GetOAuthRequest(ctx *echo.Context, id apiid.UUID) error
 	// ApproveOAuthRequest Allow the app. Only the browser that started the request holds its binding (the `aaru_oauth` cookie the API set); the answer is where to send the browser next.
 	// (POST /v1/oauth/requests/{id}/approve)
-	ApproveOAuthRequest(ctx echo.Context, id apiid.UUID) error
+	ApproveOAuthRequest(ctx *echo.Context, id apiid.UUID) error
 
 	// (POST /v1/oauth/requests/{id}/deny)
-	DenyOAuthRequest(ctx echo.Context, id apiid.UUID) error
+	DenyOAuthRequest(ctx *echo.Context, id apiid.UUID) error
 	// ListPlans Changes outside agents asked for that wait for the user (OUT-004), newest first. Only a signed-in session reaches the plan routes; an agent token never does.
 	// (GET /v1/plans)
-	ListPlans(ctx echo.Context, params ListPlansParams) error
+	ListPlans(ctx *echo.Context, params ListPlansParams) error
 
 	// (GET /v1/plans/{id})
-	GetPlan(ctx echo.Context, id apiid.UUID) error
+	GetPlan(ctx *echo.Context, id apiid.UUID) error
 	// ApprovePlan Apply the plan as one undoable action named after its agent. 409 `plan_stale` when the library changed since it was made (nothing is written), `plan_expired`, or `plan_decided`.
 	// (POST /v1/plans/{id}/approve)
-	ApprovePlan(ctx echo.Context, id apiid.UUID) error
+	ApprovePlan(ctx *echo.Context, id apiid.UUID) error
 	// DenyPlan Refuse the plan. Nothing is written; the plan stays as the record of what was asked.
 	// (POST /v1/plans/{id}/deny)
-	DenyPlan(ctx echo.Context, id apiid.UUID) error
+	DenyPlan(ctx *echo.Context, id apiid.UUID) error
 	// CreateRealtimeTicket A single-use ticket, valid 60 seconds, for opening the realtime socket from a browser, which cannot send an Authorization header on a WebSocket. Apps send their bearer token on the upgrade instead.
 	// (POST /v1/realtime/ticket)
-	CreateRealtimeTicket(ctx echo.Context) error
+	CreateRealtimeTicket(ctx *echo.Context) error
 	// SearchCatalog Search the catalog. Results are catalog projections, never library rows.
 	// (GET /v1/search)
-	SearchCatalog(ctx echo.Context, params SearchCatalogParams) error
+	SearchCatalog(ctx *echo.Context, params SearchCatalogParams) error
 	// CreateShare Make a share link to one title, sport event or concert (SHR-002). Public and reusable, it never expires. The same target with the same note gives back the same link; a different note makes a new one. At most 60 an hour.
 	// (POST /v1/shares)
-	CreateShare(ctx echo.Context) error
+	CreateShare(ctx *echo.Context) error
 	// GetSharePreview What a share link shows, signed in or not. Unauthenticated. The content shows to anyone; who sent it and the note show only to the sender and their friends, never across a block. 404 for an unknown code.
 	// (GET /v1/shares/{code})
-	GetSharePreview(ctx echo.Context, code string) error
+	GetSharePreview(ctx *echo.Context, code string) error
 
 	// (GET /v1/shelves)
-	ListShelves(ctx echo.Context) error
+	ListShelves(ctx *echo.Context) error
 
 	// (POST /v1/shelves)
-	CreateShelf(ctx echo.Context) error
+	CreateShelf(ctx *echo.Context) error
 
 	// (DELETE /v1/shelves/{id})
-	DeleteShelf(ctx echo.Context, id apiid.UUID) error
+	DeleteShelf(ctx *echo.Context, id apiid.UUID) error
 
 	// (PATCH /v1/shelves/{id})
-	UpdateShelf(ctx echo.Context, id apiid.UUID) error
+	UpdateShelf(ctx *echo.Context, id apiid.UUID) error
 	// ListShelfItems The shelf's query, resolved now. Same DTO as GET /v1/library/items.
 	// (GET /v1/shelves/{id}/items)
-	ListShelfItems(ctx echo.Context, id apiid.UUID, params ListShelfItemsParams) error
+	ListShelfItems(ctx *echo.Context, id apiid.UUID, params ListShelfItemsParams) error
 	// ListBlocks People you blocked.
 	// (GET /v1/social/blocks)
-	ListBlocks(ctx echo.Context) error
+	ListBlocks(ctx *echo.Context) error
 
 	// (DELETE /v1/social/blocks/{userId})
-	UnblockUser(ctx echo.Context, userId apiid.UUID) error
+	UnblockUser(ctx *echo.Context, userId apiid.UUID) error
 	// BlockUser Block. Ends any friendship and pending requests both ways; from then on each of you is a 404 to the other.
 	// (PUT /v1/social/blocks/{userId})
-	BlockUser(ctx echo.Context, userId apiid.UUID) error
+	BlockUser(ctx *echo.Context, userId apiid.UUID) error
 	// ListFriendRequests Pending requests to you and from you, newest first.
 	// (GET /v1/social/friend-requests)
-	ListFriendRequests(ctx echo.Context) error
+	ListFriendRequests(ctx *echo.Context) error
 	// SendFriendRequest Ask someone to be friends, by handle. If they already asked you, you become friends. Needs your own handle. At most 30 a user per hour (429).
 	// (POST /v1/social/friend-requests)
-	SendFriendRequest(ctx echo.Context) error
+	SendFriendRequest(ctx *echo.Context) error
 	// WithdrawFriendRequest Decline a request to you, or cancel one you sent. The other side is not told.
 	// (DELETE /v1/social/friend-requests/{id})
-	WithdrawFriendRequest(ctx echo.Context, id apiid.UUID) error
+	WithdrawFriendRequest(ctx *echo.Context, id apiid.UUID) error
 
 	// (POST /v1/social/friend-requests/{id}/accept)
-	AcceptFriendRequest(ctx echo.Context, id apiid.UUID) error
+	AcceptFriendRequest(ctx *echo.Context, id apiid.UUID) error
 	// ListFriends Your friends, by handle.
 	// (GET /v1/social/friends)
-	ListFriends(ctx echo.Context) error
+	ListFriends(ctx *echo.Context) error
 	// RemoveFriend Unfriend. Silent; the other side is not told.
 	// (DELETE /v1/social/friends/{userId})
-	RemoveFriend(ctx echo.Context, userId apiid.UUID) error
+	RemoveFriend(ctx *echo.Context, userId apiid.UUID) error
 	// GetFriendProfile A friend's shelves and what you share. 404 for anyone who is not your friend. A friend who hides their library shows only their name (`sharing` false).
 	// (GET /v1/social/friends/{userId}/profile)
-	GetFriendProfile(ctx echo.Context, userId apiid.UUID) error
+	GetFriendProfile(ctx *echo.Context, userId apiid.UUID) error
 	// ListFriendInvites Your invite links that are still open, newest first.
 	// (GET /v1/social/invites)
-	ListFriendInvites(ctx echo.Context) error
+	ListFriendInvites(ctx *echo.Context) error
 	// CreateFriendInvite Make a one-use invite link, live for 14 days, optionally carrying a title to watch together. Needs your own handle; at most 20 open at once.
 	// (POST /v1/social/invites)
-	CreateFriendInvite(ctx echo.Context) error
+	CreateFriendInvite(ctx *echo.Context) error
 	// RevokeFriendInvite Revoke one of your open invite links. Anyone opening it afterwards sees an invalid invite.
 	// (DELETE /v1/social/invites/{code})
-	RevokeFriendInvite(ctx echo.Context, code string) error
+	RevokeFriendInvite(ctx *echo.Context, code string) error
 	// RedeemFriendInvite Accept an invite. You and the inviter become friends and the link is spent; already friends leaves it unspent. Needs your own handle.
 	// (POST /v1/social/invites/{code}/redeem)
-	RedeemFriendInvite(ctx echo.Context, code string) error
+	RedeemFriendInvite(ctx *echo.Context, code string) error
 	// GetLeaderboard The weekly friends board (GAM-005): you and friends who joined it, by points earned that week on each person's own local dates. Making friends and a first import do not count. Until you join (`leaderboardOptIn`), `optedIn` is false and nobody is listed. Never global.
 	// (GET /v1/social/leaderboard)
-	GetLeaderboard(ctx echo.Context, params GetLeaderboardParams) error
+	GetLeaderboard(ctx *echo.Context, params GetLeaderboardParams) error
 	// RecommendTitle Send a title to up to 10 friends, with an optional note of up to 140 characters. Anyone who is not your friend makes the whole request a 404. Needs your own handle.
 	// (POST /v1/social/recommendations)
-	RecommendTitle(ctx echo.Context) error
+	RecommendTitle(ctx *echo.Context) error
 	// ReportUser Report a user to Aaru. The user is not told.
 	// (POST /v1/social/reports)
-	ReportUser(ctx echo.Context) error
+	ReportUser(ctx *echo.Context) error
 	// GetSocialUser The user with exactly this handle and where they stand with you. 404 when nobody holds it or either of you blocked the other. A friend or yourself is free; anyone else, misses included, at most 60 a user per hour (429).
 	// (GET /v1/social/users/{handle})
-	GetSocialUser(ctx echo.Context, handle string) error
+	GetSocialUser(ctx *echo.Context, handle string) error
 	// GetSportEvent One event with its live line and where to watch it (SPT-002, SPT-005).
 	// (GET /v1/sports/events/{id})
-	GetSportEvent(ctx echo.Context, id string) error
+	GetSportEvent(ctx *echo.Context, id string) error
 	// GetSportFavorites Each followed league, team and player with what is live, next and last (SPT-002).
 	// (GET /v1/sports/favorites)
-	GetSportFavorites(ctx echo.Context) error
+	GetSportFavorites(ctx *echo.Context) error
 	// GetSportSchedule One day of events for the leagues the user follows, favorites highlighted (SPT-002).
 	// (GET /v1/sports/schedule)
-	GetSportSchedule(ctx echo.Context, params GetSportScheduleParams) error
+	GetSportSchedule(ctx *echo.Context, params GetSportScheduleParams) error
 	// SearchSports Leagues, teams and players by name, from the sports provider (SPT-002).
 	// (GET /v1/sports/search)
-	SearchSports(ctx echo.Context, params SearchSportsParams) error
+	SearchSports(ctx *echo.Context, params SearchSportsParams) error
 	// GetSportSuggestions The first-run picks for Sports (SPT-002).
 	// (GET /v1/sports/suggested)
-	GetSportSuggestions(ctx echo.Context) error
+	GetSportSuggestions(ctx *echo.Context) error
 	// ResolveTitle The page for a catalog ref, in the library or not (LIB-006). Resolving may add the title to the catalog; it never adds it to the library.
 	// (POST /v1/titles/resolve)
-	ResolveTitle(ctx echo.Context) error
+	ResolveTitle(ctx *echo.Context) error
 	// GetTitle A title from the catalog. Shows include their seasons and episodes.
 	// (GET /v1/titles/{id})
-	GetTitle(ctx echo.Context, id apiid.UUID) error
+	GetTitle(ctx *echo.Context, id apiid.UUID) error
 	// ListTitlePosts Posts about this title by you and your friends, newest first.
 	// (GET /v1/titles/{id}/posts)
-	ListTitlePosts(ctx echo.Context, id apiid.UUID, params ListTitlePostsParams) error
+	ListTitlePosts(ctx *echo.Context, id apiid.UUID, params ListTitlePostsParams) error
 	// GetTonight One to three things to start tonight (AG-005), ranked from the user's own library: the next episode of shows in progress, today's airings, books in progress, wishlist films. Reasons are templates; no model is called.
 	// (GET /v1/tonight)
-	GetTonight(ctx echo.Context, params GetTonightParams) error
+	GetTonight(ctx *echo.Context, params GetTonightParams) error
 	// ClearTonightFeedback Takes back today's "Not tonight" or "Not for me" on the item (the Undo after either). Nothing to take back is still 204.
 	// (DELETE /v1/tonight/{id}/feedback)
-	ClearTonightFeedback(ctx echo.Context, id apiid.UUID, params ClearTonightFeedbackParams) error
+	ClearTonightFeedback(ctx *echo.Context, id apiid.UUID, params ClearTonightFeedbackParams) error
 	// SendTonightFeedback "Not tonight" hides the item until the local day ends; "rejected" (not for me) weighs against it for 14 days.
 	// (POST /v1/tonight/{id}/feedback)
-	SendTonightFeedback(ctx echo.Context, id apiid.UUID, params SendTonightFeedbackParams) error
+	SendTonightFeedback(ctx *echo.Context, id apiid.UUID, params SendTonightFeedbackParams) error
 	// GetUpNext Continue Watching, Start Watching, status counts and Unfinished business for the home screen, in one call.
 	// (GET /v1/up-next)
-	GetUpNext(ctx echo.Context) error
+	GetUpNext(ctx *echo.Context) error
 	// GetUserAvatar Someone's avatar (SOC-001b), for any signed-in account. A block either way, an unknown user and no avatar are the same 404. Use the `avatarUrl` a response gave you: its `v` changes with every upload, so a cached image is never stale.
 	// (GET /v1/users/{userId}/avatar)
-	GetUserAvatar(ctx echo.Context, userId apiid.UUID, params GetUserAvatarParams) error
+	GetUserAvatar(ctx *echo.Context, userId apiid.UUID, params GetUserAvatarParams) error
 	// GetWebPushKey The VAPID public key a browser subscribes with. 503 `push_unavailable` when web push is off.
 	// (GET /v1/web-push/key)
-	GetWebPushKey(ctx echo.Context) error
+	GetWebPushKey(ctx *echo.Context) error
 
 	// (DELETE /v1/web-push/subscriptions)
-	DeleteWebPushSubscription(ctx echo.Context, params DeleteWebPushSubscriptionParams) error
+	DeleteWebPushSubscription(ctx *echo.Context, params DeleteWebPushSubscriptionParams) error
 	// SaveWebPushSubscription Save this browser's push subscription. Saved again, it moves to this user.
 	// (PUT /v1/web-push/subscriptions)
-	SaveWebPushSubscription(ctx echo.Context) error
+	SaveWebPushSubscription(ctx *echo.Context) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -5836,7 +5836,7 @@ type ServerInterfaceWrapper struct {
 }
 
 // ListActions converts echo context to params.
-func (w *ServerInterfaceWrapper) ListActions(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) ListActions(ctx *echo.Context) error {
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
@@ -5854,7 +5854,7 @@ func (w *ServerInterfaceWrapper) ListActions(ctx echo.Context) error {
 }
 
 // UndoAction converts echo context to params.
-func (w *ServerInterfaceWrapper) UndoAction(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) UndoAction(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id apiid.UUID
@@ -5870,7 +5870,7 @@ func (w *ServerInterfaceWrapper) UndoAction(ctx echo.Context) error {
 }
 
 // ListFriendActivity converts echo context to params.
-func (w *ServerInterfaceWrapper) ListFriendActivity(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) ListFriendActivity(ctx *echo.Context) error {
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
@@ -5888,7 +5888,7 @@ func (w *ServerInterfaceWrapper) ListFriendActivity(ctx echo.Context) error {
 }
 
 // ClearActivityReaction converts echo context to params.
-func (w *ServerInterfaceWrapper) ClearActivityReaction(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) ClearActivityReaction(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id string
@@ -5904,7 +5904,7 @@ func (w *ServerInterfaceWrapper) ClearActivityReaction(ctx echo.Context) error {
 }
 
 // SetActivityReaction converts echo context to params.
-func (w *ServerInterfaceWrapper) SetActivityReaction(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) SetActivityReaction(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id string
@@ -5920,7 +5920,7 @@ func (w *ServerInterfaceWrapper) SetActivityReaction(ctx echo.Context) error {
 }
 
 // GetAgentSetup converts echo context to params.
-func (w *ServerInterfaceWrapper) GetAgentSetup(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetAgentSetup(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "kind" -------------
 	var kind AgentMCPKind
@@ -5936,7 +5936,7 @@ func (w *ServerInterfaceWrapper) GetAgentSetup(ctx echo.Context) error {
 }
 
 // ListAgentTokens converts echo context to params.
-func (w *ServerInterfaceWrapper) ListAgentTokens(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) ListAgentTokens(ctx *echo.Context) error {
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
@@ -5954,7 +5954,7 @@ func (w *ServerInterfaceWrapper) ListAgentTokens(ctx echo.Context) error {
 }
 
 // CreateAgentToken converts echo context to params.
-func (w *ServerInterfaceWrapper) CreateAgentToken(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) CreateAgentToken(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -5963,7 +5963,7 @@ func (w *ServerInterfaceWrapper) CreateAgentToken(ctx echo.Context) error {
 }
 
 // RevokeAgentToken converts echo context to params.
-func (w *ServerInterfaceWrapper) RevokeAgentToken(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) RevokeAgentToken(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id apiid.UUID
@@ -5979,7 +5979,7 @@ func (w *ServerInterfaceWrapper) RevokeAgentToken(ctx echo.Context) error {
 }
 
 // SignInWithApple converts echo context to params.
-func (w *ServerInterfaceWrapper) SignInWithApple(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) SignInWithApple(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -5988,7 +5988,7 @@ func (w *ServerInterfaceWrapper) SignInWithApple(ctx echo.Context) error {
 }
 
 // RequestMagicLink converts echo context to params.
-func (w *ServerInterfaceWrapper) RequestMagicLink(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) RequestMagicLink(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -5997,7 +5997,7 @@ func (w *ServerInterfaceWrapper) RequestMagicLink(ctx echo.Context) error {
 }
 
 // VerifyMagicLink converts echo context to params.
-func (w *ServerInterfaceWrapper) VerifyMagicLink(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) VerifyMagicLink(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -6006,7 +6006,7 @@ func (w *ServerInterfaceWrapper) VerifyMagicLink(ctx echo.Context) error {
 }
 
 // SignInWithGoogle converts echo context to params.
-func (w *ServerInterfaceWrapper) SignInWithGoogle(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) SignInWithGoogle(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -6015,7 +6015,7 @@ func (w *ServerInterfaceWrapper) SignInWithGoogle(ctx echo.Context) error {
 }
 
 // SignOut converts echo context to params.
-func (w *ServerInterfaceWrapper) SignOut(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) SignOut(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -6024,7 +6024,7 @@ func (w *ServerInterfaceWrapper) SignOut(ctx echo.Context) error {
 }
 
 // ReceiveAppleNotification converts echo context to params.
-func (w *ServerInterfaceWrapper) ReceiveAppleNotification(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) ReceiveAppleNotification(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -6033,7 +6033,7 @@ func (w *ServerInterfaceWrapper) ReceiveAppleNotification(ctx echo.Context) erro
 }
 
 // RecordAppleTransaction converts echo context to params.
-func (w *ServerInterfaceWrapper) RecordAppleTransaction(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) RecordAppleTransaction(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -6042,7 +6042,7 @@ func (w *ServerInterfaceWrapper) RecordAppleTransaction(ctx echo.Context) error 
 }
 
 // ListBoard converts echo context to params.
-func (w *ServerInterfaceWrapper) ListBoard(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) ListBoard(ctx *echo.Context) error {
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
@@ -6074,7 +6074,7 @@ func (w *ServerInterfaceWrapper) ListBoard(ctx echo.Context) error {
 }
 
 // CreateBoardPost converts echo context to params.
-func (w *ServerInterfaceWrapper) CreateBoardPost(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) CreateBoardPost(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -6083,7 +6083,7 @@ func (w *ServerInterfaceWrapper) CreateBoardPost(ctx echo.Context) error {
 }
 
 // DeleteBoardPost converts echo context to params.
-func (w *ServerInterfaceWrapper) DeleteBoardPost(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) DeleteBoardPost(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "postId" -------------
 	var postId apiid.UUID
@@ -6099,7 +6099,7 @@ func (w *ServerInterfaceWrapper) DeleteBoardPost(ctx echo.Context) error {
 }
 
 // GetBoardPost converts echo context to params.
-func (w *ServerInterfaceWrapper) GetBoardPost(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetBoardPost(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "postId" -------------
 	var postId apiid.UUID
@@ -6115,7 +6115,7 @@ func (w *ServerInterfaceWrapper) GetBoardPost(ctx echo.Context) error {
 }
 
 // EditBoardPost converts echo context to params.
-func (w *ServerInterfaceWrapper) EditBoardPost(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) EditBoardPost(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "postId" -------------
 	var postId apiid.UUID
@@ -6131,7 +6131,7 @@ func (w *ServerInterfaceWrapper) EditBoardPost(ctx echo.Context) error {
 }
 
 // ListBoardComments converts echo context to params.
-func (w *ServerInterfaceWrapper) ListBoardComments(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) ListBoardComments(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "postId" -------------
 	var postId apiid.UUID
@@ -6163,7 +6163,7 @@ func (w *ServerInterfaceWrapper) ListBoardComments(ctx echo.Context) error {
 }
 
 // CreateBoardComment converts echo context to params.
-func (w *ServerInterfaceWrapper) CreateBoardComment(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) CreateBoardComment(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "postId" -------------
 	var postId apiid.UUID
@@ -6179,7 +6179,7 @@ func (w *ServerInterfaceWrapper) CreateBoardComment(ctx echo.Context) error {
 }
 
 // DeleteBoardComment converts echo context to params.
-func (w *ServerInterfaceWrapper) DeleteBoardComment(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) DeleteBoardComment(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "postId" -------------
 	var postId apiid.UUID
@@ -6203,7 +6203,7 @@ func (w *ServerInterfaceWrapper) DeleteBoardComment(ctx echo.Context) error {
 }
 
 // RemoveBoardPostUpvote converts echo context to params.
-func (w *ServerInterfaceWrapper) RemoveBoardPostUpvote(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) RemoveBoardPostUpvote(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "postId" -------------
 	var postId apiid.UUID
@@ -6219,7 +6219,7 @@ func (w *ServerInterfaceWrapper) RemoveBoardPostUpvote(ctx echo.Context) error {
 }
 
 // UpvoteBoardPost converts echo context to params.
-func (w *ServerInterfaceWrapper) UpvoteBoardPost(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) UpvoteBoardPost(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "postId" -------------
 	var postId apiid.UUID
@@ -6235,7 +6235,7 @@ func (w *ServerInterfaceWrapper) UpvoteBoardPost(ctx echo.Context) error {
 }
 
 // ListBoardPostUpvoters converts echo context to params.
-func (w *ServerInterfaceWrapper) ListBoardPostUpvoters(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) ListBoardPostUpvoters(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "postId" -------------
 	var postId apiid.UUID
@@ -6251,7 +6251,7 @@ func (w *ServerInterfaceWrapper) ListBoardPostUpvoters(ctx echo.Context) error {
 }
 
 // GetCalendar converts echo context to params.
-func (w *ServerInterfaceWrapper) GetCalendar(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetCalendar(ctx *echo.Context) error {
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
@@ -6276,7 +6276,7 @@ func (w *ServerInterfaceWrapper) GetCalendar(ctx echo.Context) error {
 }
 
 // DeleteChats converts echo context to params.
-func (w *ServerInterfaceWrapper) DeleteChats(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) DeleteChats(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -6285,7 +6285,7 @@ func (w *ServerInterfaceWrapper) DeleteChats(ctx echo.Context) error {
 }
 
 // CreateChat converts echo context to params.
-func (w *ServerInterfaceWrapper) CreateChat(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) CreateChat(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -6294,7 +6294,7 @@ func (w *ServerInterfaceWrapper) CreateChat(ctx echo.Context) error {
 }
 
 // GetChatStatus converts echo context to params.
-func (w *ServerInterfaceWrapper) GetChatStatus(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetChatStatus(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -6303,7 +6303,7 @@ func (w *ServerInterfaceWrapper) GetChatStatus(ctx echo.Context) error {
 }
 
 // GetArtistConcerts converts echo context to params.
-func (w *ServerInterfaceWrapper) GetArtistConcerts(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetArtistConcerts(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -6312,7 +6312,7 @@ func (w *ServerInterfaceWrapper) GetArtistConcerts(ctx echo.Context) error {
 }
 
 // GetConcertsNear converts echo context to params.
-func (w *ServerInterfaceWrapper) GetConcertsNear(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetConcertsNear(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -6321,7 +6321,7 @@ func (w *ServerInterfaceWrapper) GetConcertsNear(ctx echo.Context) error {
 }
 
 // SearchConcertPerformers converts echo context to params.
-func (w *ServerInterfaceWrapper) SearchConcertPerformers(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) SearchConcertPerformers(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -6330,7 +6330,7 @@ func (w *ServerInterfaceWrapper) SearchConcertPerformers(ctx echo.Context) error
 }
 
 // SearchConcertPlaces converts echo context to params.
-func (w *ServerInterfaceWrapper) SearchConcertPlaces(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) SearchConcertPlaces(ctx *echo.Context) error {
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
@@ -6348,7 +6348,7 @@ func (w *ServerInterfaceWrapper) SearchConcertPlaces(ctx echo.Context) error {
 }
 
 // SearchConcerts converts echo context to params.
-func (w *ServerInterfaceWrapper) SearchConcerts(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) SearchConcerts(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -6357,7 +6357,7 @@ func (w *ServerInterfaceWrapper) SearchConcerts(ctx echo.Context) error {
 }
 
 // DisconnectMAL converts echo context to params.
-func (w *ServerInterfaceWrapper) DisconnectMAL(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) DisconnectMAL(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -6366,7 +6366,7 @@ func (w *ServerInterfaceWrapper) DisconnectMAL(ctx echo.Context) error {
 }
 
 // GetMALConnection converts echo context to params.
-func (w *ServerInterfaceWrapper) GetMALConnection(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetMALConnection(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -6375,7 +6375,7 @@ func (w *ServerInterfaceWrapper) GetMALConnection(ctx echo.Context) error {
 }
 
 // ConnectMAL converts echo context to params.
-func (w *ServerInterfaceWrapper) ConnectMAL(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) ConnectMAL(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -6384,7 +6384,7 @@ func (w *ServerInterfaceWrapper) ConnectMAL(ctx echo.Context) error {
 }
 
 // RequestMALPull converts echo context to params.
-func (w *ServerInterfaceWrapper) RequestMALPull(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) RequestMALPull(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -6393,7 +6393,7 @@ func (w *ServerInterfaceWrapper) RequestMALPull(ctx echo.Context) error {
 }
 
 // RegisterDevice converts echo context to params.
-func (w *ServerInterfaceWrapper) RegisterDevice(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) RegisterDevice(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -6402,7 +6402,7 @@ func (w *ServerInterfaceWrapper) RegisterDevice(ctx echo.Context) error {
 }
 
 // RegisterLiveActivityToken converts echo context to params.
-func (w *ServerInterfaceWrapper) RegisterLiveActivityToken(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) RegisterLiveActivityToken(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -6411,7 +6411,7 @@ func (w *ServerInterfaceWrapper) RegisterLiveActivityToken(ctx echo.Context) err
 }
 
 // UnregisterDevice converts echo context to params.
-func (w *ServerInterfaceWrapper) UnregisterDevice(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) UnregisterDevice(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "token" -------------
 	var token string
@@ -6427,7 +6427,7 @@ func (w *ServerInterfaceWrapper) UnregisterDevice(ctx echo.Context) error {
 }
 
 // GetDiscover converts echo context to params.
-func (w *ServerInterfaceWrapper) GetDiscover(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetDiscover(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -6436,7 +6436,7 @@ func (w *ServerInterfaceWrapper) GetDiscover(ctx echo.Context) error {
 }
 
 // GetDiscoverOnAir converts echo context to params.
-func (w *ServerInterfaceWrapper) GetDiscoverOnAir(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetDiscoverOnAir(ctx *echo.Context) error {
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
@@ -6454,7 +6454,7 @@ func (w *ServerInterfaceWrapper) GetDiscoverOnAir(ctx echo.Context) error {
 }
 
 // GetDiscoverSeason converts echo context to params.
-func (w *ServerInterfaceWrapper) GetDiscoverSeason(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetDiscoverSeason(ctx *echo.Context) error {
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
@@ -6493,7 +6493,7 @@ func (w *ServerInterfaceWrapper) GetDiscoverSeason(ctx echo.Context) error {
 }
 
 // DeclineGroupInvite converts echo context to params.
-func (w *ServerInterfaceWrapper) DeclineGroupInvite(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) DeclineGroupInvite(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id apiid.UUID
@@ -6509,7 +6509,7 @@ func (w *ServerInterfaceWrapper) DeclineGroupInvite(ctx echo.Context) error {
 }
 
 // AcceptGroupInvite converts echo context to params.
-func (w *ServerInterfaceWrapper) AcceptGroupInvite(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) AcceptGroupInvite(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id apiid.UUID
@@ -6525,7 +6525,7 @@ func (w *ServerInterfaceWrapper) AcceptGroupInvite(ctx echo.Context) error {
 }
 
 // ListGroups converts echo context to params.
-func (w *ServerInterfaceWrapper) ListGroups(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) ListGroups(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -6534,7 +6534,7 @@ func (w *ServerInterfaceWrapper) ListGroups(ctx echo.Context) error {
 }
 
 // CreateGroup converts echo context to params.
-func (w *ServerInterfaceWrapper) CreateGroup(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) CreateGroup(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -6543,7 +6543,7 @@ func (w *ServerInterfaceWrapper) CreateGroup(ctx echo.Context) error {
 }
 
 // DeleteGroup converts echo context to params.
-func (w *ServerInterfaceWrapper) DeleteGroup(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) DeleteGroup(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
 	var groupId apiid.UUID
@@ -6559,7 +6559,7 @@ func (w *ServerInterfaceWrapper) DeleteGroup(ctx echo.Context) error {
 }
 
 // GetGroup converts echo context to params.
-func (w *ServerInterfaceWrapper) GetGroup(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetGroup(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
 	var groupId apiid.UUID
@@ -6575,7 +6575,7 @@ func (w *ServerInterfaceWrapper) GetGroup(ctx echo.Context) error {
 }
 
 // UpdateGroup converts echo context to params.
-func (w *ServerInterfaceWrapper) UpdateGroup(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) UpdateGroup(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
 	var groupId apiid.UUID
@@ -6591,7 +6591,7 @@ func (w *ServerInterfaceWrapper) UpdateGroup(ctx echo.Context) error {
 }
 
 // CreateChannel converts echo context to params.
-func (w *ServerInterfaceWrapper) CreateChannel(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) CreateChannel(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
 	var groupId apiid.UUID
@@ -6607,7 +6607,7 @@ func (w *ServerInterfaceWrapper) CreateChannel(ctx echo.Context) error {
 }
 
 // DeleteChannel converts echo context to params.
-func (w *ServerInterfaceWrapper) DeleteChannel(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) DeleteChannel(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
 	var groupId apiid.UUID
@@ -6631,7 +6631,7 @@ func (w *ServerInterfaceWrapper) DeleteChannel(ctx echo.Context) error {
 }
 
 // UpdateChannel converts echo context to params.
-func (w *ServerInterfaceWrapper) UpdateChannel(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) UpdateChannel(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
 	var groupId apiid.UUID
@@ -6655,7 +6655,7 @@ func (w *ServerInterfaceWrapper) UpdateChannel(ctx echo.Context) error {
 }
 
 // ListChannelItems converts echo context to params.
-func (w *ServerInterfaceWrapper) ListChannelItems(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) ListChannelItems(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
 	var groupId apiid.UUID
@@ -6679,7 +6679,7 @@ func (w *ServerInterfaceWrapper) ListChannelItems(ctx echo.Context) error {
 }
 
 // AddChannelItem converts echo context to params.
-func (w *ServerInterfaceWrapper) AddChannelItem(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) AddChannelItem(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
 	var groupId apiid.UUID
@@ -6703,7 +6703,7 @@ func (w *ServerInterfaceWrapper) AddChannelItem(ctx echo.Context) error {
 }
 
 // RemoveChannelItem converts echo context to params.
-func (w *ServerInterfaceWrapper) RemoveChannelItem(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) RemoveChannelItem(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
 	var groupId apiid.UUID
@@ -6735,7 +6735,7 @@ func (w *ServerInterfaceWrapper) RemoveChannelItem(ctx echo.Context) error {
 }
 
 // ListMessages converts echo context to params.
-func (w *ServerInterfaceWrapper) ListMessages(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) ListMessages(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
 	var groupId apiid.UUID
@@ -6782,7 +6782,7 @@ func (w *ServerInterfaceWrapper) ListMessages(ctx echo.Context) error {
 }
 
 // PostMessage converts echo context to params.
-func (w *ServerInterfaceWrapper) PostMessage(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) PostMessage(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
 	var groupId apiid.UUID
@@ -6806,7 +6806,7 @@ func (w *ServerInterfaceWrapper) PostMessage(ctx echo.Context) error {
 }
 
 // DeleteMessage converts echo context to params.
-func (w *ServerInterfaceWrapper) DeleteMessage(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) DeleteMessage(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
 	var groupId apiid.UUID
@@ -6838,7 +6838,7 @@ func (w *ServerInterfaceWrapper) DeleteMessage(ctx echo.Context) error {
 }
 
 // EditMessage converts echo context to params.
-func (w *ServerInterfaceWrapper) EditMessage(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) EditMessage(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
 	var groupId apiid.UUID
@@ -6870,7 +6870,7 @@ func (w *ServerInterfaceWrapper) EditMessage(ctx echo.Context) error {
 }
 
 // GetWatchParty converts echo context to params.
-func (w *ServerInterfaceWrapper) GetWatchParty(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetWatchParty(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
 	var groupId apiid.UUID
@@ -6894,7 +6894,7 @@ func (w *ServerInterfaceWrapper) GetWatchParty(ctx echo.Context) error {
 }
 
 // OpenWatchParty converts echo context to params.
-func (w *ServerInterfaceWrapper) OpenWatchParty(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) OpenWatchParty(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
 	var groupId apiid.UUID
@@ -6918,7 +6918,7 @@ func (w *ServerInterfaceWrapper) OpenWatchParty(ctx echo.Context) error {
 }
 
 // EndWatchParty converts echo context to params.
-func (w *ServerInterfaceWrapper) EndWatchParty(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) EndWatchParty(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
 	var groupId apiid.UUID
@@ -6942,7 +6942,7 @@ func (w *ServerInterfaceWrapper) EndWatchParty(ctx echo.Context) error {
 }
 
 // SetWatchPartyReady converts echo context to params.
-func (w *ServerInterfaceWrapper) SetWatchPartyReady(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) SetWatchPartyReady(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
 	var groupId apiid.UUID
@@ -6966,7 +6966,7 @@ func (w *ServerInterfaceWrapper) SetWatchPartyReady(ctx echo.Context) error {
 }
 
 // StartWatchParty converts echo context to params.
-func (w *ServerInterfaceWrapper) StartWatchParty(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) StartWatchParty(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
 	var groupId apiid.UUID
@@ -6990,7 +6990,7 @@ func (w *ServerInterfaceWrapper) StartWatchParty(ctx echo.Context) error {
 }
 
 // MarkWatchPartyWatched converts echo context to params.
-func (w *ServerInterfaceWrapper) MarkWatchPartyWatched(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) MarkWatchPartyWatched(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
 	var groupId apiid.UUID
@@ -7014,7 +7014,7 @@ func (w *ServerInterfaceWrapper) MarkWatchPartyWatched(ctx echo.Context) error {
 }
 
 // GetChannelProgress converts echo context to params.
-func (w *ServerInterfaceWrapper) GetChannelProgress(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetChannelProgress(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
 	var groupId apiid.UUID
@@ -7038,7 +7038,7 @@ func (w *ServerInterfaceWrapper) GetChannelProgress(ctx echo.Context) error {
 }
 
 // MarkChannelRead converts echo context to params.
-func (w *ServerInterfaceWrapper) MarkChannelRead(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) MarkChannelRead(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
 	var groupId apiid.UUID
@@ -7062,7 +7062,7 @@ func (w *ServerInterfaceWrapper) MarkChannelRead(ctx echo.Context) error {
 }
 
 // InviteToGroup converts echo context to params.
-func (w *ServerInterfaceWrapper) InviteToGroup(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) InviteToGroup(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
 	var groupId apiid.UUID
@@ -7078,7 +7078,7 @@ func (w *ServerInterfaceWrapper) InviteToGroup(ctx echo.Context) error {
 }
 
 // UpdateMyMembership converts echo context to params.
-func (w *ServerInterfaceWrapper) UpdateMyMembership(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) UpdateMyMembership(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
 	var groupId apiid.UUID
@@ -7094,7 +7094,7 @@ func (w *ServerInterfaceWrapper) UpdateMyMembership(ctx echo.Context) error {
 }
 
 // RemoveGroupMember converts echo context to params.
-func (w *ServerInterfaceWrapper) RemoveGroupMember(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) RemoveGroupMember(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
 	var groupId apiid.UUID
@@ -7118,7 +7118,7 @@ func (w *ServerInterfaceWrapper) RemoveGroupMember(ctx echo.Context) error {
 }
 
 // UpdateGroupMember converts echo context to params.
-func (w *ServerInterfaceWrapper) UpdateGroupMember(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) UpdateGroupMember(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
 	var groupId apiid.UUID
@@ -7142,7 +7142,7 @@ func (w *ServerInterfaceWrapper) UpdateGroupMember(ctx echo.Context) error {
 }
 
 // TransferGroup converts echo context to params.
-func (w *ServerInterfaceWrapper) TransferGroup(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) TransferGroup(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupId" -------------
 	var groupId apiid.UUID
@@ -7158,7 +7158,7 @@ func (w *ServerInterfaceWrapper) TransferGroup(ctx echo.Context) error {
 }
 
 // GetHealth converts echo context to params.
-func (w *ServerInterfaceWrapper) GetHealth(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetHealth(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -7167,7 +7167,7 @@ func (w *ServerInterfaceWrapper) GetHealth(ctx echo.Context) error {
 }
 
 // ListImports converts echo context to params.
-func (w *ServerInterfaceWrapper) ListImports(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) ListImports(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -7176,7 +7176,7 @@ func (w *ServerInterfaceWrapper) ListImports(ctx echo.Context) error {
 }
 
 // CreateAniListImport converts echo context to params.
-func (w *ServerInterfaceWrapper) CreateAniListImport(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) CreateAniListImport(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -7185,7 +7185,7 @@ func (w *ServerInterfaceWrapper) CreateAniListImport(ctx echo.Context) error {
 }
 
 // CreateCATFeedImport converts echo context to params.
-func (w *ServerInterfaceWrapper) CreateCATFeedImport(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) CreateCATFeedImport(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -7194,7 +7194,7 @@ func (w *ServerInterfaceWrapper) CreateCATFeedImport(ctx echo.Context) error {
 }
 
 // CreateLastFMImport converts echo context to params.
-func (w *ServerInterfaceWrapper) CreateLastFMImport(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) CreateLastFMImport(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -7203,7 +7203,7 @@ func (w *ServerInterfaceWrapper) CreateLastFMImport(ctx echo.Context) error {
 }
 
 // CreateListenBrainzImport converts echo context to params.
-func (w *ServerInterfaceWrapper) CreateListenBrainzImport(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) CreateListenBrainzImport(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -7212,7 +7212,7 @@ func (w *ServerInterfaceWrapper) CreateListenBrainzImport(ctx echo.Context) erro
 }
 
 // StartStremioLink converts echo context to params.
-func (w *ServerInterfaceWrapper) StartStremioLink(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) StartStremioLink(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -7221,7 +7221,7 @@ func (w *ServerInterfaceWrapper) StartStremioLink(ctx echo.Context) error {
 }
 
 // PollStremioLink converts echo context to params.
-func (w *ServerInterfaceWrapper) PollStremioLink(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) PollStremioLink(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "code" -------------
 	var code string
@@ -7237,7 +7237,7 @@ func (w *ServerInterfaceWrapper) PollStremioLink(ctx echo.Context) error {
 }
 
 // CreateTraktImport converts echo context to params.
-func (w *ServerInterfaceWrapper) CreateTraktImport(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) CreateTraktImport(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -7246,7 +7246,7 @@ func (w *ServerInterfaceWrapper) CreateTraktImport(ctx echo.Context) error {
 }
 
 // ConnectTrakt converts echo context to params.
-func (w *ServerInterfaceWrapper) ConnectTrakt(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) ConnectTrakt(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -7255,7 +7255,7 @@ func (w *ServerInterfaceWrapper) ConnectTrakt(ctx echo.Context) error {
 }
 
 // DisconnectTrakt converts echo context to params.
-func (w *ServerInterfaceWrapper) DisconnectTrakt(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) DisconnectTrakt(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -7264,7 +7264,7 @@ func (w *ServerInterfaceWrapper) DisconnectTrakt(ctx echo.Context) error {
 }
 
 // GetTraktConnection converts echo context to params.
-func (w *ServerInterfaceWrapper) GetTraktConnection(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetTraktConnection(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -7273,7 +7273,7 @@ func (w *ServerInterfaceWrapper) GetTraktConnection(ctx echo.Context) error {
 }
 
 // DeleteImport converts echo context to params.
-func (w *ServerInterfaceWrapper) DeleteImport(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) DeleteImport(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id apiid.UUID
@@ -7289,7 +7289,7 @@ func (w *ServerInterfaceWrapper) DeleteImport(ctx echo.Context) error {
 }
 
 // GetImport converts echo context to params.
-func (w *ServerInterfaceWrapper) GetImport(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetImport(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id apiid.UUID
@@ -7305,7 +7305,7 @@ func (w *ServerInterfaceWrapper) GetImport(ctx echo.Context) error {
 }
 
 // ApplyImport converts echo context to params.
-func (w *ServerInterfaceWrapper) ApplyImport(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) ApplyImport(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id apiid.UUID
@@ -7321,7 +7321,7 @@ func (w *ServerInterfaceWrapper) ApplyImport(ctx echo.Context) error {
 }
 
 // MatchAllImportRows converts echo context to params.
-func (w *ServerInterfaceWrapper) MatchAllImportRows(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) MatchAllImportRows(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id apiid.UUID
@@ -7337,7 +7337,7 @@ func (w *ServerInterfaceWrapper) MatchAllImportRows(ctx echo.Context) error {
 }
 
 // LeaveOutImportRow converts echo context to params.
-func (w *ServerInterfaceWrapper) LeaveOutImportRow(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) LeaveOutImportRow(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id apiid.UUID
@@ -7361,7 +7361,7 @@ func (w *ServerInterfaceWrapper) LeaveOutImportRow(ctx echo.Context) error {
 }
 
 // ResolveImportRow converts echo context to params.
-func (w *ServerInterfaceWrapper) ResolveImportRow(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) ResolveImportRow(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id apiid.UUID
@@ -7385,7 +7385,7 @@ func (w *ServerInterfaceWrapper) ResolveImportRow(ctx echo.Context) error {
 }
 
 // UndoListenImport converts echo context to params.
-func (w *ServerInterfaceWrapper) UndoListenImport(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) UndoListenImport(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id apiid.UUID
@@ -7401,7 +7401,7 @@ func (w *ServerInterfaceWrapper) UndoListenImport(ctx echo.Context) error {
 }
 
 // GetInvitePreview converts echo context to params.
-func (w *ServerInterfaceWrapper) GetInvitePreview(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetInvitePreview(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "code" -------------
 	var code string
@@ -7417,7 +7417,7 @@ func (w *ServerInterfaceWrapper) GetInvitePreview(ctx echo.Context) error {
 }
 
 // ListLibraryItems converts echo context to params.
-func (w *ServerInterfaceWrapper) ListLibraryItems(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) ListLibraryItems(ctx *echo.Context) error {
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
@@ -7477,7 +7477,7 @@ func (w *ServerInterfaceWrapper) ListLibraryItems(ctx echo.Context) error {
 }
 
 // AddLibraryItem converts echo context to params.
-func (w *ServerInterfaceWrapper) AddLibraryItem(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) AddLibraryItem(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -7486,7 +7486,7 @@ func (w *ServerInterfaceWrapper) AddLibraryItem(ctx echo.Context) error {
 }
 
 // DeleteLibraryItem converts echo context to params.
-func (w *ServerInterfaceWrapper) DeleteLibraryItem(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) DeleteLibraryItem(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id apiid.UUID
@@ -7502,7 +7502,7 @@ func (w *ServerInterfaceWrapper) DeleteLibraryItem(ctx echo.Context) error {
 }
 
 // GetLibraryItem converts echo context to params.
-func (w *ServerInterfaceWrapper) GetLibraryItem(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetLibraryItem(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id apiid.UUID
@@ -7518,7 +7518,7 @@ func (w *ServerInterfaceWrapper) GetLibraryItem(ctx echo.Context) error {
 }
 
 // UpdateLibraryItem converts echo context to params.
-func (w *ServerInterfaceWrapper) UpdateLibraryItem(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) UpdateLibraryItem(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id apiid.UUID
@@ -7534,7 +7534,7 @@ func (w *ServerInterfaceWrapper) UpdateLibraryItem(ctx echo.Context) error {
 }
 
 // SetEpisodeWatched converts echo context to params.
-func (w *ServerInterfaceWrapper) SetEpisodeWatched(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) SetEpisodeWatched(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id apiid.UUID
@@ -7566,7 +7566,7 @@ func (w *ServerInterfaceWrapper) SetEpisodeWatched(ctx echo.Context) error {
 }
 
 // MarkSeasonWatched converts echo context to params.
-func (w *ServerInterfaceWrapper) MarkSeasonWatched(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) MarkSeasonWatched(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id apiid.UUID
@@ -7590,7 +7590,7 @@ func (w *ServerInterfaceWrapper) MarkSeasonWatched(ctx echo.Context) error {
 }
 
 // MarkShowWatched converts echo context to params.
-func (w *ServerInterfaceWrapper) MarkShowWatched(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) MarkShowWatched(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id apiid.UUID
@@ -7606,7 +7606,7 @@ func (w *ServerInterfaceWrapper) MarkShowWatched(ctx echo.Context) error {
 }
 
 // SyncLibrary converts echo context to params.
-func (w *ServerInterfaceWrapper) SyncLibrary(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) SyncLibrary(ctx *echo.Context) error {
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
@@ -7624,7 +7624,7 @@ func (w *ServerInterfaceWrapper) SyncLibrary(ctx echo.Context) error {
 }
 
 // ListWatching converts echo context to params.
-func (w *ServerInterfaceWrapper) ListWatching(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) ListWatching(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -7633,7 +7633,7 @@ func (w *ServerInterfaceWrapper) ListWatching(ctx echo.Context) error {
 }
 
 // ListLists converts echo context to params.
-func (w *ServerInterfaceWrapper) ListLists(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) ListLists(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -7642,7 +7642,7 @@ func (w *ServerInterfaceWrapper) ListLists(ctx echo.Context) error {
 }
 
 // CreateList converts echo context to params.
-func (w *ServerInterfaceWrapper) CreateList(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) CreateList(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -7651,7 +7651,7 @@ func (w *ServerInterfaceWrapper) CreateList(ctx echo.Context) error {
 }
 
 // DeleteList converts echo context to params.
-func (w *ServerInterfaceWrapper) DeleteList(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) DeleteList(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id apiid.UUID
@@ -7667,7 +7667,7 @@ func (w *ServerInterfaceWrapper) DeleteList(ctx echo.Context) error {
 }
 
 // GetList converts echo context to params.
-func (w *ServerInterfaceWrapper) GetList(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetList(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id apiid.UUID
@@ -7683,7 +7683,7 @@ func (w *ServerInterfaceWrapper) GetList(ctx echo.Context) error {
 }
 
 // RenameList converts echo context to params.
-func (w *ServerInterfaceWrapper) RenameList(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) RenameList(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id apiid.UUID
@@ -7699,7 +7699,7 @@ func (w *ServerInterfaceWrapper) RenameList(ctx echo.Context) error {
 }
 
 // AddListItem converts echo context to params.
-func (w *ServerInterfaceWrapper) AddListItem(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) AddListItem(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id apiid.UUID
@@ -7715,7 +7715,7 @@ func (w *ServerInterfaceWrapper) AddListItem(ctx echo.Context) error {
 }
 
 // RemoveListItem converts echo context to params.
-func (w *ServerInterfaceWrapper) RemoveListItem(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) RemoveListItem(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id apiid.UUID
@@ -7739,7 +7739,7 @@ func (w *ServerInterfaceWrapper) RemoveListItem(ctx echo.Context) error {
 }
 
 // ReorderList converts echo context to params.
-func (w *ServerInterfaceWrapper) ReorderList(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) ReorderList(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id apiid.UUID
@@ -7755,7 +7755,7 @@ func (w *ServerInterfaceWrapper) ReorderList(ctx echo.Context) error {
 }
 
 // DeleteAccount converts echo context to params.
-func (w *ServerInterfaceWrapper) DeleteAccount(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) DeleteAccount(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -7764,7 +7764,7 @@ func (w *ServerInterfaceWrapper) DeleteAccount(ctx echo.Context) error {
 }
 
 // GetMe converts echo context to params.
-func (w *ServerInterfaceWrapper) GetMe(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetMe(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -7773,7 +7773,7 @@ func (w *ServerInterfaceWrapper) GetMe(ctx echo.Context) error {
 }
 
 // DeleteAvatar converts echo context to params.
-func (w *ServerInterfaceWrapper) DeleteAvatar(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) DeleteAvatar(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -7782,7 +7782,7 @@ func (w *ServerInterfaceWrapper) DeleteAvatar(ctx echo.Context) error {
 }
 
 // UploadAvatar converts echo context to params.
-func (w *ServerInterfaceWrapper) UploadAvatar(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) UploadAvatar(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -7791,7 +7791,7 @@ func (w *ServerInterfaceWrapper) UploadAvatar(ctx echo.Context) error {
 }
 
 // ListBadges converts echo context to params.
-func (w *ServerInterfaceWrapper) ListBadges(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) ListBadges(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -7800,7 +7800,7 @@ func (w *ServerInterfaceWrapper) ListBadges(ctx echo.Context) error {
 }
 
 // MarkBadgesSeen converts echo context to params.
-func (w *ServerInterfaceWrapper) MarkBadgesSeen(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) MarkBadgesSeen(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -7809,7 +7809,7 @@ func (w *ServerInterfaceWrapper) MarkBadgesSeen(ctx echo.Context) error {
 }
 
 // DeleteConcertPlace converts echo context to params.
-func (w *ServerInterfaceWrapper) DeleteConcertPlace(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) DeleteConcertPlace(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -7818,7 +7818,7 @@ func (w *ServerInterfaceWrapper) DeleteConcertPlace(ctx echo.Context) error {
 }
 
 // GetConcertPlace converts echo context to params.
-func (w *ServerInterfaceWrapper) GetConcertPlace(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetConcertPlace(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -7827,7 +7827,7 @@ func (w *ServerInterfaceWrapper) GetConcertPlace(ctx echo.Context) error {
 }
 
 // SaveConcertPlace converts echo context to params.
-func (w *ServerInterfaceWrapper) SaveConcertPlace(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) SaveConcertPlace(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -7836,7 +7836,7 @@ func (w *ServerInterfaceWrapper) SaveConcertPlace(ctx echo.Context) error {
 }
 
 // GetEntitlement converts echo context to params.
-func (w *ServerInterfaceWrapper) GetEntitlement(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetEntitlement(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -7845,7 +7845,7 @@ func (w *ServerInterfaceWrapper) GetEntitlement(ctx echo.Context) error {
 }
 
 // ExportAccount converts echo context to params.
-func (w *ServerInterfaceWrapper) ExportAccount(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) ExportAccount(ctx *echo.Context) error {
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
@@ -7863,7 +7863,7 @@ func (w *ServerInterfaceWrapper) ExportAccount(ctx echo.Context) error {
 }
 
 // GetMyFavorites converts echo context to params.
-func (w *ServerInterfaceWrapper) GetMyFavorites(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetMyFavorites(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -7872,7 +7872,7 @@ func (w *ServerInterfaceWrapper) GetMyFavorites(ctx echo.Context) error {
 }
 
 // SetMyFavorites converts echo context to params.
-func (w *ServerInterfaceWrapper) SetMyFavorites(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) SetMyFavorites(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "kind" -------------
 	var kind FavoriteKind
@@ -7888,7 +7888,7 @@ func (w *ServerInterfaceWrapper) SetMyFavorites(ctx echo.Context) error {
 }
 
 // ListGroupInvites converts echo context to params.
-func (w *ServerInterfaceWrapper) ListGroupInvites(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) ListGroupInvites(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -7897,7 +7897,7 @@ func (w *ServerInterfaceWrapper) ListGroupInvites(ctx echo.Context) error {
 }
 
 // LinkGoogle converts echo context to params.
-func (w *ServerInterfaceWrapper) LinkGoogle(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) LinkGoogle(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -7906,7 +7906,7 @@ func (w *ServerInterfaceWrapper) LinkGoogle(ctx echo.Context) error {
 }
 
 // ListListens converts echo context to params.
-func (w *ServerInterfaceWrapper) ListListens(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) ListListens(ctx *echo.Context) error {
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
@@ -7931,7 +7931,7 @@ func (w *ServerInterfaceWrapper) ListListens(ctx echo.Context) error {
 }
 
 // GetTopListens converts echo context to params.
-func (w *ServerInterfaceWrapper) GetTopListens(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetTopListens(ctx *echo.Context) error {
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
@@ -7991,7 +7991,7 @@ func (w *ServerInterfaceWrapper) GetTopListens(ctx echo.Context) error {
 }
 
 // GetNotificationSettings converts echo context to params.
-func (w *ServerInterfaceWrapper) GetNotificationSettings(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetNotificationSettings(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -8000,7 +8000,7 @@ func (w *ServerInterfaceWrapper) GetNotificationSettings(ctx echo.Context) error
 }
 
 // UpdateNotificationSettings converts echo context to params.
-func (w *ServerInterfaceWrapper) UpdateNotificationSettings(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) UpdateNotificationSettings(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -8009,7 +8009,7 @@ func (w *ServerInterfaceWrapper) UpdateNotificationSettings(ctx echo.Context) er
 }
 
 // GetNowPlaying converts echo context to params.
-func (w *ServerInterfaceWrapper) GetNowPlaying(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetNowPlaying(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -8018,7 +8018,7 @@ func (w *ServerInterfaceWrapper) GetNowPlaying(ctx echo.Context) error {
 }
 
 // ListPoints converts echo context to params.
-func (w *ServerInterfaceWrapper) ListPoints(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) ListPoints(ctx *echo.Context) error {
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
@@ -8043,7 +8043,7 @@ func (w *ServerInterfaceWrapper) ListPoints(ctx echo.Context) error {
 }
 
 // UpdateProfile converts echo context to params.
-func (w *ServerInterfaceWrapper) UpdateProfile(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) UpdateProfile(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -8052,7 +8052,7 @@ func (w *ServerInterfaceWrapper) UpdateProfile(ctx echo.Context) error {
 }
 
 // GetProfileStats converts echo context to params.
-func (w *ServerInterfaceWrapper) GetProfileStats(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetProfileStats(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -8061,7 +8061,7 @@ func (w *ServerInterfaceWrapper) GetProfileStats(ctx echo.Context) error {
 }
 
 // GetProgress converts echo context to params.
-func (w *ServerInterfaceWrapper) GetProgress(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetProgress(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -8070,7 +8070,7 @@ func (w *ServerInterfaceWrapper) GetProgress(ctx echo.Context) error {
 }
 
 // ListRecommendations converts echo context to params.
-func (w *ServerInterfaceWrapper) ListRecommendations(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) ListRecommendations(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -8079,7 +8079,7 @@ func (w *ServerInterfaceWrapper) ListRecommendations(ctx echo.Context) error {
 }
 
 // DismissRecommendation converts echo context to params.
-func (w *ServerInterfaceWrapper) DismissRecommendation(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) DismissRecommendation(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id apiid.UUID
@@ -8095,7 +8095,7 @@ func (w *ServerInterfaceWrapper) DismissRecommendation(ctx echo.Context) error {
 }
 
 // AddRecommendation converts echo context to params.
-func (w *ServerInterfaceWrapper) AddRecommendation(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) AddRecommendation(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id apiid.UUID
@@ -8111,7 +8111,7 @@ func (w *ServerInterfaceWrapper) AddRecommendation(ctx echo.Context) error {
 }
 
 // GetSocialSettings converts echo context to params.
-func (w *ServerInterfaceWrapper) GetSocialSettings(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetSocialSettings(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -8120,7 +8120,7 @@ func (w *ServerInterfaceWrapper) GetSocialSettings(ctx echo.Context) error {
 }
 
 // UpdateSocialSettings converts echo context to params.
-func (w *ServerInterfaceWrapper) UpdateSocialSettings(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) UpdateSocialSettings(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -8129,7 +8129,7 @@ func (w *ServerInterfaceWrapper) UpdateSocialSettings(ctx echo.Context) error {
 }
 
 // ListSportFollows converts echo context to params.
-func (w *ServerInterfaceWrapper) ListSportFollows(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) ListSportFollows(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -8138,7 +8138,7 @@ func (w *ServerInterfaceWrapper) ListSportFollows(ctx echo.Context) error {
 }
 
 // UnfollowSport converts echo context to params.
-func (w *ServerInterfaceWrapper) UnfollowSport(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) UnfollowSport(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "kind" -------------
 	var kind SportEntityKind
@@ -8162,7 +8162,7 @@ func (w *ServerInterfaceWrapper) UnfollowSport(ctx echo.Context) error {
 }
 
 // FollowSport converts echo context to params.
-func (w *ServerInterfaceWrapper) FollowSport(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) FollowSport(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "kind" -------------
 	var kind SportEntityKind
@@ -8186,7 +8186,7 @@ func (w *ServerInterfaceWrapper) FollowSport(ctx echo.Context) error {
 }
 
 // GetSportSettings converts echo context to params.
-func (w *ServerInterfaceWrapper) GetSportSettings(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetSportSettings(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -8195,7 +8195,7 @@ func (w *ServerInterfaceWrapper) GetSportSettings(ctx echo.Context) error {
 }
 
 // SaveSportSettings converts echo context to params.
-func (w *ServerInterfaceWrapper) SaveSportSettings(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) SaveSportSettings(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -8204,7 +8204,7 @@ func (w *ServerInterfaceWrapper) SaveSportSettings(ctx echo.Context) error {
 }
 
 // GetStats converts echo context to params.
-func (w *ServerInterfaceWrapper) GetStats(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetStats(ctx *echo.Context) error {
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
@@ -8243,7 +8243,7 @@ func (w *ServerInterfaceWrapper) GetStats(ctx echo.Context) error {
 }
 
 // GetOAuthRequest converts echo context to params.
-func (w *ServerInterfaceWrapper) GetOAuthRequest(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetOAuthRequest(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id apiid.UUID
@@ -8259,7 +8259,7 @@ func (w *ServerInterfaceWrapper) GetOAuthRequest(ctx echo.Context) error {
 }
 
 // ApproveOAuthRequest converts echo context to params.
-func (w *ServerInterfaceWrapper) ApproveOAuthRequest(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) ApproveOAuthRequest(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id apiid.UUID
@@ -8275,7 +8275,7 @@ func (w *ServerInterfaceWrapper) ApproveOAuthRequest(ctx echo.Context) error {
 }
 
 // DenyOAuthRequest converts echo context to params.
-func (w *ServerInterfaceWrapper) DenyOAuthRequest(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) DenyOAuthRequest(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id apiid.UUID
@@ -8291,7 +8291,7 @@ func (w *ServerInterfaceWrapper) DenyOAuthRequest(ctx echo.Context) error {
 }
 
 // ListPlans converts echo context to params.
-func (w *ServerInterfaceWrapper) ListPlans(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) ListPlans(ctx *echo.Context) error {
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
@@ -8309,7 +8309,7 @@ func (w *ServerInterfaceWrapper) ListPlans(ctx echo.Context) error {
 }
 
 // GetPlan converts echo context to params.
-func (w *ServerInterfaceWrapper) GetPlan(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetPlan(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id apiid.UUID
@@ -8325,7 +8325,7 @@ func (w *ServerInterfaceWrapper) GetPlan(ctx echo.Context) error {
 }
 
 // ApprovePlan converts echo context to params.
-func (w *ServerInterfaceWrapper) ApprovePlan(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) ApprovePlan(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id apiid.UUID
@@ -8341,7 +8341,7 @@ func (w *ServerInterfaceWrapper) ApprovePlan(ctx echo.Context) error {
 }
 
 // DenyPlan converts echo context to params.
-func (w *ServerInterfaceWrapper) DenyPlan(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) DenyPlan(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id apiid.UUID
@@ -8357,7 +8357,7 @@ func (w *ServerInterfaceWrapper) DenyPlan(ctx echo.Context) error {
 }
 
 // CreateRealtimeTicket converts echo context to params.
-func (w *ServerInterfaceWrapper) CreateRealtimeTicket(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) CreateRealtimeTicket(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -8366,7 +8366,7 @@ func (w *ServerInterfaceWrapper) CreateRealtimeTicket(ctx echo.Context) error {
 }
 
 // SearchCatalog converts echo context to params.
-func (w *ServerInterfaceWrapper) SearchCatalog(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) SearchCatalog(ctx *echo.Context) error {
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
@@ -8391,7 +8391,7 @@ func (w *ServerInterfaceWrapper) SearchCatalog(ctx echo.Context) error {
 }
 
 // CreateShare converts echo context to params.
-func (w *ServerInterfaceWrapper) CreateShare(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) CreateShare(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -8400,7 +8400,7 @@ func (w *ServerInterfaceWrapper) CreateShare(ctx echo.Context) error {
 }
 
 // GetSharePreview converts echo context to params.
-func (w *ServerInterfaceWrapper) GetSharePreview(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetSharePreview(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "code" -------------
 	var code string
@@ -8416,7 +8416,7 @@ func (w *ServerInterfaceWrapper) GetSharePreview(ctx echo.Context) error {
 }
 
 // ListShelves converts echo context to params.
-func (w *ServerInterfaceWrapper) ListShelves(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) ListShelves(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -8425,7 +8425,7 @@ func (w *ServerInterfaceWrapper) ListShelves(ctx echo.Context) error {
 }
 
 // CreateShelf converts echo context to params.
-func (w *ServerInterfaceWrapper) CreateShelf(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) CreateShelf(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -8434,7 +8434,7 @@ func (w *ServerInterfaceWrapper) CreateShelf(ctx echo.Context) error {
 }
 
 // DeleteShelf converts echo context to params.
-func (w *ServerInterfaceWrapper) DeleteShelf(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) DeleteShelf(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id apiid.UUID
@@ -8450,7 +8450,7 @@ func (w *ServerInterfaceWrapper) DeleteShelf(ctx echo.Context) error {
 }
 
 // UpdateShelf converts echo context to params.
-func (w *ServerInterfaceWrapper) UpdateShelf(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) UpdateShelf(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id apiid.UUID
@@ -8466,7 +8466,7 @@ func (w *ServerInterfaceWrapper) UpdateShelf(ctx echo.Context) error {
 }
 
 // ListShelfItems converts echo context to params.
-func (w *ServerInterfaceWrapper) ListShelfItems(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) ListShelfItems(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id apiid.UUID
@@ -8498,7 +8498,7 @@ func (w *ServerInterfaceWrapper) ListShelfItems(ctx echo.Context) error {
 }
 
 // ListBlocks converts echo context to params.
-func (w *ServerInterfaceWrapper) ListBlocks(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) ListBlocks(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -8507,7 +8507,7 @@ func (w *ServerInterfaceWrapper) ListBlocks(ctx echo.Context) error {
 }
 
 // UnblockUser converts echo context to params.
-func (w *ServerInterfaceWrapper) UnblockUser(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) UnblockUser(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "userId" -------------
 	var userId apiid.UUID
@@ -8523,7 +8523,7 @@ func (w *ServerInterfaceWrapper) UnblockUser(ctx echo.Context) error {
 }
 
 // BlockUser converts echo context to params.
-func (w *ServerInterfaceWrapper) BlockUser(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) BlockUser(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "userId" -------------
 	var userId apiid.UUID
@@ -8539,7 +8539,7 @@ func (w *ServerInterfaceWrapper) BlockUser(ctx echo.Context) error {
 }
 
 // ListFriendRequests converts echo context to params.
-func (w *ServerInterfaceWrapper) ListFriendRequests(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) ListFriendRequests(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -8548,7 +8548,7 @@ func (w *ServerInterfaceWrapper) ListFriendRequests(ctx echo.Context) error {
 }
 
 // SendFriendRequest converts echo context to params.
-func (w *ServerInterfaceWrapper) SendFriendRequest(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) SendFriendRequest(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -8557,7 +8557,7 @@ func (w *ServerInterfaceWrapper) SendFriendRequest(ctx echo.Context) error {
 }
 
 // WithdrawFriendRequest converts echo context to params.
-func (w *ServerInterfaceWrapper) WithdrawFriendRequest(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) WithdrawFriendRequest(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id apiid.UUID
@@ -8573,7 +8573,7 @@ func (w *ServerInterfaceWrapper) WithdrawFriendRequest(ctx echo.Context) error {
 }
 
 // AcceptFriendRequest converts echo context to params.
-func (w *ServerInterfaceWrapper) AcceptFriendRequest(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) AcceptFriendRequest(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id apiid.UUID
@@ -8589,7 +8589,7 @@ func (w *ServerInterfaceWrapper) AcceptFriendRequest(ctx echo.Context) error {
 }
 
 // ListFriends converts echo context to params.
-func (w *ServerInterfaceWrapper) ListFriends(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) ListFriends(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -8598,7 +8598,7 @@ func (w *ServerInterfaceWrapper) ListFriends(ctx echo.Context) error {
 }
 
 // RemoveFriend converts echo context to params.
-func (w *ServerInterfaceWrapper) RemoveFriend(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) RemoveFriend(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "userId" -------------
 	var userId apiid.UUID
@@ -8614,7 +8614,7 @@ func (w *ServerInterfaceWrapper) RemoveFriend(ctx echo.Context) error {
 }
 
 // GetFriendProfile converts echo context to params.
-func (w *ServerInterfaceWrapper) GetFriendProfile(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetFriendProfile(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "userId" -------------
 	var userId apiid.UUID
@@ -8630,7 +8630,7 @@ func (w *ServerInterfaceWrapper) GetFriendProfile(ctx echo.Context) error {
 }
 
 // ListFriendInvites converts echo context to params.
-func (w *ServerInterfaceWrapper) ListFriendInvites(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) ListFriendInvites(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -8639,7 +8639,7 @@ func (w *ServerInterfaceWrapper) ListFriendInvites(ctx echo.Context) error {
 }
 
 // CreateFriendInvite converts echo context to params.
-func (w *ServerInterfaceWrapper) CreateFriendInvite(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) CreateFriendInvite(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -8648,7 +8648,7 @@ func (w *ServerInterfaceWrapper) CreateFriendInvite(ctx echo.Context) error {
 }
 
 // RevokeFriendInvite converts echo context to params.
-func (w *ServerInterfaceWrapper) RevokeFriendInvite(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) RevokeFriendInvite(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "code" -------------
 	var code string
@@ -8664,7 +8664,7 @@ func (w *ServerInterfaceWrapper) RevokeFriendInvite(ctx echo.Context) error {
 }
 
 // RedeemFriendInvite converts echo context to params.
-func (w *ServerInterfaceWrapper) RedeemFriendInvite(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) RedeemFriendInvite(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "code" -------------
 	var code string
@@ -8680,7 +8680,7 @@ func (w *ServerInterfaceWrapper) RedeemFriendInvite(ctx echo.Context) error {
 }
 
 // GetLeaderboard converts echo context to params.
-func (w *ServerInterfaceWrapper) GetLeaderboard(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetLeaderboard(ctx *echo.Context) error {
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
@@ -8698,7 +8698,7 @@ func (w *ServerInterfaceWrapper) GetLeaderboard(ctx echo.Context) error {
 }
 
 // RecommendTitle converts echo context to params.
-func (w *ServerInterfaceWrapper) RecommendTitle(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) RecommendTitle(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -8707,7 +8707,7 @@ func (w *ServerInterfaceWrapper) RecommendTitle(ctx echo.Context) error {
 }
 
 // ReportUser converts echo context to params.
-func (w *ServerInterfaceWrapper) ReportUser(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) ReportUser(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -8716,7 +8716,7 @@ func (w *ServerInterfaceWrapper) ReportUser(ctx echo.Context) error {
 }
 
 // GetSocialUser converts echo context to params.
-func (w *ServerInterfaceWrapper) GetSocialUser(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetSocialUser(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "handle" -------------
 	var handle string
@@ -8732,7 +8732,7 @@ func (w *ServerInterfaceWrapper) GetSocialUser(ctx echo.Context) error {
 }
 
 // GetSportEvent converts echo context to params.
-func (w *ServerInterfaceWrapper) GetSportEvent(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetSportEvent(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id string
@@ -8748,7 +8748,7 @@ func (w *ServerInterfaceWrapper) GetSportEvent(ctx echo.Context) error {
 }
 
 // GetSportFavorites converts echo context to params.
-func (w *ServerInterfaceWrapper) GetSportFavorites(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetSportFavorites(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -8757,7 +8757,7 @@ func (w *ServerInterfaceWrapper) GetSportFavorites(ctx echo.Context) error {
 }
 
 // GetSportSchedule converts echo context to params.
-func (w *ServerInterfaceWrapper) GetSportSchedule(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetSportSchedule(ctx *echo.Context) error {
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
@@ -8782,7 +8782,7 @@ func (w *ServerInterfaceWrapper) GetSportSchedule(ctx echo.Context) error {
 }
 
 // SearchSports converts echo context to params.
-func (w *ServerInterfaceWrapper) SearchSports(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) SearchSports(ctx *echo.Context) error {
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
@@ -8807,7 +8807,7 @@ func (w *ServerInterfaceWrapper) SearchSports(ctx echo.Context) error {
 }
 
 // GetSportSuggestions converts echo context to params.
-func (w *ServerInterfaceWrapper) GetSportSuggestions(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetSportSuggestions(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -8816,7 +8816,7 @@ func (w *ServerInterfaceWrapper) GetSportSuggestions(ctx echo.Context) error {
 }
 
 // ResolveTitle converts echo context to params.
-func (w *ServerInterfaceWrapper) ResolveTitle(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) ResolveTitle(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -8825,7 +8825,7 @@ func (w *ServerInterfaceWrapper) ResolveTitle(ctx echo.Context) error {
 }
 
 // GetTitle converts echo context to params.
-func (w *ServerInterfaceWrapper) GetTitle(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetTitle(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id apiid.UUID
@@ -8841,7 +8841,7 @@ func (w *ServerInterfaceWrapper) GetTitle(ctx echo.Context) error {
 }
 
 // ListTitlePosts converts echo context to params.
-func (w *ServerInterfaceWrapper) ListTitlePosts(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) ListTitlePosts(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id apiid.UUID
@@ -8866,7 +8866,7 @@ func (w *ServerInterfaceWrapper) ListTitlePosts(ctx echo.Context) error {
 }
 
 // GetTonight converts echo context to params.
-func (w *ServerInterfaceWrapper) GetTonight(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetTonight(ctx *echo.Context) error {
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
@@ -8884,7 +8884,7 @@ func (w *ServerInterfaceWrapper) GetTonight(ctx echo.Context) error {
 }
 
 // ClearTonightFeedback converts echo context to params.
-func (w *ServerInterfaceWrapper) ClearTonightFeedback(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) ClearTonightFeedback(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id apiid.UUID
@@ -8909,7 +8909,7 @@ func (w *ServerInterfaceWrapper) ClearTonightFeedback(ctx echo.Context) error {
 }
 
 // SendTonightFeedback converts echo context to params.
-func (w *ServerInterfaceWrapper) SendTonightFeedback(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) SendTonightFeedback(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
 	var id apiid.UUID
@@ -8934,7 +8934,7 @@ func (w *ServerInterfaceWrapper) SendTonightFeedback(ctx echo.Context) error {
 }
 
 // GetUpNext converts echo context to params.
-func (w *ServerInterfaceWrapper) GetUpNext(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetUpNext(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -8943,7 +8943,7 @@ func (w *ServerInterfaceWrapper) GetUpNext(ctx echo.Context) error {
 }
 
 // GetUserAvatar converts echo context to params.
-func (w *ServerInterfaceWrapper) GetUserAvatar(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetUserAvatar(ctx *echo.Context) error {
 	var err error
 	// ------------- Path parameter "userId" -------------
 	var userId apiid.UUID
@@ -8968,7 +8968,7 @@ func (w *ServerInterfaceWrapper) GetUserAvatar(ctx echo.Context) error {
 }
 
 // GetWebPushKey converts echo context to params.
-func (w *ServerInterfaceWrapper) GetWebPushKey(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) GetWebPushKey(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -8977,7 +8977,7 @@ func (w *ServerInterfaceWrapper) GetWebPushKey(ctx echo.Context) error {
 }
 
 // DeleteWebPushSubscription converts echo context to params.
-func (w *ServerInterfaceWrapper) DeleteWebPushSubscription(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) DeleteWebPushSubscription(ctx *echo.Context) error {
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
@@ -8995,7 +8995,7 @@ func (w *ServerInterfaceWrapper) DeleteWebPushSubscription(ctx echo.Context) err
 }
 
 // SaveWebPushSubscription converts echo context to params.
-func (w *ServerInterfaceWrapper) SaveWebPushSubscription(ctx echo.Context) error {
+func (w *ServerInterfaceWrapper) SaveWebPushSubscription(ctx *echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -9007,15 +9007,15 @@ func (w *ServerInterfaceWrapper) SaveWebPushSubscription(ctx echo.Context) error
 // are present on both echo.Echo and echo.Group, since we want to allow using
 // either of them for path registration
 type EchoRouter interface {
-	CONNECT(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	DELETE(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	GET(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	HEAD(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	OPTIONS(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	PATCH(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	POST(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	PUT(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
-	TRACE(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	CONNECT(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) echo.RouteInfo
+	DELETE(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) echo.RouteInfo
+	GET(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) echo.RouteInfo
+	HEAD(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) echo.RouteInfo
+	OPTIONS(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) echo.RouteInfo
+	PATCH(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) echo.RouteInfo
+	POST(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) echo.RouteInfo
+	PUT(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) echo.RouteInfo
+	TRACE(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) echo.RouteInfo
 }
 
 // RegisterHandlersOptions configures RegisterHandlersWithOptions.
@@ -17448,7 +17448,7 @@ type StrictServerInterface interface {
 	SaveWebPushSubscription(ctx context.Context, request SaveWebPushSubscriptionRequestObject) (SaveWebPushSubscriptionResponseObject, error)
 }
 
-type StrictHandlerFunc func(ctx echo.Context, request any) (any, error)
+type StrictHandlerFunc func(ctx *echo.Context, request any) (any, error)
 type StrictMiddlewareFunc func(f StrictHandlerFunc, operationID string) StrictHandlerFunc
 
 func NewStrictHandler(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc) ServerInterface {
@@ -17461,12 +17461,12 @@ type strictHandler struct {
 }
 
 // ListActions operation middleware
-func (sh *strictHandler) ListActions(ctx echo.Context, params ListActionsParams) error {
+func (sh *strictHandler) ListActions(ctx *echo.Context, params ListActionsParams) error {
 	var request ListActionsRequestObject
 
 	request.Params = params
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ListActions(ctx.Request().Context(), request.(ListActionsRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -17486,12 +17486,12 @@ func (sh *strictHandler) ListActions(ctx echo.Context, params ListActionsParams)
 }
 
 // UndoAction operation middleware
-func (sh *strictHandler) UndoAction(ctx echo.Context, id apiid.UUID) error {
+func (sh *strictHandler) UndoAction(ctx *echo.Context, id apiid.UUID) error {
 	var request UndoActionRequestObject
 
 	request.Id = id
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.UndoAction(ctx.Request().Context(), request.(UndoActionRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -17511,12 +17511,12 @@ func (sh *strictHandler) UndoAction(ctx echo.Context, id apiid.UUID) error {
 }
 
 // ListFriendActivity operation middleware
-func (sh *strictHandler) ListFriendActivity(ctx echo.Context, params ListFriendActivityParams) error {
+func (sh *strictHandler) ListFriendActivity(ctx *echo.Context, params ListFriendActivityParams) error {
 	var request ListFriendActivityRequestObject
 
 	request.Params = params
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ListFriendActivity(ctx.Request().Context(), request.(ListFriendActivityRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -17536,12 +17536,12 @@ func (sh *strictHandler) ListFriendActivity(ctx echo.Context, params ListFriendA
 }
 
 // ClearActivityReaction operation middleware
-func (sh *strictHandler) ClearActivityReaction(ctx echo.Context, id string) error {
+func (sh *strictHandler) ClearActivityReaction(ctx *echo.Context, id string) error {
 	var request ClearActivityReactionRequestObject
 
 	request.Id = id
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ClearActivityReaction(ctx.Request().Context(), request.(ClearActivityReactionRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -17561,17 +17561,17 @@ func (sh *strictHandler) ClearActivityReaction(ctx echo.Context, id string) erro
 }
 
 // SetActivityReaction operation middleware
-func (sh *strictHandler) SetActivityReaction(ctx echo.Context, id string) error {
+func (sh *strictHandler) SetActivityReaction(ctx *echo.Context, id string) error {
 	var request SetActivityReactionRequestObject
 
 	request.Id = id
 
 	var body SetActivityReactionJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -17582,7 +17582,7 @@ func (sh *strictHandler) SetActivityReaction(ctx echo.Context, id string) error 
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.SetActivityReaction(ctx.Request().Context(), request.(SetActivityReactionRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -17602,12 +17602,12 @@ func (sh *strictHandler) SetActivityReaction(ctx echo.Context, id string) error 
 }
 
 // GetAgentSetup operation middleware
-func (sh *strictHandler) GetAgentSetup(ctx echo.Context, kind AgentMCPKind) error {
+func (sh *strictHandler) GetAgentSetup(ctx *echo.Context, kind AgentMCPKind) error {
 	var request GetAgentSetupRequestObject
 
 	request.Kind = kind
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetAgentSetup(ctx.Request().Context(), request.(GetAgentSetupRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -17627,12 +17627,12 @@ func (sh *strictHandler) GetAgentSetup(ctx echo.Context, kind AgentMCPKind) erro
 }
 
 // ListAgentTokens operation middleware
-func (sh *strictHandler) ListAgentTokens(ctx echo.Context, params ListAgentTokensParams) error {
+func (sh *strictHandler) ListAgentTokens(ctx *echo.Context, params ListAgentTokensParams) error {
 	var request ListAgentTokensRequestObject
 
 	request.Params = params
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ListAgentTokens(ctx.Request().Context(), request.(ListAgentTokensRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -17652,15 +17652,15 @@ func (sh *strictHandler) ListAgentTokens(ctx echo.Context, params ListAgentToken
 }
 
 // CreateAgentToken operation middleware
-func (sh *strictHandler) CreateAgentToken(ctx echo.Context) error {
+func (sh *strictHandler) CreateAgentToken(ctx *echo.Context) error {
 	var request CreateAgentTokenRequestObject
 
 	var body CreateAgentTokenJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -17671,7 +17671,7 @@ func (sh *strictHandler) CreateAgentToken(ctx echo.Context) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.CreateAgentToken(ctx.Request().Context(), request.(CreateAgentTokenRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -17691,12 +17691,12 @@ func (sh *strictHandler) CreateAgentToken(ctx echo.Context) error {
 }
 
 // RevokeAgentToken operation middleware
-func (sh *strictHandler) RevokeAgentToken(ctx echo.Context, id apiid.UUID) error {
+func (sh *strictHandler) RevokeAgentToken(ctx *echo.Context, id apiid.UUID) error {
 	var request RevokeAgentTokenRequestObject
 
 	request.Id = id
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.RevokeAgentToken(ctx.Request().Context(), request.(RevokeAgentTokenRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -17716,15 +17716,15 @@ func (sh *strictHandler) RevokeAgentToken(ctx echo.Context, id apiid.UUID) error
 }
 
 // SignInWithApple operation middleware
-func (sh *strictHandler) SignInWithApple(ctx echo.Context) error {
+func (sh *strictHandler) SignInWithApple(ctx *echo.Context) error {
 	var request SignInWithAppleRequestObject
 
 	var body SignInWithAppleJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -17735,7 +17735,7 @@ func (sh *strictHandler) SignInWithApple(ctx echo.Context) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.SignInWithApple(ctx.Request().Context(), request.(SignInWithAppleRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -17755,15 +17755,15 @@ func (sh *strictHandler) SignInWithApple(ctx echo.Context) error {
 }
 
 // RequestMagicLink operation middleware
-func (sh *strictHandler) RequestMagicLink(ctx echo.Context) error {
+func (sh *strictHandler) RequestMagicLink(ctx *echo.Context) error {
 	var request RequestMagicLinkRequestObject
 
 	var body RequestMagicLinkJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -17774,7 +17774,7 @@ func (sh *strictHandler) RequestMagicLink(ctx echo.Context) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.RequestMagicLink(ctx.Request().Context(), request.(RequestMagicLinkRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -17794,15 +17794,15 @@ func (sh *strictHandler) RequestMagicLink(ctx echo.Context) error {
 }
 
 // VerifyMagicLink operation middleware
-func (sh *strictHandler) VerifyMagicLink(ctx echo.Context) error {
+func (sh *strictHandler) VerifyMagicLink(ctx *echo.Context) error {
 	var request VerifyMagicLinkRequestObject
 
 	var body VerifyMagicLinkJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -17813,7 +17813,7 @@ func (sh *strictHandler) VerifyMagicLink(ctx echo.Context) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.VerifyMagicLink(ctx.Request().Context(), request.(VerifyMagicLinkRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -17833,15 +17833,15 @@ func (sh *strictHandler) VerifyMagicLink(ctx echo.Context) error {
 }
 
 // SignInWithGoogle operation middleware
-func (sh *strictHandler) SignInWithGoogle(ctx echo.Context) error {
+func (sh *strictHandler) SignInWithGoogle(ctx *echo.Context) error {
 	var request SignInWithGoogleRequestObject
 
 	var body SignInWithGoogleJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -17852,7 +17852,7 @@ func (sh *strictHandler) SignInWithGoogle(ctx echo.Context) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.SignInWithGoogle(ctx.Request().Context(), request.(SignInWithGoogleRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -17872,10 +17872,10 @@ func (sh *strictHandler) SignInWithGoogle(ctx echo.Context) error {
 }
 
 // SignOut operation middleware
-func (sh *strictHandler) SignOut(ctx echo.Context) error {
+func (sh *strictHandler) SignOut(ctx *echo.Context) error {
 	var request SignOutRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.SignOut(ctx.Request().Context(), request.(SignOutRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -17895,15 +17895,15 @@ func (sh *strictHandler) SignOut(ctx echo.Context) error {
 }
 
 // ReceiveAppleNotification operation middleware
-func (sh *strictHandler) ReceiveAppleNotification(ctx echo.Context) error {
+func (sh *strictHandler) ReceiveAppleNotification(ctx *echo.Context) error {
 	var request ReceiveAppleNotificationRequestObject
 
 	var body ReceiveAppleNotificationJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -17914,7 +17914,7 @@ func (sh *strictHandler) ReceiveAppleNotification(ctx echo.Context) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ReceiveAppleNotification(ctx.Request().Context(), request.(ReceiveAppleNotificationRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -17934,15 +17934,15 @@ func (sh *strictHandler) ReceiveAppleNotification(ctx echo.Context) error {
 }
 
 // RecordAppleTransaction operation middleware
-func (sh *strictHandler) RecordAppleTransaction(ctx echo.Context) error {
+func (sh *strictHandler) RecordAppleTransaction(ctx *echo.Context) error {
 	var request RecordAppleTransactionRequestObject
 
 	var body RecordAppleTransactionJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -17953,7 +17953,7 @@ func (sh *strictHandler) RecordAppleTransaction(ctx echo.Context) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.RecordAppleTransaction(ctx.Request().Context(), request.(RecordAppleTransactionRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -17973,12 +17973,12 @@ func (sh *strictHandler) RecordAppleTransaction(ctx echo.Context) error {
 }
 
 // ListBoard operation middleware
-func (sh *strictHandler) ListBoard(ctx echo.Context, params ListBoardParams) error {
+func (sh *strictHandler) ListBoard(ctx *echo.Context, params ListBoardParams) error {
 	var request ListBoardRequestObject
 
 	request.Params = params
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ListBoard(ctx.Request().Context(), request.(ListBoardRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -17998,15 +17998,15 @@ func (sh *strictHandler) ListBoard(ctx echo.Context, params ListBoardParams) err
 }
 
 // CreateBoardPost operation middleware
-func (sh *strictHandler) CreateBoardPost(ctx echo.Context) error {
+func (sh *strictHandler) CreateBoardPost(ctx *echo.Context) error {
 	var request CreateBoardPostRequestObject
 
 	var body CreateBoardPostJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -18017,7 +18017,7 @@ func (sh *strictHandler) CreateBoardPost(ctx echo.Context) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.CreateBoardPost(ctx.Request().Context(), request.(CreateBoardPostRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -18037,12 +18037,12 @@ func (sh *strictHandler) CreateBoardPost(ctx echo.Context) error {
 }
 
 // DeleteBoardPost operation middleware
-func (sh *strictHandler) DeleteBoardPost(ctx echo.Context, postId apiid.UUID) error {
+func (sh *strictHandler) DeleteBoardPost(ctx *echo.Context, postId apiid.UUID) error {
 	var request DeleteBoardPostRequestObject
 
 	request.PostId = postId
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.DeleteBoardPost(ctx.Request().Context(), request.(DeleteBoardPostRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -18062,12 +18062,12 @@ func (sh *strictHandler) DeleteBoardPost(ctx echo.Context, postId apiid.UUID) er
 }
 
 // GetBoardPost operation middleware
-func (sh *strictHandler) GetBoardPost(ctx echo.Context, postId apiid.UUID) error {
+func (sh *strictHandler) GetBoardPost(ctx *echo.Context, postId apiid.UUID) error {
 	var request GetBoardPostRequestObject
 
 	request.PostId = postId
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetBoardPost(ctx.Request().Context(), request.(GetBoardPostRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -18087,17 +18087,17 @@ func (sh *strictHandler) GetBoardPost(ctx echo.Context, postId apiid.UUID) error
 }
 
 // EditBoardPost operation middleware
-func (sh *strictHandler) EditBoardPost(ctx echo.Context, postId apiid.UUID) error {
+func (sh *strictHandler) EditBoardPost(ctx *echo.Context, postId apiid.UUID) error {
 	var request EditBoardPostRequestObject
 
 	request.PostId = postId
 
 	var body EditBoardPostJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -18108,7 +18108,7 @@ func (sh *strictHandler) EditBoardPost(ctx echo.Context, postId apiid.UUID) erro
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.EditBoardPost(ctx.Request().Context(), request.(EditBoardPostRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -18128,13 +18128,13 @@ func (sh *strictHandler) EditBoardPost(ctx echo.Context, postId apiid.UUID) erro
 }
 
 // ListBoardComments operation middleware
-func (sh *strictHandler) ListBoardComments(ctx echo.Context, postId apiid.UUID, params ListBoardCommentsParams) error {
+func (sh *strictHandler) ListBoardComments(ctx *echo.Context, postId apiid.UUID, params ListBoardCommentsParams) error {
 	var request ListBoardCommentsRequestObject
 
 	request.PostId = postId
 	request.Params = params
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ListBoardComments(ctx.Request().Context(), request.(ListBoardCommentsRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -18154,17 +18154,17 @@ func (sh *strictHandler) ListBoardComments(ctx echo.Context, postId apiid.UUID, 
 }
 
 // CreateBoardComment operation middleware
-func (sh *strictHandler) CreateBoardComment(ctx echo.Context, postId apiid.UUID) error {
+func (sh *strictHandler) CreateBoardComment(ctx *echo.Context, postId apiid.UUID) error {
 	var request CreateBoardCommentRequestObject
 
 	request.PostId = postId
 
 	var body CreateBoardCommentJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -18175,7 +18175,7 @@ func (sh *strictHandler) CreateBoardComment(ctx echo.Context, postId apiid.UUID)
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.CreateBoardComment(ctx.Request().Context(), request.(CreateBoardCommentRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -18195,13 +18195,13 @@ func (sh *strictHandler) CreateBoardComment(ctx echo.Context, postId apiid.UUID)
 }
 
 // DeleteBoardComment operation middleware
-func (sh *strictHandler) DeleteBoardComment(ctx echo.Context, postId apiid.UUID, commentId apiid.UUID) error {
+func (sh *strictHandler) DeleteBoardComment(ctx *echo.Context, postId apiid.UUID, commentId apiid.UUID) error {
 	var request DeleteBoardCommentRequestObject
 
 	request.PostId = postId
 	request.CommentId = commentId
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.DeleteBoardComment(ctx.Request().Context(), request.(DeleteBoardCommentRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -18221,12 +18221,12 @@ func (sh *strictHandler) DeleteBoardComment(ctx echo.Context, postId apiid.UUID,
 }
 
 // RemoveBoardPostUpvote operation middleware
-func (sh *strictHandler) RemoveBoardPostUpvote(ctx echo.Context, postId apiid.UUID) error {
+func (sh *strictHandler) RemoveBoardPostUpvote(ctx *echo.Context, postId apiid.UUID) error {
 	var request RemoveBoardPostUpvoteRequestObject
 
 	request.PostId = postId
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.RemoveBoardPostUpvote(ctx.Request().Context(), request.(RemoveBoardPostUpvoteRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -18246,12 +18246,12 @@ func (sh *strictHandler) RemoveBoardPostUpvote(ctx echo.Context, postId apiid.UU
 }
 
 // UpvoteBoardPost operation middleware
-func (sh *strictHandler) UpvoteBoardPost(ctx echo.Context, postId apiid.UUID) error {
+func (sh *strictHandler) UpvoteBoardPost(ctx *echo.Context, postId apiid.UUID) error {
 	var request UpvoteBoardPostRequestObject
 
 	request.PostId = postId
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.UpvoteBoardPost(ctx.Request().Context(), request.(UpvoteBoardPostRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -18271,12 +18271,12 @@ func (sh *strictHandler) UpvoteBoardPost(ctx echo.Context, postId apiid.UUID) er
 }
 
 // ListBoardPostUpvoters operation middleware
-func (sh *strictHandler) ListBoardPostUpvoters(ctx echo.Context, postId apiid.UUID) error {
+func (sh *strictHandler) ListBoardPostUpvoters(ctx *echo.Context, postId apiid.UUID) error {
 	var request ListBoardPostUpvotersRequestObject
 
 	request.PostId = postId
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ListBoardPostUpvoters(ctx.Request().Context(), request.(ListBoardPostUpvotersRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -18296,12 +18296,12 @@ func (sh *strictHandler) ListBoardPostUpvoters(ctx echo.Context, postId apiid.UU
 }
 
 // GetCalendar operation middleware
-func (sh *strictHandler) GetCalendar(ctx echo.Context, params GetCalendarParams) error {
+func (sh *strictHandler) GetCalendar(ctx *echo.Context, params GetCalendarParams) error {
 	var request GetCalendarRequestObject
 
 	request.Params = params
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetCalendar(ctx.Request().Context(), request.(GetCalendarRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -18321,10 +18321,10 @@ func (sh *strictHandler) GetCalendar(ctx echo.Context, params GetCalendarParams)
 }
 
 // DeleteChats operation middleware
-func (sh *strictHandler) DeleteChats(ctx echo.Context) error {
+func (sh *strictHandler) DeleteChats(ctx *echo.Context) error {
 	var request DeleteChatsRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.DeleteChats(ctx.Request().Context(), request.(DeleteChatsRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -18344,10 +18344,10 @@ func (sh *strictHandler) DeleteChats(ctx echo.Context) error {
 }
 
 // CreateChat operation middleware
-func (sh *strictHandler) CreateChat(ctx echo.Context) error {
+func (sh *strictHandler) CreateChat(ctx *echo.Context) error {
 	var request CreateChatRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.CreateChat(ctx.Request().Context(), request.(CreateChatRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -18367,10 +18367,10 @@ func (sh *strictHandler) CreateChat(ctx echo.Context) error {
 }
 
 // GetChatStatus operation middleware
-func (sh *strictHandler) GetChatStatus(ctx echo.Context) error {
+func (sh *strictHandler) GetChatStatus(ctx *echo.Context) error {
 	var request GetChatStatusRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetChatStatus(ctx.Request().Context(), request.(GetChatStatusRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -18390,10 +18390,10 @@ func (sh *strictHandler) GetChatStatus(ctx echo.Context) error {
 }
 
 // GetArtistConcerts operation middleware
-func (sh *strictHandler) GetArtistConcerts(ctx echo.Context) error {
+func (sh *strictHandler) GetArtistConcerts(ctx *echo.Context) error {
 	var request GetArtistConcertsRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetArtistConcerts(ctx.Request().Context(), request.(GetArtistConcertsRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -18413,15 +18413,15 @@ func (sh *strictHandler) GetArtistConcerts(ctx echo.Context) error {
 }
 
 // GetConcertsNear operation middleware
-func (sh *strictHandler) GetConcertsNear(ctx echo.Context) error {
+func (sh *strictHandler) GetConcertsNear(ctx *echo.Context) error {
 	var request GetConcertsNearRequestObject
 
 	var body GetConcertsNearJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -18432,7 +18432,7 @@ func (sh *strictHandler) GetConcertsNear(ctx echo.Context) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetConcertsNear(ctx.Request().Context(), request.(GetConcertsNearRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -18452,15 +18452,15 @@ func (sh *strictHandler) GetConcertsNear(ctx echo.Context) error {
 }
 
 // SearchConcertPerformers operation middleware
-func (sh *strictHandler) SearchConcertPerformers(ctx echo.Context) error {
+func (sh *strictHandler) SearchConcertPerformers(ctx *echo.Context) error {
 	var request SearchConcertPerformersRequestObject
 
 	var body SearchConcertPerformersJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -18471,7 +18471,7 @@ func (sh *strictHandler) SearchConcertPerformers(ctx echo.Context) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.SearchConcertPerformers(ctx.Request().Context(), request.(SearchConcertPerformersRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -18491,12 +18491,12 @@ func (sh *strictHandler) SearchConcertPerformers(ctx echo.Context) error {
 }
 
 // SearchConcertPlaces operation middleware
-func (sh *strictHandler) SearchConcertPlaces(ctx echo.Context, params SearchConcertPlacesParams) error {
+func (sh *strictHandler) SearchConcertPlaces(ctx *echo.Context, params SearchConcertPlacesParams) error {
 	var request SearchConcertPlacesRequestObject
 
 	request.Params = params
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.SearchConcertPlaces(ctx.Request().Context(), request.(SearchConcertPlacesRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -18516,15 +18516,15 @@ func (sh *strictHandler) SearchConcertPlaces(ctx echo.Context, params SearchConc
 }
 
 // SearchConcerts operation middleware
-func (sh *strictHandler) SearchConcerts(ctx echo.Context) error {
+func (sh *strictHandler) SearchConcerts(ctx *echo.Context) error {
 	var request SearchConcertsRequestObject
 
 	var body SearchConcertsJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -18535,7 +18535,7 @@ func (sh *strictHandler) SearchConcerts(ctx echo.Context) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.SearchConcerts(ctx.Request().Context(), request.(SearchConcertsRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -18555,10 +18555,10 @@ func (sh *strictHandler) SearchConcerts(ctx echo.Context) error {
 }
 
 // DisconnectMAL operation middleware
-func (sh *strictHandler) DisconnectMAL(ctx echo.Context) error {
+func (sh *strictHandler) DisconnectMAL(ctx *echo.Context) error {
 	var request DisconnectMALRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.DisconnectMAL(ctx.Request().Context(), request.(DisconnectMALRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -18578,10 +18578,10 @@ func (sh *strictHandler) DisconnectMAL(ctx echo.Context) error {
 }
 
 // GetMALConnection operation middleware
-func (sh *strictHandler) GetMALConnection(ctx echo.Context) error {
+func (sh *strictHandler) GetMALConnection(ctx *echo.Context) error {
 	var request GetMALConnectionRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetMALConnection(ctx.Request().Context(), request.(GetMALConnectionRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -18601,15 +18601,15 @@ func (sh *strictHandler) GetMALConnection(ctx echo.Context) error {
 }
 
 // ConnectMAL operation middleware
-func (sh *strictHandler) ConnectMAL(ctx echo.Context) error {
+func (sh *strictHandler) ConnectMAL(ctx *echo.Context) error {
 	var request ConnectMALRequestObject
 
 	var body ConnectMALJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -18620,7 +18620,7 @@ func (sh *strictHandler) ConnectMAL(ctx echo.Context) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ConnectMAL(ctx.Request().Context(), request.(ConnectMALRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -18640,10 +18640,10 @@ func (sh *strictHandler) ConnectMAL(ctx echo.Context) error {
 }
 
 // RequestMALPull operation middleware
-func (sh *strictHandler) RequestMALPull(ctx echo.Context) error {
+func (sh *strictHandler) RequestMALPull(ctx *echo.Context) error {
 	var request RequestMALPullRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.RequestMALPull(ctx.Request().Context(), request.(RequestMALPullRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -18663,15 +18663,15 @@ func (sh *strictHandler) RequestMALPull(ctx echo.Context) error {
 }
 
 // RegisterDevice operation middleware
-func (sh *strictHandler) RegisterDevice(ctx echo.Context) error {
+func (sh *strictHandler) RegisterDevice(ctx *echo.Context) error {
 	var request RegisterDeviceRequestObject
 
 	var body RegisterDeviceJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -18682,7 +18682,7 @@ func (sh *strictHandler) RegisterDevice(ctx echo.Context) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.RegisterDevice(ctx.Request().Context(), request.(RegisterDeviceRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -18702,15 +18702,15 @@ func (sh *strictHandler) RegisterDevice(ctx echo.Context) error {
 }
 
 // RegisterLiveActivityToken operation middleware
-func (sh *strictHandler) RegisterLiveActivityToken(ctx echo.Context) error {
+func (sh *strictHandler) RegisterLiveActivityToken(ctx *echo.Context) error {
 	var request RegisterLiveActivityTokenRequestObject
 
 	var body RegisterLiveActivityTokenJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -18721,7 +18721,7 @@ func (sh *strictHandler) RegisterLiveActivityToken(ctx echo.Context) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.RegisterLiveActivityToken(ctx.Request().Context(), request.(RegisterLiveActivityTokenRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -18741,12 +18741,12 @@ func (sh *strictHandler) RegisterLiveActivityToken(ctx echo.Context) error {
 }
 
 // UnregisterDevice operation middleware
-func (sh *strictHandler) UnregisterDevice(ctx echo.Context, token string) error {
+func (sh *strictHandler) UnregisterDevice(ctx *echo.Context, token string) error {
 	var request UnregisterDeviceRequestObject
 
 	request.Token = token
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.UnregisterDevice(ctx.Request().Context(), request.(UnregisterDeviceRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -18766,10 +18766,10 @@ func (sh *strictHandler) UnregisterDevice(ctx echo.Context, token string) error 
 }
 
 // GetDiscover operation middleware
-func (sh *strictHandler) GetDiscover(ctx echo.Context) error {
+func (sh *strictHandler) GetDiscover(ctx *echo.Context) error {
 	var request GetDiscoverRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetDiscover(ctx.Request().Context(), request.(GetDiscoverRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -18789,12 +18789,12 @@ func (sh *strictHandler) GetDiscover(ctx echo.Context) error {
 }
 
 // GetDiscoverOnAir operation middleware
-func (sh *strictHandler) GetDiscoverOnAir(ctx echo.Context, params GetDiscoverOnAirParams) error {
+func (sh *strictHandler) GetDiscoverOnAir(ctx *echo.Context, params GetDiscoverOnAirParams) error {
 	var request GetDiscoverOnAirRequestObject
 
 	request.Params = params
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetDiscoverOnAir(ctx.Request().Context(), request.(GetDiscoverOnAirRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -18814,12 +18814,12 @@ func (sh *strictHandler) GetDiscoverOnAir(ctx echo.Context, params GetDiscoverOn
 }
 
 // GetDiscoverSeason operation middleware
-func (sh *strictHandler) GetDiscoverSeason(ctx echo.Context, params GetDiscoverSeasonParams) error {
+func (sh *strictHandler) GetDiscoverSeason(ctx *echo.Context, params GetDiscoverSeasonParams) error {
 	var request GetDiscoverSeasonRequestObject
 
 	request.Params = params
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetDiscoverSeason(ctx.Request().Context(), request.(GetDiscoverSeasonRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -18839,12 +18839,12 @@ func (sh *strictHandler) GetDiscoverSeason(ctx echo.Context, params GetDiscoverS
 }
 
 // DeclineGroupInvite operation middleware
-func (sh *strictHandler) DeclineGroupInvite(ctx echo.Context, id apiid.UUID) error {
+func (sh *strictHandler) DeclineGroupInvite(ctx *echo.Context, id apiid.UUID) error {
 	var request DeclineGroupInviteRequestObject
 
 	request.Id = id
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.DeclineGroupInvite(ctx.Request().Context(), request.(DeclineGroupInviteRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -18864,12 +18864,12 @@ func (sh *strictHandler) DeclineGroupInvite(ctx echo.Context, id apiid.UUID) err
 }
 
 // AcceptGroupInvite operation middleware
-func (sh *strictHandler) AcceptGroupInvite(ctx echo.Context, id apiid.UUID) error {
+func (sh *strictHandler) AcceptGroupInvite(ctx *echo.Context, id apiid.UUID) error {
 	var request AcceptGroupInviteRequestObject
 
 	request.Id = id
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.AcceptGroupInvite(ctx.Request().Context(), request.(AcceptGroupInviteRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -18889,10 +18889,10 @@ func (sh *strictHandler) AcceptGroupInvite(ctx echo.Context, id apiid.UUID) erro
 }
 
 // ListGroups operation middleware
-func (sh *strictHandler) ListGroups(ctx echo.Context) error {
+func (sh *strictHandler) ListGroups(ctx *echo.Context) error {
 	var request ListGroupsRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ListGroups(ctx.Request().Context(), request.(ListGroupsRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -18912,15 +18912,15 @@ func (sh *strictHandler) ListGroups(ctx echo.Context) error {
 }
 
 // CreateGroup operation middleware
-func (sh *strictHandler) CreateGroup(ctx echo.Context) error {
+func (sh *strictHandler) CreateGroup(ctx *echo.Context) error {
 	var request CreateGroupRequestObject
 
 	var body CreateGroupJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -18931,7 +18931,7 @@ func (sh *strictHandler) CreateGroup(ctx echo.Context) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.CreateGroup(ctx.Request().Context(), request.(CreateGroupRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -18951,12 +18951,12 @@ func (sh *strictHandler) CreateGroup(ctx echo.Context) error {
 }
 
 // DeleteGroup operation middleware
-func (sh *strictHandler) DeleteGroup(ctx echo.Context, groupId apiid.UUID) error {
+func (sh *strictHandler) DeleteGroup(ctx *echo.Context, groupId apiid.UUID) error {
 	var request DeleteGroupRequestObject
 
 	request.GroupId = groupId
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.DeleteGroup(ctx.Request().Context(), request.(DeleteGroupRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -18976,12 +18976,12 @@ func (sh *strictHandler) DeleteGroup(ctx echo.Context, groupId apiid.UUID) error
 }
 
 // GetGroup operation middleware
-func (sh *strictHandler) GetGroup(ctx echo.Context, groupId apiid.UUID) error {
+func (sh *strictHandler) GetGroup(ctx *echo.Context, groupId apiid.UUID) error {
 	var request GetGroupRequestObject
 
 	request.GroupId = groupId
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetGroup(ctx.Request().Context(), request.(GetGroupRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -19001,17 +19001,17 @@ func (sh *strictHandler) GetGroup(ctx echo.Context, groupId apiid.UUID) error {
 }
 
 // UpdateGroup operation middleware
-func (sh *strictHandler) UpdateGroup(ctx echo.Context, groupId apiid.UUID) error {
+func (sh *strictHandler) UpdateGroup(ctx *echo.Context, groupId apiid.UUID) error {
 	var request UpdateGroupRequestObject
 
 	request.GroupId = groupId
 
 	var body UpdateGroupJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -19022,7 +19022,7 @@ func (sh *strictHandler) UpdateGroup(ctx echo.Context, groupId apiid.UUID) error
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.UpdateGroup(ctx.Request().Context(), request.(UpdateGroupRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -19042,17 +19042,17 @@ func (sh *strictHandler) UpdateGroup(ctx echo.Context, groupId apiid.UUID) error
 }
 
 // CreateChannel operation middleware
-func (sh *strictHandler) CreateChannel(ctx echo.Context, groupId apiid.UUID) error {
+func (sh *strictHandler) CreateChannel(ctx *echo.Context, groupId apiid.UUID) error {
 	var request CreateChannelRequestObject
 
 	request.GroupId = groupId
 
 	var body CreateChannelJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -19063,7 +19063,7 @@ func (sh *strictHandler) CreateChannel(ctx echo.Context, groupId apiid.UUID) err
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.CreateChannel(ctx.Request().Context(), request.(CreateChannelRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -19083,13 +19083,13 @@ func (sh *strictHandler) CreateChannel(ctx echo.Context, groupId apiid.UUID) err
 }
 
 // DeleteChannel operation middleware
-func (sh *strictHandler) DeleteChannel(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error {
+func (sh *strictHandler) DeleteChannel(ctx *echo.Context, groupId apiid.UUID, channelId apiid.UUID) error {
 	var request DeleteChannelRequestObject
 
 	request.GroupId = groupId
 	request.ChannelId = channelId
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.DeleteChannel(ctx.Request().Context(), request.(DeleteChannelRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -19109,7 +19109,7 @@ func (sh *strictHandler) DeleteChannel(ctx echo.Context, groupId apiid.UUID, cha
 }
 
 // UpdateChannel operation middleware
-func (sh *strictHandler) UpdateChannel(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error {
+func (sh *strictHandler) UpdateChannel(ctx *echo.Context, groupId apiid.UUID, channelId apiid.UUID) error {
 	var request UpdateChannelRequestObject
 
 	request.GroupId = groupId
@@ -19117,10 +19117,10 @@ func (sh *strictHandler) UpdateChannel(ctx echo.Context, groupId apiid.UUID, cha
 
 	var body UpdateChannelJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -19131,7 +19131,7 @@ func (sh *strictHandler) UpdateChannel(ctx echo.Context, groupId apiid.UUID, cha
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.UpdateChannel(ctx.Request().Context(), request.(UpdateChannelRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -19151,13 +19151,13 @@ func (sh *strictHandler) UpdateChannel(ctx echo.Context, groupId apiid.UUID, cha
 }
 
 // ListChannelItems operation middleware
-func (sh *strictHandler) ListChannelItems(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error {
+func (sh *strictHandler) ListChannelItems(ctx *echo.Context, groupId apiid.UUID, channelId apiid.UUID) error {
 	var request ListChannelItemsRequestObject
 
 	request.GroupId = groupId
 	request.ChannelId = channelId
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ListChannelItems(ctx.Request().Context(), request.(ListChannelItemsRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -19177,7 +19177,7 @@ func (sh *strictHandler) ListChannelItems(ctx echo.Context, groupId apiid.UUID, 
 }
 
 // AddChannelItem operation middleware
-func (sh *strictHandler) AddChannelItem(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error {
+func (sh *strictHandler) AddChannelItem(ctx *echo.Context, groupId apiid.UUID, channelId apiid.UUID) error {
 	var request AddChannelItemRequestObject
 
 	request.GroupId = groupId
@@ -19185,10 +19185,10 @@ func (sh *strictHandler) AddChannelItem(ctx echo.Context, groupId apiid.UUID, ch
 
 	var body AddChannelItemJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -19199,7 +19199,7 @@ func (sh *strictHandler) AddChannelItem(ctx echo.Context, groupId apiid.UUID, ch
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.AddChannelItem(ctx.Request().Context(), request.(AddChannelItemRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -19219,14 +19219,14 @@ func (sh *strictHandler) AddChannelItem(ctx echo.Context, groupId apiid.UUID, ch
 }
 
 // RemoveChannelItem operation middleware
-func (sh *strictHandler) RemoveChannelItem(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID, titleId apiid.UUID) error {
+func (sh *strictHandler) RemoveChannelItem(ctx *echo.Context, groupId apiid.UUID, channelId apiid.UUID, titleId apiid.UUID) error {
 	var request RemoveChannelItemRequestObject
 
 	request.GroupId = groupId
 	request.ChannelId = channelId
 	request.TitleId = titleId
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.RemoveChannelItem(ctx.Request().Context(), request.(RemoveChannelItemRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -19246,14 +19246,14 @@ func (sh *strictHandler) RemoveChannelItem(ctx echo.Context, groupId apiid.UUID,
 }
 
 // ListMessages operation middleware
-func (sh *strictHandler) ListMessages(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID, params ListMessagesParams) error {
+func (sh *strictHandler) ListMessages(ctx *echo.Context, groupId apiid.UUID, channelId apiid.UUID, params ListMessagesParams) error {
 	var request ListMessagesRequestObject
 
 	request.GroupId = groupId
 	request.ChannelId = channelId
 	request.Params = params
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ListMessages(ctx.Request().Context(), request.(ListMessagesRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -19273,7 +19273,7 @@ func (sh *strictHandler) ListMessages(ctx echo.Context, groupId apiid.UUID, chan
 }
 
 // PostMessage operation middleware
-func (sh *strictHandler) PostMessage(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error {
+func (sh *strictHandler) PostMessage(ctx *echo.Context, groupId apiid.UUID, channelId apiid.UUID) error {
 	var request PostMessageRequestObject
 
 	request.GroupId = groupId
@@ -19281,10 +19281,10 @@ func (sh *strictHandler) PostMessage(ctx echo.Context, groupId apiid.UUID, chann
 
 	var body PostMessageJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -19295,7 +19295,7 @@ func (sh *strictHandler) PostMessage(ctx echo.Context, groupId apiid.UUID, chann
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.PostMessage(ctx.Request().Context(), request.(PostMessageRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -19315,14 +19315,14 @@ func (sh *strictHandler) PostMessage(ctx echo.Context, groupId apiid.UUID, chann
 }
 
 // DeleteMessage operation middleware
-func (sh *strictHandler) DeleteMessage(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID, messageId apiid.UUID) error {
+func (sh *strictHandler) DeleteMessage(ctx *echo.Context, groupId apiid.UUID, channelId apiid.UUID, messageId apiid.UUID) error {
 	var request DeleteMessageRequestObject
 
 	request.GroupId = groupId
 	request.ChannelId = channelId
 	request.MessageId = messageId
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.DeleteMessage(ctx.Request().Context(), request.(DeleteMessageRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -19342,7 +19342,7 @@ func (sh *strictHandler) DeleteMessage(ctx echo.Context, groupId apiid.UUID, cha
 }
 
 // EditMessage operation middleware
-func (sh *strictHandler) EditMessage(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID, messageId apiid.UUID) error {
+func (sh *strictHandler) EditMessage(ctx *echo.Context, groupId apiid.UUID, channelId apiid.UUID, messageId apiid.UUID) error {
 	var request EditMessageRequestObject
 
 	request.GroupId = groupId
@@ -19351,10 +19351,10 @@ func (sh *strictHandler) EditMessage(ctx echo.Context, groupId apiid.UUID, chann
 
 	var body EditMessageJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -19365,7 +19365,7 @@ func (sh *strictHandler) EditMessage(ctx echo.Context, groupId apiid.UUID, chann
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.EditMessage(ctx.Request().Context(), request.(EditMessageRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -19385,13 +19385,13 @@ func (sh *strictHandler) EditMessage(ctx echo.Context, groupId apiid.UUID, chann
 }
 
 // GetWatchParty operation middleware
-func (sh *strictHandler) GetWatchParty(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error {
+func (sh *strictHandler) GetWatchParty(ctx *echo.Context, groupId apiid.UUID, channelId apiid.UUID) error {
 	var request GetWatchPartyRequestObject
 
 	request.GroupId = groupId
 	request.ChannelId = channelId
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetWatchParty(ctx.Request().Context(), request.(GetWatchPartyRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -19411,7 +19411,7 @@ func (sh *strictHandler) GetWatchParty(ctx echo.Context, groupId apiid.UUID, cha
 }
 
 // OpenWatchParty operation middleware
-func (sh *strictHandler) OpenWatchParty(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error {
+func (sh *strictHandler) OpenWatchParty(ctx *echo.Context, groupId apiid.UUID, channelId apiid.UUID) error {
 	var request OpenWatchPartyRequestObject
 
 	request.GroupId = groupId
@@ -19419,10 +19419,10 @@ func (sh *strictHandler) OpenWatchParty(ctx echo.Context, groupId apiid.UUID, ch
 
 	var body OpenWatchPartyJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -19433,7 +19433,7 @@ func (sh *strictHandler) OpenWatchParty(ctx echo.Context, groupId apiid.UUID, ch
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.OpenWatchParty(ctx.Request().Context(), request.(OpenWatchPartyRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -19453,13 +19453,13 @@ func (sh *strictHandler) OpenWatchParty(ctx echo.Context, groupId apiid.UUID, ch
 }
 
 // EndWatchParty operation middleware
-func (sh *strictHandler) EndWatchParty(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error {
+func (sh *strictHandler) EndWatchParty(ctx *echo.Context, groupId apiid.UUID, channelId apiid.UUID) error {
 	var request EndWatchPartyRequestObject
 
 	request.GroupId = groupId
 	request.ChannelId = channelId
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.EndWatchParty(ctx.Request().Context(), request.(EndWatchPartyRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -19479,7 +19479,7 @@ func (sh *strictHandler) EndWatchParty(ctx echo.Context, groupId apiid.UUID, cha
 }
 
 // SetWatchPartyReady operation middleware
-func (sh *strictHandler) SetWatchPartyReady(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error {
+func (sh *strictHandler) SetWatchPartyReady(ctx *echo.Context, groupId apiid.UUID, channelId apiid.UUID) error {
 	var request SetWatchPartyReadyRequestObject
 
 	request.GroupId = groupId
@@ -19487,10 +19487,10 @@ func (sh *strictHandler) SetWatchPartyReady(ctx echo.Context, groupId apiid.UUID
 
 	var body SetWatchPartyReadyJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -19501,7 +19501,7 @@ func (sh *strictHandler) SetWatchPartyReady(ctx echo.Context, groupId apiid.UUID
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.SetWatchPartyReady(ctx.Request().Context(), request.(SetWatchPartyReadyRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -19521,7 +19521,7 @@ func (sh *strictHandler) SetWatchPartyReady(ctx echo.Context, groupId apiid.UUID
 }
 
 // StartWatchParty operation middleware
-func (sh *strictHandler) StartWatchParty(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error {
+func (sh *strictHandler) StartWatchParty(ctx *echo.Context, groupId apiid.UUID, channelId apiid.UUID) error {
 	var request StartWatchPartyRequestObject
 
 	request.GroupId = groupId
@@ -19529,10 +19529,10 @@ func (sh *strictHandler) StartWatchParty(ctx echo.Context, groupId apiid.UUID, c
 
 	var body StartWatchPartyJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -19546,7 +19546,7 @@ func (sh *strictHandler) StartWatchParty(ctx echo.Context, groupId apiid.UUID, c
 		request.Body = &body
 	}
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.StartWatchParty(ctx.Request().Context(), request.(StartWatchPartyRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -19566,13 +19566,13 @@ func (sh *strictHandler) StartWatchParty(ctx echo.Context, groupId apiid.UUID, c
 }
 
 // MarkWatchPartyWatched operation middleware
-func (sh *strictHandler) MarkWatchPartyWatched(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error {
+func (sh *strictHandler) MarkWatchPartyWatched(ctx *echo.Context, groupId apiid.UUID, channelId apiid.UUID) error {
 	var request MarkWatchPartyWatchedRequestObject
 
 	request.GroupId = groupId
 	request.ChannelId = channelId
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.MarkWatchPartyWatched(ctx.Request().Context(), request.(MarkWatchPartyWatchedRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -19592,13 +19592,13 @@ func (sh *strictHandler) MarkWatchPartyWatched(ctx echo.Context, groupId apiid.U
 }
 
 // GetChannelProgress operation middleware
-func (sh *strictHandler) GetChannelProgress(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error {
+func (sh *strictHandler) GetChannelProgress(ctx *echo.Context, groupId apiid.UUID, channelId apiid.UUID) error {
 	var request GetChannelProgressRequestObject
 
 	request.GroupId = groupId
 	request.ChannelId = channelId
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetChannelProgress(ctx.Request().Context(), request.(GetChannelProgressRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -19618,7 +19618,7 @@ func (sh *strictHandler) GetChannelProgress(ctx echo.Context, groupId apiid.UUID
 }
 
 // MarkChannelRead operation middleware
-func (sh *strictHandler) MarkChannelRead(ctx echo.Context, groupId apiid.UUID, channelId apiid.UUID) error {
+func (sh *strictHandler) MarkChannelRead(ctx *echo.Context, groupId apiid.UUID, channelId apiid.UUID) error {
 	var request MarkChannelReadRequestObject
 
 	request.GroupId = groupId
@@ -19626,10 +19626,10 @@ func (sh *strictHandler) MarkChannelRead(ctx echo.Context, groupId apiid.UUID, c
 
 	var body MarkChannelReadJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -19640,7 +19640,7 @@ func (sh *strictHandler) MarkChannelRead(ctx echo.Context, groupId apiid.UUID, c
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.MarkChannelRead(ctx.Request().Context(), request.(MarkChannelReadRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -19660,17 +19660,17 @@ func (sh *strictHandler) MarkChannelRead(ctx echo.Context, groupId apiid.UUID, c
 }
 
 // InviteToGroup operation middleware
-func (sh *strictHandler) InviteToGroup(ctx echo.Context, groupId apiid.UUID) error {
+func (sh *strictHandler) InviteToGroup(ctx *echo.Context, groupId apiid.UUID) error {
 	var request InviteToGroupRequestObject
 
 	request.GroupId = groupId
 
 	var body InviteToGroupJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -19681,7 +19681,7 @@ func (sh *strictHandler) InviteToGroup(ctx echo.Context, groupId apiid.UUID) err
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.InviteToGroup(ctx.Request().Context(), request.(InviteToGroupRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -19701,17 +19701,17 @@ func (sh *strictHandler) InviteToGroup(ctx echo.Context, groupId apiid.UUID) err
 }
 
 // UpdateMyMembership operation middleware
-func (sh *strictHandler) UpdateMyMembership(ctx echo.Context, groupId apiid.UUID) error {
+func (sh *strictHandler) UpdateMyMembership(ctx *echo.Context, groupId apiid.UUID) error {
 	var request UpdateMyMembershipRequestObject
 
 	request.GroupId = groupId
 
 	var body UpdateMyMembershipJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -19722,7 +19722,7 @@ func (sh *strictHandler) UpdateMyMembership(ctx echo.Context, groupId apiid.UUID
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.UpdateMyMembership(ctx.Request().Context(), request.(UpdateMyMembershipRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -19742,13 +19742,13 @@ func (sh *strictHandler) UpdateMyMembership(ctx echo.Context, groupId apiid.UUID
 }
 
 // RemoveGroupMember operation middleware
-func (sh *strictHandler) RemoveGroupMember(ctx echo.Context, groupId apiid.UUID, userId apiid.UUID) error {
+func (sh *strictHandler) RemoveGroupMember(ctx *echo.Context, groupId apiid.UUID, userId apiid.UUID) error {
 	var request RemoveGroupMemberRequestObject
 
 	request.GroupId = groupId
 	request.UserId = userId
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.RemoveGroupMember(ctx.Request().Context(), request.(RemoveGroupMemberRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -19768,7 +19768,7 @@ func (sh *strictHandler) RemoveGroupMember(ctx echo.Context, groupId apiid.UUID,
 }
 
 // UpdateGroupMember operation middleware
-func (sh *strictHandler) UpdateGroupMember(ctx echo.Context, groupId apiid.UUID, userId apiid.UUID) error {
+func (sh *strictHandler) UpdateGroupMember(ctx *echo.Context, groupId apiid.UUID, userId apiid.UUID) error {
 	var request UpdateGroupMemberRequestObject
 
 	request.GroupId = groupId
@@ -19776,10 +19776,10 @@ func (sh *strictHandler) UpdateGroupMember(ctx echo.Context, groupId apiid.UUID,
 
 	var body UpdateGroupMemberJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -19790,7 +19790,7 @@ func (sh *strictHandler) UpdateGroupMember(ctx echo.Context, groupId apiid.UUID,
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.UpdateGroupMember(ctx.Request().Context(), request.(UpdateGroupMemberRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -19810,17 +19810,17 @@ func (sh *strictHandler) UpdateGroupMember(ctx echo.Context, groupId apiid.UUID,
 }
 
 // TransferGroup operation middleware
-func (sh *strictHandler) TransferGroup(ctx echo.Context, groupId apiid.UUID) error {
+func (sh *strictHandler) TransferGroup(ctx *echo.Context, groupId apiid.UUID) error {
 	var request TransferGroupRequestObject
 
 	request.GroupId = groupId
 
 	var body TransferGroupJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -19831,7 +19831,7 @@ func (sh *strictHandler) TransferGroup(ctx echo.Context, groupId apiid.UUID) err
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.TransferGroup(ctx.Request().Context(), request.(TransferGroupRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -19851,10 +19851,10 @@ func (sh *strictHandler) TransferGroup(ctx echo.Context, groupId apiid.UUID) err
 }
 
 // GetHealth operation middleware
-func (sh *strictHandler) GetHealth(ctx echo.Context) error {
+func (sh *strictHandler) GetHealth(ctx *echo.Context) error {
 	var request GetHealthRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetHealth(ctx.Request().Context(), request.(GetHealthRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -19874,10 +19874,10 @@ func (sh *strictHandler) GetHealth(ctx echo.Context) error {
 }
 
 // ListImports operation middleware
-func (sh *strictHandler) ListImports(ctx echo.Context) error {
+func (sh *strictHandler) ListImports(ctx *echo.Context) error {
 	var request ListImportsRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ListImports(ctx.Request().Context(), request.(ListImportsRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -19897,15 +19897,15 @@ func (sh *strictHandler) ListImports(ctx echo.Context) error {
 }
 
 // CreateAniListImport operation middleware
-func (sh *strictHandler) CreateAniListImport(ctx echo.Context) error {
+func (sh *strictHandler) CreateAniListImport(ctx *echo.Context) error {
 	var request CreateAniListImportRequestObject
 
 	var body CreateAniListImportJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -19916,7 +19916,7 @@ func (sh *strictHandler) CreateAniListImport(ctx echo.Context) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.CreateAniListImport(ctx.Request().Context(), request.(CreateAniListImportRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -19936,15 +19936,15 @@ func (sh *strictHandler) CreateAniListImport(ctx echo.Context) error {
 }
 
 // CreateCATFeedImport operation middleware
-func (sh *strictHandler) CreateCATFeedImport(ctx echo.Context) error {
+func (sh *strictHandler) CreateCATFeedImport(ctx *echo.Context) error {
 	var request CreateCATFeedImportRequestObject
 
 	var body CreateCATFeedImportJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -19955,7 +19955,7 @@ func (sh *strictHandler) CreateCATFeedImport(ctx echo.Context) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.CreateCATFeedImport(ctx.Request().Context(), request.(CreateCATFeedImportRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -19975,15 +19975,15 @@ func (sh *strictHandler) CreateCATFeedImport(ctx echo.Context) error {
 }
 
 // CreateLastFMImport operation middleware
-func (sh *strictHandler) CreateLastFMImport(ctx echo.Context) error {
+func (sh *strictHandler) CreateLastFMImport(ctx *echo.Context) error {
 	var request CreateLastFMImportRequestObject
 
 	var body CreateLastFMImportJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -19994,7 +19994,7 @@ func (sh *strictHandler) CreateLastFMImport(ctx echo.Context) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.CreateLastFMImport(ctx.Request().Context(), request.(CreateLastFMImportRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -20014,15 +20014,15 @@ func (sh *strictHandler) CreateLastFMImport(ctx echo.Context) error {
 }
 
 // CreateListenBrainzImport operation middleware
-func (sh *strictHandler) CreateListenBrainzImport(ctx echo.Context) error {
+func (sh *strictHandler) CreateListenBrainzImport(ctx *echo.Context) error {
 	var request CreateListenBrainzImportRequestObject
 
 	var body CreateListenBrainzImportJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -20033,7 +20033,7 @@ func (sh *strictHandler) CreateListenBrainzImport(ctx echo.Context) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.CreateListenBrainzImport(ctx.Request().Context(), request.(CreateListenBrainzImportRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -20053,10 +20053,10 @@ func (sh *strictHandler) CreateListenBrainzImport(ctx echo.Context) error {
 }
 
 // StartStremioLink operation middleware
-func (sh *strictHandler) StartStremioLink(ctx echo.Context) error {
+func (sh *strictHandler) StartStremioLink(ctx *echo.Context) error {
 	var request StartStremioLinkRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.StartStremioLink(ctx.Request().Context(), request.(StartStremioLinkRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -20076,12 +20076,12 @@ func (sh *strictHandler) StartStremioLink(ctx echo.Context) error {
 }
 
 // PollStremioLink operation middleware
-func (sh *strictHandler) PollStremioLink(ctx echo.Context, code string) error {
+func (sh *strictHandler) PollStremioLink(ctx *echo.Context, code string) error {
 	var request PollStremioLinkRequestObject
 
 	request.Code = code
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.PollStremioLink(ctx.Request().Context(), request.(PollStremioLinkRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -20101,10 +20101,10 @@ func (sh *strictHandler) PollStremioLink(ctx echo.Context, code string) error {
 }
 
 // CreateTraktImport operation middleware
-func (sh *strictHandler) CreateTraktImport(ctx echo.Context) error {
+func (sh *strictHandler) CreateTraktImport(ctx *echo.Context) error {
 	var request CreateTraktImportRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.CreateTraktImport(ctx.Request().Context(), request.(CreateTraktImportRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -20124,15 +20124,15 @@ func (sh *strictHandler) CreateTraktImport(ctx echo.Context) error {
 }
 
 // ConnectTrakt operation middleware
-func (sh *strictHandler) ConnectTrakt(ctx echo.Context) error {
+func (sh *strictHandler) ConnectTrakt(ctx *echo.Context) error {
 	var request ConnectTraktRequestObject
 
 	var body ConnectTraktJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -20143,7 +20143,7 @@ func (sh *strictHandler) ConnectTrakt(ctx echo.Context) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ConnectTrakt(ctx.Request().Context(), request.(ConnectTraktRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -20163,10 +20163,10 @@ func (sh *strictHandler) ConnectTrakt(ctx echo.Context) error {
 }
 
 // DisconnectTrakt operation middleware
-func (sh *strictHandler) DisconnectTrakt(ctx echo.Context) error {
+func (sh *strictHandler) DisconnectTrakt(ctx *echo.Context) error {
 	var request DisconnectTraktRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.DisconnectTrakt(ctx.Request().Context(), request.(DisconnectTraktRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -20186,10 +20186,10 @@ func (sh *strictHandler) DisconnectTrakt(ctx echo.Context) error {
 }
 
 // GetTraktConnection operation middleware
-func (sh *strictHandler) GetTraktConnection(ctx echo.Context) error {
+func (sh *strictHandler) GetTraktConnection(ctx *echo.Context) error {
 	var request GetTraktConnectionRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetTraktConnection(ctx.Request().Context(), request.(GetTraktConnectionRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -20209,12 +20209,12 @@ func (sh *strictHandler) GetTraktConnection(ctx echo.Context) error {
 }
 
 // DeleteImport operation middleware
-func (sh *strictHandler) DeleteImport(ctx echo.Context, id apiid.UUID) error {
+func (sh *strictHandler) DeleteImport(ctx *echo.Context, id apiid.UUID) error {
 	var request DeleteImportRequestObject
 
 	request.Id = id
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.DeleteImport(ctx.Request().Context(), request.(DeleteImportRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -20234,12 +20234,12 @@ func (sh *strictHandler) DeleteImport(ctx echo.Context, id apiid.UUID) error {
 }
 
 // GetImport operation middleware
-func (sh *strictHandler) GetImport(ctx echo.Context, id apiid.UUID) error {
+func (sh *strictHandler) GetImport(ctx *echo.Context, id apiid.UUID) error {
 	var request GetImportRequestObject
 
 	request.Id = id
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetImport(ctx.Request().Context(), request.(GetImportRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -20259,12 +20259,12 @@ func (sh *strictHandler) GetImport(ctx echo.Context, id apiid.UUID) error {
 }
 
 // ApplyImport operation middleware
-func (sh *strictHandler) ApplyImport(ctx echo.Context, id apiid.UUID) error {
+func (sh *strictHandler) ApplyImport(ctx *echo.Context, id apiid.UUID) error {
 	var request ApplyImportRequestObject
 
 	request.Id = id
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ApplyImport(ctx.Request().Context(), request.(ApplyImportRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -20284,12 +20284,12 @@ func (sh *strictHandler) ApplyImport(ctx echo.Context, id apiid.UUID) error {
 }
 
 // MatchAllImportRows operation middleware
-func (sh *strictHandler) MatchAllImportRows(ctx echo.Context, id apiid.UUID) error {
+func (sh *strictHandler) MatchAllImportRows(ctx *echo.Context, id apiid.UUID) error {
 	var request MatchAllImportRowsRequestObject
 
 	request.Id = id
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.MatchAllImportRows(ctx.Request().Context(), request.(MatchAllImportRowsRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -20309,7 +20309,7 @@ func (sh *strictHandler) MatchAllImportRows(ctx echo.Context, id apiid.UUID) err
 }
 
 // LeaveOutImportRow operation middleware
-func (sh *strictHandler) LeaveOutImportRow(ctx echo.Context, id apiid.UUID, index int) error {
+func (sh *strictHandler) LeaveOutImportRow(ctx *echo.Context, id apiid.UUID, index int) error {
 	var request LeaveOutImportRowRequestObject
 
 	request.Id = id
@@ -20317,10 +20317,10 @@ func (sh *strictHandler) LeaveOutImportRow(ctx echo.Context, id apiid.UUID, inde
 
 	var body LeaveOutImportRowJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -20331,7 +20331,7 @@ func (sh *strictHandler) LeaveOutImportRow(ctx echo.Context, id apiid.UUID, inde
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.LeaveOutImportRow(ctx.Request().Context(), request.(LeaveOutImportRowRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -20351,7 +20351,7 @@ func (sh *strictHandler) LeaveOutImportRow(ctx echo.Context, id apiid.UUID, inde
 }
 
 // ResolveImportRow operation middleware
-func (sh *strictHandler) ResolveImportRow(ctx echo.Context, id apiid.UUID, index int) error {
+func (sh *strictHandler) ResolveImportRow(ctx *echo.Context, id apiid.UUID, index int) error {
 	var request ResolveImportRowRequestObject
 
 	request.Id = id
@@ -20359,10 +20359,10 @@ func (sh *strictHandler) ResolveImportRow(ctx echo.Context, id apiid.UUID, index
 
 	var body ResolveImportRowJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -20373,7 +20373,7 @@ func (sh *strictHandler) ResolveImportRow(ctx echo.Context, id apiid.UUID, index
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ResolveImportRow(ctx.Request().Context(), request.(ResolveImportRowRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -20393,12 +20393,12 @@ func (sh *strictHandler) ResolveImportRow(ctx echo.Context, id apiid.UUID, index
 }
 
 // UndoListenImport operation middleware
-func (sh *strictHandler) UndoListenImport(ctx echo.Context, id apiid.UUID) error {
+func (sh *strictHandler) UndoListenImport(ctx *echo.Context, id apiid.UUID) error {
 	var request UndoListenImportRequestObject
 
 	request.Id = id
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.UndoListenImport(ctx.Request().Context(), request.(UndoListenImportRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -20418,12 +20418,12 @@ func (sh *strictHandler) UndoListenImport(ctx echo.Context, id apiid.UUID) error
 }
 
 // GetInvitePreview operation middleware
-func (sh *strictHandler) GetInvitePreview(ctx echo.Context, code string) error {
+func (sh *strictHandler) GetInvitePreview(ctx *echo.Context, code string) error {
 	var request GetInvitePreviewRequestObject
 
 	request.Code = code
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetInvitePreview(ctx.Request().Context(), request.(GetInvitePreviewRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -20443,12 +20443,12 @@ func (sh *strictHandler) GetInvitePreview(ctx echo.Context, code string) error {
 }
 
 // ListLibraryItems operation middleware
-func (sh *strictHandler) ListLibraryItems(ctx echo.Context, params ListLibraryItemsParams) error {
+func (sh *strictHandler) ListLibraryItems(ctx *echo.Context, params ListLibraryItemsParams) error {
 	var request ListLibraryItemsRequestObject
 
 	request.Params = params
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ListLibraryItems(ctx.Request().Context(), request.(ListLibraryItemsRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -20468,15 +20468,15 @@ func (sh *strictHandler) ListLibraryItems(ctx echo.Context, params ListLibraryIt
 }
 
 // AddLibraryItem operation middleware
-func (sh *strictHandler) AddLibraryItem(ctx echo.Context) error {
+func (sh *strictHandler) AddLibraryItem(ctx *echo.Context) error {
 	var request AddLibraryItemRequestObject
 
 	var body AddLibraryItemJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -20487,7 +20487,7 @@ func (sh *strictHandler) AddLibraryItem(ctx echo.Context) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.AddLibraryItem(ctx.Request().Context(), request.(AddLibraryItemRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -20507,12 +20507,12 @@ func (sh *strictHandler) AddLibraryItem(ctx echo.Context) error {
 }
 
 // DeleteLibraryItem operation middleware
-func (sh *strictHandler) DeleteLibraryItem(ctx echo.Context, id apiid.UUID) error {
+func (sh *strictHandler) DeleteLibraryItem(ctx *echo.Context, id apiid.UUID) error {
 	var request DeleteLibraryItemRequestObject
 
 	request.Id = id
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.DeleteLibraryItem(ctx.Request().Context(), request.(DeleteLibraryItemRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -20532,12 +20532,12 @@ func (sh *strictHandler) DeleteLibraryItem(ctx echo.Context, id apiid.UUID) erro
 }
 
 // GetLibraryItem operation middleware
-func (sh *strictHandler) GetLibraryItem(ctx echo.Context, id apiid.UUID) error {
+func (sh *strictHandler) GetLibraryItem(ctx *echo.Context, id apiid.UUID) error {
 	var request GetLibraryItemRequestObject
 
 	request.Id = id
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetLibraryItem(ctx.Request().Context(), request.(GetLibraryItemRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -20557,17 +20557,17 @@ func (sh *strictHandler) GetLibraryItem(ctx echo.Context, id apiid.UUID) error {
 }
 
 // UpdateLibraryItem operation middleware
-func (sh *strictHandler) UpdateLibraryItem(ctx echo.Context, id apiid.UUID) error {
+func (sh *strictHandler) UpdateLibraryItem(ctx *echo.Context, id apiid.UUID) error {
 	var request UpdateLibraryItemRequestObject
 
 	request.Id = id
 
 	var body UpdateLibraryItemJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -20578,7 +20578,7 @@ func (sh *strictHandler) UpdateLibraryItem(ctx echo.Context, id apiid.UUID) erro
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.UpdateLibraryItem(ctx.Request().Context(), request.(UpdateLibraryItemRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -20598,7 +20598,7 @@ func (sh *strictHandler) UpdateLibraryItem(ctx echo.Context, id apiid.UUID) erro
 }
 
 // SetEpisodeWatched operation middleware
-func (sh *strictHandler) SetEpisodeWatched(ctx echo.Context, id apiid.UUID, season int, episode int) error {
+func (sh *strictHandler) SetEpisodeWatched(ctx *echo.Context, id apiid.UUID, season int, episode int) error {
 	var request SetEpisodeWatchedRequestObject
 
 	request.Id = id
@@ -20607,10 +20607,10 @@ func (sh *strictHandler) SetEpisodeWatched(ctx echo.Context, id apiid.UUID, seas
 
 	var body SetEpisodeWatchedJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -20621,7 +20621,7 @@ func (sh *strictHandler) SetEpisodeWatched(ctx echo.Context, id apiid.UUID, seas
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.SetEpisodeWatched(ctx.Request().Context(), request.(SetEpisodeWatchedRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -20641,13 +20641,13 @@ func (sh *strictHandler) SetEpisodeWatched(ctx echo.Context, id apiid.UUID, seas
 }
 
 // MarkSeasonWatched operation middleware
-func (sh *strictHandler) MarkSeasonWatched(ctx echo.Context, id apiid.UUID, season int) error {
+func (sh *strictHandler) MarkSeasonWatched(ctx *echo.Context, id apiid.UUID, season int) error {
 	var request MarkSeasonWatchedRequestObject
 
 	request.Id = id
 	request.Season = season
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.MarkSeasonWatched(ctx.Request().Context(), request.(MarkSeasonWatchedRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -20667,12 +20667,12 @@ func (sh *strictHandler) MarkSeasonWatched(ctx echo.Context, id apiid.UUID, seas
 }
 
 // MarkShowWatched operation middleware
-func (sh *strictHandler) MarkShowWatched(ctx echo.Context, id apiid.UUID) error {
+func (sh *strictHandler) MarkShowWatched(ctx *echo.Context, id apiid.UUID) error {
 	var request MarkShowWatchedRequestObject
 
 	request.Id = id
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.MarkShowWatched(ctx.Request().Context(), request.(MarkShowWatchedRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -20692,12 +20692,12 @@ func (sh *strictHandler) MarkShowWatched(ctx echo.Context, id apiid.UUID) error 
 }
 
 // SyncLibrary operation middleware
-func (sh *strictHandler) SyncLibrary(ctx echo.Context, params SyncLibraryParams) error {
+func (sh *strictHandler) SyncLibrary(ctx *echo.Context, params SyncLibraryParams) error {
 	var request SyncLibraryRequestObject
 
 	request.Params = params
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.SyncLibrary(ctx.Request().Context(), request.(SyncLibraryRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -20717,10 +20717,10 @@ func (sh *strictHandler) SyncLibrary(ctx echo.Context, params SyncLibraryParams)
 }
 
 // ListWatching operation middleware
-func (sh *strictHandler) ListWatching(ctx echo.Context) error {
+func (sh *strictHandler) ListWatching(ctx *echo.Context) error {
 	var request ListWatchingRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ListWatching(ctx.Request().Context(), request.(ListWatchingRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -20740,10 +20740,10 @@ func (sh *strictHandler) ListWatching(ctx echo.Context) error {
 }
 
 // ListLists operation middleware
-func (sh *strictHandler) ListLists(ctx echo.Context) error {
+func (sh *strictHandler) ListLists(ctx *echo.Context) error {
 	var request ListListsRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ListLists(ctx.Request().Context(), request.(ListListsRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -20763,15 +20763,15 @@ func (sh *strictHandler) ListLists(ctx echo.Context) error {
 }
 
 // CreateList operation middleware
-func (sh *strictHandler) CreateList(ctx echo.Context) error {
+func (sh *strictHandler) CreateList(ctx *echo.Context) error {
 	var request CreateListRequestObject
 
 	var body CreateListJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -20782,7 +20782,7 @@ func (sh *strictHandler) CreateList(ctx echo.Context) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.CreateList(ctx.Request().Context(), request.(CreateListRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -20802,12 +20802,12 @@ func (sh *strictHandler) CreateList(ctx echo.Context) error {
 }
 
 // DeleteList operation middleware
-func (sh *strictHandler) DeleteList(ctx echo.Context, id apiid.UUID) error {
+func (sh *strictHandler) DeleteList(ctx *echo.Context, id apiid.UUID) error {
 	var request DeleteListRequestObject
 
 	request.Id = id
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.DeleteList(ctx.Request().Context(), request.(DeleteListRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -20827,12 +20827,12 @@ func (sh *strictHandler) DeleteList(ctx echo.Context, id apiid.UUID) error {
 }
 
 // GetList operation middleware
-func (sh *strictHandler) GetList(ctx echo.Context, id apiid.UUID) error {
+func (sh *strictHandler) GetList(ctx *echo.Context, id apiid.UUID) error {
 	var request GetListRequestObject
 
 	request.Id = id
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetList(ctx.Request().Context(), request.(GetListRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -20852,17 +20852,17 @@ func (sh *strictHandler) GetList(ctx echo.Context, id apiid.UUID) error {
 }
 
 // RenameList operation middleware
-func (sh *strictHandler) RenameList(ctx echo.Context, id apiid.UUID) error {
+func (sh *strictHandler) RenameList(ctx *echo.Context, id apiid.UUID) error {
 	var request RenameListRequestObject
 
 	request.Id = id
 
 	var body RenameListJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -20873,7 +20873,7 @@ func (sh *strictHandler) RenameList(ctx echo.Context, id apiid.UUID) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.RenameList(ctx.Request().Context(), request.(RenameListRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -20893,17 +20893,17 @@ func (sh *strictHandler) RenameList(ctx echo.Context, id apiid.UUID) error {
 }
 
 // AddListItem operation middleware
-func (sh *strictHandler) AddListItem(ctx echo.Context, id apiid.UUID) error {
+func (sh *strictHandler) AddListItem(ctx *echo.Context, id apiid.UUID) error {
 	var request AddListItemRequestObject
 
 	request.Id = id
 
 	var body AddListItemJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -20914,7 +20914,7 @@ func (sh *strictHandler) AddListItem(ctx echo.Context, id apiid.UUID) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.AddListItem(ctx.Request().Context(), request.(AddListItemRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -20934,13 +20934,13 @@ func (sh *strictHandler) AddListItem(ctx echo.Context, id apiid.UUID) error {
 }
 
 // RemoveListItem operation middleware
-func (sh *strictHandler) RemoveListItem(ctx echo.Context, id apiid.UUID, titleId apiid.UUID) error {
+func (sh *strictHandler) RemoveListItem(ctx *echo.Context, id apiid.UUID, titleId apiid.UUID) error {
 	var request RemoveListItemRequestObject
 
 	request.Id = id
 	request.TitleId = titleId
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.RemoveListItem(ctx.Request().Context(), request.(RemoveListItemRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -20960,17 +20960,17 @@ func (sh *strictHandler) RemoveListItem(ctx echo.Context, id apiid.UUID, titleId
 }
 
 // ReorderList operation middleware
-func (sh *strictHandler) ReorderList(ctx echo.Context, id apiid.UUID) error {
+func (sh *strictHandler) ReorderList(ctx *echo.Context, id apiid.UUID) error {
 	var request ReorderListRequestObject
 
 	request.Id = id
 
 	var body ReorderListJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -20981,7 +20981,7 @@ func (sh *strictHandler) ReorderList(ctx echo.Context, id apiid.UUID) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ReorderList(ctx.Request().Context(), request.(ReorderListRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -21001,10 +21001,10 @@ func (sh *strictHandler) ReorderList(ctx echo.Context, id apiid.UUID) error {
 }
 
 // DeleteAccount operation middleware
-func (sh *strictHandler) DeleteAccount(ctx echo.Context) error {
+func (sh *strictHandler) DeleteAccount(ctx *echo.Context) error {
 	var request DeleteAccountRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.DeleteAccount(ctx.Request().Context(), request.(DeleteAccountRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -21024,10 +21024,10 @@ func (sh *strictHandler) DeleteAccount(ctx echo.Context) error {
 }
 
 // GetMe operation middleware
-func (sh *strictHandler) GetMe(ctx echo.Context) error {
+func (sh *strictHandler) GetMe(ctx *echo.Context) error {
 	var request GetMeRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetMe(ctx.Request().Context(), request.(GetMeRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -21047,10 +21047,10 @@ func (sh *strictHandler) GetMe(ctx echo.Context) error {
 }
 
 // DeleteAvatar operation middleware
-func (sh *strictHandler) DeleteAvatar(ctx echo.Context) error {
+func (sh *strictHandler) DeleteAvatar(ctx *echo.Context) error {
 	var request DeleteAvatarRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.DeleteAvatar(ctx.Request().Context(), request.(DeleteAvatarRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -21070,12 +21070,12 @@ func (sh *strictHandler) DeleteAvatar(ctx echo.Context) error {
 }
 
 // UploadAvatar operation middleware
-func (sh *strictHandler) UploadAvatar(ctx echo.Context) error {
+func (sh *strictHandler) UploadAvatar(ctx *echo.Context) error {
 	var request UploadAvatarRequestObject
 
 	request.Body = ctx.Request().Body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.UploadAvatar(ctx.Request().Context(), request.(UploadAvatarRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -21095,10 +21095,10 @@ func (sh *strictHandler) UploadAvatar(ctx echo.Context) error {
 }
 
 // ListBadges operation middleware
-func (sh *strictHandler) ListBadges(ctx echo.Context) error {
+func (sh *strictHandler) ListBadges(ctx *echo.Context) error {
 	var request ListBadgesRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ListBadges(ctx.Request().Context(), request.(ListBadgesRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -21118,15 +21118,15 @@ func (sh *strictHandler) ListBadges(ctx echo.Context) error {
 }
 
 // MarkBadgesSeen operation middleware
-func (sh *strictHandler) MarkBadgesSeen(ctx echo.Context) error {
+func (sh *strictHandler) MarkBadgesSeen(ctx *echo.Context) error {
 	var request MarkBadgesSeenRequestObject
 
 	var body MarkBadgesSeenJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -21137,7 +21137,7 @@ func (sh *strictHandler) MarkBadgesSeen(ctx echo.Context) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.MarkBadgesSeen(ctx.Request().Context(), request.(MarkBadgesSeenRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -21157,10 +21157,10 @@ func (sh *strictHandler) MarkBadgesSeen(ctx echo.Context) error {
 }
 
 // DeleteConcertPlace operation middleware
-func (sh *strictHandler) DeleteConcertPlace(ctx echo.Context) error {
+func (sh *strictHandler) DeleteConcertPlace(ctx *echo.Context) error {
 	var request DeleteConcertPlaceRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.DeleteConcertPlace(ctx.Request().Context(), request.(DeleteConcertPlaceRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -21180,10 +21180,10 @@ func (sh *strictHandler) DeleteConcertPlace(ctx echo.Context) error {
 }
 
 // GetConcertPlace operation middleware
-func (sh *strictHandler) GetConcertPlace(ctx echo.Context) error {
+func (sh *strictHandler) GetConcertPlace(ctx *echo.Context) error {
 	var request GetConcertPlaceRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetConcertPlace(ctx.Request().Context(), request.(GetConcertPlaceRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -21203,15 +21203,15 @@ func (sh *strictHandler) GetConcertPlace(ctx echo.Context) error {
 }
 
 // SaveConcertPlace operation middleware
-func (sh *strictHandler) SaveConcertPlace(ctx echo.Context) error {
+func (sh *strictHandler) SaveConcertPlace(ctx *echo.Context) error {
 	var request SaveConcertPlaceRequestObject
 
 	var body SaveConcertPlaceJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -21222,7 +21222,7 @@ func (sh *strictHandler) SaveConcertPlace(ctx echo.Context) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.SaveConcertPlace(ctx.Request().Context(), request.(SaveConcertPlaceRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -21242,10 +21242,10 @@ func (sh *strictHandler) SaveConcertPlace(ctx echo.Context) error {
 }
 
 // GetEntitlement operation middleware
-func (sh *strictHandler) GetEntitlement(ctx echo.Context) error {
+func (sh *strictHandler) GetEntitlement(ctx *echo.Context) error {
 	var request GetEntitlementRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetEntitlement(ctx.Request().Context(), request.(GetEntitlementRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -21265,12 +21265,12 @@ func (sh *strictHandler) GetEntitlement(ctx echo.Context) error {
 }
 
 // ExportAccount operation middleware
-func (sh *strictHandler) ExportAccount(ctx echo.Context, params ExportAccountParams) error {
+func (sh *strictHandler) ExportAccount(ctx *echo.Context, params ExportAccountParams) error {
 	var request ExportAccountRequestObject
 
 	request.Params = params
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ExportAccount(ctx.Request().Context(), request.(ExportAccountRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -21290,10 +21290,10 @@ func (sh *strictHandler) ExportAccount(ctx echo.Context, params ExportAccountPar
 }
 
 // GetMyFavorites operation middleware
-func (sh *strictHandler) GetMyFavorites(ctx echo.Context) error {
+func (sh *strictHandler) GetMyFavorites(ctx *echo.Context) error {
 	var request GetMyFavoritesRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetMyFavorites(ctx.Request().Context(), request.(GetMyFavoritesRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -21313,17 +21313,17 @@ func (sh *strictHandler) GetMyFavorites(ctx echo.Context) error {
 }
 
 // SetMyFavorites operation middleware
-func (sh *strictHandler) SetMyFavorites(ctx echo.Context, kind FavoriteKind) error {
+func (sh *strictHandler) SetMyFavorites(ctx *echo.Context, kind FavoriteKind) error {
 	var request SetMyFavoritesRequestObject
 
 	request.Kind = kind
 
 	var body SetMyFavoritesJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -21334,7 +21334,7 @@ func (sh *strictHandler) SetMyFavorites(ctx echo.Context, kind FavoriteKind) err
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.SetMyFavorites(ctx.Request().Context(), request.(SetMyFavoritesRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -21354,10 +21354,10 @@ func (sh *strictHandler) SetMyFavorites(ctx echo.Context, kind FavoriteKind) err
 }
 
 // ListGroupInvites operation middleware
-func (sh *strictHandler) ListGroupInvites(ctx echo.Context) error {
+func (sh *strictHandler) ListGroupInvites(ctx *echo.Context) error {
 	var request ListGroupInvitesRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ListGroupInvites(ctx.Request().Context(), request.(ListGroupInvitesRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -21377,15 +21377,15 @@ func (sh *strictHandler) ListGroupInvites(ctx echo.Context) error {
 }
 
 // LinkGoogle operation middleware
-func (sh *strictHandler) LinkGoogle(ctx echo.Context) error {
+func (sh *strictHandler) LinkGoogle(ctx *echo.Context) error {
 	var request LinkGoogleRequestObject
 
 	var body LinkGoogleJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -21396,7 +21396,7 @@ func (sh *strictHandler) LinkGoogle(ctx echo.Context) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.LinkGoogle(ctx.Request().Context(), request.(LinkGoogleRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -21416,12 +21416,12 @@ func (sh *strictHandler) LinkGoogle(ctx echo.Context) error {
 }
 
 // ListListens operation middleware
-func (sh *strictHandler) ListListens(ctx echo.Context, params ListListensParams) error {
+func (sh *strictHandler) ListListens(ctx *echo.Context, params ListListensParams) error {
 	var request ListListensRequestObject
 
 	request.Params = params
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ListListens(ctx.Request().Context(), request.(ListListensRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -21441,12 +21441,12 @@ func (sh *strictHandler) ListListens(ctx echo.Context, params ListListensParams)
 }
 
 // GetTopListens operation middleware
-func (sh *strictHandler) GetTopListens(ctx echo.Context, params GetTopListensParams) error {
+func (sh *strictHandler) GetTopListens(ctx *echo.Context, params GetTopListensParams) error {
 	var request GetTopListensRequestObject
 
 	request.Params = params
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetTopListens(ctx.Request().Context(), request.(GetTopListensRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -21466,10 +21466,10 @@ func (sh *strictHandler) GetTopListens(ctx echo.Context, params GetTopListensPar
 }
 
 // GetNotificationSettings operation middleware
-func (sh *strictHandler) GetNotificationSettings(ctx echo.Context) error {
+func (sh *strictHandler) GetNotificationSettings(ctx *echo.Context) error {
 	var request GetNotificationSettingsRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetNotificationSettings(ctx.Request().Context(), request.(GetNotificationSettingsRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -21489,15 +21489,15 @@ func (sh *strictHandler) GetNotificationSettings(ctx echo.Context) error {
 }
 
 // UpdateNotificationSettings operation middleware
-func (sh *strictHandler) UpdateNotificationSettings(ctx echo.Context) error {
+func (sh *strictHandler) UpdateNotificationSettings(ctx *echo.Context) error {
 	var request UpdateNotificationSettingsRequestObject
 
 	var body UpdateNotificationSettingsJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -21508,7 +21508,7 @@ func (sh *strictHandler) UpdateNotificationSettings(ctx echo.Context) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.UpdateNotificationSettings(ctx.Request().Context(), request.(UpdateNotificationSettingsRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -21528,10 +21528,10 @@ func (sh *strictHandler) UpdateNotificationSettings(ctx echo.Context) error {
 }
 
 // GetNowPlaying operation middleware
-func (sh *strictHandler) GetNowPlaying(ctx echo.Context) error {
+func (sh *strictHandler) GetNowPlaying(ctx *echo.Context) error {
 	var request GetNowPlayingRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetNowPlaying(ctx.Request().Context(), request.(GetNowPlayingRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -21551,12 +21551,12 @@ func (sh *strictHandler) GetNowPlaying(ctx echo.Context) error {
 }
 
 // ListPoints operation middleware
-func (sh *strictHandler) ListPoints(ctx echo.Context, params ListPointsParams) error {
+func (sh *strictHandler) ListPoints(ctx *echo.Context, params ListPointsParams) error {
 	var request ListPointsRequestObject
 
 	request.Params = params
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ListPoints(ctx.Request().Context(), request.(ListPointsRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -21576,15 +21576,15 @@ func (sh *strictHandler) ListPoints(ctx echo.Context, params ListPointsParams) e
 }
 
 // UpdateProfile operation middleware
-func (sh *strictHandler) UpdateProfile(ctx echo.Context) error {
+func (sh *strictHandler) UpdateProfile(ctx *echo.Context) error {
 	var request UpdateProfileRequestObject
 
 	var body UpdateProfileJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -21595,7 +21595,7 @@ func (sh *strictHandler) UpdateProfile(ctx echo.Context) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.UpdateProfile(ctx.Request().Context(), request.(UpdateProfileRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -21615,10 +21615,10 @@ func (sh *strictHandler) UpdateProfile(ctx echo.Context) error {
 }
 
 // GetProfileStats operation middleware
-func (sh *strictHandler) GetProfileStats(ctx echo.Context) error {
+func (sh *strictHandler) GetProfileStats(ctx *echo.Context) error {
 	var request GetProfileStatsRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetProfileStats(ctx.Request().Context(), request.(GetProfileStatsRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -21638,10 +21638,10 @@ func (sh *strictHandler) GetProfileStats(ctx echo.Context) error {
 }
 
 // GetProgress operation middleware
-func (sh *strictHandler) GetProgress(ctx echo.Context) error {
+func (sh *strictHandler) GetProgress(ctx *echo.Context) error {
 	var request GetProgressRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetProgress(ctx.Request().Context(), request.(GetProgressRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -21661,10 +21661,10 @@ func (sh *strictHandler) GetProgress(ctx echo.Context) error {
 }
 
 // ListRecommendations operation middleware
-func (sh *strictHandler) ListRecommendations(ctx echo.Context) error {
+func (sh *strictHandler) ListRecommendations(ctx *echo.Context) error {
 	var request ListRecommendationsRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ListRecommendations(ctx.Request().Context(), request.(ListRecommendationsRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -21684,12 +21684,12 @@ func (sh *strictHandler) ListRecommendations(ctx echo.Context) error {
 }
 
 // DismissRecommendation operation middleware
-func (sh *strictHandler) DismissRecommendation(ctx echo.Context, id apiid.UUID) error {
+func (sh *strictHandler) DismissRecommendation(ctx *echo.Context, id apiid.UUID) error {
 	var request DismissRecommendationRequestObject
 
 	request.Id = id
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.DismissRecommendation(ctx.Request().Context(), request.(DismissRecommendationRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -21709,12 +21709,12 @@ func (sh *strictHandler) DismissRecommendation(ctx echo.Context, id apiid.UUID) 
 }
 
 // AddRecommendation operation middleware
-func (sh *strictHandler) AddRecommendation(ctx echo.Context, id apiid.UUID) error {
+func (sh *strictHandler) AddRecommendation(ctx *echo.Context, id apiid.UUID) error {
 	var request AddRecommendationRequestObject
 
 	request.Id = id
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.AddRecommendation(ctx.Request().Context(), request.(AddRecommendationRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -21734,10 +21734,10 @@ func (sh *strictHandler) AddRecommendation(ctx echo.Context, id apiid.UUID) erro
 }
 
 // GetSocialSettings operation middleware
-func (sh *strictHandler) GetSocialSettings(ctx echo.Context) error {
+func (sh *strictHandler) GetSocialSettings(ctx *echo.Context) error {
 	var request GetSocialSettingsRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetSocialSettings(ctx.Request().Context(), request.(GetSocialSettingsRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -21757,15 +21757,15 @@ func (sh *strictHandler) GetSocialSettings(ctx echo.Context) error {
 }
 
 // UpdateSocialSettings operation middleware
-func (sh *strictHandler) UpdateSocialSettings(ctx echo.Context) error {
+func (sh *strictHandler) UpdateSocialSettings(ctx *echo.Context) error {
 	var request UpdateSocialSettingsRequestObject
 
 	var body UpdateSocialSettingsJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -21776,7 +21776,7 @@ func (sh *strictHandler) UpdateSocialSettings(ctx echo.Context) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.UpdateSocialSettings(ctx.Request().Context(), request.(UpdateSocialSettingsRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -21796,10 +21796,10 @@ func (sh *strictHandler) UpdateSocialSettings(ctx echo.Context) error {
 }
 
 // ListSportFollows operation middleware
-func (sh *strictHandler) ListSportFollows(ctx echo.Context) error {
+func (sh *strictHandler) ListSportFollows(ctx *echo.Context) error {
 	var request ListSportFollowsRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ListSportFollows(ctx.Request().Context(), request.(ListSportFollowsRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -21819,13 +21819,13 @@ func (sh *strictHandler) ListSportFollows(ctx echo.Context) error {
 }
 
 // UnfollowSport operation middleware
-func (sh *strictHandler) UnfollowSport(ctx echo.Context, kind SportEntityKind, providerId string) error {
+func (sh *strictHandler) UnfollowSport(ctx *echo.Context, kind SportEntityKind, providerId string) error {
 	var request UnfollowSportRequestObject
 
 	request.Kind = kind
 	request.ProviderId = providerId
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.UnfollowSport(ctx.Request().Context(), request.(UnfollowSportRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -21845,13 +21845,13 @@ func (sh *strictHandler) UnfollowSport(ctx echo.Context, kind SportEntityKind, p
 }
 
 // FollowSport operation middleware
-func (sh *strictHandler) FollowSport(ctx echo.Context, kind SportEntityKind, providerId string) error {
+func (sh *strictHandler) FollowSport(ctx *echo.Context, kind SportEntityKind, providerId string) error {
 	var request FollowSportRequestObject
 
 	request.Kind = kind
 	request.ProviderId = providerId
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.FollowSport(ctx.Request().Context(), request.(FollowSportRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -21871,10 +21871,10 @@ func (sh *strictHandler) FollowSport(ctx echo.Context, kind SportEntityKind, pro
 }
 
 // GetSportSettings operation middleware
-func (sh *strictHandler) GetSportSettings(ctx echo.Context) error {
+func (sh *strictHandler) GetSportSettings(ctx *echo.Context) error {
 	var request GetSportSettingsRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetSportSettings(ctx.Request().Context(), request.(GetSportSettingsRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -21894,15 +21894,15 @@ func (sh *strictHandler) GetSportSettings(ctx echo.Context) error {
 }
 
 // SaveSportSettings operation middleware
-func (sh *strictHandler) SaveSportSettings(ctx echo.Context) error {
+func (sh *strictHandler) SaveSportSettings(ctx *echo.Context) error {
 	var request SaveSportSettingsRequestObject
 
 	var body SaveSportSettingsJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -21913,7 +21913,7 @@ func (sh *strictHandler) SaveSportSettings(ctx echo.Context) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.SaveSportSettings(ctx.Request().Context(), request.(SaveSportSettingsRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -21933,12 +21933,12 @@ func (sh *strictHandler) SaveSportSettings(ctx echo.Context) error {
 }
 
 // GetStats operation middleware
-func (sh *strictHandler) GetStats(ctx echo.Context, params GetStatsParams) error {
+func (sh *strictHandler) GetStats(ctx *echo.Context, params GetStatsParams) error {
 	var request GetStatsRequestObject
 
 	request.Params = params
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetStats(ctx.Request().Context(), request.(GetStatsRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -21958,12 +21958,12 @@ func (sh *strictHandler) GetStats(ctx echo.Context, params GetStatsParams) error
 }
 
 // GetOAuthRequest operation middleware
-func (sh *strictHandler) GetOAuthRequest(ctx echo.Context, id apiid.UUID) error {
+func (sh *strictHandler) GetOAuthRequest(ctx *echo.Context, id apiid.UUID) error {
 	var request GetOAuthRequestRequestObject
 
 	request.Id = id
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetOAuthRequest(ctx.Request().Context(), request.(GetOAuthRequestRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -21983,17 +21983,17 @@ func (sh *strictHandler) GetOAuthRequest(ctx echo.Context, id apiid.UUID) error 
 }
 
 // ApproveOAuthRequest operation middleware
-func (sh *strictHandler) ApproveOAuthRequest(ctx echo.Context, id apiid.UUID) error {
+func (sh *strictHandler) ApproveOAuthRequest(ctx *echo.Context, id apiid.UUID) error {
 	var request ApproveOAuthRequestRequestObject
 
 	request.Id = id
 
 	var body ApproveOAuthRequestJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -22004,7 +22004,7 @@ func (sh *strictHandler) ApproveOAuthRequest(ctx echo.Context, id apiid.UUID) er
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ApproveOAuthRequest(ctx.Request().Context(), request.(ApproveOAuthRequestRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -22024,17 +22024,17 @@ func (sh *strictHandler) ApproveOAuthRequest(ctx echo.Context, id apiid.UUID) er
 }
 
 // DenyOAuthRequest operation middleware
-func (sh *strictHandler) DenyOAuthRequest(ctx echo.Context, id apiid.UUID) error {
+func (sh *strictHandler) DenyOAuthRequest(ctx *echo.Context, id apiid.UUID) error {
 	var request DenyOAuthRequestRequestObject
 
 	request.Id = id
 
 	var body DenyOAuthRequestJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -22045,7 +22045,7 @@ func (sh *strictHandler) DenyOAuthRequest(ctx echo.Context, id apiid.UUID) error
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.DenyOAuthRequest(ctx.Request().Context(), request.(DenyOAuthRequestRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -22065,12 +22065,12 @@ func (sh *strictHandler) DenyOAuthRequest(ctx echo.Context, id apiid.UUID) error
 }
 
 // ListPlans operation middleware
-func (sh *strictHandler) ListPlans(ctx echo.Context, params ListPlansParams) error {
+func (sh *strictHandler) ListPlans(ctx *echo.Context, params ListPlansParams) error {
 	var request ListPlansRequestObject
 
 	request.Params = params
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ListPlans(ctx.Request().Context(), request.(ListPlansRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -22090,12 +22090,12 @@ func (sh *strictHandler) ListPlans(ctx echo.Context, params ListPlansParams) err
 }
 
 // GetPlan operation middleware
-func (sh *strictHandler) GetPlan(ctx echo.Context, id apiid.UUID) error {
+func (sh *strictHandler) GetPlan(ctx *echo.Context, id apiid.UUID) error {
 	var request GetPlanRequestObject
 
 	request.Id = id
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetPlan(ctx.Request().Context(), request.(GetPlanRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -22115,12 +22115,12 @@ func (sh *strictHandler) GetPlan(ctx echo.Context, id apiid.UUID) error {
 }
 
 // ApprovePlan operation middleware
-func (sh *strictHandler) ApprovePlan(ctx echo.Context, id apiid.UUID) error {
+func (sh *strictHandler) ApprovePlan(ctx *echo.Context, id apiid.UUID) error {
 	var request ApprovePlanRequestObject
 
 	request.Id = id
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ApprovePlan(ctx.Request().Context(), request.(ApprovePlanRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -22140,12 +22140,12 @@ func (sh *strictHandler) ApprovePlan(ctx echo.Context, id apiid.UUID) error {
 }
 
 // DenyPlan operation middleware
-func (sh *strictHandler) DenyPlan(ctx echo.Context, id apiid.UUID) error {
+func (sh *strictHandler) DenyPlan(ctx *echo.Context, id apiid.UUID) error {
 	var request DenyPlanRequestObject
 
 	request.Id = id
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.DenyPlan(ctx.Request().Context(), request.(DenyPlanRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -22165,10 +22165,10 @@ func (sh *strictHandler) DenyPlan(ctx echo.Context, id apiid.UUID) error {
 }
 
 // CreateRealtimeTicket operation middleware
-func (sh *strictHandler) CreateRealtimeTicket(ctx echo.Context) error {
+func (sh *strictHandler) CreateRealtimeTicket(ctx *echo.Context) error {
 	var request CreateRealtimeTicketRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.CreateRealtimeTicket(ctx.Request().Context(), request.(CreateRealtimeTicketRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -22188,12 +22188,12 @@ func (sh *strictHandler) CreateRealtimeTicket(ctx echo.Context) error {
 }
 
 // SearchCatalog operation middleware
-func (sh *strictHandler) SearchCatalog(ctx echo.Context, params SearchCatalogParams) error {
+func (sh *strictHandler) SearchCatalog(ctx *echo.Context, params SearchCatalogParams) error {
 	var request SearchCatalogRequestObject
 
 	request.Params = params
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.SearchCatalog(ctx.Request().Context(), request.(SearchCatalogRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -22213,15 +22213,15 @@ func (sh *strictHandler) SearchCatalog(ctx echo.Context, params SearchCatalogPar
 }
 
 // CreateShare operation middleware
-func (sh *strictHandler) CreateShare(ctx echo.Context) error {
+func (sh *strictHandler) CreateShare(ctx *echo.Context) error {
 	var request CreateShareRequestObject
 
 	var body CreateShareJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -22232,7 +22232,7 @@ func (sh *strictHandler) CreateShare(ctx echo.Context) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.CreateShare(ctx.Request().Context(), request.(CreateShareRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -22252,12 +22252,12 @@ func (sh *strictHandler) CreateShare(ctx echo.Context) error {
 }
 
 // GetSharePreview operation middleware
-func (sh *strictHandler) GetSharePreview(ctx echo.Context, code string) error {
+func (sh *strictHandler) GetSharePreview(ctx *echo.Context, code string) error {
 	var request GetSharePreviewRequestObject
 
 	request.Code = code
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetSharePreview(ctx.Request().Context(), request.(GetSharePreviewRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -22277,10 +22277,10 @@ func (sh *strictHandler) GetSharePreview(ctx echo.Context, code string) error {
 }
 
 // ListShelves operation middleware
-func (sh *strictHandler) ListShelves(ctx echo.Context) error {
+func (sh *strictHandler) ListShelves(ctx *echo.Context) error {
 	var request ListShelvesRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ListShelves(ctx.Request().Context(), request.(ListShelvesRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -22300,15 +22300,15 @@ func (sh *strictHandler) ListShelves(ctx echo.Context) error {
 }
 
 // CreateShelf operation middleware
-func (sh *strictHandler) CreateShelf(ctx echo.Context) error {
+func (sh *strictHandler) CreateShelf(ctx *echo.Context) error {
 	var request CreateShelfRequestObject
 
 	var body CreateShelfJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -22319,7 +22319,7 @@ func (sh *strictHandler) CreateShelf(ctx echo.Context) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.CreateShelf(ctx.Request().Context(), request.(CreateShelfRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -22339,12 +22339,12 @@ func (sh *strictHandler) CreateShelf(ctx echo.Context) error {
 }
 
 // DeleteShelf operation middleware
-func (sh *strictHandler) DeleteShelf(ctx echo.Context, id apiid.UUID) error {
+func (sh *strictHandler) DeleteShelf(ctx *echo.Context, id apiid.UUID) error {
 	var request DeleteShelfRequestObject
 
 	request.Id = id
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.DeleteShelf(ctx.Request().Context(), request.(DeleteShelfRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -22364,17 +22364,17 @@ func (sh *strictHandler) DeleteShelf(ctx echo.Context, id apiid.UUID) error {
 }
 
 // UpdateShelf operation middleware
-func (sh *strictHandler) UpdateShelf(ctx echo.Context, id apiid.UUID) error {
+func (sh *strictHandler) UpdateShelf(ctx *echo.Context, id apiid.UUID) error {
 	var request UpdateShelfRequestObject
 
 	request.Id = id
 
 	var body UpdateShelfJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -22385,7 +22385,7 @@ func (sh *strictHandler) UpdateShelf(ctx echo.Context, id apiid.UUID) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.UpdateShelf(ctx.Request().Context(), request.(UpdateShelfRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -22405,13 +22405,13 @@ func (sh *strictHandler) UpdateShelf(ctx echo.Context, id apiid.UUID) error {
 }
 
 // ListShelfItems operation middleware
-func (sh *strictHandler) ListShelfItems(ctx echo.Context, id apiid.UUID, params ListShelfItemsParams) error {
+func (sh *strictHandler) ListShelfItems(ctx *echo.Context, id apiid.UUID, params ListShelfItemsParams) error {
 	var request ListShelfItemsRequestObject
 
 	request.Id = id
 	request.Params = params
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ListShelfItems(ctx.Request().Context(), request.(ListShelfItemsRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -22431,10 +22431,10 @@ func (sh *strictHandler) ListShelfItems(ctx echo.Context, id apiid.UUID, params 
 }
 
 // ListBlocks operation middleware
-func (sh *strictHandler) ListBlocks(ctx echo.Context) error {
+func (sh *strictHandler) ListBlocks(ctx *echo.Context) error {
 	var request ListBlocksRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ListBlocks(ctx.Request().Context(), request.(ListBlocksRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -22454,12 +22454,12 @@ func (sh *strictHandler) ListBlocks(ctx echo.Context) error {
 }
 
 // UnblockUser operation middleware
-func (sh *strictHandler) UnblockUser(ctx echo.Context, userId apiid.UUID) error {
+func (sh *strictHandler) UnblockUser(ctx *echo.Context, userId apiid.UUID) error {
 	var request UnblockUserRequestObject
 
 	request.UserId = userId
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.UnblockUser(ctx.Request().Context(), request.(UnblockUserRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -22479,12 +22479,12 @@ func (sh *strictHandler) UnblockUser(ctx echo.Context, userId apiid.UUID) error 
 }
 
 // BlockUser operation middleware
-func (sh *strictHandler) BlockUser(ctx echo.Context, userId apiid.UUID) error {
+func (sh *strictHandler) BlockUser(ctx *echo.Context, userId apiid.UUID) error {
 	var request BlockUserRequestObject
 
 	request.UserId = userId
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.BlockUser(ctx.Request().Context(), request.(BlockUserRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -22504,10 +22504,10 @@ func (sh *strictHandler) BlockUser(ctx echo.Context, userId apiid.UUID) error {
 }
 
 // ListFriendRequests operation middleware
-func (sh *strictHandler) ListFriendRequests(ctx echo.Context) error {
+func (sh *strictHandler) ListFriendRequests(ctx *echo.Context) error {
 	var request ListFriendRequestsRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ListFriendRequests(ctx.Request().Context(), request.(ListFriendRequestsRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -22527,15 +22527,15 @@ func (sh *strictHandler) ListFriendRequests(ctx echo.Context) error {
 }
 
 // SendFriendRequest operation middleware
-func (sh *strictHandler) SendFriendRequest(ctx echo.Context) error {
+func (sh *strictHandler) SendFriendRequest(ctx *echo.Context) error {
 	var request SendFriendRequestRequestObject
 
 	var body SendFriendRequestJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -22546,7 +22546,7 @@ func (sh *strictHandler) SendFriendRequest(ctx echo.Context) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.SendFriendRequest(ctx.Request().Context(), request.(SendFriendRequestRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -22566,12 +22566,12 @@ func (sh *strictHandler) SendFriendRequest(ctx echo.Context) error {
 }
 
 // WithdrawFriendRequest operation middleware
-func (sh *strictHandler) WithdrawFriendRequest(ctx echo.Context, id apiid.UUID) error {
+func (sh *strictHandler) WithdrawFriendRequest(ctx *echo.Context, id apiid.UUID) error {
 	var request WithdrawFriendRequestRequestObject
 
 	request.Id = id
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.WithdrawFriendRequest(ctx.Request().Context(), request.(WithdrawFriendRequestRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -22591,12 +22591,12 @@ func (sh *strictHandler) WithdrawFriendRequest(ctx echo.Context, id apiid.UUID) 
 }
 
 // AcceptFriendRequest operation middleware
-func (sh *strictHandler) AcceptFriendRequest(ctx echo.Context, id apiid.UUID) error {
+func (sh *strictHandler) AcceptFriendRequest(ctx *echo.Context, id apiid.UUID) error {
 	var request AcceptFriendRequestRequestObject
 
 	request.Id = id
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.AcceptFriendRequest(ctx.Request().Context(), request.(AcceptFriendRequestRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -22616,10 +22616,10 @@ func (sh *strictHandler) AcceptFriendRequest(ctx echo.Context, id apiid.UUID) er
 }
 
 // ListFriends operation middleware
-func (sh *strictHandler) ListFriends(ctx echo.Context) error {
+func (sh *strictHandler) ListFriends(ctx *echo.Context) error {
 	var request ListFriendsRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ListFriends(ctx.Request().Context(), request.(ListFriendsRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -22639,12 +22639,12 @@ func (sh *strictHandler) ListFriends(ctx echo.Context) error {
 }
 
 // RemoveFriend operation middleware
-func (sh *strictHandler) RemoveFriend(ctx echo.Context, userId apiid.UUID) error {
+func (sh *strictHandler) RemoveFriend(ctx *echo.Context, userId apiid.UUID) error {
 	var request RemoveFriendRequestObject
 
 	request.UserId = userId
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.RemoveFriend(ctx.Request().Context(), request.(RemoveFriendRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -22664,12 +22664,12 @@ func (sh *strictHandler) RemoveFriend(ctx echo.Context, userId apiid.UUID) error
 }
 
 // GetFriendProfile operation middleware
-func (sh *strictHandler) GetFriendProfile(ctx echo.Context, userId apiid.UUID) error {
+func (sh *strictHandler) GetFriendProfile(ctx *echo.Context, userId apiid.UUID) error {
 	var request GetFriendProfileRequestObject
 
 	request.UserId = userId
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetFriendProfile(ctx.Request().Context(), request.(GetFriendProfileRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -22689,10 +22689,10 @@ func (sh *strictHandler) GetFriendProfile(ctx echo.Context, userId apiid.UUID) e
 }
 
 // ListFriendInvites operation middleware
-func (sh *strictHandler) ListFriendInvites(ctx echo.Context) error {
+func (sh *strictHandler) ListFriendInvites(ctx *echo.Context) error {
 	var request ListFriendInvitesRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ListFriendInvites(ctx.Request().Context(), request.(ListFriendInvitesRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -22712,15 +22712,15 @@ func (sh *strictHandler) ListFriendInvites(ctx echo.Context) error {
 }
 
 // CreateFriendInvite operation middleware
-func (sh *strictHandler) CreateFriendInvite(ctx echo.Context) error {
+func (sh *strictHandler) CreateFriendInvite(ctx *echo.Context) error {
 	var request CreateFriendInviteRequestObject
 
 	var body CreateFriendInviteJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -22731,7 +22731,7 @@ func (sh *strictHandler) CreateFriendInvite(ctx echo.Context) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.CreateFriendInvite(ctx.Request().Context(), request.(CreateFriendInviteRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -22751,12 +22751,12 @@ func (sh *strictHandler) CreateFriendInvite(ctx echo.Context) error {
 }
 
 // RevokeFriendInvite operation middleware
-func (sh *strictHandler) RevokeFriendInvite(ctx echo.Context, code string) error {
+func (sh *strictHandler) RevokeFriendInvite(ctx *echo.Context, code string) error {
 	var request RevokeFriendInviteRequestObject
 
 	request.Code = code
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.RevokeFriendInvite(ctx.Request().Context(), request.(RevokeFriendInviteRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -22776,17 +22776,17 @@ func (sh *strictHandler) RevokeFriendInvite(ctx echo.Context, code string) error
 }
 
 // RedeemFriendInvite operation middleware
-func (sh *strictHandler) RedeemFriendInvite(ctx echo.Context, code string) error {
+func (sh *strictHandler) RedeemFriendInvite(ctx *echo.Context, code string) error {
 	var request RedeemFriendInviteRequestObject
 
 	request.Code = code
 
 	var body RedeemFriendInviteJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -22797,7 +22797,7 @@ func (sh *strictHandler) RedeemFriendInvite(ctx echo.Context, code string) error
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.RedeemFriendInvite(ctx.Request().Context(), request.(RedeemFriendInviteRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -22817,12 +22817,12 @@ func (sh *strictHandler) RedeemFriendInvite(ctx echo.Context, code string) error
 }
 
 // GetLeaderboard operation middleware
-func (sh *strictHandler) GetLeaderboard(ctx echo.Context, params GetLeaderboardParams) error {
+func (sh *strictHandler) GetLeaderboard(ctx *echo.Context, params GetLeaderboardParams) error {
 	var request GetLeaderboardRequestObject
 
 	request.Params = params
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetLeaderboard(ctx.Request().Context(), request.(GetLeaderboardRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -22842,15 +22842,15 @@ func (sh *strictHandler) GetLeaderboard(ctx echo.Context, params GetLeaderboardP
 }
 
 // RecommendTitle operation middleware
-func (sh *strictHandler) RecommendTitle(ctx echo.Context) error {
+func (sh *strictHandler) RecommendTitle(ctx *echo.Context) error {
 	var request RecommendTitleRequestObject
 
 	var body RecommendTitleJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -22861,7 +22861,7 @@ func (sh *strictHandler) RecommendTitle(ctx echo.Context) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.RecommendTitle(ctx.Request().Context(), request.(RecommendTitleRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -22881,15 +22881,15 @@ func (sh *strictHandler) RecommendTitle(ctx echo.Context) error {
 }
 
 // ReportUser operation middleware
-func (sh *strictHandler) ReportUser(ctx echo.Context) error {
+func (sh *strictHandler) ReportUser(ctx *echo.Context) error {
 	var request ReportUserRequestObject
 
 	var body ReportUserJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -22900,7 +22900,7 @@ func (sh *strictHandler) ReportUser(ctx echo.Context) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ReportUser(ctx.Request().Context(), request.(ReportUserRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -22920,12 +22920,12 @@ func (sh *strictHandler) ReportUser(ctx echo.Context) error {
 }
 
 // GetSocialUser operation middleware
-func (sh *strictHandler) GetSocialUser(ctx echo.Context, handle string) error {
+func (sh *strictHandler) GetSocialUser(ctx *echo.Context, handle string) error {
 	var request GetSocialUserRequestObject
 
 	request.Handle = handle
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetSocialUser(ctx.Request().Context(), request.(GetSocialUserRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -22945,12 +22945,12 @@ func (sh *strictHandler) GetSocialUser(ctx echo.Context, handle string) error {
 }
 
 // GetSportEvent operation middleware
-func (sh *strictHandler) GetSportEvent(ctx echo.Context, id string) error {
+func (sh *strictHandler) GetSportEvent(ctx *echo.Context, id string) error {
 	var request GetSportEventRequestObject
 
 	request.Id = id
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetSportEvent(ctx.Request().Context(), request.(GetSportEventRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -22970,10 +22970,10 @@ func (sh *strictHandler) GetSportEvent(ctx echo.Context, id string) error {
 }
 
 // GetSportFavorites operation middleware
-func (sh *strictHandler) GetSportFavorites(ctx echo.Context) error {
+func (sh *strictHandler) GetSportFavorites(ctx *echo.Context) error {
 	var request GetSportFavoritesRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetSportFavorites(ctx.Request().Context(), request.(GetSportFavoritesRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -22993,12 +22993,12 @@ func (sh *strictHandler) GetSportFavorites(ctx echo.Context) error {
 }
 
 // GetSportSchedule operation middleware
-func (sh *strictHandler) GetSportSchedule(ctx echo.Context, params GetSportScheduleParams) error {
+func (sh *strictHandler) GetSportSchedule(ctx *echo.Context, params GetSportScheduleParams) error {
 	var request GetSportScheduleRequestObject
 
 	request.Params = params
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetSportSchedule(ctx.Request().Context(), request.(GetSportScheduleRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -23018,12 +23018,12 @@ func (sh *strictHandler) GetSportSchedule(ctx echo.Context, params GetSportSched
 }
 
 // SearchSports operation middleware
-func (sh *strictHandler) SearchSports(ctx echo.Context, params SearchSportsParams) error {
+func (sh *strictHandler) SearchSports(ctx *echo.Context, params SearchSportsParams) error {
 	var request SearchSportsRequestObject
 
 	request.Params = params
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.SearchSports(ctx.Request().Context(), request.(SearchSportsRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -23043,10 +23043,10 @@ func (sh *strictHandler) SearchSports(ctx echo.Context, params SearchSportsParam
 }
 
 // GetSportSuggestions operation middleware
-func (sh *strictHandler) GetSportSuggestions(ctx echo.Context) error {
+func (sh *strictHandler) GetSportSuggestions(ctx *echo.Context) error {
 	var request GetSportSuggestionsRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetSportSuggestions(ctx.Request().Context(), request.(GetSportSuggestionsRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -23066,15 +23066,15 @@ func (sh *strictHandler) GetSportSuggestions(ctx echo.Context) error {
 }
 
 // ResolveTitle operation middleware
-func (sh *strictHandler) ResolveTitle(ctx echo.Context) error {
+func (sh *strictHandler) ResolveTitle(ctx *echo.Context) error {
 	var request ResolveTitleRequestObject
 
 	var body ResolveTitleJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -23085,7 +23085,7 @@ func (sh *strictHandler) ResolveTitle(ctx echo.Context) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ResolveTitle(ctx.Request().Context(), request.(ResolveTitleRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -23105,12 +23105,12 @@ func (sh *strictHandler) ResolveTitle(ctx echo.Context) error {
 }
 
 // GetTitle operation middleware
-func (sh *strictHandler) GetTitle(ctx echo.Context, id apiid.UUID) error {
+func (sh *strictHandler) GetTitle(ctx *echo.Context, id apiid.UUID) error {
 	var request GetTitleRequestObject
 
 	request.Id = id
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetTitle(ctx.Request().Context(), request.(GetTitleRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -23130,13 +23130,13 @@ func (sh *strictHandler) GetTitle(ctx echo.Context, id apiid.UUID) error {
 }
 
 // ListTitlePosts operation middleware
-func (sh *strictHandler) ListTitlePosts(ctx echo.Context, id apiid.UUID, params ListTitlePostsParams) error {
+func (sh *strictHandler) ListTitlePosts(ctx *echo.Context, id apiid.UUID, params ListTitlePostsParams) error {
 	var request ListTitlePostsRequestObject
 
 	request.Id = id
 	request.Params = params
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ListTitlePosts(ctx.Request().Context(), request.(ListTitlePostsRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -23156,12 +23156,12 @@ func (sh *strictHandler) ListTitlePosts(ctx echo.Context, id apiid.UUID, params 
 }
 
 // GetTonight operation middleware
-func (sh *strictHandler) GetTonight(ctx echo.Context, params GetTonightParams) error {
+func (sh *strictHandler) GetTonight(ctx *echo.Context, params GetTonightParams) error {
 	var request GetTonightRequestObject
 
 	request.Params = params
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetTonight(ctx.Request().Context(), request.(GetTonightRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -23181,13 +23181,13 @@ func (sh *strictHandler) GetTonight(ctx echo.Context, params GetTonightParams) e
 }
 
 // ClearTonightFeedback operation middleware
-func (sh *strictHandler) ClearTonightFeedback(ctx echo.Context, id apiid.UUID, params ClearTonightFeedbackParams) error {
+func (sh *strictHandler) ClearTonightFeedback(ctx *echo.Context, id apiid.UUID, params ClearTonightFeedbackParams) error {
 	var request ClearTonightFeedbackRequestObject
 
 	request.Id = id
 	request.Params = params
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ClearTonightFeedback(ctx.Request().Context(), request.(ClearTonightFeedbackRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -23207,7 +23207,7 @@ func (sh *strictHandler) ClearTonightFeedback(ctx echo.Context, id apiid.UUID, p
 }
 
 // SendTonightFeedback operation middleware
-func (sh *strictHandler) SendTonightFeedback(ctx echo.Context, id apiid.UUID, params SendTonightFeedbackParams) error {
+func (sh *strictHandler) SendTonightFeedback(ctx *echo.Context, id apiid.UUID, params SendTonightFeedbackParams) error {
 	var request SendTonightFeedbackRequestObject
 
 	request.Id = id
@@ -23215,10 +23215,10 @@ func (sh *strictHandler) SendTonightFeedback(ctx echo.Context, id apiid.UUID, pa
 
 	var body SendTonightFeedbackJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -23229,7 +23229,7 @@ func (sh *strictHandler) SendTonightFeedback(ctx echo.Context, id apiid.UUID, pa
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.SendTonightFeedback(ctx.Request().Context(), request.(SendTonightFeedbackRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -23249,10 +23249,10 @@ func (sh *strictHandler) SendTonightFeedback(ctx echo.Context, id apiid.UUID, pa
 }
 
 // GetUpNext operation middleware
-func (sh *strictHandler) GetUpNext(ctx echo.Context) error {
+func (sh *strictHandler) GetUpNext(ctx *echo.Context) error {
 	var request GetUpNextRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetUpNext(ctx.Request().Context(), request.(GetUpNextRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -23272,13 +23272,13 @@ func (sh *strictHandler) GetUpNext(ctx echo.Context) error {
 }
 
 // GetUserAvatar operation middleware
-func (sh *strictHandler) GetUserAvatar(ctx echo.Context, userId apiid.UUID, params GetUserAvatarParams) error {
+func (sh *strictHandler) GetUserAvatar(ctx *echo.Context, userId apiid.UUID, params GetUserAvatarParams) error {
 	var request GetUserAvatarRequestObject
 
 	request.UserId = userId
 	request.Params = params
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetUserAvatar(ctx.Request().Context(), request.(GetUserAvatarRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -23298,10 +23298,10 @@ func (sh *strictHandler) GetUserAvatar(ctx echo.Context, userId apiid.UUID, para
 }
 
 // GetWebPushKey operation middleware
-func (sh *strictHandler) GetWebPushKey(ctx echo.Context) error {
+func (sh *strictHandler) GetWebPushKey(ctx *echo.Context) error {
 	var request GetWebPushKeyRequestObject
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetWebPushKey(ctx.Request().Context(), request.(GetWebPushKeyRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -23321,12 +23321,12 @@ func (sh *strictHandler) GetWebPushKey(ctx echo.Context) error {
 }
 
 // DeleteWebPushSubscription operation middleware
-func (sh *strictHandler) DeleteWebPushSubscription(ctx echo.Context, params DeleteWebPushSubscriptionParams) error {
+func (sh *strictHandler) DeleteWebPushSubscription(ctx *echo.Context, params DeleteWebPushSubscriptionParams) error {
 	var request DeleteWebPushSubscriptionRequestObject
 
 	request.Params = params
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.DeleteWebPushSubscription(ctx.Request().Context(), request.(DeleteWebPushSubscriptionRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
@@ -23346,15 +23346,15 @@ func (sh *strictHandler) DeleteWebPushSubscription(ctx echo.Context, params Dele
 }
 
 // SaveWebPushSubscription operation middleware
-func (sh *strictHandler) SaveWebPushSubscription(ctx echo.Context) error {
+func (sh *strictHandler) SaveWebPushSubscription(ctx *echo.Context) error {
 	var request SaveWebPushSubscriptionRequestObject
 
 	var body SaveWebPushSubscriptionJSONRequestBody
 	var err error
-	if binder, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
+	if _, ok := ctx.Echo().Binder.(*echo.DefaultBinder); ok {
 		// Bind only the request body, so that path and query parameters
 		// are not also bound into the body struct.
-		err = binder.BindBody(ctx, &body)
+		err = echo.BindBody(ctx, &body)
 	} else {
 		// A custom binder is installed on the Echo instance; defer to it
 		// entirely, since echo.Binder does not expose body-only binding.
@@ -23365,7 +23365,7 @@ func (sh *strictHandler) SaveWebPushSubscription(ctx echo.Context) error {
 	}
 	request.Body = &body
 
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+	handler := func(ctx *echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.SaveWebPushSubscription(ctx.Request().Context(), request.(SaveWebPushSubscriptionRequestObject))
 	}
 	for _, middleware := range sh.middlewares {

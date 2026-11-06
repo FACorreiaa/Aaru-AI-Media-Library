@@ -7,6 +7,7 @@ import (
 	"aaru-go-api/internal/apitime"
 	"aaru-go-api/internal/apperr"
 	"aaru-go-api/internal/db/sqlc"
+	"aaru-go-api/internal/middleware"
 	"aaru-go-api/internal/safe"
 	"aaru-go-api/internal/telemetry"
 	"aaru-go-api/internal/transcription"
@@ -23,7 +24,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/google/uuid"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 const (
@@ -95,7 +96,7 @@ func (s *Server) GetChatStatus(ctx context.Context, _ api.GetChatStatusRequestOb
 // chatTurn is `POST /v1/chats/{id}/turns`: the answer as server-sent events. The headers go out with
 // the first frame, so whatever Turn refuses before that is still a JSON error. Turn returns an error
 // only when it has emitted nothing; after that a failure is an `error` frame.
-func (s *Server) chatTurn(c echo.Context) error {
+func (s *Server) chatTurn(c *echo.Context) error {
 	ctx := c.Request().Context()
 	user, err := currentUser(ctx)
 	if err != nil {
@@ -112,7 +113,7 @@ func (s *Server) chatTurn(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	stream := &chatStream{res: c.Response(), log: s.Log, every: s.chatHeartbeat, stop: make(chan struct{})}
+	stream := &chatStream{res: middleware.Response(c), log: s.Log, every: s.chatHeartbeat, stop: make(chan struct{})}
 	defer stream.close()
 	err = s.chatService().Turn(ctx, user, chat, body, hint, stream.send)
 	switch {
@@ -129,7 +130,7 @@ func (s *Server) chatTurn(c echo.Context) error {
 
 // readChatTurn is the request's words, trimmed, and its hint. A raw route is not in the embedded spec,
 // so no validator has seen this body; the length is checked after trimming, or blank would pass.
-func readChatTurn(c echo.Context) (string, agent.Hint, error) {
+func readChatTurn(c *echo.Context) (string, agent.Hint, error) {
 	if contentType(c) != "application/json" {
 		return "", agent.Hint{}, errUnreadable
 	}
@@ -265,7 +266,7 @@ func chatComponentsFrame(e agent.ChatEvent) componentsFrameJSON {
 
 // chatTranscribe is `POST /v1/chats/transcribe`: one spoken question as text. The audio stays in this
 // function's memory and goes nowhere but the transcription service; neither it nor the words reach a log.
-func (s *Server) chatTranscribe(c echo.Context) error {
+func (s *Server) chatTranscribe(c *echo.Context) error {
 	ctx := c.Request().Context()
 	user, err := currentUser(ctx)
 	if err != nil {

@@ -20,7 +20,7 @@ This file is the working contract for anyone — human or agent — changing the
 
 | Layer | Choice |
 | --- | --- |
-| API server | `aaru-server-v2`: Go, echo v4 with its middleware; handlers generated (oapi-codegen strict server) from `aaru-server/Sources/AppAPI/openapi.yaml`. A 1:1 port of the Swift server, which is archived in `aaru-server/` (it keeps only the spec and the client generator); all server code goes in `aaru-server-v2`. Conventions in `aaru-server-v2/PORTING.md` |
+| API server | `aaru-server-v2`: Go, echo v5 (moved from v4 2026-11-06: GO-2026-6872 and 6875 are fixed only in v5); handlers generated (oapi-codegen strict server) from `aaru-server/Sources/AppAPI/openapi.yaml`. A 1:1 port of the Swift server, which is archived in `aaru-server/` (it keeps only the spec and the client generator); all server code goes in `aaru-server-v2`. Conventions in `aaru-server-v2/PORTING.md` |
 | Shared code | `AaruCore` Swift package in `aaru-core/` (models, IDs, validation) for the Apple apps; the Go server holds the same rules in `aaru-server-v2/internal/core`. No HTTP client in either |
 | API client (Apple) | `AaruAPI` Swift package in `aaru-api/`: the `/v1` client generated from the server's `openapi.yaml` and committed, plus session middleware. Regenerate with `scripts/generate-api-client.sh`; CI fails if stale |
 | iOS + Mac | SwiftUI, one multiplatform target in `aaru-ios/`, plus one widget extension (iOS + macOS widgets, Live Activity, App Intents) |

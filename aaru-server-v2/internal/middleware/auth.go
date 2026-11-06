@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 // Sessions resolves a session token hash to its user.
@@ -62,7 +62,7 @@ func IsPublic(path string) bool {
 // the API append to `X-Forwarded-For` (see ClientAddress).
 func Auth(sessions Sessions, webClientSecret string, trustedProxyHops int) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
+		return func(c *echo.Context) error {
 			req := c.Request()
 			ctx := reqctx.WithClientAddress(req.Context(), RateLimitAddress(
 				req.Header.Get("X-Aaru-Visitor"), req.Header.Get("X-Aaru-Web-Secret"), webClientSecret,

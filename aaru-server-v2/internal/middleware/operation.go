@@ -5,7 +5,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 const operationKey = "aaru.operation"
@@ -15,13 +15,13 @@ const operationKey = "aaru.operation"
 // the spec's id, which Swift reported, starts lowercase (`getTitle`).
 func Operation(f api.StrictHandlerFunc, operationID string) api.StrictHandlerFunc {
 	id := lowerFirst(operationID)
-	return func(c echo.Context, request any) (any, error) {
+	return func(c *echo.Context, request any) (any, error) {
 		c.Set(operationKey, id)
 		return f(c, request)
 	}
 }
 
-func operation(c echo.Context) string {
+func operation(c *echo.Context) string {
 	id, _ := c.Get(operationKey).(string)
 	return id
 }

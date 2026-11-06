@@ -9,7 +9,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/getkin/kin-openapi/routers/gorillamux"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 // Validate refuses with 400 `bad_request` what the Swift server's generated
@@ -27,7 +27,7 @@ func Validate(spec *openapi3.T) (echo.MiddlewareFunc, error) {
 		return nil, fmt.Errorf("validation router: %w", err)
 	}
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
+		return func(c *echo.Context) error {
 			req := c.Request()
 			route, params, err := router.FindRoute(req)
 			if err != nil {
