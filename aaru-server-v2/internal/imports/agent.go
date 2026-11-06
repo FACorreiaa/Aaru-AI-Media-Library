@@ -3,6 +3,7 @@ package imports
 import (
 	"aaru-go-api/internal/capture"
 	"aaru-go-api/internal/core"
+	"aaru-go-api/internal/model"
 	"context"
 
 	"github.com/google/uuid"
@@ -36,6 +37,40 @@ func (a AgentImporter) CreateFileImport(ctx context.Context, user uuid.UUID, sou
 // Aaru. It spends one capture and returns the job's id.
 func (a AgentImporter) CreateTitleList(ctx context.Context, user uuid.UUID, titles []capture.Title, list string) (uuid.UUID, error) {
 	job, err := a.Service.CreateCapture(ctx, user, CaptureRequest{Titles: titles, ListName: list})
+	if err != nil {
+		return uuid.Nil, err
+	}
+	return job.ID, nil
+}
+
+// MARK: Files in a chat (ASK-010)
+
+// CreateListenImport is a listening history a chat was sent, as the listening log's import.
+func (a AgentImporter) CreateListenImport(ctx context.Context, user uuid.UUID, source core.ImportSource, filename *string, data []byte) (uuid.UUID, error) {
+	job, err := a.Service.CreateListenFileImport(ctx, user, &source, filename, data)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	return job.ID, nil
+}
+
+// CreateTextCapture is text a chat was sent, read as a capture. It spends one capture.
+func (a AgentImporter) CreateTextCapture(ctx context.Context, user uuid.UUID, text string) (uuid.UUID, error) {
+	return a.capture(ctx, user, CaptureRequest{Text: &text})
+}
+
+// CreatePictureCapture is pictures a chat was sent, read together as one capture.
+func (a AgentImporter) CreatePictureCapture(ctx context.Context, user uuid.UUID, pictures []model.Image) (uuid.UUID, error) {
+	return a.capture(ctx, user, CaptureRequest{Images: pictures})
+}
+
+// CreateDocumentCapture is a PDF a chat was sent, read as a capture.
+func (a AgentImporter) CreateDocumentCapture(ctx context.Context, user uuid.UUID, pdf []byte) (uuid.UUID, error) {
+	return a.capture(ctx, user, CaptureRequest{Document: pdf})
+}
+
+func (a AgentImporter) capture(ctx context.Context, user uuid.UUID, req CaptureRequest) (uuid.UUID, error) {
+	job, err := a.Service.CreateCapture(ctx, user, req)
 	if err != nil {
 		return uuid.Nil, err
 	}

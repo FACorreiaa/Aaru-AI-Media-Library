@@ -15,6 +15,7 @@ output-options:
     - createCATImport
     - createCaptureImport
     - createChatTurn
+    - createChatAttachment
     - transcribeChatAudio
   # Whole-second UTC dates on the wire, as the Swift server sent them; see internal/apitime.
   type-mapping:

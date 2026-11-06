@@ -86,3 +86,30 @@ JOIN titles t ON t.id = li.title_id
 WHERE li.user_id = $1 AND li.status = 'in_progress'
 ORDER BY li.updated_at DESC, li.id
 LIMIT $2;
+
+-- name: SaveChatAttachment :one
+-- No row when the chat is not the user's.
+INSERT INTO chat_attachments (id, chat_id, user_id, kind, name, media_type, source, rows, data, created_at)
+SELECT sqlc.arg(id)::uuid, c.id, c.user_id, sqlc.arg(kind)::text, sqlc.arg(name)::text, sqlc.arg(media_type)::text,
+    sqlc.narg(source)::text, sqlc.narg(rows)::int, sqlc.arg(data)::bytea, sqlc.arg(now)::pg_catalog.timestamptz
+FROM chats c WHERE c.id = sqlc.arg(chat_id)::uuid AND c.user_id = sqlc.arg(user_id)::uuid
+RETURNING id;
+
+-- name: CountChatAttachments :one
+SELECT count(*)::int FROM chat_attachments
+WHERE chat_id = sqlc.arg(chat_id)::uuid AND user_id = sqlc.arg(user_id)::uuid
+  AND created_at >= sqlc.arg(since)::pg_catalog.timestamptz;
+
+-- name: ChatAttachments :many
+-- The chat's files still kept, oldest first, with their bytes.
+SELECT id, kind, name, media_type, source, rows, data, created_at FROM chat_attachments
+WHERE chat_id = sqlc.arg(chat_id)::uuid AND user_id = sqlc.arg(user_id)::uuid
+  AND created_at >= sqlc.arg(since)::pg_catalog.timestamptz
+ORDER BY created_at, id;
+
+-- name: DeleteChatAttachment :execrows
+DELETE FROM chat_attachments
+WHERE id = sqlc.arg(id)::uuid AND chat_id = sqlc.arg(chat_id)::uuid AND user_id = sqlc.arg(user_id)::uuid;
+
+-- name: SweepChatAttachments :execrows
+DELETE FROM chat_attachments WHERE created_at < sqlc.arg(before)::pg_catalog.timestamptz;

@@ -406,11 +406,21 @@ type ChatPatchResult struct {
 // change applies at once, holding like a tap and journaled as Aaru; anything larger, and any
 // removal, becomes a plan the user approves. A plan adding many titles spends one capture.
 func (t *Tools) ChatPatch(ctx context.Context, in PatchInput, user uuid.UUID) (ChatPatchResult, error) {
+	return t.chatPatch(ctx, in, user, false)
+}
+
+// ChatPatchPlanned is ChatPatch with every change, even a tap-sized one, a plan the user approves:
+// the chat holds a file or a paste whose words the user did not type (ASK-010).
+func (t *Tools) ChatPatchPlanned(ctx context.Context, in PatchInput, user uuid.UUID) (ChatPatchResult, error) {
+	return t.chatPatch(ctx, in, user, true)
+}
+
+func (t *Tools) chatPatch(ctx context.Context, in PatchInput, user uuid.UUID, alwaysPlan bool) (ChatPatchResult, error) {
 	changes, err := ParseChanges(in)
 	if err != nil {
 		return ChatPatchResult{}, err
 	}
-	if !tapSized(changes) {
+	if alwaysPlan || !tapSized(changes) {
 		plan, err := t.Plans.ProposeFor(ctx, changes, plans.Origin{
 			UserID: user, Name: library.ChatAgentName, Caller: library.ChatCaller, SpendsCapture: true,
 			Quota: func(ctx context.Context, q *sqlc.Queries) error { return t.captureQuota(ctx, q, user) },

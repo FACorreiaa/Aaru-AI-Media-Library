@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"regexp"
 	"strings"
 )
 
@@ -63,18 +64,49 @@ type Image struct {
 	MediaType string
 }
 
-// UserImages is one user turn: the pictures, in order, then text.
+// PDFMediaType is an Image that is a PDF: it goes to the model as a document block (ASK-010).
+const PDFMediaType = "application/pdf"
+
+// UserImages is one user turn: the pictures, in order, then text. A PDF among them is a document.
 func UserImages(images []Image, text string) Turn {
 	content := make([]Block, 0, len(images)+1)
 	for _, image := range images {
-		content = append(content, block(map[string]any{
-			"type": "image",
-			"source": map[string]string{
-				"type": "base64", "media_type": image.MediaType, "data": base64.StdEncoding.EncodeToString(image.Data),
-			},
-		}))
+		content = append(content, FileBlock(image))
 	}
-	return Turn{Role: RoleUser, Content: append(content, block(map[string]string{"type": "text", "text": text}))}
+	return Turn{Role: RoleUser, Content: append(content, TextBlock(text))}
+}
+
+// FileBlock is one picture as an image block, or one PDF as a document block, in base64.
+func FileBlock(file Image) Block {
+	kind := "image"
+	if file.MediaType == PDFMediaType {
+		kind = "document"
+	}
+	return block(map[string]any{
+		"type": kind,
+		"source": map[string]string{
+			"type": "base64", "media_type": file.MediaType, "data": base64.StdEncoding.EncodeToString(file.Data),
+		},
+	})
+}
+
+// TextBlock is one text block.
+func TextBlock(text string) Block { return block(map[string]string{"type": "text", "text": text}) }
+
+// Fence wraps text the user sent in <tag attrs>…</tag> so the model reads it as data. A closing tag
+// inside the text, in any case or spacing, is broken up first, so the text cannot end its own block
+// early and speak as the prompt.
+func Fence(tag, attrs, text string) string {
+	open := "<" + tag
+	if attrs != "" {
+		open += " " + attrs
+	}
+	return open + ">\n" + closingTag(tag).ReplaceAllString(text, "<\u200b/"+tag) + "\n</" + tag + ">"
+}
+
+// closingTag matches `</tag`, `< / TAG` and the like.
+func closingTag(tag string) *regexp.Regexp {
+	return regexp.MustCompile(`(?i)<\s*/\s*` + regexp.QuoteMeta(tag))
 }
 
 // Request is one model call.

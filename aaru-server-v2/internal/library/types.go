@@ -176,6 +176,9 @@ type Filter struct {
 	Status  *core.LibraryStatus `json:"status,omitempty"`
 	IsOwned *bool               `json:"isOwned,omitempty"`
 	ListID  *swiftUUID          `json:"listID,omitempty"`
+	// Query narrows to titles whose name (or original name) contains it, any case. Only the agent's
+	// library read sets it (ASK-010); a shelf never stores it.
+	Query string `json:"-"`
 }
 
 // WithList is the filter narrowed to a list's members.

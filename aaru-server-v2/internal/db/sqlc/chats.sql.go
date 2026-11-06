@@ -67,6 +67,60 @@ func (q *Queries) BeginChatTurn(ctx context.Context, arg BeginChatTurnParams) (i
 	return stored, err
 }
 
+const chatAttachments = `-- name: ChatAttachments :many
+SELECT id, kind, name, media_type, source, rows, data, created_at FROM chat_attachments
+WHERE chat_id = $1::uuid AND user_id = $2::uuid
+  AND created_at >= $3::pg_catalog.timestamptz
+ORDER BY created_at, id
+`
+
+type ChatAttachmentsParams struct {
+	ChatID uuid.UUID
+	UserID uuid.UUID
+	Since  time.Time
+}
+
+type ChatAttachmentsRow struct {
+	ID        uuid.UUID
+	Kind      string
+	Name      string
+	MediaType string
+	Source    *string
+	Rows      *int32
+	Data      []byte
+	CreatedAt pgtype.Timestamptz
+}
+
+// The chat's files still kept, oldest first, with their bytes.
+func (q *Queries) ChatAttachments(ctx context.Context, arg ChatAttachmentsParams) ([]ChatAttachmentsRow, error) {
+	rows, err := q.db.Query(ctx, chatAttachments, arg.ChatID, arg.UserID, arg.Since)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ChatAttachmentsRow{}
+	for rows.Next() {
+		var i ChatAttachmentsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Kind,
+			&i.Name,
+			&i.MediaType,
+			&i.Source,
+			&i.Rows,
+			&i.Data,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const chatRepliesToday = `-- name: ChatRepliesToday :one
 SELECT (
     (SELECT count(*) FROM agent_replies a WHERE a.tagger_id = $1::uuid
@@ -165,6 +219,25 @@ func (q *Queries) ChatsForExport(ctx context.Context, userID uuid.UUID) ([]Chat,
 	return items, nil
 }
 
+const countChatAttachments = `-- name: CountChatAttachments :one
+SELECT count(*)::int FROM chat_attachments
+WHERE chat_id = $1::uuid AND user_id = $2::uuid
+  AND created_at >= $3::pg_catalog.timestamptz
+`
+
+type CountChatAttachmentsParams struct {
+	ChatID uuid.UUID
+	UserID uuid.UUID
+	Since  time.Time
+}
+
+func (q *Queries) CountChatAttachments(ctx context.Context, arg CountChatAttachmentsParams) (int32, error) {
+	row := q.db.QueryRow(ctx, countChatAttachments, arg.ChatID, arg.UserID, arg.Since)
+	var column_1 int32
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
 const createChat = `-- name: CreateChat :exec
 INSERT INTO chats (id, user_id) VALUES ($1, $2)
 `
@@ -186,6 +259,25 @@ DELETE FROM chats WHERE user_id = $1
 func (q *Queries) DeleteAllChats(ctx context.Context, userID uuid.UUID) error {
 	_, err := q.db.Exec(ctx, deleteAllChats, userID)
 	return err
+}
+
+const deleteChatAttachment = `-- name: DeleteChatAttachment :execrows
+DELETE FROM chat_attachments
+WHERE id = $1::uuid AND chat_id = $2::uuid AND user_id = $3::uuid
+`
+
+type DeleteChatAttachmentParams struct {
+	ID     uuid.UUID
+	ChatID uuid.UUID
+	UserID uuid.UUID
+}
+
+func (q *Queries) DeleteChatAttachment(ctx context.Context, arg DeleteChatAttachmentParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteChatAttachment, arg.ID, arg.ChatID, arg.UserID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const failStaleChatTurns = `-- name: FailStaleChatTurns :exec
@@ -343,6 +435,46 @@ func (q *Queries) RecentChatTurns(ctx context.Context, arg RecentChatTurnsParams
 	return items, nil
 }
 
+const saveChatAttachment = `-- name: SaveChatAttachment :one
+INSERT INTO chat_attachments (id, chat_id, user_id, kind, name, media_type, source, rows, data, created_at)
+SELECT $1::uuid, c.id, c.user_id, $2::text, $3::text, $4::text,
+    $5::text, $6::int, $7::bytea, $8::pg_catalog.timestamptz
+FROM chats c WHERE c.id = $9::uuid AND c.user_id = $10::uuid
+RETURNING id
+`
+
+type SaveChatAttachmentParams struct {
+	ID        uuid.UUID
+	Kind      string
+	Name      string
+	MediaType string
+	Source    *string
+	Rows      *int32
+	Data      []byte
+	Now       time.Time
+	ChatID    uuid.UUID
+	UserID    uuid.UUID
+}
+
+// No row when the chat is not the user's.
+func (q *Queries) SaveChatAttachment(ctx context.Context, arg SaveChatAttachmentParams) (uuid.UUID, error) {
+	row := q.db.QueryRow(ctx, saveChatAttachment,
+		arg.ID,
+		arg.Kind,
+		arg.Name,
+		arg.MediaType,
+		arg.Source,
+		arg.Rows,
+		arg.Data,
+		arg.Now,
+		arg.ChatID,
+		arg.UserID,
+	)
+	var id uuid.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
 const setChatTitle = `-- name: SetChatTitle :exec
 UPDATE chats SET title = $1::text WHERE id = $2::uuid AND title IS NULL
 `
@@ -356,4 +488,16 @@ type SetChatTitleParams struct {
 func (q *Queries) SetChatTitle(ctx context.Context, arg SetChatTitleParams) error {
 	_, err := q.db.Exec(ctx, setChatTitle, arg.Title, arg.ID)
 	return err
+}
+
+const sweepChatAttachments = `-- name: SweepChatAttachments :execrows
+DELETE FROM chat_attachments WHERE created_at < $1::pg_catalog.timestamptz
+`
+
+func (q *Queries) SweepChatAttachments(ctx context.Context, before time.Time) (int64, error) {
+	result, err := q.db.Exec(ctx, sweepChatAttachments, before)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }

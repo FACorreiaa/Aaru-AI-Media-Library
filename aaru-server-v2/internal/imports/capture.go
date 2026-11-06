@@ -55,6 +55,9 @@ type CaptureRequest struct {
 	Link *string
 	// Images are set for pictures: at least one, in order.
 	Images []model.Image
+	// Document is a PDF a chat handed over (ASK-010), already checked by internal/upload. Only the
+	// chat sends one; the capture route takes pictures.
+	Document []byte
 	// Only narrows text and images to one kind (BOOK-001). A link names its own kind.
 	Only core.MediaType
 	// Titles are a list Aaru chose in a chat (BOOK-003), planned as they are with no second model call.
@@ -70,6 +73,8 @@ func (r CaptureRequest) kind() string {
 		return "chat"
 	case r.Text != nil:
 		return "text"
+	case r.Document != nil:
+		return "pdf"
 	case r.Link != nil:
 		return "url"
 	}
@@ -153,6 +158,9 @@ func captureContent(req CaptureRequest) ([]Row, *capture.Content, error) {
 				"That is more text than a capture reads. Paste a shorter list, or use an import.")
 		}
 		return nil, &capture.Content{Text: text, Only: req.Only}, nil
+	}
+	if req.Document != nil {
+		return nil, &capture.Content{Image: req.Document, MediaType: model.PDFMediaType, Only: req.Only}, nil
 	}
 	if len(req.Images) == 0 {
 		return nil, nil, apperr.Validation("image", "There is nothing to read.").
