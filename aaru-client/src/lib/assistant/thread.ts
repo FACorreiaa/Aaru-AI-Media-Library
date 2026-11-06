@@ -13,11 +13,13 @@ import type { Reply } from './reply'
 // its last turn; then the next question starts a new one. Holds no UI state.
 
 export type ChatHint = components['schemas']['ChatHint']
+export type ChatAttachment = components['schemas']['ChatAttachment']
 
 export const IDLE_MS = 15 * 60_000
 export const BUSY_TRIES = 3
 export const UNREACHABLE =
   'Aaru could not reach the server. Try again in a moment.'
+export const FILES_GONE = 'Those files are no longer here. Attach them again.'
 
 export type ThreadDeps = {
   createChat: () => Promise<string>
@@ -53,12 +55,60 @@ export class ChatThread {
     this.chatId = null
   }
 
+  /** The chat files go into, started now if there is none yet. */
+  async chat(): Promise<string> {
+    this.lastUsed = this.deps.now()
+    if (this.chatId === null) this.chatId = await this.deps.createChat()
+    return this.chatId
+  }
+
+  /**
+   * One file into the chat (ASK-010), for the next turn to carry. Throws the server's reason when
+   * it refuses the file: a program, an archive, or a name that does not match what is inside.
+   */
+  async attach(
+    file: Blob,
+    name: string,
+    signal: AbortSignal,
+  ): Promise<{ chat: string; attachment: ChatAttachment }> {
+    const chat = await this.chat()
+    const params = new URLSearchParams({ chat })
+    if (name) params.set('filename', name)
+    let response: Response
+    try {
+      response = await this.deps.fetch(`/app/assistant/attach?${params}`, {
+        method: 'POST',
+        headers: { 'Content-Type': file.type || 'application/octet-stream' },
+        body: file,
+        signal,
+      })
+    } catch {
+      throw new Error(UNREACHABLE)
+    }
+    if (!response.ok) throw new Error(await messageOf(response))
+    return { chat, attachment: await response.json<ChatAttachment>() }
+  }
+
+  /** A file taken back off before sending. A failure only leaves it to expire in an hour. */
+  async detach(chat: string, id: string): Promise<void> {
+    const params = new URLSearchParams({ chat, id })
+    await this.deps
+      .fetch(`/app/assistant/attach?${params}`, { method: 'DELETE' })
+      .catch(() => undefined)
+  }
+
+  /** The chat files were attached to, or null when there is none now. */
+  current(): string | null {
+    return this.chatId
+  }
+
   /** One Chat turn. `onUpdate` gets the reply after every frame. Never throws. */
   async send(
     body: string,
     hint: ChatHint | undefined,
     signal: AbortSignal,
     onUpdate: (reply: Reply) => void,
+    attachments: string[] = [],
   ): Promise<Reply> {
     this.lastUsed = this.deps.now()
     let reply = newReply()
@@ -88,7 +138,11 @@ export class ChatThread {
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ body, hint }),
+            body: JSON.stringify(
+              attachments.length > 0
+                ? { body, hint, attachments }
+                : { body, hint },
+            ),
             signal,
           },
         )
@@ -102,6 +156,9 @@ export class ChatThread {
         return reply
       }
       const message = await messageOf(response)
+      // Files belong to the chat they were attached to: a new chat would not have them.
+      if (response.status === 404 && attachments.length > 0)
+        return failReply(reply, FILES_GONE)
       if (response.status === 404 && !recreated) {
         recreated = true
         if (this.chatId === chat) this.chatId = null

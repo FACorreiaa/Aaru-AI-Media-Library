@@ -36,6 +36,9 @@ import { Route as ShellAppRecapRouteImport } from './routes/_shell.app_.recap'
 import { Route as ShellAppSettingsRouteImport } from './routes/_shell.app_.settings'
 import { Route as ShellAppSportsRouteImport } from './routes/_shell.app_.sports'
 import { Route as ShellAppWeekRouteImport } from './routes/_shell.app_.week'
+import { Route as AppAssistantAttachRouteImport } from './routes/app_.assistant.attach'
+import { Route as AppAssistantTurnRouteImport } from './routes/app_.assistant.turn'
+import { Route as AppAssistantVoiceRouteImport } from './routes/app_.assistant.voice'
 import { Route as AppAvatarsUserIdRouteImport } from './routes/app_.avatars.$userId'
 import { Route as ShellAppFriendsIndexRouteImport } from './routes/_shell.app_.friends.index'
 import { Route as ShellAppFriendsHandleRouteImport } from './routes/_shell.app_.friends.$handle'
@@ -198,6 +201,21 @@ const ShellAppWeekRoute = ShellAppWeekRouteImport.update({
   id: '/app_/week',
   path: '/app/week',
   getParentRoute: () => ShellRoute,
+} as any)
+const AppAssistantAttachRoute = AppAssistantAttachRouteImport.update({
+  id: '/app_/assistant/attach',
+  path: '/app/assistant/attach',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppAssistantTurnRoute = AppAssistantTurnRouteImport.update({
+  id: '/app_/assistant/turn',
+  path: '/app/assistant/turn',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppAssistantVoiceRoute = AppAssistantVoiceRouteImport.update({
+  id: '/app_/assistant/voice',
+  path: '/app/assistant/voice',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AppAvatarsUserIdRoute = AppAvatarsUserIdRouteImport.update({
   id: '/app_/avatars/$userId',
@@ -369,6 +387,9 @@ export interface FileRoutesByFullPath {
   '/app/settings': typeof ShellAppSettingsRouteWithChildren
   '/app/sports': typeof ShellAppSportsRoute
   '/app/week': typeof ShellAppWeekRoute
+  '/app/assistant/attach': typeof AppAssistantAttachRoute
+  '/app/assistant/turn': typeof AppAssistantTurnRoute
+  '/app/assistant/voice': typeof AppAssistantVoiceRoute
   '/app/avatars/$userId': typeof AppAvatarsUserIdRoute
   '/app/friends/$handle': typeof ShellAppFriendsHandleRoute
   '/app/groups/$groupId': typeof ShellAppGroupsGroupIdRouteWithChildren
@@ -422,6 +443,9 @@ export interface FileRoutesByTo {
   '/app/recap': typeof ShellAppRecapRoute
   '/app/sports': typeof ShellAppSportsRoute
   '/app/week': typeof ShellAppWeekRoute
+  '/app/assistant/attach': typeof AppAssistantAttachRoute
+  '/app/assistant/turn': typeof AppAssistantTurnRoute
+  '/app/assistant/voice': typeof AppAssistantVoiceRoute
   '/app/avatars/$userId': typeof AppAvatarsUserIdRoute
   '/app/friends/$handle': typeof ShellAppFriendsHandleRoute
   '/app/imports/$id': typeof ShellAppImportsIdRoute
@@ -478,6 +502,9 @@ export interface FileRoutesById {
   '/_shell/app_/settings': typeof ShellAppSettingsRouteWithChildren
   '/_shell/app_/sports': typeof ShellAppSportsRoute
   '/_shell/app_/week': typeof ShellAppWeekRoute
+  '/app_/assistant/attach': typeof AppAssistantAttachRoute
+  '/app_/assistant/turn': typeof AppAssistantTurnRoute
+  '/app_/assistant/voice': typeof AppAssistantVoiceRoute
   '/app_/avatars/$userId': typeof AppAvatarsUserIdRoute
   '/_shell/app_/friends/$handle': typeof ShellAppFriendsHandleRoute
   '/_shell/app_/groups/$groupId': typeof ShellAppGroupsGroupIdRouteWithChildren
@@ -535,6 +562,9 @@ export interface FileRouteTypes {
     | '/app/settings'
     | '/app/sports'
     | '/app/week'
+    | '/app/assistant/attach'
+    | '/app/assistant/turn'
+    | '/app/assistant/voice'
     | '/app/avatars/$userId'
     | '/app/friends/$handle'
     | '/app/groups/$groupId'
@@ -588,6 +618,9 @@ export interface FileRouteTypes {
     | '/app/recap'
     | '/app/sports'
     | '/app/week'
+    | '/app/assistant/attach'
+    | '/app/assistant/turn'
+    | '/app/assistant/voice'
     | '/app/avatars/$userId'
     | '/app/friends/$handle'
     | '/app/imports/$id'
@@ -643,6 +676,9 @@ export interface FileRouteTypes {
     | '/_shell/app_/settings'
     | '/_shell/app_/sports'
     | '/_shell/app_/week'
+    | '/app_/assistant/attach'
+    | '/app_/assistant/turn'
+    | '/app_/assistant/voice'
     | '/app_/avatars/$userId'
     | '/_shell/app_/friends/$handle'
     | '/_shell/app_/groups/$groupId'
@@ -685,6 +721,9 @@ export interface RootRouteChildren {
   ICodeRoute: typeof ICodeRoute
   OauthConsentRoute: typeof OauthConsentRoute
   SCodeRoute: typeof SCodeRoute
+  AppAssistantAttachRoute: typeof AppAssistantAttachRoute
+  AppAssistantTurnRoute: typeof AppAssistantTurnRoute
+  AppAssistantVoiceRoute: typeof AppAssistantVoiceRoute
   AppAvatarsUserIdRoute: typeof AppAvatarsUserIdRoute
 }
 
@@ -878,6 +917,27 @@ declare module '@tanstack/solid-router' {
       fullPath: '/app/week'
       preLoaderRoute: typeof ShellAppWeekRouteImport
       parentRoute: typeof ShellRoute
+    }
+    '/app_/assistant/attach': {
+      id: '/app_/assistant/attach'
+      path: '/app/assistant/attach'
+      fullPath: '/app/assistant/attach'
+      preLoaderRoute: typeof AppAssistantAttachRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app_/assistant/turn': {
+      id: '/app_/assistant/turn'
+      path: '/app/assistant/turn'
+      fullPath: '/app/assistant/turn'
+      preLoaderRoute: typeof AppAssistantTurnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app_/assistant/voice': {
+      id: '/app_/assistant/voice'
+      path: '/app/assistant/voice'
+      fullPath: '/app/assistant/voice'
+      preLoaderRoute: typeof AppAssistantVoiceRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/app_/avatars/$userId': {
       id: '/app_/avatars/$userId'
@@ -1205,6 +1265,9 @@ const rootRouteChildren: RootRouteChildren = {
   ICodeRoute: ICodeRoute,
   OauthConsentRoute: OauthConsentRoute,
   SCodeRoute: SCodeRoute,
+  AppAssistantAttachRoute: AppAssistantAttachRoute,
+  AppAssistantTurnRoute: AppAssistantTurnRoute,
+  AppAssistantVoiceRoute: AppAssistantVoiceRoute,
   AppAvatarsUserIdRoute: AppAvatarsUserIdRoute,
 }
 export const routeTree = rootRouteImport

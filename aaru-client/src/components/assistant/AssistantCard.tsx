@@ -13,7 +13,15 @@ import {
 import { cancelReply, wrote } from '../../lib/assistant/reply'
 import type { Reply } from '../../lib/assistant/reply'
 import { chatThread, chatsCleared } from '../../lib/assistant/session'
-import type { ChatHint } from '../../lib/assistant/thread'
+import type { ChatAttachment, ChatHint } from '../../lib/assistant/thread'
+import {
+  ACCEPT,
+  MAX_TURN_FILES,
+  PASTE_AS_FILE,
+  pastedText,
+  piecesOf,
+} from '../../lib/assistant/files'
+import type { Piece } from '../../lib/assistant/files'
 import {
   canRecord,
   readAloud,
@@ -30,7 +38,13 @@ import { undoAction } from '../../lib/history/server'
 import { OwlMark } from '../Brand'
 import { PlanCard } from '../PlanCard'
 import { AgentCards } from '../groups/AgentParts'
-import { CloseIcon, MicIcon, SpeakerIcon, SpeakerOffIcon } from '../shell/icons'
+import {
+  CloseIcon,
+  MicIcon,
+  PaperclipIcon,
+  SpeakerIcon,
+  SpeakerOffIcon,
+} from '../shell/icons'
 
 // ASK-009 on the web (DESIGN.md "Assistant"): the card the owl opens over the current page. The
 // page behind dims and takes no input; Esc, the close button or a swipe down closes it, and
@@ -40,6 +54,8 @@ import { CloseIcon, MicIcon, SpeakerIcon, SpeakerOffIcon } from '../shell/icons'
 type Turn = {
   id: number
   question: string
+  /** The names of the files it carried (ASK-010). */
+  files: string[]
   reply: Reply
   /** Spoken, so the reply is read aloud in this language. */
   language: string | null
@@ -47,6 +63,15 @@ type Turn = {
 }
 
 type Mic = 'idle' | 'listening' | 'reading'
+
+/** A file on its way into the next turn: still being read by the server, or ready to send. */
+type Chip = {
+  key: number
+  name: string
+  attachment: ChatAttachment | null
+  /** The chat it went into: a chip from a chat that has since ended is gone. */
+  chat: string | null
+}
 
 const MAX_QUESTION = 4000
 
@@ -66,17 +91,109 @@ export function AssistantCard(props: {
   const [level, setLevel] = createSignal(-160)
   const [problem, setProblem] = createSignal<string | null>(null)
   const [muted, setMuted] = createSignal(readAloudMuted())
+  const [chips, setChips] = createSignal<Chip[]>([])
+  const [over, setOver] = createSignal(false)
   const [field, setField] = createSignal<HTMLTextAreaElement>()
   let list: HTMLOListElement | undefined
   let controller: AbortController | null = null
   let recorder: Recorder | null = null
   let nextID = 0
+  let nextChip = 0
   let changed = false
+  let attaching = new AbortController()
 
   // Read fresh after an await: the card may have closed meanwhile.
   const isOpen = () => props.open
   const working = () => turns().some((t) => t.reply.state === 'working')
   const micOn = () => props.voice && canRecord()
+  const reading = () => chips().some((c) => c.attachment === null)
+  const ready = () =>
+    chips().filter(
+      (c) => c.attachment !== null && c.chat === chatThread().current(),
+    )
+  const canAsk = () =>
+    !working() && !reading() && (text().trim() !== '' || ready().length > 0)
+
+  /** Files chosen, dropped or pasted: each sent to the chat as it is picked. */
+  async function choose(files: Iterable<File> | null | undefined) {
+    const picked = [...(files ?? [])]
+    if (picked.length === 0) return
+    setProblem(null)
+    try {
+      const pieces = (await Promise.all(picked.map(piecesOf))).flat()
+      await addPieces(pieces)
+    } catch (error) {
+      setProblem(
+        error instanceof Error ? error.message : 'Aaru could not read that.',
+      )
+    }
+  }
+
+  async function addPieces(pieces: Piece[]) {
+    if (chips().length + pieces.length > MAX_TURN_FILES) {
+      setProblem(`Send up to ${MAX_TURN_FILES} files at a time.`)
+      return
+    }
+    const signal = attaching.signal
+    await Promise.all(
+      pieces.map(async (piece) => {
+        const key = ++nextChip
+        setChips((all) => [
+          ...all,
+          {
+            key,
+            name: piece.name || 'Pasted text',
+            attachment: null,
+            chat: null,
+          },
+        ])
+        try {
+          const { chat, attachment } = await chatThread().attach(
+            piece.blob,
+            piece.name,
+            signal,
+          )
+          setChips((all) =>
+            all.map((c) =>
+              c.key === key
+                ? { ...c, attachment, chat, name: attachment.name }
+                : c,
+            ),
+          )
+        } catch (error) {
+          setChips((all) => all.filter((c) => c.key !== key))
+          if (!signal.aborted)
+            setProblem(
+              error instanceof Error
+                ? `${piece.name || 'That text'}: ${error.message}`
+                : 'Aaru could not read that file.',
+            )
+        }
+      }),
+    )
+  }
+
+  function removeChip(chip: Chip) {
+    setChips((all) => all.filter((c) => c.key !== chip.key))
+    if (chip.attachment && chip.chat)
+      void chatThread().detach(chip.chat, chip.attachment.id)
+  }
+
+  function clearChips() {
+    attaching.abort()
+    attaching = new AbortController()
+    setChips([])
+  }
+
+  /** The system's picker; nothing lives in the page. */
+  function pick() {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.multiple = true
+    input.accept = ACCEPT
+    input.onchange = () => void choose(input.files)
+    input.click()
+  }
 
   function update(id: number, change: (turn: Turn) => Turn) {
     setTurns((all) => all.map((t) => (t.id === id ? change(t) : t)))
@@ -87,9 +204,11 @@ export function AssistantCard(props: {
 
   async function ask(question: string, language: string | null) {
     const body = question.trim().slice(0, MAX_QUESTION)
-    if (!body || working()) return
+    const sent = ready()
+    if ((!body && sent.length === 0) || working() || reading()) return
     setProblem(null)
     setText('')
+    setChips([])
     stopReading()
     const id = ++nextID
     controller = new AbortController()
@@ -99,6 +218,7 @@ export function AssistantCard(props: {
       {
         id,
         question: body,
+        files: sent.map((c) => c.name),
         reply: {
           text: '',
           status: null,
@@ -114,8 +234,12 @@ export function AssistantCard(props: {
         undone: false,
       },
     ])
-    const reply = await chatThread().send(body, props.hint(), signal, (r) =>
-      update(id, (t) => ({ ...t, reply: r })),
+    const reply = await chatThread().send(
+      body,
+      props.hint(),
+      signal,
+      (r) => update(id, (t) => ({ ...t, reply: r })),
+      sent.flatMap((c) => (c.attachment ? [c.attachment.id] : [])),
     )
     update(id, (t) => ({ ...t, reply }))
     if (wrote(reply)) changed = true
@@ -172,12 +296,24 @@ export function AssistantCard(props: {
 
   function opened() {
     // Over 15 minutes away, the card starts clean, as a new chat does.
-    if (!chatThread().reopen()) setTurns([])
+    if (!chatThread().reopen()) {
+      setTurns([])
+      clearChips()
+    }
     if (props.listen && micOn()) void listen()
   }
 
   // Delete my chats empties the card as well as the server.
-  createEffect(on(chatsCleared, () => setTurns([]), { defer: true }))
+  createEffect(
+    on(
+      chatsCleared,
+      () => {
+        setTurns([])
+        clearChips()
+      },
+      { defer: true },
+    ),
+  )
 
   // The shell opens and closes the card (the owl, ⌘J, a link inside it), so both are watched
   // here rather than in onOpenChange, which hears only the card's own Esc and swipe.
@@ -252,7 +388,8 @@ export function AssistantCard(props: {
             fallback={
               <p class="text-sm text-muted">
                 Ask about your library, what's on, or what to add. "Recommend
-                X-Men books in reading order" works too.
+                X-Men books in reading order" works too, and so does a file: an
+                export, a screenshot or a list someone sent you.
               </p>
             }
           >
@@ -276,11 +413,57 @@ export function AssistantCard(props: {
           </Show>
         </div>
 
+        <Show when={chips().length > 0}>
+          <ul
+            aria-label="Files to send"
+            class="flex flex-wrap gap-2 border-t border-line px-5 pt-3"
+          >
+            <For each={chips()}>
+              {(chip) => (
+                <li class="flex max-w-full items-center gap-2 rounded-full border border-line bg-paper py-1 pr-1 pl-3 text-sm">
+                  <span class="min-w-0 truncate">
+                    <span class="font-medium">{chip.name}</span>
+                    <span class="text-muted">
+                      {chip.attachment
+                        ? ` · ${chip.attachment.summary}`
+                        : ' · reading…'}
+                    </span>
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    class="size-7 shrink-0 rounded-full"
+                    aria-label={`Remove ${chip.name}`}
+                    onClick={() => removeChip(chip)}
+                  >
+                    <CloseIcon class="size-4" />
+                  </Button>
+                </li>
+              )}
+            </For>
+          </ul>
+        </Show>
         <form
-          class="flex items-end gap-2 border-t border-line px-5 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]"
+          class="flex items-end gap-2 border-t px-5 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] transition-colors"
+          classList={{
+            'border-accent': over(),
+            'border-line': !over(),
+            'border-t-0': chips().length > 0 && !over(),
+          }}
           onSubmit={(event) => {
             event.preventDefault()
             void ask(text(), null)
+          }}
+          onDragOver={(event) => {
+            if (!event.dataTransfer?.types.includes('Files')) return
+            event.preventDefault()
+            setOver(true)
+          }}
+          onDragLeave={() => setOver(false)}
+          onDrop={(event) => {
+            event.preventDefault()
+            setOver(false)
+            void choose(event.dataTransfer?.files)
           }}
         >
           <Show
@@ -312,6 +495,21 @@ export function AssistantCard(props: {
                 maxLength={MAX_QUESTION}
                 placeholder="Ask Aaru"
                 class="field-sizing-content max-h-40 min-h-11 resize-none rounded-2xl bg-paper px-4 py-2.5"
+                onPaste={(event: ClipboardEvent) => {
+                  const files = [...(event.clipboardData?.files ?? [])]
+                  if (files.length > 0) {
+                    event.preventDefault()
+                    void choose(files)
+                    return
+                  }
+                  // A whole chat or list is longer than a question: it goes as a file.
+                  const pasted =
+                    event.clipboardData?.getData('text/plain') ?? ''
+                  if (pasted.length > PASTE_AS_FILE) {
+                    event.preventDefault()
+                    void addPieces([pastedText(pasted)])
+                  }
+                }}
                 onKeyDown={(
                   event: KeyboardEvent & { currentTarget: HTMLTextAreaElement },
                 ) => {
@@ -322,6 +520,19 @@ export function AssistantCard(props: {
                 }}
               />
             </TextField>
+          </Show>
+          <Show when={mic() === 'idle'}>
+            <Button
+              type="button"
+              variant="soft"
+              size="icon"
+              class="size-11 shrink-0 rounded-full"
+              aria-label="Attach a file"
+              disabled={working() || chips().length >= MAX_TURN_FILES}
+              onClick={pick}
+            >
+              <PaperclipIcon class="size-5" />
+            </Button>
           </Show>
           <Show when={micOn()}>
             <Button
@@ -341,11 +552,7 @@ export function AssistantCard(props: {
             </Button>
           </Show>
           <Show when={mic() === 'idle'}>
-            <Button
-              type="submit"
-              class="h-11 shrink-0"
-              disabled={!text().trim() || working()}
-            >
+            <Button type="submit" class="h-11 shrink-0" disabled={!canAsk()}>
               Ask
             </Button>
           </Show>
@@ -370,9 +577,21 @@ function TurnView(props: {
     (reply().state === 'working' && !reply().text ? 'Aaru is thinking…' : null)
   return (
     <li class="flex flex-col gap-3">
-      <p class="ml-12 self-end rounded-2xl bg-accent/10 px-4 py-2 whitespace-pre-line">
-        {props.turn.question}
-      </p>
+      <div class="ml-12 flex flex-col items-end gap-1 self-end">
+        <Show when={props.turn.question}>
+          <p class="rounded-2xl bg-accent/10 px-4 py-2 whitespace-pre-line">
+            {props.turn.question}
+          </p>
+        </Show>
+        <For each={props.turn.files}>
+          {(name) => (
+            <p class="rounded-full border border-line px-3 py-1 text-sm text-muted">
+              <PaperclipIcon class="mr-1 inline size-4 align-text-bottom" />
+              {name}
+            </p>
+          )}
+        </For>
+      </div>
       <Show when={reply().text}>
         <div class="whitespace-pre-line">
           <For each={parseInline(reply().text)}>
@@ -417,7 +636,7 @@ function TurnView(props: {
               onClick={props.onClose}
               class="inline-flex h-10 items-center rounded-full bg-accent px-4 text-sm font-semibold text-on-accent"
             >
-              Review the list
+              Review the import
             </Link>
           </div>
         )}
