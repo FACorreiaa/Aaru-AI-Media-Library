@@ -882,6 +882,7 @@ account or a stranger that has not happened yet.
 | GRAPH-001 | Built, unverified | `GET /v1/titles/{id}/relations`, `catalog/relations*.go`, `catalog/wikidata.go`, migration 00007 `catalog_relations` | Stub providers only; not run against live AniList, TMDB or Wikidata from the server yet |
 | GRAPH-002 | Built, unverified | `RelatedTitles.tsx`, `_shell.app_.graph.$titleId.tsx`, `TitleRelated.swift` | Builds and tests pass; not looked at on a screen; "Add the chain" moved to GRAPH-003 |
 | GRAPH-003 | Built, unverified | `list_roadmaps`, `capture.Place`, `RoadmapSteps.tsx`, `RoadmapSteps.swift`, `POST /v1/titles/{id}/relations/chain` | Stub model only; not looked at on a screen |
+| GRAPH-004 | Built, unverified | `GET /v1/lists/{id}/graph`, `title_relations`, `RelationGraphCanvas` (web, Apple) | Stub model only; not looked at on a screen |
 | IMP-021 | Built, unverified | `POST /v1/imports/{id}/match-all`, `catalog/guess.go`, `imports/matchall.go`, `aaru-ios/Aaru/Capture/MatchAllButton.swift` | Web run locally: real Open Library, stub model, 8 of 10 rows filled in about 12 seconds. iOS builds and has not been tapped. Needs the API promoted |
 | PRV-001 | Done | #27 8d5ddc3; docs/providers.md, AboutView.swift | privacy@ routing not set up |
 | CAT-011 | Done | #24 7edc80c; TVmazeAirTimes.swift | |
@@ -3053,6 +3054,16 @@ only: not yet asked of the real model.
 **Needs:** GRAPH-002, GRAPH-003.
 - `GET /v1/lists/{id}/graph` in the same shape; a read-only `title_relations` chat tool so the owl
   checks a roadmap against the graph before proposing it.
+- Layout: a column per title in step order; titles read side by side share a column; an optional
+  title hangs under the one before it, off the main chain. "Start here" is the first main-chain title
+  not finished or dropped. A plain list is its titles in order.
+- `title_relations` takes a ref from the owl's other tools and returns the main chain in order with
+  the user's own status, where to start, and the related titles, each with a ref. The roadmap rule asks
+  the owl to check the order with it first.
+
+**Progress 2026-11-06:** server (`library/roadmap_graph.go`, `agent/relations_tool.go`), web
+(`/app/lists/$id/graph`, the shared `RelationGraphCanvas`) and Apple (`ListGraphSheet`,
+`RelationGraphCanvas.swift`) built; checks pass. Stub model only.
 
 ## P2 · Web (`aaru-client`)
 

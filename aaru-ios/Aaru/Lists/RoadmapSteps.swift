@@ -175,3 +175,59 @@ private extension Array {
         indices.contains(index) ? self[index] : nil
     }
 }
+
+/// GRAPH-004: a roadmap list as a graph, in a sheet: its titles left to right in step order, titles
+/// read side by side in one column, optional ones hanging under the title before them. A title opens
+/// its page inside the sheet.
+struct ListGraphSheet: View {
+    let api: Client?
+    let listID: String
+    let library: LibraryModel
+    let lists: ListsModel
+
+    @State private var graph: RelationGraph?
+    @State private var failed = false
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if let graph {
+                    RelationGraphCanvas(graph: graph)
+                } else if failed {
+                    ContentUnavailableView("The graph could not be loaded", systemImage: "wifi.slash")
+                } else {
+                    ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            }
+            .navigationTitle("In order")
+            #if os(iOS)
+                .navigationBarTitleDisplayMode(.inline)
+            #endif
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Done") { dismiss() }
+                    }
+                }
+                .navigationDestination(for: String.self) { id in
+                    LibraryEntryDestination(id: id, api: api, library: library, lists: lists)
+                }
+                .catalogDestination(api: api, library: library, lists: lists)
+        }
+        .task { await load() }
+        #if os(macOS)
+            .frame(minWidth: 720, minHeight: 520)
+        #endif
+    }
+
+    private func load() async {
+        guard let api else { return }
+        do {
+            if case let .ok(response) = try await api.getListGraph(path: .init(id: listID)) {
+                graph = try response.body.json
+                return
+            }
+        } catch {}
+        failed = true
+    }
+}

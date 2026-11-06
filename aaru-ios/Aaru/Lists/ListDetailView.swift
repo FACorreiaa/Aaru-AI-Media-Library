@@ -26,6 +26,7 @@ struct ListDetailView: View {
     @State private var shown = Paging.pageSize
     /// GRAPH-003: a list the owl planned in steps opens on them; Order is the editable list.
     @State private var showsSteps = true
+    @State private var showsGraph = false
 
     private var matching: [ListItem] {
         (detail?.items ?? []).filter { Paging.matches(query, $0.title.title, $0.title.byline) }
@@ -68,6 +69,9 @@ struct ListDetailView: View {
                     }
                     .pickerStyle(.segmented)
                 }
+                ToolbarItem(placement: .secondaryAction) {
+                    Button("Graph", systemImage: "point.3.connected.trianglepath.dotted") { showsGraph = true }
+                }
             }
             ToolbarItem(placement: .primaryAction) {
                 Button("Add titles", systemImage: "plus") { showsSearch = true }
@@ -86,6 +90,9 @@ struct ListDetailView: View {
                 SearchView(api: api, library: library, lists: lists, intoList: list)
                     .closesOnSheetsRequest()
             }
+        }
+        .sheet(isPresented: $showsGraph) {
+            ListGraphSheet(api: api, listID: listID, library: library, lists: lists)
         }
         .task(id: listID) { await load() }
         .refreshable { await load() }

@@ -2663,6 +2663,24 @@ paths:
           description: Deleted.
         default:
           $ref: '#/components/responses/Error'
+  /v1/lists/{id}/graph:
+    parameters:
+      - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: getListGraph
+      summary: >-
+        The list drawn as a graph (GRAPH-004), in the relation graph's shape: its steps left to right
+        (a column per title), titles read side by side in one column, optional titles hanging under
+        the title before them off the main chain, and "Start here" on the first main-chain title not
+        finished or dropped. A plain list is its titles in order.
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/RelationGraph'}
+        default:
+          $ref: '#/components/responses/Error'
   /v1/lists/{id}/items:
     post:
       operationId: addListItem

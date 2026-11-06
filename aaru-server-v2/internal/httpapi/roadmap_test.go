@@ -81,6 +81,27 @@ func TestRoadmapKeepsItsStepsNotesPairsAndWhatWasNotFound(t *testing.T) {
 	library := env.json(http.MethodGet, "/v1/library/items", nil)["items"].([]any)
 	assert.Len(t, library, 3, "the optional title joins the list, not Plan to read")
 
+	// GRAPH-004: the roadmap as a graph. A column per title, the pair in one column, the optional
+	// title hanging under the one before it, off the main chain.
+	g := env.json(http.MethodGet, "/v1/lists/"+saved["id"].(string)+"/graph", nil)
+	place := map[string][2]float64{}
+	chain := map[string]bool{}
+	keys := map[string]string{}
+	for _, n := range g["nodes"].([]any) {
+		node := n.(map[string]any)
+		name := node["ref"].(map[string]any)["title"].(string)
+		place[name] = [2]float64{node["rank"].(float64), node["lane"].(float64)}
+		chain[name] = node["mainChain"].(bool)
+		keys[name] = node["key"].(string)
+	}
+	assert.Equal(t, [2]float64{0, 0}, place[dark])
+	assert.Equal(t, [2]float64{1, 0}, place[ff])
+	assert.Equal(t, [2]float64{1, 1}, place[fourth], "read side by side with FF")
+	assert.Equal(t, [2]float64{1, 2}, place[ultimates])
+	assert.False(t, chain[ultimates], "optional is off the main chain")
+	assert.Equal(t, keys[dark], g["startHere"])
+	assert.Contains(t, g["edges"], map[string]any{"from": keys[dark], "to": keys[fourth], "relation": "sequel"})
+
 	// A member removed by hand leaves its step.
 	ultimatesID := ""
 	for _, item := range detail["items"].([]any) {

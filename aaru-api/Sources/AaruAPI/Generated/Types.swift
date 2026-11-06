@@ -803,6 +803,11 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `DELETE /v1/lists/{id}`.
     /// - Remark: Generated from `#/paths//v1/lists/{id}/delete(deleteList)`.
     func deleteList(_ input: Operations.DeleteList.Input) async throws -> Operations.DeleteList.Output
+    /// The list drawn as a graph (GRAPH-004), in the relation graph's shape: its steps left to right (a column per title), titles read side by side in one column, optional titles hanging under the title before them off the main chain, and "Start here" on the first main-chain title not finished or dropped. A plain list is its titles in order.
+    ///
+    /// - Remark: HTTP `GET /v1/lists/{id}/graph`.
+    /// - Remark: Generated from `#/paths//v1/lists/{id}/graph/get(getListGraph)`.
+    func getListGraph(_ input: Operations.GetListGraph.Input) async throws -> Operations.GetListGraph.Output
     /// Add a title to a list. It need not be in the library.
     ///
     /// - Remark: HTTP `POST /v1/lists/{id}/items`.
@@ -2975,6 +2980,19 @@ extension APIProtocol {
         headers: Operations.DeleteList.Input.Headers = .init()
     ) async throws -> Operations.DeleteList.Output {
         try await deleteList(Operations.DeleteList.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// The list drawn as a graph (GRAPH-004), in the relation graph's shape: its steps left to right (a column per title), titles read side by side in one column, optional titles hanging under the title before them off the main chain, and "Start here" on the first main-chain title not finished or dropped. A plain list is its titles in order.
+    ///
+    /// - Remark: HTTP `GET /v1/lists/{id}/graph`.
+    /// - Remark: Generated from `#/paths//v1/lists/{id}/graph/get(getListGraph)`.
+    public func getListGraph(
+        path: Operations.GetListGraph.Input.Path,
+        headers: Operations.GetListGraph.Input.Headers = .init()
+    ) async throws -> Operations.GetListGraph.Output {
+        try await getListGraph(Operations.GetListGraph.Input(
             path: path,
             headers: headers
         ))
@@ -37810,6 +37828,153 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/lists/{id}/delete(deleteList)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// The list drawn as a graph (GRAPH-004), in the relation graph's shape: its steps left to right (a column per title), titles read side by side in one column, optional titles hanging under the title before them off the main chain, and "Start here" on the first main-chain title not finished or dropped. A plain list is its titles in order.
+    ///
+    /// - Remark: HTTP `GET /v1/lists/{id}/graph`.
+    /// - Remark: Generated from `#/paths//v1/lists/{id}/graph/get(getListGraph)`.
+    public enum GetListGraph {
+        public static let id: Swift.String = "getListGraph"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/lists/{id}/graph/GET/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/lists/{id}/graph/GET/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.GetListGraph.Input.Path
+            /// - Remark: Generated from `#/paths/v1/lists/{id}/graph/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetListGraph.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetListGraph.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetListGraph.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.GetListGraph.Input.Path,
+                headers: Operations.GetListGraph.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/lists/{id}/graph/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/lists/{id}/graph/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.RelationGraph)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.RelationGraph {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetListGraph.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetListGraph.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// OK.
+            ///
+            /// - Remark: Generated from `#/paths//v1/lists/{id}/graph/get(getListGraph)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetListGraph.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetListGraph.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/lists/{id}/graph/get(getListGraph)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

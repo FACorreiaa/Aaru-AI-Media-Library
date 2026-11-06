@@ -129,8 +129,6 @@ struct RelationGraphSheet: View {
 
     @State private var model: TitleRelationsModel
     @State private var planning = false
-    @State private var zoom: CGFloat = 1
-    @State private var settledZoom: CGFloat = 1
     @Environment(\.dismiss) private var dismiss
 
     init(api: Client?, titleID: String, library: LibraryModel, lists: ListsModel) {
@@ -139,12 +137,6 @@ struct RelationGraphSheet: View {
         self.lists = lists
         _model = State(initialValue: TitleRelationsModel(api: api, titleID: titleID))
     }
-
-    private static let column: CGFloat = 136
-    private static let row: CGFloat = 236
-    private static let pad: CGFloat = 16
-    /// Where an edge meets a card: halfway down a 2:3 poster.
-    private static let anchorY: CGFloat = 72
 
     var body: some View {
         NavigationStack {
@@ -216,20 +208,7 @@ struct RelationGraphSheet: View {
                         .padding(.horizontal, AaruSpace.large)
                 }
                 if graph.nodes.count > 1 {
-                    ScrollView([.horizontal, .vertical]) {
-                        canvas(graph)
-                            .scaleEffect(zoom, anchor: .topLeading)
-                            .frame(
-                                width: size(graph).width * zoom,
-                                height: size(graph).height * zoom,
-                                alignment: .topLeading
-                            )
-                    }
-                    .gesture(
-                        MagnifyGesture()
-                            .onChanged { zoom = min(max(settledZoom * $0.magnification, 0.5), 2) }
-                            .onEnded { _ in settledZoom = zoom }
-                    )
+                    RelationGraphCanvas(graph: graph) { node in Task { await model.centre(on: node) } }
                     Text("Relations from AniList, TMDB and Wikidata.")
                         .font(.caption)
                         .foregroundStyle(Color(.muted))
@@ -248,81 +227,5 @@ struct RelationGraphSheet: View {
         } else {
             ContentUnavailableView("Related titles could not be loaded", systemImage: "wifi.slash")
         }
-    }
-
-    private func size(_ graph: RelationGraph) -> CGSize {
-        let ranks = graph.nodes.map(\.rank).max() ?? 0
-        let lanes = graph.nodes.map(\.lane).max() ?? 0
-        return CGSize(
-            width: CGFloat(ranks) * Self.column + RelatedCard.width + Self.pad * 2,
-            height: CGFloat(lanes) * Self.row + Self.row + Self.pad
-        )
-    }
-
-    private func origin(_ node: RelationNode) -> CGPoint {
-        CGPoint(x: Self.pad + CGFloat(node.rank) * Self.column, y: Self.pad + CGFloat(node.lane) * Self.row)
-    }
-
-    private func canvas(_ graph: RelationGraph) -> some View {
-        let byKey = Dictionary(graph.nodes.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
-        return ZStack(alignment: .topLeading) {
-            Canvas { context, _ in
-                for edge in graph.edges {
-                    guard let source = byKey[edge.from], let target = byKey[edge.to] else { continue }
-                    let main = edge.relation == .sequel || edge.relation == .prequel
-                    context.stroke(
-                        path(from: source, to: target),
-                        with: .color(main ? Color(.accent) : Color(.line)),
-                        style: StrokeStyle(lineWidth: main ? 2 : 1.25, dash: main ? [] : [4, 4])
-                    )
-                }
-            }
-            .frame(width: size(graph).width, height: size(graph).height)
-            .accessibilityHidden(true)
-            ForEach(graph.nodes, id: \.key) { node in
-                VStack(alignment: .leading, spacing: AaruSpace.xsmall) {
-                    RelatedNodeLink(node: node, startHere: graph.startHere == node.key)
-                        .overlay {
-                            if node.centre {
-                                RoundedRectangle(cornerRadius: AaruRadius.field, style: .continuous)
-                                    .stroke(Color(.accent), lineWidth: 2)
-                                    .padding(-3)
-                                    .allowsHitTesting(false)
-                            }
-                        }
-                    if !node.centre {
-                        Button("Centre") { Task { await model.centre(on: node) } }
-                            .font(.caption)
-                            .buttonStyle(.borderless)
-                    }
-                }
-                .offset(x: origin(node).x, y: origin(node).y)
-            }
-        }
-        .frame(width: size(graph).width, height: size(graph).height, alignment: .topLeading)
-    }
-
-    /// From the right of the earlier card to the left of the later one, or straight down between
-    /// two cards in one column.
-    private func path(from source: RelationNode, to target: RelationNode) -> Path {
-        let ordered = source.rank < target.rank || (source.rank == target.rank && source.lane <= target.lane)
-        let (first, second) = ordered ? (source, target) : (target, source)
-        var path = Path()
-        if first.rank == second.rank {
-            let x = origin(first).x + RelatedCard.width / 2
-            path.move(to: CGPoint(x: x, y: origin(first).y + RelatedCard.width * 1.5))
-            path.addLine(to: CGPoint(x: x, y: origin(second).y))
-            return path
-        }
-        let start = CGPoint(x: origin(first).x + RelatedCard.width, y: origin(first).y + Self.anchorY)
-        let end = CGPoint(x: origin(second).x, y: origin(second).y + Self.anchorY)
-        let bend = (end.x - start.x) / 2
-        path.move(to: start)
-        path.addCurve(
-            to: end,
-            control1: CGPoint(x: start.x + bend, y: start.y),
-            control2: CGPoint(x: end.x - bend, y: end.y)
-        )
-        return path
     }
 }
