@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -49,7 +49,7 @@ func TestResponseLogsGiveWholeMilliseconds(t *testing.T) {
 	logs := &recordedLogParity{}
 	e := echo.New()
 	e.Use(RequestLog(slog.New(logs)))
-	e.GET("/stremio/:token/manifest.json", func(c echo.Context) error {
+	e.GET("/stremio/:token/manifest.json", func(c *echo.Context) error {
 		time.Sleep(1200 * time.Microsecond)
 		return c.NoContent(http.StatusNoContent)
 	})

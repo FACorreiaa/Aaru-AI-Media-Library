@@ -8,7 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -18,8 +18,8 @@ func TestTheRouteLabelIsTheMatchedTemplateNeverThePath(t *testing.T) {
 	metrics.Reset()
 	e := echo.New()
 	e.Use(Metrics(), Errors(slog.New(slog.NewTextHandler(io.Discard, nil)), nil))
-	e.GET("/v1/metric-titles/:id", func(c echo.Context) error { return c.String(http.StatusOK, "ok") })
-	e.GET("/v1/metric-fails", func(echo.Context) error { return echo.ErrBadRequest })
+	e.GET("/v1/metric-titles/:id", func(c *echo.Context) error { return c.String(http.StatusOK, "ok") })
+	e.GET("/v1/metric-fails", func(*echo.Context) error { return echo.ErrBadRequest })
 	for path, status := range map[string]int{
 		"/v1/metric-titles/0b6a2f63-secret-id": http.StatusOK,
 		"/v1/metric-fails":                     http.StatusBadRequest,

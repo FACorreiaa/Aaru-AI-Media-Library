@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 // StremioRoutes.swift: SCR-003's HTTP surface, hand-written because the Stremio protocol fixes the
@@ -19,13 +19,13 @@ import (
 
 func (s *Server) registerStremioRoutes(e *echo.Echo) {
 	e.GET("/stremio/*", s.stremioRespond)
-	e.OPTIONS("/stremio/*", func(c echo.Context) error {
+	e.OPTIONS("/stremio/*", func(c *echo.Context) error {
 		stremioHeaders(c, 86400)
 		return c.NoContent(http.StatusNoContent)
 	})
 }
 
-func stremioHeaders(c echo.Context, maxAge int) {
+func stremioHeaders(c *echo.Context, maxAge int) {
 	h := c.Response().Header()
 	h.Set("Access-Control-Allow-Origin", "*")
 	h.Set("Access-Control-Allow-Headers", "*")
@@ -39,7 +39,7 @@ func stremioHeaders(c echo.Context, maxAge int) {
 }
 
 // stremioJSON writes body as Swift's encoder did: sorted keys (struct order), slashes unescaped.
-func stremioJSON(c echo.Context, status int, body any, maxAge int) error {
+func stremioJSON(c *echo.Context, status int, body any, maxAge int) error {
 	var buf bytes.Buffer
 	enc := json.NewEncoder(&buf)
 	enc.SetEscapeHTML(false)
@@ -54,11 +54,11 @@ func stremioJSON(c echo.Context, status int, body any, maxAge int) error {
 	return err
 }
 
-func stremioFail(c echo.Context, status int, message string) error {
+func stremioFail(c *echo.Context, status int, message string) error {
 	return stremioJSON(c, status, stremio.Err(message), 0)
 }
 
-func (s *Server) stremioRespond(c echo.Context) error {
+func (s *Server) stremioRespond(c *echo.Context) error {
 	parsed, ok := stremio.ParseRequest(c.Request().URL.EscapedPath())
 	if !ok {
 		return stremioFail(c, http.StatusNotFound, "Not a Stremio addon path.")
@@ -85,7 +85,7 @@ func (s *Server) stremioRespond(c echo.Context) error {
 }
 
 // stremioAnswer answers the request; done is false when a service call failed and nothing was written.
-func (s *Server) stremioAnswer(c echo.Context, r stremio.Request, caller *auth.AgentCaller) (bool, error) {
+func (s *Server) stremioAnswer(c *echo.Context, r stremio.Request, caller *auth.AgentCaller) (bool, error) {
 	switch r.Kind {
 	case stremio.RouteManifest:
 		if caller == nil {
@@ -103,7 +103,7 @@ func (s *Server) stremioAnswer(c echo.Context, r stremio.Request, caller *auth.A
 	}
 }
 
-func (s *Server) stremioResource(c echo.Context, r stremio.Request, caller *auth.AgentCaller) (bool, error) {
+func (s *Server) stremioResource(c *echo.Context, r stremio.Request, caller *auth.AgentCaller) (bool, error) {
 	ctx := c.Request().Context()
 	switch r.Name {
 	case "catalog":

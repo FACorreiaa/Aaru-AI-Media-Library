@@ -13,7 +13,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 // oauthBodyLimit is what the registration, token and revoke endpoints read.
@@ -40,14 +40,14 @@ func (s *Server) registerOAuthRoutes(e *echo.Echo) {
 		return
 	}
 	for _, path := range []string{"/.well-known/oauth-protected-resource", "/.well-known/oauth-protected-resource/v1/mcp"} {
-		e.GET(path, func(c echo.Context) error { return oauthJSON(c, http.StatusOK, s.OAuth.ProtectedResource()) })
+		e.GET(path, func(c *echo.Context) error { return oauthJSON(c, http.StatusOK, s.OAuth.ProtectedResource()) })
 	}
-	e.GET("/.well-known/oauth-authorization-server", func(c echo.Context) error {
+	e.GET("/.well-known/oauth-authorization-server", func(c *echo.Context) error {
 		return oauthJSON(c, http.StatusOK, s.OAuth.AuthorizationServer())
 	})
 	e.POST("/oauth/register", s.oauthRespond(s.oauthRegister))
 	e.GET("/oauth/authorize", s.oauthRespond(s.oauthAuthorize))
-	e.POST("/oauth/token", s.oauthRespond(func(c echo.Context) error {
+	e.POST("/oauth/token", s.oauthRespond(func(c *echo.Context) error {
 		form, err := oauthForm(c)
 		if err != nil {
 			return err
@@ -58,7 +58,7 @@ func (s *Server) registerOAuthRoutes(e *echo.Echo) {
 		}
 		return oauthJSON(c, http.StatusOK, body)
 	}))
-	e.POST("/oauth/revoke", s.oauthRespond(func(c echo.Context) error {
+	e.POST("/oauth/revoke", s.oauthRespond(func(c *echo.Context) error {
 		form, err := oauthForm(c)
 		if err != nil {
 			return err
@@ -72,7 +72,7 @@ func (s *Server) registerOAuthRoutes(e *echo.Echo) {
 		"/.well-known/oauth-protected-resource", "/.well-known/oauth-protected-resource/v1/mcp",
 		"/.well-known/oauth-authorization-server", "/oauth/register", "/oauth/token", "/oauth/revoke",
 	} {
-		e.OPTIONS(path, func(c echo.Context) error {
+		e.OPTIONS(path, func(c *echo.Context) error {
 			for k, v := range oauthCORS {
 				c.Response().Header().Set(k, v)
 			}
@@ -81,7 +81,7 @@ func (s *Server) registerOAuthRoutes(e *echo.Echo) {
 	}
 }
 
-func (s *Server) oauthRegister(c echo.Context) error {
+func (s *Server) oauthRegister(c *echo.Context) error {
 	body, err := readLimited(c.Request().Body, oauthBodyLimit)
 	if err != nil {
 		return err
@@ -97,7 +97,7 @@ func (s *Server) oauthRegister(c echo.Context) error {
 	return oauthJSON(c, http.StatusCreated, client)
 }
 
-func (s *Server) oauthAuthorize(c echo.Context) error {
+func (s *Server) oauthAuthorize(c *echo.Context) error {
 	query := map[string]string{}
 	for name, values := range c.Request().URL.Query() {
 		if len(values) > 0 {
@@ -125,7 +125,7 @@ func (s *Server) oauthAuthorize(c echo.Context) error {
 // oauthRespond answers every OAuth failure as RFC 6749's JSON; anything
 // unexpected is logged and stays vague.
 func (s *Server) oauthRespond(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		err := next(c)
 		if err == nil {
 			return nil
@@ -141,7 +141,7 @@ func (s *Server) oauthRespond(next echo.HandlerFunc) echo.HandlerFunc {
 }
 
 // oauthJSON writes body with sorted keys and unescaped slashes, plus CORS and no-store.
-func oauthJSON(c echo.Context, status int, body map[string]any) error {
+func oauthJSON(c *echo.Context, status int, body map[string]any) error {
 	var buf bytes.Buffer
 	enc := json.NewEncoder(&buf)
 	enc.SetEscapeHTML(false)
@@ -170,7 +170,7 @@ func readLimited(r io.Reader, limit int64) ([]byte, error) {
 
 // oauthForm is an `application/x-www-form-urlencoded` body, read as the Swift
 // server did: `+` is a space, a bad escape keeps its raw text, the last field wins.
-func oauthForm(c echo.Context) (map[string]string, error) {
+func oauthForm(c *echo.Context) (map[string]string, error) {
 	body, err := readLimited(c.Request().Body, oauthBodyLimit)
 	if err != nil {
 		return nil, err

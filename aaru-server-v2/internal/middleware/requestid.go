@@ -7,7 +7,7 @@ import (
 	"encoding/hex"
 	"log/slog"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 // RequestIDHeader carries the request's id back to the caller, so a report can name the request.
@@ -18,7 +18,7 @@ const RequestIDHeader = "X-Request-Id"
 // header is never trusted into the logs.
 func RequestID() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
+		return func(c *echo.Context) error {
 			id := newRequestID()
 			req := c.Request()
 			c.SetRequest(req.WithContext(reqctx.WithRequestID(req.Context(), id)))

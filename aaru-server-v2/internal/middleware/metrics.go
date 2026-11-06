@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 var echoParam = regexp.MustCompile(`:([A-Za-z0-9_]+)`)
@@ -16,11 +16,11 @@ var echoParam = regexp.MustCompile(`:([A-Za-z0-9_]+)`)
 // The count is taken in a defer, so a request that panics still leaves the in-flight gauge.
 func Metrics() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
+		return func(c *echo.Context) error {
 			metrics.RequestStarted()
 			started := time.Now()
 			defer func() {
-				metrics.RequestFinished(MethodLabel(c.Request().Method), RouteTemplate(c), c.Response().Status, time.Since(started))
+				metrics.RequestFinished(MethodLabel(c.Request().Method), RouteTemplate(c), Status(c), time.Since(started))
 			}()
 			return next(c)
 		}
@@ -43,7 +43,7 @@ func MethodLabel(method string) string {
 var templates sync.Map
 
 // RouteTemplate is the matched route in OpenAPI form (`/v1/titles/{id}`), "" when nothing matched.
-func RouteTemplate(c echo.Context) string {
+func RouteTemplate(c *echo.Context) string {
 	path := c.Path()
 	if path == "" || c.Get(unmatchedKey) != nil {
 		return ""

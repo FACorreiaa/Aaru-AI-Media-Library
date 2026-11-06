@@ -13,7 +13,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 // captureJSONLimit bounds capture's JSON body (HTTP-001): text is at most 100,000 characters, of
@@ -42,7 +42,7 @@ var errTooManyImages = apperr.New(http.StatusUnprocessableEntity, "capture_too_m
 // createCaptureImport is `POST /v1/imports/capture` (AG-006): JSON with exactly one of `text` and
 // `url`; one image (JPEG, PNG, GIF, WebP) up to 5 MB; or up to five in a multipart form. `?kind=book`
 // reads books only (BOOK-001).
-func (s *Server) createCaptureImport(c echo.Context) error {
+func (s *Server) createCaptureImport(c *echo.Context) error {
 	ctx := c.Request().Context()
 	user, err := currentUser(ctx)
 	if err != nil {
@@ -114,7 +114,7 @@ func captureOnly(kind string) (core.MediaType, error) {
 
 // readCaptureImages reads a multipart form's `image` parts, in order, as they arrive: nothing past
 // a limit is read. Other parts are ignored.
-func readCaptureImages(c echo.Context) ([]model.Image, error) {
+func readCaptureImages(c *echo.Context) ([]model.Image, error) {
 	req := c.Request()
 	if req.ContentLength > captureBodyLimit {
 		return nil, errImagesTooLarge

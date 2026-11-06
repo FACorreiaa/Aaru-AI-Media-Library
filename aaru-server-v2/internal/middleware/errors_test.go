@@ -10,7 +10,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -34,8 +34,8 @@ func TestFailureCarriesOperationAndProvider(t *testing.T) {
 			reporter := &recordingReporter{}
 			e := echo.New()
 			e.Use(Errors(slog.New(slog.NewTextHandler(io.Discard, nil)), reporter))
-			handler := Operation(func(echo.Context, any) (any, error) { return nil, tt.err }, "GetTitle")
-			e.GET("/v1/titles/:id", func(c echo.Context) error {
+			handler := Operation(func(*echo.Context, any) (any, error) { return nil, tt.err }, "GetTitle")
+			e.GET("/v1/titles/:id", func(c *echo.Context) error {
 				_, err := handler(c, nil)
 				return err
 			})

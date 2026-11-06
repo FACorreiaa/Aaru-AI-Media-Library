@@ -7,7 +7,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 // Trakt connect (IMP-002, ImportHandlers.swift) and MyAnimeList connect (SCR-005,
@@ -114,7 +114,7 @@ func (s *Server) DisconnectMAL(ctx context.Context, _ api.DisconnectMALRequestOb
 // percent-encode the `aaru://` Location. No session (both are public in the auth middleware): the
 // one-time `state` names the user.
 func (s *Server) registerConnectRedirectRoutes(e *echo.Echo) {
-	e.GET("/v1/imports/trakt/callback", func(c echo.Context) error {
+	e.GET("/v1/imports/trakt/callback", func(c *echo.Context) error {
 		code, state, errParam := callbackQuery(c)
 		next, err := s.TraktConnect.Callback(c.Request().Context(), code, state, errParam)
 		if err != nil {
@@ -122,7 +122,7 @@ func (s *Server) registerConnectRedirectRoutes(e *echo.Echo) {
 		}
 		return c.Redirect(http.StatusFound, next)
 	})
-	e.GET("/v1/connections/mal/callback", func(c echo.Context) error {
+	e.GET("/v1/connections/mal/callback", func(c *echo.Context) error {
 		code, state, errParam := callbackQuery(c)
 		next, err := s.MALConnect.Callback(c.Request().Context(), code, state, errParam)
 		if err != nil {
@@ -133,7 +133,7 @@ func (s *Server) registerConnectRedirectRoutes(e *echo.Echo) {
 }
 
 // callbackQuery is the redirect's `code`, `state` and `error`; nil when one was not sent.
-func callbackQuery(c echo.Context) (code, state, errParam *string) {
+func callbackQuery(c *echo.Context) (code, state, errParam *string) {
 	query := c.QueryParams()
 	get := func(name string) *string {
 		if values, ok := query[name]; ok && len(values) > 0 {

@@ -13,7 +13,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 // ScrobbleRoutes.swift: SCR-001's HTTP surface, first used by the browser extension (SCR-007):
@@ -28,12 +28,12 @@ const (
 
 func (s *Server) registerScrobbleRoutes(e *echo.Echo) {
 	for _, action := range []scrobble.Action{scrobble.ActionStart, scrobble.ActionPause, scrobble.ActionStop} {
-		e.POST(scrobblePath+"/"+string(action), func(c echo.Context) error { return s.scrobbleRespond(c, action) })
+		e.POST(scrobblePath+"/"+string(action), func(c *echo.Context) error { return s.scrobbleRespond(c, action) })
 	}
 }
 
 // writeScrobbleJSON writes v as Swift's encoder did here: sorted keys, slashes unescaped, `no-store`.
-func writeScrobbleJSON(c echo.Context, status int, v any) error {
+func writeScrobbleJSON(c *echo.Context, status int, v any) error {
 	var buf bytes.Buffer
 	enc := json.NewEncoder(&buf)
 	enc.SetEscapeHTML(false)
@@ -49,7 +49,7 @@ func writeScrobbleJSON(c echo.Context, status int, v any) error {
 }
 
 // scrobbleError is `/v1`'s one error shape.
-func scrobbleError(c echo.Context, status int, code, message string) error {
+func scrobbleError(c *echo.Context, status int, code, message string) error {
 	return writeScrobbleJSON(c, status, map[string]string{"code": code, "message": message})
 }
 
@@ -66,7 +66,7 @@ func readUpTo(body io.Reader, limit int64) ([]byte, bool, error) {
 	return data, int64(len(data)) <= limit, nil
 }
 
-func (s *Server) scrobbleRespond(c echo.Context, action scrobble.Action) error {
+func (s *Server) scrobbleRespond(c *echo.Context, action scrobble.Action) error {
 	ctx := c.Request().Context()
 	err := func() error {
 		secret := middleware.BearerToken(c.Request().Header.Get("Authorization"))
@@ -113,7 +113,7 @@ func (s *Server) scrobbleRespond(c echo.Context, action scrobble.Action) error {
 	return nil
 }
 
-func (s *Server) scrobbleAnswer(c echo.Context, data []byte, action scrobble.Action, caller auth.AgentCaller) (scrobble.Answer, error) {
+func (s *Server) scrobbleAnswer(c *echo.Context, data []byte, action scrobble.Action, caller auth.AgentCaller) (scrobble.Answer, error) {
 	ctx := c.Request().Context()
 	body, err := scrobble.ParseBody(data)
 	if err != nil {
@@ -135,7 +135,7 @@ func (s *Server) scrobbleAnswer(c echo.Context, data []byte, action scrobble.Act
 
 // scrobbleVideo is a YouTube video (SCR-009): a play, never a watch event, so it matches and ticks
 // nothing. A music video heard long enough is also a listen (SCR-011).
-func (s *Server) scrobbleVideo(c echo.Context, body scrobble.Body, action scrobble.Action, caller auth.AgentCaller) (scrobble.Answer, error) {
+func (s *Server) scrobbleVideo(c *echo.Context, body scrobble.Body, action scrobble.Action, caller auth.AgentCaller) (scrobble.Answer, error) {
 	ctx := c.Request().Context()
 	now := s.Scrobble.NowTime()
 	video, err := body.VideoPlay(action, now)
@@ -182,14 +182,14 @@ func (s *Server) registerListenBrainzRoutes(e *echo.Echo) {
 	e.GET(listenBrainzPath+"/validate-token", s.listenBrainzValidate)
 	// Browser scrobblers fetch from a page or an extension; nothing here reads a cookie.
 	for _, path := range []string{"submit-listens", "validate-token"} {
-		e.OPTIONS(listenBrainzPath+"/"+path, func(c echo.Context) error {
+		e.OPTIONS(listenBrainzPath+"/"+path, func(c *echo.Context) error {
 			listenBrainzCORS(c)
 			return c.NoContent(http.StatusNoContent)
 		})
 	}
 }
 
-func listenBrainzCORS(c echo.Context) {
+func listenBrainzCORS(c *echo.Context) {
 	h := c.Response().Header()
 	h.Set("Access-Control-Allow-Origin", "*")
 	h.Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
@@ -197,7 +197,7 @@ func listenBrainzCORS(c echo.Context) {
 	h.Set("Access-Control-Max-Age", "86400")
 }
 
-func listenBrainzJSON(c echo.Context, status int, v any) error {
+func listenBrainzJSON(c *echo.Context, status int, v any) error {
 	listenBrainzCORS(c)
 	return writeScrobbleJSON(c, status, v)
 }
@@ -208,7 +208,7 @@ type listenBrainzFailure struct {
 	Error string `json:"error"`
 }
 
-func listenBrainzError(c echo.Context, status int, message string) error {
+func listenBrainzError(c *echo.Context, status int, message string) error {
 	return listenBrainzJSON(c, status, listenBrainzFailure{Code: status, Error: message})
 }
 
@@ -225,7 +225,7 @@ func listenBrainzToken(header string) string {
 	return ""
 }
 
-func (s *Server) listenBrainzSubmit(c echo.Context) error {
+func (s *Server) listenBrainzSubmit(c *echo.Context) error {
 	ctx := c.Request().Context()
 	err := func() error {
 		var caller auth.AgentCaller
@@ -290,7 +290,7 @@ type listenBrainzTokenCheck struct {
 }
 
 // listenBrainzValidate answers 200 either way and says in `valid` whether the token works.
-func (s *Server) listenBrainzValidate(c echo.Context) error {
+func (s *Server) listenBrainzValidate(c *echo.Context) error {
 	ctx := c.Request().Context()
 	secret := listenBrainzToken(c.Request().Header.Get("Authorization"))
 	if secret == "" {

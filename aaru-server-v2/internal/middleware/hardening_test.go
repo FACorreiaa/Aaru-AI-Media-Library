@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -42,7 +42,7 @@ func TestAPanickingHandlerIsAReportedJSON500(t *testing.T) {
 	reporter := &recordingReporter{}
 	e := echo.New()
 	e.Use(Metrics(), Errors(slog.New(logs), reporter), Recover())
-	e.GET("/v1/boom/:id", func(echo.Context) error { panic("kaboom") })
+	e.GET("/v1/boom/:id", func(*echo.Context) error { panic("kaboom") })
 
 	rec := httptest.NewRecorder()
 	e.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/v1/boom/1", nil))
@@ -71,7 +71,7 @@ func TestMetricsFinishesWhenAPanicPassesThrough(t *testing.T) {
 	metrics.Reset()
 	e := echo.New()
 	e.Use(Metrics())
-	e.GET("/v1/boom", func(echo.Context) error { panic("kaboom") })
+	e.GET("/v1/boom", func(*echo.Context) error { panic("kaboom") })
 	func() {
 		defer func() { _ = recover() }()
 		e.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/v1/boom", nil))
@@ -83,7 +83,7 @@ func TestMetricsFinishesWhenAPanicPassesThrough(t *testing.T) {
 func TestRecoverPassesHTTPAbortOn(t *testing.T) {
 	e := echo.New()
 	e.Use(Recover())
-	e.GET("/v1/abort", func(echo.Context) error { panic(http.ErrAbortHandler) })
+	e.GET("/v1/abort", func(*echo.Context) error { panic(http.ErrAbortHandler) })
 	assert.PanicsWithError(t, http.ErrAbortHandler.Error(), func() {
 		e.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/v1/abort", nil))
 	})
@@ -96,7 +96,7 @@ func TestAClientThatWentAwayIsA499NeverReported(t *testing.T) {
 	reporter := &recordingReporter{}
 	e := echo.New()
 	e.Use(Metrics(), Errors(slog.New(logs), reporter))
-	e.GET("/v1/search", func(c echo.Context) error {
+	e.GET("/v1/search", func(c *echo.Context) error {
 		<-c.Request().Context().Done()
 		return fmt.Errorf("search: %w", c.Request().Context().Err())
 	})
@@ -118,7 +118,7 @@ func TestACancellationWithTheClientStillThereIsA500(t *testing.T) {
 	reporter := &recordingReporter{}
 	e := echo.New()
 	e.Use(Errors(discard(), reporter))
-	e.GET("/v1/x", func(echo.Context) error { return context.Canceled })
+	e.GET("/v1/x", func(*echo.Context) error { return context.Canceled })
 	rec := httptest.NewRecorder()
 	e.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/v1/x", nil))
 	assert.Equal(t, http.StatusInternalServerError, rec.Code)
@@ -130,12 +130,13 @@ func TestANonStandardMethodIsLabelledOther(t *testing.T) {
 	metrics.Reset()
 	e := echo.New()
 	e.Use(Metrics(), Errors(discard(), nil))
-	e.Any("/v1/thing", func(c echo.Context) error { return c.NoContent(http.StatusNoContent) })
+	// echo v5's Any matches every method, FOO too; the label is what is checked here.
+	e.Any("/v1/thing", func(c *echo.Context) error { return c.NoContent(http.StatusNoContent) })
 	for _, m := range []string{"FOO", "RANDOM1", http.MethodGet} {
 		e.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(m, "/v1/thing", nil))
 	}
 	text := metricsText(t)
-	assert.Contains(t, text, `aaru_http_requests_total{code="405",method="OTHER",route="/v1/thing"} 2`)
+	assert.Contains(t, text, `aaru_http_requests_total{code="204",method="OTHER",route="/v1/thing"} 2`)
 	assert.Contains(t, text, `aaru_http_requests_total{code="204",method="GET",route="/v1/thing"} 1`)
 	assert.NotContains(t, text, "FOO")
 	assert.Equal(t, "OTHER", MethodLabel("RANDOM9"))
@@ -160,8 +161,8 @@ func TestRunningOutOfTimeIsA503(t *testing.T) {
 // DB-001: a request is cut at its deadline and answers 503 within it; an exempt route is not.
 func TestTheRequestDeadlineCutsALongRequest(t *testing.T) {
 	e := echo.New()
-	e.Use(Errors(discard(), nil), Deadline(50*time.Millisecond, func(c echo.Context) bool { return c.Path() == "/v1/ws" }))
-	wait := func(c echo.Context) error {
+	e.Use(Errors(discard(), nil), Deadline(50*time.Millisecond, func(c *echo.Context) bool { return c.Path() == "/v1/ws" }))
+	wait := func(c *echo.Context) error {
 		select {
 		case <-c.Request().Context().Done():
 			return c.Request().Context().Err()
@@ -188,8 +189,8 @@ func TestTheRequestDeadlineCutsALongRequest(t *testing.T) {
 func TestABodyOverItsLimitIs413BeforeTheHandler(t *testing.T) {
 	read := false
 	e := echo.New()
-	e.Use(Errors(discard(), nil), BodyLimit(func(echo.Context) BodyRule { return BodyRule{Limit: 1024} }))
-	e.POST("/v1/x", func(c echo.Context) error {
+	e.Use(Errors(discard(), nil), BodyLimit(func(*echo.Context) BodyRule { return BodyRule{Limit: 1024} }))
+	e.POST("/v1/x", func(c *echo.Context) error {
 		read = true
 		if _, err := io.ReadAll(c.Request().Body); err != nil {
 			if tooLarge := bodyTooLarge(c, err); tooLarge != nil {
@@ -218,8 +219,8 @@ func TestABodyOverItsLimitIs413BeforeTheHandler(t *testing.T) {
 func TestARouteWithItsOwnBoundSpeaks(t *testing.T) {
 	own := apperr.New(http.StatusRequestEntityTooLarge, "file_too_large", "That file is too large.")
 	e := echo.New()
-	e.Use(Errors(discard(), nil), BodyLimit(func(echo.Context) BodyRule { return BodyRule{Limit: 1024, OwnBound: true} }))
-	e.POST("/v1/upload", func(c echo.Context) error {
+	e.Use(Errors(discard(), nil), BodyLimit(func(*echo.Context) BodyRule { return BodyRule{Limit: 1024, OwnBound: true} }))
+	e.POST("/v1/upload", func(c *echo.Context) error {
 		if c.Request().ContentLength > 512 {
 			return own
 		}
@@ -244,7 +245,7 @@ func TestATransportsOwn500IsReported(t *testing.T) {
 	reporter := &recordingReporter{}
 	e := echo.New()
 	e.Use(Errors(discard(), reporter))
-	e.POST("/v1/mcp", func(c echo.Context) error {
+	e.POST("/v1/mcp", func(c *echo.Context) error {
 		ReportFailure(c, errors.New("db down"), "internal", http.StatusInternalServerError)
 		return c.String(http.StatusInternalServerError, "Something went wrong.")
 	})
@@ -252,7 +253,7 @@ func TestATransportsOwn500IsReported(t *testing.T) {
 	require.Len(t, reporter.failures, 1)
 	assert.Equal(t, Failure{ErrorType: "*errors.errorString", Code: "internal", Status: 500, Method: "POST", Route: "/v1/mcp"}, reporter.failures[0])
 
-	e.POST("/v1/mcp-cancelled", func(c echo.Context) error {
+	e.POST("/v1/mcp-cancelled", func(c *echo.Context) error {
 		ReportFailure(c, fmt.Errorf("tool: %w", context.Canceled), "internal", http.StatusInternalServerError)
 		return c.String(http.StatusInternalServerError, "Something went wrong.")
 	})
@@ -295,7 +296,7 @@ func TestEveryRequestLineCarriesTheRequestID(t *testing.T) {
 	log := slog.New(NewContextHandler(slog.NewJSONHandler(&buf, &slog.HandlerOptions{Level: slog.LevelInfo})))
 	e := echo.New()
 	e.Use(RequestID(), RequestLog(log))
-	e.GET("/v1/x", func(c echo.Context) error {
+	e.GET("/v1/x", func(c *echo.Context) error {
 		log.InfoContext(c.Request().Context(), "Inside")
 		return c.NoContent(http.StatusNoContent)
 	})
@@ -319,7 +320,7 @@ func TestTheArrivalLineIsDebug(t *testing.T) {
 	logs := &recordedLogParity{}
 	e := echo.New()
 	e.Use(RequestLog(slog.New(logs)))
-	e.GET("/v1/x", func(c echo.Context) error { return c.NoContent(http.StatusNoContent) })
+	e.GET("/v1/x", func(c *echo.Context) error { return c.NoContent(http.StatusNoContent) })
 	e.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/v1/x", nil))
 	require.Len(t, logs.records, 2)
 	assert.Equal(t, slog.LevelDebug, logs.records[0].Level)
@@ -334,13 +335,13 @@ func TestBodyReadDeadlineCutsAStalledBodyAndSparesASlowHandler(t *testing.T) {
 	readErr := make(chan error, 1)
 	ctxErr := make(chan error, 1)
 	e := echo.New()
-	e.Use(BodyLimit(func(echo.Context) BodyRule { return BodyRule{Limit: 1 << 20, ReadTimeout: timeout} }))
-	e.POST("/read", func(c echo.Context) error {
+	e.Use(BodyLimit(func(*echo.Context) BodyRule { return BodyRule{Limit: 1 << 20, ReadTimeout: timeout} }))
+	e.POST("/read", func(c *echo.Context) error {
 		_, err := io.ReadAll(c.Request().Body)
 		readErr <- err
 		return nil
 	})
-	e.POST("/slow", func(c echo.Context) error {
+	e.POST("/slow", func(c *echo.Context) error {
 		if _, err := io.ReadAll(c.Request().Body); err != nil {
 			return err
 		}

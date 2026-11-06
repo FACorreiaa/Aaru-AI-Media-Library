@@ -11,7 +11,7 @@ import (
 	"net/http"
 
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 // Reporter sends a server failure somewhere (Sentry). Nothing from the request goes with it.
@@ -44,7 +44,7 @@ const reporterKey = "aaru.reporter"
 // as a 499 and never reported.
 func Errors(log *slog.Logger, reporter Reporter) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
+		return func(c *echo.Context) error {
 			if reporter != nil {
 				c.Set(reporterKey, reporter)
 			}
@@ -54,7 +54,7 @@ func Errors(log *slog.Logger, reporter Reporter) echo.MiddlewareFunc {
 			if err == nil {
 				return nil
 			}
-			if c.Response().Committed {
+			if Committed(c) {
 				// A response under way (a streamed export) cannot take an error body. A client
 				// that left is not a failure; anything else is one nobody else will report.
 				if ClientGone(ctx, err) {
@@ -97,7 +97,7 @@ func ClientGone(ctx context.Context, err error) bool {
 // ReportFailure sends a 5xx that a transport answered itself (MCP, scrobbles, ListenBrainz,
 // Stremio, OAuth write their own bodies) to the reporter Errors holds, as Errors would have
 // (HTTP-006). The transport logs it; a client that went away is not reported.
-func ReportFailure(c echo.Context, err error, code string, status int) {
+func ReportFailure(c *echo.Context, err error, code string, status int) {
 	reporter, _ := c.Get(reporterKey).(Reporter)
 	if reporter == nil || err == nil || ClientGone(c.Request().Context(), err) {
 		return
@@ -106,7 +106,7 @@ func ReportFailure(c echo.Context, err error, code string, status int) {
 	reporter.Report(f)
 }
 
-func routeLabel(c echo.Context) string {
+func routeLabel(c *echo.Context) string {
 	if route := RouteTemplate(c); route != "" {
 		return route
 	}
@@ -114,7 +114,7 @@ func routeLabel(c echo.Context) string {
 }
 
 // failure is the report for err and the attributes its log line carries.
-func failure(c echo.Context, err error, code string, status int) (Failure, []any) {
+func failure(c *echo.Context, err error, code string, status int) (Failure, []any) {
 	route := routeLabel(c)
 	f := Failure{
 		ErrorType: errorType(err), Code: code, Status: status,
@@ -150,15 +150,15 @@ func Map(err error) *apperr.Error {
 	if e := apperr.From(err); e != nil {
 		return e
 	}
-	var httpErr *echo.HTTPError
-	if errors.As(err, &httpErr) {
+	// echo v5's own 404 and 405 are sentinels, not *HTTPError: StatusCode reads both.
+	if code := echo.StatusCode(err); code != 0 {
 		switch {
-		case httpErr.Code == http.StatusBadRequest:
+		case code == http.StatusBadRequest:
 			return apperr.BadRequest()
-		case httpErr.Code >= 500:
+		case code >= 500:
 			return apperr.Internal()
 		default:
-			return apperr.FromStatus(httpErr.Code, http.StatusText(httpErr.Code))
+			return apperr.FromStatus(code, http.StatusText(code))
 		}
 	}
 	if errors.Is(err, context.DeadlineExceeded) {
@@ -178,7 +178,7 @@ type body struct {
 }
 
 // Write sends e in the shared shape.
-func Write(c echo.Context, e *apperr.Error) error {
+func Write(c *echo.Context, e *apperr.Error) error {
 	data, err := json.Marshal(body{Code: e.Code, Details: e.Details, Message: e.Message})
 	if err != nil {
 		data = []byte(`{"code":"internal","message":"Something went wrong."}`)

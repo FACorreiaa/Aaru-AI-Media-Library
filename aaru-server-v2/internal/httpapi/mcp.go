@@ -16,7 +16,7 @@ import (
 	"math"
 	"strings"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 // OUT-004 · the MCP route (`POST /v1/mcp`, MCPRoutes.swift) and its tools: internal/mcp is the

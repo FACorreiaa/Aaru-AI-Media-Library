@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 // BodyRule is one request's body bound (HTTP-001).
@@ -29,9 +29,9 @@ const tooLargeKey = "aaru.body.too.large"
 
 // BodyLimit bounds each request's body by its route's rule, before the validator or a handler
 // reads it. A declared length over the limit is refused at once.
-func BodyLimit(rule func(c echo.Context) BodyRule) echo.MiddlewareFunc {
+func BodyLimit(rule func(c *echo.Context) BodyRule) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
+		return func(c *echo.Context) error {
 			r := rule(c)
 			tooLarge := r.TooLarge
 			if tooLarge == nil {
@@ -80,7 +80,7 @@ func (b *timedBody) Read(p []byte) (int, error) {
 }
 
 // bodyTooLarge is the answer for err when reading the body ran past its limit, else nil.
-func bodyTooLarge(c echo.Context, err error) *apperr.Error {
+func bodyTooLarge(c *echo.Context, err error) *apperr.Error {
 	var maxErr *http.MaxBytesError
 	if !errors.As(err, &maxErr) {
 		return nil
@@ -94,12 +94,12 @@ func bodyTooLarge(c echo.Context, err error) *apperr.Error {
 // Deadline bounds a request's context by timeout (DB-001), so a slow query, a full pool or a
 // provider's Retry-After cannot hold a request until the client gives up. exempt routes (the
 // WebSocket, uploads, the export, MCP) keep the request's own context. timeout <= 0 turns it off.
-func Deadline(timeout time.Duration, exempt func(c echo.Context) bool) echo.MiddlewareFunc {
+func Deadline(timeout time.Duration, exempt func(c *echo.Context) bool) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		if timeout <= 0 {
 			return next
 		}
-		return func(c echo.Context) error {
+		return func(c *echo.Context) error {
 			if exempt != nil && exempt(c) {
 				return next(c)
 			}

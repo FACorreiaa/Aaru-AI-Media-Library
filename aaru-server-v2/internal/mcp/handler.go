@@ -14,7 +14,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 const (
@@ -66,7 +66,7 @@ func (h *Handler) log() *slog.Logger {
 // Register adds the route; GET and DELETE answer 405 (no server-initiated stream, no sessions).
 func (h *Handler) Register(e *echo.Echo) {
 	e.POST(Path, h.post)
-	notAllowed := func(c echo.Context) error {
+	notAllowed := func(c *echo.Context) error {
 		c.Response().Header().Set("Allow", "POST")
 		return c.NoContent(http.StatusMethodNotAllowed)
 	}
@@ -74,7 +74,7 @@ func (h *Handler) Register(e *echo.Echo) {
 	e.DELETE(Path, notAllowed)
 }
 
-func plain(c echo.Context, status int, message string) error {
+func plain(c *echo.Context, status int, message string) error {
 	h := c.Response().Header()
 	h.Set("Content-Type", "text/plain; charset=utf-8")
 	h.Set("Cache-Control", "no-store")
@@ -83,7 +83,7 @@ func plain(c echo.Context, status int, message string) error {
 	return err
 }
 
-func (h *Handler) post(c echo.Context) error {
+func (h *Handler) post(c *echo.Context) error {
 	req := c.Request()
 	if origin := req.Header.Get("Origin"); origin != "" && !h.AllowedOrigins[strings.ToLower(origin)] {
 		return plain(c, http.StatusForbidden, "This origin may not call Aaru's MCP endpoint.")
@@ -131,7 +131,7 @@ func (h *Handler) post(c echo.Context) error {
 
 // serverError answers a failure outside JSON-RPC with 500, logs it and reports it like a `/v1`
 // 500 (HTTP-006). A client that went away is logged at Info only.
-func (h *Handler) serverError(c echo.Context, err error) error {
+func (h *Handler) serverError(c *echo.Context, err error) error {
 	ctx := c.Request().Context()
 	if middleware.ClientGone(ctx, err) {
 		h.log().InfoContext(ctx, "MCP request cancelled by the client")

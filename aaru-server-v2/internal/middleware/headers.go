@@ -6,14 +6,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 // ClientTimeZone reads `X-Timezone` (GAM-003): points and streak days are dated
 // in it. Anything Go does not know as an IANA zone is ignored.
 func ClientTimeZone() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
+		return func(c *echo.Context) error {
 			if loc := ParseTimeZone(c.Request().Header.Get("X-Timezone")); loc != nil {
 				c.SetRequest(c.Request().WithContext(reqctx.WithTimeZone(c.Request().Context(), loc)))
 			}
@@ -38,11 +38,11 @@ func ParseTimeZone(value string) *time.Location {
 // carries the version, so it is never stale.
 func AvatarCache() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
+		return func(c *echo.Context) error {
 			req := c.Request()
 			if req.Method == http.MethodGet && strings.HasPrefix(req.URL.Path, "/v1/users/") && strings.HasSuffix(req.URL.Path, "/avatar") {
-				c.Response().Before(func() {
-					if c.Response().Status == http.StatusOK {
+				Response(c).Before(func() {
+					if Status(c) == http.StatusOK {
 						c.Response().Header().Set("Cache-Control", "private, max-age=604800")
 					}
 				})
