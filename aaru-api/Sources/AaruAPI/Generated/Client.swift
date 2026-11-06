@@ -11114,6 +11114,92 @@ public struct Client: APIProtocol {
             }
         )
     }
+    /// The title's relation graph (GRAPH-001): prequels, sequels, side stories and adaptations across kinds, from AniList, TMDB collections and Wikidata, placed for drawing and marked with the caller's library. Catalog data: reading it writes nothing. A graph that is missing titles because a source failed or ran out of time says `partial`.
+    ///
+    /// - Remark: HTTP `GET /v1/titles/{id}/relations`.
+    /// - Remark: Generated from `#/paths//v1/titles/{id}/relations/get(getTitleRelations)`.
+    public func getTitleRelations(_ input: Operations.GetTitleRelations.Input) async throws -> Operations.GetTitleRelations.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.GetTitleRelations.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/titles/{}/relations",
+                    parameters: [
+                        input.path.id
+                    ]
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .get
+                )
+                suppressMutabilityWarning(&request)
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "order",
+                    value: input.query.order
+                )
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.GetTitleRelations.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.RelationGraph.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                default:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(body: body)
+                    )
+                }
+            }
+        )
+    }
     /// Posts about this title by you and your friends, newest first.
     ///
     /// - Remark: HTTP `GET /v1/titles/{id}/posts`.

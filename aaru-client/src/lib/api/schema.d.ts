@@ -2050,6 +2050,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/titles/{id}/relations': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** The title's relation graph (GRAPH-001): prequels, sequels, side stories and adaptations across kinds, from AniList, TMDB collections and Wikidata, placed for drawing and marked with the caller's library. Catalog data: reading it writes nothing. A graph that is missing titles because a source failed or ran out of time says `partial`. */
+    get: operations['getTitleRelations']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/titles/{id}/posts': {
     parameters: {
       query?: never
@@ -4609,6 +4626,62 @@ export interface components {
       genres?: string[]
       /** @description Albums only: the tracklist of the album's earliest official release, by disc then position. Absent when MusicBrainz could not be reached and none is stored yet. */
       tracks?: components['schemas']['AlbumTrack'][]
+    }
+    /** @enum {string} */
+    RelationOrder: 'release' | 'story'
+    /**
+     * @description How one title stands to another (GRAPH-001), read "`to` is `from`'s relation". Edges are written forward: a prequel arrives as the other title's `sequel`, a source as the other title's `adaptation`, a parent as the other title's `side_story`, so the first three values below never appear on an edge but keep the vocabulary whole.
+     * @enum {string}
+     */
+    Relation:
+      | 'prequel'
+      | 'sequel'
+      | 'side_story'
+      | 'spin_off'
+      | 'adaptation'
+      | 'source'
+      | 'alternative'
+      | 'summary'
+      | 'parent'
+      | 'other'
+    RelationGraph: {
+      /** @description Ordered by `rank`, then `lane`. */
+      nodes: components['schemas']['RelationNode'][]
+      edges: components['schemas']['RelationEdge'][]
+      order: components['schemas']['RelationOrder']
+      /** @description True when the main chain has a story order that differs from release order. */
+      storyOrderAvailable: boolean
+      /** @description True when a source failed or ran out of time; the graph may miss titles. */
+      partial: boolean
+      /** @description Key of the first main-chain title, in this order, the caller has not finished or dropped. Absent when every one is done. */
+      startHere?: string
+    }
+    RelationNode: {
+      /** @description Stable within one graph. */
+      key: string
+      /** @description Opens the title (POST /v1/titles/resolve) or adds it, as a search hit does. */
+      ref: components['schemas']['MediaRef']
+      isAnime?: boolean
+      posterUrl?: string
+      /** @description `YYYY-MM-DD` when the source knows the day. */
+      releaseDate?: string
+      /** @description The source's own word for it (`tv`, `movie`, `ova`, `novel`…), for a label. */
+      format?: string
+      /** @description Column, from 0: the order along the main chain. */
+      rank: number
+      /** @description Row: 0 is the main chain, 1 and on hang below it. */
+      lane: number
+      mainChain: boolean
+      /** @description The title the graph was asked for. */
+      centre: boolean
+      /** Format: uuid */
+      libraryItemId?: string
+      status?: components['schemas']['LibraryStatus']
+    }
+    RelationEdge: {
+      from: string
+      to: string
+      relation: components['schemas']['Relation']
     }
     TitlePreview: {
       title: components['schemas']['TitleDetail']
@@ -8718,6 +8791,32 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['TitleDetail']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getTitleRelations: {
+    parameters: {
+      query?: {
+        /** @description `release` (default) or `story`. Story order needs numbered series in the data; when `storyOrderAvailable` is false the graph comes back in release order. */
+        order?: components['schemas']['RelationOrder']
+      }
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The graph. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['RelationGraph']
         }
       }
       default: components['responses']['Error']

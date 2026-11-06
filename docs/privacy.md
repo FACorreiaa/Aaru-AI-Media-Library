@@ -268,6 +268,9 @@ Aaru only uses these services, and only for the purpose listed:
   (Cinemeta) for a show's episode list by its IMDb id, never who you are.
 - **TMDB, TVmaze, AniList, Open Library, MusicBrainz and ListenBrainz** provide catalog data.
   Aaru's server sends them what you search for and catalog ids, never who you are.
+- **Wikidata** says how titles relate (a film's book, a book's sequel, a series' story order)
+  for a title's relation graph. Aaru's server sends it catalog ids only, never who you are or
+  what is in your library; your own marks on the graph come from Aaru's database.
 - **Last.fm and ListenBrainz**, only if you import your listening from them. Aaru's server sends
   the username you type and reads that account's public listening history.
 - **JustWatch**, through TMDB, says where a show streams in your country on Discover's On air

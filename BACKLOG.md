@@ -34,6 +34,25 @@ library layer stay separate, external IDs stored whenever known, no second backe
 - **Anime is first-class from P1** (AniList catalog, `anilist`/`mal`/`anidb` external IDs).
 - DMs are **Signal-grade (libsignal)**. Licence and web support are OPEN — see DM-003, DM-004.
 
+## Decisions recorded 2026-11-06
+
+Owner, 2026-11-06: "In the end I want to be able to know what to read, what to watch and where do I
+start without the need of using Grok." Relation graphs and roadmaps are pulled forward together
+(GRAPH-001…004):
+
+- **Relation graph scope:** the direct chain and its adaptations a couple of hops out, AniDB-style;
+  tapping a title re-centres. Never the whole franchise.
+- **Order:** release order by default, with a story-order toggle where the data numbers a series.
+- **Sources:** AniList `relations`, TMDB collections and Wikidata (CC0, no key, ids only). Relations
+  are catalog data: never a library write, never a recommendation. Titles are joined by id, never
+  by name.
+- **Comics stay books** (the 2026-11-05 rule stands): a roadmap names collected volumes on Open
+  Library, and issue ranges ride along as text.
+- **A roadmap is a List with steps:** headings, a note per title, optional titles and side-by-side
+  pairs; its graph is a view of that List.
+- **Roadmap source:** the model writes it from what it knows, every title is matched to the catalog
+  before the review, and what does not match stays as text in its step.
+
 ## Decisions recorded 2026-11-04
 
 Go audit of `aaru-server-v2` (2026-11-03) remediated. The report is in the git history of
@@ -860,6 +879,8 @@ account or a stranger that has not happened yet.
 | IMP-019 | Open | BACKLOG IMP-019 | Bingers has an API only for paid plans; owner decides |
 | IMP-020 | Built, unverified | #172; CSVImportParser, TitleResolver, GoodreadsImportTests, BookYearToleranceTests; deployed f6cc317 (infra #456) | Stub catalog only; no real Goodreads export run yet |
 | BOOK-003 | Built, unverified | `plan_title_list`, `capture.ListName`, `imports.titleRows`, `ImportRow.lists`, components frame `importId` | Stub model only. "Review the list" in the Assistant card on iPhone, Mac and web opens the review; the waiting capture card and the push still lead there too |
+| GRAPH-001 | Built, unverified | `GET /v1/titles/{id}/relations`, `catalog/relations*.go`, `catalog/wikidata.go`, migration 00007 `catalog_relations` | Stub providers only; not run against live AniList, TMDB or Wikidata from the server yet |
+| GRAPH-002 | Built, unverified | `RelatedTitles.tsx`, `_shell.app_.graph.$titleId.tsx`, `TitleRelated.swift` | Builds and tests pass; not looked at on a screen; "Add the chain" moved to GRAPH-003 |
 | IMP-021 | Built, unverified | `POST /v1/imports/{id}/match-all`, `catalog/guess.go`, `imports/matchall.go`, `aaru-ios/Aaru/Capture/MatchAllButton.swift` | Web run locally: real Open Library, stub model, 8 of 10 rows filled in about 12 seconds. iOS builds and has not been tapped. Needs the API promoted |
 | PRV-001 | Done | #27 8d5ddc3; docs/providers.md, AboutView.swift | privacy@ routing not set up |
 | CAT-011 | Done | #24 7edc80c; TVmazeAirTimes.swift | |
@@ -2975,6 +2996,52 @@ tap on it did nothing. It is now a menu: a tap adds the title as planned, a hold
 addable status and "Add to list…". The poster still opens the catalog page, and a hold on it
 still adds. One card, so Home, Discover, Seasons, On air and the kind screens all get it. The web
 card already has Add and List….
+
+## P2 · Relations and roadmaps (pulled forward 2026-11-06)
+
+### GRAPH-001 · Relations on the server · M · owner 2026-11-06
+**Needs:** CAT-002, CAT-007.
+- `GET /v1/titles/{id}/relations?order=release|story` is the title's graph: nodes with a `MediaRef`,
+  a poster, `rank` (column) and `lane` (row, 0 the main chain), edges written forward (`sequel`,
+  `adaptation`, `side_story`…), `startHere`, `storyOrderAvailable` and `partial`.
+- Sources: AniList `relations` (CHARACTER and music videos left out), a TMDB film's collection chained
+  by release date, and Wikidata's follows / followed by / based on / derivative work and numbered
+  series. Wikidata items whose only ids are ones Aaru does not track (games, plays) are dropped.
+- A prequel or sequel in the same medium (films and shows count as one) costs nothing to walk; any other
+  relation costs a hop. Titles two hops out are shown, titles under that are asked about; at most 40
+  titles and 24 lookups. AniList is asked about main-chain titles only (its rate limit). A page waits
+  8 seconds; past that it gets a `partial` graph and the walk finishes in the background, so the next
+  read is whole. A source that fails also leaves the graph `partial`.
+- Release order is by date (an undated title keeps its place along the sequel links); story order
+  is a numbered Wikidata series, else the sequel links themselves.
+- Each source's answer is cached 30 days in `catalog_relations`; a failed refresh serves the old one.
+- The caller's marks (status, library item) come from Aaru's database, an AniList season through the
+  TMDB show it maps to. "Start here" is the first main-chain title not finished or dropped.
+
+**Done when:** Fellowship of the Ring, A New Hope, Attack on Titan and Frieren each answer a sensible
+graph from the live providers, and a second read calls none of them.
+
+### GRAPH-002 · Related titles and the graph in the title room · M
+**Needs:** GRAPH-001.
+- A Related section in the title room and on the not-in-library page (direct relations, grouped), and
+  a Graph view on web and Apple drawn from `rank`/`lane` with no layout library. "Add the chain" makes
+  a capture of the chain's titles to review: it moves to GRAPH-003, which builds the capture of exact
+  refs that it needs.
+
+**Progress 2026-11-06:** web (`RelatedTitles.tsx`, `/app/graph/$titleId`) and Apple
+(`TitleRelated.swift`, `TitleRelationsModel.swift`) built; typecheck, lint, tests, size budget and the
+iOS and macOS builds pass. Not yet looked at on a screen.
+
+### GRAPH-003 · Roadmap lists · M
+**Needs:** BOOK-003.
+- Lists gain steps (heading, note), and each title a note, an optional flag and a side-by-side pair.
+  `plan_title_list` carries them; optional titles join the List only; unmatched rows stay as text in
+  their step.
+
+### GRAPH-004 · Roadmap graph and grounding · S
+**Needs:** GRAPH-002, GRAPH-003.
+- `GET /v1/lists/{id}/graph` in the same shape; a read-only `title_relations` chat tool so the owl
+  checks a roadmap against the graph before proposing it.
 
 ## P2 · Web (`aaru-client`)
 

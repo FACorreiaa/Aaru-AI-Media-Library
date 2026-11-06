@@ -161,6 +161,9 @@ type Providers struct {
 	// Recordings identifies scrobbled tracks (MUS-006): the same MusicBrainz client as
 	// Music, so both share one pacer. Optional.
 	Recordings RecordingMatcher
+	// Wikidata is the relation source across kinds (GRAPH-001). Optional: without it a graph has
+	// AniList's and TMDB's relations only.
+	Wikidata RelationSource
 }
 
 // nilIfBlank is the trimmed string, or nil when it is blank.
