@@ -47,6 +47,8 @@ type ChatDeps struct {
 	Sports    *sports.Service
 	// TitleLists plans a list the user asked for (BOOK-003). Nil leaves the tool out.
 	TitleLists TitleListPlanner
+	// Files hands a chat's file to an import (ASK-010). Nil leaves import_attachment out.
+	Files FileImporter
 }
 
 // TitleListPlanner turns titles chosen in a chat into a capture the user reviews in Aaru, matched and
@@ -67,6 +69,11 @@ type ChatTools struct {
 	applied       bool
 	actionID      *uuid.UUID
 	actionSummary string
+
+	// attachments are the chat's files by ref (a1, a2, …). Any at all taints the turn: every write
+	// is then a plan, since the words in a file were not typed by the user (ASK-010).
+	attachments map[string]Attachment
+	tainted     bool
 }
 
 // NewChatTools builds the tools for one Chat turn of user.
@@ -110,8 +117,8 @@ func (t *ChatTools) Definitions() []model.Tool {
 	for _, d := range GroupToolDefinitions {
 		switch d.Name {
 		case "read_my_library":
-			d.Description = "The signed-in user's own library: titles with status and progress. " +
-				"A line's ref also names its library item for apply_library_patch."
+			d.Description = "The signed-in user's own library: titles with status and progress, newest change first. " +
+				"Find one title by query. A line's ref also names its library item for apply_library_patch."
 		case "title_details":
 			d.Description += " Also how far the user is in it."
 		}
@@ -159,6 +166,9 @@ func (t *ChatTools) Definitions() []model.Tool {
 				"them and the user reviews them in Aaru; nothing is added until they approve. Once per reply.",
 			InputSchema: capture.Tool.InputSchema,
 		})
+	}
+	if t.deps.Files != nil && len(t.attachments) > 0 {
+		out = append(out, importAttachmentTool)
 	}
 	return append(out, model.Tool{
 		Name: "apply_library_patch",
@@ -239,6 +249,11 @@ func (t *ChatTools) Run(ctx context.Context, name string, input json.RawMessage)
 		out, err = t.planTitleList(ctx, input)
 	case "apply_library_patch":
 		out, err = t.patch(ctx, input)
+	case "import_attachment":
+		if t.deps.Files == nil || len(t.attachments) == 0 {
+			return "No tool called " + name + ".", true
+		}
+		out, err = t.importAttachment(ctx, input)
 	default:
 		return "No tool called " + name + ".", true
 	}
@@ -574,7 +589,11 @@ func (t *ChatTools) patch(ctx context.Context, raw json.RawMessage) (string, err
 			return "", errOneTapPerTurn
 		}
 	}
-	res, err := t.deps.Tools.ChatPatch(ctx, in, t.User)
+	patch := t.deps.Tools.ChatPatch
+	if t.tainted {
+		patch = t.deps.Tools.ChatPatchPlanned
+	}
+	res, err := patch(ctx, in, t.User)
 	if err != nil {
 		return "", err
 	}

@@ -87,11 +87,14 @@ func Request(content Content) model.Request {
 	switch {
 	case content.IsImage() && len(content.More) > 0:
 		turn = model.UserImages(content.Images(), "These images are parts of one capture. Report every title shown in them.")
+	case content.MediaType == model.PDFMediaType:
+		turn = model.UserImage(content.Image, content.MediaType, "Report every title named in this document.")
 	case content.IsImage():
 		turn = model.UserImage(content.Image, content.MediaType, "Report every title shown in this image.")
 	default:
-		turn = model.UserText("Report every title named in this text, which the user pasted, or the titles it asks for:\n\n<capture>\n" +
-			content.Text + "\n</capture>")
+		// Fenced: a `</capture>` the user pasted cannot close the block and speak as the prompt.
+		turn = model.UserText("Report every title named in this text, which the user pasted, or the titles it asks for:\n\n" +
+			model.Fence("capture", "", content.Text))
 	}
 	system, tool := System, Tool
 	if content.Only == core.MediaBook {

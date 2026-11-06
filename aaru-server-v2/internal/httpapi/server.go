@@ -163,6 +163,10 @@ type Server struct {
 	transcriptions *ratelimit.FixedWindow
 	// transcribing holds one slot for each spoken question in flight in this process.
 	transcribing chan struct{}
+	// attaching limits each user's chat files (ASK-010); attachingNow holds one slot for each file
+	// being read in this process, so parallel 24 MB uploads stay off the pod's memory limit.
+	attaching    *ratelimit.FixedWindow
+	attachingNow chan struct{}
 	// chatHeartbeat is how often a Chat turn's stream says it is alive.
 	chatHeartbeat time.Duration
 	// chatStop ends when the server shuts down, and every Chat turn with it (StopChats).
@@ -283,6 +287,7 @@ func New(deps Deps) *Server {
 	return &Server{
 		Deps: deps, q: q, transcriptions: ratelimit.New(transcriptionsPerHour, time.Hour), chatHeartbeat: chatHeartbeatEvery,
 		transcribing: make(chan struct{}, maxTranscriptionsInFlight), chatStop: chatStop, stopChats: stopChats,
+		attaching: ratelimit.New(chatAttachmentsPerHour, time.Hour), attachingNow: make(chan struct{}, maxAttachingInFlight),
 	}
 }
 
@@ -300,6 +305,7 @@ func (s *Server) chatService() *agent.ChatService {
 		Deps: agent.ChatDeps{
 			Q: s.q, Tools: tools, Stats: s.Stats, Lists: s.Library.Store, Favorites: s.Social, Music: s.Listens, Sports: s.Sports,
 			TitleLists: imports.AgentImporter{Service: s.Imports},
+			Files:      imports.AgentImporter{Service: s.Imports},
 		},
 	}
 }

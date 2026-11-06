@@ -10,6 +10,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"image"
+	"image/png"
 	"math/rand/v2"
 	"net/http"
 	"net/http/httptest"
@@ -189,8 +191,10 @@ func TestCapturePastedTitlesPlanWriteNothingThenApplyAsOneUndoableAction(t *test
 func TestCaptureImageGoesToTheModelAsOneBase64BlockWithItsType(t *testing.T) {
 	m := &captureModel{responses: []model.Response{captureReport([2]any{"Poster " + uuid.NewString(), nil})}}
 	env := newCaptureEnv(t, m, nil)
-	png := []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 1, 2, 3}
-	id := env.uploadJob("/v1/imports/capture", "image/png", png)
+	var buf bytes.Buffer
+	require.NoError(t, png.Encode(&buf, image.NewGray(image.Rect(0, 0, 2, 2))))
+	picture := buf.Bytes()
+	id := env.uploadJob("/v1/imports/capture", "image/png", picture)
 	assert.Equal(t, "image", env.captureInput(id).Content.Kind())
 	env.runImports()
 	require.Len(t, m.requests, 1)
@@ -201,7 +205,7 @@ func TestCaptureImageGoesToTheModelAsOneBase64BlockWithItsType(t *testing.T) {
 	require.NoError(t, json.Unmarshal(m.requests[0].Turns[0].Content[0], &block))
 	assert.Equal(t, "image", block.Type)
 	assert.Equal(t, "image/png", block.Source["media_type"])
-	assert.Equal(t, base64.StdEncoding.EncodeToString(png), block.Source["data"])
+	assert.Equal(t, base64.StdEncoding.EncodeToString(picture), block.Source["data"])
 }
 
 func TestCaptureImageOver5MBIsRefusedAndOtherTypesAreUnreadable(t *testing.T) {

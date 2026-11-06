@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// The bottom of the Assistant card: type, or tap the mic and talk. While listening, the field
-/// makes way for a level meter; the words go up once Aaru has read them.
+/// The bottom of the Assistant card: type, or tap the mic and talk, or attach a file (ASK-010). While
+/// listening, the field makes way for a level meter; the words go up once Aaru has read them.
 struct AssistantComposer: View {
     let model: AssistantModel
     /// Opened by a long press: the mic is about to start, so no keyboard.
@@ -20,13 +20,17 @@ struct AssistantComposer: View {
     }
 
     private var canSend: Bool {
-        model.phase == .idle && !question.isEmpty && !isTooLong
+        model.phase == .idle && !isTooLong && !model.files.isReading
+            && (!question.isEmpty || !model.files.ready.isEmpty)
     }
 
     /// One muted line above the field. The words stay, so they can be cut down.
     private var problem: String? {
         let showsField = model.phase != .listening && model.phase != .reading
-        return showsField && isTooLong ? "That's too long for Aaru. Try something shorter." : model.voiceProblem
+        if showsField, isTooLong {
+            return "That's too long for Aaru. Try something shorter."
+        }
+        return model.voiceProblem ?? model.files.problem
     }
 
     var body: some View {
@@ -39,7 +43,13 @@ struct AssistantComposer: View {
             if model.micDenied {
                 micDenied
             }
+            if !model.files.chips.isEmpty {
+                AssistantFileChips(files: model.files)
+            }
             HStack(alignment: .bottom, spacing: AaruSpace.xsmall) {
+                if model.phase == .idle || model.phase == .answering {
+                    AssistantAttachMenu(files: model.files, disabled: model.phase != .idle)
+                }
                 input
                 if model.voiceAvailable, model.phase != .reading {
                     micButton
@@ -57,6 +67,18 @@ struct AssistantComposer: View {
                 isFocused = true
             }
         }
+        // A whole chat or list is longer than a question: it goes as a file, and the field empties.
+        .onChange(of: text) { _, now in
+            guard now.unicodeScalars.count > AssistantFiles.pasteAsFile, model.phase == .idle else { return }
+            model.files.attachPasted(now)
+            text = ""
+        }
+        #if os(macOS)
+        .dropDestination(for: URL.self) { urls, _ in
+            model.files.attachFiles(urls)
+            return !urls.isEmpty
+        }
+        #endif
     }
 
     @ViewBuilder private var input: some View {

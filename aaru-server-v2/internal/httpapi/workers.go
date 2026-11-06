@@ -54,6 +54,8 @@ func (s *Server) Workers() []Worker {
 		// Deletes capture inputs the worker never read, an hour on (CaptureSweeper, AG-006).
 		workers = append(workers, &capture.Sweeper{Store: s.Imports.CaptureStore(), Log: s.Log})
 	}
+	// Deletes chat files an hour on (ASK-010).
+	workers = append(workers, &agent.AttachmentSweeper{Store: s.chats(), Log: s.Log})
 	if s.MALConnect != nil && s.Imports != nil && s.Library != nil && s.Catalog != nil {
 		// Reads MyAnimeList lists back and pushes anime progress every 30 seconds (MALSyncService,
 		// SCR-005/SCR-010); none without MAL_CLIENT_ID.

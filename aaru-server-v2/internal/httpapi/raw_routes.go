@@ -20,6 +20,7 @@ func (s *Server) registerRawRoutes(e *echo.Echo) {
 	e.POST("/v1/imports/capture", s.createCaptureImport)
 	e.POST("/v1/chats/:id/turns", s.chatTurn)
 	e.POST("/v1/chats/transcribe", s.chatTranscribe)
+	e.POST("/v1/chats/:id/attachments", s.createChatAttachment)
 	e.GET("/internal/metrics", s.internalMetrics)
 	s.registerOAuthRoutes(e)
 	// The realtime socket (GRP-006) signs itself in: a bearer token, or a browser ticket.

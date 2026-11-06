@@ -2382,9 +2382,43 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Ask Aaru (ASK-009). The answer is a stream of server-sent events, each frame an `event:` line with its type and a `data:` line with JSON: `status` and `delta` carry ChatTextFrame, `components` ChatComponentsFrame, `done` ChatDoneFrame, `error` ChatErrorFrame. Lines starting with `:` are heartbeats. Once the stream has begun, a failure can only be an `error` frame: a send past the daily cap is a 200 with one `error` frame, code `resting`. Before it begins: 404 for a chat that is not the caller's, 409 `chat_busy` while the chat is still answering, 422 for a body that is blank or over 4000 characters, 503 `agent_unavailable` when Aaru is off. Hanging up stops the turn and keeps what was written. */
+    /** Ask Aaru (ASK-009). The answer is a stream of server-sent events, each frame an `event:` line with its type and a `data:` line with JSON: `status` and `delta` carry ChatTextFrame, `components` ChatComponentsFrame, `done` ChatDoneFrame, `error` ChatErrorFrame. Lines starting with `:` are heartbeats. Once the stream has begun, a failure can only be an `error` frame: a send past the daily cap is a 200 with one `error` frame, code `resting`. Before it begins: 404 for a chat that is not the caller's, 409 `chat_busy` while the chat is still answering, 422 for a body that is over 4000 characters or blank with no attachments, 422 `attachment_gone` when an attachment is no longer kept, 503 `agent_unavailable` when Aaru is off. Hanging up stops the turn and keeps what was written. */
     post: operations['createChatTurn']
     delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/chats/{id}/attachments': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Attach one file to a chat (ASK-010), for the next turn to carry by id. The body is the file itself, sent with its own Content-Type (application/octet-stream when unknown); the server reads its bytes, not its name or type, to decide what it is. Pictures (JPEG, PNG, GIF, WebP, 5 MB), PDFs (10 MB, 100 pages, no encryption or active content), text and Markdown, the import exports (CSV, MAL XML or .xml.gz, iCal; 5 MB) and listening histories (JSON, 24 MB). Anything else, a program, an archive, or a file whose name disagrees with its bytes, is 422 `validation_failed` with the reason. 413 `file_too_large`, 404 for a chat that is not the caller's, 409 `chat_attachments_full` past 20 files in a chat, 429 `rate_limited` past 40 files an hour. A file is kept for an hour, then deleted. */
+    post: operations['createChatAttachment']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/chats/{id}/attachments/{attachmentId}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /** Remove a file from a chat before it is sent, or after (ASK-010). */
+    delete: operations['deleteChatAttachment']
     options?: never
     head?: never
     patch?: never
@@ -4718,8 +4752,27 @@ export interface components {
       titleId?: string
     }
     ChatTurnRequest: {
+      /** @description The question. May be blank only when the turn carries attachments. */
       body: string
       hint?: components['schemas']['ChatHint']
+      /** @description Files attached to this chat with createChatAttachment, sent with this turn. */
+      attachments?: string[]
+    }
+    /** @description One file in a chat (ASK-010). `kind` is what Aaru does with it: a picture, PDF or text is read with the question; an export or a listening history is read on Aaru's server, and Aaru can turn it into an import the user reviews. */
+    ChatAttachment: {
+      /** Format: uuid */
+      id: string
+      /** @enum {string} */
+      kind: 'image' | 'pdf' | 'text' | 'export' | 'listens'
+      name: string
+      /** @description Bytes. */
+      size: number
+      /** @description What an export or a listening history is, as an import source (`letterboxd_csv`, `spotify_json`, …). */
+      source?: string
+      /** @description An export's rows or a history's plays. */
+      rows?: number
+      /** @description What the chip says, such as "a Letterboxd export of 412 rows". */
+      summary: string
     }
     ChatTranscript: {
       text: string
@@ -9323,6 +9376,59 @@ export interface operations {
         content: {
           'text/event-stream': string
         }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  createChatAttachment: {
+    parameters: {
+      query?: {
+        /** @description The file's name, shown on its chip and checked against its bytes. Empty for pasted text. */
+        filename?: string
+      }
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/octet-stream': string
+        '*/*': string
+      }
+    }
+    responses: {
+      /** @description The file, as the chat will use it. */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ChatAttachment']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  deleteChatAttachment: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+        attachmentId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Removed, or already gone. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
       }
       default: components['responses']['Error']
     }

@@ -213,6 +213,9 @@ func (s *Store) EntryForTitle(ctx context.Context, user, titleID uuid.UUID, now 
 	return nil, nil // none
 }
 
+// likeEscaper keeps a query's own % and _ literal in an ILIKE pattern (default escape `\`).
+var likeEscaper = strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
+
 // Entries is one page of the user's entries matching the filter, newest change first, and the
 // cursor for the next page (nil on the last).
 func (s *Store) Entries(ctx context.Context, user uuid.UUID, filter Filter, after *Cursor, limit int, now time.Time) ([]Entry, *Cursor, error) {
@@ -228,6 +231,10 @@ func (s *Store) Entries(ctx context.Context, user uuid.UUID, filter Filter, afte
 	}
 	if filter.IsOwned != nil {
 		q.add("li.is_owned = ?", *filter.IsOwned)
+	}
+	if filter.Query != "" {
+		pattern := "%" + likeEscaper.Replace(filter.Query) + "%"
+		q.add("(t.title ILIKE ? OR t.original_title ILIKE ?)", pattern, pattern)
 	}
 	if list := filter.List(); list != nil {
 		q.add(`EXISTS (SELECT 1 FROM list_items lst JOIN lists l ON l.id = lst.list_id

@@ -167,6 +167,16 @@ with @aaru, Aaru keeps a daily count of how much text its answers used, to keep 
 It also keeps a daily count of the questions you send it, with no text, to enforce the daily
 limit. Both counts stay when you delete your chats and are removed with your account.
 
+**Files in a chat.** You can attach a file to a question, or paste a long text. Aaru's server
+checks every file before anything reads it, by its contents rather than its name, and refuses
+anything that is not one of the kinds it reads (pictures, PDFs, plain text, the import exports
+Aaru knows, listening histories). A picture, PDF or text is sent to Anthropic (below) with your
+question. An import file is read only on Aaru's server: Anthropic sees which kind of export it
+is, how many rows it has and at most its first 20 rows, never the whole file. A file is kept for
+at most an hour, so a follow-up question can still use it, then deleted. The chat keeps only
+a note of the file's name. If Aaru makes an import from a file, it is an import you review like
+any other, and nothing is added to your library until you approve it.
+
 **Voice.** If you speak your question, the audio goes to Aaru's server and is transcribed there,
 on Aaru's own cluster. It is held in memory only while it is read, never stored, and never sent
 to anyone else. Only the words it was turned into are kept, as part of the chat.

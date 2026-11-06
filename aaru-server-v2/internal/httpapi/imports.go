@@ -7,6 +7,7 @@ import (
 	"aaru-go-api/internal/apperr"
 	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/imports"
+	"aaru-go-api/internal/upload"
 	"context"
 	"errors"
 	"io"
@@ -189,14 +190,32 @@ func readUpload(c *echo.Context, limit int64, tooLarge error) ([]byte, error) {
 	return data, nil
 }
 
-// uploadText is an upload's text, decoded as UTF-8 with invalid bytes replaced, as Swift's
+// exportDoor is what the export uploads take: text, MAL's .xml.gz unpacked (ASK-010).
+var exportDoor = upload.Door{
+	Accept: []upload.Kind{upload.KindText}, MaxText: imports.MaxUploadBytes, Gzip: true,
+	Archive: apperr.Validation("file", "This is a .zip file. Unzip it and upload the CSV files inside, one at a time."),
+}
+
+// uploadText is an upload's text once upload.Check has read its bytes: a program, an archive or
+// anything else that is not text is refused. Invalid UTF-8 is replaced, as Swift's
 // String(decoding:as:) did.
-func uploadText(c *echo.Context) (string, error) {
+func uploadText(c *echo.Context, filename *string) (string, error) {
 	data, err := readUpload(c, imports.MaxUploadBytes, errFileTooLarge)
 	if err != nil {
 		return "", err
 	}
-	return strings.ToValidUTF8(string(data), "�"), nil
+	file, err := upload.Check(derefOr(filename), contentType(c), data, exportDoor)
+	if err != nil {
+		return "", err
+	}
+	return file.Text, nil
+}
+
+func derefOr(v *string) string {
+	if v == nil {
+		return ""
+	}
+	return *v
 }
 
 func optionalQuery(c *echo.Context, name string) *string {
@@ -224,7 +243,7 @@ func (s *Server) createCSVImport(c *echo.Context) error {
 	default:
 		return errUnreadable
 	}
-	text, err := uploadText(c)
+	text, err := uploadText(c, filename)
 	if err != nil {
 		return err
 	}
@@ -286,7 +305,7 @@ func (s *Server) createCATImport(c *echo.Context) error {
 	default:
 		return errUnreadable
 	}
-	text, err := uploadText(c)
+	text, err := uploadText(c, nil)
 	if err != nil {
 		return err
 	}

@@ -2742,8 +2742,9 @@ paths:
         heartbeats. Once the stream has begun, a failure can only be an `error` frame: a send past the
         daily cap is a 200 with one `error` frame, code `resting`. Before it begins: 404 for a chat that
         is not the caller's, 409 `chat_busy` while the chat is still answering, 422 for a body that is
-        blank or over 4000 characters, 503 `agent_unavailable` when Aaru is off. Hanging up stops the
-        turn and keeps what was written.
+        over 4000 characters or blank with no attachments, 422 `attachment_gone` when an attachment is
+        no longer kept, 503 `agent_unavailable` when Aaru is off. Hanging up stops the turn and keeps
+        what was written.
       parameters:
         - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
       requestBody:
@@ -2757,6 +2758,53 @@ paths:
           content:
             text/event-stream:
               schema: {type: string, format: binary}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/chats/{id}/attachments:
+    post:
+      operationId: createChatAttachment
+      summary: >-
+        Attach one file to a chat (ASK-010), for the next turn to carry by id. The body is the file
+        itself, sent with its own Content-Type (application/octet-stream when unknown); the server reads
+        its bytes, not its name or type, to decide what it is. Pictures (JPEG, PNG, GIF, WebP, 5 MB),
+        PDFs (10 MB, 100 pages, no encryption or active content), text and Markdown, the import exports
+        (CSV, MAL XML or .xml.gz, iCal; 5 MB) and listening histories (JSON, 24 MB). Anything else, a
+        program, an archive, or a file whose name disagrees with its bytes, is 422 `validation_failed`
+        with the reason. 413 `file_too_large`, 404 for a chat that is not the caller's, 409
+        `chat_attachments_full` past 20 files in a chat, 429 `rate_limited` past 40 files an hour. A
+        file is kept for an hour, then deleted.
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+        - name: filename
+          in: query
+          required: false
+          description: The file's name, shown on its chip and checked against its bytes. Empty for pasted text.
+          schema: {type: string, maxLength: 255}
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema: {type: string, format: binary}
+          '*/*':
+            schema: {type: string, format: binary}
+      responses:
+        '201':
+          description: The file, as the chat will use it.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ChatAttachment'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/chats/{id}/attachments/{attachmentId}:
+    delete:
+      operationId: deleteChatAttachment
+      summary: Remove a file from a chat before it is sent, or after (ASK-010).
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: attachmentId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '204':
+          description: Removed, or already gone.
         default:
           $ref: '#/components/responses/Error'
   /v1/me/export:
@@ -5730,8 +5778,39 @@ components:
       type: object
       required: [body]
       properties:
-        body: {type: string, minLength: 1, maxLength: 4000}
+        body:
+          type: string
+          maxLength: 4000
+          description: The question. May be blank only when the turn carries attachments.
         hint: {$ref: '#/components/schemas/ChatHint'}
+        attachments:
+          type: array
+          maxItems: 5
+          description: Files attached to this chat with createChatAttachment, sent with this turn.
+          items: {type: string, format: uuid}
+    ChatAttachment:
+      type: object
+      description: >-
+        One file in a chat (ASK-010). `kind` is what Aaru does with it: a picture, PDF or text is read
+        with the question; an export or a listening history is read on Aaru's server, and Aaru can
+        turn it into an import the user reviews.
+      required: [id, kind, name, size, summary]
+      properties:
+        id: {type: string, format: uuid}
+        kind:
+          type: string
+          enum: [image, pdf, text, export, listens]
+        name: {type: string}
+        size: {type: integer, description: Bytes.}
+        source:
+          type: string
+          description: What an export or a listening history is, as an import source (`letterboxd_csv`, `spotify_json`, …).
+        rows:
+          type: integer
+          description: An export's rows or a history's plays.
+        summary:
+          type: string
+          description: What the chip says, such as "a Letterboxd export of 412 rows".
     ChatTranscript:
       type: object
       required: [text, language]

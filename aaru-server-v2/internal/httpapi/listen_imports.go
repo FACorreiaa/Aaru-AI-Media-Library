@@ -8,6 +8,7 @@ import (
 	"aaru-go-api/internal/apperr"
 	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/imports"
+	"aaru-go-api/internal/upload"
 	"context"
 	"net/http"
 
@@ -19,6 +20,12 @@ import (
 var errListenFileTooLarge = apperr.New(http.StatusRequestEntityTooLarge, "file_too_large",
 	"That file is larger than 24 MB, the most Aaru reads at once. Spotify splits its history into "+
 		"smaller files: add them one at a time.")
+
+// listenDoor is what a listening history upload takes: text up to 24 MB (ASK-010).
+var listenDoor = upload.Door{
+	Accept: []upload.Kind{upload.KindText}, MaxText: imports.MaxListenUploadBytes,
+	Archive: apperr.Validation("file", "This is a .zip file. Unzip it and add each Streaming_History_Audio file, one at a time."),
+}
 
 // createListenFileImport is a Spotify or YouTube listening history file (application/octet-stream
 // on `POST /v1/imports/csv`). Bigger than an export, so its own limit.
@@ -42,6 +49,11 @@ func (s *Server) createListenFileImport(c *echo.Context, user uuid.UUID, asked s
 	if err != nil {
 		return err
 	}
+	file, err := upload.Check(derefOr(filename), "", data, listenDoor)
+	if err != nil {
+		return err
+	}
+	data = file.Data
 	job, err := s.Imports.CreateListenFileImport(c.Request().Context(), user, source, filename, data)
 	if err != nil {
 		return err

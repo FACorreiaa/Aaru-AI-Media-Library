@@ -47,12 +47,18 @@ var GroupToolDefinitions = []model.Tool{
 		InputSchema: schema(map[string]any{"ref": map[string]any{"type": "string"}}, []string{"ref"}),
 	},
 	{
-		Name:        "read_my_library",
-		Description: "The library of the person who tagged you (only theirs): titles with status and progress.",
+		Name: "read_my_library",
+		Description: "The library of the person who tagged you (only theirs): titles with status and progress, " +
+			"newest change first. Find one title by query.",
 		InputSchema: schema(map[string]any{
 			"status": map[string]any{
 				"type": "string", "enum": []string{"wishlist", "in_progress", "on_hold", "finished", "dropped"},
 			},
+			"query": map[string]any{"type": "string", "description": "Part of a title's name."},
+			"kind": map[string]any{
+				"type": "string", "enum": []string{"movie", "show", "anime", "book", "manga", "album"},
+			},
+			"cursor": map[string]any{"type": "string", "description": "The cursor a page ended with, for the next one."},
 		}, []string{}),
 	},
 	{

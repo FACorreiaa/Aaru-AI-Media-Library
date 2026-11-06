@@ -36,6 +36,7 @@ var ownBodyLimits = map[string]int64{
 	"POST /v1/imports/cat":                         imports.MaxUploadBytes,
 	"POST /v1/imports/capture":                     captureBodyLimit, // images; each form has its own limit
 	"POST /v1/chats/transcribe":                    maxChatAudioBytes,
+	"POST /v1/chats/:id/attachments":               maxChatAttachmentBytes,
 	"PUT /v1/me/avatar":                            social.MaxAvatarBytes,
 	"POST " + listenBrainzPath + "/submit-listens": listenBrainzMaxBody,
 	"POST " + mcp.Path:                             mcp.MaxBody,
@@ -59,6 +60,7 @@ var noDeadline = map[string]bool{
 	"POST /v1/imports/capture":                     true,
 	"POST /v1/chats/:id/turns":                     true,
 	"POST /v1/chats/transcribe":                    true,
+	"POST /v1/chats/:id/attachments":               true,
 	"PUT /v1/me/avatar":                            true,
 	"POST " + listenBrainzPath + "/submit-listens": true,
 	"GET /v1/me/export":                            true,

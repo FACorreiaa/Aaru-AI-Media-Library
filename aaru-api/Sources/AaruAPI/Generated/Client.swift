@@ -13243,7 +13243,7 @@ public struct Client: APIProtocol {
             }
         )
     }
-    /// Ask Aaru (ASK-009). The answer is a stream of server-sent events, each frame an `event:` line with its type and a `data:` line with JSON: `status` and `delta` carry ChatTextFrame, `components` ChatComponentsFrame, `done` ChatDoneFrame, `error` ChatErrorFrame. Lines starting with `:` are heartbeats. Once the stream has begun, a failure can only be an `error` frame: a send past the daily cap is a 200 with one `error` frame, code `resting`. Before it begins: 404 for a chat that is not the caller's, 409 `chat_busy` while the chat is still answering, 422 for a body that is blank or over 4000 characters, 503 `agent_unavailable` when Aaru is off. Hanging up stops the turn and keeps what was written.
+    /// Ask Aaru (ASK-009). The answer is a stream of server-sent events, each frame an `event:` line with its type and a `data:` line with JSON: `status` and `delta` carry ChatTextFrame, `components` ChatComponentsFrame, `done` ChatDoneFrame, `error` ChatErrorFrame. Lines starting with `:` are heartbeats. Once the stream has begun, a failure can only be an `error` frame: a send past the daily cap is a 200 with one `error` frame, code `resting`. Before it begins: 404 for a chat that is not the caller's, 409 `chat_busy` while the chat is still answering, 422 for a body that is over 4000 characters or blank with no attachments, 422 `attachment_gone` when an attachment is no longer kept, 503 `agent_unavailable` when Aaru is off. Hanging up stops the turn and keeps what was written.
     ///
     /// - Remark: HTTP `POST /v1/chats/{id}/turns`.
     /// - Remark: Generated from `#/paths//v1/chats/{id}/turns/post(createChatTurn)`.
@@ -13302,6 +13302,167 @@ public struct Client: APIProtocol {
                         preconditionFailure("bestContentType chose an invalid content type.")
                     }
                     return .ok(.init(body: body))
+                default:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(body: body)
+                    )
+                }
+            }
+        )
+    }
+    /// Attach one file to a chat (ASK-010), for the next turn to carry by id. The body is the file itself, sent with its own Content-Type (application/octet-stream when unknown); the server reads its bytes, not its name or type, to decide what it is. Pictures (JPEG, PNG, GIF, WebP, 5 MB), PDFs (10 MB, 100 pages, no encryption or active content), text and Markdown, the import exports (CSV, MAL XML or .xml.gz, iCal; 5 MB) and listening histories (JSON, 24 MB). Anything else, a program, an archive, or a file whose name disagrees with its bytes, is 422 `validation_failed` with the reason. 413 `file_too_large`, 404 for a chat that is not the caller's, 409 `chat_attachments_full` past 20 files in a chat, 429 `rate_limited` past 40 files an hour. A file is kept for an hour, then deleted.
+    ///
+    /// - Remark: HTTP `POST /v1/chats/{id}/attachments`.
+    /// - Remark: Generated from `#/paths//v1/chats/{id}/attachments/post(createChatAttachment)`.
+    public func createChatAttachment(_ input: Operations.CreateChatAttachment.Input) async throws -> Operations.CreateChatAttachment.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.CreateChatAttachment.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/chats/{}/attachments",
+                    parameters: [
+                        input.path.id
+                    ]
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .post
+                )
+                suppressMutabilityWarning(&request)
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "filename",
+                    value: input.query.filename
+                )
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                let body: OpenAPIRuntime.HTTPBody?
+                switch input.body {
+                case let .binary(value):
+                    body = try converter.setRequiredRequestBodyAsBinary(
+                        value,
+                        headerFields: &request.headerFields,
+                        contentType: "application/octet-stream"
+                    )
+                case let .any(value):
+                    body = try converter.setRequiredRequestBodyAsBinary(
+                        value,
+                        headerFields: &request.headerFields,
+                        contentType: "*/*"
+                    )
+                }
+                return (request, body)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 201:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.CreateChatAttachment.Output.Created.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ChatAttachment.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .created(.init(body: body))
+                default:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(body: body)
+                    )
+                }
+            }
+        )
+    }
+    /// Remove a file from a chat before it is sent, or after (ASK-010).
+    ///
+    /// - Remark: HTTP `DELETE /v1/chats/{id}/attachments/{attachmentId}`.
+    /// - Remark: Generated from `#/paths//v1/chats/{id}/attachments/{attachmentId}/delete(deleteChatAttachment)`.
+    public func deleteChatAttachment(_ input: Operations.DeleteChatAttachment.Input) async throws -> Operations.DeleteChatAttachment.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.DeleteChatAttachment.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/chats/{}/attachments/{}",
+                    parameters: [
+                        input.path.id,
+                        input.path.attachmentId
+                    ]
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .delete
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 204:
+                    return .noContent(.init())
                 default:
                     let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
                     let body: Components.Responses._Error.Body

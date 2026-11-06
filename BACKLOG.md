@@ -3837,7 +3837,7 @@ search columns, `POST /v1/chats/{id}/turns` as `text/event-stream`.
 **Needs:** ASK-001. Cluster Whisper; `allow-whisper` in the infra repo first.
 
 ### ASK-007 · Image upload · M
-**Needs:** ASK-001. 5 MB, kept 30 days; `docs/privacy.md`.
+Superseded by ASK-010 (2026-11-06): pictures are one kind of file a chat takes, kept an hour.
 
 ### ASK-008 · Share to Board · S
 **Needs:** ASK-001, BOARD-002. A client tap that opens the composer prefilled; no agent write path.
@@ -3852,6 +3852,36 @@ ASK-006; the Ask Aaru page (ASK-002, ASK-003) reuses the engine later.
 Web (2026-11-05): the card is `components/assistant/AssistantCard.tsx`, opened from the top-bar
 owl, the sidebar's "Ask Aaru" row or ⌘J; the turn and voice go through two Worker proxy routes
 (ARCHITECTURE.md). Run locally against a stub model only.
+
+### ASK-010 · Files and paste in the assistant · L · owner, 2026-11-06
+**Needs:** ASK-009.
+The card takes files and long pastes, and reaches the user's own library faster.
+- **Files.** `POST /v1/chats/{id}/attachments`, one file a request, up to 5 a turn: pictures
+  (JPEG, PNG, GIF, WebP), PDFs, plain text and Markdown, every import export (`source=auto`,
+  MAL `.xml.gz` too) and listening histories. Kept an hour in `chat_attachments`, then swept; the
+  chat keeps only `[Attached name]`. A paste over 4,000 characters becomes a text attachment.
+- **File check** (`internal/upload`, every upload door, not only chat). The bytes decide the
+  kind; a name or Content-Type that disagrees is refused. Executables, archives, Office
+  containers and anything off the allow-list are refused by magic number. Text is UTF-8 (or
+  UTF-16 with a BOM, converted) with no NUL and no more than a sliver of binary; a few Latin-1
+  bytes are replaced as the import always did. XML with a DOCTYPE or ENTITY is refused. A gzip
+  only as MAL's `.xml.gz`, unpacked to at most 5 MB and 100 times its size. Pictures at most
+  40 MP from their header. PDFs at most 10 MB and about 100 pages,
+  refused when they carry encryption or active content (`/JavaScript`, `/Launch`,
+  `/EmbeddedFile`, …). Aaru never renders or parses a PDF; only the model reads it. No virus
+  scanner (owner, 2026-11-06): `upload.Check` is where ClamAV would go if one is wanted.
+- **What the model sees.** Pictures and PDFs as content blocks, text wrapped in an
+  `<attachment>` block it cannot close, an import file only as its format, row count and first
+  20 rows. While a file or paste is in the chat, every write is a `PlanCard` (no tap-sized
+  apply), copied from Norviq.
+- **`import_attachment`.** Hands a file to an import the user reviews: an export as a file
+  import, a listening history to the listening log, a picture, PDF or text as a capture (one of
+  the 30 a day). It never writes the library.
+- **Library reach.** `read_my_library` takes a title `query`, a `kind` and an `offset`; the
+  title on screen (the hint) is ref `r0` with its progress, so "mark this season as watched"
+  needs no search. A season is still a `PlanCard` (X-009).
+- Clients: a paperclip, paste and drop in the card on iPhone, Mac and web, chips with the
+  detected format or the refusal, and "Review import" on the reply.
 
 ---
 

@@ -169,6 +169,25 @@ func (t *titleReads) airs(ctx context.Context, args map[string]any) (string, err
 	return strings.Join(lines, "\n"), nil
 }
 
+// libraryPage is how many entries one read_my_library call names.
+const libraryPage = 60
+
+// libraryKind is the tool's kind as a library filter: anime is a show or film that is anime.
+func libraryKind(raw string) (*core.MediaType, *bool) {
+	switch raw {
+	case "anime":
+		yes := true
+		return nil, &yes
+	case "movie", "show":
+		kind, no := core.MediaType(raw), false
+		return &kind, &no
+	case "book", "manga", "album":
+		kind := core.MediaType(raw)
+		return &kind, nil
+	}
+	return nil, nil
+}
+
 // myLibrary is the tagger's library only: the tool has no way to name anyone else.
 func (t *titleReads) myLibrary(ctx context.Context, args map[string]any) (string, error) {
 	var filter library.Filter
@@ -177,26 +196,33 @@ func (t *titleReads) myLibrary(ctx context.Context, args map[string]any) (string
 			filter.Status = &status
 		}
 	}
-	entries, _, err := t.Library.List(ctx, t.User, filter, nil, 60)
+	if query, ok := str(args, "query"); ok {
+		filter.Query = strings.TrimSpace(query)
+	}
+	if raw, ok := str(args, "kind"); ok {
+		kind, anime := libraryKind(raw)
+		filter.Type, filter.IsAnime = kind, anime
+	}
+	var cursor *string
+	if raw, ok := str(args, "cursor"); ok && raw != "" {
+		cursor = &raw
+	}
+	entries, next, err := t.Library.List(ctx, t.User, filter, cursor, libraryPage)
 	if err != nil {
 		return "", err
 	}
 	if len(entries) == 0 {
 		return "Their library has nothing here.", nil
 	}
-	lines := make([]string, len(entries))
+	lines := make([]string, len(entries), len(entries)+1)
 	for i, e := range entries {
 		id := e.Title.ID
 		ref := t.remember(core.MediaRef{TitleID: &id, Type: e.Title.Type})
 		t.items[ref] = e.Item.ID
-		line := ref + ": " + DescribeTitle(e.Title) + " — " + string(e.Item.Status)
-		if e.Progress != nil {
-			line += fmt.Sprintf(", %d/%d episodes", e.Progress.WatchedCount, e.Progress.AiredCount)
-		}
-		if e.Item.Rating != nil {
-			line += ", rated " + swiftDouble(e.Item.Rating.Value()) + "/10"
-		}
-		lines[i] = line
+		lines[i] = ref + ": " + DescribeTitle(e.Title) + " — " + describeEntry(e)
+	}
+	if next != nil {
+		lines = append(lines, "More: call again with cursor "+*next+".")
 	}
 	return strings.Join(lines, "\n"), nil
 }

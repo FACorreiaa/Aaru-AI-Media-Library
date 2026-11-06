@@ -53,7 +53,8 @@ This file is the working contract for anyone — human or agent — changing the
 | User import — capture | Pasted text, an image, or a catalog link (TMDB, AniList, Open Library) as an import job (`source=capture`, AG-006, pulled forward 2026-10-22). Text (up to 100,000 characters, so a whole chat) and up to 5 images are read by one `ModelProviding` call and deleted once read; links are parsed by id and never fetched. `?kind=book` reads books only (BOOK-001). Text that asks for titles ("X-Men books in reading order") is answered with titles to review, and an order becomes a list on approve; the owl's `plan_title_list` makes the same job without a second model call (BOOK-003). 30 a day for every account, no monthly limit while Plus is off sale (BIL-005) |
 | Agent model | Pluggable `model.Provider` in `aaru-server-v2` (`internal/model`, `internal/agent`). Anthropic default, user key supported, spend metered daily |
 | Transcription | The cluster's own Whisper (`http://whisper.horus.svc.cluster.local:8000/v1`, `Systran/faster-whisper-small`, auto-detected language) behind an OpenAI-compatible provider, as Norviq does; audio held in memory, never stored, no paid speech API (ASK-009) |
-| Assistant | A card opened from the owl in the top bar, talk or type, on iPhone, Mac and web. A streaming chat turn in `aaru-server-v2` (`internal/agent/chat.go`) over `model.Provider`, reading only the signed-in user's own data and the catalog; one item changes like a tap, a larger plan is a `PlanCard`. Free for every account; chats stored until deleted in Settings (ASK-009, owner 2026-11-04) |
+| Assistant | A card opened from the owl in the top bar, talk or type, on iPhone, Mac and web. A streaming chat turn in `aaru-server-v2` (`internal/agent/chat.go`) over `model.Provider`, reading only the signed-in user's own data and the catalog; one item changes like a tap, a larger plan is a `PlanCard`. Free for every account; chats stored until deleted in Settings (ASK-009, owner 2026-11-04). Files and long pastes in the card (ASK-010, owner 2026-11-06): `POST /v1/chats/{id}/attachments`, kept an hour; pictures, PDFs and text go to the model, an export only as its format and first rows; `import_attachment` makes an import the user reviews; while a file is in the chat every write is a `PlanCard` |
+| File check | `internal/upload`: every upload door (chat files, capture pictures, exports, listening histories) reads a file's bytes before anything else does. Magic numbers decide the kind; a name or Content-Type that disagrees is refused, as are programs, archives, Office containers, pictures past 40 MP, XML with a DOCTYPE, and PDFs with encryption or active content. No virus scanner (owner, 2026-11-06); `upload.Check` is where one would go (ASK-010) |
 | Billing | Aaru Plus on StoreKit 2, bought in the Apple apps only (BIL-001…004, pulled forward 2026-10-22). The server verifies Apple's signed transactions and notifications itself (`internal/billing`, against Apple's root) and keeps the entitlement; the web shows it and sells nothing. No Stripe, no web checkout |
 | Outbound agent access | App Intents in `aaru-ios`; MCP at `POST /v1/mcp` in `aaru-server-v2/internal/mcp`, with an OAuth front door (`internal/oauth`) so Claude can add Aaru as a custom connector. Not a second backend |
 
@@ -102,6 +103,7 @@ cd aaru-server-v2 && go run ./cmd/aaru --db-migrate
 cd aaru-server-v2 && golangci-lint run ./...
 cd aaru-server-v2 && make vuln            # known vulnerabilities in reachable code, as CI runs it
 cd aaru-server-v2 && go test -run='^$' -fuzz=FuzzDetectAndParse -fuzztime=45s ./internal/imports   # fuzz one parser (one target per run)
+cd aaru-server-v2 && go test -run='^$' -fuzz=FuzzCheck -fuzztime=45s ./internal/upload              # the upload file check
 docker build -t aaru-server aaru-server-v2
 
 # Web
@@ -205,6 +207,9 @@ Use these words in code, APIs, and UI:
   group page. Derived on the server (`inBacklog`), never stored, never a status (APP-018)
 - **Action** — one journaled, undoable library write, whether the user or the agent made it
 - **Import job** — one run of Trakt or a CSV/list ingest
+- **Chat file** — one file attached to a chat with Aaru (ASK-010), or a paste too long to be a
+  question. Kept an hour (`chat_attachments`), never a library write: `import_attachment` turns it
+  into an import or a capture the user reviews. While one is in the chat, every write is a plan
 - **Capture** — one-shot intake of pasted text, an image, or a URL, or a list Aaru named in a chat.
   It is an *import source*, not a subsystem: it produces a `MatchTable` then a `PlanCard`, and never
   writes unplanned

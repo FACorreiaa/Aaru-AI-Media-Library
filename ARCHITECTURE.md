@@ -920,7 +920,32 @@ The web's session cookie is HttpOnly, so the browser cannot call `/v1/chats/{id}
 `POST /app/assistant/voice`, check the Origin and the session cookie, add the bearer token and
 `X-Timezone`, and pipe the request and the server-sent events through unchanged
 (`aaru-client/src/lib/assistant/proxy.ts`). They hold no rules; creating and deleting chats and
-the status check are ordinary server functions.
+the status check are ordinary server functions. A third, `POST`/`DELETE /app/assistant/attach`,
+passes a chat file's bytes through as they are (ASK-010).
+
+### Files in a chat (ASK-010)
+
+A file goes up on its own, before the turn: `POST /v1/chats/{id}/attachments` reads it whole
+(24 MB at most), runs `upload.Check`, sorts it (picture, PDF, text, export, listening history;
+an export by `imports.DetectFormat`, so the chip can say "a Letterboxd export of 412 rows") and
+keeps it in `chat_attachments` for an hour, swept by `agent.AttachmentSweeper`. The turn names
+files by id; one the chat no longer keeps is `attachment_gone` before anything is stored.
+
+The model reads pictures and PDFs as content blocks and text inside an `<attachment>` fence it
+cannot close (`model.Fence`). An export or a history is never sent whole: only what it is, its
+row count and its first 20 rows. The stored turn keeps `[Attached name]`, never the bytes. Every
+file in the chat taints the turn, after Norviq: `ChatPatchPlanned` makes even a tap-sized change
+a plan. `import_attachment` hands a file to `imports.AgentImporter`: an export as a file import,
+a history to the listening log, pictures, a PDF or text as a capture (one of the 30 a day). It
+never writes the library.
+
+`internal/upload` is the one file check, on every upload door: the chat's, capture's pictures,
+`/v1/imports/csv` and `/cat`. It decides by magic number, never by name; refuses programs,
+archives, Office containers, XML with a DOCTYPE or ENTITY, pictures over 40 MP (read from the
+header only), and PDFs that carry `/Encrypt`, `/JavaScript`, `/Launch`, `/EmbeddedFile` and the
+like (names are read with their `#hh` escapes decoded). Keys hidden inside a compressed object
+stream are not seen, which is why Aaru never renders or parses a PDF: only the model reads it.
+There is no virus scanner (owner, 2026-11-06); one would sit inside `upload.Check`.
 
 ## Outbound agent surfaces
 

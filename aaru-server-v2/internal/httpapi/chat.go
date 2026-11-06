@@ -55,7 +55,10 @@ var (
 	errAudioTooLong       = apperr.New(http.StatusRequestEntityTooLarge, "audio_too_long", "That recording is longer than 60 seconds.")
 	errTranscriptionEmpty = apperr.New(http.StatusUnprocessableEntity, "transcription_empty", "Aaru didn't hear any words.")
 	errTooManyVoice       = apperr.RateLimited("Too many spoken questions. Try again later.")
-	errVoiceBusy          = apperr.RateLimited("Voice is busy right now. Try again in a moment.")
+	errAttachmentGone     = apperr.New(http.StatusUnprocessableEntity, "attachment_gone",
+		"That file is no longer here. Files are kept for an hour; attach it again.")
+	errTooManyTurnFiles = apperr.Validation("attachments", "Send up to 5 files at a time.")
+	errVoiceBusy        = apperr.RateLimited("Voice is busy right now. Try again in a moment.")
 )
 
 func (s *Server) chats() *agent.ChatStore { return &agent.ChatStore{Q: s.q} }
@@ -109,16 +112,18 @@ func (s *Server) chatTurn(c *echo.Context) error {
 	if err != nil {
 		return errChatNotFound
 	}
-	body, hint, err := readChatTurn(c)
+	ask, err := readChatTurn(c)
 	if err != nil {
 		return err
 	}
 	stream := &chatStream{res: middleware.Response(c), log: s.Log, every: s.chatHeartbeat, stop: make(chan struct{})}
 	defer stream.close()
-	err = s.chatService().Turn(ctx, user, chat, body, hint, stream.send)
+	err = s.chatService().Turn(ctx, user, chat, ask, stream.send)
 	switch {
 	case errors.Is(err, agent.ErrChatNotFound):
 		return errChatNotFound
+	case errors.Is(err, agent.ErrAttachmentGone):
+		return errAttachmentGone
 	case errors.Is(err, agent.ErrChatBusy):
 		return errChatBusy
 	case err != nil:
@@ -128,29 +133,38 @@ func (s *Server) chatTurn(c *echo.Context) error {
 	return nil
 }
 
-// readChatTurn is the request's words, trimmed, and its hint. A raw route is not in the embedded spec,
-// so no validator has seen this body; the length is checked after trimming, or blank would pass.
-func readChatTurn(c *echo.Context) (string, agent.Hint, error) {
+// readChatTurn is the request's words, trimmed, its hint and its files. A raw route is not in the
+// embedded spec, so no validator has seen this body; the length is checked after trimming, or blank
+// would pass. Blank is allowed when the turn carries files (ASK-010).
+func readChatTurn(c *echo.Context) (agent.Ask, error) {
 	if contentType(c) != "application/json" {
-		return "", agent.Hint{}, errUnreadable
+		return agent.Ask{}, errUnreadable
 	}
 	data, fits, err := readUpTo(c.Request().Body, defaultBodyLimit)
 	if err != nil || !fits {
-		return "", agent.Hint{}, apperr.BadRequest()
+		return agent.Ask{}, apperr.BadRequest()
 	}
 	var req api.ChatTurnRequest
 	if err := json.Unmarshal(data, &req); err != nil {
-		return "", agent.Hint{}, apperr.BadRequest()
+		return agent.Ask{}, apperr.BadRequest()
 	}
 	body := strings.TrimSpace(req.Body)
+	var files []uuid.UUID
+	if req.Attachments != nil {
+		for _, id := range *req.Attachments {
+			files = append(files, id.ID())
+		}
+	}
 	switch {
-	case body == "":
-		return "", agent.Hint{}, errChatBlank
+	case len(files) > agent.MaxTurnAttachments:
+		return agent.Ask{}, errTooManyTurnFiles
+	case body == "" && len(files) == 0:
+		return agent.Ask{}, errChatBlank
 	case utf8.RuneCountInString(body) > maxChatBody:
-		return "", agent.Hint{}, errChatTooLong
+		return agent.Ask{}, errChatTooLong
 	case strings.ContainsRune(body, 0):
 		// Postgres text cannot hold it, and nobody types it.
-		return "", agent.Hint{}, apperr.BadRequest()
+		return agent.Ask{}, apperr.BadRequest()
 	}
 	var hint agent.Hint
 	if req.Hint != nil {
@@ -161,7 +175,7 @@ func readChatTurn(c *echo.Context) (string, agent.Hint, error) {
 			hint.TitleID = &title
 		}
 	}
-	return body, hint, nil
+	return agent.Ask{Body: body, Hint: hint, Attachments: files}, nil
 }
 
 // chatStream writes a Chat turn's events as they come, flushing each. The heartbeat starts with the

@@ -180,7 +180,7 @@ func (f *turnFixture) streaming() { f.svc.Model = streamingModel{f.model} }
 
 func (f *turnFixture) send(ctx context.Context, body string, hint agent.Hint) error {
 	f.t.Helper()
-	return f.svc.Turn(ctx, f.user, f.chat, body, hint, func(e agent.ChatEvent) { f.sent = append(f.sent, e) })
+	return f.svc.Turn(ctx, f.user, f.chat, agent.Ask{Body: body, Hint: hint}, func(e agent.ChatEvent) { f.sent = append(f.sent, e) })
 }
 
 func (f *turnFixture) ask(body string) {

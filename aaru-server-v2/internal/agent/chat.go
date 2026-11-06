@@ -80,6 +80,14 @@ type Hint struct {
 	TitleID *uuid.UUID
 }
 
+// Ask is one turn the user sends: the words, where they are, and the files it carries (ASK-010).
+// Body may be empty only when Attachments is not.
+type Ask struct {
+	Body        string
+	Hint        Hint
+	Attachments []uuid.UUID
+}
+
 var chatScreens = []string{
 	"home", "discover", "library", "calendar", "lists", "friends", "groups", "books", "manga", "music", "sports",
 	"insights", "title",
@@ -121,7 +129,7 @@ func (s *ChatService) log() *slog.Logger {
 // A send over the daily cap (shared with `@aaru`) stores nothing and calls no model. The gate fails
 // closed. When ctx ends, the turn stays `stopped` with what was written so far. When Stop ends, it
 // stays `stopped` too, and the client, still there, gets an error event to try again.
-func (s *ChatService) Turn(ctx context.Context, user, chat uuid.UUID, body string, hint Hint, emit func(ChatEvent)) error {
+func (s *ChatService) Turn(ctx context.Context, user, chat uuid.UUID, ask Ask, emit func(ChatEvent)) error {
 	now := s.now()
 	owned, err := s.Store.Chat(ctx, chat, user)
 	if err != nil {
@@ -134,6 +142,15 @@ func (s *ChatService) Turn(ctx context.Context, user, chat uuid.UUID, body strin
 	if err != nil {
 		return err
 	}
+	kept, err := s.Store.Attachments(ctx, chat, user, now)
+	if err != nil {
+		return err
+	}
+	files, err := picked(kept, ask.Attachments)
+	if err != nil {
+		return err
+	}
+	body := storedBody(ask.Body, files)
 	replies, err := s.Store.RepliesToday(ctx, user, now)
 	if err != nil {
 		return err
@@ -156,6 +173,7 @@ func (s *ChatService) Turn(ctx context.Context, user, chat uuid.UUID, body strin
 	}
 
 	run := &chatRun{user: user, emit: emit, tools: NewChatTools(s.Deps, user)}
+	run.tools.attach(attachmentRefs(kept))
 	ceiling := s.Ceiling
 	if ceiling <= 0 {
 		ceiling = TurnCeiling
@@ -165,7 +183,7 @@ func (s *ChatService) Turn(ctx context.Context, user, chat uuid.UUID, body strin
 	if s.Stop != nil {
 		defer context.AfterFunc(s.Stop, cancel)() //nolint:contextcheck // Stop is the turn's second parent: the process, not the request
 	}
-	answerErr := safe.Step(func() error { return s.answer(turnCtx, run, recent, body, hint) })
+	answerErr := safe.Step(func() error { return s.answer(turnCtx, run, recent, ask, files) })
 	s.settle(ctx, run, agentTurn, answerErr)
 	return nil
 }
@@ -219,21 +237,26 @@ func (r *chatRun) sayApart(text string) {
 	r.say(text)
 }
 
-// answer runs the gate and the tool loop. Its error is the turn's failure, or the hang-up.
-func (s *ChatService) answer(ctx context.Context, run *chatRun, recent []ChatTurn, body string, hint Hint) error {
-	inScope, err := InScope(ctx, meteredProvider{Provider: s.Model, q: s.Store.Q, user: run.user, now: s.now}, recent, body)
+// answer runs the gate and the tool loop. Its error is the turn's failure, or the hang-up. Files sent
+// with no words skip the gate: handing Aaru a file is asking about it.
+func (s *ChatService) answer(ctx context.Context, run *chatRun, recent []ChatTurn, ask Ask, files []Attachment) error {
+	if ask.Body != "" || len(files) == 0 {
+		gated := meteredProvider{Provider: s.Model, q: s.Store.Q, user: run.user, now: s.now}
+		inScope, err := InScope(ctx, gated, recent, storedBody(ask.Body, files))
+		if err != nil {
+			return err
+		}
+		if !inScope {
+			run.say(OutOfScopeReply)
+			return nil
+		}
+	}
+	system, err := s.system(ctx, run.user, ask.Hint, run.tools)
 	if err != nil {
 		return err
 	}
-	if !inScope {
-		run.say(OutOfScopeReply)
-		return nil
-	}
-	system, err := s.system(ctx, run.user, hint)
-	if err != nil {
-		return err
-	}
-	turns := append(chatTranscript(recent), model.UserText(body))
+	current := model.Turn{Role: model.RoleUser, Content: userContent(ask.Body, files, run.tools.attachments)}
+	turns := append(chatTranscript(recent), current)
 	definitions := run.tools.Definitions()
 	for range MaxRounds {
 		if err := ctx.Err(); err != nil {
@@ -435,6 +458,8 @@ func toolStatus(name string) string {
 		return "Checking your sports"
 	case "apply_library_patch":
 		return "Updating your library"
+	case "import_attachment":
+		return "Reading your file"
 	default:
 		return ""
 	}
@@ -442,7 +467,7 @@ func toolStatus(name string) string {
 
 // system reads what the prompt needs: where the user is, and how far they are in a title they are
 // looking at. Unknown hints are dropped here.
-func (s *ChatService) system(ctx context.Context, user uuid.UUID, hint Hint) (string, error) {
+func (s *ChatService) system(ctx context.Context, user uuid.UUID, hint Hint, tools *ChatTools) (string, error) {
 	zone := reqctx.TimeZone(ctx)
 	if zone == nil {
 		zone = time.UTC
@@ -463,9 +488,14 @@ func (s *ChatService) system(ctx context.Context, user uuid.UUID, hint Hint) (st
 				return "", err
 			}
 			lookingAt = "They are looking at " + DescribeTitle(titles[0]) + ", so \"this\" means that title. " + guard
+			inLibrary, err := tools.rememberOnScreen(ctx, titles[0])
+			if err != nil {
+				return "", err
+			}
+			lookingAt += inLibrary
 		}
 	}
-	return chatSystem(s.now().In(zone), zone.String(), screen, lookingAt), nil
+	return chatSystem(s.now().In(zone), zone.String(), screen, lookingAt, attachmentsPrompt(tools.attachments)), nil
 }
 
 // aboutAaru is all the model knows about the app. It answers questions about Aaru only from this.
@@ -478,7 +508,7 @@ const aboutAaru = `About Aaru, all you know about the app:
 
 // chatSystem is the system prompt of one Chat turn: rules, the facts about Aaru, and where the user
 // is. Only `now`, the screen word and the title line vary, and none of them is free-form.
-func chatSystem(now time.Time, zone, screen, lookingAt string) string {
+func chatSystem(now time.Time, zone, screen, lookingAt, files string) string {
 	lines := []string{
 		"You are Aaru, the assistant inside Aaru. You are talking to one signed-in user.",
 		"It is " + now.Format("Monday 2006-01-02 15:04") + ", time zone " + zone + ".",
@@ -504,6 +534,9 @@ func chatSystem(now time.Time, zone, screen, lookingAt string) string {
 	}
 	if lookingAt != "" {
 		lines = append(lines, "- "+lookingAt)
+	}
+	if files != "" {
+		lines = append(lines, files)
 	}
 	return strings.Join(lines, "\n") + "\n\n" + aboutAaru
 }
