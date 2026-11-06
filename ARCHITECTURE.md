@@ -255,6 +255,7 @@ DELETE /v1/auth/session
 GET    /v1/search?q=&type=all|movie|show|anime|book   # all: CAT-019
 GET    /v1/titles/{id}
 POST   /v1/titles/resolve                 # LIB-006: a MediaRef's page; catalog only, never the library
+GET    /v1/titles/{id}/relations          # GRAPH-001: the relation graph, marked with the caller's library
 
 GET    /v1/calendar?from=&to=             # CAL-001
 GET    /v1/up-next                        # UPN-001; counts + unfinished UPN-002
@@ -410,6 +411,28 @@ Both are derived reads over the user's library. Neither has its own table.
   rating edit or an import makes an item fresh again.
 
 `list_airs` in the tool layer wraps CAL-001.
+
+### Relations (GRAPH-001)
+
+`GET /v1/titles/{id}/relations` is a title's relation graph. `catalog.RelationService`
+(`aaru-server-v2/internal/catalog/relations_service.go`) starts from the `titles` row (an anime kept
+as one TMDB show starts from its first AniList season, through `anime_mappings`) and
+`BuildRelationGraph` (`relations.go`) walks out in rounds: each round asks every `RelationSource`
+that can answer for the titles not yet asked about, a few at a time. The sources are AniList
+(`relations`), TMDB (a film's collection, chained by release date) and Wikidata (`wikidata.go`,
+Action API: `haswbstatement` search, then `wbgetentities`). Answers are joined by any shared id
+(`NodeKeys`), never by name, and each pair is written forward (`core.Relation.Canonical`).
+
+A prequel or sequel in the same medium costs nothing to walk, anything else one hop; titles up to
+two hops are kept, at most 40 of them and 24 lookups. AniList answers for main-chain titles only
+(`ChainOnlySource`), and Wikidata keeps the items it read in memory for a day. A page waits 8 s;
+a graph cut short is finished in the background (`RelationService.warm`) so the cache fills. The server places the graph: the main chain on
+lane 0 in release order (by date; an undated title keeps its place along the sequel links) or story
+order (a numbered Wikidata series, else the sequel links), and each other title in
+the column of the chain title it relates to, or a step from the title it continues, in the first
+free lane. Clients draw `rank` and `lane` as they come. Each source's answer is cached 30 days in
+`catalog_relations` (catalog data, no user); the caller's marks and "Start here" are read from the
+library after the graph is built.
 
 ### Discover (DISC-001)
 

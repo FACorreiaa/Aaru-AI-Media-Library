@@ -170,6 +170,17 @@ and the user's layer (rating, owned, page, notes; About for shows) a side column
 they stack, the user's layer first on Apple. The next cell on the season map stands on Paper in
 a gold ring. Every write is the one the room already made.
 
+**Related titles (GRAPH-002, 2026-11-06, web, iPhone, iPad, Mac).** Under About (and the
+tracklist) the room, and the page of a title not in the library, show what comes before and after
+it, what it is based on and adapted into, and its side stories: small posters in a row per group,
+each with its year and format ("2013 · OVA"), the person's status, and **Start here** on the first
+main-chain title they have not finished. **Graph** opens the whole graph: the main chain along the
+top in release order (story order a toggle away when a numbered series says so), every other title
+in the column of the one it hangs from. Main-chain lines are solid in the accent; other relations
+dashed with a small label. The centre is ringed. A title opens its page; Centre walks the graph out
+from it. Relations are catalog data: the graph never adds anything, and says so quietly when it is
+still finding titles. Credit: "Relations from AniList, TMDB and Wikidata."
+
 ## 5. Tonight
 
 A nightly composed view. Not recommendations-as-a-product — a **short plan**.

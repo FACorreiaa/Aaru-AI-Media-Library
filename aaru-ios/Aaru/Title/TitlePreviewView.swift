@@ -94,6 +94,7 @@ struct TitlePreviewView: View {
                 if kind == .music {
                     AlbumTracklist(tracks: title.tracks, isLoading: false)
                 }
+                TitleRelated(api: api, titleID: title.id, library: library, lists: lists)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(16)

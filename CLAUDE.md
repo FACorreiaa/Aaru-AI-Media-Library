@@ -30,6 +30,7 @@ This file is the working contract for anyone — human or agent — changing the
 | Jobs | Workers inside the API process (`internal/httpapi/workers.go`), leasing rows with `FOR UPDATE SKIP LOCKED`: imports, hydration, sweeps |
 | Catalog — video | TMDB (also trending, on the air, new shows, in theaters for Discover) |
 | Catalog — anime | AniList GraphQL (with MAL ids); first-class from P1; this season + trending for Discover. While AniList is down, TMDB's Japanese animation stands in for search and Discover (CAT-021). AniDB's daily title dump adds alternate titles for matching only (CAT-022) |
+| Catalog — relations | AniList `relations`, TMDB collections and Wikidata (Action API, CC0, no key, ids only) for a title's relation graph: sequels, prequels, side stories and adaptations across kinds, story order from numbered series; cached 30 days in `catalog_relations` (GRAPH-001) |
 | Catalog — air times | TVmaze (no key, CC BY-SA): exact air times and network for TMDB shows, and the next episode's time on Discover's On air (DISC-003); TMDB stays the episode source |
 | Where to watch | TMDB `watch/providers` (JustWatch data, credited): flat-rate services per country on Discover's On air (DISC-003, CAT-014 in part). The country comes from the device language, per request, never stored |
 | Catalog — manga | AniList GraphQL, type MANGA (any format: manga, manhwa, manhua, one-shot, light novel), with MAL ids; no fallback while AniList is down (MNG-001, pulled forward 2026-10-23) |
@@ -214,6 +215,11 @@ Use these words in code, APIs, and UI:
   It is an *import source*, not a subsystem: it produces a `MatchTable` then a `PlanCard`, and never
   writes unplanned
 - **Assistant card** — the floating card the owl opens over the current screen: one chat with Aaru, typed or spoken, replies written (and read aloud after a spoken question). App chrome; the agent fills it with catalog components but never emits the card itself
+- **Relation** — how one title stands to another in the catalog (GRAPH-001): `prequel` | `sequel` |
+  `side_story` | `spin_off` | `adaptation` | `source` | `alternative` | `summary` | `parent` |
+  `other`. Catalog data from AniList, TMDB collections and Wikidata, joined by id, never by name;
+  never a library write and never a recommendation. The *main chain* is prequels and sequels in one
+  medium; "Start here" is its first title the user has not finished or dropped
 - **Discover** — provider-curated public rows (DISC-001: trending, on the air, new shows, in
   theaters, this season's anime, trending books; MUS-002: new albums, albums coming soon), the
   same for every user, plus the On air view (DISC-003): the week's airings by channel. Each row
@@ -317,7 +323,8 @@ the points ledger, levels, streaks, badges, the friends leaderboard and the stre
 imports (MNG-001…002) and profile favorites (FAV-001), 2026-10-23; the Sports tab (SPT-001…005),
 2026-10-24; faster friend finding (opt-in email, Trakt and AniList discovery, suggestions), a
 Friends tab, and group reactions, replies, images and presence (SOC-008…011, NAV-004,
-GRP-013…017), 2026-10-27; the Aaru assistant, a one-to-one chat with voice (ASK-009), 2026-11-04).
+GRP-013…017), 2026-10-27; the Aaru assistant, a one-to-one chat with voice (ASK-009), 2026-11-04; relation graphs and
+roadmap lists (GRAPH-001…004), 2026-11-06).
 
 ## Out of scope (do not add unless asked)
 

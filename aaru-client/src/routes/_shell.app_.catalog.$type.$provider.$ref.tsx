@@ -3,6 +3,7 @@ import { Show, createSignal } from 'solid-js'
 import { AddControl } from '../components/AddControl'
 import { AddToListDialog } from '../components/AddToListDialog'
 import { AlbumHeader, Tracklist } from '../components/AlbumParts'
+import { RelatedTitles } from '../components/RelatedTitles'
 import { Poster } from '../components/Poster'
 import { ShareDialog } from '../components/ShareDialog'
 import { BackLink } from '../components/shell/BackLink'
@@ -174,6 +175,9 @@ function TitlePreview() {
             </div>
           </section>
         </Show>
+        <div class="mt-10 max-w-[56rem]">
+          <RelatedTitles titleId={title().id} />
+        </div>
         <Show when={problem()}>
           {(message) => (
             <p role="alert" class="mt-3 text-sm text-danger">

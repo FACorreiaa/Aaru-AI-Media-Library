@@ -15,6 +15,8 @@ type Kit struct {
 	Service   *Service
 	Discover  *DiscoverService
 	Refresher *Refresher
+	// Relations builds relation graphs (GRAPH-001) over AniList, TMDB collections and Wikidata.
+	Relations *RelationService
 	// MusicBrainz is the album adapter, also the recording matcher and the album
 	// artist lister (MUS-003): one client, one pacer.
 	MusicBrainz *MusicBrainz
@@ -29,7 +31,7 @@ func (k *Kit) Resolver() Resolver { return NewResolver(k.Store, k.Providers) }
 // NewProviders builds the adapters with the Swift server's pacing
 // (makeCatalogProviders): TMDB 40/s, AniList 1.5/s burst 5 (90 a minute), Open
 // Library 3/s, TVmaze 1.8/s burst 5 (~20 per 10 s), MusicBrainz 1/s, ListenBrainz
-// 1/s burst 2. userAgent is the contact User-Agent the open APIs ask for.
+// 1/s burst 2, Wikidata 5/s burst 10. userAgent is the contact User-Agent the open APIs ask for.
 func NewProviders(tmdbAPIKey, userAgent string, transport provider.Transport) Providers {
 	musicBrainz := &MusicBrainz{
 		Client:    provider.NewClient("musicbrainz", transport, provider.NewPacer(1, 1)),
@@ -38,14 +40,20 @@ func NewProviders(tmdbAPIKey, userAgent string, transport provider.Transport) Pr
 	listenBrainz := provider.NewClient("listenbrainz", transport, provider.NewPacer(1, 2))
 	anilistClient := provider.NewClient("anilist", transport, provider.NewPacer(1.5, 5))
 	anilistClient.Classify = ClassifyAniList
+	tmdb := &TMDB{Client: provider.NewClient("tmdb", transport, provider.NewPacer(40, 40)), APIKey: tmdbAPIKey}
 	return Providers{
-		TMDB:        &TMDB{Client: provider.NewClient("tmdb", transport, provider.NewPacer(40, 40)), APIKey: tmdbAPIKey},
+		TMDB:        tmdb,
 		AniList:     &AniList{Client: anilistClient, UserAgent: userAgent},
 		OpenLibrary: &OpenLibrary{Client: provider.NewClient("openlibrary", transport, provider.NewPacer(3, 3)), UserAgent: userAgent},
 		AirTimes:    &TVmaze{Client: provider.NewClient("tvmaze", transport, provider.NewPacer(1.8, 5))},
 		Music:       musicBrainz,
 		Releases:    &ListenBrainz{Client: listenBrainz, UserAgent: userAgent},
 		Recordings:  musicBrainz,
+		// Wikidata asks to be read gently: a few requests a second, one client.
+		Wikidata: &Wikidata{
+			Client: provider.NewClient("wikidata", transport, provider.NewPacer(5, 10)), UserAgent: userAgent,
+			Enrich: TMDBRelatedEnricher(tmdb),
+		},
 	}
 }
 
@@ -72,6 +80,13 @@ func NewKit(pool *pgxpool.Pool, providers Providers, log *slog.Logger) *Kit {
 		Discover:  NewDiscoverService(store, sources, fallback, timing, log),
 		Refresher: NewRefresher(store, service),
 	}
+	var relationSources []RelationSource
+	for _, p := range []any{providers.AniList, providers.TMDB, providers.Wikidata} {
+		if source, ok := p.(RelationSource); ok && source != nil {
+			relationSources = append(relationSources, source)
+		}
+	}
+	kit.Relations = NewRelationService(store, relationSources, log)
 	if mb, ok := providers.Music.(*MusicBrainz); ok {
 		kit.MusicBrainz = mb
 	}

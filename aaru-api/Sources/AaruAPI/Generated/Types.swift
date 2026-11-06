@@ -721,6 +721,11 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /v1/titles/{id}`.
     /// - Remark: Generated from `#/paths//v1/titles/{id}/get(getTitle)`.
     func getTitle(_ input: Operations.GetTitle.Input) async throws -> Operations.GetTitle.Output
+    /// The title's relation graph (GRAPH-001): prequels, sequels, side stories and adaptations across kinds, from AniList, TMDB collections and Wikidata, placed for drawing and marked with the caller's library. Catalog data: reading it writes nothing. A graph that is missing titles because a source failed or ran out of time says `partial`.
+    ///
+    /// - Remark: HTTP `GET /v1/titles/{id}/relations`.
+    /// - Remark: Generated from `#/paths//v1/titles/{id}/relations/get(getTitleRelations)`.
+    func getTitleRelations(_ input: Operations.GetTitleRelations.Input) async throws -> Operations.GetTitleRelations.Output
     /// Posts about this title by you and your friends, newest first.
     ///
     /// - Remark: HTTP `GET /v1/titles/{id}/posts`.
@@ -2724,6 +2729,21 @@ extension APIProtocol {
     ) async throws -> Operations.GetTitle.Output {
         try await getTitle(Operations.GetTitle.Input(
             path: path,
+            headers: headers
+        ))
+    }
+    /// The title's relation graph (GRAPH-001): prequels, sequels, side stories and adaptations across kinds, from AniList, TMDB collections and Wikidata, placed for drawing and marked with the caller's library. Catalog data: reading it writes nothing. A graph that is missing titles because a source failed or ran out of time says `partial`.
+    ///
+    /// - Remark: HTTP `GET /v1/titles/{id}/relations`.
+    /// - Remark: Generated from `#/paths//v1/titles/{id}/relations/get(getTitleRelations)`.
+    public func getTitleRelations(
+        path: Operations.GetTitleRelations.Input.Path,
+        query: Operations.GetTitleRelations.Input.Query = .init(),
+        headers: Operations.GetTitleRelations.Input.Headers = .init()
+    ) async throws -> Operations.GetTitleRelations.Output {
+        try await getTitleRelations(Operations.GetTitleRelations.Input(
+            path: path,
+            query: query,
             headers: headers
         ))
     }
@@ -10757,6 +10777,207 @@ public enum Components {
                 case byline
                 case genres
                 case tracks
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/RelationOrder`.
+        @frozen public enum RelationOrder: String, Codable, Hashable, Sendable, CaseIterable {
+            case release = "release"
+            case story = "story"
+        }
+        /// How one title stands to another (GRAPH-001), read "`to` is `from`'s relation". Edges are written forward: a prequel arrives as the other title's `sequel`, a source as the other title's `adaptation`, a parent as the other title's `side_story`, so the first three values below never appear on an edge but keep the vocabulary whole.
+        ///
+        /// - Remark: Generated from `#/components/schemas/Relation`.
+        @frozen public enum Relation: String, Codable, Hashable, Sendable, CaseIterable {
+            case prequel = "prequel"
+            case sequel = "sequel"
+            case sideStory = "side_story"
+            case spinOff = "spin_off"
+            case adaptation = "adaptation"
+            case source = "source"
+            case alternative = "alternative"
+            case summary = "summary"
+            case parent = "parent"
+            case other = "other"
+        }
+        /// - Remark: Generated from `#/components/schemas/RelationGraph`.
+        public struct RelationGraph: Codable, Hashable, Sendable {
+            /// Ordered by `rank`, then `lane`.
+            ///
+            /// - Remark: Generated from `#/components/schemas/RelationGraph/nodes`.
+            public var nodes: [Components.Schemas.RelationNode]
+            /// - Remark: Generated from `#/components/schemas/RelationGraph/edges`.
+            public var edges: [Components.Schemas.RelationEdge]
+            /// - Remark: Generated from `#/components/schemas/RelationGraph/order`.
+            public var order: Components.Schemas.RelationOrder
+            /// True when the main chain has a story order that differs from release order.
+            ///
+            /// - Remark: Generated from `#/components/schemas/RelationGraph/storyOrderAvailable`.
+            public var storyOrderAvailable: Swift.Bool
+            /// True when a source failed or ran out of time; the graph may miss titles.
+            ///
+            /// - Remark: Generated from `#/components/schemas/RelationGraph/partial`.
+            public var partial: Swift.Bool
+            /// Key of the first main-chain title, in this order, the caller has not finished or dropped. Absent when every one is done.
+            ///
+            /// - Remark: Generated from `#/components/schemas/RelationGraph/startHere`.
+            public var startHere: Swift.String?
+            /// Creates a new `RelationGraph`.
+            ///
+            /// - Parameters:
+            ///   - nodes: Ordered by `rank`, then `lane`.
+            ///   - edges:
+            ///   - order:
+            ///   - storyOrderAvailable: True when the main chain has a story order that differs from release order.
+            ///   - partial: True when a source failed or ran out of time; the graph may miss titles.
+            ///   - startHere: Key of the first main-chain title, in this order, the caller has not finished or dropped. Absent when every one is done.
+            public init(
+                nodes: [Components.Schemas.RelationNode],
+                edges: [Components.Schemas.RelationEdge],
+                order: Components.Schemas.RelationOrder,
+                storyOrderAvailable: Swift.Bool,
+                partial: Swift.Bool,
+                startHere: Swift.String? = nil
+            ) {
+                self.nodes = nodes
+                self.edges = edges
+                self.order = order
+                self.storyOrderAvailable = storyOrderAvailable
+                self.partial = partial
+                self.startHere = startHere
+            }
+            public enum CodingKeys: String, CodingKey {
+                case nodes
+                case edges
+                case order
+                case storyOrderAvailable
+                case partial
+                case startHere
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/RelationNode`.
+        public struct RelationNode: Codable, Hashable, Sendable {
+            /// Stable within one graph.
+            ///
+            /// - Remark: Generated from `#/components/schemas/RelationNode/key`.
+            public var key: Swift.String
+            /// Opens the title (POST /v1/titles/resolve) or adds it, as a search hit does.
+            ///
+            /// - Remark: Generated from `#/components/schemas/RelationNode/ref`.
+            public var ref: Components.Schemas.MediaRef
+            /// - Remark: Generated from `#/components/schemas/RelationNode/isAnime`.
+            public var isAnime: Swift.Bool?
+            /// - Remark: Generated from `#/components/schemas/RelationNode/posterUrl`.
+            public var posterUrl: Swift.String?
+            /// `YYYY-MM-DD` when the source knows the day.
+            ///
+            /// - Remark: Generated from `#/components/schemas/RelationNode/releaseDate`.
+            public var releaseDate: Swift.String?
+            /// The source's own word for it (`tv`, `movie`, `ova`, `novel`…), for a label.
+            ///
+            /// - Remark: Generated from `#/components/schemas/RelationNode/format`.
+            public var format: Swift.String?
+            /// Column, from 0: the order along the main chain.
+            ///
+            /// - Remark: Generated from `#/components/schemas/RelationNode/rank`.
+            public var rank: Swift.Int
+            /// Row: 0 is the main chain, 1 and on hang below it.
+            ///
+            /// - Remark: Generated from `#/components/schemas/RelationNode/lane`.
+            public var lane: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/RelationNode/mainChain`.
+            public var mainChain: Swift.Bool
+            /// The title the graph was asked for.
+            ///
+            /// - Remark: Generated from `#/components/schemas/RelationNode/centre`.
+            public var centre: Swift.Bool
+            /// - Remark: Generated from `#/components/schemas/RelationNode/libraryItemId`.
+            public var libraryItemId: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/RelationNode/status`.
+            public var status: Components.Schemas.LibraryStatus?
+            /// Creates a new `RelationNode`.
+            ///
+            /// - Parameters:
+            ///   - key: Stable within one graph.
+            ///   - ref: Opens the title (POST /v1/titles/resolve) or adds it, as a search hit does.
+            ///   - isAnime:
+            ///   - posterUrl:
+            ///   - releaseDate: `YYYY-MM-DD` when the source knows the day.
+            ///   - format: The source's own word for it (`tv`, `movie`, `ova`, `novel`…), for a label.
+            ///   - rank: Column, from 0: the order along the main chain.
+            ///   - lane: Row: 0 is the main chain, 1 and on hang below it.
+            ///   - mainChain:
+            ///   - centre: The title the graph was asked for.
+            ///   - libraryItemId:
+            ///   - status:
+            public init(
+                key: Swift.String,
+                ref: Components.Schemas.MediaRef,
+                isAnime: Swift.Bool? = nil,
+                posterUrl: Swift.String? = nil,
+                releaseDate: Swift.String? = nil,
+                format: Swift.String? = nil,
+                rank: Swift.Int,
+                lane: Swift.Int,
+                mainChain: Swift.Bool,
+                centre: Swift.Bool,
+                libraryItemId: Swift.String? = nil,
+                status: Components.Schemas.LibraryStatus? = nil
+            ) {
+                self.key = key
+                self.ref = ref
+                self.isAnime = isAnime
+                self.posterUrl = posterUrl
+                self.releaseDate = releaseDate
+                self.format = format
+                self.rank = rank
+                self.lane = lane
+                self.mainChain = mainChain
+                self.centre = centre
+                self.libraryItemId = libraryItemId
+                self.status = status
+            }
+            public enum CodingKeys: String, CodingKey {
+                case key
+                case ref
+                case isAnime
+                case posterUrl
+                case releaseDate
+                case format
+                case rank
+                case lane
+                case mainChain
+                case centre
+                case libraryItemId
+                case status
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/RelationEdge`.
+        public struct RelationEdge: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/RelationEdge/from`.
+            public var from: Swift.String
+            /// - Remark: Generated from `#/components/schemas/RelationEdge/to`.
+            public var to: Swift.String
+            /// - Remark: Generated from `#/components/schemas/RelationEdge/relation`.
+            public var relation: Components.Schemas.Relation
+            /// Creates a new `RelationEdge`.
+            ///
+            /// - Parameters:
+            ///   - from:
+            ///   - to:
+            ///   - relation:
+            public init(
+                from: Swift.String,
+                to: Swift.String,
+                relation: Components.Schemas.Relation
+            ) {
+                self.from = from
+                self.to = to
+                self.relation = relation
+            }
+            public enum CodingKeys: String, CodingKey {
+                case from
+                case to
+                case relation
             }
         }
         /// - Remark: Generated from `#/components/schemas/TitlePreview`.
@@ -34382,6 +34603,171 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/titles/{id}/get(getTitle)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// The title's relation graph (GRAPH-001): prequels, sequels, side stories and adaptations across kinds, from AniList, TMDB collections and Wikidata, placed for drawing and marked with the caller's library. Catalog data: reading it writes nothing. A graph that is missing titles because a source failed or ran out of time says `partial`.
+    ///
+    /// - Remark: HTTP `GET /v1/titles/{id}/relations`.
+    /// - Remark: Generated from `#/paths//v1/titles/{id}/relations/get(getTitleRelations)`.
+    public enum GetTitleRelations {
+        public static let id: Swift.String = "getTitleRelations"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/titles/{id}/relations/GET/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/titles/{id}/relations/GET/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.GetTitleRelations.Input.Path
+            /// - Remark: Generated from `#/paths/v1/titles/{id}/relations/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// `release` (default) or `story`. Story order needs numbered series in the data; when `storyOrderAvailable` is false the graph comes back in release order.
+                ///
+                /// - Remark: Generated from `#/paths/v1/titles/{id}/relations/GET/query/order`.
+                public var order: Components.Schemas.RelationOrder?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - order: `release` (default) or `story`. Story order needs numbered series in the data; when `storyOrderAvailable` is false the graph comes back in release order.
+                public init(order: Components.Schemas.RelationOrder? = nil) {
+                    self.order = order
+                }
+            }
+            public var query: Operations.GetTitleRelations.Input.Query
+            /// - Remark: Generated from `#/paths/v1/titles/{id}/relations/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetTitleRelations.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetTitleRelations.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetTitleRelations.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - query:
+            ///   - headers:
+            public init(
+                path: Operations.GetTitleRelations.Input.Path,
+                query: Operations.GetTitleRelations.Input.Query = .init(),
+                headers: Operations.GetTitleRelations.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/titles/{id}/relations/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/titles/{id}/relations/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.RelationGraph)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.RelationGraph {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetTitleRelations.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetTitleRelations.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The graph.
+            ///
+            /// - Remark: Generated from `#/paths//v1/titles/{id}/relations/get(getTitleRelations)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetTitleRelations.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetTitleRelations.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/titles/{id}/relations/get(getTitleRelations)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

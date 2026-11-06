@@ -2329,6 +2329,35 @@ paths:
                 $ref: '#/components/schemas/TitleDetail'
         default:
           $ref: '#/components/responses/Error'
+  /v1/titles/{id}/relations:
+    get:
+      operationId: getTitleRelations
+      summary: >-
+        The title's relation graph (GRAPH-001): prequels, sequels, side stories and adaptations
+        across kinds, from AniList, TMDB collections and Wikidata, placed for drawing and marked
+        with the caller's library. Catalog data: reading it writes nothing. A graph that is missing
+        titles because a source failed or ran out of time says `partial`.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: order
+          in: query
+          description: >-
+            `release` (default) or `story`. Story order needs numbered series in the data; when
+            `storyOrderAvailable` is false the graph comes back in release order.
+          schema: {$ref: '#/components/schemas/RelationOrder'}
+      responses:
+        '200':
+          description: The graph.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/RelationGraph'}
+        default:
+          $ref: '#/components/responses/Error'
   /v1/titles/{id}/posts:
     get:
       operationId: listTitlePosts
@@ -5593,6 +5622,67 @@ components:
             Albums only: the tracklist of the album's earliest official release, by disc then
             position. Absent when MusicBrainz could not be reached and none is stored yet.
           items: {$ref: '#/components/schemas/AlbumTrack'}
+    RelationOrder:
+      type: string
+      enum: [release, story]
+    Relation:
+      type: string
+      description: >-
+        How one title stands to another (GRAPH-001), read "`to` is `from`'s relation". Edges are
+        written forward: a prequel arrives as the other title's `sequel`, a source as the other
+        title's `adaptation`, a parent as the other title's `side_story`, so the first three
+        values below never appear on an edge but keep the vocabulary whole.
+      enum: [prequel, sequel, side_story, spin_off, adaptation, source, alternative, summary, parent, other]
+    RelationGraph:
+      type: object
+      required: [nodes, edges, order, storyOrderAvailable, partial]
+      properties:
+        nodes:
+          type: array
+          description: Ordered by `rank`, then `lane`.
+          items: {$ref: '#/components/schemas/RelationNode'}
+        edges:
+          type: array
+          items: {$ref: '#/components/schemas/RelationEdge'}
+        order: {$ref: '#/components/schemas/RelationOrder'}
+        storyOrderAvailable:
+          type: boolean
+          description: True when the main chain has a story order that differs from release order.
+        partial:
+          type: boolean
+          description: True when a source failed or ran out of time; the graph may miss titles.
+        startHere:
+          type: string
+          description: >-
+            Key of the first main-chain title, in this order, the caller has not finished or
+            dropped. Absent when every one is done.
+    RelationNode:
+      type: object
+      required: [key, ref, rank, lane, mainChain, centre]
+      properties:
+        key: {type: string, description: Stable within one graph.}
+        ref:
+          $ref: '#/components/schemas/MediaRef'
+          description: Opens the title (POST /v1/titles/resolve) or adds it, as a search hit does.
+        isAnime: {type: boolean}
+        posterUrl: {type: string}
+        releaseDate: {type: string, description: '`YYYY-MM-DD` when the source knows the day.'}
+        format:
+          type: string
+          description: The source's own word for it (`tv`, `movie`, `ova`, `novel`…), for a label.
+        rank: {type: integer, description: 'Column, from 0: the order along the main chain.'}
+        lane: {type: integer, description: 'Row: 0 is the main chain, 1 and on hang below it.'}
+        mainChain: {type: boolean}
+        centre: {type: boolean, description: The title the graph was asked for.}
+        libraryItemId: {type: string, format: uuid}
+        status: {$ref: '#/components/schemas/LibraryStatus'}
+    RelationEdge:
+      type: object
+      required: [from, to, relation]
+      properties:
+        from: {type: string}
+        to: {type: string}
+        relation: {$ref: '#/components/schemas/Relation'}
     TitlePreview:
       type: object
       required: [title]
