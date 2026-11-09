@@ -141,6 +141,10 @@ Apple `Design/AgentPresence.swift`.
 and `OwlUnavailableView` (Apple, `Design/Owl.swift`) wrap a screen's existing empty copy and
 actions with the idling owl. The agent never emits them.
 
+**The first run is chrome too (ONB-001, 2026-11-09).** The kind cards, the poster pickers, the
+favorites, "More from what you picked" and the alerts screen (DESIGN.md §0a) belong to the flow
+a new account sees once. The agent never emits them.
+
 **The catalog grows from nine to twenty, said out loud here (2026-10-09).** Phase 1.5 did not
 grow it, and Capture, remote approval, Shortcuts, and MCP still render on the original nine.
 The eleven new components add product, not agent reach, and each has a reason:

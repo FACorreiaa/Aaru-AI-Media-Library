@@ -34,6 +34,23 @@ library layer stay separate, external IDs stored whenever known, no second backe
 - **Anime is first-class from P1** (AniList catalog, `anilist`/`mal`/`anidb` external IDs).
 - DMs are **Signal-grade (libsignal)**. Licence and web support are OPEN — see DM-003, DM-004.
 
+## Decisions recorded 2026-11-09
+
+Owner, 2026-11-09: a first-run flow "to engage new users on our app to set their favorite shows,
+what they have watched and read and recommend shows and always have the option to just skip it"
+(ONB-001), modelled on another tracker's onboarding:
+
+- **Kinds first:** the first screen asks which kinds the user keeps; one picker screen per kind.
+- **A tap is a status:** the first tap marks Watched / Read / Listened, more taps cycle the rest.
+  Favorites are their own screen.
+- **"Recommend" means related, not personal:** the suggestions screen shows the picks' relation
+  graph (GRAPH-001), "More from what you picked". The no-recommendations rule stands: no "for
+  you", no taste profile, nothing read from other users.
+- **Skip everywhere, no minimum:** every screen can end the flow; what was saved stays.
+- **Picks are history, not activity:** journal kind `onboarding`, undated ticks, no points or
+  streak days, not in the Recap; a picked status counts as set by hand.
+- **New accounts only:** accounts made before it shipped are marked done. Web and Apple together.
+
 ## Decisions recorded 2026-11-06
 
 Owner, 2026-11-06: "In the end I want to be able to know what to read, what to watch and where do I
@@ -832,6 +849,7 @@ account or a stranger that has not happened yet.
 | APP-008 | Partial | sidebarAdaptable + ⌘F in RootView/LibraryView | No ⌘N add shortcut |
 | APP-009 | Built, unverified | #25 6d90253; HomeCache.swift | Sample data only; web has no offline cache |
 | DISC-001 | Built, unverified | #38 eaeb15e; DiscoverService.swift; deployed | No recorded new-account run on 3 clients |
+| ONB-001 | Built, unverified | `feat/onboarding`; OnboardingTests (Go, AaruCore), `lib/onboarding/model.test.ts` | API run locally against live AniList, Open Library and ListenBrainz (TMDB rows with stubs only); web gate checked by HTTP; never driven in a browser, simulator or device |
 | DISC-003 | Built, unverified | OnAirGuideTests, `lib/discover/onAir.test.ts`; `Catalog/OnAirGuide.swift`, `TMDBCatalog+OnAir.swift`, `OnAirGuide.tsx`, `OnAirView.swift` | TMDB, TVmaze and JustWatch checked with stubs only; not run against live providers or on a device |
 | DISC-002 | Built, unverified | #84; DiscoverSeasonTests, season model tests; deployed f5dcb8c (infra #412) | Not run on a device |
 | BOOK-002 | Built, unverified | `books_classics`, `books_science_fiction`, `books_science`, `books_business`, `kindPageOnly`; `aaru-ios/Aaru/Kinds/BooksImport.swift`, `aaru-client/src/components/kind/BooksTop.tsx` | Needs the API promoted. Web looked at locally against a stub model; not on a device |
@@ -2874,6 +2892,22 @@ Lists is a tab on iPhone and a sidebar entry on iPad and Mac; Home shows list ch
 **Done when:** Lists is one tap from anywhere on iPhone and Mac.
 
 ---
+
+### ONB-001 · First run · L · owner, 2026-11-09
+**Needs:** DISC-001, FAV-001, GRAPH-001, SOC-005 (airing alerts).
+DESIGN.md §0a. `Me.onboardingPending` (from `users.onboarded_at`, backfilled for old accounts);
+`PUT /v1/me/onboarding {skipped}`; `GET /v1/onboarding/rows?kind=` (Popular and genre rows:
+TMDB discover by genre, AniList by genre, Open Library subjects, ListenBrainz sitewide; cached
+24 h, outside `/v1/discover`); `POST /v1/onboarding/picks` (one `onboarding` action, 1–60 items);
+`POST /v1/onboarding/related` (relation graphs of the picks, library titles left out, at most
+30). Web `/app/welcome` outside the shell; Apple `RootView` shows `OnboardingFlow` before
+`MainTabs`. The status cycle and step list are the same pure function on both (`AaruCore`
+`Onboarding`, web `lib/onboarding/model.ts`).
+
+**Done when:** a new account lands on the flow on web, iPhone and Mac; picking two shows as
+Watching and a book as Read, starring one, adding a sequel and turning alerts on lands on a Home
+with Up Next filled, no points and one undo for each screen; Skip on the first screen lands on
+Home and the flow never shows again; an old account never sees it.
 
 ## P2 · Sports (pulled forward 2026-10-24)
 

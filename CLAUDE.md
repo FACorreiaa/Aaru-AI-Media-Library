@@ -192,6 +192,10 @@ Use these words in code, APIs, and UI:
   follow (there is none), never a Favorite, never shown to friends
 - **Sport event** — one match, game or card from the sports provider. Catalog data for the Sports
   tab, kept no longer than the cache: never a Title, never a library item, never journaled
+- **First run** — the once-only flow a new account sees before Home (ONB-001): kinds, picks with
+  a status, favorites, the picks' related titles, alerts. Skippable on every screen. Its picks
+  are history (journal kind `onboarding`: undated, no points), and its suggestions are relation
+  data, never recommendations
 - **Owned** — separate `isOwned` flag; do not overload status
 - **Avatar** — a user's own photo, one square JPEG the device made (SOC-001b). It shows wherever
   their name shows to a signed-in account, with the monogram as the fallback; never on a route a

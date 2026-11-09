@@ -1469,6 +1469,72 @@ public struct Client: APIProtocol {
             }
         )
     }
+    /// End the first-run flow (ONB-001), finished or skipped. The first call wins; later calls change nothing. What the flow already saved stays.
+    ///
+    /// - Remark: HTTP `PUT /v1/me/onboarding`.
+    /// - Remark: Generated from `#/paths//v1/me/onboarding/put(finishOnboarding)`.
+    public func finishOnboarding(_ input: Operations.FinishOnboarding.Input) async throws -> Operations.FinishOnboarding.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.FinishOnboarding.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/me/onboarding",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .put
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                let body: OpenAPIRuntime.HTTPBody?
+                switch input.body {
+                case let .json(value):
+                    body = try converter.setRequiredRequestBodyAsJSON(
+                        value,
+                        headerFields: &request.headerFields,
+                        contentType: "application/json; charset=utf-8"
+                    )
+                }
+                return (request, body)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 204:
+                    return .noContent(.init())
+                default:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(body: body)
+                    )
+                }
+            }
+        )
+    }
     /// The user with exactly this handle and where they stand with you. 404 when nobody holds it or either of you blocked the other. A friend or yourself is free; anyone else, misses included, at most 60 a user per hour (429).
     ///
     /// - Remark: HTTP `GET /v1/social/users/{handle}`.
@@ -9270,6 +9336,268 @@ public struct Client: APIProtocol {
                     case "application/json":
                         body = try await converter.getResponseBodyAsJSON(
                             Components.Schemas.DiscoverRows.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                default:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(body: body)
+                    )
+                }
+            }
+        )
+    }
+    /// Rows of well-known titles of one kind to pick from in the first-run flow (ONB-001).
+    ///
+    /// Popular first, then rows by genre (by subject for books). Catalog data, the same for every user and cached by the server; items the caller has carry `libraryItemId`. A row whose provider is down is left out; manga has none while AniList is down, and anime comes from TMDB's Japanese animation then, with a `note`.
+    ///
+    /// - Remark: HTTP `GET /v1/onboarding/rows`.
+    /// - Remark: Generated from `#/paths//v1/onboarding/rows/get(getOnboardingRows)`.
+    public func getOnboardingRows(_ input: Operations.GetOnboardingRows.Input) async throws -> Operations.GetOnboardingRows.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.GetOnboardingRows.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/onboarding/rows",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .get
+                )
+                suppressMutabilityWarning(&request)
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "kind",
+                    value: input.query.kind
+                )
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.GetOnboardingRows.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.DiscoverRows.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                default:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(body: body)
+                    )
+                }
+            }
+        )
+    }
+    /// Add the titles picked in one step of the first-run flow, each with its status (ONB-001).
+    ///
+    /// One journaled action (one undo), journal kind `onboarding`: the picks were watched, read or heard before, so their ticks carry no date, they earn no points and no streak day, and the Recap leaves them out. A status other than `wishlist` counts as set by hand, so a later import never moves it back. A title already in the library is returned unchanged. A ref that resolves to no title is left out of `items` and counted in `missed`. 1 to 60 items, else 422.
+    ///
+    /// - Remark: HTTP `POST /v1/onboarding/picks`.
+    /// - Remark: Generated from `#/paths//v1/onboarding/picks/post(addOnboardingPicks)`.
+    public func addOnboardingPicks(_ input: Operations.AddOnboardingPicks.Input) async throws -> Operations.AddOnboardingPicks.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.AddOnboardingPicks.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/onboarding/picks",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .post
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                let body: OpenAPIRuntime.HTTPBody?
+                switch input.body {
+                case let .json(value):
+                    body = try converter.setRequiredRequestBodyAsJSON(
+                        value,
+                        headerFields: &request.headerFields,
+                        contentType: "application/json; charset=utf-8"
+                    )
+                }
+                return (request, body)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.AddOnboardingPicks.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.OnboardingPicked.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                default:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(body: body)
+                    )
+                }
+            }
+        )
+    }
+    /// Titles related to the ones picked (ONB-001): prequels, sequels, side stories, spin-offs, adaptations and sources from each title's relation graph (GRAPH-001).
+    ///
+    /// Catalog data joined by id, never a recommendation: nothing is read from other users and nothing is ranked by taste. Titles already in the caller's library are left out, each title once under the first pick it relates to, at most 30 shared across the picks in turn so one long franchise cannot fill them, grouped by pick in the order the picks were sent. Graphs not cached yet get a few seconds; `partial` says some were cut short (they keep loading for the next call).
+    ///
+    /// - Remark: HTTP `POST /v1/onboarding/related`.
+    /// - Remark: Generated from `#/paths//v1/onboarding/related/post(getOnboardingRelated)`.
+    public func getOnboardingRelated(_ input: Operations.GetOnboardingRelated.Input) async throws -> Operations.GetOnboardingRelated.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.GetOnboardingRelated.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/onboarding/related",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .post
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                let body: OpenAPIRuntime.HTTPBody?
+                switch input.body {
+                case let .json(value):
+                    body = try converter.setRequiredRequestBodyAsJSON(
+                        value,
+                        headerFields: &request.headerFields,
+                        contentType: "application/json; charset=utf-8"
+                    )
+                }
+                return (request, body)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.GetOnboardingRelated.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.OnboardingRelated.self,
                             from: responseBody,
                             transforming: { value in
                                 .json(value)
