@@ -31,6 +31,16 @@ export async function requireSession(
   return session
 }
 
+/** The first run (ONB-001): a signed-in account that has not finished or skipped it goes to
+ * `/app/welcome` first, carrying where it was headed so the flow ends there. */
+export function requireOnboarded(
+  session: Extract<Session, { signedIn: true }>,
+  next: string,
+): void {
+  if (session.onboardingPending)
+    throw redirect({ to: '/app/welcome', search: { next } })
+}
+
 /** The session changed under this tab (a new name or handle): ask again on the next read. */
 export function forgetSession(queryClient: QueryClient) {
   queryClient.removeQueries({ queryKey: SESSION_KEY })

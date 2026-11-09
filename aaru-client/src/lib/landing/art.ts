@@ -144,3 +144,17 @@ export const KIND_CARDS: KindCard[] = [
     ],
   },
 ]
+
+/** Manga for the first run's kinds screen (ONB-001), drawn in type like sports: the landing has
+ * no manga card, and no open catalog's manga covers were checked by hand. */
+export const MANGA_CARD: KindCard = {
+  id: 'manga',
+  name: 'Manga',
+  pitch: 'The last chapter and volume you read, manhwa and manhua too.',
+  shape: 'poster',
+  covers: [
+    { title: 'Berserk', caption: 'Vol. 1' },
+    { title: 'Vagabond', caption: 'Vol. 1' },
+    { title: 'One Piece', caption: 'Ch. 1' },
+  ],
+}
