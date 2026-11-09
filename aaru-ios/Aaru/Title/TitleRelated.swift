@@ -23,7 +23,7 @@ struct TitleRelated: View {
     }
 
     var body: some View {
-        Group {
+        ZStack(alignment: .leading) {
             if let graph = model.graph, !graph.relatedGroups.isEmpty {
                 VStack(alignment: .leading, spacing: AaruSpace.large) {
                     HStack(alignment: .firstTextBaseline) {
@@ -49,6 +49,8 @@ struct TitleRelated: View {
                         }
                     }
                 }
+            } else {
+                Color.clear.frame(height: 0)
             }
         }
         .task(id: titleID) { await model.load() }

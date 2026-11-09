@@ -33,7 +33,7 @@ struct TitleFromFriends: View {
     }
 
     var body: some View {
-        Group {
+        ZStack(alignment: .leading) {
             if !board.posts.isEmpty || hasFriends {
                 VStack(alignment: .leading, spacing: AaruSpace.large) {
                     Text("From friends")
@@ -61,6 +61,8 @@ struct TitleFromFriends: View {
                     }
                 }
                 .panel()
+            } else {
+                Color.clear.frame(height: 0)
             }
         }
         .task(id: summary.id) {
