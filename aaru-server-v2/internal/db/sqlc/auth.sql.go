@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const clearUserShareNotes = `-- name: ClearUserShareNotes :exec
@@ -284,6 +285,22 @@ func (q *Queries) FailMagicLinkCodes(ctx context.Context, arg FailMagicLinkCodes
 	return err
 }
 
+const finishOnboarding = `-- name: FinishOnboarding :exec
+UPDATE users SET onboarded_at = now(), onboarding_skipped = $1
+WHERE id = $2 AND onboarded_at IS NULL
+`
+
+type FinishOnboardingParams struct {
+	Skipped bool
+	ID      uuid.UUID
+}
+
+// ONB-001: the first call ends the flow; a later one changes nothing.
+func (q *Queries) FinishOnboarding(ctx context.Context, arg FinishOnboardingParams) error {
+	_, err := q.db.Exec(ctx, finishOnboarding, arg.Skipped, arg.ID)
+	return err
+}
+
 const promoteNextOwner = `-- name: PromoteNextOwner :exec
 UPDATE group_members SET role = 'owner'
 WHERE group_members.group_id = $1::uuid AND group_members.user_id = (
@@ -366,7 +383,7 @@ func (q *Queries) UserIdentities(ctx context.Context, userID uuid.UUID) ([]UserI
 }
 
 const userProfile = `-- name: UserProfile :one
-SELECT u.first_name, u.last_name, p.handle, u.avatar_version
+SELECT u.first_name, u.last_name, p.handle, u.avatar_version, u.onboarded_at
 FROM users u LEFT JOIN profiles p ON p.user_id = u.id
 WHERE u.id = $1
 `
@@ -376,6 +393,7 @@ type UserProfileRow struct {
 	LastName      *string
 	Handle        *string
 	AvatarVersion *int64
+	OnboardedAt   pgtype.Timestamptz
 }
 
 func (q *Queries) UserProfile(ctx context.Context, id uuid.UUID) (UserProfileRow, error) {
@@ -386,6 +404,7 @@ func (q *Queries) UserProfile(ctx context.Context, id uuid.UUID) (UserProfileRow
 		&i.LastName,
 		&i.Handle,
 		&i.AvatarVersion,
+		&i.OnboardedAt,
 	)
 	return i, err
 }

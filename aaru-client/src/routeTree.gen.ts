@@ -17,6 +17,7 @@ import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as DotwellKnownAppleAppSiteAssociationRouteImport } from './routes/[.]well-known/apple-app-site-association'
 import { Route as ShellAppRouteImport } from './routes/_shell.app'
 import { Route as AppExportRouteImport } from './routes/app_.export'
+import { Route as AppWelcomeRouteImport } from './routes/app_.welcome'
 import { Route as AuthVerifyRouteImport } from './routes/auth.verify'
 import { Route as ConnectExtensionRouteImport } from './routes/connect.extension'
 import { Route as ICodeRouteImport } from './routes/i.$code'
@@ -107,6 +108,11 @@ const ShellAppRoute = ShellAppRouteImport.update({
 const AppExportRoute = AppExportRouteImport.update({
   id: '/app_/export',
   path: '/app/export',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppWelcomeRoute = AppWelcomeRouteImport.update({
+  id: '/app_/welcome',
+  path: '/app/welcome',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthVerifyRoute = AuthVerifyRouteImport.update({
@@ -380,6 +386,7 @@ export interface FileRoutesByFullPath {
   '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/app': typeof ShellAppRoute
   '/app/export': typeof AppExportRoute
+  '/app/welcome': typeof AppWelcomeRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/connect/extension': typeof ConnectExtensionRoute
   '/i/$code': typeof ICodeRoute
@@ -440,6 +447,7 @@ export interface FileRoutesByTo {
   '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/app': typeof ShellAppRoute
   '/app/export': typeof AppExportRoute
+  '/app/welcome': typeof AppWelcomeRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/connect/extension': typeof ConnectExtensionRoute
   '/i/$code': typeof ICodeRoute
@@ -499,6 +507,7 @@ export interface FileRoutesById {
   '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/_shell/app': typeof ShellAppRoute
   '/app_/export': typeof AppExportRoute
+  '/app_/welcome': typeof AppWelcomeRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/connect/extension': typeof ConnectExtensionRoute
   '/i/$code': typeof ICodeRoute
@@ -561,6 +570,7 @@ export interface FileRouteTypes {
     | '/.well-known/apple-app-site-association'
     | '/app'
     | '/app/export'
+    | '/app/welcome'
     | '/auth/verify'
     | '/connect/extension'
     | '/i/$code'
@@ -621,6 +631,7 @@ export interface FileRouteTypes {
     | '/.well-known/apple-app-site-association'
     | '/app'
     | '/app/export'
+    | '/app/welcome'
     | '/auth/verify'
     | '/connect/extension'
     | '/i/$code'
@@ -679,6 +690,7 @@ export interface FileRouteTypes {
     | '/.well-known/apple-app-site-association'
     | '/_shell/app'
     | '/app_/export'
+    | '/app_/welcome'
     | '/auth/verify'
     | '/connect/extension'
     | '/i/$code'
@@ -740,6 +752,7 @@ export interface RootRouteChildren {
   SignInRoute: typeof SignInRoute
   DotwellKnownAppleAppSiteAssociationRoute: typeof DotwellKnownAppleAppSiteAssociationRoute
   AppExportRoute: typeof AppExportRoute
+  AppWelcomeRoute: typeof AppWelcomeRoute
   AuthVerifyRoute: typeof AuthVerifyRoute
   ConnectExtensionRoute: typeof ConnectExtensionRoute
   ICodeRoute: typeof ICodeRoute
@@ -807,6 +820,13 @@ declare module '@tanstack/solid-router' {
       path: '/app/export'
       fullPath: '/app/export'
       preLoaderRoute: typeof AppExportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app_/welcome': {
+      id: '/app_/welcome'
+      path: '/app/welcome'
+      fullPath: '/app/welcome'
+      preLoaderRoute: typeof AppWelcomeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/verify': {
@@ -1302,6 +1322,7 @@ const rootRouteChildren: RootRouteChildren = {
   DotwellKnownAppleAppSiteAssociationRoute:
     DotwellKnownAppleAppSiteAssociationRoute,
   AppExportRoute: AppExportRoute,
+  AppWelcomeRoute: AppWelcomeRoute,
   AuthVerifyRoute: AuthVerifyRoute,
   ConnectExtensionRoute: ConnectExtensionRoute,
   ICodeRoute: ICodeRoute,

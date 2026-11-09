@@ -101,6 +101,11 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `PUT /v1/me/favorites/{kind}`.
     /// - Remark: Generated from `#/paths//v1/me/favorites/{kind}/put(setMyFavorites)`.
     func setMyFavorites(_ input: Operations.SetMyFavorites.Input) async throws -> Operations.SetMyFavorites.Output
+    /// End the first-run flow (ONB-001), finished or skipped. The first call wins; later calls change nothing. What the flow already saved stays.
+    ///
+    /// - Remark: HTTP `PUT /v1/me/onboarding`.
+    /// - Remark: Generated from `#/paths//v1/me/onboarding/put(finishOnboarding)`.
+    func finishOnboarding(_ input: Operations.FinishOnboarding.Input) async throws -> Operations.FinishOnboarding.Output
     /// The user with exactly this handle and where they stand with you. 404 when nobody holds it or either of you blocked the other. A friend or yourself is free; anyone else, misses included, at most 60 a user per hour (429).
     ///
     /// - Remark: HTTP `GET /v1/social/users/{handle}`.
@@ -593,6 +598,27 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /v1/discover`.
     /// - Remark: Generated from `#/paths//v1/discover/get(getDiscover)`.
     func getDiscover(_ input: Operations.GetDiscover.Input) async throws -> Operations.GetDiscover.Output
+    /// Rows of well-known titles of one kind to pick from in the first-run flow (ONB-001).
+    ///
+    /// Popular first, then rows by genre (by subject for books). Catalog data, the same for every user and cached by the server; items the caller has carry `libraryItemId`. A row whose provider is down is left out; manga has none while AniList is down, and anime comes from TMDB's Japanese animation then, with a `note`.
+    ///
+    /// - Remark: HTTP `GET /v1/onboarding/rows`.
+    /// - Remark: Generated from `#/paths//v1/onboarding/rows/get(getOnboardingRows)`.
+    func getOnboardingRows(_ input: Operations.GetOnboardingRows.Input) async throws -> Operations.GetOnboardingRows.Output
+    /// Add the titles picked in one step of the first-run flow, each with its status (ONB-001).
+    ///
+    /// One journaled action (one undo), journal kind `onboarding`: the picks were watched, read or heard before, so their ticks carry no date, they earn no points and no streak day, and the Recap leaves them out. A status other than `wishlist` counts as set by hand, so a later import never moves it back. A title already in the library is returned unchanged. A ref that resolves to no title is left out of `items` and counted in `missed`. 1 to 60 items, else 422.
+    ///
+    /// - Remark: HTTP `POST /v1/onboarding/picks`.
+    /// - Remark: Generated from `#/paths//v1/onboarding/picks/post(addOnboardingPicks)`.
+    func addOnboardingPicks(_ input: Operations.AddOnboardingPicks.Input) async throws -> Operations.AddOnboardingPicks.Output
+    /// Titles related to the ones picked (ONB-001): prequels, sequels, side stories, spin-offs, adaptations and sources from each title's relation graph (GRAPH-001).
+    ///
+    /// Catalog data joined by id, never a recommendation: nothing is read from other users and nothing is ranked by taste. Titles already in the caller's library are left out, each title once under the first pick it relates to, at most 30 shared across the picks in turn so one long franchise cannot fill them, grouped by pick in the order the picks were sent. Graphs not cached yet get a few seconds; `partial` says some were cut short (they keep loading for the next call).
+    ///
+    /// - Remark: HTTP `POST /v1/onboarding/related`.
+    /// - Remark: Generated from `#/paths//v1/onboarding/related/post(getOnboardingRelated)`.
+    func getOnboardingRelated(_ input: Operations.GetOnboardingRelated.Input) async throws -> Operations.GetOnboardingRelated.Output
     /// One season's titles for the Seasons view (DISC-002), a page at a time.
     ///
     /// A season is a calendar quarter in UTC: winter Jan–Mar, spring Apr–Jun, summer Jul–Sep, fall Oct–Dec. Anime by AniList's broadcast season, new shows by first air date, returning shows by an episode airing that season, films by first release. The same lists for every user, cached by the server; items the caller has carry `libraryItemId`.
@@ -1220,6 +1246,19 @@ extension APIProtocol {
     ) async throws -> Operations.SetMyFavorites.Output {
         try await setMyFavorites(Operations.SetMyFavorites.Input(
             path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// End the first-run flow (ONB-001), finished or skipped. The first call wins; later calls change nothing. What the flow already saved stays.
+    ///
+    /// - Remark: HTTP `PUT /v1/me/onboarding`.
+    /// - Remark: Generated from `#/paths//v1/me/onboarding/put(finishOnboarding)`.
+    public func finishOnboarding(
+        headers: Operations.FinishOnboarding.Input.Headers = .init(),
+        body: Operations.FinishOnboarding.Input.Body
+    ) async throws -> Operations.FinishOnboarding.Output {
+        try await finishOnboarding(Operations.FinishOnboarding.Input(
             headers: headers,
             body: body
         ))
@@ -2479,6 +2518,51 @@ extension APIProtocol {
     /// - Remark: Generated from `#/paths//v1/discover/get(getDiscover)`.
     public func getDiscover(headers: Operations.GetDiscover.Input.Headers = .init()) async throws -> Operations.GetDiscover.Output {
         try await getDiscover(Operations.GetDiscover.Input(headers: headers))
+    }
+    /// Rows of well-known titles of one kind to pick from in the first-run flow (ONB-001).
+    ///
+    /// Popular first, then rows by genre (by subject for books). Catalog data, the same for every user and cached by the server; items the caller has carry `libraryItemId`. A row whose provider is down is left out; manga has none while AniList is down, and anime comes from TMDB's Japanese animation then, with a `note`.
+    ///
+    /// - Remark: HTTP `GET /v1/onboarding/rows`.
+    /// - Remark: Generated from `#/paths//v1/onboarding/rows/get(getOnboardingRows)`.
+    public func getOnboardingRows(
+        query: Operations.GetOnboardingRows.Input.Query,
+        headers: Operations.GetOnboardingRows.Input.Headers = .init()
+    ) async throws -> Operations.GetOnboardingRows.Output {
+        try await getOnboardingRows(Operations.GetOnboardingRows.Input(
+            query: query,
+            headers: headers
+        ))
+    }
+    /// Add the titles picked in one step of the first-run flow, each with its status (ONB-001).
+    ///
+    /// One journaled action (one undo), journal kind `onboarding`: the picks were watched, read or heard before, so their ticks carry no date, they earn no points and no streak day, and the Recap leaves them out. A status other than `wishlist` counts as set by hand, so a later import never moves it back. A title already in the library is returned unchanged. A ref that resolves to no title is left out of `items` and counted in `missed`. 1 to 60 items, else 422.
+    ///
+    /// - Remark: HTTP `POST /v1/onboarding/picks`.
+    /// - Remark: Generated from `#/paths//v1/onboarding/picks/post(addOnboardingPicks)`.
+    public func addOnboardingPicks(
+        headers: Operations.AddOnboardingPicks.Input.Headers = .init(),
+        body: Operations.AddOnboardingPicks.Input.Body
+    ) async throws -> Operations.AddOnboardingPicks.Output {
+        try await addOnboardingPicks(Operations.AddOnboardingPicks.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Titles related to the ones picked (ONB-001): prequels, sequels, side stories, spin-offs, adaptations and sources from each title's relation graph (GRAPH-001).
+    ///
+    /// Catalog data joined by id, never a recommendation: nothing is read from other users and nothing is ranked by taste. Titles already in the caller's library are left out, each title once under the first pick it relates to, at most 30 shared across the picks in turn so one long franchise cannot fill them, grouped by pick in the order the picks were sent. Graphs not cached yet get a few seconds; `partial` says some were cut short (they keep loading for the next call).
+    ///
+    /// - Remark: HTTP `POST /v1/onboarding/related`.
+    /// - Remark: Generated from `#/paths//v1/onboarding/related/post(getOnboardingRelated)`.
+    public func getOnboardingRelated(
+        headers: Operations.GetOnboardingRelated.Input.Headers = .init(),
+        body: Operations.GetOnboardingRelated.Input.Body
+    ) async throws -> Operations.GetOnboardingRelated.Output {
+        try await getOnboardingRelated(Operations.GetOnboardingRelated.Input(
+            headers: headers,
+            body: body
+        ))
     }
     /// One season's titles for the Seasons view (DISC-002), a page at a time.
     ///
@@ -5630,6 +5714,10 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/Me/avatarUrl`.
             public var avatarUrl: Swift.String?
+            /// True until the first-run flow is finished or skipped (ONB-001); accounts made before it shipped never see it. Always sent; optional so apps built before the server ships still read `Me`.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Me/onboardingPending`.
+            public var onboardingPending: Swift.Bool?
             /// Creates a new `Me`.
             ///
             /// - Parameters:
@@ -5642,6 +5730,7 @@ public enum Components {
             ///   - email: The address friends may see when you share it: the email sign-in's, else Google's, else Apple's. Absent when no sign-in has one.
             ///   - emailShareable: False without an email, or for an Apple private relay address, which friends cannot write to. Always sent since SOC-001b; optional so apps built before the server ships still read `Me`.
             ///   - avatarUrl: Path to `GET /v1/users/{userId}/avatar` with its version. Absent without an avatar.
+            ///   - onboardingPending: True until the first-run flow is finished or skipped (ONB-001); accounts made before it shipped never see it. Always sent; optional so apps built before the server ships still read `Me`.
             public init(
                 userId: Swift.String,
                 displayName: Swift.String? = nil,
@@ -5651,7 +5740,8 @@ public enum Components {
                 providers: Components.Schemas.Me.ProvidersPayload,
                 email: Swift.String? = nil,
                 emailShareable: Swift.Bool? = nil,
-                avatarUrl: Swift.String? = nil
+                avatarUrl: Swift.String? = nil,
+                onboardingPending: Swift.Bool? = nil
             ) {
                 self.userId = userId
                 self.displayName = displayName
@@ -5662,6 +5752,7 @@ public enum Components {
                 self.email = email
                 self.emailShareable = emailShareable
                 self.avatarUrl = avatarUrl
+                self.onboardingPending = onboardingPending
             }
             public enum CodingKeys: String, CodingKey {
                 case userId
@@ -5673,6 +5764,182 @@ public enum Components {
                 case email
                 case emailShareable
                 case avatarUrl
+                case onboardingPending
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/OnboardingFinish`.
+        public struct OnboardingFinish: Codable, Hashable, Sendable {
+            /// True when the user left with Skip rather than reaching the end.
+            ///
+            /// - Remark: Generated from `#/components/schemas/OnboardingFinish/skipped`.
+            public var skipped: Swift.Bool
+            /// Creates a new `OnboardingFinish`.
+            ///
+            /// - Parameters:
+            ///   - skipped: True when the user left with Skip rather than reaching the end.
+            public init(skipped: Swift.Bool) {
+                self.skipped = skipped
+            }
+            public enum CodingKeys: String, CodingKey {
+                case skipped
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/OnboardingPicks`.
+        public struct OnboardingPicks: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/OnboardingPicks/items`.
+            public var items: [Components.Schemas.AddLibraryItem]
+            /// Creates a new `OnboardingPicks`.
+            ///
+            /// - Parameters:
+            ///   - items:
+            public init(items: [Components.Schemas.AddLibraryItem]) {
+                self.items = items
+            }
+            public enum CodingKeys: String, CodingKey {
+                case items
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/OnboardingPicked`.
+        public struct OnboardingPicked: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/OnboardingPicked/items`.
+            public var items: [Components.Schemas.OnboardingPickedItem]
+            /// Refs that resolved to no title.
+            ///
+            /// - Remark: Generated from `#/components/schemas/OnboardingPicked/missed`.
+            public var missed: Swift.Int
+            /// The journaled action, for undo. Absent when nothing changed.
+            ///
+            /// - Remark: Generated from `#/components/schemas/OnboardingPicked/actionId`.
+            public var actionId: Swift.String?
+            /// Creates a new `OnboardingPicked`.
+            ///
+            /// - Parameters:
+            ///   - items:
+            ///   - missed: Refs that resolved to no title.
+            ///   - actionId: The journaled action, for undo. Absent when nothing changed.
+            public init(
+                items: [Components.Schemas.OnboardingPickedItem],
+                missed: Swift.Int,
+                actionId: Swift.String? = nil
+            ) {
+                self.items = items
+                self.missed = missed
+                self.actionId = actionId
+            }
+            public enum CodingKeys: String, CodingKey {
+                case items
+                case missed
+                case actionId
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/OnboardingPickedItem`.
+        public struct OnboardingPickedItem: Codable, Hashable, Sendable {
+            /// Position in the request's `items`.
+            ///
+            /// - Remark: Generated from `#/components/schemas/OnboardingPickedItem/index`.
+            public var index: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/OnboardingPickedItem/libraryItemId`.
+            public var libraryItemId: Swift.String
+            /// - Remark: Generated from `#/components/schemas/OnboardingPickedItem/titleId`.
+            public var titleId: Swift.String
+            /// Creates a new `OnboardingPickedItem`.
+            ///
+            /// - Parameters:
+            ///   - index: Position in the request's `items`.
+            ///   - libraryItemId:
+            ///   - titleId:
+            public init(
+                index: Swift.Int,
+                libraryItemId: Swift.String,
+                titleId: Swift.String
+            ) {
+                self.index = index
+                self.libraryItemId = libraryItemId
+                self.titleId = titleId
+            }
+            public enum CodingKeys: String, CodingKey {
+                case index
+                case libraryItemId
+                case titleId
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/OnboardingRelatedRequest`.
+        public struct OnboardingRelatedRequest: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/OnboardingRelatedRequest/titleIds`.
+            public var titleIds: [Swift.String]
+            /// Creates a new `OnboardingRelatedRequest`.
+            ///
+            /// - Parameters:
+            ///   - titleIds:
+            public init(titleIds: [Swift.String]) {
+                self.titleIds = titleIds
+            }
+            public enum CodingKeys: String, CodingKey {
+                case titleIds
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/OnboardingRelated`.
+        public struct OnboardingRelated: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/OnboardingRelated/items`.
+            public var items: [Components.Schemas.OnboardingRelatedItem]
+            /// True when a graph failed or ran out of time.
+            ///
+            /// - Remark: Generated from `#/components/schemas/OnboardingRelated/partial`.
+            public var partial: Swift.Bool
+            /// Creates a new `OnboardingRelated`.
+            ///
+            /// - Parameters:
+            ///   - items:
+            ///   - partial: True when a graph failed or ran out of time.
+            public init(
+                items: [Components.Schemas.OnboardingRelatedItem],
+                partial: Swift.Bool
+            ) {
+                self.items = items
+                self.partial = partial
+            }
+            public enum CodingKeys: String, CodingKey {
+                case items
+                case partial
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/OnboardingRelatedItem`.
+        public struct OnboardingRelatedItem: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/OnboardingRelatedItem/hit`.
+            public var hit: Components.Schemas.CatalogHit
+            /// How `hit` stands to the picked title, read "`hit` is the pick's `relation`".
+            ///
+            /// - Remark: Generated from `#/components/schemas/OnboardingRelatedItem/relation`.
+            public var relation: Components.Schemas.Relation
+            /// - Remark: Generated from `#/components/schemas/OnboardingRelatedItem/fromTitleId`.
+            public var fromTitleId: Swift.String
+            /// The picked title's name
+            ///
+            /// - Remark: Generated from `#/components/schemas/OnboardingRelatedItem/fromTitle`.
+            public var fromTitle: Swift.String
+            /// Creates a new `OnboardingRelatedItem`.
+            ///
+            /// - Parameters:
+            ///   - hit:
+            ///   - relation: How `hit` stands to the picked title, read "`hit` is the pick's `relation`".
+            ///   - fromTitleId:
+            ///   - fromTitle: The picked title's name
+            public init(
+                hit: Components.Schemas.CatalogHit,
+                relation: Components.Schemas.Relation,
+                fromTitleId: Swift.String,
+                fromTitle: Swift.String
+            ) {
+                self.hit = hit
+                self.relation = relation
+                self.fromTitleId = fromTitleId
+                self.fromTitle = fromTitle
+            }
+            public enum CodingKeys: String, CodingKey {
+                case hit
+                case relation
+                case fromTitleId
+                case fromTitle
             }
         }
         /// - Remark: Generated from `#/components/schemas/Entitlement`.
@@ -9106,7 +9373,7 @@ public enum Components {
             public var isAnime: Swift.Bool
             /// - Remark: Generated from `#/components/schemas/CatalogHit/ids`.
             public var ids: Components.Schemas.ExternalIds
-            /// The caller's library item for this title, when they have one. Discover only.
+            /// The caller's library item for this title, when they have one. Discover and onboarding rows only.
             ///
             /// - Remark: Generated from `#/components/schemas/CatalogHit/libraryItemId`.
             public var libraryItemId: Swift.String?
@@ -9126,7 +9393,7 @@ public enum Components {
             ///   - byline: Authors, for books and manga; the artist credit, for albums.
             ///   - isAnime:
             ///   - ids:
-            ///   - libraryItemId: The caller's library item for this title, when they have one. Discover only.
+            ///   - libraryItemId: The caller's library item for this title, when they have one. Discover and onboarding rows only.
             ///   - releaseDate: YYYY-MM-DD. A film's first release or a show's first air date (TMDB), an anime's start date (AniList). Absent when the provider has no full date.
             public init(
                 _type: Components.Schemas.MediaType,
@@ -16929,6 +17196,130 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/me/favorites/{kind}/put(setMyFavorites)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// End the first-run flow (ONB-001), finished or skipped. The first call wins; later calls change nothing. What the flow already saved stays.
+    ///
+    /// - Remark: HTTP `PUT /v1/me/onboarding`.
+    /// - Remark: Generated from `#/paths//v1/me/onboarding/put(finishOnboarding)`.
+    public enum FinishOnboarding {
+        public static let id: Swift.String = "finishOnboarding"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/onboarding/PUT/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.FinishOnboarding.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.FinishOnboarding.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.FinishOnboarding.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/me/onboarding/PUT/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/onboarding/PUT/requestBody/content/application\/json`.
+                case json(Components.Schemas.OnboardingFinish)
+            }
+            public var body: Operations.FinishOnboarding.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.FinishOnboarding.Input.Headers = .init(),
+                body: Operations.FinishOnboarding.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Onboarding is over for this account.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/onboarding/put(finishOnboarding)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.FinishOnboarding.Output.NoContent)
+            /// Onboarding is over for this account.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/onboarding/put(finishOnboarding)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.FinishOnboarding.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/onboarding/put(finishOnboarding)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)
@@ -31666,6 +32057,439 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/discover/get(getDiscover)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Rows of well-known titles of one kind to pick from in the first-run flow (ONB-001).
+    ///
+    /// Popular first, then rows by genre (by subject for books). Catalog data, the same for every user and cached by the server; items the caller has carry `libraryItemId`. A row whose provider is down is left out; manga has none while AniList is down, and anime comes from TMDB's Japanese animation then, with a `note`.
+    ///
+    /// - Remark: HTTP `GET /v1/onboarding/rows`.
+    /// - Remark: Generated from `#/paths//v1/onboarding/rows/get(getOnboardingRows)`.
+    public enum GetOnboardingRows {
+        public static let id: Swift.String = "getOnboardingRows"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/onboarding/rows/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/onboarding/rows/GET/query/kind`.
+                public var kind: Components.Schemas.DiscoverRowKind
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - kind:
+                public init(kind: Components.Schemas.DiscoverRowKind) {
+                    self.kind = kind
+                }
+            }
+            public var query: Operations.GetOnboardingRows.Input.Query
+            /// - Remark: Generated from `#/paths/v1/onboarding/rows/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetOnboardingRows.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetOnboardingRows.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetOnboardingRows.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - query:
+            ///   - headers:
+            public init(
+                query: Operations.GetOnboardingRows.Input.Query,
+                headers: Operations.GetOnboardingRows.Input.Headers = .init()
+            ) {
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/onboarding/rows/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/onboarding/rows/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.DiscoverRows)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.DiscoverRows {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetOnboardingRows.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetOnboardingRows.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Rows in display order. Empty rows are left out.
+            ///
+            /// - Remark: Generated from `#/paths//v1/onboarding/rows/get(getOnboardingRows)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetOnboardingRows.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetOnboardingRows.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/onboarding/rows/get(getOnboardingRows)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Add the titles picked in one step of the first-run flow, each with its status (ONB-001).
+    ///
+    /// One journaled action (one undo), journal kind `onboarding`: the picks were watched, read or heard before, so their ticks carry no date, they earn no points and no streak day, and the Recap leaves them out. A status other than `wishlist` counts as set by hand, so a later import never moves it back. A title already in the library is returned unchanged. A ref that resolves to no title is left out of `items` and counted in `missed`. 1 to 60 items, else 422.
+    ///
+    /// - Remark: HTTP `POST /v1/onboarding/picks`.
+    /// - Remark: Generated from `#/paths//v1/onboarding/picks/post(addOnboardingPicks)`.
+    public enum AddOnboardingPicks {
+        public static let id: Swift.String = "addOnboardingPicks"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/onboarding/picks/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.AddOnboardingPicks.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.AddOnboardingPicks.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.AddOnboardingPicks.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/onboarding/picks/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/onboarding/picks/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.OnboardingPicks)
+            }
+            public var body: Operations.AddOnboardingPicks.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.AddOnboardingPicks.Input.Headers = .init(),
+                body: Operations.AddOnboardingPicks.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/onboarding/picks/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/onboarding/picks/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.OnboardingPicked)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.OnboardingPicked {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.AddOnboardingPicks.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.AddOnboardingPicks.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The library items, in the order sent.
+            ///
+            /// - Remark: Generated from `#/paths//v1/onboarding/picks/post(addOnboardingPicks)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.AddOnboardingPicks.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.AddOnboardingPicks.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/onboarding/picks/post(addOnboardingPicks)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Titles related to the ones picked (ONB-001): prequels, sequels, side stories, spin-offs, adaptations and sources from each title's relation graph (GRAPH-001).
+    ///
+    /// Catalog data joined by id, never a recommendation: nothing is read from other users and nothing is ranked by taste. Titles already in the caller's library are left out, each title once under the first pick it relates to, at most 30 shared across the picks in turn so one long franchise cannot fill them, grouped by pick in the order the picks were sent. Graphs not cached yet get a few seconds; `partial` says some were cut short (they keep loading for the next call).
+    ///
+    /// - Remark: HTTP `POST /v1/onboarding/related`.
+    /// - Remark: Generated from `#/paths//v1/onboarding/related/post(getOnboardingRelated)`.
+    public enum GetOnboardingRelated {
+        public static let id: Swift.String = "getOnboardingRelated"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/onboarding/related/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetOnboardingRelated.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetOnboardingRelated.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetOnboardingRelated.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/onboarding/related/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/onboarding/related/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.OnboardingRelatedRequest)
+            }
+            public var body: Operations.GetOnboardingRelated.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.GetOnboardingRelated.Input.Headers = .init(),
+                body: Operations.GetOnboardingRelated.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/onboarding/related/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/onboarding/related/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.OnboardingRelated)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.OnboardingRelated {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetOnboardingRelated.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetOnboardingRelated.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The related titles.
+            ///
+            /// - Remark: Generated from `#/paths//v1/onboarding/related/post(getOnboardingRelated)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetOnboardingRelated.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetOnboardingRelated.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/onboarding/related/post(getOnboardingRelated)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

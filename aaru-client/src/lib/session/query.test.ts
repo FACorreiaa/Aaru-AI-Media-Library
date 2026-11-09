@@ -8,7 +8,9 @@ vi.mock('@tanstack/solid-router', () => ({
   redirect: (options: unknown) => ({ options }),
 }))
 
-const { SESSION_KEY, forgetAccount, requireSession } = await import('./query')
+const { SESSION_KEY, forgetAccount, requireOnboarded, requireSession } =
+  await import('./query')
+const { onboardingFinished } = await import('../onboarding/session')
 
 describe('requireSession', () => {
   let queryClient: QueryClient
@@ -47,5 +49,54 @@ describe('requireSession', () => {
     forgetAccount(queryClient)
     await requireSession(queryClient)
     expect(getSession).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('requireOnboarded', () => {
+  const signedIn = {
+    signedIn: true as const,
+    displayName: 'Ana',
+    handle: 'ana',
+  }
+
+  it('sends a new account to the first run, carrying where it was headed', () => {
+    expect(() =>
+      requireOnboarded(
+        { ...signedIn, onboardingPending: true },
+        '/app/library?kind=book',
+      ),
+    ).toThrow(
+      expect.objectContaining({
+        options: {
+          to: '/app/welcome',
+          search: { next: '/app/library?kind=book' },
+        },
+      }),
+    )
+  })
+
+  it('lets everyone else through, an absent flag included', () => {
+    expect(() =>
+      requireOnboarded({ ...signedIn, onboardingPending: false }, '/app'),
+    ).not.toThrow()
+    expect(() => requireOnboarded(signedIn, '/app')).not.toThrow()
+  })
+
+  it('stops asking once the first run ends, without asking the server again', async () => {
+    getSession.mockReset()
+    getSession.mockResolvedValue({ ...signedIn, onboardingPending: true })
+    const queryClient = new QueryClient()
+    queryClient.setQueryData(['library'], [])
+    const before = await requireSession(queryClient)
+    expect(before.onboardingPending).toBe(true)
+
+    onboardingFinished(queryClient)
+    const after = await requireSession(queryClient)
+    expect(after.onboardingPending).toBe(false)
+    expect(() => requireOnboarded(after, '/app')).not.toThrow()
+    expect(getSession).toHaveBeenCalledTimes(1)
+    // Pages read before the flow added titles are asked again.
+    expect(queryClient.getQueryData(['library'])).toBeUndefined()
+    expect(queryClient.getQueryData(SESSION_KEY)).toBeDefined()
   })
 })

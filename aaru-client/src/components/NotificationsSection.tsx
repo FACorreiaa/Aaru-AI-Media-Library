@@ -1,11 +1,7 @@
 import { For, Show, createSignal, onMount } from 'solid-js'
-import { keyBytes, pushSupport } from '../lib/push/model'
+import { BLOCKED_MESSAGE, browserPushSupport, turnOn } from '../lib/push/enable'
 import type { PushSupport } from '../lib/push/model'
-import {
-  deleteSubscription,
-  saveNotifications,
-  saveSubscription,
-} from '../lib/push/server'
+import { deleteSubscription, saveNotifications } from '../lib/push/server'
 import type { NotificationSettings, PushSetup } from '../lib/push/server'
 import { SettingsSection } from './settings/SettingsSection'
 import {
@@ -53,15 +49,7 @@ export function NotificationsSection(props: { setup: PushSetup }) {
     setProblem(error instanceof Error ? error.message : fallback)
 
   onMount(async () => {
-    setSupport(
-      pushSupport({
-        serviceWorker: 'serviceWorker' in navigator,
-        pushManager: 'PushManager' in window,
-        notification: 'Notification' in window,
-        iOS: /iPad|iPhone|iPod/.test(navigator.userAgent),
-        standalone: window.matchMedia('(display-mode: standalone)').matches,
-      }),
-    )
+    setSupport(browserPushSupport())
     if (support() !== 'supported') return
     const registration = await navigator.serviceWorker.getRegistration('/')
     setSubscribed(Boolean(await registration?.pushManager.getSubscription()))
@@ -80,34 +68,18 @@ export function NotificationsSection(props: { setup: PushSetup }) {
     }
   }
 
-  async function turnOn(publicKey: string) {
+  async function enable(publicKey: string) {
     setBusy(true)
     setProblem(null)
     try {
-      if ((await Notification.requestPermission()) !== 'granted') {
-        setProblem(
-          'Notifications are blocked for Aaru in this browser. Allow them in the site settings, then try again.',
-        )
+      const result = await turnOn(publicKey, settings())
+      if (result.kind === 'blocked') {
+        setProblem(BLOCKED_MESSAGE)
         return
       }
-      const registration = await navigator.serviceWorker.register('/sw.js')
-      await navigator.serviceWorker.ready
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: keyBytes(publicKey),
-      })
-      const json = subscription.toJSON()
-      await saveSubscription({
-        data: {
-          endpoint: subscription.endpoint,
-          keys: {
-            p256dh: json.keys?.p256dh ?? '',
-            auth: json.keys?.auth ?? '',
-          },
-        },
-      })
       setSubscribed(true)
-      if (!Object.values(settings()).some(Boolean)) await toggle('airing', true)
+      setSettings(result.settings)
+      if (result.airingFailed) setProblem('That was not saved.')
     } catch (error) {
       fail(error, 'This browser could not be signed up for alerts.')
     } finally {
@@ -193,7 +165,7 @@ export function NotificationsSection(props: { setup: PushSetup }) {
                   variant="outline"
                   disabled={busy()}
                   onClick={() =>
-                    void (subscribed() ? turnOff() : turnOn(publicKey()))
+                    void (subscribed() ? turnOff() : enable(publicKey()))
                   }
                 >
                   {subscribed()

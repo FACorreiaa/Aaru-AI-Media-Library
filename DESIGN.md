@@ -21,7 +21,8 @@ Keep a **canvas** beside intent so work does not die in the scroll.
 The app's landing screen, and the web landing page's twin. Mascot on its disc, wordmark, one
 display headline, three plain pillars (one library, private by default, bring your history), then
 Sign in with Apple and Continue with email pinned to the bottom on iPhone. Side by side on iPad
-and Mac. No carousel, no feature tour, no "AI". `WelcomeView` in `aaru-ios`.
+and Mac. No carousel, no feature tour, no "AI". `WelcomeView` in `aaru-ios`. That rule is for the
+signed-out screen; a new account's first run is §0a.
 
 The web landing (`src/routes/index.tsx`, owner 2026-10-20) is centred: a privacy pill, the
 display headline, Get started, then App Store and Google Play buttons at equal weight ("Coming
@@ -31,6 +32,36 @@ per thing tracked (TV shows, movies, anime, books, music, sports), each with a s
 three covers (`KindCard`), imports, native apps, FAQ. The header and footer link to X. Art is
 hotlinked from TMDB, Open Library and the Cover Art Archive (`src/lib/landing/art.ts`); sports
 use type tiles. `WelcomeView` has not been brought in line yet.
+
+## 0a. First run (ONB-001, owner 2026-11-09)
+
+A new account's first screens, once, before Home: say what you keep, pick what you have
+already watched, read or heard, and land on a Home that is not empty. Every screen has Skip at
+the top right, which ends the whole flow and keeps what was already saved; nothing asks twice.
+Accounts made before it shipped never see it (`Me.onboardingPending`).
+
+1. **What do you keep?** The six kinds as cards, pick any. The owl (curious) sits above the
+   headline, the one place in the flow it appears. "Bring your history instead" goes to Import.
+2. **Pick shows you watch** (one screen per kind chosen, in Library's kind order; "Pick books
+   you've read", "Pick albums you've heard"…). A search field, then rows of well-known titles:
+   Popular, then by genre (by subject for books, one Popular row for albums). A tap marks the
+   poster with a status chip, the first tap being Watched / Read / Listened; more taps cycle
+   Watching / Reading and Plan to…, then off. A long press (right-click on the web and Mac)
+   opens the status menu and Remove. The pill at the bottom reads "Continue (3)", or "Skip
+   shows" with nothing picked: no minimum. Continue saves the screen's picks as one action.
+3. **Your favorites.** The titles marked Watched / Read / Listened, by kind: tap to star, up to
+   ten a kind, in tap order (FAV-001). Shown only when there is one.
+4. **More from what you picked.** Sequels, prequels, side stories, spin-offs, adaptations and
+   sources of the picks, from the relation graph (GRAPH-001), grouped "More from Dune". A tap
+   adds Plan to… Never "for you" or "because you watched": it is the catalog's relation data,
+   and the step is left out when there is none.
+5. **Never miss a new episode.** A sample alert for one of their Watching shows, "Turn on
+   notifications" and "Not now". Only when a show or anime was picked as Watching (airing alerts
+   follow those alone) and the device can take push.
+
+The picks were watched before today, so they are journaled as kind `onboarding`: undated ticks,
+no points, no streak day, not in the Recap, one badge summary. A status the user picked is
+theirs: a later import never moves it back. The flow is app chrome; the agent never emits it.
 
 ## 1. The Field (home)
 
@@ -492,7 +523,8 @@ then any; the user's main kind leads, and an empty library takes the first three
 which public rows show, never what is in them. "More on Discover" leads to the rest.
 
 It is catalog data, the same lists for everyone. It is **not** recommendations: no "because you
-watched", no taste profile, nothing read from other users. A tab on iPhone, a sidebar
+watched", no taste profile, nothing read from other users. The first run's "More from what you picked" (§0a) is the
+relation graph, not this rule bent. A tab on iPhone, a sidebar
 destination on iPad, Mac and the web (§18).
 
 **On air (DISC-003, owner 2026-10-24).** Today | On air | Seasons. On air is the week's airings
@@ -1329,7 +1361,7 @@ sets, brand assets), main wins.
 - **Where the owl lives (owner, 2026-10-23).** Signed-out surfaces, and in the app: beside
   "The Field" on Home, in screen-level empty states (`OwlEmpty` / `OwlUnavailableView`, never
   inside a picker, a filter result or a settings row), on errors, the 404 and the load-failed
-  view, on the recap cover, on an earned badge. Never on a plan card, which an outside
+  view, on the first run's opening screen (§0a), on the recap cover, on an earned badge. Never on a plan card, which an outside
   connection wrote.
 - **Poses.** Standing (the poster's owl) by default; **curious** when nothing matches (search,
   the 404), **sleeping** when nothing airs or you are caught up, **celebrating** for a

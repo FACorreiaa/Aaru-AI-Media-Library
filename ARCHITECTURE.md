@@ -487,6 +487,22 @@ albums, `stats/sitewide/artists` for Coming soon), because fresh releases carry 
 their own. Hits are `album`s keyed by the release-group MBID, so marking works; covers are Cover
 Art Archive release URLs. `CatalogProviders.releases` is optional: without it the rows are absent.
 
+### First run (ONB-001)
+
+A new account's flow (DESIGN.md §0a) is a client of four routes in `aaru-server-v2`.
+`users.onboarded_at` is null until `PUT /v1/me/onboarding` sets it (first call wins); the
+migration filled it for every account made before, and `Me.onboardingPending` reads it.
+`GET /v1/onboarding/rows?kind=` serves Popular and genre rows of well-known titles (TMDB
+`discover/{tv,movie}` by popularity and `with_genres`, AniList `POPULARITY_DESC` by `genre_in`,
+Open Library subjects, ListenBrainz's sitewide release groups) from its own 24 h cache, outside
+`/v1/discover` so Discover's fetch does not grow, marked against the library like Discover.
+`POST /v1/onboarding/picks` resolves each `MediaRef` and applies one `library.Batch` as journal
+kind `onboarding`: in `UndatedKinds`, not in `LiveKinds`, then `BatchApplied` (one badge summary,
+no points). `POST /v1/onboarding/related` runs each pick's relation graph (GRAPH-001) four at a
+time under one deadline and returns the relation nodes the caller does not have. The status
+cycle and which steps show are pure functions on both clients (`AaruCore` `Onboarding`, web
+`lib/onboarding/model.ts`).
+
 ### MediaRef
 
 ```swift

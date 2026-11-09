@@ -21,6 +21,8 @@ export type Session =
       handle: string | null
       /** The API's path to your photo (SOC-001b), for `avatarSrc`. */
       avatarUrl?: string | null
+      /** True until the first run is finished or skipped (ONB-001). Absent reads as false. */
+      onboardingPending?: boolean
     }
 
 export const getSession = createServerFn({ method: 'GET' }).handler(
@@ -39,9 +41,11 @@ export const getSession = createServerFn({ method: 'GET' }).handler(
         displayName: data?.displayName ?? null,
         handle: data?.handle ?? null,
         avatarUrl: data?.avatarUrl ?? null,
+        onboardingPending: data?.onboardingPending ?? false,
       }
     } catch {
-      // An unreachable API keeps the session; only a 401 ends it (as in the Apple apps).
+      // An unreachable API keeps the session; only a 401 ends it (as in the Apple apps). The
+      // first run waits for an answer: it is never forced on a guess.
       return { signedIn: true, displayName: null, handle: null }
     }
   },

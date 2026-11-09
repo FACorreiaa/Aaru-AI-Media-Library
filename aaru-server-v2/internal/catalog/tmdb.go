@@ -339,10 +339,16 @@ func tmdbRowHits(page tmdbSearchPage, mediaType core.MediaType, anime bool) []Hi
 	return hits
 }
 
+// tmdbJapaneseAnimation is TMDB's stand-in for AniList (CAT-021): animation from Japan.
+func tmdbJapaneseAnimation() map[string]string {
+	return map[string]string{"with_genres": "16", "with_origin_country": "JP"}
+}
+
 // tmdbAnimeQuery is Japanese animation: this season's premieres, or what aired in
 // the last and next week.
 func tmdbAnimeQuery(list DiscoverList, now time.Time) (map[string]string, error) {
-	query := map[string]string{"with_genres": "16", "with_origin_country": "JP", "sort_by": "popularity.desc"}
+	query := tmdbJapaneseAnimation()
+	query["sort_by"] = "popularity.desc"
 	if list == ListAnimeSeason {
 		season := CurrentSeason(now)
 		first, last := season.Days()

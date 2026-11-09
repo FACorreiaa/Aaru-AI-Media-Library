@@ -63,15 +63,18 @@ function TypeCover(props: { tile: TypeTile; index: number }) {
   )
 }
 
-/** One thing Aaru tracks: three covers in a small fan, the name, one line. */
-export function KindCard(props: { kind: Kind }) {
+/** One thing Aaru tracks: three covers in a small fan, the name, one line. `compact` is the
+ * first run's smaller card (ONB-001), six to a screen. */
+export function KindCard(props: { kind: Kind; compact?: boolean }) {
   const width = () => (props.kind.shape === 'square' ? 'w-[40%]' : 'w-[38%]')
   const aspect = () =>
     props.kind.shape === 'square' ? 'aspect-square' : 'aspect-[2/3]'
   return (
-    <article class="flex flex-col rounded-[28px] bg-surface p-7">
+    <article
+      class={`flex flex-col rounded-[28px] bg-surface ${props.compact ? 'p-5' : 'p-7'}`}
+    >
       <div
-        class="relative mx-auto h-44 w-full max-w-[17rem]"
+        class={`relative mx-auto w-full ${props.compact ? 'h-28 max-w-[11rem]' : 'h-44 max-w-[17rem]'}`}
         aria-hidden="true"
       >
         <For each={props.kind.covers}>
@@ -88,8 +91,16 @@ export function KindCard(props: { kind: Kind }) {
           )}
         </For>
       </div>
-      <h3 class="mt-8 font-display text-2xl font-medium">{props.kind.name}</h3>
-      <p class="mt-2 leading-relaxed text-muted">{props.kind.pitch}</p>
+      <h3
+        class={`font-display font-medium ${props.compact ? 'mt-5 text-xl' : 'mt-8 text-2xl'}`}
+      >
+        {props.kind.name}
+      </h3>
+      <p
+        class={`mt-2 leading-relaxed text-muted ${props.compact ? 'text-sm' : ''}`}
+      >
+        {props.kind.pitch}
+      </p>
     </article>
   )
 }

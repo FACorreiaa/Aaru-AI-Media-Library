@@ -91,6 +91,9 @@ type RelationService struct {
 	Store   *Store
 	Sources []RelationSource
 	log     *slog.Logger
+	// OnboardingDeadline bounds one onboarding related call's graphs (OnboardingRelatedDeadline
+	// when zero); tests shorten it.
+	OnboardingDeadline time.Duration
 	// warming holds the centres being walked in the background, so one title warms once.
 	warming sync.Map
 }
@@ -110,6 +113,12 @@ func NewRelationService(store *Store, sources []RelationSource, log *slog.Logger
 
 // Graph is the title's relations in the given order.
 func (s *RelationService) Graph(ctx context.Context, titleID uuid.UUID, order RelationOrder) (RelationGraph, error) {
+	return s.graphBy(ctx, titleID, order, time.Now().Add(RelationGraphDeadline))
+}
+
+// graphBy is Graph drawn with whatever arrived by deadline; a graph cut short keeps warming past
+// it, as long as ctx itself is alive.
+func (s *RelationService) graphBy(ctx context.Context, titleID uuid.UUID, order RelationOrder, deadline time.Time) (RelationGraph, error) {
 	title, err := s.Store.Title(ctx, titleID)
 	if err != nil {
 		return RelationGraph{}, err
@@ -135,7 +144,7 @@ func (s *RelationService) Graph(ctx context.Context, titleID uuid.UUID, order Re
 			centre.IDs.AniList = mappings[0].AniList
 		}
 	}
-	pageCtx, cancel := context.WithTimeout(ctx, RelationGraphDeadline)
+	pageCtx, cancel := context.WithDeadline(ctx, deadline)
 	defer cancel()
 	graph := BuildRelationGraph(pageCtx, centre, s.Sources, order)
 	if graph.Partial && errors.Is(pageCtx.Err(), context.DeadlineExceeded) && ctx.Err() == nil {

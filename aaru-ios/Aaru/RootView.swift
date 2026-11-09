@@ -27,6 +27,10 @@ struct RootView: View {
     @State private var pendingShare: SharedLink?
     /// The undo toast after a bulk write (PROG-005), shared by every screen and sheet.
     @State private var toasts = ToastCenter()
+    /// The first run (ONB-001): whether this account still has it to do.
+    @State private var onboarding = OnboardingGate.checking
+    /// An invite or share link came in: it wins, and the first run waits for the next launch.
+    @State private var onboardingDeferred = false
 
     private var flow: AuthFlow {
         AuthFlow(api: api, session: session)
@@ -35,10 +39,21 @@ struct RootView: View {
     var body: some View {
         Group {
             if session.isSignedIn {
-                MainTabs(
-                    api: api, library: library, lists: lists, imports: imports, groups: groups,
-                    realtime: realtime, settings: settingsContext
-                )
+                switch onboarding {
+                case .checking:
+                    ProgressView()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(Color(.paper).ignoresSafeArea())
+                case .pending:
+                    OnboardingFlow(api: api, library: library, notifications: settings.notifications) { openImport in
+                        finishOnboarding(openImport: openImport)
+                    }
+                case .done:
+                    MainTabs(
+                        api: api, library: library, lists: lists, imports: imports, groups: groups,
+                        realtime: realtime, settings: settingsContext
+                    )
+                }
             } else {
                 WelcomeView(
                     api: api,
@@ -71,11 +86,15 @@ struct RootView: View {
         // Share links and invites open signed out too; every other link waits for the app.
         .onOpenURL { url in
             if let share = SharedLink(url) {
+                if session.isSignedIn {
+                    deferOnboarding()
+                }
                 open(share)
                 return
             }
             guard let invite = InviteLink(url) else { return }
             if session.isSignedIn {
+                deferOnboarding()
                 openInvite = invite
             } else {
                 pendingInvite = invite
@@ -83,6 +102,9 @@ struct RootView: View {
         }
         // A signed-out device keeps nothing of the last user's library.
         .onChange(of: session.isSignedIn) { _, signedIn in
+            if signedIn, pendingInvite != nil || pendingShare != nil {
+                deferOnboarding()
+            }
             if signedIn, let invite = pendingInvite {
                 pendingInvite = nil
                 openInvite = invite
@@ -94,6 +116,9 @@ struct RootView: View {
             if !signedIn {
                 openShare = nil
                 pendingShare = nil
+                onboarding = .checking
+                onboardingDeferred = false
+                OnboardingGate.forget()
                 onSignedOut()
                 toasts.dismiss()
             }
@@ -105,6 +130,45 @@ struct RootView: View {
         }
         // Outermost, so the sheets above (a widget's title, a push's request) carry it too.
         .toastCenter(toasts)
+        .task(id: session.token) { await checkOnboarding() }
+    }
+
+    // MARK: First run (ONB-001)
+
+    /// Reads `Me.onboardingPending` once per session. Never holds the app: a failed or slow call,
+    /// or a server that does not send the field, opens the app. Once the server says done, this
+    /// device stops asking.
+    private func checkOnboarding() async {
+        guard session.isSignedIn, onboarding == .checking else { return }
+        guard let api, !OnboardingGate.isKnownDone, !onboardingDeferred else {
+            onboarding = .done
+            return
+        }
+        let pending = await OnboardingGate.fetchPending(api)
+        guard !Task.isCancelled, onboarding == .checking else { return }
+        if pending == false {
+            OnboardingGate.rememberDone()
+        }
+        onboarding = pending == true && !onboardingDeferred ? .pending : .done
+    }
+
+    /// A link is waiting: the app opens on it, and the first run stays pending on the server.
+    private func deferOnboarding() {
+        onboardingDeferred = true
+        if onboarding != .done {
+            onboarding = .done
+        }
+    }
+
+    /// The flow ended (finished, skipped or "Bring your history instead"). Import opens once the
+    /// app is up, as the share sheet does after other sheets go.
+    private func finishOnboarding(openImport: Bool) {
+        onboarding = .done
+        guard openImport else { return }
+        Task {
+            try? await Task.sleep(for: .milliseconds(450))
+            router.openSettings(.imports)
+        }
     }
 
     /// Clears whatever sheet is up first: SwiftUI shows nothing when asked for a sheet over

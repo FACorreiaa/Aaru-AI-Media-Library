@@ -278,6 +278,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/me/onboarding': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /** End the first-run flow (ONB-001), finished or skipped. The first call wins; later calls change nothing. What the flow already saved stays. */
+    put: operations['finishOnboarding']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/social/users/{handle}': {
     parameters: {
       query?: never
@@ -1704,6 +1721,66 @@ export interface paths {
     get: operations['getDiscover']
     put?: never
     post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/onboarding/rows': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Rows of well-known titles of one kind to pick from in the first-run flow (ONB-001).
+     * @description Popular first, then rows by genre (by subject for books). Catalog data, the same for every user and cached by the server; items the caller has carry `libraryItemId`. A row whose provider is down is left out; manga has none while AniList is down, and anime comes from TMDB's Japanese animation then, with a `note`.
+     */
+    get: operations['getOnboardingRows']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/onboarding/picks': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Add the titles picked in one step of the first-run flow, each with its status (ONB-001).
+     * @description One journaled action (one undo), journal kind `onboarding`: the picks were watched, read or heard before, so their ticks carry no date, they earn no points and no streak day, and the Recap leaves them out. A status other than `wishlist` counts as set by hand, so a later import never moves it back. A title already in the library is returned unchanged. A ref that resolves to no title is left out of `items` and counted in `missed`. 1 to 60 items, else 422.
+     */
+    post: operations['addOnboardingPicks']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/onboarding/related': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Titles related to the ones picked (ONB-001): prequels, sequels, side stories, spin-offs, adaptations and sources from each title's relation graph (GRAPH-001).
+     * @description Catalog data joined by id, never a recommendation: nothing is read from other users and nothing is ranked by taste. Titles already in the caller's library are left out, each title once under the first pick it relates to, at most 30 shared across the picks in turn so one long franchise cannot fill them, grouped by pick in the order the picks were sent. Graphs not cached yet get a few seconds; `partial` says some were cut short (they keep loading for the next call).
+     */
+    post: operations['getOnboardingRelated']
     delete?: never
     options?: never
     head?: never
@@ -3494,6 +3571,50 @@ export interface components {
       emailShareable?: boolean
       /** @description Path to `GET /v1/users/{userId}/avatar` with its version. Absent without an avatar. */
       avatarUrl?: string
+      /** @description True until the first-run flow is finished or skipped (ONB-001); accounts made before it shipped never see it. Always sent; optional so apps built before the server ships still read `Me`. */
+      onboardingPending?: boolean
+    }
+    OnboardingFinish: {
+      /** @description True when the user left with Skip rather than reaching the end. */
+      skipped: boolean
+    }
+    OnboardingPicks: {
+      items: components['schemas']['AddLibraryItem'][]
+    }
+    OnboardingPicked: {
+      items: components['schemas']['OnboardingPickedItem'][]
+      /** @description Refs that resolved to no title. */
+      missed: number
+      /**
+       * Format: uuid
+       * @description The journaled action, for undo. Absent when nothing changed.
+       */
+      actionId?: string
+    }
+    OnboardingPickedItem: {
+      /** @description Position in the request's `items`. */
+      index: number
+      /** Format: uuid */
+      libraryItemId: string
+      /** Format: uuid */
+      titleId: string
+    }
+    OnboardingRelatedRequest: {
+      titleIds: string[]
+    }
+    OnboardingRelated: {
+      items: components['schemas']['OnboardingRelatedItem'][]
+      /** @description True when a graph failed or ran out of time. */
+      partial: boolean
+    }
+    OnboardingRelatedItem: {
+      hit: components['schemas']['CatalogHit']
+      /** @description How `hit` stands to the picked title, read "`hit` is the pick's `relation`". */
+      relation: components['schemas']['Relation']
+      /** Format: uuid */
+      fromTitleId: string
+      /** @description The picked title's name */
+      fromTitle: string
     }
     Entitlement: {
       /** @description Aaru Plus is active. */
@@ -4297,7 +4418,7 @@ export interface components {
       byline?: string
       isAnime: boolean
       ids: components['schemas']['ExternalIds']
-      /** @description The caller's library item for this title, when they have one. Discover only. */
+      /** @description The caller's library item for this title, when they have one. Discover and onboarding rows only. */
       libraryItemId?: string
       /** @description YYYY-MM-DD. A film's first release or a show's first air date (TMDB), an anime's start date (AniList). Absent when the provider has no full date. */
       releaseDate?: string
@@ -5903,6 +6024,29 @@ export interface operations {
         content: {
           'application/json': components['schemas']['Favorites']
         }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  finishOnboarding: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['OnboardingFinish']
+      }
+    }
+    responses: {
+      /** @description Onboarding is over for this account. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
       }
       default: components['responses']['Error']
     }
@@ -8342,6 +8486,79 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['DiscoverRows']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getOnboardingRows: {
+    parameters: {
+      query: {
+        kind: components['schemas']['DiscoverRowKind']
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Rows in display order. Empty rows are left out. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DiscoverRows']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  addOnboardingPicks: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['OnboardingPicks']
+      }
+    }
+    responses: {
+      /** @description The library items, in the order sent. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['OnboardingPicked']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getOnboardingRelated: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['OnboardingRelatedRequest']
+      }
+    }
+    responses: {
+      /** @description The related titles. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['OnboardingRelated']
         }
       }
       default: components['responses']['Error']
