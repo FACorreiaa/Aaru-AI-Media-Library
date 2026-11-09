@@ -60,6 +60,20 @@ final class FavoritesModel {
         return await save(kind, current.map(\.mediaRef) + [hit.mediaRef])
     }
 
+    /// Adds Aaru titles (refs by `titleId`) at the end of a kind, after what is there: the first
+    /// run's favorites (ONB-001). Loads first, keeps a title once, stops at the limit. True when
+    /// it was saved, or there was nothing new.
+    func append(_ refs: [MediaRef], to kind: FavoriteKind) async -> Bool {
+        if favorites == nil {
+            await load()
+        }
+        guard let current = favorites?[kind] else { return false }
+        var seen = Set(current.map(\.id))
+        let added = refs.filter { ref in ref.titleId.map { seen.insert($0).inserted } ?? false }
+        guard !added.isEmpty else { return true }
+        return await save(kind, Array((current.map(\.mediaRef) + added).prefix(Self.limit)))
+    }
+
     private func save(_ kind: FavoriteKind, _ refs: [MediaRef]) async -> Bool {
         guard let api else { return false }
         problem = nil
