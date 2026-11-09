@@ -50,7 +50,8 @@ var ownBodyLimits = map[string]int64{
 
 // noDeadline are the routes the request deadline leaves alone (DB-001): the socket lives for
 // hours, uploads arrive at the client's pace, the export, MCP tool calls, a Chat turn and a
-// transcription can run long (each has its own ceiling), and
+// transcription can run long (each has its own ceiling), first-run picks resolve new titles at
+// each provider's pace (AniList's 1.5/s; onboardingPicksCeiling), and
 // an import's approval, a plan's, their undo and account deletion are one transaction each that must not be
 // cut half way through a large library.
 var noDeadline = map[string]bool{
@@ -69,6 +70,7 @@ var noDeadline = map[string]bool{
 	"POST /v1/imports/:id/undo":                    true,
 	"POST /v1/actions/:id/undo":                    true,
 	"POST /v1/plans/:id/approve":                   true,
+	"POST /v1/onboarding/picks":                    true,
 	"DELETE /v1/me":                                true,
 }
 

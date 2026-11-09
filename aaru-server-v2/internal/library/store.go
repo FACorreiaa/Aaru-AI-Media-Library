@@ -48,8 +48,9 @@ func (s *Store) now() time.Time {
 }
 
 // UndatedKinds are writes whose ticks were not watched today: an import, a season marked watched
-// (a catch-up, owner 2026-10-25), and the whole show marked watched (PROG-005).
-var UndatedKinds = map[string]bool{"import": true, "season": true, "show": true}
+// (a catch-up, owner 2026-10-25), the whole show marked watched (PROG-005), and the titles picked
+// while setting up (ONB-001).
+var UndatedKinds = map[string]bool{"import": true, "season": true, "show": true, OnboardingKind: true}
 
 // ProgressKinds are kinds that are progress on an item: episode, season and whole-show ticks, and
 // field edits (status, pages). A committed one accepts a Tonight pick (AG-005).

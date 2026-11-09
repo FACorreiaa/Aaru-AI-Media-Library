@@ -126,32 +126,9 @@ func (s *Service) Add(ctx context.Context, ref core.MediaRef, status *core.Libra
 	if existing != nil {
 		return s.Entry(ctx, existing.Item.ID, user)
 	}
-	write := s.PrepareAdd(title, status, caller)
-	if title.Type == core.MediaShow && status != nil && *status == core.StatusFinished {
-		// PROG-005: added as watched means every aired episode, in the same one action. An insert
-		// writes its ticks undated, like the whole-show mark.
-		detail, err := s.Catalog.Service.Detail(ctx, title.ID)
-		if err != nil {
-			return Entry{}, err
-		}
-		snapshot := *write.Op.Snapshot
-		snapshot.Watched = nil
-		for _, ep := range detail.Episodes {
-			if ep.Season > 0 && HasAired(ep, detail.Status, s.now()) {
-				if k, err := core.NewEpisodeKey(ep.Season, ep.Episode); err == nil {
-					snapshot.Watched = append(snapshot.Watched, k)
-				}
-			}
-		}
-		// Running or not, it is finished (owner, 2026-10-30); nothing aired yet is still planned.
-		if len(snapshot.Watched) == 0 {
-			snapshot.Fields.Status = core.StatusWishlist
-			snapshot.Fields.FinishedAt = nil
-			byHand := false
-			snapshot.Fields.StatusByHand = &byHand
-		}
-		write.Op = InsertItem(snapshot)
-		write.Episodes = len(snapshot.Watched)
+	write, err := s.prepareAddWatched(ctx, title, status, caller)
+	if err != nil {
+		return Entry{}, err
 	}
 	if _, err := s.Commit(ctx, write, user, caller); err != nil {
 		var conflict *StoreConflict
@@ -175,6 +152,38 @@ func (s *Service) Add(ctx context.Context, ref core.MediaRef, status *core.Libra
 		}
 	}
 	return s.Entry(ctx, write.ItemID, user)
+}
+
+// prepareAddWatched is PrepareAdd, where a show added as finished also ticks every aired episode
+// in the same one action (PROG-005). An insert writes its ticks undated, like the whole-show mark.
+func (s *Service) prepareAddWatched(ctx context.Context, title core.Title, status *core.LibraryStatus, caller Caller) (PreparedWrite, error) {
+	write := s.PrepareAdd(title, status, caller)
+	if title.Type != core.MediaShow || status == nil || *status != core.StatusFinished {
+		return write, nil
+	}
+	detail, err := s.Catalog.Service.Detail(ctx, title.ID)
+	if err != nil {
+		return PreparedWrite{}, err
+	}
+	snapshot := *write.Op.Snapshot
+	snapshot.Watched = nil
+	for _, ep := range detail.Episodes {
+		if ep.Season > 0 && HasAired(ep, detail.Status, s.now()) {
+			if k, err := core.NewEpisodeKey(ep.Season, ep.Episode); err == nil {
+				snapshot.Watched = append(snapshot.Watched, k)
+			}
+		}
+	}
+	// Running or not, it is finished (owner, 2026-10-30); nothing aired yet is still planned.
+	if len(snapshot.Watched) == 0 {
+		snapshot.Fields.Status = core.StatusWishlist
+		snapshot.Fields.FinishedAt = nil
+		byHand := false
+		snapshot.Fields.StatusByHand = &byHand
+	}
+	write.Op = InsertItem(snapshot)
+	write.Episodes = len(snapshot.Watched)
+	return write, nil
 }
 
 // Entry is the user's item. Another user's item is 404, never 403: do not confirm it exists.

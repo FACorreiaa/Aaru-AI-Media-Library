@@ -22,9 +22,14 @@ INSERT INTO user_progress (user_id, evaluated_at) VALUES (@user_id, now());
 SELECT user_id FROM auth_identities WHERE provider = @provider AND provider_subject = @provider_subject LIMIT 1;
 
 -- name: UserProfile :one
-SELECT u.first_name, u.last_name, p.handle, u.avatar_version
+SELECT u.first_name, u.last_name, p.handle, u.avatar_version, u.onboarded_at
 FROM users u LEFT JOIN profiles p ON p.user_id = u.id
 WHERE u.id = @id;
+
+-- ONB-001: the first call ends the flow; a later one changes nothing.
+-- name: FinishOnboarding :exec
+UPDATE users SET onboarded_at = now(), onboarding_skipped = @skipped
+WHERE id = @id AND onboarded_at IS NULL;
 
 -- name: UserIdentities :many
 SELECT provider, email FROM auth_identities WHERE user_id = @user_id ORDER BY provider;

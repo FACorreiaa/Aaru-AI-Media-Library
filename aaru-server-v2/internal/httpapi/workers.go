@@ -39,6 +39,10 @@ func (s *Server) Workers() []Worker {
 	if s.Catalog != nil {
 		// Keeps tracked shows' episodes, genres and book page counts current.
 		workers = append(workers, catalog.NewRefreshWorker(s.Catalog.Refresher, s.Log))
+		if s.Catalog.Onboarding != nil {
+			// Loads the first-run rows at start and as they expire (ONB-001).
+			workers = append(workers, &catalog.OnboardingWarmer{Service: s.Catalog.Onboarding, Log: s.Log})
+		}
 	}
 	if s.Library != nil {
 		// Moves finished shows back to in progress when a new episode airs (owner, 2026-10-30).

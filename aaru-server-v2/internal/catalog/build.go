@@ -14,7 +14,9 @@ type Kit struct {
 	Providers Providers
 	Service   *Service
 	Discover  *DiscoverService
-	Refresher *Refresher
+	// Onboarding is the first-run flow's rows of well-known titles (ONB-001).
+	Onboarding *OnboardingService
+	Refresher  *Refresher
 	// Relations builds relation graphs (GRAPH-001) over AniList, TMDB collections and Wikidata.
 	Relations *RelationService
 	// MusicBrainz is the album adapter, also the recording matcher and the album
@@ -80,6 +82,11 @@ func NewKit(pool *pgxpool.Pool, providers Providers, log *slog.Logger) *Kit {
 		Discover:  NewDiscoverService(store, sources, fallback, timing, log),
 		Refresher: NewRefresher(store, service),
 	}
+	var popularFallback PopularLister
+	if l, ok := providers.TMDB.(PopularLister); ok {
+		popularFallback = l
+	}
+	kit.Onboarding = NewOnboardingService(kit.Discover, sources, popularFallback, log)
 	var relationSources []RelationSource
 	for _, p := range []any{providers.AniList, providers.TMDB, providers.Wikidata} {
 		if source, ok := p.(RelationSource); ok && source != nil {

@@ -42,6 +42,8 @@ type Profile struct {
 	Providers     []Provider
 	Email         *string
 	AvatarVersion *int64
+	// OnboardingPending is true until the first-run flow is finished or skipped (ONB-001).
+	OnboardingPending bool
 }
 
 // DisplayName is the two names joined: what friends and groups see.
@@ -188,7 +190,10 @@ func (s *Store) Profile(ctx context.Context, id uuid.UUID) (Profile, bool, error
 	if err != nil {
 		return Profile{}, false, fmt.Errorf("identities: %w", err)
 	}
-	p := Profile{ID: id, FirstName: row.FirstName, LastName: row.LastName, Handle: row.Handle, AvatarVersion: row.AvatarVersion, Providers: []Provider{}}
+	p := Profile{
+		ID: id, FirstName: row.FirstName, LastName: row.LastName, Handle: row.Handle, AvatarVersion: row.AvatarVersion,
+		Providers: []Provider{}, OnboardingPending: !row.OnboardedAt.Valid,
+	}
 	known := []sqlc.UserIdentitiesRow{}
 	for _, i := range identities {
 		switch Provider(i.Provider) {
@@ -199,6 +204,15 @@ func (s *Store) Profile(ctx context.Context, id uuid.UUID) (Profile, bool, error
 	}
 	p.Email = ContactEmail(known)
 	return p, true, nil
+}
+
+// FinishOnboarding ends the first-run flow (ONB-001), finished or skipped. The first call wins:
+// a later one changes nothing, so the account keeps how it first left the flow.
+func (s *Store) FinishOnboarding(ctx context.Context, id uuid.UUID, skipped bool) error {
+	if err := s.q.FinishOnboarding(ctx, sqlc.FinishOnboardingParams{ID: id, Skipped: skipped}); err != nil {
+		return fmt.Errorf("finish onboarding: %w", err)
+	}
+	return nil
 }
 
 // deleteUser deletes the user and, by cascade, every row that belongs to them,

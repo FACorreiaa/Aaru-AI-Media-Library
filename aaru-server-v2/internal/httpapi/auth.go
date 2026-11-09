@@ -164,6 +164,8 @@ func MeDTO(p auth.Profile) api.Me {
 		Providers:      providers,
 		Email:          p.Email,
 		EmailShareable: &shareable,
+		// Always sent (ONB-001); optional on the wire only for apps older than the field.
+		OnboardingPending: &p.OnboardingPending,
 	}
 	if p.AvatarVersion != nil {
 		path := AvatarPath(p.ID, *p.AvatarVersion)
