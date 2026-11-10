@@ -7,6 +7,7 @@ import (
 	"aaru-go-api/internal/apitime"
 	"aaru-go-api/internal/apperr"
 	"aaru-go-api/internal/db/sqlc"
+	"aaru-go-api/internal/library"
 	"aaru-go-api/internal/middleware"
 	"aaru-go-api/internal/safe"
 	"aaru-go-api/internal/telemetry"
@@ -86,6 +87,157 @@ func (s *Server) DeleteChats(ctx context.Context, _ api.DeleteChatsRequestObject
 		return nil, err
 	}
 	return api.DeleteChats204Response{}, nil
+}
+
+// ListChats is GET /v1/chats: the caller's history, latest first (ASK-011).
+func (s *Server) ListChats(ctx context.Context, req api.ListChatsRequestObject) (api.ListChatsResponseObject, error) {
+	user, err := currentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var after *agent.ChatCursor
+	if req.Params.Cursor != nil {
+		cursor, ok := library.ParseCursor(*req.Params.Cursor)
+		if !ok {
+			return nil, apperr.Validation("cursor", "That cursor is not one of Aaru's.")
+		}
+		after = &agent.ChatCursor{UpdatedAt: time.UnixMicro(cursor.UpdatedAtMicros), ID: cursor.ID}
+	}
+	chats, next, err := s.chats().List(ctx, user, after)
+	if err != nil {
+		return nil, err
+	}
+	out := api.ListChats200JSONResponse{Items: make([]api.ChatSummary, len(chats))}
+	for i, c := range chats {
+		out.Items[i] = api.ChatSummary{
+			Id: apiid.From(c.ID), Title: c.Title, CreatedAt: apitime.From(c.CreatedAt), UpdatedAt: apitime.From(c.UpdatedAt),
+		}
+	}
+	if next != nil {
+		token := library.Cursor{UpdatedAtMicros: next.UpdatedAt.UnixMicro(), ID: next.ID}.Token()
+		out.Page.NextCursor = &token
+	}
+	return out, nil
+}
+
+// chatJSON is api.Chat with each turn's components as a components frame is written.
+type chatJSON struct {
+	ID        apiid.UUID     `json:"id"`
+	Title     *string        `json:"title,omitempty"`
+	CreatedAt apitime.Time   `json:"createdAt"`
+	UpdatedAt apitime.Time   `json:"updatedAt"`
+	Turns     []chatTurnJSON `json:"turns"`
+}
+
+type chatTurnJSON struct {
+	ID         apiid.UUID           `json:"id"`
+	Role       string               `json:"role"`
+	Body       string               `json:"body"`
+	State      string               `json:"state"`
+	CreatedAt  apitime.Time         `json:"createdAt"`
+	Components *componentsFrameJSON `json:"components,omitempty"`
+}
+
+func (c chatJSON) VisitGetChatResponse(w http.ResponseWriter) error { return writeJSON(w, c) }
+
+// GetChat is GET /v1/chats/{id}: one chat with its turns, to read again and continue (ASK-011).
+func (s *Server) GetChat(ctx context.Context, req api.GetChatRequestObject) (api.GetChatResponseObject, error) {
+	user, err := currentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	store := s.chats()
+	chat, err := store.Chat(ctx, req.Id.ID(), user)
+	if err != nil {
+		return nil, err
+	}
+	if chat == nil {
+		return nil, errChatNotFound
+	}
+	turns, err := store.RecentTurns(ctx, chat.ID, agent.ChatHistoryTurns)
+	if err != nil {
+		return nil, err
+	}
+	out := chatJSON{
+		ID: apiid.From(chat.ID), Title: chat.Title, CreatedAt: apitime.From(chat.CreatedAt),
+		UpdatedAt: apitime.From(chat.UpdatedAt), Turns: make([]chatTurnJSON, len(turns)),
+	}
+	for i, t := range turns {
+		out.Turns[i] = chatTurnJSON{
+			ID: apiid.From(t.ID), Role: t.Role, Body: t.Body, State: t.State, CreatedAt: apitime.From(t.CreatedAt),
+		}
+		if out.Turns[i].Components, err = s.storedChatComponents(ctx, user, t.Components); err != nil {
+			return nil, err
+		}
+	}
+	return out, nil
+}
+
+// storedChatComponents reads a stored turn's components again: its titles and plan as they are
+// now, and the roadmap as Aaru wrote it. What has since gone is left out; nil when nothing is left.
+func (s *Server) storedChatComponents(ctx context.Context, user uuid.UUID, raw json.RawMessage) (*componentsFrameJSON, error) {
+	if len(raw) == 0 {
+		return nil, nil //nolint:nilnil // a turn with no components has none
+	}
+	var stored agent.StoredComponents
+	if err := json.Unmarshal(raw, &stored); err != nil {
+		return nil, fmt.Errorf("stored chat components: %w", err)
+	}
+	event := agent.ChatEvent{
+		Type: agent.ChatEventComponents, Roadmap: stored.Roadmap, ActionID: stored.ActionID, ActionSummary: stored.ActionSummary,
+	}
+	if len(stored.TitleIDs) > 0 {
+		titles, err := s.Catalog.Store.Titles(ctx, stored.TitleIDs)
+		if err != nil {
+			return nil, fmt.Errorf("stored chat titles: %w", err)
+		}
+		// In the order the turn showed them.
+		for _, id := range stored.TitleIDs {
+			for _, t := range titles {
+				if t.ID == id {
+					event.Titles = append(event.Titles, t)
+					break
+				}
+			}
+		}
+	}
+	if stored.PlanID != nil {
+		plan, err := s.Plans.Plan(ctx, *stored.PlanID, user)
+		var gone *apperr.Error
+		switch {
+		case err == nil:
+			event.Plan = &plan
+		case errors.As(err, &gone) && gone.Status == http.StatusNotFound:
+		default:
+			return nil, err
+		}
+	}
+	if stored.ImportID != nil {
+		job, err := s.Imports.Store.Job(ctx, *stored.ImportID, user)
+		if err != nil {
+			return nil, err
+		}
+		if job != nil {
+			event.ImportID = stored.ImportID
+		}
+	}
+	frame := chatComponentsFrame(event)
+	if len(frame.Titles) == 0 && frame.Plan == nil && frame.ImportID == nil && frame.Roadmap == nil && frame.ActionID == nil {
+		return nil, nil //nolint:nilnil // everything it held has gone
+	}
+	return &frame, nil
+}
+
+// DeleteChat is DELETE /v1/chats/{id}: one chat, its turns and files with it (ASK-011).
+func (s *Server) DeleteChat(ctx context.Context, req api.DeleteChatRequestObject) (api.DeleteChatResponseObject, error) {
+	user, err := currentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.chats().Delete(ctx, req.Id.ID(), user); err != nil {
+		return nil, err
+	}
+	return api.DeleteChat204Response{}, nil
 }
 
 // GetChatStatus is GET /v1/chats/status.
@@ -260,13 +412,15 @@ type componentsFrameJSON struct {
 	Titles        []api.TitleSummary `json:"titles,omitempty"`
 	Plan          *planJSON          `json:"plan,omitempty"`
 	ImportID      *apiid.UUID        `json:"importId,omitempty"`
+	Roadmap       *agent.Roadmap     `json:"roadmap,omitempty"`
 	ActionID      *apiid.UUID        `json:"actionId,omitempty"`
 	ActionSummary string             `json:"actionSummary,omitempty"`
 }
 
 func chatComponentsFrame(e agent.ChatEvent) componentsFrameJSON {
 	frame := componentsFrameJSON{
-		ImportID: apiid.PtrOrNil(e.ImportID), ActionID: apiid.PtrOrNil(e.ActionID), ActionSummary: e.ActionSummary,
+		ImportID: apiid.PtrOrNil(e.ImportID), Roadmap: e.Roadmap, ActionID: apiid.PtrOrNil(e.ActionID),
+		ActionSummary: e.ActionSummary,
 	}
 	for _, t := range e.Titles {
 		frame.Titles = append(frame.Titles, TitleSummaryDTO(t))

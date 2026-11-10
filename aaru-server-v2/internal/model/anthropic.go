@@ -159,6 +159,9 @@ func AnthropicBody(req Request, model, effort string) map[string]any {
 	if req.ToolChoice != "" {
 		body["tool_choice"] = map[string]string{"type": "tool", "name": req.ToolChoice}
 	}
+	if req.Effort != "" {
+		effort = req.Effort
+	}
 	if effort != "" {
 		body["output_config"] = map[string]string{"effort": effort}
 	}

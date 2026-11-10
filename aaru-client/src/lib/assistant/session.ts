@@ -22,8 +22,24 @@ export function chatThread(): ChatThread {
   return thread
 }
 
-/** Forgets the chat, after Delete my chats. */
+const [wanted, setWanted] = createSignal<{ id: string; n: number } | null>(null)
+
+/** A chat someone asked to open from outside the card (Settings); the card loads it. */
+export const chatWanted = wanted
+
+/** Asks the card to show this stored chat the next time it is open (ASK-011). */
+export function wantAssistantChat(id: string) {
+  setWanted((was) => ({ id, n: (was?.n ?? 0) + 1 }))
+}
+
+/** Forgets the chat and empties the card: New chat, or after Delete my chats. */
 export function resetAssistantChat() {
   thread?.reset()
   setCleared((n) => n + 1)
+}
+
+/** One chat was deleted: the card empties only if it was showing that one. */
+export function forgetAssistantChat(chatId: string) {
+  if (thread?.current()?.toLowerCase() === chatId.toLowerCase())
+    resetAssistantChat()
 }

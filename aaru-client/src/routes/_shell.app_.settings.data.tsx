@@ -13,7 +13,13 @@ import type { Action } from '../lib/history/model'
 import { listActions, undoAction } from '../lib/history/server'
 import { periodLabel, recapShortcuts } from '../lib/recap/model'
 import { deleteChats } from '../lib/assistant/server'
-import { resetAssistantChat } from '../lib/assistant/session'
+import {
+  chatsCleared,
+  resetAssistantChat,
+  wantAssistantChat,
+} from '../lib/assistant/session'
+import { ChatHistory } from '../components/assistant/ChatHistory'
+import { useAppShell } from '../components/shell/context'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 
 export const Route = createFileRoute('/_shell/app_/settings/data')({
@@ -171,8 +177,10 @@ function YourData() {
   )
 }
 
-/** ASK-009: Delete my chats with Aaru. Changes Aaru made stay; so does the daily count. */
+/** ASK-009, ASK-011: the user's chats, to open or delete one, and Delete my chats with Aaru.
+ * Changes Aaru made stay; so does the daily count. */
 function ChatsSection() {
+  const shell = useAppShell()
   const [asking, setAsking] = createSignal(false)
   const [busy, setBusy] = createSignal(false)
   const [done, setDone] = createSignal(false)
@@ -199,8 +207,18 @@ function ChatsSection() {
     <SettingsSection
       id="chats"
       title="Chats with Aaru"
-      description="What you asked Aaru from the owl, and its answers. They stay until you delete them."
+      description="What you asked Aaru from the owl, and its answers. Open one to read it again or carry on; they stay until you delete them."
     >
+      {/* Keyed on the clear count: Delete my chats empties the list too. */}
+      <Show when={chatsCleared() + 1} keyed>
+        <ChatHistory
+          class="mb-5"
+          onOpen={(chat) => {
+            wantAssistantChat(chat.id)
+            shell.openAssistant()
+          }}
+        />
+      </Show>
       <div class="flex flex-wrap items-center gap-3">
         <Button
           variant="danger-outline"

@@ -1,4 +1,5 @@
 import { createFileRoute, redirect, useNavigate } from '@tanstack/solid-router'
+import { useAssistantTitle } from '../components/shell/context'
 import { Show, createSignal } from 'solid-js'
 import { AddControl } from '../components/AddControl'
 import { AddToListDialog } from '../components/AddToListDialog'
@@ -51,6 +52,7 @@ export const Route = createFileRoute(
 
 function TitlePreview() {
   const title = Route.useLoaderData()
+  useAssistantTitle(() => title().id)
   const navigate = useNavigate()
   const [adding, setAdding] = createSignal(false)
   const [problem, setProblem] = createSignal<string | null>(null)

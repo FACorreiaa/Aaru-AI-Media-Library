@@ -72,6 +72,20 @@ SELECT (
 -- name: DeleteAllChats :exec
 DELETE FROM chats WHERE user_id = $1;
 
+-- name: ListChats :many
+-- The user's chats that hold at least one turn, latest first, after a `(updated_at, id)` cursor.
+SELECT c.id, c.user_id, c.title, c.created_at, c.updated_at FROM chats c
+WHERE c.user_id = sqlc.arg(user_id)::uuid
+  AND EXISTS (SELECT 1 FROM chat_turns t WHERE t.chat_id = c.id)
+  AND (c.updated_at, c.id) < (coalesce(sqlc.narg(before_at)::pg_catalog.timestamptz, 'infinity'),
+                              coalesce(sqlc.narg(before_id)::uuid, 'ffffffff-ffff-ffff-ffff-ffffffffffff'))
+ORDER BY c.updated_at DESC, c.id DESC
+LIMIT sqlc.arg(page_size)::int;
+
+-- name: DeleteChat :exec
+-- Turns and files go with it. Someone else's chat is untouched.
+DELETE FROM chats WHERE id = sqlc.arg(id)::uuid AND user_id = sqlc.arg(user_id)::uuid;
+
 -- name: ChatsForExport :many
 SELECT id, user_id, title, created_at, updated_at FROM chats WHERE user_id = $1 ORDER BY created_at, id;
 
