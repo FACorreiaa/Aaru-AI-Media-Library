@@ -15,12 +15,43 @@ public struct ChatReply: Sendable {
     public private(set) var plan: Components.Schemas.AgentPlan?
     /// A list Aaru sent to be matched (BOOK-003): a capture the person reviews like any other.
     public private(set) var importID: String?
+    /// That list as Aaru named it, in its steps (ASK-011).
+    public private(set) var roadmap: Components.Schemas.ChatRoadmap?
     public private(set) var actionID: String?
     public private(set) var actionSummary: String?
     public private(set) var state: State = .working
     public private(set) var problem: String?
 
     public init() {}
+
+    /// A stored agent turn as the reply it was, for a chat opened from history (ASK-011).
+    public init(stored turn: Components.Schemas.ChatTurn) {
+        text = turn.body
+        if let components = turn.components {
+            merge(components)
+        }
+        switch turn.state {
+        case .done:
+            state = .answered
+        case .failed:
+            state = .failed
+            problem = Self.didNotFinish
+        case .stopped, .streaming:
+            // `streaming`: read while another device is still asking.
+            state = .cancelled
+            problem = Self.stoppedEarly
+        }
+    }
+
+    /// A question whose answer was never stored.
+    static var unanswered: ChatReply {
+        var reply = ChatReply()
+        reply.cancel()
+        return reply
+    }
+
+    static let didNotFinish = "Aaru could not finish this answer."
+    static let stoppedEarly = "This answer was stopped before it finished."
 
     public mutating func apply(_ frame: ChatFrame) {
         guard state == .working else { return }
@@ -70,6 +101,7 @@ public struct ChatReply: Sendable {
         }
         plan = components.plan ?? plan
         importID = components.importId ?? importID
+        roadmap = components.roadmap ?? roadmap
         actionID = components.actionId ?? actionID
         actionSummary = components.actionSummary ?? actionSummary
     }

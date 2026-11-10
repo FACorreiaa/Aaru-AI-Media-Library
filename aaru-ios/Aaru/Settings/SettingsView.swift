@@ -77,6 +77,10 @@ struct SettingsRouteView: View {
             ImportDetailView(id: id, context: context)
         case .history:
             HistoryView(model: context.models.history) { await context.refreshLibrary() }
+        case .chats:
+            ChatsPage(model: context.models.chats, push: push)
+        case let .chat(id):
+            StoredChatView(id: id, api: context.api)
         }
     }
 }

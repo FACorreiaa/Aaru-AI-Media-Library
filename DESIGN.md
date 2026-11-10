@@ -1284,8 +1284,11 @@ The card's header has New chat, which empties the card and starts another, and H
 lists the user's chats by the start of their first question and when they were last used. A tap
 opens one with its turns, cards and roadmaps as they were, and the next question continues it;
 each can be deleted there. Settings → Your data lists the same chats, deletes one, and Delete my
-chats with Aaru (confirmed) empties them all and the open card with them. Chats are kept until
-deleted.
+chats with Aaru (confirmed) empties them all and the open card with them. A chat picked in
+Settings opens the card on it on the web; on iPhone and Mac, where Settings is a sheet or its own
+window, it opens to read, and carrying on with it is the card's History. Chats are kept until
+deleted. On iPhone and Mac the header's buttons are symbols: New chat (a pencil on a square) and
+Chats (two bubbles), which becomes a back arrow while the list shows.
 
 **Scores (ASK-011).** Asked how good a title is, Aaru gives the audience score from TMDB (films,
 shows) or AniList (anime, manga), names that source, and may sum up what a few of its users
