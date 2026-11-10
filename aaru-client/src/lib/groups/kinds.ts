@@ -186,6 +186,56 @@ export function phaseLabel(phase: PartyPhase): string {
   }
 }
 
+/** What the UI calls a Room: a reading session for a book or manga, else a watch party. */
+export function partyWord(type: string): 'Watch party' | 'Reading session' {
+  return type === 'book' || type === 'manga' ? 'Reading session' : 'Watch party'
+}
+
+/** What a party is aimed at: "S1 · E3", "Chapter 12 · Vol. 2", "Page 120", or nothing. */
+export function partyTarget(
+  party: Pick<WatchParty, 'season' | 'episode' | 'chapter' | 'volume' | 'page'>,
+): string | null {
+  if (party.season !== undefined && party.episode !== undefined)
+    return episodeCode(party.season, party.episode)
+  const parts = [
+    party.chapter !== undefined ? `Chapter ${party.chapter}` : null,
+    party.volume !== undefined ? `Vol. ${party.volume}` : null,
+    party.page !== undefined ? `Page ${party.page}` : null,
+  ].filter((part): part is string => part !== null)
+  return parts.length > 0 ? parts.join(' · ') : null
+}
+
+/** The tap for a member the end does not mark: "Mark watched for me", "Mark read for me". */
+export function markLabel(type: string): string {
+  if (type === 'book' || type === 'manga') return 'Mark read for me'
+  return type === 'album' ? 'Mark listened for me' : 'Mark watched for me'
+}
+
+/**
+ * A reading session's target from the opening form's text fields. Blank fields are left out;
+ * `null` when a field holds anything but a whole number ≥ 0.
+ */
+export function readingTarget(
+  type: string,
+  fields: { chapter: string; volume: string; page: string },
+): { chapter?: number; volume?: number; page?: number } | null {
+  const names =
+    type === 'manga'
+      ? (['chapter', 'volume'] as const)
+      : type === 'book'
+        ? (['page'] as const)
+        : []
+  const target: { chapter?: number; volume?: number; page?: number } = {}
+  for (const name of names) {
+    const text = fields[name].trim()
+    if (text === '') continue
+    const n = Number(text)
+    if (!Number.isInteger(n) || n < 0) return null
+    target[name] = n
+  }
+  return target
+}
+
 /** The host, or an admin or owner, starts and ends a party. */
 export function canHost(
   party: WatchParty,
