@@ -1,9 +1,5 @@
 # Product
 
-## Register
-
-product
-
 ## Users
 
 Cross-media power trackers. People who already keep their history somewhere (Trakt,
