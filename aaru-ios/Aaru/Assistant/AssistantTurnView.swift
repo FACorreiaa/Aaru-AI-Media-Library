@@ -137,13 +137,19 @@ private struct UndoRibbon: View {
                 Text("Undone.")
                     .foregroundStyle(Color(.muted))
             } else {
-                HStack(alignment: .firstTextBaseline, spacing: AaruSpace.xsmall) {
-                    Text("\(turn.reply.actionSummary ?? "Aaru changed your library") ·")
+                // The undo toast's shape: the words, then Undo at the end with a 44 pt target.
+                HStack(spacing: AaruSpace.small) {
+                    Text(turn.reply.actionSummary ?? "Aaru changed your library")
                         .foregroundStyle(Color(.ink))
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     Button("Undo", action: undo)
                         .fontWeight(.semibold)
                         .foregroundStyle(Color(.accent))
                         .buttonStyle(.plain)
+                        .frame(minWidth: 44, minHeight: 44)
+                        .contentShape(.rect)
+                        // The ribbon's own padding is part of the target, not added to it.
+                        .padding(.vertical, -AaruSpace.small)
                         .disabled(undoing)
                 }
                 if let problem {

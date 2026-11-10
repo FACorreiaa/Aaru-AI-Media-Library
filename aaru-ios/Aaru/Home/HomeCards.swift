@@ -10,26 +10,35 @@ struct ContinueCard: View {
     let onCheck: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: AaruSpace.small) {
             NavigationLink(value: entry.libraryItemId) {
                 HomeArt(url: artURL, aspect: 16 / 9)
-                    .overlay(alignment: .bottomLeading) { chips.padding(8) }
+                    .overlay(alignment: .bottomLeading) { chips.padding(AaruSpace.small) }
                     .clipShape(RoundedRectangle(cornerRadius: AaruRadius.panel, style: .continuous))
             }
             .buttonStyle(.plain)
             .modifier(HoverLift())
-            HStack(alignment: .top, spacing: 8) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(entry.title.title)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Color(.accent))
-                        .lineLimit(1)
-                    Text(episodeLine)
-                        .font(.caption)
-                        .foregroundStyle(Color(.muted))
-                        .lineLimit(1)
+            // The art is hidden from VoiceOver and its chips alone do not name the show.
+            .accessibilityLabel(entry.title.title)
+            .accessibilityValue([episodeLine, leftLabel].joined(separator: ", "))
+            HStack(alignment: .top, spacing: AaruSpace.small) {
+                // The accent name is a link, as its colour says. VoiceOver has the art's link.
+                NavigationLink(value: entry.libraryItemId) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(entry.title.title)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Color(.accent))
+                            .lineLimit(1)
+                        Text(episodeLine)
+                            .font(.caption)
+                            .foregroundStyle(Color(.muted))
+                            .lineLimit(1)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(.rect)
                 }
-                Spacer(minLength: 0)
+                .buttonStyle(.plain)
+                .accessibilityHidden(true)
                 Button(action: onCheck) {
                     Image(systemName: isPending ? "checkmark.circle.fill" : "checkmark.circle")
                         .font(.title2)

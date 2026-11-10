@@ -45,7 +45,7 @@ struct WeekStrip: View {
             // Four across, or two by two at the accessibility sizes so the figures stay whole.
             LazyVGrid(
                 columns: Array(
-                    repeating: GridItem(.flexible(), spacing: 8, alignment: .leading),
+                    repeating: GridItem(.flexible(), spacing: AaruSpace.small, alignment: .leading),
                     count: dynamicType.isAccessibilitySize ? 2 : 4
                 ),
                 alignment: .leading,
@@ -105,7 +105,7 @@ struct CountChips: View {
 
     var body: some View {
         ScrollView(.horizontal) {
-            HStack(spacing: 8) {
+            HStack(spacing: AaruSpace.small) {
                 ForEach(LibraryStatus.allCases) { status in
                     Button { onSelect(status) } label: {
                         HStack(spacing: 6) {
@@ -126,7 +126,7 @@ struct CountChips: View {
                     .accessibilityHint("Shows these in Library")
                 }
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, AaruSpace.xlarge)
         }
         .scrollIndicators(.hidden)
     }
@@ -174,7 +174,7 @@ struct ListChip: View {
     let list: ListSummary
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: AaruSpace.small) {
             Image(systemName: "list.bullet.rectangle")
                 .foregroundStyle(.tint)
                 .accessibilityHidden(true)
@@ -187,7 +187,7 @@ struct ListChip: View {
                 .monospacedDigit()
         }
         .padding(.horizontal, AaruSpace.large)
-        .padding(.vertical, 10)
+        .padding(.vertical, AaruSpace.medium)
         .background(Color(.surface), in: Capsule())
         .accessibilityElement(children: .combine)
     }

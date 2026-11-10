@@ -17,28 +17,45 @@ struct HomeRow<Content: View>: View {
                     .accessibilityAddTraits(.isHeader)
                 Spacer()
                 if let trailing {
-                    Button(trailing.label, action: trailing.action)
-                        .font(.subheadline.weight(.medium))
-                        .buttonStyle(.borderless)
+                    HomeRowLink(label: trailing.label, action: trailing.action)
                 }
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, AaruSpace.xlarge)
             if let note {
                 Text(note)
                     .font(.caption)
                     .foregroundStyle(Color(.muted))
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, AaruSpace.xlarge)
             }
             ScrollView(.horizontal) {
-                LazyHStack(alignment: .top, spacing: 12) {
+                LazyHStack(alignment: .top, spacing: AaruSpace.medium) {
                     content()
                 }
                 .scrollTargetLayout()
-                .padding(.horizontal, 20)
+                .padding(.horizontal, AaruSpace.xlarge)
             }
             .scrollIndicators(.hidden)
             .scrollTargetBehavior(.viewAligned)
         }
+    }
+}
+
+/// The link at the end of a row's heading ("All 14", "See calendar"). The words stay one line
+/// tall; the tap target is 44 pt, reaching into the space above and below the heading.
+struct HomeRowLink: View {
+    let label: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(label)
+                .frame(minHeight: 44)
+                .contentShape(.rect)
+        }
+        .font(.subheadline.weight(.medium))
+        .buttonStyle(.borderless)
+        // Gives back what the target added, so the heading's row keeps its height.
+        .padding(.vertical, -AaruSpace.medium)
     }
 }
 
@@ -72,7 +89,7 @@ struct HomeArt: View {
         Color(.surface)
             .aspectRatio(aspect, contentMode: .fit)
             .overlay {
-                AsyncImage(url: url, transaction: Transaction(animation: .easeOut(duration: 0.2))) { phase in
+                AsyncImage(url: url, transaction: Transaction(animation: AaruMotion.ease(AaruMotion.fast))) { phase in
                     if let image = phase.image {
                         image.resizable().scaledToFill()
                     } else {
@@ -118,7 +135,7 @@ struct HoverLift: ViewModifier {
         #else
             content
                 .scaleEffect(hovering && !reduceMotion ? 1.02 : 1)
-                .animation(.easeOut(duration: 0.15), value: hovering)
+                .animation(AaruMotion.ease(AaruMotion.fast), value: hovering)
                 .onHover { hovering = $0 }
         #endif
     }

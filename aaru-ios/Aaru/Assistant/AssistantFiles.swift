@@ -184,9 +184,9 @@ struct AssistantAttachMenu: View {
             Label("Attach a file", systemImage: "paperclip")
                 .labelStyle(.iconOnly)
                 .font(.title3)
-                .foregroundStyle(Color(.muted))
                 .frame(minWidth: 44, minHeight: 44)
                 .contentShape(.rect)
+                .hoverInk()
         }
         .menuStyle(.button)
         .buttonStyle(.plain)
@@ -245,10 +245,12 @@ struct AssistantFileChips: View {
                             Label("Remove \(chip.name)", systemImage: "xmark.circle.fill")
                                 .labelStyle(.iconOnly)
                                 .foregroundStyle(Color(.muted))
-                                .frame(minWidth: 28, minHeight: 28)
+                                .frame(minWidth: 44, minHeight: 44)
                                 .contentShape(.rect)
                         }
                         .buttonStyle(.plain)
+                        // The chip's padding is part of the target, so the chip stays slim.
+                        .padding(.vertical, -AaruSpace.xsmall)
                     }
                     .padding(.leading, AaruSpace.small)
                     .padding(.vertical, AaruSpace.xsmall)

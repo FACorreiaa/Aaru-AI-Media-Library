@@ -18,7 +18,7 @@ struct TonightCard: View {
     @ScaledMetric(relativeTo: .body) private var glyphBox = 22
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: AaruSpace.medium) {
             Text("Tonight").eyebrow()
                 .accessibilityAddTraits(.isHeader)
             Group {
@@ -40,7 +40,7 @@ struct TonightCard: View {
             .edgeLit()
             if let also = tonight.also {
                 NavigationLink(value: also.libraryItemId) {
-                    HStack(spacing: 4) {
+                    HStack(spacing: AaruSpace.xsmall) {
                         Text("Also tonight").foregroundStyle(Color(.muted))
                         Text(also.title.title).foregroundStyle(Color(.accent))
                         if !also.episodeLine.isEmpty {
@@ -50,8 +50,12 @@ struct TonightCard: View {
                     }
                     .font(.subheadline)
                     .lineLimit(1)
+                    .frame(minHeight: 44, alignment: .leading)
+                    .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
+                // The line stays where it was; only the tap target grew.
+                .padding(.vertical, -AaruSpace.medium)
                 .contextMenu { setAsideButtons(also) }
             }
         }
@@ -68,7 +72,7 @@ struct TonightCard: View {
     }
 
     private var details: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: AaruSpace.xsmall) {
             Text(tonight.primary.title.title)
                 .font(.aaruDisplay(wide ? .title : .title2))
                 .foregroundStyle(Color(.ink))
@@ -83,9 +87,9 @@ struct TonightCard: View {
                 .font(.footnote)
                 .monospacedDigit()
                 .foregroundStyle(Color(.muted))
-            actions.padding(.top, 8)
+            actions.padding(.top, AaruSpace.small)
         }
-        .padding(wide ? 24 : 16)
+        .padding(wide ? AaruSpace.xxlarge : AaruSpace.large)
     }
 
     /// The full phrasing on one row where it fits, then the tick drops to the bare code, and at
@@ -93,17 +97,17 @@ struct TonightCard: View {
     /// button.
     private var actions: some View {
         ViewThatFits(in: .horizontal) {
-            HStack(spacing: 12) {
+            HStack(spacing: AaruSpace.medium) {
                 tick(short: false)
                 navigation
             }
-            HStack(spacing: 12) {
+            HStack(spacing: AaruSpace.medium) {
                 tick(short: true)
                 navigation
             }
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: AaruSpace.medium) {
                 tick(short: true)
-                HStack(spacing: 12) { navigation }
+                HStack(spacing: AaruSpace.medium) { navigation }
             }
         }
         .lineLimit(1)
@@ -183,7 +187,7 @@ struct TonightCard: View {
     if let tonight = HomeModel.sample.tonight {
         NavigationStack {
             TonightCard(tonight: tonight, isPending: false) { _ in }
-                .padding(20)
+                .padding(AaruSpace.xlarge)
         }
     }
 }
@@ -192,7 +196,7 @@ struct TonightCard: View {
     if let tonight = HomeModel.sample.tonight {
         NavigationStack {
             TonightCard(tonight: tonight, isPending: false) { _ in }
-                .padding(16)
+                .padding(AaruSpace.large)
         }
         .preferredColorScheme(.dark)
     }
@@ -202,7 +206,7 @@ struct TonightCard: View {
     if let tonight = HomeModel.sample.tonight {
         NavigationStack {
             TonightCard(tonight: tonight, isPending: false, wide: true) { _ in }
-                .padding(20)
+                .padding(AaruSpace.xlarge)
         }
         .preferredColorScheme(.dark)
     }

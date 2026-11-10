@@ -6,8 +6,8 @@ struct LastImportCard: View {
     let job: ImportJob
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
+        HStack(alignment: .top, spacing: AaruSpace.medium) {
+            VStack(alignment: .leading, spacing: AaruSpace.xsmall) {
                 Text("Last import").eyebrow()
                 Text(job.filename ?? job.sourceLabel)
                     .font(.subheadline.weight(.medium))
@@ -21,7 +21,7 @@ struct LastImportCard: View {
                 if job.isWorking, job.rowsTotal > 0 {
                     ProgressView(value: Double(min(job.rowsMatched, job.rowsTotal)), total: Double(job.rowsTotal))
                         .tint(Color(.gold))
-                        .padding(.top, 4)
+                        .padding(.top, AaruSpace.xsmall)
                         .accessibilityHidden(true)
                 }
             }
@@ -44,10 +44,10 @@ struct LastImportCard: View {
 // MARK: Previews
 
 #Preview("Last import") {
-    VStack(spacing: 16) {
+    VStack(spacing: AaruSpace.large) {
         LastImportCard(job: .sampleWorking)
         LastImportCard(job: .sampleDone)
     }
-    .padding(20)
+    .padding(AaruSpace.xlarge)
     .frame(width: 360)
 }
