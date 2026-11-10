@@ -67,7 +67,7 @@ Phases are the ones in `BACKLOG.md`: 0 Rails, 1 Basics, 2 Clients + widgets + im
 | Achievements (web `/app/achievements`; pushed on Apple from Home, Friends and Insights) | `StreakBar`, `BadgeShelf` — level, streak, badges by family with progress, hidden ones as "???", the points ledger | `GET /v1/me/progress`, `GET /v1/me/badges`, `POST /v1/me/badges/seen`, `GET /v1/me/points` | 5 · GAM-001…004 (owner pulled forward 2026-10-22) |
 | Leaderboard (on Friends, "This week") | `Shelf`-like ranked list, friends only, opt-in | `GET /v1/social/leaderboard` | 5 · GAM-005 (2026-10-22) |
 | Groups | `GroupRail`, `ChannelList`, `MessageList`, `MemberList`, `SpoilerVeil` (a `shelf` channel reads "List" and a Room "Watch party" in the UI); agent replies inside `MessageList` carry `TitleCard`, `CalendarRow`, `Shelf` | `/v1/groups/*`, `/v1/group-invites/*`, `/v1/realtime/ticket`, `/v1/ws` | 4 · GRP-001…GRP-012 (pulled forward 2026-10-20) |
-| Watch channel | `WatchPanel` above the channel's `MessageList` | `/v1/groups/{id}/channels/{cid}/session` + `/v1/ws` | 4 · GRP-009 (absorbs ROOM-001) |
+| Watch channel | `WatchPanel` above the channel's `MessageList` | `/v1/groups/{id}/channels/{cid}/party` (`/ready`, `/start`, `/end`, `/watched`) + `/v1/ws` | 4 · GRP-009 (absorbs ROOM-001), ROOM-005 |
 | Conversations | `ConversationView` | ciphertext message routes + `/v1/ws` | 6 · DM-* |
 | Approvals | `PlanCard`, pinned at the top of Home ("Waiting for you") until The Field exists; a push opens one | `GET /v1/plans`, `GET /v1/plans/{id}`, `POST /v1/plans/{id}/approve`, `/deny` | 7 · OUT-004 (built 2026-10-20) |
 | Shortcuts / App Intents | `TitleCard`, `TonightStrip` as intent snippets | agent tool layer | 7 · M14 |
@@ -127,7 +127,7 @@ refuses and substitutes the nearest catalog piece.
 | `MessageList` | A channel's conversation and its composer | channel id, kind, "not end-to-end" label, messages (author or Aaru, body, `components`, reply, mentions, spoiler stamp, edited / deleted / from a blocked member), last-read marker, typing names; composer with `@` suggestions |
 | `MemberList` | Who is in a group | members by role, Aaru as a member with its medallion, `share_progress` per member |
 | `SpoilerVeil` | Hides a message the reader is not caught up to | message id, stamped `EpisodeKey`, reader's progress; tap to reveal |
-| `WatchPanel` | Watch-together session in a `watch` channel (was `RoomPanel`) | channel id, title / episode, ready members + drift, countdown from server time, reactions, state, "Mark watched for me" |
+| `WatchPanel` | Watch-together or read-together session in a `watch` channel (was `RoomPanel`) | channel id, title / episode, episode, chapter or page, joined members + drift, the "Mark it for me" switch, countdown from server time, reactions, state, what was marked with Undo, "Mark watched for me" for a member who switched it off (ROOM-005) |
 | `ConversationView` | E2E conversation | `conversationId`, participants; message bodies decrypt on device only |
 
 `PlanCard`, `JobLedger`, `MatchTable`, and `UndoRibbon` are the four that make agent writes

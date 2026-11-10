@@ -833,8 +833,12 @@ ship before the Phase 2 gate.
   tiered. See "Achievements" below.
 - **Leaderboard** (pulled forward 2026-10-22) — friends only, weekly, opt-in. Never global.
 - **Watch channel** (`WatchPanel`, with groups since 2026-10-20; was the Phase 6 Room) — watch
-  together inside a group: countdown to "press play", who is in, reactions, drift from
-  scrobbles ("Ana is 2 min ahead"), and "Mark watched for me" at the end.
+  or read together inside a group: countdown to "press play", who is in, reactions, drift from
+  scrobbles ("Ana is 2 min ahead"). The lobby says "When the host ends, this is marked for
+  you" beside a "Mark it for me" switch, on until the member turns it off. The ended screen
+  says what was marked and carries Undo; a member who switched it off sees "Mark watched for
+  me" instead. A session for a book or manga reads **Reading session** and asks for a page or
+  a chapter. No screen share, video or voice (ROOM-005, owner 2026-11-10).
 - **Conversations** (`ConversationView`, Phase 6) — end-to-end encrypted DMs. A lock and a
   safety-number check live in the header, not in a settings screen.
 
@@ -1132,8 +1136,9 @@ Field" (§1). Recap is not a destination: Insights plays it ("Play as story"), H
 its window, Your data keeps the shortcuts. The listen log is **Listens** ("All listens ›" from
 Insights and Library's More menu), never "Music", which is the albums kind. An agent's plan is
 "Waiting for you" on Home and "Request" when a push opens one. In groups, a `shelf` channel
-reads **List** and a Room reads **Watch party**: UI labels only, the stored kinds and code names
-stay `shelf` and `watch` / Room (owner, 2026-10-21).
+reads **List** and a Room reads **Watch party**, or **Reading session** when its title is a book
+or manga (ROOM-005): UI labels only, the stored kinds and code names stay `shelf` and `watch` /
+Room (owner, 2026-10-21).
 
 **Settings: eight pages, in this order.** Each is its own page; none scrolls into the next. A
 new import source or connected app joins its page; it never gets a page of its own.

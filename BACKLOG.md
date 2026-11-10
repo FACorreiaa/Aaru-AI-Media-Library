@@ -36,18 +36,23 @@ library layer stay separate, external IDs stored whenever known, no second backe
 
 ## Decisions recorded 2026-11-10
 
-Owner, 2026-11-10, after asking the owl what to read before Secret Wars and getting nothing, then
-finding the old chat still open on a title page: roadmaps must come out as lists "like ChatGPT",
-a new question must not drag in the last one, and chats need a place to be read again. Designed in
-`docs/superpowers/specs/2026-11-10-owl-roadmaps-history-design.md` (ASK-011).
+Owner, 2026-11-10, on what the release is about: friends-only groups watching or reading
+something together.
 
-| Question | Decision |
-| --- | --- |
-| Fresh chat | The 15-minute rule stays; a New chat button is added |
-| History | In the owl card and in Settings. This delivers the history half of ASK-002 and ASK-003 without an Ask Aaru page |
-| Reviews | Audience scores from TMDB and AniList through `title_scores`. Web search (ASK-004) stays deferred |
-| Model | Haiku 5.5 stays. A turn the gate marks as asking for a list runs at effort `medium`, 8,192 tokens, six rounds |
-| Where a roadmap comes from | The model's own knowledge, matched to the catalog and reviewed before anything is added. `title_relations` confirms, never vetoes |
+- **No screen share for release.** No video, voice or screen in a session; everyone presses play
+  on their own service. Reasons recorded: captures of Netflix, Disney+ and Prime come out blank,
+  relaying a stream is not Aaru's to do, and the cluster is one node with no media relay.
+  Revisit after strangers have used sessions.
+- **Ending a session marks the title for everyone who joined** (ROOM-005). Each write is the
+  member's own journaled, undoable action, and each member can switch it off for themselves.
+  This reverses GRP-009 and ROOM-001's "only for members who tap / confirm", and
+  `docs/privacy.md` changed first.
+- **Reading sessions.** A session can be for a book or manga, with a page or chapter.
+- Not the owner's, chosen while planning and open to change: "joined" is a `watch_ready` row (no
+  live presence; GRP-017 stays open); the end never moves progress backward and skips a
+  `dropped` item; no push on session end; the UI says "Reading session" for books and manga.
+- Release blockers found the same day are listed under "Release blockers (2026-11-10)" below
+  the status table.
 
 ## Decisions recorded 2026-11-09
 
@@ -1006,6 +1011,7 @@ account or a stranger that has not happened yet.
 | ROOM-002 | Closed (GRP-009) | folded into watch channels, 2026-10-20 | |
 | ROOM-003 | Open | none | |
 | ROOM-004 | Open | none | |
+| ROOM-005 | Open | docs only (2026-11-10) | Server, web and Apple to follow |
 | AG-001 | Built | Agent/AgentTools.swift | All five tools, over MCP; no in-app composer (AG-004) |
 | AG-002 | Open | none | |
 | AG-003 | Partial | Plans/PlanService.swift, `/v1/plans` | Remote agent plans only; no autonomy dial |
@@ -1065,6 +1071,24 @@ with every provider stubbed.
 on `maat` since 2026-10-15 with the Apple and web clients on it.
 
 ---
+
+## Release blockers (2026-11-10)
+
+Found by an audit of this file against main on 2026-11-10. None of these is new scope; each is
+what the file's own rules, `MARKETING.md`'s launch gate or App Store review already ask for.
+
+| # | Blocker | State | Whose |
+| --- | --- | --- | --- |
+| 1 | Report a group message, and a person from their profile (split from GRP-016). Reports are wired only on Board posts | Open | code |
+| 2 | Terms of service: no `/terms` page and no item for one | Open | code; owner approves the text |
+| 3 | Store submission: `fastlane/metadata/`, screenshots, privacy labels, review notes with a demo account | Open | code + owner |
+| 4 | SEC-002's minimum: re-authenticate before `DELETE /v1/me`, sign out everywhere, refuse Sandbox transactions for Plus. SEC-001…003 say "before the first strangers" and are unscheduled | Open | code |
+| 5 | Board counts include rows from blocked users | Open | code |
+| 6 | Groups (GRP-001…013) and a full session never run on two devices; widgets, the Live Activity and universal links never seen on a device | Open | owner |
+| 7 | Trakt never connected on a real account; `INFRA_TOKEN` unset, so promote PRs are opened by hand | Open | owner |
+| 8 | The P2 gate: 0 strangers | Open | owner |
+| 9 | REL-004 says "iOS + macOS lanes", but `Fastfile` has `PLATFORMS = %w[ios]`: the Mac lane waits for a Mac Installer Distribution certificate, or iPhone ships first | Open | owner decides |
+| 10 | This file: 22 ids have no status row (ASK-001…010, BOARD-004, DISC-004/005, NAV-001/002/003/005, SPT-001…005), and the summary rows above are stale (P4 "0/8", P6 "Nothing on main", P2 31/54 against 29/54) | Open | docs |
 
 ## Phase map
 
@@ -3799,8 +3823,8 @@ until ended. Every response carries `serverTime` so clients count down against i
 second per socket, never stored), and "Mark watched for me" (`…/party/watched`), which ticks
 only the tapper's progress through `LibraryService`, during or after the party.
 
-**Done when:** members on web, iOS and Mac see the same countdown within 500 ms, and ending the
-session ticks the episode only for members who tap.
+**Done when:** members on web, iOS and Mac see the same countdown within 500 ms. What ending the
+session writes is ROOM-005's (owner, 2026-11-10); before it, only members who tapped were ticked.
 
 ### GRP-010 · Model provider, minimal · M
 **Needs:** none.
@@ -4260,6 +4284,26 @@ check-off at the end (each member's own PROG write, journaled as their tap). Awa
 
 **Done when:** four members on mixed iOS/Mac/web see the same countdown within 500 ms, and
 ending the room ticks the episode for each member who confirms — never for one who does not.
+(Changed by ROOM-005, 2026-11-10: joining is the confirmation, with a switch to opt out.)
+
+### ROOM-005 · Session end marks everyone who joined; reading sessions · M
+**Needs:** GRP-009. Owner, 2026-11-10.
+A member joins a session by saying they are ready; the row carries "Mark it for me", on by
+default (`watch_ready.auto_mark`). When the host or an admin ends a session whose countdown
+started, the server marks the title for every joined member who left it on, through the library
+service as that member's own action ("Watch party: …"), and keeps the action id so the ended
+screen offers Undo. It never moves progress backward and leaves a `dropped` item alone. A member
+who switched it off keeps "Mark watched for me". Ending twice writes once.
+
+Sessions take a reading target: `chapter` and `volume` for manga, `page` for books, beside
+`season` and `episode`. The web picker offers books and manga as iOS does, and the UI reads
+"Reading session" for them.
+
+No screen share, video or voice: see the 2026-11-10 decision.
+
+**Done when:** with two accounts joined, one with the switch off, the host ends an episode
+session: the episode is ticked for the first, untouched for the second, and Undo on the ended
+screen restores it. The same holds for a manga chapter opened from the web.
 
 ### ROOM-002 · Room chat · M
 **Needs:** ROOM-001.

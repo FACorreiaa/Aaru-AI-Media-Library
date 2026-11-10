@@ -1456,8 +1456,9 @@ Rules:
     the two share a renderer. "Add to my library" is the viewer's own journaled tap.
   - `watch`: the watch-together room (below) living in a channel: one open party at a time, a
     ready list, a countdown every client runs against `serverTime`, reactions from a fixed set
-    over the socket, and "Mark watched for me", which ticks only the tapper's library through
-    `LibraryService`.
+    over the socket, and the check-off: ending a party marks the title for each joined member
+    who left "Mark it for me" on, and "Mark watched for me" does the same for one member by
+    tap. Both go through the library service as that member's own action (ROOM-005).
 - **`@aaru`.** A mention enqueues an `agent_replies` row. The worker builds context from the
   channel's last 30 messages, the channel's title, session or shelf, and the tagger's own
   library. It never reads another member's library. Tools are read-only. The reply is a group
@@ -1569,7 +1570,21 @@ server never sees plaintext.
   `watch_sessions`. Members come from the group, which is friends-only.
 - A room runs over `/v1/ws`: a countdown to "press play", reactions, and a shared check-off at
   the end that writes each member's own progress through the normal data layer.
-- Aaru owns no player, so it does not sync playback. It can show drift from scrobbles ("Ana is
+- **The check-off (ROOM-005, owner 2026-11-10).** A member joins with a `watch_ready` row, which
+  carries `auto_mark` (on unless they switch it off). When the host or an admin ends a party
+  whose countdown started, the server runs one write per joined member with `auto_mark` on and
+  no `marked_at`: the same helper the "Mark watched for me" tap uses, through the library
+  service with a caller whose summary reads "Watch party: …". Each is that member's own
+  journaled action (its id is kept on the row, so the ended screen offers Undo). A member's
+  item that is `dropped`, or already at or past the session's point, is left alone. One
+  member's failure never stops the others, and `marked_at` makes a second end or a later tap a
+  no-op. Ending before the countdown writes nothing.
+- A session is for an episode, a film, or a reading target: `watch_sessions` carries `season`
+  and `episode` for shows, `chapter` and `volume` for manga, `page` for books. With no target,
+  a film, book, manga or album is marked `finished`.
+- Aaru owns no player, so it does not sync playback, and it relays no screen, video or sound:
+  there is no media server (owner, 2026-11-10; captured streams from the large services are
+  blank, and relaying them is not Aaru's to do). It can show drift from scrobbles ("Ana is
   2 min ahead").
 - SharePlay (`GroupActivity` with `.generic` metadata + `GroupSessionMessenger`) is a layer on
   top of rooms for Apple users. It does not replace them.

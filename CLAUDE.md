@@ -281,9 +281,15 @@ Use these words in code, APIs, and UI:
   it a Message, which is the encrypted DM
 - **Mention** — `@handle` or `@aaru` inside a group message. Mentioning `@aaru` is the only way
   the agent posts in a group
-- **Room** — a watch-together session: invite, countdown, reactions, shared check-off. Aaru
-  does not control anyone's player. Since 2026-10-20 it lives in a `watch` channel. The UI
-  word is "Watch party" (owner, 2026-10-21: a label only; code keeps Room)
+- **Room** — a watch-together or read-together session: invite, countdown, reactions, shared
+  check-off. Aaru does not control anyone's player and shares no screen, video or sound (owner,
+  2026-11-10). Since 2026-10-20 it lives in a `watch` channel. The UI word is "Watch party", or
+  "Reading session" for a book or manga (owner, 2026-10-21: a label only; code keeps Room).
+  A member *joins* by saying they are ready (`watch_ready`). When the host ends a session whose
+  countdown started, the server marks the title for every joined member who left "Mark it for
+  me" on (ROOM-005, owner 2026-11-10): each write is that member's own journaled, undoable
+  Action, never moves progress backward and never touches a `dropped` item. This is the one
+  place another person's tap writes to your library, and only because you joined
 - **Board** — the friends-only stream of posts. A query, not a table. No public page, no global
   feed
 - **Post** — one Board entry by a user: free text, or one title with a rating and a spoiler
