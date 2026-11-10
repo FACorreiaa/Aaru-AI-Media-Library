@@ -44,7 +44,10 @@ struct AssistantTurnView: View {
                 )
                 .id(plan.id)
             }
-            if let importID = reply.importID {
+            if let roadmap = reply.roadmap {
+                // ASK-011: the list in its steps, as Aaru named it; its review is the import's.
+                RoadmapCardView(roadmap: roadmap, importID: reply.importID) { PushInbox.shared.importID = $0 }
+            } else if let importID = reply.importID {
                 // BOOK-003: the list waits in an ordinary review, opened as a capture's push opens it.
                 Button("Review the import") { PushInbox.shared.importID = importID }
                     .buttonStyle(.borderedProminent)

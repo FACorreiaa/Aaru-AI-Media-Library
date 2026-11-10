@@ -15,6 +15,8 @@ final class SettingsServices {
     let connections: ConnectionsModel
     let data: DataModel
     let history: HistoryModel
+    /// The chats with Aaru, listed under Your data (ASK-011).
+    let chats: ChatsModel
 
     init(api: Client?) {
         account = AccountModel(api: api)
@@ -24,6 +26,7 @@ final class SettingsServices {
         connections = ConnectionsModel(api: api)
         data = DataModel(api: api)
         history = HistoryModel(api: api)
+        chats = ChatsModel(api: api)
     }
 
     func reset() {
@@ -34,6 +37,7 @@ final class SettingsServices {
         connections.reset()
         data.reset()
         history.reset()
+        chats.reset()
     }
 }
 
