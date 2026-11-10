@@ -247,18 +247,35 @@ function ImportPage() {
     </div>
   )
 
+  // Only an approved import saved anything: a failed or discarded one made no list.
+  const applied = () => job().state === 'succeeded' || job().state === 'partial'
+
   // BOOK-003: a capture that asked for an order saves one list.
   const orderList = () =>
     detail().rows.find((row) => row.lists?.length)?.lists?.[0]
 
   const rowLists = () => (
     <>
-      <Show when={orderList()}>
+      <Show when={planned() || applied() ? orderList() : undefined}>
         {(list) => (
           <p class="mt-10 max-w-[56rem] text-sm text-muted">
             {planned()
               ? `Approve also saves these in order as the list “${list()}”.`
               : `Saved in order as the list “${list()}”.`}
+            <Show when={detail().listId}>
+              {(id) => (
+                <>
+                  {' '}
+                  <Link
+                    to="/app/lists/$id"
+                    params={{ id: id() }}
+                    class="font-medium text-accent underline"
+                  >
+                    Open the list
+                  </Link>
+                </>
+              )}
+            </Show>
           </p>
         )}
       </Show>
@@ -296,106 +313,115 @@ function ImportPage() {
               </div>
               <ul class="mt-3 max-w-[56rem] divide-y divide-line">
                 <For each={rows(outcome).slice(0, SHOWN)}>
-                  {(row) => (
-                    <li class="flex items-start gap-3 py-2.5">
-                      <Show when={rowTickable(row)}>
-                        <Checkbox
-                          class="mt-1 shrink-0"
-                          checked={!row.leftOut}
-                          onChange={(on: boolean) => void setLeftOut(row, !on)}
-                        >
-                          <CheckboxInput
-                            aria-label={
-                              row.leftOut
-                                ? `Add ${row.title}`
-                                : `Leave out ${row.title}`
+                  {(row, index) => (
+                    <>
+                      <Show when={stepHeading(row, rows(outcome)[index() - 1])}>
+                        {(heading) => (
+                          <li class="pt-5 pb-1.5 eyebrow">{heading()}</li>
+                        )}
+                      </Show>
+                      <li class="flex items-start gap-3 py-2.5">
+                        <Show when={rowTickable(row)}>
+                          <Checkbox
+                            class="mt-1 shrink-0"
+                            checked={!row.leftOut}
+                            onChange={(on: boolean) =>
+                              void setLeftOut(row, !on)
                             }
-                          />
-                          <CheckboxControl />
-                        </Checkbox>
-                      </Show>
-                      <Show when={row.guess}>
-                        <div class="w-10 shrink-0">
-                          <Poster
-                            url={row.guess?.posterUrl}
-                            kind={kindOf(row.type, false)}
-                            radius="thumb"
-                          />
-                        </div>
-                      </Show>
-                      <div class="min-w-0 flex-1">
-                        <Show
-                          when={row.guess}
-                          fallback={
-                            <p
-                              class="font-medium"
-                              classList={{
-                                'text-muted': row.leftOut === true,
-                              }}
-                            >
-                              {row.title}
-                              {row.year ? ` (${row.year})` : ''}
-                            </p>
-                          }
-                        >
-                          {(guess) => (
-                            <>
+                          >
+                            <CheckboxInput
+                              aria-label={
+                                row.leftOut
+                                  ? `Add ${row.title}`
+                                  : `Leave out ${row.title}`
+                              }
+                            />
+                            <CheckboxControl />
+                          </Checkbox>
+                        </Show>
+                        <Show when={row.guess}>
+                          <div class="w-10 shrink-0">
+                            <Poster
+                              url={row.guess?.posterUrl}
+                              kind={kindOf(row.type, false)}
+                              radius="thumb"
+                            />
+                          </div>
+                        </Show>
+                        <div class="min-w-0 flex-1">
+                          <Show
+                            when={row.guess}
+                            fallback={
                               <p
                                 class="font-medium"
                                 classList={{
                                   'text-muted': row.leftOut === true,
                                 }}
                               >
-                                {guess().title}
+                                {row.title}
+                                {row.year ? ` (${row.year})` : ''}
                               </p>
-                              <Show when={guess().byline}>
-                                <p class="text-sm text-muted">
-                                  {guess().byline}
+                            }
+                          >
+                            {(guess) => (
+                              <>
+                                <p
+                                  class="font-medium"
+                                  classList={{
+                                    'text-muted': row.leftOut === true,
+                                  }}
+                                >
+                                  {guess().title}
                                 </p>
-                              </Show>
+                                <Show when={guess().byline}>
+                                  <p class="text-sm text-muted">
+                                    {guess().byline}
+                                  </p>
+                                </Show>
+                                <p class="text-sm text-muted">
+                                  Best guess for “{row.title}”
+                                </p>
+                              </>
+                            )}
+                          </Show>
+                          <Show
+                            when={tickable(outcome) && !row.guess && row.author}
+                          >
+                            <p class="text-sm text-muted">{row.author}</p>
+                          </Show>
+                          <Show when={row.reason}>
+                            <p class="text-sm text-muted">{row.reason}</p>
+                          </Show>
+                          <Show when={row.roadmap}>
+                            {(place) => (
                               <p class="text-sm text-muted">
-                                Best guess for “{row.title}”
+                                {roadmapLine(place())}
                               </p>
-                            </>
-                          )}
+                            )}
+                          </Show>
+                        </div>
+                        <Show when={outcome === 'unmatched' && resolvable()}>
+                          <Button
+                            variant="quiet"
+                            size="sm"
+                            class="shrink-0"
+                            onClick={() => setFinding(row)}
+                          >
+                            Find it
+                          </Button>
                         </Show>
-                        <Show
-                          when={tickable(outcome) && !row.guess && row.author}
-                        >
-                          <p class="text-sm text-muted">{row.author}</p>
+                        <Show when={planned() && row.guess}>
+                          <Button
+                            variant="quiet"
+                            size="sm"
+                            class="shrink-0"
+                            onClick={() => setFinding(row)}
+                          >
+                            Change
+                          </Button>
                         </Show>
-                        <Show when={row.reason}>
-                          <p class="text-sm text-muted">{row.reason}</p>
-                        </Show>
-                        <Show when={row.roadmap}>
-                          {(place) => (
-                            <p class="text-sm text-muted">
-                              {roadmapLine(place())}
-                            </p>
-                          )}
-                        </Show>
-                      </div>
-                      <Show when={outcome === 'unmatched' && resolvable()}>
-                        <Button
-                          variant="quiet"
-                          size="sm"
-                          class="shrink-0"
-                          onClick={() => setFinding(row)}
-                        >
-                          Find it
-                        </Button>
-                      </Show>
-                      <Show when={planned() && row.guess}>
-                        <Button
-                          variant="quiet"
-                          size="sm"
-                          class="shrink-0"
-                          onClick={() => setFinding(row)}
-                        >
-                          Change
-                        </Button>
-                      </Show>
-                    </li>
+                      </li>
+                    </>
                   )}
                 </For>
               </ul>
@@ -685,12 +711,23 @@ function Ledger(props: { steps: ImportStep[] }) {
   )
 }
 
-/** GRAPH-003: where a row sits in the roadmap it came with ("Step 1 · Hickman FF · FF #1-5 ·
- * Optional"), so the review shows the order before Approve. */
+/** ASK-011: a row that starts a new step of its roadmap gets that step's heading above it, so
+ * each group of the review reads in its steps. Null for a row in the same step as the one before. */
+function stepHeading(
+  row: ImportRow,
+  before: ImportRow | undefined,
+): string | null {
+  const place = row.roadmap
+  if (!place || place.step <= 0 || !place.heading) return null
+  if (before?.roadmap?.step === place.step) return null
+  return `${place.step}. ${place.heading}`
+}
+
+/** GRAPH-003: what the roadmap says of a row under its step's heading ("FF #1-5 · Optional"). A
+ * step with no heading keeps its number here. */
 function roadmapLine(place: NonNullable<ImportRow['roadmap']>): string {
   return [
-    place.step > 0 ? `Step ${place.step}` : null,
-    place.heading,
+    place.step > 0 && !place.heading ? `Step ${place.step}` : null,
     place.note,
     place.optional ? 'Optional: joins the list only' : null,
     place.pair ? 'Read side by side' : null,

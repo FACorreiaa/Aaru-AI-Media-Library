@@ -49,10 +49,17 @@ export class ChatThread {
     return true
   }
 
-  /** Forgets the chat: Delete my chats. */
+  /** Forgets the chat: New chat, or Delete my chats. */
   reset() {
     this.generation += 1
     this.chatId = null
+  }
+
+  /** Continues a chat opened from history (ASK-011): its 15 minutes start again. */
+  adopt(chatId: string) {
+    this.generation += 1
+    this.chatId = chatId
+    this.lastUsed = this.deps.now()
   }
 
   /** The chat files go into, started now if there is none yet. */
