@@ -103,14 +103,8 @@ final class AssistantModel {
                 decidedPlans = [:]
                 files.clear()
             }
-            // A question a screen asked for the person goes out as if typed here.
-            if let question = presentation.question, started == flowToken, phase == .idle {
-                send(question)
-                return
-            }
-            // From idle only: while listening, toggling would stop the recording.
-            guard started == flowToken, presentation.listening, voiceAvailable, phase == .idle else { return }
-            toggleListening()
+            guard started == flowToken else { return }
+            begin(presentation)
         }
     }
 
