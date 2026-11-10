@@ -183,10 +183,16 @@ func captureRow(t capture.Title) Row {
 	if t.Type == core.MediaBook && t.Author != nil {
 		year = nil
 	}
-	return Row{
+	row := Row{
 		SourceKey: t.SourceKey, Type: t.Type, Title: t.Title, Year: year, IDs: t.IDs, Author: t.Author,
 		Status: ptr(core.StatusWishlist), Lists: []string{}, Roadmap: t.Place,
 	}
+	// A film or show named with no year and no id goes by its exact name: one such title matches,
+	// several wait for a pick by hand. Without this the row could never match (ASK-011).
+	if (t.Type == core.MediaMovie || t.Type == core.MediaShow) && year == nil && t.IDs.IsEmpty() {
+		row.NameOnly = ptr(true)
+	}
+	return row
 }
 
 // titleRows are captured titles in their order, each joining list once approved (BOOK-003).

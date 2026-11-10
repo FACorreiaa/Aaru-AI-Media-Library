@@ -118,6 +118,8 @@ type Request struct {
 	// ToolChoice forces a tool by name; "" lets the model choose. Claude Haiku 5.5
 	// accepts a forced call; Opus 5.5, Sonnet 5.5 and Fable 5.1 answer it with a 400.
 	ToolChoice string
+	// Effort overrides the provider's configured `output_config.effort` for this call; "" keeps it.
+	Effort string
 }
 
 // Stop is why the model stopped.

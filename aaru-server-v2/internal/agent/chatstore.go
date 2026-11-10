@@ -159,6 +159,51 @@ func (s *ChatStore) RepliesToday(ctx context.Context, user uuid.UUID, now time.T
 	return int(n), nil
 }
 
+// ChatPage is how many chats one page of history holds.
+const ChatPage = 30
+
+// ChatHistoryTurns is how many of a chat's latest turns are read back.
+const ChatHistoryTurns = 200
+
+// ChatCursor is a place in the history: the chat a page ended on.
+type ChatCursor struct {
+	UpdatedAt time.Time
+	ID        uuid.UUID
+}
+
+// List is one page of the user's chats that hold a turn, latest first, and the cursor of the next
+// page; nil when this is the last.
+func (s *ChatStore) List(ctx context.Context, user uuid.UUID, after *ChatCursor) ([]Chat, *ChatCursor, error) {
+	params := sqlc.ListChatsParams{UserID: user, PageSize: ChatPage + 1}
+	if after != nil {
+		params.BeforeAt = &after.UpdatedAt
+		params.BeforeID = &after.ID
+	}
+	rows, err := s.Q.ListChats(ctx, params)
+	if err != nil {
+		return nil, nil, fmt.Errorf("list chats: %w", err)
+	}
+	var next *ChatCursor
+	if len(rows) > ChatPage {
+		rows = rows[:ChatPage]
+		last := rows[len(rows)-1]
+		next = &ChatCursor{UpdatedAt: last.UpdatedAt.Time, ID: last.ID}
+	}
+	out := make([]Chat, len(rows))
+	for i, r := range rows {
+		out[i] = chatOf(r)
+	}
+	return out, next, nil
+}
+
+// Delete removes one chat of the user, turns and files with it. A chat that is not theirs stays.
+func (s *ChatStore) Delete(ctx context.Context, id, user uuid.UUID) error {
+	if err := s.Q.DeleteChat(ctx, sqlc.DeleteChatParams{ID: id, UserID: user}); err != nil {
+		return fmt.Errorf("delete chat: %w", err)
+	}
+	return nil
+}
+
 // DeleteAll removes every chat of the user, turns with them.
 func (s *ChatStore) DeleteAll(ctx context.Context, user uuid.UUID) error {
 	if err := s.Q.DeleteAllChats(ctx, user); err != nil {

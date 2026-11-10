@@ -2830,6 +2830,21 @@ paths:
         default:
           $ref: '#/components/responses/Error'
   /v1/chats:
+    get:
+      operationId: listChats
+      summary: >-
+        The caller's chats with Aaru, latest first, 30 a page (ASK-011). A chat nobody has asked
+        anything in is left out.
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: One page of chats.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ChatList'}
+        default:
+          $ref: '#/components/responses/Error'
     post:
       operationId: createChat
       summary: Start a Chat with Aaru (ASK-009), a one-to-one thread only its user can read.
@@ -2888,6 +2903,32 @@ paths:
           content:
             application/json:
               schema: {$ref: '#/components/schemas/ChatTranscript'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/chats/{id}:
+    get:
+      operationId: getChat
+      summary: >-
+        One chat with its turns, oldest first, so it can be read again and continued (ASK-011). The
+        latest 200 turns. 404 for a chat that is not the caller's.
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: The chat.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Chat'}
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      operationId: deleteChat
+      summary: Delete one of the caller's chats, its turns and files with it (ASK-011).
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '204':
+          description: Deleted, or already gone.
         default:
           $ref: '#/components/responses/Error'
   /v1/chats/{id}/turns:
@@ -4092,6 +4133,10 @@ components:
       required: [job, rows]
       properties:
         job: {$ref: '#/components/schemas/ImportJob'}
+        listId:
+          type: string
+          format: uuid
+          description: The list an approved import's titles joined, when it named one (ASK-011).
         rows:
           type: array
           items: {$ref: '#/components/schemas/ImportRow'}
@@ -6061,6 +6106,79 @@ components:
       required: [id]
       properties:
         id: {type: string, format: uuid}
+    ChatSummary:
+      type: object
+      description: One chat in the caller's history. `title` is the start of its first question.
+      required: [id, createdAt, updatedAt]
+      properties:
+        id: {type: string, format: uuid}
+        title: {type: string}
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+    ChatList:
+      type: object
+      required: [items, page]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/ChatSummary'}
+        page: {$ref: '#/components/schemas/PageInfo'}
+    Chat:
+      type: object
+      required: [id, createdAt, updatedAt, turns]
+      properties:
+        id: {type: string, format: uuid}
+        title: {type: string}
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+        turns:
+          type: array
+          items: {$ref: '#/components/schemas/ChatTurn'}
+    ChatTurn:
+      type: object
+      description: >-
+        One stored turn. An agent turn's `components` are what its tools left, read again now: a
+        title, plan or import that has since gone is left out.
+      required: [id, role, body, state, createdAt]
+      properties:
+        id: {type: string, format: uuid}
+        role: {type: string, enum: [user, agent]}
+        body: {type: string}
+        state: {type: string, enum: [streaming, done, failed, stopped]}
+        createdAt: {type: string, format: date-time}
+        components: {$ref: '#/components/schemas/ChatComponentsFrame'}
+    ChatRoadmap:
+      type: object
+      description: >-
+        A list Aaru sent to be matched, as Aaru named it (ASK-011): the titles in their steps, before
+        any is matched. It is shown in the reply; the import at `importId` is where it is reviewed
+        and approved. A plain list is one step with no heading.
+      required: [steps]
+      properties:
+        listName: {type: string}
+        steps:
+          type: array
+          items: {$ref: '#/components/schemas/ChatRoadmapStep'}
+    ChatRoadmapStep:
+      type: object
+      required: [items]
+      properties:
+        heading: {type: string}
+        note: {type: string}
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/ChatRoadmapItem'}
+    ChatRoadmapItem:
+      type: object
+      required: [title, type]
+      properties:
+        title: {type: string}
+        type: {type: string, enum: [movie, show, book, manga]}
+        year: {type: integer}
+        author: {type: string}
+        note: {type: string, description: 'What to read or watch in it, such as issue numbers.'}
+        optional: {type: boolean}
+        pair: {type: integer, description: The same number on titles read or watched side by side.}
     ChatStatus:
       type: object
       required: [assistant, voice]
@@ -6143,6 +6261,7 @@ components:
           type: string
           format: uuid
           description: A list Aaru sent to be matched (BOOK-003), reviewed at `/v1/imports/{id}` like any capture.
+        roadmap: {$ref: '#/components/schemas/ChatRoadmap'}
         actionId:
           type: string
           format: uuid
