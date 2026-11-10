@@ -86,6 +86,15 @@ func TestBoardBlocksHideCommentsBothWays(t *testing.T) {
 	assert.Equal(t, []any{"from me"}, boardBodies(env.boardComments(post, ana.token)))
 	env.boardComment(post, "from ana", "", ana.token)
 	assert.NotContains(t, boardBodies(env.boardComments(post, ben.token)), "from ana")
+	// The count agrees with the list each of them sees: three comments, one hidden from each.
+	count := func(token ...string) any {
+		rec := env.send(http.MethodGet, "/v1/board/posts/"+post, nil, token...)
+		require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
+		return decode[map[string]any](t, rec)["commentCount"]
+	}
+	assert.InDelta(t, 2, count(ana.token), 0)
+	assert.InDelta(t, 2, count(ben.token), 0)
+	assert.InDelta(t, 3, count(), 0)
 }
 
 func TestBoardAuthorWhoBlockedTheViewerIsTheMissing404AndOffTheFeed(t *testing.T) {

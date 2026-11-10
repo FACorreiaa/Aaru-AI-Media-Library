@@ -81,4 +81,9 @@ func TestBoardUpvotersListHidesBlockedPeople(t *testing.T) {
 	boardBlock(env.harness, env.user, ana.uid)
 	boardBlock(env.harness, cara.uid, env.user)
 	assert.Equal(t, []string{bob.handle}, handles())
+	// The count agrees with the list, on the post and on the Board.
+	assert.InDelta(t, 1, env.boardGet("/v1/board/posts/" + post)["upvotes"], 0)
+	feed, _ := env.boardGet("/v1/board")["items"].([]any)
+	require.NotEmpty(t, feed)
+	assert.InDelta(t, 1, feed[0].(map[string]any)["upvotes"], 0)
 }
