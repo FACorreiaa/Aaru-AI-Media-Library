@@ -433,7 +433,8 @@ AniList's chain. Answers are joined by any shared id
 A prequel or sequel in the same medium costs nothing to walk, anything else one hop; titles up to
 two hops are kept, at most 40 of them and 24 lookups. AniList answers for main-chain titles only
 (`ChainOnlySource`), and Wikidata keeps the items it read in memory for a day. A page waits 8 s;
-a graph cut short is finished in the background (`RelationService.warm`) so the cache fills. The server places the graph: the main chain on
+a graph cut short is finished in the background (`RelationService.warm`) so the cache fills, and a
+title added by hand is warmed at once (`Warm`, at most three walks at a time; imports are not warmed). The server places the graph: the main chain on
 lane 0 in release order (by date; an undated title keeps its place along the sequel links) or story
 order (a numbered Wikidata series, else the sequel links), and each other title in
 the column of the chain title it relates to, or a step from the title it continues, in the first

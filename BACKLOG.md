@@ -3063,6 +3063,9 @@ card already has Add and List….
   has no link between Game of Thrones and House of the Dragon: shows of one fictional universe are
   not related here (the 2026-11-06 bound: the chain and its adaptations, not the franchise).
 - Both clients hid a failed read exactly like "nothing related"; they now say so (GRAPH-002).
+- Owner, 2026-11-10: a title added by hand has its graph built in the background (`Warm`), so its
+  page does not wait on cold providers; and Related carries "Ask Aaru for more", which asks the owl
+  what else is set in the title's world (the asking exception; nothing joins the graph).
 
 **Done when:** Fellowship of the Ring, A New Hope, Attack on Titan and Frieren each answer a sensible
 graph from the live providers, and a second read calls none of them.

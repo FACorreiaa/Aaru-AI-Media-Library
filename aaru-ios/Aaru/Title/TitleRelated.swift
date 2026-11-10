@@ -13,6 +13,20 @@ struct TitleRelated: View {
 
     @State private var model: TitleRelationsModel
     @State private var showsGraph = false
+    @Environment(AppRouter.self) private var router: AppRouter?
+    @Environment(AssistantModel.self) private var assistant: AssistantModel?
+    @Environment(\.assistantHostID) private var hostID
+
+    /// Providers know sequels and adaptations, not every show set in one world: that is a question
+    /// for the owl, whose answer is its own suggestion to review, never catalog data.
+    private func askSameWorld() {
+        let title = model.centre?.ref.title ?? "this title"
+        router?.openAssistant(
+            listening: false, titleID: titleID, onTitlePage: true, hostID: hostID,
+            question: "What else is set in the same world as \"\(title)\"? Spin-offs, prequels and sequels "
+                + "in any medium that are not already related here."
+        )
+    }
 
     init(api: Client?, titleID: String, library: LibraryModel, lists: ListsModel) {
         self.api = api
@@ -30,6 +44,11 @@ struct TitleRelated: View {
                         Text("Related").eyebrow()
                             .accessibilityAddTraits(.isHeader)
                         Spacer()
+                        if assistant?.isAvailable == true, router != nil {
+                            Button("Ask Aaru for more", action: askSameWorld)
+                                .buttonStyle(.borderless)
+                                .controlSize(.small)
+                        }
                         Button("Graph", systemImage: "point.3.connected.trianglepath.dotted") { showsGraph = true }
                             .buttonStyle(.bordered)
                             .controlSize(.small)

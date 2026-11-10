@@ -211,7 +211,11 @@ in the column of the one it hangs from. Main-chain lines are solid in the accent
 dashed with a small label. The centre is ringed. A title opens its page; Centre walks the graph out
 from it. Relations are catalog data: the graph never adds anything, and says so quietly when it is
 still finding titles. Nothing related leaves the section out; a read that fails says "Related titles
-could not be loaded" with Try again, never silence (2026-11-10). Credit: "Relations from AniList,
+could not be loaded" with Try again, never silence (2026-11-10). **Ask Aaru for more** (owner,
+2026-11-10; shown while the assistant answers) opens the Assistant card with the question already
+asked: what else is set in this title's world. Providers link sequels and adaptations, not every
+show of one universe; the owl's answer is its own suggestion, reviewed before anything is added,
+and never joins the graph. Credit: "Relations from AniList,
 TMDB and Wikidata."
 
 **Roadmaps (GRAPH-003, 2026-11-06, web, iPhone, iPad, Mac).** Ask the owl what to read before

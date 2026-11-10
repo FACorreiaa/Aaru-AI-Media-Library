@@ -14,6 +14,7 @@ import (
 	"log/slog"
 	"slices"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
@@ -34,6 +35,9 @@ const RelationsEmptyTTL = 24 * time.Hour
 const (
 	RelationGraphDeadline = 8 * time.Second
 	RelationWarmDeadline  = time.Minute
+	// relationWarmLimit is how many graphs warm at once; past it a warm is skipped, and the title's
+	// first page warms it instead. The providers' pacers are shared with every page.
+	relationWarmLimit = 3
 )
 
 // relationsFresh is true while a cached answer of this age is still believed.
@@ -108,6 +112,8 @@ type RelationService struct {
 	OnboardingDeadline time.Duration
 	// warming holds the centres being walked in the background, so one title warms once.
 	warming sync.Map
+	// warms counts the walks running in the background.
+	warms atomic.Int32
 }
 
 // NewRelationService wraps each source in the shared cache. Sources may be empty: the graph is
@@ -131,12 +137,48 @@ func (s *RelationService) Graph(ctx context.Context, titleID uuid.UUID, order Re
 // graphBy is Graph drawn with whatever arrived by deadline; a graph cut short keeps warming past
 // it, as long as ctx itself is alive.
 func (s *RelationService) graphBy(ctx context.Context, titleID uuid.UUID, order RelationOrder, deadline time.Time) (RelationGraph, error) {
-	title, err := s.Store.Title(ctx, titleID)
+	centre, err := s.centre(ctx, titleID)
 	if err != nil {
 		return RelationGraph{}, err
 	}
+	pageCtx, cancel := context.WithDeadline(ctx, deadline)
+	defer cancel()
+	graph := BuildRelationGraph(pageCtx, centre, s.Sources, order)
+	if graph.Partial && errors.Is(pageCtx.Err(), context.DeadlineExceeded) && ctx.Err() == nil {
+		s.warm(ctx, centre, order)
+	}
+	return graph, nil
+}
+
+// Warm builds the title's graph in the background, so the first time its page is opened the
+// answers are cached (a cold graph can take longer than a page waits). Called when a title is
+// added by hand; an import's thousand titles are not warmed. It never fails the caller.
+func (s *RelationService) Warm(ctx context.Context, titleID uuid.UUID) {
+	if s == nil || len(s.Sources) == 0 {
+		return
+	}
+	ctx = context.WithoutCancel(ctx)
+	go func() {
+		defer func() { _ = recovered(s.log, "relation warm", recover()) }()
+		lookup, cancel := context.WithTimeout(ctx, RelationGraphDeadline)
+		centre, err := s.centre(lookup, titleID)
+		cancel()
+		if err != nil {
+			s.log.Warn("Relation warm could not read the title", "title", titleID.String(), "error", err.Error())
+			return
+		}
+		s.warm(ctx, centre, OrderRelease)
+	}()
+}
+
+// centre is the title as the node a graph starts from.
+func (s *RelationService) centre(ctx context.Context, titleID uuid.UUID) (RelatedNode, error) {
+	title, err := s.Store.Title(ctx, titleID)
+	if err != nil {
+		return RelatedNode{}, err
+	}
 	if title == nil {
-		return RelationGraph{}, apperr.NotFound()
+		return RelatedNode{}, apperr.NotFound()
 	}
 	centre := RelatedNode{
 		Type: title.Type, IsAnime: title.IsAnime, IDs: title.IDs, Title: title.Title, Year: title.Year,
@@ -147,7 +189,7 @@ func (s *RelationService) graphBy(ctx context.Context, titleID uuid.UUID, order 
 	if title.IsAnime && title.Type == core.MediaShow && centre.IDs.AniList == "" && centre.IDs.TMDB != "" {
 		mappings, err := s.Store.MappingsByTMDB(ctx, []string{centre.IDs.TMDB})
 		if err != nil {
-			return RelationGraph{}, err
+			return RelatedNode{}, err
 		}
 		slices.SortFunc(mappings, func(a, b AnimeMapping) int {
 			return cmp.Compare(seasonOrLast(a.TMDBSeason), seasonOrLast(b.TMDBSeason))
@@ -156,13 +198,7 @@ func (s *RelationService) graphBy(ctx context.Context, titleID uuid.UUID, order 
 			centre.IDs.AniList = mappings[0].AniList
 		}
 	}
-	pageCtx, cancel := context.WithDeadline(ctx, deadline)
-	defer cancel()
-	graph := BuildRelationGraph(pageCtx, centre, s.Sources, order)
-	if graph.Partial && errors.Is(pageCtx.Err(), context.DeadlineExceeded) && ctx.Err() == nil {
-		s.warm(ctx, centre, order)
-	}
-	return graph, nil
+	return centre, nil
 }
 
 // warm walks the graph again past the page, detached from it, so its answers land in the cache.
@@ -174,9 +210,15 @@ func (s *RelationService) warm(ctx context.Context, centre RelatedNode, order Re
 	if _, busy := s.warming.LoadOrStore(keys[0], true); busy {
 		return
 	}
+	if s.warms.Add(1) > relationWarmLimit {
+		s.warms.Add(-1)
+		s.warming.Delete(keys[0])
+		return
+	}
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), RelationWarmDeadline)
 	go func() {
 		defer cancel()
+		defer s.warms.Add(-1)
 		defer s.warming.Delete(keys[0])
 		defer func() { _ = recovered(s.log, "relation warm", recover()) }()
 		BuildRelationGraph(ctx, centre, s.Sources, order)

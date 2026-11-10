@@ -5,6 +5,7 @@ import { Poster } from './Poster'
 import { TitleLink } from './TitleLink'
 import { statusLabel } from '../lib/library/model'
 import { loadRelations } from '../lib/title/server'
+import { useAppShell } from './shell/context'
 import {
   RELATED_GROUP_LABELS,
   centreOf,
@@ -24,6 +25,16 @@ const RETRY_PARTIAL_MS = 5000
 export function RelatedTitles(props: { titleId: string }) {
   const [graph, setGraph] = createSignal<RelationGraph | null>(null)
   const [failed, setFailed] = createSignal(false)
+  const shell = useAppShell()
+  // Providers know sequels and adaptations, not every show set in one world: that is a question
+  // for the owl, whose answer is its own suggestion to review, never catalog data.
+  const askSameWorld = () => {
+    const g = graph()
+    const title = (g && centreOf(g)?.ref.title) || 'this title'
+    shell.askAssistant(
+      `What else is set in the same world as "${title}"? Spin-offs, prequels and sequels in any medium that are not already related here.`,
+    )
+  }
   let retry: ReturnType<typeof setTimeout> | undefined
   const load = (titleId: string, again: boolean) =>
     loadRelations({ data: { titleId } })
@@ -91,13 +102,20 @@ export function RelatedTitles(props: { titleId: string }) {
           <h2 id="related-titles" class="eyebrow">
             Related
           </h2>
-          <Link
-            to="/app/graph/$titleId"
-            params={{ titleId: props.titleId }}
-            class={buttonVariants({ variant: 'outline', size: 'sm' })}
-          >
-            Graph
-          </Link>
+          <div class="flex shrink-0 items-center gap-2">
+            <Show when={shell.assistantAvailable()}>
+              <Button variant="ghost" size="sm" onClick={askSameWorld}>
+                Ask Aaru for more
+              </Button>
+            </Show>
+            <Link
+              to="/app/graph/$titleId"
+              params={{ titleId: props.titleId }}
+              class={buttonVariants({ variant: 'outline', size: 'sm' })}
+            >
+              Graph
+            </Link>
+          </div>
         </div>
         <div class="mt-3 flex flex-col gap-5">
           <For each={groups()}>
