@@ -13,16 +13,13 @@ import {
 } from 'solid-js'
 import type { JSX } from 'solid-js'
 import { requestMALPull } from '../../lib/mal/server'
-import { avatarSrc } from '../../lib/profile/avatar-src'
 import { Wordmark } from '../Brand'
+import { Medallion } from '../Medallion'
 import { OwlButton } from '../assistant/OwlButton'
 import { getAssistantStatus } from '../../lib/assistant/server'
 import { hintFor } from '../../lib/assistant/hint'
 import type { Scope } from '../SearchPanel'
 import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
   Button,
   Collapsible,
   CollapsibleContent,
@@ -489,7 +486,6 @@ function AppSidebar(props: {
   const name = () =>
     props.session.displayName ??
     (props.session.handle ? `@${props.session.handle}` : 'Your account')
-  const initial = () => name().replace('@', '').charAt(0).toUpperCase()
 
   return (
     <Sidebar collapsible="icon" aria-label="Aaru">
@@ -576,7 +572,7 @@ function AppSidebar(props: {
               size="lg"
               class="h-12 gap-3 rounded-full px-1.5 hover:bg-stone/70 group-data-[collapsible=icon]:size-10! group-data-[collapsible=icon]:p-1!"
             >
-              <AccountAvatar session={props.session} initial={initial()} />
+              <AccountAvatar session={props.session} />
               <span class="flex min-w-0 flex-col leading-tight">
                 <span class="truncate text-sm font-semibold text-ink">
                   {name()}
@@ -596,18 +592,10 @@ function AppSidebar(props: {
   )
 }
 
-/** Your photo on the account row and the top bar (SOC-001b), else your initial on ink. */
-function AccountAvatar(props: { session: ShellSession; initial: string }) {
-  return (
-    <Avatar aria-hidden="true" class="size-8 bg-ink">
-      <Show when={avatarSrc(props.session.avatarUrl)}>
-        {(src) => <AvatarImage src={src()} alt="" />}
-      </Show>
-      <AvatarFallback class="font-display text-sm text-paper">
-        {props.initial}
-      </AvatarFallback>
-    </Avatar>
-  )
+/** You on the account row and the top bar: the same medallion Home and the profile show
+ * (SOC-001b), your photo or your initials. */
+function AccountAvatar(props: { session: ShellSession }) {
+  return <Medallion person={props.session} class="size-8 text-sm" />
 }
 
 /** Below 1024px: the wordmark, Search, your avatar to Account, and the menu that opens the
@@ -618,10 +606,6 @@ function TopBar(props: {
   onAsk?: (listen: boolean) => void
 }) {
   const sidebar = useSidebar()
-  const initial = () =>
-    (props.session.displayName ?? props.session.handle ?? 'A')
-      .charAt(0)
-      .toUpperCase()
   return (
     <header class="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-line bg-paper/95 px-4 backdrop-blur-sm lg:hidden">
       <Wordmark to="/app" class="h-7 w-auto" />
@@ -643,7 +627,7 @@ function TopBar(props: {
           aria-label="Account"
           class="grid size-10 place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
-          <AccountAvatar session={props.session} initial={initial()} />
+          <AccountAvatar session={props.session} />
         </Link>
         <Button
           variant="ghost"

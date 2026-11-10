@@ -977,9 +977,9 @@ function Home() {
                 </For>
               </Row>
             </Show>
-          </div>
 
-          <div class="order-5 min-w-0 lg:col-start-1 lg:row-start-3">
+            {/* A new account's way in sits with the rows, so on a phone it comes before the
+ side blocks, which are all empty then. */}
             <Show when={empty() && (!discoverReady() || discover().length > 0)}>
               <div
                 class={cn(
@@ -1009,7 +1009,9 @@ function Home() {
                 </div>
               </div>
             </Show>
+          </div>
 
+          <div class="order-5 min-w-0 lg:col-start-1 lg:row-start-3">
             {/* DISC-001 on Home: a break from the user's own rows, then a few public rows by
  the kinds they keep. The rest wait on Discover. */}
             <Show when={discoverHere().length > 0}>

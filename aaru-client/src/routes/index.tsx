@@ -46,7 +46,7 @@ const faqs: Array<[string, string]> = [
   ],
   [
     'Where can I import from?',
-    'Trakt, IMDb, Letterboxd, Goodreads, TV Time, MyAnimeList, AniList and a Pogdesign CAT show list.',
+    'Trakt, Stremio, IMDb, Letterboxd, Goodreads, Netflix, TV Time, MyAnimeList, AniList and a Pogdesign CAT show list. Any other CSV is read by its column names.',
   ],
   [
     'Does it handle anime properly?',
@@ -92,7 +92,7 @@ function Landing() {
             href="#how"
             class="hidden transition-colors hover:text-ink sm:inline"
           >
-            How it works
+            Bring your history
           </a>
           <a
             href="#faq"
@@ -105,13 +105,13 @@ function Landing() {
             target="_blank"
             rel="me noopener"
             aria-label="Aaru on X"
-            class="transition-colors hover:text-ink"
+            class="-mx-3.5 grid size-11 place-items-center transition-colors hover:text-ink"
           >
             <XIcon />
           </a>
           <Link
             to={signedIn() ? '/app' : '/sign-in'}
-            class="text-ink transition-colors hover:text-accent"
+            class="-my-3 py-3 text-ink transition-colors hover:text-accent"
           >
             {signedIn() ? 'Open Aaru' : 'Sign in'}
           </Link>
@@ -129,7 +129,7 @@ function Landing() {
               Private by default. No ads, no feed.
             </a>
             <h1
-              class="rise mt-7 font-display text-[2.5rem] leading-[1.05] font-medium tracking-tight text-balance md:text-6xl lg:text-[4.25rem]"
+              class="rise mt-7 font-display text-4xl leading-[1.05] font-medium tracking-tight text-balance md:text-6xl lg:text-7xl"
               style={{ '--delay': '60ms' }}
             >
               Everything you watch, read and follow.
@@ -143,12 +143,12 @@ function Landing() {
               library. Bring your history, leave whenever you like.
             </p>
             <div
-              class="rise mt-9 flex flex-col items-center gap-5"
+              class="rise mt-9 flex w-full flex-col items-stretch gap-5 sm:w-auto sm:items-center"
               style={{ '--delay': '180ms' }}
             >
               <Link
                 to={signedIn() ? '/app' : '/sign-in'}
-                class="inline-flex items-center rounded-full bg-accent px-7 py-3.5 text-base font-semibold whitespace-nowrap text-on-accent shadow-[0_8px_24px_-12px_color-mix(in_srgb,var(--accent)_60%,transparent)] transition-transform hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
+                class="inline-flex items-center justify-center rounded-full bg-accent px-7 py-3.5 text-base font-semibold whitespace-nowrap text-on-accent shadow-[0_8px_24px_-12px_color-mix(in_srgb,var(--accent)_60%,transparent)] transition-transform hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
               >
                 {signedIn() ? 'Open Aaru' : 'Get started on the web'}
               </Link>
@@ -168,7 +168,7 @@ function Landing() {
             All of it, in one library.
           </h2>
           <p class="mt-4 max-w-[52ch] text-lg leading-relaxed text-muted">
-            One search, one library and four plain statuses for everything you
+            One search, one library and five plain statuses for everything you
             follow.
           </p>
           <div class="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -200,8 +200,8 @@ function Landing() {
             loading="lazy"
             class="mx-auto h-28 w-28 rounded-[22.5%] shadow-[0_18px_40px_-18px_var(--shadow)] md:h-32 md:w-32"
           />
-          <h2 class="mt-10 font-display text-3xl leading-tight font-medium tracking-tight md:text-5xl">
-            Made for iPhone, iPad, Mac and the web
+          <h2 class="mt-10 font-display text-3xl leading-tight font-medium tracking-tight text-balance md:text-5xl">
+            Made for iPhone, iPad, Mac and the web.
           </h2>
           <p class="mx-auto mt-4 max-w-[46ch] text-lg leading-relaxed text-muted">
             Native apps with widgets for what is next, a web app on the same
@@ -218,8 +218,8 @@ function Landing() {
             <div class="flex flex-col gap-3">
               <For each={faqs}>
                 {([question, answer]) => (
-                  <details class={`${cardClass} group px-6 py-5 open:pb-6`}>
-                    <summary class="flex cursor-pointer list-none items-center justify-between gap-6 text-lg font-medium [&::-webkit-details-marker]:hidden">
+                  <details class={`${cardClass} group`}>
+                    <summary class="flex cursor-pointer list-none items-center justify-between gap-6 rounded-card px-6 py-5 text-lg font-medium [&::-webkit-details-marker]:hidden">
                       {question}
                       <span
                         aria-hidden="true"
@@ -228,7 +228,7 @@ function Landing() {
                         +
                       </span>
                     </summary>
-                    <p class="mt-3 max-w-[60ch] leading-relaxed text-muted">
+                    <p class="max-w-[60ch] px-6 pb-6 leading-relaxed text-muted">
                       {answer}
                     </p>
                   </details>
@@ -252,7 +252,7 @@ function Landing() {
                 href={X_URL}
                 target="_blank"
                 rel="me noopener"
-                class="inline-flex items-center gap-1.5 hover:text-ink"
+                class="inline-flex items-center gap-1.5 py-3 hover:text-ink md:py-0"
               >
                 <XIcon class="h-3.5 w-3.5" />
                 @fatc88
@@ -261,7 +261,7 @@ function Landing() {
                 href={DISCORD_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                class="hover:text-ink"
+                class="py-3 hover:text-ink md:py-0"
               >
                 Join us on Discord
               </a>

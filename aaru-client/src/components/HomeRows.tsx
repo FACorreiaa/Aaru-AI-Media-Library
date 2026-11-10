@@ -1,5 +1,11 @@
 import { Link } from '@tanstack/solid-router'
-import { Show, createSignal, createUniqueId } from 'solid-js'
+import {
+  Show,
+  createSignal,
+  createUniqueId,
+  onCleanup,
+  onMount,
+} from 'solid-js'
 import type { JSX } from 'solid-js'
 import { badge, metaLine, shortCode } from '../lib/calendar/model'
 import type { CalendarEntry } from '../lib/calendar/model'
@@ -30,7 +36,8 @@ import { TitleLink } from './TitleLink'
 import { Badge, badgeVariants, Button } from '~/components/ui'
 
 // APP-009: Home's rows (DESIGN.md §13). Each row scrolls sideways and snaps; it takes focus so
-// the arrow keys scroll it, and on desktop it has its own back / forward buttons. A keyboard
+// the arrow keys scroll it, and on desktop it has its own back / forward buttons, shown only when
+// the row holds more than fits and dimmed at the end they point to. A keyboard
 // user can skip a row's cards: the first Tab in a row shows "Skip <row>". A card that
 // holds a library item has its menu (CardMenu): mark it watched, or open it.
 
@@ -45,6 +52,27 @@ export function Row(props: {
   const id = createUniqueId()
   let scroller: HTMLDivElement | undefined
   let end: HTMLSpanElement | undefined
+  // How far the row can still go each way; both zero when every card fits.
+  const [room, setRoom] = createSignal({ back: false, forward: false })
+  const measure = () => {
+    if (!scroller) return
+    const left = Math.abs(scroller.scrollLeft)
+    const most = scroller.scrollWidth - scroller.clientWidth
+    setRoom({ back: left > 1, forward: left < most - 1 })
+  }
+  onMount(() => {
+    if (!scroller) return
+    measure()
+    // Cards arrive and leave after the first paint, and the window changes width.
+    const watcher = new ResizeObserver(measure)
+    watcher.observe(scroller)
+    const cards = new MutationObserver(measure)
+    cards.observe(scroller, { childList: true })
+    onCleanup(() => {
+      watcher.disconnect()
+      cards.disconnect()
+    })
+  })
   const scroll = (direction: 1 | -1) =>
     scroller?.scrollBy({
       left: direction * scroller.clientWidth * 0.85,
@@ -71,24 +99,31 @@ export function Row(props: {
         </div>
         <div class="flex items-center gap-3">
           {props.action}
-          <div class="hidden gap-1 md:flex">
-            <Button
-              variant="quiet"
-              size="icon-sm"
-              aria-label={`Scroll ${props.title} back`}
-              onClick={() => scroll(-1)}
-            >
-              <Chevron flip />
-            </Button>
-            <Button
-              variant="quiet"
-              size="icon-sm"
-              aria-label={`Scroll ${props.title} forward`}
-              onClick={() => scroll(1)}
-            >
-              <Chevron />
-            </Button>
-          </div>
+          <Show when={room().back || room().forward}>
+            <div class="hidden gap-1 md:flex">
+              {/* `aria-disabled`, not `disabled`: the button keeps the focus at the row's end. */}
+              <Button
+                variant="quiet"
+                size="icon-sm"
+                aria-label={`Scroll ${props.title} back`}
+                aria-disabled={!room().back}
+                class="aria-disabled:opacity-40"
+                onClick={() => scroll(-1)}
+              >
+                <Chevron flip />
+              </Button>
+              <Button
+                variant="quiet"
+                size="icon-sm"
+                aria-label={`Scroll ${props.title} forward`}
+                aria-disabled={!room().forward}
+                class="aria-disabled:opacity-40"
+                onClick={() => scroll(1)}
+              >
+                <Chevron />
+              </Button>
+            </div>
+          </Show>
         </div>
       </div>
       <div
@@ -96,7 +131,8 @@ export function Row(props: {
         role="region"
         aria-labelledby={id}
         tabindex="0"
-        class="-mx-4 mt-4 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto px-4 pb-3 focus-visible:outline-2 focus-visible:-outline-offset-2 md:mx-0 md:scroll-px-0 md:px-0"
+        onScroll={measure}
+        class="-mx-4 mt-4 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto px-4 pb-3 [scrollbar-color:var(--line-strong)_transparent] [scrollbar-width:thin] focus-visible:outline-2 focus-visible:-outline-offset-2 md:mx-0 md:scroll-px-0 md:px-0"
       >
         {props.children}
       </div>

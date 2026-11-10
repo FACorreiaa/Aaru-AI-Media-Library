@@ -71,7 +71,7 @@ export function KindCard(props: { kind: Kind; compact?: boolean }) {
     props.kind.shape === 'square' ? 'aspect-square' : 'aspect-[2/3]'
   return (
     <article
-      class={`flex flex-col rounded-[28px] bg-surface ${props.compact ? 'p-5' : 'p-7'}`}
+      class={`flex flex-col rounded-card bg-surface ${props.compact ? 'p-5' : 'p-7'}`}
     >
       <div
         class={`relative mx-auto w-full ${props.compact ? 'h-28 max-w-[11rem]' : 'h-44 max-w-[17rem]'}`}
@@ -80,7 +80,7 @@ export function KindCard(props: { kind: Kind; compact?: boolean }) {
         <For each={props.kind.covers}>
           {(cover, index) => (
             <div
-              class={`absolute bottom-0 overflow-hidden rounded-field bg-paper shadow-[0_14px_28px_-16px_rgb(0_0_0/0.55)] ring-1 ring-line ${width()} ${aspect()} ${placement[props.kind.shape][index()]} ${turn[index()]}`}
+              class={`absolute bottom-0 overflow-hidden rounded-field bg-stone shadow-[0_14px_28px_-16px_rgb(0_0_0/0.55)] ring-1 ring-line ${width()} ${aspect()} ${placement[props.kind.shape][index()]} ${turn[index()]}`}
             >
               {'url' in cover ? (
                 <CoverImage cover={cover} />
