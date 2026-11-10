@@ -1280,8 +1280,28 @@ file the server refuses leaves no chip and one muted line saying why. Up to five
 question, which may then be empty. The question bubble lists the files it carried. A reply
 that made an import shows "Review the import".
 
-**Chats.** Settings → Your data → Delete my chats with Aaru (confirmed) empties them, and the
-open card with them. They are kept until then.
+**Roadmaps (ASK-011).** A reply that planned a list shows it in the card as a `RoadmapCard`: the
+list's name, its numbered steps with a heading and a note, and under each the titles as Aaru
+named them, with their year, their note ("#1-12"), Optional, and "side by side" for a pair. A
+plain list is one step with no heading. One button, "Review and save", opens the import review,
+where the titles are matched and nothing is added until the user approves; after approval the
+review links to the saved list. The card never adds from a roadmap itself. Aaru's words above it
+are a sentence or two: the list is not written out twice.
+
+**Chats (ASK-011).** A chat continues for 15 minutes across openings of the card, on any screen.
+The card's header has New chat, which empties the card and starts another, and History, which
+lists the user's chats by the start of their first question and when they were last used. A tap
+opens one with its turns, cards and roadmaps as they were, and the next question continues it;
+each can be deleted there. Settings → Your data lists the same chats, deletes one, and Delete my
+chats with Aaru (confirmed) empties them all and the open card with them. A chat picked in
+Settings opens the card on it on the web; on iPhone and Mac, where Settings is a sheet or its own
+window, it opens to read, and carrying on with it is the card's History. Chats are kept until
+deleted. On iPhone and Mac the header's buttons are symbols: New chat (a pencil on a square) and
+Chats (two bubbles), which becomes a back arrow while the list shows.
+
+**Scores (ASK-011).** Asked how good a title is, Aaru gives the audience score from TMDB (films,
+shows) or AniList (anime, manga), names that source, and may sum up what a few of its users
+wrote. These are never called critics' reviews. With no score it says "I can't see that yet".
 
 The card, owl, mic and composer are chrome and are never agent-emitted; replies carry only
 components from the catalog below. Colours and type follow the Brand section.

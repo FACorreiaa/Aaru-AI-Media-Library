@@ -34,6 +34,21 @@ library layer stay separate, external IDs stored whenever known, no second backe
 - **Anime is first-class from P1** (AniList catalog, `anilist`/`mal`/`anidb` external IDs).
 - DMs are **Signal-grade (libsignal)**. Licence and web support are OPEN — see DM-003, DM-004.
 
+## Decisions recorded 2026-11-10
+
+Owner, 2026-11-10, after asking the owl what to read before Secret Wars and getting nothing, then
+finding the old chat still open on a title page: roadmaps must come out as lists "like ChatGPT",
+a new question must not drag in the last one, and chats need a place to be read again. Designed in
+`docs/superpowers/specs/2026-11-10-owl-roadmaps-history-design.md` (ASK-011).
+
+| Question | Decision |
+| --- | --- |
+| Fresh chat | The 15-minute rule stays; a New chat button is added |
+| History | In the owl card and in Settings. This delivers the history half of ASK-002 and ASK-003 without an Ask Aaru page |
+| Reviews | Audience scores from TMDB and AniList through `title_scores`. Web search (ASK-004) stays deferred |
+| Model | Haiku 5.5 stays. A turn the gate marks as asking for a list runs at effort `medium`, 8,192 tokens, six rounds |
+| Where a roadmap comes from | The model's own knowledge, matched to the catalog and reviewed before anything is added. `title_relations` confirms, never vetoes |
+
 ## Decisions recorded 2026-11-09
 
 Owner, 2026-11-09: a first-run flow "to engage new users on our app to set their favorite shows,
@@ -3988,6 +4003,20 @@ ASK-006; the Ask Aaru page (ASK-002, ASK-003) reuses the engine later.
 Web (2026-11-05): the card is `components/assistant/AssistantCard.tsx`, opened from the top-bar
 owl, the sidebar's "Ask Aaru" row or ⌘J; the turn and voice go through two Worker proxy routes
 (ARCHITECTURE.md). Run locally against a stub model only.
+
+### ASK-011 · Roadmaps in the card, one question at a time, chat history, scores · L · owner, 2026-11-10
+**Needs:** ASK-009, BOOK-003, GRAPH-003.
+- **Roadmaps.** A roadmap, an order or a list of editions is built from what the model knows and
+  sent with `plan_title_list`; the reply shows it as a `RoadmapCard` from the components frame's
+  `roadmap`, with "Review and save" opening the import. More room for such turns; a tool call cut
+  off by the output limit fails the turn instead of passing as done. A film or show captured with
+  no year matches by its exact name.
+- **One question at a time.** Earlier turns are background; New chat in the card.
+- **History.** `GET /v1/chats`, `GET /v1/chats/{id}`, `DELETE /v1/chats/{id}`; a history list in
+  the card and in Settings, on web, iPhone and Mac.
+- **Scores.** `title_scores`: TMDB and AniList audience scores, credited; reviews fenced and the
+  turn's writes become plans.
+**Status (2026-11-10):** server done; web and Apple next. Not yet asked of the real model.
 
 ### ASK-010 · Files and paste in the assistant · L · owner, 2026-11-06
 **Needs:** ASK-009.

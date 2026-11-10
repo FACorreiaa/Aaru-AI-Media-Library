@@ -160,7 +160,14 @@ struct ImportDetailView: View {
         let guessable = matching.count(where: { $0.guessable == true })
         if !matching.isEmpty {
             Section {
-                ForEach(matching.prefix(Self.shownRows), id: \.index) { row in
+                let shown = Array(matching.prefix(Self.shownRows))
+                ForEach(Array(shown.enumerated()), id: \.element.index) { position, row in
+                    if let heading = row.stepHeading(after: position > 0 ? shown[position - 1] : nil) {
+                        Text(heading)
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(Color(.muted))
+                            .accessibilityAddTraits(.isHeader)
+                    }
                     ImportReviewRow(
                         row: row,
                         canTick: canTick(row),
@@ -309,11 +316,16 @@ private extension ImportDetailView {
     @ViewBuilder
     func rowLists(_ job: ImportJob) -> some View {
         if let list = detail?.rows.lazy.compactMap({ $0.lists?.first }).first {
-            Text(job.state == .planned
-                ? "Approve also saves these in order as the list \u{201C}\(list)\u{201D}."
-                : "Saved in order as the list \u{201C}\(list)\u{201D}.")
-                .font(.subheadline)
-                .foregroundStyle(Color(.muted))
+            // Only an approved import saved anything: a failed one made no list.
+            if job.state == .planned {
+                Text("Approve also saves these in order as the list \u{201C}\(list)\u{201D}.")
+                    .font(.subheadline)
+                    .foregroundStyle(Color(.muted))
+            } else if job.state == .succeeded || job.state == .partial {
+                Text("Saved in order as the list \u{201C}\(list)\u{201D}. Find it under Lists.")
+                    .font(.subheadline)
+                    .foregroundStyle(Color(.muted))
+            }
         }
         rows(.unmatched, title: "Not matched")
         rows(.create, title: job.state == .planned ? "Will be added" : "Added")

@@ -3,23 +3,6 @@ import AaruCore
 import Foundation
 import Observation
 
-/// One Chat turn in the Assistant card: what was asked and Aaru's reply so far.
-struct AssistantTurn: Identifiable {
-    let id: UUID
-    let question: String
-    /// The names of the files it carried (ASK-010).
-    var files: [String] = []
-    let spoken: Bool
-    var reply: ChatReply
-    var undone: Bool
-}
-
-extension Notification.Name {
-    /// Delete my chats succeeded. A notification because the Mac's Settings scene does not hold
-    /// the model.
-    static let aaruChatsDeleted = Notification.Name("aaruChatsDeleted")
-}
-
 /// The Assistant card's state (ASK-009): one Chat, typed or spoken, one flow at a time. A flow is
 /// listening, reading what was said, and answering; closing the card ends it. A write already
 /// applied stays journaled, and the library is synced after every turn so it shows.
@@ -47,6 +30,8 @@ final class AssistantModel {
     private(set) var libraryChanges = 0
     /// The files the next turn carries (ASK-010).
     let files: AssistantFiles
+    /// The card's past chats, and whether it shows them (ASK-011).
+    let history: AssistantHistory
     /// Persists on this device. Muting stops speech now.
     var isMuted: Bool {
         didSet {
@@ -82,7 +67,9 @@ final class AssistantModel {
         let thread = api.map { ChatThread(client: $0) }
         self.thread = thread
         files = AssistantFiles(thread: thread)
+        history = AssistantHistory(api: api)
         isMuted = UserDefaults.standard.bool(forKey: Self.mutedKey)
+        history.assistant = self
         Task { [weak self] in
             for await _ in NotificationCenter.default.notifications(named: .aaruChatsDeleted) {
                 guard let self else { return }
@@ -105,6 +92,7 @@ final class AssistantModel {
 
     func opened(_ presentation: AssistantPresentation) {
         hint = presentation.hint
+        history.cardOpened()
         let started = flowToken
         Task { [weak self, thread] in
             let continues = await thread?.reopen() ?? true
@@ -186,6 +174,27 @@ final class AssistantModel {
         libraryChanges += 1
     }
 
+    /// ASK-011: ends the turn on its way and shows a stored chat's turns, which the next question
+    /// continues; nil is New chat, an empty card whose next question starts another.
+    func show(_ chat: StoredChat?) async {
+        closed()
+        turns = (chat?.exchanges ?? []).map {
+            AssistantTurn(id: UUID(), question: $0.question, spoken: false, reply: $0.reply, undone: false)
+        }
+        decidedPlans = [:]
+        files.clear()
+        if let chat {
+            await thread?.adopt(chat.id)
+        } else {
+            await thread?.reset()
+        }
+    }
+
+    /// The chat the next question goes to, once one has started.
+    func currentChat() async -> String? {
+        await thread?.current()
+    }
+
     /// Delete my chats: the turns, the plans answered in them and the thread. Availability stays:
     /// this account is still signed in, and offline a fresh status read would hide the owl.
     func chatsDeleted() async {
@@ -207,6 +216,7 @@ final class AssistantModel {
         files.clear()
         isAvailable = false
         voiceAvailable = false
+        history.reset()
         await thread?.reset()
     }
 

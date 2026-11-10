@@ -972,6 +972,26 @@ The web's session cookie is HttpOnly, so the browser cannot call `/v1/chats/{id}
 the status check are ordinary server functions. A third, `POST`/`DELETE /app/assistant/attach`,
 passes a chat file's bytes through as they are (ASK-010).
 
+### History, roadmaps and scores (ASK-011)
+
+`GET /v1/chats` pages the caller's chats that hold a turn, `GET /v1/chats/{id}` returns one with
+its latest 200 turns, and `DELETE /v1/chats/{id}` removes one. `chat_turns.components` holds
+references (title ids, a plan id, an import id, an action id), read again from their own tables
+when a chat is read back, so a stored turn never carries a copy of catalog or library data. The
+one exception is `roadmap`: the list a turn sent with `plan_title_list`, in the model's own words,
+kept like the turn's body.
+
+A roadmap is still a capture: `plan_title_list` makes an import job (`source=capture`) the user
+reviews and approves, and the components frame's `roadmap` only shows what that job was sent. The
+scope gate's verdict also says whether a turn asks for several titles at once; such a turn gets
+`ListMaxTokens`, `ListRounds` and `ListEffort` (`model.Request.Effort`, a per-call override of the
+configured effort). Clients hold no rule about any of this.
+
+`title_scores` reads `catalog.ScoreService` (`internal/catalog/scores.go`): TMDB's vote average
+and the start of a few user reviews, AniList's average score. In memory for six hours, never on
+a `Title`, never stored. Review text is a stranger's words: it is fenced, and a turn that read it
+is tainted like a turn with a file, so its writes are plans.
+
 ### Files in a chat (ASK-010)
 
 A file goes up on its own, before the turn: `POST /v1/chats/{id}/attachments` reads it whole

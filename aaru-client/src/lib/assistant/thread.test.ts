@@ -121,6 +121,30 @@ describe('chat thread', () => {
     expect(chats).toEqual(['c1', 'c2'])
   })
 
+  it('continues a chat opened from history and restarts its 15 minutes', async () => {
+    const now = { t: 0 }
+    const { t, chats, fetchImpl } = thread(
+      [() => stream(answer), () => stream(answer)],
+      now,
+    )
+    now.t = IDLE_MS * 3
+    t.adopt('old')
+    expect(t.current()).toBe('old')
+    expect(t.reopen()).toBe(true)
+    await t.send('hi', undefined, new AbortController().signal, () => undefined)
+    expect(chats).toEqual([])
+    expect(JSON.stringify(fetchImpl.mock.calls)).toContain('chat=old')
+  })
+
+  it('New chat forgets the chat, so the next question starts another', async () => {
+    const { t, chats } = thread([() => stream(answer), () => stream(answer)])
+    await t.send('hi', undefined, new AbortController().signal, () => undefined)
+    t.reset()
+    expect(t.current()).toBeNull()
+    await t.send('hi', undefined, new AbortController().signal, () => undefined)
+    expect(chats).toEqual(['c1', 'c2'])
+  })
+
   it('a cancelled turn says so', async () => {
     const controller = new AbortController()
     controller.abort()
