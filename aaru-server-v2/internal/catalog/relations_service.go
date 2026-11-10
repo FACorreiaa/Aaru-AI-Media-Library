@@ -24,6 +24,10 @@ import (
 // rarely, and a graph that is a month behind still reads right.
 const RelationsTTL = 30 * 24 * time.Hour
 
+// RelationsEmptyTTL is how long "nothing related" is believed: a day. Providers gain links, and a
+// bad answer on one day must not hide a title's relations for a month.
+const RelationsEmptyTTL = 24 * time.Hour
+
 // RelationGraphDeadline bounds building one graph for a page; whatever arrived by then is drawn,
 // marked partial, and the walk goes on in the background for up to RelationWarmDeadline so the next
 // read finds every answer cached.
@@ -31,6 +35,14 @@ const (
 	RelationGraphDeadline = 8 * time.Second
 	RelationWarmDeadline  = time.Minute
 )
+
+// relationsFresh is true while a cached answer of this age is still believed.
+func relationsFresh(cached Relations, age time.Duration) bool {
+	if len(cached.Edges) == 0 {
+		return age < RelationsEmptyTTL
+	}
+	return age < RelationsTTL
+}
 
 // cachedRelationSource keeps a source's answers in `catalog_relations`. A failed fetch serves the
 // old answer when there is one.
@@ -53,7 +65,7 @@ func (c cachedRelationSource) Relations(ctx context.Context, n RelatedNode) (Rel
 	case err == nil:
 		var cached Relations
 		if json.Unmarshal(row.Relations, &cached) == nil {
-			if c.now().Sub(row.FetchedAt.Time) < RelationsTTL {
+			if relationsFresh(cached, c.now().Sub(row.FetchedAt.Time)) {
 				return cached, nil
 			}
 			stale = &cached

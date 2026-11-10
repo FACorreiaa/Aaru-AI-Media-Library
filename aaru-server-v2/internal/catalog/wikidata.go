@@ -27,6 +27,10 @@ const wikidataBatch = 10
 // derivative works, most of them games, plays and radio dramas Aaru does not track.
 const wikidataMaxNeighbours = 40
 
+// wikidataMaxParts bounds the parts read for a series a title is based on: "A Song of Ice and
+// Fire" stands for its novels, and a long-running series is not listed whole.
+const wikidataMaxParts = 12
+
 // The Wikidata properties Aaru reads (checked against Wikidata 2026-11-06).
 const (
 	wdFollows          = "P155"
@@ -34,6 +38,7 @@ const (
 	wdBasedOn          = "P144"
 	wdDerivativeWork   = "P4969"
 	wdPartOfTheSeries  = "P179"
+	wdHasParts         = "P527"
 	wdSeriesOrdinal    = "P1545"
 	wdPublicationDate  = "P577"
 	wdStartTime        = "P580"
@@ -84,6 +89,9 @@ type wikidataItem struct {
 	node      RelatedNode
 	trackable bool
 	links     []wikidataLink
+	// parts are what an item Aaru cannot track is made of (a book series' novels), so a title
+	// based on the series is related to the books themselves.
+	parts []string
 }
 
 type wikidataLink struct {
@@ -158,7 +166,12 @@ func (w *Wikidata) Relations(ctx context.Context, n RelatedNode) (Relations, err
 	if !ok {
 		return empty, nil
 	}
+	// What Wikidata knows about the title itself goes back too: its other ids let a TMDB show be
+	// asked about at AniList, and keep it one node with the same title reached another way.
 	self := RelatedNode{Wikidata: qid, Series: item.node.Series}
+	if item.trackable && item.node.Type == n.Type {
+		self.IDs, self.IsAnime = item.node.IDs, item.node.IsAnime
+	}
 	out := Relations{Self: &self, Edges: []RelatedEdge{}}
 	if len(item.links) == 0 {
 		return out, nil
@@ -171,12 +184,41 @@ func (w *Wikidata) Relations(ctx context.Context, n RelatedNode) (Relations, err
 	if err != nil {
 		return Relations{}, err
 	}
+	// A source or adaptation Aaru cannot track (a book series, a film series) stands for its parts.
+	var partIDs []string
+	for _, l := range item.links {
+		if r, ok := related[l.qid]; ok && !r.trackable && !l.relation.MainChain() {
+			partIDs = append(partIDs, r.parts...)
+		}
+	}
+	parts := map[string]wikidataItem{}
+	if len(partIDs) > 0 {
+		if parts, err = w.items(ctx, partIDs); err != nil {
+			return Relations{}, err
+		}
+	}
 	var nodes []RelatedNode
 	var relations []core.Relation
-	for _, l := range item.links {
-		if r, ok := related[l.qid]; ok && r.trackable {
+	seen := map[string]bool{qid: true}
+	add := func(r wikidataItem, relation core.Relation) {
+		if r.trackable && !seen[r.node.Wikidata] {
+			seen[r.node.Wikidata] = true
 			nodes = append(nodes, r.node)
-			relations = append(relations, l.relation)
+			relations = append(relations, relation)
+		}
+	}
+	for _, l := range item.links {
+		r, ok := related[l.qid]
+		switch {
+		case !ok:
+		case r.trackable:
+			add(r, l.relation)
+		case !l.relation.MainChain():
+			for _, p := range r.parts {
+				if part, ok := parts[p]; ok {
+					add(part, l.relation)
+				}
+			}
 		}
 	}
 	if w.Enrich != nil && len(nodes) > 0 {
@@ -198,6 +240,7 @@ func (w *Wikidata) find(ctx context.Context, lookups [][2]string) (string, error
 		terms[i] = l[0] + "=" + l[1]
 	}
 	var body struct {
+		wikidataFailure
 		Query struct {
 			Search []struct {
 				Title string `json:"title"`
@@ -208,7 +251,7 @@ func (w *Wikidata) find(ctx context.Context, lookups [][2]string) (string, error
 		"action": "query", "list": "search", "srsearch": "haswbstatement:" + strings.Join(terms, "|"),
 		"srlimit": "1", "srnamespace": "0",
 	}, &body)
-	if err != nil {
+	if err = cmp.Or(err, body.failed()); err != nil {
 		return "", err
 	}
 	for _, s := range body.Query.Search {
@@ -237,13 +280,14 @@ func (w *Wikidata) items(ctx context.Context, qids []string) (map[string]wikidat
 	for start := 0; start < len(missing); start += wikidataBatch {
 		batch := missing[start:min(start+wikidataBatch, len(missing))]
 		var body struct {
+			wikidataFailure
 			Entities map[string]wikidataEntity `json:"entities"`
 		}
 		err := w.get(ctx, map[string]string{
 			"action": "wbgetentities", "ids": strings.Join(batch, "|"), "props": "labels|claims",
 			"languages": "en|mul",
 		}, &body)
-		if err != nil {
+		if err = cmp.Or(err, body.failed()); err != nil {
 			return nil, err
 		}
 		w.mu.Lock()
@@ -279,6 +323,21 @@ func (w *Wikidata) get(ctx context.Context, query map[string]string, v any) erro
 }
 
 // MARK: - Wikidata wire shapes
+
+// wikidataFailure is the Action API's way of failing: HTTP 200 with an `error` object. Read as a
+// failure, never as "nothing found", so it is not cached as an empty answer.
+type wikidataFailure struct {
+	Error *struct {
+		Code string `json:"code"`
+	} `json:"error"`
+}
+
+func (f wikidataFailure) failed() error {
+	if f.Error == nil {
+		return nil
+	}
+	return provider.NewError("wikidata", provider.KindUnavailable)
+}
 
 type wikidataEntity struct {
 	Missing *string `json:"missing"`
@@ -407,6 +466,16 @@ func (e wikidataEntity) series() []SeriesPlace {
 	return out
 }
 
+// openLibraryWork is the item's Open Library work id: a work, never an edition.
+func (e wikidataEntity) openLibraryWork() string {
+	for _, c := range e.claims(wdOpenLibrary) {
+		if v := c.Mainsnak.text(); strings.HasSuffix(v, "W") {
+			return v
+		}
+	}
+	return ""
+}
+
 // node is the item as a title Aaru can track, its kind read from the catalog ids it carries; false
 // for anything else (a game, a play, a single comic issue).
 func (e wikidataEntity) node(qid string) (RelatedNode, bool) {
@@ -428,19 +497,13 @@ func (e wikidataEntity) node(qid string) (RelatedNode, bool) {
 	case e.text(wdAniListManga) != "" || e.text(wdMALManga) != "":
 		mediaType = core.MediaManga
 		ids.AniList, ids.MAL = e.text(wdAniListManga), e.text(wdMALManga)
+	case e.openLibraryWork() != "":
+		// A novel with an audiobook carries a MusicBrainz id too; it is still the book.
+		mediaType, ids.OpenLibrary, ids.MusicBrainz = core.MediaBook, e.openLibraryWork(), ""
 	case ids.MusicBrainz != "":
 		mediaType = core.MediaAlbum
 	default:
-		for _, c := range e.claims(wdOpenLibrary) {
-			if v := c.Mainsnak.text(); strings.HasSuffix(v, "W") {
-				ids.OpenLibrary = v
-				break
-			}
-		}
-		if ids.OpenLibrary == "" {
-			return RelatedNode{}, false
-		}
-		mediaType = core.MediaBook
+		return RelatedNode{}, false
 	}
 	var date *string
 	var year *int
@@ -475,6 +538,10 @@ func (e wikidataEntity) item(qid string) wikidataItem {
 		node = RelatedNode{Wikidata: qid, Series: e.series()}
 	}
 	out := wikidataItem{node: node, trackable: trackable}
+	if !trackable {
+		parts := e.items(wdHasParts)
+		out.parts = parts[:min(len(parts), wikidataMaxParts)]
+	}
 	seen := map[string]bool{qid: true}
 	add := func(qids []string, relation core.Relation) {
 		for _, q := range qids {
