@@ -261,6 +261,21 @@ func (q *Queries) DeleteAllChats(ctx context.Context, userID uuid.UUID) error {
 	return err
 }
 
+const deleteChat = `-- name: DeleteChat :exec
+DELETE FROM chats WHERE id = $1::uuid AND user_id = $2::uuid
+`
+
+type DeleteChatParams struct {
+	ID     uuid.UUID
+	UserID uuid.UUID
+}
+
+// Turns and files go with it. Someone else's chat is untouched.
+func (q *Queries) DeleteChat(ctx context.Context, arg DeleteChatParams) error {
+	_, err := q.db.Exec(ctx, deleteChat, arg.ID, arg.UserID)
+	return err
+}
+
 const deleteChatAttachment = `-- name: DeleteChatAttachment :execrows
 DELETE FROM chat_attachments
 WHERE id = $1::uuid AND chat_id = $2::uuid AND user_id = $3::uuid
@@ -377,6 +392,55 @@ func (q *Queries) InProgressTitleNames(ctx context.Context, arg InProgressTitleN
 			return nil, err
 		}
 		items = append(items, title)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listChats = `-- name: ListChats :many
+SELECT c.id, c.user_id, c.title, c.created_at, c.updated_at FROM chats c
+WHERE c.user_id = $1::uuid
+  AND EXISTS (SELECT 1 FROM chat_turns t WHERE t.chat_id = c.id)
+  AND (c.updated_at, c.id) < (coalesce($2::pg_catalog.timestamptz, 'infinity'),
+                              coalesce($3::uuid, 'ffffffff-ffff-ffff-ffff-ffffffffffff'))
+ORDER BY c.updated_at DESC, c.id DESC
+LIMIT $4::int
+`
+
+type ListChatsParams struct {
+	UserID   uuid.UUID
+	BeforeAt *time.Time
+	BeforeID *uuid.UUID
+	PageSize int32
+}
+
+// The user's chats that hold at least one turn, latest first, after a `(updated_at, id)` cursor.
+func (q *Queries) ListChats(ctx context.Context, arg ListChatsParams) ([]Chat, error) {
+	rows, err := q.db.Query(ctx, listChats,
+		arg.UserID,
+		arg.BeforeAt,
+		arg.BeforeID,
+		arg.PageSize,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Chat{}
+	for rows.Next() {
+		var i Chat
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Title,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
