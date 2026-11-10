@@ -5044,15 +5044,23 @@ type UserRef struct {
 
 // WatchParty defines model for WatchParty.
 type WatchParty struct {
-	EndedAt  *apitime.Time   `json:"endedAt,omitempty"`
-	Episode  *int            `json:"episode,omitempty"`
-	Host     *SocialUser     `json:"host,omitempty"`
-	Id       apiid.UUID      `json:"id"`
+	// Chapter A manga reading session reads to this chapter.
+	Chapter *int          `json:"chapter,omitempty"`
+	EndedAt *apitime.Time `json:"endedAt,omitempty"`
+	Episode *int          `json:"episode,omitempty"`
+	Host    *SocialUser   `json:"host,omitempty"`
+	Id      apiid.UUID    `json:"id"`
+
+	// Page A book reading session reads to this page.
+	Page     *int            `json:"page,omitempty"`
 	Ready    []SocialUser    `json:"ready"`
 	Season   *int            `json:"season,omitempty"`
 	StartsAt *apitime.Time   `json:"startsAt,omitempty"`
 	State    WatchPartyState `json:"state"`
 	Title    TitleSummary    `json:"title"`
+
+	// Volume A manga reading session reads to this volume.
+	Volume *int `json:"volume,omitempty"`
 }
 
 // WatchPartyState defines model for WatchParty.State.
@@ -5060,16 +5068,21 @@ type WatchPartyState string
 
 // WatchPartyCreate defines model for WatchPartyCreate.
 type WatchPartyCreate struct {
+	Chapter *int `json:"chapter,omitempty"`
 	Episode *int `json:"episode,omitempty"`
+	Page    *int `json:"page,omitempty"`
 	Season  *int `json:"season,omitempty"`
 
 	// Title A title by Aaru id, by provider ids, or by title + year.
-	Title MediaRef `json:"title"`
+	Title  MediaRef `json:"title"`
+	Volume *int     `json:"volume,omitempty"`
 }
 
 // WatchPartyReady defines model for WatchPartyReady.
 type WatchPartyReady struct {
-	Ready bool `json:"ready"`
+	// AutoMark Leave out to keep what you chose; a first join starts with it on.
+	AutoMark *bool `json:"autoMark,omitempty"`
+	Ready    bool  `json:"ready"`
 }
 
 // WatchPartyStart defines model for WatchPartyStart.
@@ -5080,7 +5093,15 @@ type WatchPartyStart struct {
 
 // WatchPartyView defines model for WatchPartyView.
 type WatchPartyView struct {
-	Party *WatchParty `json:"party,omitempty"`
+	// ActionId The action that marked it for you, for POST /v1/actions/{id}/undo. Absent when your library already said so.
+	ActionId *apiid.UUID `json:"actionId,omitempty"`
+
+	// AutoMark Your own "Mark it for me": the end of the party marks the title for you. True until you switch it off.
+	AutoMark bool `json:"autoMark"`
+
+	// MarkedForYou The party marked its title in your library, at its end or by your tap.
+	MarkedForYou bool        `json:"markedForYou"`
+	Party        *WatchParty `json:"party,omitempty"`
 
 	// ServerTime Count down against this, not the device clock.
 	ServerTime apitime.Time `json:"serverTime"`
@@ -5887,19 +5908,19 @@ type ServerInterface interface {
 	// GetWatchParty A watch channel's newest party, ended or not, and the server's clock for the countdown.
 	// (GET /v1/groups/{groupId}/channels/{channelId}/party)
 	GetWatchParty(ctx *echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
-	// OpenWatchParty Open a party in the lobby. A show needs the episode. One open party per channel (409).
+	// OpenWatchParty Open a party in the lobby. A show needs the episode; a manga can carry a chapter and volume, a book a page. One open party per channel (409).
 	// (POST /v1/groups/{groupId}/channels/{channelId}/party)
 	OpenWatchParty(ctx *echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
-	// EndWatchParty End the party. The host or an admin.
+	// EndWatchParty End the party. The host or an admin. If the countdown had started, the title is marked for every member who joined and left autoMark on, as their own undoable action.
 	// (POST /v1/groups/{groupId}/channels/{channelId}/party/end)
 	EndWatchParty(ctx *echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
-	// SetWatchPartyReady Say you are ready, or not.
+	// SetWatchPartyReady Say you are ready, or not. Being ready is joining; autoMark is whether the end of the party marks the title for you.
 	// (POST /v1/groups/{groupId}/channels/{channelId}/party/ready)
 	SetWatchPartyReady(ctx *echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
 	// StartWatchParty Start the countdown. The host or an admin.
 	// (POST /v1/groups/{groupId}/channels/{channelId}/party/start)
 	StartWatchParty(ctx *echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
-	// MarkWatchPartyWatched Mark the party's episode, film or book watched in your own library. Nobody else's.
+	// MarkWatchPartyWatched Mark the party's episode, chapter, page, film or book in your own library. For a member who switched autoMark off or did not join.
 	// (POST /v1/groups/{groupId}/channels/{channelId}/party/watched)
 	MarkWatchPartyWatched(ctx *echo.Context, groupId apiid.UUID, channelId apiid.UUID) error
 	// GetChannelProgress A title channel's title, your progress, and the progress of members who share theirs in this group.
@@ -18148,19 +18169,19 @@ type StrictServerInterface interface {
 	// GetWatchParty A watch channel's newest party, ended or not, and the server's clock for the countdown.
 	// (GET /v1/groups/{groupId}/channels/{channelId}/party)
 	GetWatchParty(ctx context.Context, request GetWatchPartyRequestObject) (GetWatchPartyResponseObject, error)
-	// OpenWatchParty Open a party in the lobby. A show needs the episode. One open party per channel (409).
+	// OpenWatchParty Open a party in the lobby. A show needs the episode; a manga can carry a chapter and volume, a book a page. One open party per channel (409).
 	// (POST /v1/groups/{groupId}/channels/{channelId}/party)
 	OpenWatchParty(ctx context.Context, request OpenWatchPartyRequestObject) (OpenWatchPartyResponseObject, error)
-	// EndWatchParty End the party. The host or an admin.
+	// EndWatchParty End the party. The host or an admin. If the countdown had started, the title is marked for every member who joined and left autoMark on, as their own undoable action.
 	// (POST /v1/groups/{groupId}/channels/{channelId}/party/end)
 	EndWatchParty(ctx context.Context, request EndWatchPartyRequestObject) (EndWatchPartyResponseObject, error)
-	// SetWatchPartyReady Say you are ready, or not.
+	// SetWatchPartyReady Say you are ready, or not. Being ready is joining; autoMark is whether the end of the party marks the title for you.
 	// (POST /v1/groups/{groupId}/channels/{channelId}/party/ready)
 	SetWatchPartyReady(ctx context.Context, request SetWatchPartyReadyRequestObject) (SetWatchPartyReadyResponseObject, error)
 	// StartWatchParty Start the countdown. The host or an admin.
 	// (POST /v1/groups/{groupId}/channels/{channelId}/party/start)
 	StartWatchParty(ctx context.Context, request StartWatchPartyRequestObject) (StartWatchPartyResponseObject, error)
-	// MarkWatchPartyWatched Mark the party's episode, film or book watched in your own library. Nobody else's.
+	// MarkWatchPartyWatched Mark the party's episode, chapter, page, film or book in your own library. For a member who switched autoMark off or did not join.
 	// (POST /v1/groups/{groupId}/channels/{channelId}/party/watched)
 	MarkWatchPartyWatched(ctx context.Context, request MarkWatchPartyWatchedRequestObject) (MarkWatchPartyWatchedResponseObject, error)
 	// GetChannelProgress A title channel's title, your progress, and the progress of members who share theirs in this group.
