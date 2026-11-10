@@ -81,6 +81,8 @@ func (s *Server) AddLibraryItem(ctx context.Context, req api.AddLibraryItemReque
 	if err != nil {
 		return nil, err
 	}
+	// Its relation graph is built now, in the background, so its page finds it ready (GRAPH-001).
+	s.Catalog.Relations.Warm(ctx, entry.Title.ID)
 	return api.AddLibraryItem200JSONResponse(LibraryEntryDTO(entry)), nil
 }
 

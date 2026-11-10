@@ -202,7 +202,7 @@ they stack, the user's layer first on Apple. The next cell on the season map sta
 a gold ring. Every write is the one the room already made.
 
 **Related titles (GRAPH-002, 2026-11-06, web, iPhone, iPad, Mac).** Under About (and the
-tracklist) the room, and the page of a title not in the library, show what comes before and after
+tracklist), above the episodes, the room, and the page of a title not in the library, show what comes before and after
 it, what it is based on and adapted into, and its side stories: small posters in a row per group,
 each with its year and format ("2013 · OVA"), the person's status, and **Start here** on the first
 main-chain title they have not finished. **Graph** opens the whole graph: the main chain along the
@@ -210,7 +210,13 @@ top in release order (story order a toggle away when a numbered series says so),
 in the column of the one it hangs from. Main-chain lines are solid in the accent; other relations
 dashed with a small label. The centre is ringed. A title opens its page; Centre walks the graph out
 from it. Relations are catalog data: the graph never adds anything, and says so quietly when it is
-still finding titles. Credit: "Relations from AniList, TMDB and Wikidata."
+still finding titles. Nothing related leaves the section out; a read that fails says "Related titles
+could not be loaded" with Try again, never silence (2026-11-10). **Ask Aaru for more** (owner,
+2026-11-10; shown while the assistant answers) opens the Assistant card with the question already
+asked: what else is set in this title's world. Providers link sequels and adaptations, not every
+show of one universe; the owl's answer is its own suggestion, reviewed before anything is added,
+and never joins the graph. Credit: "Relations from AniList,
+TMDB and Wikidata."
 
 **Roadmaps (GRAPH-003, 2026-11-06, web, iPhone, iPad, Mac).** Ask the owl what to read before
 Secret Wars and the answer is a roadmap: numbered steps in the reply, and the same steps sent for
@@ -222,7 +228,8 @@ What Aaru could not find stays as text in its step, so the order is never lost. 
 collected editions, with the issues as the note. From any graph, **Add the chain** sends the main
 chain, in the chosen order, to the same review. A roadmap list's **Graph** draws it the way a title's
 graph is drawn (GRAPH-004): a column per title in step order, titles read side by side stacked in
-one column, optional ones hanging under the title before them.
+one column, optional ones hanging under the title before them. A list without steps has **Graph**
+too and draws in its order (2026-11-10): the list "Add the chain" makes is one.
 
 ## 5. Tonight
 
@@ -249,7 +256,9 @@ kept (Home's cache on Apple, `localStorage` on the web, cleared on sign-out), so
 offline. The device composes it as above only when no answer for today exists. Each pick has
 "Not tonight" (gone for the day) and "Not for me" (ranked lower for 14 days), each saying so
 in a "…" menu (and a context menu on Apple). The card moves on at once, then Tonight loads
-again. Mark watched shows only when the pick is a show's next episode. "Season N watched"
+again. On Apple the card's buttons, and the Title room's, are the system's regular size in a
+capsule (owner, 2026-11-10: large is for a screen's one main action, not a row inside a card).
+Mark watched shows only when the pick is a show's next episode. "Season N watched"
 (PROG-006, owner 2026-10-23) ticks every aired episode of that season, shown only while
 episodes after the next one remain in it; since 2026-10-28 it sits in the "…" menu too, so the
 card shows two actions, Mark watched and Open. The art sits above the words until the screen is
@@ -458,6 +467,8 @@ rows of wide cards, one job per row.
   season, and "N left · Xh" for what remains. Title, `S1 · E8 · Episode name` under it, a check
   to mark the next episode watched. The newest 12, then "All N" to the Watching page (APP-018).
   On the web each row opens with "Skip <row>" for the keyboard, shown on focus.
+  A row's back and forward arrows show only when it holds more than fits, and the one at the
+  row's end is dimmed; its scrollbar is thin and takes the hairline colour.
 - **Start watching** (`StartRow`) — poster cards for wishlist titles with runtime, so the row
   answers "what can I start in two hours."
 - **Calendar** (`CalendarRow`) — the next few airings of tracked shows and anime, badged
@@ -1276,8 +1287,28 @@ file the server refuses leaves no chip and one muted line saying why. Up to five
 question, which may then be empty. The question bubble lists the files it carried. A reply
 that made an import shows "Review the import".
 
-**Chats.** Settings → Your data → Delete my chats with Aaru (confirmed) empties them, and the
-open card with them. They are kept until then.
+**Roadmaps (ASK-011).** A reply that planned a list shows it in the card as a `RoadmapCard`: the
+list's name, its numbered steps with a heading and a note, and under each the titles as Aaru
+named them, with their year, their note ("#1-12"), Optional, and "side by side" for a pair. A
+plain list is one step with no heading. One button, "Review and save", opens the import review,
+where the titles are matched and nothing is added until the user approves; after approval the
+review links to the saved list. The card never adds from a roadmap itself. Aaru's words above it
+are a sentence or two: the list is not written out twice.
+
+**Chats (ASK-011).** A chat continues for 15 minutes across openings of the card, on any screen.
+The card's header has New chat, which empties the card and starts another, and History, which
+lists the user's chats by the start of their first question and when they were last used. A tap
+opens one with its turns, cards and roadmaps as they were, and the next question continues it;
+each can be deleted there. Settings → Your data lists the same chats, deletes one, and Delete my
+chats with Aaru (confirmed) empties them all and the open card with them. A chat picked in
+Settings opens the card on it on the web; on iPhone and Mac, where Settings is a sheet or its own
+window, it opens to read, and carrying on with it is the card's History. Chats are kept until
+deleted. On iPhone and Mac the header's buttons are symbols: New chat (a pencil on a square) and
+Chats (two bubbles), which becomes a back arrow while the list shows.
+
+**Scores (ASK-011).** Asked how good a title is, Aaru gives the audience score from TMDB (films,
+shows) or AniList (anime, manga), names that source, and may sum up what a few of its users
+wrote. These are never called critics' reviews. With no score it says "I can't see that yet".
 
 The card, owl, mic and composer are chrome and are never agent-emitted; replies carry only
 components from the catalog below. Colours and type follow the Brand section.

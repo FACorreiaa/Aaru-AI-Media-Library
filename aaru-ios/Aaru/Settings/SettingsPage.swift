@@ -62,9 +62,12 @@ enum SettingsPage: String, CaseIterable, Identifiable, Hashable {
     }
 }
 
-/// Where Settings' stack goes: a page, an import job opened from Import, or History.
+/// Where Settings' stack goes: a page, an import job opened from Import, History, the chats with
+/// Aaru, or one of them (ASK-011).
 enum SettingsRoute: Hashable {
     case page(SettingsPage)
     case job(String)
     case history
+    case chats
+    case chat(String)
 }

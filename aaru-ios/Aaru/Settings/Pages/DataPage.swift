@@ -31,12 +31,15 @@ struct DataPage: View {
             }
             ExportDataSection(model: model)
             Section {
+                NavigationLink(value: SettingsRoute.chats) {
+                    Label("Chats with Aaru", systemImage: "bubble.left.and.bubble.right")
+                }
                 Button("Delete my chats with Aaru", role: .destructive) {
                     confirmingDeleteChats = true
                 }
                 .disabled(model.deletingChats || !model.isAvailable)
             } footer: {
-                Text("Aaru keeps your chats until you delete them.")
+                Text("Aaru keeps your chats until you delete them, one at a time or all at once.")
             }
         }
         .settingsPage("Your data", problem: $model.problem)

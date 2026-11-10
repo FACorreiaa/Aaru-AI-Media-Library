@@ -8,6 +8,8 @@ import { cn } from '~/lib/utils'
 // (owner, 2026-10-21: "should be horizontal", not a small block in the side column). Four
 // figures in a row, the week's bars with their days, and the way into Insights.
 export function WeekStripCard(props: { week: WeekStrip }) {
+  // A week with nothing in it keeps its seven marks but not the room for bars.
+  const flat = () => props.week.days.every((height) => height === 0)
   return (
     <section class="mt-8" aria-labelledby="home-week">
       <div class="flex items-baseline justify-between gap-4">
@@ -44,7 +46,10 @@ export function WeekStripCard(props: { week: WeekStrip }) {
           <For each={props.week.days}>
             {(height, i) => (
               <span class="flex flex-1 flex-col items-center gap-1">
-                <span class="flex h-12 w-full items-end text-accent">
+                <span
+                  class="flex w-full items-end text-accent"
+                  classList={{ 'h-12': !flat(), 'h-1': flat() }}
+                >
                   <span
                     class="w-full rounded-xs"
                     classList={{

@@ -69,6 +69,10 @@ struct ListDetailView: View {
                     }
                     .pickerStyle(.segmented)
                 }
+            }
+            // Any list with titles draws as a graph, a plain one in its order (GRAPH-004): a list
+            // made by "Add the chain" has no steps and still wants its graph.
+            if !(detail?.items ?? []).isEmpty {
                 ToolbarItem(placement: .secondaryAction) {
                     Button("Graph", systemImage: "point.3.connected.trianglepath.dotted") { showsGraph = true }
                 }

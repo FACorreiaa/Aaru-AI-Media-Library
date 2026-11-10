@@ -79,11 +79,21 @@ struct AssistantCard: View {
     private var panel: some View {
         VStack(spacing: 0) {
             header
-            turns
-            Rectangle()
-                .fill(Color(.line))
-                .frame(height: 1)
-            AssistantComposer(model: model, opensListening: opensListening)
+            if model.history.panel == .list {
+                AssistantHistoryPanel(
+                    model: model.history.chats,
+                    opening: model.history.opening,
+                    problem: model.history.problem
+                ) { chat in
+                    Task { await model.history.open(chat.id) }
+                }
+            } else {
+                turns
+                Rectangle()
+                    .fill(Color(.line))
+                    .frame(height: 1)
+                AssistantComposer(model: model, opensListening: opensListening)
+            }
         }
         .background(Color(.surface))
         .clipShape(.rect(cornerRadius: AaruRadius.card, style: .continuous))
@@ -115,6 +125,10 @@ struct AssistantCard: View {
                     .foregroundStyle(Color(.ink))
                     .accessibilityAddTraits(.isHeader)
                 Spacer(minLength: 0)
+                if model.history.panel == .chat, !model.turns.isEmpty {
+                    newChatButton
+                }
+                chatsButton
                 if model.voiceAvailable {
                     muteButton
                 }
@@ -138,6 +152,30 @@ struct AssistantCard: View {
         }
         .buttonStyle(.plain)
         .help(model.isMuted ? "Read replies aloud" : "Stop reading replies aloud")
+    }
+
+    /// ASK-011: ends this chat and starts an empty one.
+    private var newChatButton: some View {
+        Button { Task { await model.history.newChat() } } label: {
+            headerIcon("New chat", symbol: "square.and.pencil")
+        }
+        .buttonStyle(.plain)
+        .help("New chat")
+    }
+
+    /// ASK-011: the user's past chats, and back.
+    private var chatsButton: some View {
+        let showing = model.history.panel == .list
+        return Button {
+            model.history.panel = showing ? .chat : .list
+        } label: {
+            headerIcon(
+                showing ? "Back to chat" : "Chats",
+                symbol: showing ? "chevron.backward" : "bubble.left.and.bubble.right"
+            )
+        }
+        .buttonStyle(.plain)
+        .help(showing ? "Back to chat" : "Your chats")
     }
 
     private var closeButton: some View {

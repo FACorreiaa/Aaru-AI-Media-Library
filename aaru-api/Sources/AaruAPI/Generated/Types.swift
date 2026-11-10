@@ -850,6 +850,11 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /v1/imports`.
     /// - Remark: Generated from `#/paths//v1/imports/get(listImports)`.
     func listImports(_ input: Operations.ListImports.Input) async throws -> Operations.ListImports.Output
+    /// The caller's chats with Aaru, latest first, 30 a page (ASK-011). A chat nobody has asked anything in is left out.
+    ///
+    /// - Remark: HTTP `GET /v1/chats`.
+    /// - Remark: Generated from `#/paths//v1/chats/get(listChats)`.
+    func listChats(_ input: Operations.ListChats.Input) async throws -> Operations.ListChats.Output
     /// Start a Chat with Aaru (ASK-009), a one-to-one thread only its user can read.
     ///
     /// - Remark: HTTP `POST /v1/chats`.
@@ -870,6 +875,16 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/chats/transcribe`.
     /// - Remark: Generated from `#/paths//v1/chats/transcribe/post(transcribeChatAudio)`.
     func transcribeChatAudio(_ input: Operations.TranscribeChatAudio.Input) async throws -> Operations.TranscribeChatAudio.Output
+    /// One chat with its turns, oldest first, so it can be read again and continued (ASK-011). The latest 200 turns. 404 for a chat that is not the caller's.
+    ///
+    /// - Remark: HTTP `GET /v1/chats/{id}`.
+    /// - Remark: Generated from `#/paths//v1/chats/{id}/get(getChat)`.
+    func getChat(_ input: Operations.GetChat.Input) async throws -> Operations.GetChat.Output
+    /// Delete one of the caller's chats, its turns and files with it (ASK-011).
+    ///
+    /// - Remark: HTTP `DELETE /v1/chats/{id}`.
+    /// - Remark: Generated from `#/paths//v1/chats/{id}/delete(deleteChat)`.
+    func deleteChat(_ input: Operations.DeleteChat.Input) async throws -> Operations.DeleteChat.Output
     /// Ask Aaru (ASK-009). The answer is a stream of server-sent events, each frame an `event:` line with its type and a `data:` line with JSON: `status` and `delta` carry ChatTextFrame, `components` ChatComponentsFrame, `done` ChatDoneFrame, `error` ChatErrorFrame. Lines starting with `:` are heartbeats. Once the stream has begun, a failure can only be an `error` frame: a send past the daily cap is a 200 with one `error` frame, code `resting`. Before it begins: 404 for a chat that is not the caller's, 409 `chat_busy` while the chat is still answering, 422 for a body that is over 4000 characters or blank with no attachments, 422 `attachment_gone` when an attachment is no longer kept, 503 `agent_unavailable` when Aaru is off. Hanging up stops the turn and keeps what was written.
     ///
     /// - Remark: HTTP `POST /v1/chats/{id}/turns`.
@@ -3127,6 +3142,19 @@ extension APIProtocol {
     public func listImports(headers: Operations.ListImports.Input.Headers = .init()) async throws -> Operations.ListImports.Output {
         try await listImports(Operations.ListImports.Input(headers: headers))
     }
+    /// The caller's chats with Aaru, latest first, 30 a page (ASK-011). A chat nobody has asked anything in is left out.
+    ///
+    /// - Remark: HTTP `GET /v1/chats`.
+    /// - Remark: Generated from `#/paths//v1/chats/get(listChats)`.
+    public func listChats(
+        query: Operations.ListChats.Input.Query = .init(),
+        headers: Operations.ListChats.Input.Headers = .init()
+    ) async throws -> Operations.ListChats.Output {
+        try await listChats(Operations.ListChats.Input(
+            query: query,
+            headers: headers
+        ))
+    }
     /// Start a Chat with Aaru (ASK-009), a one-to-one thread only its user can read.
     ///
     /// - Remark: HTTP `POST /v1/chats`.
@@ -3159,6 +3187,32 @@ extension APIProtocol {
         try await transcribeChatAudio(Operations.TranscribeChatAudio.Input(
             headers: headers,
             body: body
+        ))
+    }
+    /// One chat with its turns, oldest first, so it can be read again and continued (ASK-011). The latest 200 turns. 404 for a chat that is not the caller's.
+    ///
+    /// - Remark: HTTP `GET /v1/chats/{id}`.
+    /// - Remark: Generated from `#/paths//v1/chats/{id}/get(getChat)`.
+    public func getChat(
+        path: Operations.GetChat.Input.Path,
+        headers: Operations.GetChat.Input.Headers = .init()
+    ) async throws -> Operations.GetChat.Output {
+        try await getChat(Operations.GetChat.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Delete one of the caller's chats, its turns and files with it (ASK-011).
+    ///
+    /// - Remark: HTTP `DELETE /v1/chats/{id}`.
+    /// - Remark: Generated from `#/paths//v1/chats/{id}/delete(deleteChat)`.
+    public func deleteChat(
+        path: Operations.DeleteChat.Input.Path,
+        headers: Operations.DeleteChat.Input.Headers = .init()
+    ) async throws -> Operations.DeleteChat.Output {
+        try await deleteChat(Operations.DeleteChat.Input(
+            path: path,
+            headers: headers
         ))
     }
     /// Ask Aaru (ASK-009). The answer is a stream of server-sent events, each frame an `event:` line with its type and a `data:` line with JSON: `status` and `delta` carry ChatTextFrame, `components` ChatComponentsFrame, `done` ChatDoneFrame, `error` ChatErrorFrame. Lines starting with `:` are heartbeats. Once the stream has begun, a failure can only be an `error` frame: a send past the daily cap is a 200 with one `error` frame, code `resting`. Before it begins: 404 for a chat that is not the caller's, 409 `chat_busy` while the chat is still answering, 422 for a body that is over 4000 characters or blank with no attachments, 422 `attachment_gone` when an attachment is no longer kept, 503 `agent_unavailable` when Aaru is off. Hanging up stops the turn and keeps what was written.
@@ -5114,22 +5168,30 @@ public enum Components {
         public struct ImportDetail: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/ImportDetail/job`.
             public var job: Components.Schemas.ImportJob
+            /// The list an approved import's titles joined, when it named one (ASK-011).
+            ///
+            /// - Remark: Generated from `#/components/schemas/ImportDetail/listId`.
+            public var listId: Swift.String?
             /// - Remark: Generated from `#/components/schemas/ImportDetail/rows`.
             public var rows: [Components.Schemas.ImportRow]
             /// Creates a new `ImportDetail`.
             ///
             /// - Parameters:
             ///   - job:
+            ///   - listId: The list an approved import's titles joined, when it named one (ASK-011).
             ///   - rows:
             public init(
                 job: Components.Schemas.ImportJob,
+                listId: Swift.String? = nil,
                 rows: [Components.Schemas.ImportRow]
             ) {
                 self.job = job
+                self.listId = listId
                 self.rows = rows
             }
             public enum CodingKeys: String, CodingKey {
                 case job
+                case listId
                 case rows
             }
         }
@@ -11912,6 +11974,286 @@ public enum Components {
                 case id
             }
         }
+        /// One chat in the caller's history. `title` is the start of its first question.
+        ///
+        /// - Remark: Generated from `#/components/schemas/ChatSummary`.
+        public struct ChatSummary: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ChatSummary/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ChatSummary/title`.
+            public var title: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ChatSummary/createdAt`.
+            public var createdAt: Foundation.Date
+            /// - Remark: Generated from `#/components/schemas/ChatSummary/updatedAt`.
+            public var updatedAt: Foundation.Date
+            /// Creates a new `ChatSummary`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - title:
+            ///   - createdAt:
+            ///   - updatedAt:
+            public init(
+                id: Swift.String,
+                title: Swift.String? = nil,
+                createdAt: Foundation.Date,
+                updatedAt: Foundation.Date
+            ) {
+                self.id = id
+                self.title = title
+                self.createdAt = createdAt
+                self.updatedAt = updatedAt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case title
+                case createdAt
+                case updatedAt
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ChatList`.
+        public struct ChatList: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ChatList/items`.
+            public var items: [Components.Schemas.ChatSummary]
+            /// - Remark: Generated from `#/components/schemas/ChatList/page`.
+            public var page: Components.Schemas.PageInfo
+            /// Creates a new `ChatList`.
+            ///
+            /// - Parameters:
+            ///   - items:
+            ///   - page:
+            public init(
+                items: [Components.Schemas.ChatSummary],
+                page: Components.Schemas.PageInfo
+            ) {
+                self.items = items
+                self.page = page
+            }
+            public enum CodingKeys: String, CodingKey {
+                case items
+                case page
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/Chat`.
+        public struct Chat: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/Chat/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Chat/title`.
+            public var title: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/Chat/createdAt`.
+            public var createdAt: Foundation.Date
+            /// - Remark: Generated from `#/components/schemas/Chat/updatedAt`.
+            public var updatedAt: Foundation.Date
+            /// - Remark: Generated from `#/components/schemas/Chat/turns`.
+            public var turns: [Components.Schemas.ChatTurn]
+            /// Creates a new `Chat`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - title:
+            ///   - createdAt:
+            ///   - updatedAt:
+            ///   - turns:
+            public init(
+                id: Swift.String,
+                title: Swift.String? = nil,
+                createdAt: Foundation.Date,
+                updatedAt: Foundation.Date,
+                turns: [Components.Schemas.ChatTurn]
+            ) {
+                self.id = id
+                self.title = title
+                self.createdAt = createdAt
+                self.updatedAt = updatedAt
+                self.turns = turns
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case title
+                case createdAt
+                case updatedAt
+                case turns
+            }
+        }
+        /// One stored turn. An agent turn's `components` are what its tools left, read again now: a title, plan or import that has since gone is left out.
+        ///
+        /// - Remark: Generated from `#/components/schemas/ChatTurn`.
+        public struct ChatTurn: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ChatTurn/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ChatTurn/role`.
+            @frozen public enum RolePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case user = "user"
+                case agent = "agent"
+            }
+            /// - Remark: Generated from `#/components/schemas/ChatTurn/role`.
+            public var role: Components.Schemas.ChatTurn.RolePayload
+            /// - Remark: Generated from `#/components/schemas/ChatTurn/body`.
+            public var body: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ChatTurn/state`.
+            @frozen public enum StatePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case streaming = "streaming"
+                case done = "done"
+                case failed = "failed"
+                case stopped = "stopped"
+            }
+            /// - Remark: Generated from `#/components/schemas/ChatTurn/state`.
+            public var state: Components.Schemas.ChatTurn.StatePayload
+            /// - Remark: Generated from `#/components/schemas/ChatTurn/createdAt`.
+            public var createdAt: Foundation.Date
+            /// - Remark: Generated from `#/components/schemas/ChatTurn/components`.
+            public var components: Components.Schemas.ChatComponentsFrame?
+            /// Creates a new `ChatTurn`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - role:
+            ///   - body:
+            ///   - state:
+            ///   - createdAt:
+            ///   - components:
+            public init(
+                id: Swift.String,
+                role: Components.Schemas.ChatTurn.RolePayload,
+                body: Swift.String,
+                state: Components.Schemas.ChatTurn.StatePayload,
+                createdAt: Foundation.Date,
+                components: Components.Schemas.ChatComponentsFrame? = nil
+            ) {
+                self.id = id
+                self.role = role
+                self.body = body
+                self.state = state
+                self.createdAt = createdAt
+                self.components = components
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case role
+                case body
+                case state
+                case createdAt
+                case components
+            }
+        }
+        /// A list Aaru sent to be matched, as Aaru named it (ASK-011): the titles in their steps, before any is matched. It is shown in the reply; the import at `importId` is where it is reviewed and approved. A plain list is one step with no heading.
+        ///
+        /// - Remark: Generated from `#/components/schemas/ChatRoadmap`.
+        public struct ChatRoadmap: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ChatRoadmap/listName`.
+            public var listName: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ChatRoadmap/steps`.
+            public var steps: [Components.Schemas.ChatRoadmapStep]
+            /// Creates a new `ChatRoadmap`.
+            ///
+            /// - Parameters:
+            ///   - listName:
+            ///   - steps:
+            public init(
+                listName: Swift.String? = nil,
+                steps: [Components.Schemas.ChatRoadmapStep]
+            ) {
+                self.listName = listName
+                self.steps = steps
+            }
+            public enum CodingKeys: String, CodingKey {
+                case listName
+                case steps
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ChatRoadmapStep`.
+        public struct ChatRoadmapStep: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ChatRoadmapStep/heading`.
+            public var heading: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ChatRoadmapStep/note`.
+            public var note: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ChatRoadmapStep/items`.
+            public var items: [Components.Schemas.ChatRoadmapItem]
+            /// Creates a new `ChatRoadmapStep`.
+            ///
+            /// - Parameters:
+            ///   - heading:
+            ///   - note:
+            ///   - items:
+            public init(
+                heading: Swift.String? = nil,
+                note: Swift.String? = nil,
+                items: [Components.Schemas.ChatRoadmapItem]
+            ) {
+                self.heading = heading
+                self.note = note
+                self.items = items
+            }
+            public enum CodingKeys: String, CodingKey {
+                case heading
+                case note
+                case items
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ChatRoadmapItem`.
+        public struct ChatRoadmapItem: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ChatRoadmapItem/title`.
+            public var title: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ChatRoadmapItem/type`.
+            @frozen public enum _TypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case movie = "movie"
+                case show = "show"
+                case book = "book"
+                case manga = "manga"
+            }
+            /// - Remark: Generated from `#/components/schemas/ChatRoadmapItem/type`.
+            public var _type: Components.Schemas.ChatRoadmapItem._TypePayload
+            /// - Remark: Generated from `#/components/schemas/ChatRoadmapItem/year`.
+            public var year: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/ChatRoadmapItem/author`.
+            public var author: Swift.String?
+            /// What to read or watch in it, such as issue numbers.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ChatRoadmapItem/note`.
+            public var note: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ChatRoadmapItem/optional`.
+            public var optional: Swift.Bool?
+            /// The same number on titles read or watched side by side.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ChatRoadmapItem/pair`.
+            public var pair: Swift.Int?
+            /// Creates a new `ChatRoadmapItem`.
+            ///
+            /// - Parameters:
+            ///   - title:
+            ///   - _type:
+            ///   - year:
+            ///   - author:
+            ///   - note: What to read or watch in it, such as issue numbers.
+            ///   - optional:
+            ///   - pair: The same number on titles read or watched side by side.
+            public init(
+                title: Swift.String,
+                _type: Components.Schemas.ChatRoadmapItem._TypePayload,
+                year: Swift.Int? = nil,
+                author: Swift.String? = nil,
+                note: Swift.String? = nil,
+                optional: Swift.Bool? = nil,
+                pair: Swift.Int? = nil
+            ) {
+                self.title = title
+                self._type = _type
+                self.year = year
+                self.author = author
+                self.note = note
+                self.optional = optional
+                self.pair = pair
+            }
+            public enum CodingKeys: String, CodingKey {
+                case title
+                case _type = "type"
+                case year
+                case author
+                case note
+                case optional
+                case pair
+            }
+        }
         /// - Remark: Generated from `#/components/schemas/ChatStatus`.
         public struct ChatStatus: Codable, Hashable, Sendable {
             /// Aaru can answer. False hides the owl.
@@ -12124,6 +12466,8 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/ChatComponentsFrame/importId`.
             public var importId: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ChatComponentsFrame/roadmap`.
+            public var roadmap: Components.Schemas.ChatRoadmap?
             /// A single change Aaru applied, undone at `/v1/actions/{id}/undo`.
             ///
             /// - Remark: Generated from `#/components/schemas/ChatComponentsFrame/actionId`.
@@ -12136,18 +12480,21 @@ public enum Components {
             ///   - titles:
             ///   - plan:
             ///   - importId: A list Aaru sent to be matched (BOOK-003), reviewed at `/v1/imports/{id}` like any capture.
+            ///   - roadmap:
             ///   - actionId: A single change Aaru applied, undone at `/v1/actions/{id}/undo`.
             ///   - actionSummary:
             public init(
                 titles: [Components.Schemas.TitleSummary]? = nil,
                 plan: Components.Schemas.AgentPlan? = nil,
                 importId: Swift.String? = nil,
+                roadmap: Components.Schemas.ChatRoadmap? = nil,
                 actionId: Swift.String? = nil,
                 actionSummary: Swift.String? = nil
             ) {
                 self.titles = titles
                 self.plan = plan
                 self.importId = importId
+                self.roadmap = roadmap
                 self.actionId = actionId
                 self.actionSummary = actionSummary
             }
@@ -12155,6 +12502,7 @@ public enum Components {
                 case titles
                 case plan
                 case importId
+                case roadmap
                 case actionId
                 case actionSummary
             }
@@ -39437,6 +39785,155 @@ public enum Operations {
             }
         }
     }
+    /// The caller's chats with Aaru, latest first, 30 a page (ASK-011). A chat nobody has asked anything in is left out.
+    ///
+    /// - Remark: HTTP `GET /v1/chats`.
+    /// - Remark: Generated from `#/paths//v1/chats/get(listChats)`.
+    public enum ListChats {
+        public static let id: Swift.String = "listChats"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/chats/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// Opaque cursor from a previous page's `page.nextCursor`.
+                ///
+                /// - Remark: Generated from `#/paths/v1/chats/GET/query/cursor`.
+                public var cursor: Components.Parameters.Cursor?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - cursor: Opaque cursor from a previous page's `page.nextCursor`.
+                public init(cursor: Components.Parameters.Cursor? = nil) {
+                    self.cursor = cursor
+                }
+            }
+            public var query: Operations.ListChats.Input.Query
+            /// - Remark: Generated from `#/paths/v1/chats/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListChats.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListChats.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ListChats.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - query:
+            ///   - headers:
+            public init(
+                query: Operations.ListChats.Input.Query = .init(),
+                headers: Operations.ListChats.Input.Headers = .init()
+            ) {
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/chats/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/chats/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.ChatList)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ChatList {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ListChats.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ListChats.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// One page of chats.
+            ///
+            /// - Remark: Generated from `#/paths//v1/chats/get(listChats)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ListChats.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ListChats.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/chats/get(listChats)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
     /// Start a Chat with Aaru (ASK-009), a one-to-one thread only its user can read.
     ///
     /// - Remark: HTTP `POST /v1/chats`.
@@ -39912,6 +40409,284 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/chats/transcribe/post(transcribeChatAudio)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// One chat with its turns, oldest first, so it can be read again and continued (ASK-011). The latest 200 turns. 404 for a chat that is not the caller's.
+    ///
+    /// - Remark: HTTP `GET /v1/chats/{id}`.
+    /// - Remark: Generated from `#/paths//v1/chats/{id}/get(getChat)`.
+    public enum GetChat {
+        public static let id: Swift.String = "getChat"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/chats/{id}/GET/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/chats/{id}/GET/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.GetChat.Input.Path
+            /// - Remark: Generated from `#/paths/v1/chats/{id}/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetChat.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetChat.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetChat.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.GetChat.Input.Path,
+                headers: Operations.GetChat.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/chats/{id}/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/chats/{id}/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.Chat)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.Chat {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetChat.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetChat.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The chat.
+            ///
+            /// - Remark: Generated from `#/paths//v1/chats/{id}/get(getChat)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetChat.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetChat.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/chats/{id}/get(getChat)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Delete one of the caller's chats, its turns and files with it (ASK-011).
+    ///
+    /// - Remark: HTTP `DELETE /v1/chats/{id}`.
+    /// - Remark: Generated from `#/paths//v1/chats/{id}/delete(deleteChat)`.
+    public enum DeleteChat {
+        public static let id: Swift.String = "deleteChat"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/chats/{id}/DELETE/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/chats/{id}/DELETE/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.DeleteChat.Input.Path
+            /// - Remark: Generated from `#/paths/v1/chats/{id}/DELETE/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DeleteChat.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.DeleteChat.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.DeleteChat.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.DeleteChat.Input.Path,
+                headers: Operations.DeleteChat.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Deleted, or already gone.
+            ///
+            /// - Remark: Generated from `#/paths//v1/chats/{id}/delete(deleteChat)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.DeleteChat.Output.NoContent)
+            /// Deleted, or already gone.
+            ///
+            /// - Remark: Generated from `#/paths//v1/chats/{id}/delete(deleteChat)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.DeleteChat.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/chats/{id}/delete(deleteChat)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

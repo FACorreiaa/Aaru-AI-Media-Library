@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate, useRouter } from '@tanstack/solid-router'
+import { useAssistantTitle } from '../components/shell/context'
 import { Show, createSignal } from 'solid-js'
 import { Button } from '~/components/ui'
 import { BackLink } from '../components/shell/BackLink'
@@ -32,6 +33,7 @@ export const Route = createFileRoute('/_shell/app_/graph/$titleId')({
 function GraphPage() {
   const graph = Route.useLoaderData()
   const params = Route.useParams()
+  useAssistantTitle(() => params().titleId)
   const router = useRouter()
   const navigate = useNavigate()
   const [centring, setCentring] = createSignal<string | null>(null)

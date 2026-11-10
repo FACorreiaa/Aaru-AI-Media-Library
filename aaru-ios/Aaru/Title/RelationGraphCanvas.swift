@@ -1,3 +1,4 @@
+import AaruAPI
 import SwiftUI
 
 /// GRAPH-002 / GRAPH-004: `RelationGraph` drawn. The server places every title (`rank` is the column,
@@ -55,6 +56,13 @@ struct RelationGraphCanvas: View {
                         with: .color(main ? Color(.accent) : Color(.line)),
                         style: StrokeStyle(lineWidth: main ? 2 : 1.25, dash: main ? [] : [4, 4])
                     )
+                    // Off the main chain an edge says what it is, as the web's graph does.
+                    if let label = edge.relation.edgeLabel {
+                        context.draw(
+                            Text(label).font(.caption2).foregroundStyle(Color(.muted)),
+                            at: labelPoint(from: source, to: target)
+                        )
+                    }
                 }
             }
             .frame(width: size(graph).width, height: size(graph).height)
@@ -82,6 +90,22 @@ struct RelationGraphCanvas: View {
         .frame(width: size(graph).width, height: size(graph).height, alignment: .topLeading)
     }
 
+    /// Where an edge's label sits: the middle of the gap between its two cards.
+    private func labelPoint(from source: RelationNode, to target: RelationNode) -> CGPoint {
+        let ordered = source.rank < target.rank || (source.rank == target.rank && source.lane <= target.lane)
+        let (first, second) = ordered ? (source, target) : (target, source)
+        if first.rank == second.rank {
+            return CGPoint(
+                x: origin(first).x + RelatedCard.width / 2,
+                y: (origin(first).y + RelatedCard.width * 1.5 + origin(second).y) / 2
+            )
+        }
+        return CGPoint(
+            x: (origin(first).x + RelatedCard.width + origin(second).x) / 2,
+            y: (origin(first).y + origin(second).y) / 2 + Self.anchorY
+        )
+    }
+
     /// From the right of the earlier card to the left of the later one, or straight down between
     /// two cards in one column.
     private func path(from source: RelationNode, to target: RelationNode) -> Path {
@@ -104,5 +128,22 @@ struct RelationGraphCanvas: View {
             control2: CGPoint(x: end.x - bend, y: end.y)
         )
         return path
+    }
+}
+
+extension Components.Schemas.Relation {
+    /// A short label for an edge in the graph; the main chain needs none. The web's `edgeLabel`.
+    var edgeLabel: String? {
+        switch self {
+        case .sequel, .prequel: nil
+        case .adaptation: "adapted"
+        case .source: "source"
+        case .sideStory: "side story"
+        case .parent: "main story"
+        case .spinOff: "spin-off"
+        case .alternative: "other version"
+        case .summary: "recap"
+        case .other: "related"
+        }
     }
 }

@@ -10,9 +10,20 @@ import {
   TextFieldLabel,
   TextFieldTextArea,
 } from '~/components/ui'
-import { cancelReply, wrote } from '../../lib/assistant/reply'
+import {
+  cancelReply,
+  exchangesOf,
+  newReply,
+  wrote,
+} from '../../lib/assistant/reply'
 import type { Reply } from '../../lib/assistant/reply'
-import { chatThread, chatsCleared } from '../../lib/assistant/session'
+import { getChat } from '../../lib/assistant/server'
+import {
+  chatThread,
+  chatWanted,
+  chatsCleared,
+  resetAssistantChat,
+} from '../../lib/assistant/session'
 import type { ChatAttachment, ChatHint } from '../../lib/assistant/thread'
 import {
   ACCEPT,
@@ -38,6 +49,8 @@ import { undoAction } from '../../lib/history/server'
 import { OwlMark } from '../Brand'
 import { PlanCard } from '../PlanCard'
 import { AgentCards } from '../groups/AgentParts'
+import { ChatHistory } from './ChatHistory'
+import { RoadmapCard } from './RoadmapCard'
 import {
   CloseIcon,
   MicIcon,
@@ -79,6 +92,9 @@ export function AssistantCard(props: {
   open: boolean
   /** Opened by a long press or ⌥ with the shortcut: listening at once. */
   listen: boolean
+  /** A question a page asked for the person (the shell's `askAssistant`): sent once the card is open. */
+  question: string | null
+  onAsked: () => void
   voice: boolean
   hint: () => ChatHint | undefined
   onOpenChange: (open: boolean) => void
@@ -94,6 +110,9 @@ export function AssistantCard(props: {
   const [chips, setChips] = createSignal<Chip[]>([])
   const [over, setOver] = createSignal(false)
   const [field, setField] = createSignal<HTMLTextAreaElement>()
+  /** The chat, or the list of past chats (ASK-011). */
+  const [view, setView] = createSignal<'chat' | 'history'>('chat')
+  const [opening, setOpening] = createSignal(false)
   let list: HTMLOListElement | undefined
   let controller: AbortController | null = null
   let recorder: Recorder | null = null
@@ -219,17 +238,7 @@ export function AssistantCard(props: {
         id,
         question: body,
         files: sent.map((c) => c.name),
-        reply: {
-          text: '',
-          status: null,
-          titles: [],
-          plan: null,
-          importId: null,
-          actionId: null,
-          actionSummary: null,
-          state: 'working',
-          problem: null,
-        },
+        reply: newReply(),
         language,
         undone: false,
       },
@@ -281,6 +290,56 @@ export function AssistantCard(props: {
     }
   }
 
+  /** Ends the chat on screen and starts an empty one (ASK-011). */
+  function newChat() {
+    controller?.abort()
+    recorder?.cancel()
+    stopReading()
+    setProblem(null)
+    setView('chat')
+    // Empties the turns and the chips through `chatsCleared`.
+    resetAssistantChat()
+    field()?.focus()
+  }
+
+  /** Shows a chat from history; the next question continues it (ASK-011). */
+  async function openStored(id: string) {
+    if (opening()) return
+    controller?.abort()
+    recorder?.cancel()
+    stopReading()
+    setProblem(null)
+    setOpening(true)
+    try {
+      const chat = await getChat({ data: { id } })
+      if (!isOpen()) return
+      clearChips()
+      setTurns(
+        exchangesOf(chat.turns).map((exchange) => ({
+          id: ++nextID,
+          question: exchange.question,
+          files: [],
+          reply: exchange.reply,
+          language: null,
+          undone: false,
+        })),
+      )
+      chatThread().adopt(chat.id)
+      setView('chat')
+      queueMicrotask(() =>
+        list?.lastElementChild?.scrollIntoView({ block: 'end' }),
+      )
+    } catch (error) {
+      setProblem(
+        error instanceof Error
+          ? error.message
+          : 'That chat could not be opened.',
+      )
+    } finally {
+      setOpening(false)
+    }
+  }
+
   function close() {
     controller?.abort()
     recorder?.cancel()
@@ -294,14 +353,37 @@ export function AssistantCard(props: {
 
   onCleanup(close)
 
+  let shown = 0
+
   function opened() {
+    setView('chat')
     // Over 15 minutes away, the card starts clean, as a new chat does.
     if (!chatThread().reopen()) {
       setTurns([])
       clearChips()
     }
+    // A chat picked in Settings: shown once, then the card is its own again.
+    const wanted = chatWanted()
+    if (wanted && wanted.n !== shown) {
+      shown = wanted.n
+      void openStored(wanted.id)
+      return
+    }
     if (props.listen && micOn()) void listen()
   }
+
+  // A chat picked while the card is already open is shown at once.
+  createEffect(
+    on(
+      chatWanted,
+      (wanted) => {
+        if (!wanted || wanted.n === shown || !isOpen()) return
+        shown = wanted.n
+        void openStored(wanted.id)
+      },
+      { defer: true },
+    ),
+  )
 
   // Delete my chats empties the card as well as the server.
   createEffect(
@@ -327,6 +409,13 @@ export function AssistantCard(props: {
     ),
   )
 
+  createEffect(() => {
+    const question = props.question
+    if (!props.open || !question) return
+    props.onAsked()
+    void ask(question, null)
+  })
+
   return (
     <Drawer
       side="bottom"
@@ -351,6 +440,21 @@ export function AssistantCard(props: {
             yes, and every change can be undone.
           </DrawerDescription>
           <div class="ml-auto flex items-center gap-1">
+            <Show when={turns().length > 0 && view() === 'chat'}>
+              <Button variant="ghost" size="xs" onClick={newChat}>
+                New chat
+              </Button>
+            </Show>
+            <Button
+              variant="ghost"
+              size="xs"
+              aria-pressed={view() === 'history'}
+              onClick={() =>
+                setView((was) => (was === 'history' ? 'chat' : 'history'))
+              }
+            >
+              {view() === 'history' ? 'Back to chat' : 'History'}
+            </Button>
             <Show when={turns().some((t) => t.language !== null)}>
               <Button
                 variant="ghost"
@@ -382,7 +486,21 @@ export function AssistantCard(props: {
           </div>
         </div>
 
-        <div class="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+        <Show when={view() === 'history'}>
+          <div class="min-h-0 flex-1 overflow-y-auto px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+            <h3 class="mb-2 font-display font-semibold">Your chats</h3>
+            <Show when={opening()}>
+              <p role="status" class="mb-2 text-sm text-muted">
+                Opening…
+              </p>
+            </Show>
+            <ChatHistory onOpen={(chat) => void openStored(chat.id)} />
+          </div>
+        </Show>
+        <div
+          class="min-h-0 flex-1 overflow-y-auto px-5 py-4"
+          classList={{ hidden: view() === 'history' }}
+        >
           <Show
             when={turns().length > 0}
             fallback={
@@ -413,7 +531,7 @@ export function AssistantCard(props: {
           </Show>
         </div>
 
-        <Show when={chips().length > 0}>
+        <Show when={chips().length > 0 && view() === 'chat'}>
           <ul
             aria-label="Files to send"
             class="flex flex-wrap gap-2 border-t border-line px-5 pt-3"
@@ -446,6 +564,7 @@ export function AssistantCard(props: {
         <form
           class="flex items-end gap-2 border-t px-5 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] transition-colors"
           classList={{
+            hidden: view() === 'history',
             'border-accent': over(),
             'border-line': !over(),
             'border-t-0': chips().length > 0 && !over(),
@@ -627,7 +746,16 @@ function TurnView(props: {
       <Show when={reply().plan}>
         {(plan) => <PlanCard plan={plan()} onDecided={props.onDecided} />}
       </Show>
-      <Show when={reply().importId}>
+      <Show when={reply().roadmap}>
+        {(roadmap) => (
+          <RoadmapCard
+            roadmap={roadmap()}
+            importId={reply().importId}
+            onReview={props.onClose}
+          />
+        )}
+      </Show>
+      <Show when={reply().roadmap ? null : reply().importId}>
         {(id) => (
           <div>
             <Link

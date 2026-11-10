@@ -101,6 +101,8 @@ struct AssistantPresentation: Equatable {
     let hostID: UUID?
     let listening: Bool
     let hint: Components.Schemas.ChatHint?
+    /// A question a screen asks for the person ("Ask Aaru for more"): sent once the card is open.
+    var question: String?
 }
 
 /// One place that says where the app is: the selected destination, what Settings shows, and the
@@ -336,7 +338,9 @@ final class AppRouter {
 
     /// Opens the Assistant card over `hostID`, telling the server where the user is. Settings
     /// sends no screen.
-    func openAssistant(listening: Bool, titleID: String?, onTitlePage: Bool, hostID: UUID?) {
+    func openAssistant(
+        listening: Bool, titleID: String?, onTitlePage: Bool, hostID: UUID?, question: String? = nil
+    ) {
         let hint: Components.Schemas.ChatHint? = if onTitlePage {
             .init(screen: "title", titleId: titleID)
         } else if tab == .settings {
@@ -344,7 +348,7 @@ final class AppRouter {
         } else {
             .init(screen: tab.rawValue, titleId: titleID)
         }
-        assistant = AssistantPresentation(hostID: hostID, listening: listening, hint: hint)
+        assistant = AssistantPresentation(hostID: hostID, listening: listening, hint: hint, question: question)
     }
 
     func closeAssistant() {

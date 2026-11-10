@@ -6,15 +6,19 @@ import (
 	"aaru-go-api/internal/apitime"
 	"aaru-go-api/internal/apperr"
 	"aaru-go-api/internal/core"
+	"aaru-go-api/internal/db"
+	"aaru-go-api/internal/db/sqlc"
 	"aaru-go-api/internal/imports"
 	"aaru-go-api/internal/upload"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"mime"
 	"net/http"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
 )
 
@@ -49,7 +53,33 @@ func (s *Server) GetImport(ctx context.Context, req api.GetImportRequestObject) 
 	for i, r := range rows {
 		out[i] = ImportRowDTO(r)
 	}
-	return importDetailJSON{Job: importJobOut(job), Rows: out}, nil
+	listID, err := s.importList(ctx, user, job, rows)
+	if err != nil {
+		return nil, err
+	}
+	return importDetailJSON{Job: importJobOut(job), ListID: listID, Rows: out}, nil
+}
+
+// importList is the list an approved import's titles joined, when its rows named one (ASK-011): the
+// user's list of that name. Nil before approval, and when the list was never made or has gone.
+func (s *Server) importList(ctx context.Context, user uuid.UUID, job core.ImportJob, rows []imports.PlannedRow) (*apiid.UUID, error) {
+	if job.State != core.JobSucceeded && job.State != core.JobPartial {
+		return nil, nil //nolint:nilnil // not approved yet
+	}
+	for _, r := range rows {
+		if len(r.Row.Lists) == 0 {
+			continue
+		}
+		id, err := s.q.ListIDByName(ctx, sqlc.ListIDByNameParams{UserID: user, Name: r.Row.Lists[0]})
+		if db.IsNoRows(err) {
+			return nil, nil //nolint:nilnil // no such list
+		}
+		if err != nil {
+			return nil, fmt.Errorf("import list: %w", err)
+		}
+		return apiid.Ptr(id), nil
+	}
+	return nil, nil //nolint:nilnil // the import named no list
 }
 
 func (s *Server) DeleteImport(ctx context.Context, req api.DeleteImportRequestObject) (api.DeleteImportResponseObject, error) {
@@ -362,8 +392,9 @@ type importListJSON struct {
 func (l importListJSON) VisitListImportsResponse(w http.ResponseWriter) error { return writeJSON(w, l) }
 
 type importDetailJSON struct {
-	Job  importJobJSON   `json:"job"`
-	Rows []api.ImportRow `json:"rows"`
+	Job    importJobJSON   `json:"job"`
+	ListID *apiid.UUID     `json:"listId,omitempty"`
+	Rows   []api.ImportRow `json:"rows"`
 }
 
 func (d importDetailJSON) VisitGetImportResponse(w http.ResponseWriter) error { return writeJSON(w, d) }

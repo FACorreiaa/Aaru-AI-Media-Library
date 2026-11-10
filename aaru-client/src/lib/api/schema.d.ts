@@ -2458,7 +2458,8 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    get?: never
+    /** The caller's chats with Aaru, latest first, 30 a page (ASK-011). A chat nobody has asked anything in is left out. */
+    get: operations['listChats']
     put?: never
     /** Start a Chat with Aaru (ASK-009), a one-to-one thread only its user can read. */
     post: operations['createChat']
@@ -2498,6 +2499,24 @@ export interface paths {
     /** Turn a spoken question into text (ASK-009). The audio is held in memory while it is read and never stored. 413 `file_too_large` over 8 MB, 413 `audio_too_long` when `X-Audio-Seconds` says over 60, 422 `transcription_empty` when no words were heard, 429 `rate_limited` past 40 an hour, 503 `transcription_unavailable` when voice is off. */
     post: operations['transcribeChatAudio']
     delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/chats/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** One chat with its turns, oldest first, so it can be read again and continued (ASK-011). The latest 200 turns. 404 for a chat that is not the caller's. */
+    get: operations['getChat']
+    put?: never
+    post?: never
+    /** Delete one of the caller's chats, its turns and files with it (ASK-011). */
+    delete: operations['deleteChat']
     options?: never
     head?: never
     patch?: never
@@ -3407,6 +3426,11 @@ export interface components {
     }
     ImportDetail: {
       job: components['schemas']['ImportJob']
+      /**
+       * Format: uuid
+       * @description The list an approved import's titles joined, when it named one (ASK-011).
+       */
+      listId?: string
       rows: components['schemas']['ImportRow'][]
     }
     DeviceRegistration: {
@@ -4979,6 +5003,65 @@ export interface components {
       /** Format: uuid */
       id: string
     }
+    /** @description One chat in the caller's history. `title` is the start of its first question. */
+    ChatSummary: {
+      /** Format: uuid */
+      id: string
+      title?: string
+      /** Format: date-time */
+      createdAt: string
+      /** Format: date-time */
+      updatedAt: string
+    }
+    ChatList: {
+      items: components['schemas']['ChatSummary'][]
+      page: components['schemas']['PageInfo']
+    }
+    Chat: {
+      /** Format: uuid */
+      id: string
+      title?: string
+      /** Format: date-time */
+      createdAt: string
+      /** Format: date-time */
+      updatedAt: string
+      turns: components['schemas']['ChatTurn'][]
+    }
+    /** @description One stored turn. An agent turn's `components` are what its tools left, read again now: a title, plan or import that has since gone is left out. */
+    ChatTurn: {
+      /** Format: uuid */
+      id: string
+      /** @enum {string} */
+      role: 'user' | 'agent'
+      body: string
+      /** @enum {string} */
+      state: 'streaming' | 'done' | 'failed' | 'stopped'
+      /** Format: date-time */
+      createdAt: string
+      components?: components['schemas']['ChatComponentsFrame']
+    }
+    /** @description A list Aaru sent to be matched, as Aaru named it (ASK-011): the titles in their steps, before any is matched. It is shown in the reply; the import at `importId` is where it is reviewed and approved. A plain list is one step with no heading. */
+    ChatRoadmap: {
+      listName?: string
+      steps: components['schemas']['ChatRoadmapStep'][]
+    }
+    ChatRoadmapStep: {
+      heading?: string
+      note?: string
+      items: components['schemas']['ChatRoadmapItem'][]
+    }
+    ChatRoadmapItem: {
+      title: string
+      /** @enum {string} */
+      type: 'movie' | 'show' | 'book' | 'manga'
+      year?: number
+      author?: string
+      /** @description What to read or watch in it, such as issue numbers. */
+      note?: string
+      optional?: boolean
+      /** @description The same number on titles read or watched side by side. */
+      pair?: number
+    }
     ChatStatus: {
       /** @description Aaru can answer. False hides the owl. */
       assistant: boolean
@@ -5033,6 +5116,7 @@ export interface components {
        * @description A list Aaru sent to be matched (BOOK-003), reviewed at `/v1/imports/{id}` like any capture.
        */
       importId?: string
+      roadmap?: components['schemas']['ChatRoadmap']
       /**
        * Format: uuid
        * @description A single change Aaru applied, undone at `/v1/actions/{id}/undo`.
@@ -9693,6 +9777,30 @@ export interface operations {
       default: components['responses']['Error']
     }
   }
+  listChats: {
+    parameters: {
+      query?: {
+        /** @description Opaque cursor from a previous page's `page.nextCursor`. */
+        cursor?: components['parameters']['Cursor']
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description One page of chats. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ChatList']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
   createChat: {
     parameters: {
       query?: never
@@ -9779,6 +9887,50 @@ export interface operations {
         content: {
           'application/json': components['schemas']['ChatTranscript']
         }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getChat: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The chat. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Chat']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  deleteChat: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Deleted, or already gone. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
       }
       default: components['responses']['Error']
     }

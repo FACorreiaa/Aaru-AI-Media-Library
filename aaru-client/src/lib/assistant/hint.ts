@@ -17,6 +17,9 @@ const SCREENS: Array<[string, string]> = [
   ['/app/sports', 'sports'],
   ['/app/insights', 'insights'],
   ['/app/title', 'title'],
+  // A catalog title not in the library yet, and a title's graph: still a title page.
+  ['/app/catalog', 'title'],
+  ['/app/graph', 'title'],
 ]
 
 export function screenOf(pathname: string): string | null {

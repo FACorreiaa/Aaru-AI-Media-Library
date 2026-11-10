@@ -1,10 +1,11 @@
 import { Link } from '@tanstack/solid-router'
 import { For, Show, createEffect, createSignal, on, onCleanup } from 'solid-js'
-import { Badge, buttonVariants } from '~/components/ui'
+import { Badge, Button, buttonVariants } from '~/components/ui'
 import { Poster } from './Poster'
 import { TitleLink } from './TitleLink'
 import { statusLabel } from '../lib/library/model'
 import { loadRelations } from '../lib/title/server'
+import { useAppShell } from './shell/context'
 import {
   RELATED_GROUP_LABELS,
   centreOf,
@@ -15,13 +16,25 @@ import {
 import type { RelationGraph, RelationNode } from '../lib/title/relations'
 
 // GRAPH-002: `RelatedRow`, the title room's Related section. Read in the browser after the room
-// shows; a failed read leaves the section out, and a graph the server cut short is asked for once
-// more, when the rest is cached.
+// shows. Nothing related leaves the section out; a failed read says so and offers to try again
+// (a silent failure looked exactly like "nothing related"). A graph the server cut short is asked
+// for once more, when the rest is cached.
 
 const RETRY_PARTIAL_MS = 5000
 
 export function RelatedTitles(props: { titleId: string }) {
   const [graph, setGraph] = createSignal<RelationGraph | null>(null)
+  const [failed, setFailed] = createSignal(false)
+  const shell = useAppShell()
+  // Providers know sequels and adaptations, not every show set in one world: that is a question
+  // for the owl, whose answer is its own suggestion to review, never catalog data.
+  const askSameWorld = () => {
+    const g = graph()
+    const title = (g && centreOf(g)?.ref.title) || 'this title'
+    shell.askAssistant(
+      `What else is set in the same world as "${title}"? Spin-offs, prequels and sequels in any medium that are not already related here.`,
+    )
+  }
   let retry: ReturnType<typeof setTimeout> | undefined
   const load = (titleId: string, again: boolean) =>
     loadRelations({ data: { titleId } })
@@ -29,10 +42,14 @@ export function RelatedTitles(props: { titleId: string }) {
         // A page that moved on to another title ignores a late answer for the last one.
         if (titleId !== props.titleId) return
         setGraph(g)
+        setFailed(false)
         if (g.partial && again)
           retry = setTimeout(() => void load(titleId, false), RETRY_PARTIAL_MS)
       })
-      .catch(() => undefined)
+      .catch(() => {
+        // A late failure for a title the page left, or behind a graph already shown, says nothing.
+        if (titleId === props.titleId && !graph()) setFailed(true)
+      })
   // Read in the browser only, and again whenever the page moves to another title.
   createEffect(
     on(
@@ -40,6 +57,7 @@ export function RelatedTitles(props: { titleId: string }) {
       (titleId) => {
         clearTimeout(retry)
         setGraph(null)
+        setFailed(false)
         void load(titleId, true)
       },
     ),
@@ -53,19 +71,51 @@ export function RelatedTitles(props: { titleId: string }) {
   }
 
   return (
-    <Show when={groups().length > 0}>
+    <Show
+      when={groups().length > 0}
+      fallback={
+        <Show when={failed()}>
+          <section aria-labelledby="related-titles">
+            <h2 id="related-titles" class="eyebrow">
+              Related
+            </h2>
+            <p role="status" class="mt-3 text-sm text-muted">
+              Related titles could not be loaded.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              class="mt-3"
+              onClick={() => {
+                setFailed(false)
+                void load(props.titleId, true)
+              }}
+            >
+              Try again
+            </Button>
+          </section>
+        </Show>
+      }
+    >
       <section aria-labelledby="related-titles">
         <div class="flex items-baseline justify-between gap-4">
           <h2 id="related-titles" class="eyebrow">
             Related
           </h2>
-          <Link
-            to="/app/graph/$titleId"
-            params={{ titleId: props.titleId }}
-            class={buttonVariants({ variant: 'outline', size: 'sm' })}
-          >
-            Graph
-          </Link>
+          <div class="flex shrink-0 items-center gap-2">
+            <Show when={shell.assistantAvailable()}>
+              <Button variant="ghost" size="sm" onClick={askSameWorld}>
+                Ask Aaru for more
+              </Button>
+            </Show>
+            <Link
+              to="/app/graph/$titleId"
+              params={{ titleId: props.titleId }}
+              class={buttonVariants({ variant: 'outline', size: 'sm' })}
+            >
+              Graph
+            </Link>
+          </div>
         </div>
         <div class="mt-3 flex flex-col gap-5">
           <For each={groups()}>

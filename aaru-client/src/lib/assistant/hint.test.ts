@@ -15,6 +15,14 @@ describe('assistant hint', () => {
       screen: 'title',
       titleId: 't1',
     })
+    expect(hintFor('/app/catalog/movie/tmdb/603', 't2')).toEqual({
+      screen: 'title',
+      titleId: 't2',
+    })
+    expect(hintFor('/app/graph/t3', 't3')).toEqual({
+      screen: 'title',
+      titleId: 't3',
+    })
     expect(hintFor('/app/books', 't1')).toEqual({ screen: 'books' })
     expect(hintFor('/app/settings', null)).toBeUndefined()
   })

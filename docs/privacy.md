@@ -168,8 +168,9 @@ titles it names become the same kind of import, and count as a capture. A link y
 captures you made today and how much text each used.
 
 **Your chats with Aaru.** When you ask Aaru something from the owl in the top bar, the
-question and Aaru's answer are kept as a chat. Chats stay until you delete them with "Delete my
-chats with Aaru" in Settings. They are in your export and are removed with your account. As
+question and Aaru's answer are kept as a chat. You can read your chats again from the owl's
+History and delete any one of them there or in Settings. Chats stay until you delete them, one
+at a time or all at once with "Delete my chats with Aaru" in Settings. They are in your export and are removed with your account. As
 with @aaru, Aaru keeps a daily count of how much text its answers used, to keep the service fair.
 It also keeps a daily count of the questions you send it, with no text, to enforce the daily
 limit. Both counts stay when you delete your chats and are removed with your account.
@@ -267,7 +268,9 @@ Aaru only uses these services, and only for the purpose listed:
   Aaru, it receives your question, the recent turns of that chat, the name of the screen you are
   on, your time zone, the title you are looking at or asking about with how far you are in it,
   and the parts of your own library, lists, stats, favorites, listens and followed sports that
-  Aaru reads to answer. It never receives your friends' or groups' data. It gets all of this
+  Aaru reads to answer. When you ask how a title is rated, it also receives that title's public
+  score and the start of a few public user reviews from TMDB or AniList. It never receives your
+  friends' or groups' data. It gets all of this
   through its API and does not train on it.
 - **Stremio**, only if you connect it. Your Stremio app asks Aaru for your rows and reports
   what you play. If you import your Stremio history, Aaru's server reads your Stremio library
@@ -310,7 +313,8 @@ within a year. Error reports are deleted within 90 days and product counts withi
   lists, shelves, favorites, friends, blocks, groups, listens, followed sports and chats. It leaves
   out daily usage counts, the history behind Undo, plans Aaru proposed and import records. CSV opens
   in a spreadsheet and imports back into Aaru.
-- **Delete your chats:** Settings → Delete my chats with Aaru. The daily count of questions you
+- **Delete your chats:** one chat from the owl's History or Settings → Your data, or all of them
+  with Settings → Delete my chats with Aaru. The daily count of questions you
   sent, which holds no text, stays to enforce the daily limit and is removed with your account.
 - **Questions or requests:** privacy@aaruapp.com.
 

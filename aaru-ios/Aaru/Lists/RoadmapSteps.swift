@@ -70,12 +70,23 @@ struct RoadmapSection: Identifiable {
     }
 }
 
+extension ImportRow {
+    /// ASK-011: the heading a review shows above the first row of each roadmap step ("1. Hickman
+    /// FF"); nil for a row in the same step as the one before, or in no headed step.
+    func stepHeading(after previous: ImportRow?) -> String? {
+        guard let place = roadmap, place.step > 0, let heading = place.heading,
+              previous?.roadmap?.step != place.step
+        else { return nil }
+        return "\(place.step). \(heading)"
+    }
+}
+
 extension RoadmapPlace {
-    /// "Step 1 · Hickman FF · FF #1-5 · Optional": where a review row sits in its roadmap.
+    /// "FF #1-5 · Optional": what the roadmap says of a review row, under its step's heading. A
+    /// step with no heading keeps its number here.
     var line: String {
         [
-            step > 0 ? "Step \(step)" : nil,
-            heading,
+            step > 0 && heading == nil ? "Step \(step)" : nil,
             note,
             optional == true ? "Optional: joins the list only" : nil,
             pair != nil ? "Read side by side" : nil,

@@ -917,8 +917,8 @@ account or a stranger that has not happened yet.
 | IMP-019 | Open | BACKLOG IMP-019 | Bingers has an API only for paid plans; owner decides |
 | IMP-020 | Built, unverified | #172; CSVImportParser, TitleResolver, GoodreadsImportTests, BookYearToleranceTests; deployed f6cc317 (infra #456) | Stub catalog only; no real Goodreads export run yet |
 | BOOK-003 | Built, unverified | `plan_title_list`, `capture.ListName`, `imports.titleRows`, `ImportRow.lists`, components frame `importId` | Stub model only. "Review the list" in the Assistant card on iPhone, Mac and web opens the review; the waiting capture card and the push still lead there too |
-| GRAPH-001 | Built, unverified | `GET /v1/titles/{id}/relations`, `catalog/relations*.go`, `catalog/wikidata.go`, migration 00007 `catalog_relations` | Stub providers only; not run against live AniList, TMDB or Wikidata from the server yet |
-| GRAPH-002 | Built, unverified | `RelatedTitles.tsx`, `_shell.app_.graph.$titleId.tsx`, `TitleRelated.swift` | Builds and tests pass; not looked at on a screen; "Add the chain" moved to GRAPH-003 |
+| GRAPH-001 | Built, unverified | `GET /v1/titles/{id}/relations`, `catalog/relations*.go`, `catalog/wikidata.go`, migrations 00007 `catalog_relations` and 00010 (cache reset) | Run against live Wikidata and AniList 2026-11-10 (`relations_live_test.go`, `AARU_LIVE=1`): Fellowship, A New Hope, Game of Thrones, Dragon Ball Z, Attack on Titan and Frieren each answer a graph. TMDB collections not run live (no key on the dev machine); production not checked |
+| GRAPH-002 | Built, unverified | `RelatedTitles.tsx`, `_shell.app_.graph.$titleId.tsx`, `TitleRelated.swift` | Builds and tests pass; not looked at on a screen; "Add the chain" moved to GRAPH-003. 2026-11-10: a failed read says so with Try again (it was silent), Related sits above the episodes on Apple, edges are labelled there, related titles open from every stack |
 | GRAPH-003 | Built, unverified | `list_roadmaps`, `capture.Place`, `RoadmapSteps.tsx`, `RoadmapSteps.swift`, `POST /v1/titles/{id}/relations/chain` | Stub model only; not looked at on a screen |
 | GRAPH-004 | Built, unverified | `GET /v1/lists/{id}/graph`, `title_relations`, `RelationGraphCanvas` (web, Apple) | Stub model only; not looked at on a screen |
 | IMP-021 | Built, unverified | `POST /v1/imports/{id}/match-all`, `catalog/guess.go`, `imports/matchall.go`, `aaru-ios/Aaru/Capture/MatchAllButton.swift` | Web run locally: real Open Library, stub model, 8 of 10 rows filled in about 12 seconds. iOS builds and has not been tapped. Needs the API promoted |
@@ -3093,6 +3093,19 @@ card already has Add and List….
 - The caller's marks (status, library item) come from Aaru's database, an AniList season through the
   TMDB show it maps to. "Start here" is the first main-chain title not finished or dropped.
 
+- Audit, 2026-11-10 (the owner saw no relations anywhere): run live for the first time, Game of
+  Thrones came back alone (its one Wikidata link is "based on" a book series, an item with no id
+  Aaru tracks) and Dragon Ball Z was two nodes (the TMDB show and its AniList entry). Now a source or
+  adaptation Aaru cannot track stands for its parts (P527, at most 12), Wikidata's answer carries the
+  title's own ids, and a source is asked about a node once another source names the id it reads.
+  "Nothing related" is cached a day, not 30; the Action API's 200-with-error is a failure. Wikidata
+  has no link between Game of Thrones and House of the Dragon: shows of one fictional universe are
+  not related here (the 2026-11-06 bound: the chain and its adaptations, not the franchise).
+- Both clients hid a failed read exactly like "nothing related"; they now say so (GRAPH-002).
+- Owner, 2026-11-10: a title added by hand has its graph built in the background (`Warm`), so its
+  page does not wait on cold providers; and Related carries "Ask Aaru for more", which asks the owl
+  what else is set in the title's world (the asking exception; nothing joins the graph).
+
 **Done when:** Fellowship of the Ring, A New Hope, Attack on Titan and Frieren each answer a sensible
 graph from the live providers, and a second read calls none of them.
 
@@ -4014,6 +4027,20 @@ ASK-006; the Ask Aaru page (ASK-002, ASK-003) reuses the engine later.
 Web (2026-11-05): the card is `components/assistant/AssistantCard.tsx`, opened from the top-bar
 owl, the sidebar's "Ask Aaru" row or ⌘J; the turn and voice go through two Worker proxy routes
 (ARCHITECTURE.md). Run locally against a stub model only.
+
+### ASK-011 · Roadmaps in the card, one question at a time, chat history, scores · L · owner, 2026-11-10
+**Needs:** ASK-009, BOOK-003, GRAPH-003.
+- **Roadmaps.** A roadmap, an order or a list of editions is built from what the model knows and
+  sent with `plan_title_list`; the reply shows it as a `RoadmapCard` from the components frame's
+  `roadmap`, with "Review and save" opening the import. More room for such turns; a tool call cut
+  off by the output limit fails the turn instead of passing as done. A film or show captured with
+  no year matches by its exact name.
+- **One question at a time.** Earlier turns are background; New chat in the card.
+- **History.** `GET /v1/chats`, `GET /v1/chats/{id}`, `DELETE /v1/chats/{id}`; a history list in
+  the card and in Settings, on web, iPhone and Mac.
+- **Scores.** `title_scores`: TMDB and AniList audience scores, credited; reviews fenced and the
+  turn's writes become plans.
+**Status (2026-11-10):** server done; web and Apple next. Not yet asked of the real model.
 
 ### ASK-010 · Files and paste in the assistant · L · owner, 2026-11-06
 **Needs:** ASK-009.

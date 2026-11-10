@@ -3,8 +3,8 @@ import SwiftUI
 
 /// GRAPH-002: `RelatedRow`, the title room's Related section: the titles directly before and after
 /// this one, what it is based on and adapted into, and its side stories, each with the person's
-/// status and "Start here". Graph opens the whole `RelationGraph`. Absent when nothing is related
-/// or the read fails.
+/// status and "Start here". Graph opens the whole `RelationGraph`. Absent when nothing is related;
+/// a read that fails says so and offers to try again.
 struct TitleRelated: View {
     let api: Client?
     let titleID: String
@@ -13,6 +13,20 @@ struct TitleRelated: View {
 
     @State private var model: TitleRelationsModel
     @State private var showsGraph = false
+    @Environment(AppRouter.self) private var router: AppRouter?
+    @Environment(AssistantModel.self) private var assistant: AssistantModel?
+    @Environment(\.assistantHostID) private var hostID
+
+    /// Providers know sequels and adaptations, not every show set in one world: that is a question
+    /// for the owl, whose answer is its own suggestion to review, never catalog data.
+    private func askSameWorld() {
+        let title = model.centre?.ref.title ?? "this title"
+        router?.openAssistant(
+            listening: false, titleID: titleID, onTitlePage: true, hostID: hostID,
+            question: "What else is set in the same world as \"\(title)\"? Spin-offs, prequels and sequels "
+                + "in any medium that are not already related here."
+        )
+    }
 
     init(api: Client?, titleID: String, library: LibraryModel, lists: ListsModel) {
         self.api = api
@@ -30,6 +44,11 @@ struct TitleRelated: View {
                         Text("Related").eyebrow()
                             .accessibilityAddTraits(.isHeader)
                         Spacer()
+                        if assistant?.isAvailable == true, router != nil {
+                            Button("Ask Aaru for more", action: askSameWorld)
+                                .buttonStyle(.borderless)
+                                .controlSize(.small)
+                        }
                         Button("Graph", systemImage: "point.3.connected.trianglepath.dotted") { showsGraph = true }
                             .buttonStyle(.bordered)
                             .controlSize(.small)
@@ -48,6 +67,18 @@ struct TitleRelated: View {
                             }
                         }
                     }
+                }
+            } else if model.failed {
+                VStack(alignment: .leading, spacing: AaruSpace.small) {
+                    Text("Related").eyebrow()
+                        .accessibilityAddTraits(.isHeader)
+                    Text("Related titles could not be loaded.")
+                        .font(.subheadline)
+                        .foregroundStyle(Color(.muted))
+                    Button("Try again") { Task { await model.load() } }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                        .disabled(model.loading)
                 }
             } else {
                 Color.clear.frame(height: 0)
@@ -227,7 +258,11 @@ struct RelationGraphSheet: View {
         } else if model.loading {
             ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
-            ContentUnavailableView("Related titles could not be loaded", systemImage: "wifi.slash")
+            ContentUnavailableView {
+                Label("Related titles could not be loaded", systemImage: "wifi.slash")
+            } actions: {
+                Button("Try again") { Task { await model.load() } }
+            }
         }
     }
 }

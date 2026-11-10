@@ -9,10 +9,10 @@ import { useSignedIn } from '../lib/session/use-signed-in'
 export function LegalLinks(props: { class?: string }) {
   return (
     <nav aria-label="About Aaru" class={props.class ?? 'flex gap-4'}>
-      <Link to="/about" class="hover:text-ink">
+      <Link to="/about" class="py-3 hover:text-ink md:py-0">
         About
       </Link>
-      <Link to="/privacy" class="hover:text-ink">
+      <Link to="/privacy" class="py-3 hover:text-ink md:py-0">
         Privacy
       </Link>
     </nav>

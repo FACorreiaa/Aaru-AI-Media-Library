@@ -1,4 +1,10 @@
-import { createContext, onCleanup, onMount, useContext } from 'solid-js'
+import {
+  createContext,
+  createEffect,
+  onCleanup,
+  onMount,
+  useContext,
+} from 'solid-js'
 import type { Accessor } from 'solid-js'
 import type { LibraryEntry } from '../../lib/library/model'
 import type { Scope } from '../SearchPanel'
@@ -20,6 +26,10 @@ export type AppShellContext = {
   setMentions: (count: number) => void
   /** Opens the assistant's card (ASK-009); `listen` starts with the microphone. */
   openAssistant: (listen?: boolean) => void
+  /** Opens the card and asks this at once, as if typed there. Does nothing while Aaru is off. */
+  askAssistant: (question: string) => void
+  /** True while the assistant answers: a button that asks it shows only then. */
+  assistantAvailable: Accessor<boolean>
   /** The title a title page is showing, so a question there is about it. Null off one. */
   setAssistantTitle: (titleId: string | null) => void
 }
@@ -39,9 +49,13 @@ export function useSearchHost(host: SearchHost) {
   onCleanup(() => shell.setSearchHost(null))
 }
 
-/** Tells the assistant which title this page shows, while it is mounted. */
-export function useAssistantTitle(titleId: () => string) {
+/**
+ * Tells the assistant which title this page shows, while it is mounted. It follows the id: moving
+ * from one title's page to another's keeps the page mounted, and the question must be about the
+ * new one (ASK-011).
+ */
+export function useAssistantTitle(titleId: () => string | null | undefined) {
   const shell = useAppShell()
-  onMount(() => shell.setAssistantTitle(titleId()))
+  createEffect(() => shell.setAssistantTitle(titleId() ?? null))
   onCleanup(() => shell.setAssistantTitle(null))
 }

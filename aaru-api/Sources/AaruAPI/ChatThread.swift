@@ -43,7 +43,14 @@ public actor ChatThread {
         return true
     }
 
-    /// Forgets the chat: sign-out and Delete my chats.
+    /// Continues a chat opened from history (ASK-011): its 15 minutes start again.
+    public func adopt(_ id: String) {
+        generation += 1
+        chatID = id
+        lastUsed = now()
+    }
+
+    /// Forgets the chat: New chat, sign-out and Delete my chats.
     public func reset() {
         generation += 1
         chatID = nil

@@ -258,7 +258,8 @@ extension TitleDetailView {
                     .foregroundStyle(Color(.muted))
             }
         }
-        .controlSize(.large)
+        .controlSize(.regular)
+        .buttonBorderShape(.capsule)
     }
 
     @ViewBuilder private var yours: some View {
@@ -280,10 +281,11 @@ extension TitleDetailView {
             }
             .panel()
         }
+        // Above the episodes: under a long season list nobody finds what to watch first (GRAPH-002).
+        TitleRelated(api: model.api, titleID: entry.title.id, library: library, lists: lists)
         if model.isShow {
             TitleSeasons(model: model, expanded: $expandedSeasons, onOpen: { openEpisode = $0 }, retry: load)
         }
-        TitleRelated(api: model.api, titleID: entry.title.id, library: library, lists: lists)
         TitleFromFriends(api: model.api, summary: entry.title)
     }
 }

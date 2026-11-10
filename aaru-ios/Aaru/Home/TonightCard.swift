@@ -15,6 +15,7 @@ struct TonightCard: View {
     var onSetAside: (TonightPick, TonightVerdict) -> Void = { _, _ in }
     var onMarkSeasonWatched: (ContinueEntry) -> Void = { _ in }
     let onMarkWatched: (ContinueEntry) -> Void
+    @ScaledMetric(relativeTo: .body) private var glyphBox = 22
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -106,7 +107,10 @@ struct TonightCard: View {
             }
         }
         .lineLimit(1)
-        .controlSize(.large)
+        // The system's regular size, as the HIG sizes a button inside a card; large is for a
+        // screen's one main action.
+        .controlSize(.regular)
+        .buttonBorderShape(.capsule)
     }
 
     @ViewBuilder private func tick(short: Bool) -> some View {
@@ -117,7 +121,6 @@ struct TonightCard: View {
             } label: {
                 // One phrasing for the tick wherever the episode is named (UX-044).
                 Label(short ? code : "Mark \(code) watched", systemImage: "checkmark")
-                    .frame(minHeight: 32)
             }
             .buttonStyle(.borderedProminent)
             .fixedSize()
@@ -128,7 +131,7 @@ struct TonightCard: View {
 
     @ViewBuilder private var navigation: some View {
         NavigationLink(value: tonight.primary.libraryItemId) {
-            Text("Open").frame(minHeight: 32)
+            Text("Open")
         }
         .buttonStyle(.bordered)
         .fixedSize()
@@ -146,7 +149,8 @@ struct TonightCard: View {
         } label: {
             Label("More", systemImage: "ellipsis")
                 .labelStyle(.iconOnly)
-                .frame(minWidth: 32, minHeight: 32)
+                // As tall as a line of the labels beside it, at any text size.
+                .frame(minWidth: glyphBox, minHeight: glyphBox)
         }
         .buttonStyle(.bordered)
         .fixedSize()
