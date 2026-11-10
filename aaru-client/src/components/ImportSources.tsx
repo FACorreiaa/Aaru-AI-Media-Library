@@ -3,13 +3,16 @@ import { For } from 'solid-js'
 /** Import sources in the order CLAUDE.md applies them. Vendors are sources, not domain terms. */
 export const IMPORT_SOURCES = [
   'Trakt',
+  'Stremio',
   'IMDb',
   'Letterboxd',
   'Goodreads',
   'Pogdesign CAT',
+  'Netflix',
   'TV Time',
   'MyAnimeList',
   'AniList',
+  'Any other CSV',
 ] as const
 
 export function ImportSources(props: { sources?: readonly string[] }) {

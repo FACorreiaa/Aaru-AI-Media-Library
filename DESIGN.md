@@ -467,6 +467,8 @@ rows of wide cards, one job per row.
   season, and "N left · Xh" for what remains. Title, `S1 · E8 · Episode name` under it, a check
   to mark the next episode watched. The newest 12, then "All N" to the Watching page (APP-018).
   On the web each row opens with "Skip <row>" for the keyboard, shown on focus.
+  A row's back and forward arrows show only when it holds more than fits, and the one at the
+  row's end is dimmed; its scrollbar is thin and takes the hairline colour.
 - **Start watching** (`StartRow`) — poster cards for wishlist titles with runtime, so the row
   answers "what can I start in two hours."
 - **Calendar** (`CalendarRow`) — the next few airings of tracked shows and anime, badged
