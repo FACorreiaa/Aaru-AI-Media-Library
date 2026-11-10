@@ -112,7 +112,12 @@ struct PostScreen: View {
                     Text("Replies to it stay, under “Comment deleted”.")
                 }
             }
-            .sheet(isPresented: $reporting) { ReportPostSheet(model: model) }
+            .sheet(isPresented: $reporting) {
+                ReportPostSheet(noun: "post", authorName: model.post?.author.inviteName ?? "They") { reason, note in
+                    await model.report(reason: reason, note: note)
+                        ? nil : (model.problem ?? "That report was not sent.")
+                }
+            }
             .sheet(isPresented: $showsUpvoters) { UpvotersSheet(people: model.upvoters, myHandle: myHandle) }
     }
 

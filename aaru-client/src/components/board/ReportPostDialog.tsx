@@ -15,9 +15,9 @@ import {
   TextFieldTextArea,
   toast,
 } from '~/components/ui'
-import type { BoardPost } from '../../lib/board/model'
 import { REPORT_NOTE_LENGTH, reportPost } from '../../lib/board/server'
 import { inviterName } from '../../lib/social/model'
+import type { SocialUser } from '../../lib/social/server'
 
 type Reason = 'spam' | 'harassment' | 'impersonation' | 'other'
 
@@ -28,15 +28,24 @@ const REASONS: { value: Reason; label: string }[] = [
   { value: 'other', label: 'Something else' },
 ]
 
+/** What is being reported: a Board post or a group message, by its id and author. */
+export type Reported = {
+  kind: 'post' | 'group-message'
+  id: string
+  author: SocialUser
+}
+
 /**
- * Report a friend's post (BOARD-002): why, from four reasons, and an optional note. It goes to
- * Aaru through the user-report route with the post named; the friend is not told.
+ * Report a friend's post (BOARD-002) or a group message: why, from four reasons, and an optional
+ * note. It goes to Aaru through the user-report route with the post or message named; the author
+ * is not told.
  */
 export default function ReportPostDialog(props: {
   open: boolean
-  post: BoardPost
+  reported: Reported
   onClose: () => void
 }) {
+  const noun = () => (props.reported.kind === 'post' ? 'post' : 'message')
   const [reason, setReason] = createSignal<Reason | null>(null)
   const [note, setNote] = createSignal('')
   const [sending, setSending] = createSignal(false)
@@ -55,8 +64,9 @@ export default function ReportPostDialog(props: {
     try {
       await reportPost({
         data: {
-          authorId: props.post.author.userId,
-          postId: props.post.id,
+          authorId: props.reported.author.userId,
+          postId: props.reported.id,
+          kind: props.reported.kind,
           reason: why,
           note: note().trim() || undefined,
         },
@@ -86,14 +96,14 @@ export default function ReportPostDialog(props: {
           class="block w-[min(26rem,calc(100vw-2rem))] gap-0 p-0 sm:max-w-none"
         >
           <div class="flex items-center justify-between gap-4 border-b border-line px-5 py-4">
-            <DialogTitle class="text-xl">Report this post</DialogTitle>
+            <DialogTitle class="text-xl">Report this {noun()}</DialogTitle>
             <Button variant="ghost" size="bare" class="text-sm" onClick={close}>
               Cancel
             </Button>
           </div>
           <div class="px-5 pt-4 pb-5">
             <DialogDescription class="text-sm text-muted">
-              {inviterName(props.post.author)} won’t know you reported it.
+              {inviterName(props.reported.author)} won’t know you reported it.
             </DialogDescription>
             <RadioGroup
               aria-label="Why"

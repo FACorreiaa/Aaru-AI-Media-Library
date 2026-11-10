@@ -182,15 +182,20 @@ export const loadFromFriends = createServerFn({ method: 'GET' })
     },
   )
 
-/** How long a report's own note may be: the server's 1,000 less the post reference. */
+/** How long a report's own note may be: the server's 1,000 less the reference to what was reported. */
 export const REPORT_NOTE_LENGTH = 900
 
-/** Reports a post through the user-report route; the note says which post, then the reporter's words. */
+/**
+ * Reports a Board post or a group message through the user-report route. The note says which one
+ * (`post:<id>` or `group-message:<id>`), then the reporter's words; the author is not told.
+ */
 export const reportPost = createServerFn({ method: 'POST' })
   .validator(
     z.object({
       authorId: uuid,
       postId: uuid,
+      /** What `postId` names. A Board post unless said. */
+      kind: z.enum(['post', 'group-message']).default('post'),
       reason: z.enum(['spam', 'harassment', 'impersonation', 'other']),
       /** What the reporter adds; the server keeps notes under 1,000 characters in all. */
       note: z.string().max(REPORT_NOTE_LENGTH).optional(),
@@ -202,7 +207,7 @@ export const reportPost = createServerFn({ method: 'POST' })
         body: {
           userId: data.authorId,
           reason: data.reason,
-          note: [`post:${data.postId}`, data.note?.trim()]
+          note: [`${data.kind}:${data.postId}`, data.note?.trim()]
             .filter(Boolean)
             .join('\n'),
         },
