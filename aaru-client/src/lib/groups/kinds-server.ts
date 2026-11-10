@@ -119,6 +119,9 @@ export const openWatchParty = createServerFn({ method: 'POST' })
       title: mediaRef,
       season: z.number().int().optional(),
       episode: z.number().int().optional(),
+      chapter: z.number().int().optional(),
+      volume: z.number().int().optional(),
+      page: z.number().int().optional(),
     }),
   )
   .handler(async ({ data }): Promise<WatchPartyView> =>
@@ -131,6 +134,9 @@ export const openWatchParty = createServerFn({ method: 'POST' })
             title: data.title,
             season: data.season,
             episode: data.episode,
+            chapter: data.chapter,
+            volume: data.volume,
+            page: data.page,
           },
         },
       ),
@@ -138,13 +144,19 @@ export const openWatchParty = createServerFn({ method: 'POST' })
     ),
   )
 
+/**
+ * Being ready is joining: the host ending the party marks its title for me unless `autoMark`
+ * is false (ROOM-005). Leaving `autoMark` out keeps what I chose.
+ */
 export const setWatchPartyReady = createServerFn({ method: 'POST' })
-  .validator(channelRef.extend({ ready: z.boolean() }))
+  .validator(
+    channelRef.extend({ ready: z.boolean(), autoMark: z.boolean().optional() }),
+  )
   .handler(async ({ data }): Promise<WatchPartyView> =>
     check(
       await api(sessionToken()).POST(
         '/v1/groups/{groupId}/channels/{channelId}/party/ready',
-        { ...path(data), body: { ready: data.ready } },
+        { ...path(data), body: { ready: data.ready, autoMark: data.autoMark } },
       ),
       'That was not saved.',
     ),
@@ -176,7 +188,7 @@ export const endWatchParty = createServerFn({ method: 'POST' })
     ),
   )
 
-/** Ticks the party's episode, film or book in my own library. Nobody else's. */
+/** Marks the party's episode, chapter, page, film or book in my own library, by my tap. */
 export const markWatchPartyWatched = createServerFn({ method: 'POST' })
   .validator(channelRef)
   .handler(async ({ data }) =>

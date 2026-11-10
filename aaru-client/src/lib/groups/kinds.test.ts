@@ -4,7 +4,11 @@ import {
   countdownSeconds,
   hitRef,
   kindGlyph,
+  markLabel,
   partyPhase,
+  partyTarget,
+  partyWord,
+  readingTarget,
   phaseLabel,
   progressLabel,
   reactionDue,
@@ -161,5 +165,49 @@ describe('hitRef', () => {
       title: 'Arrival',
       year: 2016,
     })
+  })
+})
+
+describe('sessions that read (ROOM-005)', () => {
+  it('calls a book or manga party a reading session', () => {
+    expect(partyWord('manga')).toBe('Reading session')
+    expect(partyWord('book')).toBe('Reading session')
+    expect(partyWord('show')).toBe('Watch party')
+    expect(partyWord('movie')).toBe('Watch party')
+  })
+
+  it('says what a party is aimed at', () => {
+    expect(partyTarget(party({ season: 1, episode: 3 }))).toBe('S1 · E3')
+    expect(partyTarget(party({ chapter: 12, volume: 2 }))).toBe(
+      'Chapter 12 · Vol. 2',
+    )
+    expect(partyTarget(party({ volume: 2 }))).toBe('Vol. 2')
+    expect(partyTarget(party({ page: 120 }))).toBe('Page 120')
+    expect(partyTarget(party())).toBeNull()
+  })
+
+  it('words the tap in the kind’s own verb', () => {
+    expect(markLabel('show')).toBe('Mark watched for me')
+    expect(markLabel('book')).toBe('Mark read for me')
+    expect(markLabel('manga')).toBe('Mark read for me')
+    expect(markLabel('album')).toBe('Mark listened for me')
+  })
+
+  it('reads the opening form into a target, leaving blanks out', () => {
+    const blank = { chapter: '', volume: '', page: '' }
+    expect(readingTarget('manga', { ...blank, chapter: '12' })).toEqual({
+      chapter: 12,
+    })
+    expect(
+      readingTarget('manga', { chapter: '12', volume: '2', page: '9' }),
+    ).toEqual({ chapter: 12, volume: 2 })
+    expect(readingTarget('book', { ...blank, page: '120' })).toEqual({
+      page: 120,
+    })
+    expect(readingTarget('book', blank)).toEqual({})
+    // A film has no reading target, whatever the fields hold.
+    expect(readingTarget('movie', { ...blank, page: '3' })).toEqual({})
+    expect(readingTarget('manga', { ...blank, chapter: '-1' })).toBeNull()
+    expect(readingTarget('book', { ...blank, page: '1.5' })).toBeNull()
   })
 })

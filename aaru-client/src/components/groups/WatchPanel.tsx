@@ -10,9 +10,15 @@ import {
 } from 'solid-js'
 import {
   Button,
+  SwitchControl,
+  SwitchDescription,
+  SwitchInput,
+  SwitchLabel,
+  SwitchThumb,
   TextField,
   TextFieldInput,
   TextFieldLabel,
+  Switch as Toggle,
 } from '~/components/ui'
 import { Segmented } from '../Segmented'
 import {
@@ -20,10 +26,13 @@ import {
   REACTIONS,
   canHost,
   countdownSeconds,
-  episodeCode,
   hitRef,
+  markLabel,
   partyPhase,
+  partyTarget,
+  partyWord,
   phaseLabel,
+  readingTarget,
   serverOffset,
   validEpisode,
 } from '../../lib/groups/kinds'
@@ -38,6 +47,7 @@ import {
 } from '../../lib/groups/kinds-server'
 import type { WatchPartyView } from '../../lib/groups/kinds-server'
 import type { Channel } from '../../lib/groups/server'
+import { undoAction } from '../../lib/history/server'
 import { kindOf } from '../../lib/library/model'
 import type { CatalogHit } from '../../lib/library/model'
 import { sendReaction, useRealtime } from '../../lib/realtime/socket'
@@ -55,9 +65,12 @@ const COUNTDOWNS = ['5', '10', '30'].map((value) => ({
 const numberClass = 'mt-0.5 min-h-9 w-16 rounded-lg border-0 px-2 text-sm'
 
 /**
- * WatchPanel (GRP-009): a watch channel's party above its chat. Lobby with who is ready, a
- * countdown every client runs against the server's clock, live reactions, and "Mark watched
- * for me", which ticks only my own library. Aaru never touches anyone's player.
+ * WatchPanel (GRP-009, ROOM-005): a watch channel's party above its chat. Lobby with who has
+ * joined, a countdown every client runs against the server's clock, and live reactions. Being
+ * ready is joining: when the host ends, the server marks the title for everyone who joined and
+ * left "Mark it for me" on, and the ended party offers Undo. Someone who switched it off, or
+ * never joined, keeps "Mark watched for me". A book or manga makes it a reading session, with a
+ * page or a chapter. Aaru never touches anyone's player and shares no screen.
  */
 export function WatchPanel(props: { channel: Channel }) {
   const shell = useShell()
@@ -77,8 +90,11 @@ export function WatchPanel(props: { channel: Channel }) {
   const [picked, setPicked] = createSignal<CatalogHit | null>(null)
   const [season, setSeason] = createSignal('1')
   const [episode, setEpisode] = createSignal('1')
+  const [chapter, setChapter] = createSignal('')
+  const [volume, setVolume] = createSignal('')
+  const [page, setPage] = createSignal('')
   const [countdown, setCountdown] = createSignal(COUNTDOWN_DEFAULT)
-  const [marked, setMarked] = createSignal<string | null>(null)
+  const [undone, setUndone] = createSignal<string | null>(null)
   const [floating, setFloating] = createSignal<Floating[]>([])
   let floatId = 0
 
@@ -96,6 +112,15 @@ export function WatchPanel(props: { channel: Channel }) {
     return p ? canHost(p, meId(), scope.detail().group.role) : false
   }
   const ready = () => party()?.ready.some((u) => u.userId === meId()) ?? false
+  /** The end of the party will mark it for me: I joined and left "Mark it for me" on. */
+  const willMark = () => ready() && (view()?.autoMark ?? true)
+  const word = () => partyWord(party()?.title.type ?? 'movie')
+  const reading = () =>
+    readingTarget(picked()?.type ?? '', {
+      chapter: chapter(),
+      volume: volume(),
+      page: page(),
+    })
 
   /** Takes a party response, timing the server's clock from the middle of the round trip. */
   async function take(request: () => Promise<WatchPartyView>) {
@@ -104,7 +129,6 @@ export function WatchPanel(props: { channel: Channel }) {
     const received = Date.now()
     setOffset(serverOffset(next.serverTime, (sent + received) / 2))
     setNow(received)
-    if (next.party?.id !== party()?.id) setMarked(null)
     setView(next)
   }
 
@@ -164,6 +188,8 @@ export function WatchPanel(props: { channel: Channel }) {
     if (!hit) return
     const isShow = hit.type === 'show'
     if (isShow && !validEpisode(Number(season()), Number(episode()))) return
+    const target = reading()
+    if (!target) return
     void act(async () => {
       const next = await openWatchParty({
         data: {
@@ -171,40 +197,88 @@ export function WatchPanel(props: { channel: Channel }) {
           title: hitRef(hit),
           ...(isShow
             ? { season: Number(season()), episode: Number(episode()) }
-            : {}),
+            : target),
         },
       })
       setPicking(false)
       setPicked(null)
+      setChapter('')
+      setVolume('')
+      setPage('')
       return next
     })
   }
 
-  async function markWatched() {
-    const id = party()?.id
+  function markWatched() {
+    void act(async () => {
+      await markWatchPartyWatched({ data: ref() })
+      return getWatchParty({ data: ref() })
+    })
+  }
+
+  /** Takes back what the party marked for me: my own action, nobody else's. */
+  async function undo() {
+    const id = view()?.actionId
     if (!id) return
     setBusy(true)
     setProblem(null)
     try {
-      await markWatchPartyWatched({ data: ref() })
-      setMarked(id)
+      await undoAction({ data: { id } })
+      setUndone(id)
     } catch (error) {
-      setProblem(error instanceof Error ? error.message : 'Not marked.')
+      const text = error instanceof Error ? error.message : ''
+      if (text === 'That was already undone.') setUndone(id)
+      else setProblem(text || 'That could not be undone.')
     } finally {
       setBusy(false)
     }
   }
 
-  const episodeLine = () => {
+  const targetLine = () => {
     const p = party()
-    return p?.season !== undefined && p.episode !== undefined
-      ? episodeCode(p.season, p.episode)
-      : null
+    return p ? partyTarget(p) : null
   }
+
+  /** My side of the check-off, once the party has started or ended. */
+  const mine = () => (
+    <Show
+      when={view()?.markedForYou}
+      fallback={
+        <Show when={!willMark() || phase() === 'ended'}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={busy()}
+            onClick={markWatched}
+            title="Marks it in your own library only"
+          >
+            {markLabel(party()?.title.type ?? 'movie')}
+          </Button>
+        </Show>
+      }
+    >
+      <span role="status" class="text-sm font-medium text-accent">
+        {undone() && undone() === view()?.actionId
+          ? 'Undone'
+          : 'Marked in your library ✓'}
+      </span>
+      <Show when={view()?.actionId && undone() !== view()?.actionId}>
+        <Button
+          variant="link"
+          size="bare"
+          disabled={busy()}
+          onClick={() => void undo()}
+          class="text-accent"
+        >
+          Undo
+        </Button>
+      </Show>
+    </Show>
+  )
 
   return (
     <section
-      aria-label="Watch party"
+      aria-label={word()}
       class="relative shrink-0 border-b border-line bg-surface/40 px-4 py-3 md:px-6"
     >
       <Switch>
@@ -231,7 +305,7 @@ export function WatchPanel(props: { channel: Channel }) {
               fallback={
                 <div class="mt-2">
                   <TitlePicker
-                    kinds={['film', 'show', 'anime']}
+                    kinds={['film', 'show', 'anime', 'manga', 'book']}
                     onPick={setPicked}
                   />
                 </div>
@@ -282,10 +356,60 @@ export function WatchPanel(props: { channel: Channel }) {
                       />
                     </TextField>
                   </Show>
+                  <Show when={hit().type === 'manga'}>
+                    <TextField
+                      value={chapter()}
+                      onChange={setChapter}
+                      class="w-auto gap-0"
+                    >
+                      <TextFieldLabel class="text-xs font-medium">
+                        To chapter
+                      </TextFieldLabel>
+                      <TextFieldInput
+                        type="number"
+                        min="0"
+                        inputmode="numeric"
+                        class={numberClass}
+                      />
+                    </TextField>
+                    <TextField
+                      value={volume()}
+                      onChange={setVolume}
+                      class="w-auto gap-0"
+                    >
+                      <TextFieldLabel class="text-xs font-medium">
+                        Volume
+                      </TextFieldLabel>
+                      <TextFieldInput
+                        type="number"
+                        min="0"
+                        inputmode="numeric"
+                        class={numberClass}
+                      />
+                    </TextField>
+                  </Show>
+                  <Show when={hit().type === 'book'}>
+                    <TextField
+                      value={page()}
+                      onChange={setPage}
+                      class="w-auto gap-0"
+                    >
+                      <TextFieldLabel class="text-xs font-medium">
+                        To page
+                      </TextFieldLabel>
+                      <TextFieldInput
+                        type="number"
+                        min="0"
+                        inputmode="numeric"
+                        class={`${numberClass} w-20`}
+                      />
+                    </TextField>
+                  </Show>
                   <Button
                     size="sm"
                     disabled={
                       busy() ||
+                      !reading() ||
                       (hit().type === 'show' &&
                         !validEpisode(Number(season()), Number(episode())))
                     }
@@ -312,7 +436,7 @@ export function WatchPanel(props: { channel: Channel }) {
                 </p>
                 <p class="truncate font-display text-lg leading-tight font-medium">
                   {p().title.title}
-                  <Show when={episodeLine()}>
+                  <Show when={targetLine()}>
                     {(code) => (
                       <span class="ml-1.5 font-sans text-sm text-muted">
                         {code()}
@@ -326,9 +450,9 @@ export function WatchPanel(props: { channel: Channel }) {
                   </Show>
                   <Show
                     when={p().ready.length > 0}
-                    fallback={'Nobody is ready yet'}
+                    fallback={'Nobody has joined yet'}
                   >
-                    Ready:{' '}
+                    Joined:{' '}
                     {p()
                       .ready.map((u) => u.displayName ?? `@${u.handle}`)
                       .join(', ')}
@@ -410,13 +534,7 @@ export function WatchPanel(props: { channel: Channel }) {
                 </Match>
               </Switch>
               <div class="flex items-center gap-2">
-                <Show when={phase() === 'live'}>
-                  <MarkWatched
-                    done={marked() === p().id}
-                    busy={busy()}
-                    onMark={() => void markWatched()}
-                  />
-                </Show>
+                <Show when={phase() === 'live'}>{mine()}</Show>
                 <Show when={hosting()}>
                   <Button
                     variant="ghost"
@@ -427,10 +545,48 @@ export function WatchPanel(props: { channel: Channel }) {
                     }
                     class="px-3"
                   >
-                    End watch party
+                    End {word().toLowerCase()}
                   </Button>
                 </Show>
               </div>
+              <Show
+                when={ready()}
+                fallback={
+                  <Show when={phase() === 'lobby'}>
+                    <p class="w-full text-xs text-muted">
+                      Joining means that when the host ends, this is marked in
+                      your library. You can switch that off, and undo it after.
+                    </p>
+                  </Show>
+                }
+              >
+                <Toggle
+                  class="flex w-full items-start gap-3 text-sm"
+                  checked={view()?.autoMark ?? true}
+                  disabled={busy()}
+                  onChange={(next) =>
+                    void act(() =>
+                      setWatchPartyReady({
+                        data: { ...ref(), ready: true, autoMark: next },
+                      }),
+                    )
+                  }
+                >
+                  <SwitchInput />
+                  <SwitchControl>
+                    <SwitchThumb />
+                  </SwitchControl>
+                  <span>
+                    <SwitchLabel class="cursor-pointer">
+                      Mark it for me
+                    </SwitchLabel>
+                    <SwitchDescription class="block text-xs">
+                      When the host ends, this is marked in your library. You
+                      can undo it after.
+                    </SwitchDescription>
+                  </span>
+                </Toggle>
+              </Show>
             </div>
           )}
         </Match>
@@ -440,28 +596,21 @@ export function WatchPanel(props: { channel: Channel }) {
               when={party()}
               fallback={
                 <p class="min-w-0 flex-1 text-sm text-muted">
-                  Pick something to watch, count down together, react as it
-                  plays.
+                  Pick something to watch or read, count down together, react as
+                  it goes. When the host ends, it is marked for everyone who
+                  joined.
                 </p>
               }
             >
               {(p) => (
                 <p class="min-w-0 flex-1 truncate text-sm text-muted">
-                  Last watch party:{' '}
+                  Last {word().toLowerCase()}:{' '}
                   <span class="font-medium text-ink">{p().title.title}</span>
-                  <Show when={episodeLine()}> {episodeLine()}</Show>
+                  <Show when={targetLine()}> {targetLine()}</Show>
                 </p>
               )}
             </Show>
-            <Show when={party()}>
-              {(p) => (
-                <MarkWatched
-                  done={marked() === p().id}
-                  busy={busy()}
-                  onMark={() => void markWatched()}
-                />
-              )}
-            </Show>
+            <Show when={party()}>{mine()}</Show>
             <Button size="sm" onClick={() => setPicking(true)}>
               Start a watch party
             </Button>
@@ -489,33 +638,5 @@ export function WatchPanel(props: { channel: Channel }) {
         </span>
       </Show>
     </section>
-  )
-}
-
-/** "Mark watched for me": my own library only; then a quiet confirmation. */
-function MarkWatched(props: {
-  done: boolean
-  busy: boolean
-  onMark: () => void
-}) {
-  return (
-    <Show
-      when={!props.done}
-      fallback={
-        <span role="status" class="text-sm font-medium text-accent">
-          Marked in your library ✓
-        </span>
-      }
-    >
-      <Button
-        variant="outline"
-        size="sm"
-        disabled={props.busy}
-        onClick={() => props.onMark()}
-        title="Ticks it in your own library only"
-      >
-        Mark watched for me
-      </Button>
-    </Show>
   )
 }
