@@ -1,6 +1,8 @@
 -- The friends-only Board: posts, upvotes and comments (BOARD-001, PostgresBoardStore.swift).
 -- Every post read selects the same columns, so internal/boards converts each row type to one.
--- Deleted posts are filtered by each read's WHERE.
+-- Deleted posts are filtered by each read's WHERE. The upvote and comment counts leave out anyone
+-- blocked in either direction with the viewer, as the upvoter and comment lists do, so a count
+-- never disagrees with the list under it.
 
 -- name: BoardInsertPost :exec
 INSERT INTO board_posts (id, user_id, title_id, rating, body, spoiler_season, spoiler_episode, spoiler_ending, created_at)
@@ -11,10 +13,16 @@ VALUES (sqlc.arg(id), sqlc.arg(user_id), sqlc.narg(title_id), sqlc.narg(rating):
 -- Nil when the post is unknown or deleted.
 SELECT b.id, b.user_id, p.handle, u.display_name, u.avatar_version, b.title_id, b.rating, b.body,
     b.spoiler_season, b.spoiler_episode, b.spoiler_ending, b.created_at, b.edited_at,
-    (SELECT count(*)::int FROM board_upvotes v WHERE v.post_id = b.id)::int AS upvotes,
+    (SELECT count(*)::int FROM board_upvotes v WHERE v.post_id = b.id
+        AND NOT EXISTS (SELECT 1 FROM social_blocks k
+            WHERE (k.blocker_id = sqlc.arg(viewer)::uuid AND k.blocked_id = v.user_id)
+               OR (k.blocker_id = v.user_id AND k.blocked_id = sqlc.arg(viewer)::uuid)))::int AS upvotes,
     EXISTS (SELECT 1 FROM board_upvotes v WHERE v.post_id = b.id AND v.user_id = sqlc.arg(viewer)::uuid)
         AS upvoted_by_viewer,
-    (SELECT count(*)::int FROM board_comments c WHERE c.post_id = b.id AND c.deleted_at IS NULL)::int
+    (SELECT count(*)::int FROM board_comments c WHERE c.post_id = b.id AND c.deleted_at IS NULL
+        AND NOT EXISTS (SELECT 1 FROM social_blocks k
+            WHERE (k.blocker_id = sqlc.arg(viewer)::uuid AND k.blocked_id = c.user_id)
+               OR (k.blocker_id = c.user_id AND k.blocked_id = sqlc.arg(viewer)::uuid)))::int
         AS comment_count
 FROM board_posts b
 JOIN profiles p ON p.user_id = b.user_id JOIN users u ON u.id = b.user_id
@@ -24,10 +32,16 @@ WHERE b.id = sqlc.arg(id) AND b.deleted_at IS NULL;
 -- Posts by these authors, newest first, keyset-paged by the id of the last post seen.
 SELECT b.id, b.user_id, p.handle, u.display_name, u.avatar_version, b.title_id, b.rating, b.body,
     b.spoiler_season, b.spoiler_episode, b.spoiler_ending, b.created_at, b.edited_at,
-    (SELECT count(*)::int FROM board_upvotes v WHERE v.post_id = b.id)::int AS upvotes,
+    (SELECT count(*)::int FROM board_upvotes v WHERE v.post_id = b.id
+        AND NOT EXISTS (SELECT 1 FROM social_blocks k
+            WHERE (k.blocker_id = sqlc.arg(viewer)::uuid AND k.blocked_id = v.user_id)
+               OR (k.blocker_id = v.user_id AND k.blocked_id = sqlc.arg(viewer)::uuid)))::int AS upvotes,
     EXISTS (SELECT 1 FROM board_upvotes v WHERE v.post_id = b.id AND v.user_id = sqlc.arg(viewer)::uuid)
         AS upvoted_by_viewer,
-    (SELECT count(*)::int FROM board_comments c WHERE c.post_id = b.id AND c.deleted_at IS NULL)::int
+    (SELECT count(*)::int FROM board_comments c WHERE c.post_id = b.id AND c.deleted_at IS NULL
+        AND NOT EXISTS (SELECT 1 FROM social_blocks k
+            WHERE (k.blocker_id = sqlc.arg(viewer)::uuid AND k.blocked_id = c.user_id)
+               OR (k.blocker_id = c.user_id AND k.blocked_id = sqlc.arg(viewer)::uuid)))::int
         AS comment_count
 FROM board_posts b
 JOIN profiles p ON p.user_id = b.user_id JOIN users u ON u.id = b.user_id
@@ -41,10 +55,16 @@ LIMIT sqlc.arg(row_limit);
 -- Posts by these authors created since `since`: upvotes descending, then newest.
 SELECT b.id, b.user_id, p.handle, u.display_name, u.avatar_version, b.title_id, b.rating, b.body,
     b.spoiler_season, b.spoiler_episode, b.spoiler_ending, b.created_at, b.edited_at,
-    (SELECT count(*)::int FROM board_upvotes v WHERE v.post_id = b.id)::int AS upvotes,
+    (SELECT count(*)::int FROM board_upvotes v WHERE v.post_id = b.id
+        AND NOT EXISTS (SELECT 1 FROM social_blocks k
+            WHERE (k.blocker_id = sqlc.arg(viewer)::uuid AND k.blocked_id = v.user_id)
+               OR (k.blocker_id = v.user_id AND k.blocked_id = sqlc.arg(viewer)::uuid)))::int AS upvotes,
     EXISTS (SELECT 1 FROM board_upvotes v WHERE v.post_id = b.id AND v.user_id = sqlc.arg(viewer)::uuid)
         AS upvoted_by_viewer,
-    (SELECT count(*)::int FROM board_comments c WHERE c.post_id = b.id AND c.deleted_at IS NULL)::int
+    (SELECT count(*)::int FROM board_comments c WHERE c.post_id = b.id AND c.deleted_at IS NULL
+        AND NOT EXISTS (SELECT 1 FROM social_blocks k
+            WHERE (k.blocker_id = sqlc.arg(viewer)::uuid AND k.blocked_id = c.user_id)
+               OR (k.blocker_id = c.user_id AND k.blocked_id = sqlc.arg(viewer)::uuid)))::int
         AS comment_count
 FROM board_posts b
 JOIN profiles p ON p.user_id = b.user_id JOIN users u ON u.id = b.user_id
@@ -57,10 +77,16 @@ LIMIT sqlc.arg(row_limit);
 -- Posts about one title by these authors, newest first.
 SELECT b.id, b.user_id, p.handle, u.display_name, u.avatar_version, b.title_id, b.rating, b.body,
     b.spoiler_season, b.spoiler_episode, b.spoiler_ending, b.created_at, b.edited_at,
-    (SELECT count(*)::int FROM board_upvotes v WHERE v.post_id = b.id)::int AS upvotes,
+    (SELECT count(*)::int FROM board_upvotes v WHERE v.post_id = b.id
+        AND NOT EXISTS (SELECT 1 FROM social_blocks k
+            WHERE (k.blocker_id = sqlc.arg(viewer)::uuid AND k.blocked_id = v.user_id)
+               OR (k.blocker_id = v.user_id AND k.blocked_id = sqlc.arg(viewer)::uuid)))::int AS upvotes,
     EXISTS (SELECT 1 FROM board_upvotes v WHERE v.post_id = b.id AND v.user_id = sqlc.arg(viewer)::uuid)
         AS upvoted_by_viewer,
-    (SELECT count(*)::int FROM board_comments c WHERE c.post_id = b.id AND c.deleted_at IS NULL)::int
+    (SELECT count(*)::int FROM board_comments c WHERE c.post_id = b.id AND c.deleted_at IS NULL
+        AND NOT EXISTS (SELECT 1 FROM social_blocks k
+            WHERE (k.blocker_id = sqlc.arg(viewer)::uuid AND k.blocked_id = c.user_id)
+               OR (k.blocker_id = c.user_id AND k.blocked_id = sqlc.arg(viewer)::uuid)))::int
         AS comment_count
 FROM board_posts b
 JOIN profiles p ON p.user_id = b.user_id JOIN users u ON u.id = b.user_id

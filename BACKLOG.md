@@ -447,8 +447,8 @@ Friends and groups (design: `docs/superpowers/specs/2026-10-27-friends-groups-de
   the rating update), so undo is per row. "Report post" reuses `reportUser` on the post author
   with the note prefixed `post:<id>`; there is no new route. Comment list pages carry a nullable
   `next` cursor, and a page can be short or empty after deleted and blocked rows are filtered.
-  Known gaps, for later: the upvote count and `commentCount` include rows from users the viewer
-  blocked while the lists hide them.
+  The upvote count and `commentCount` used to include rows from users the viewer blocked while
+  the lists hid them; fixed 2026-11-10, the counts now leave out anyone blocked either way.
 - **Everything playing, in one Live Activity (owner, 2026-10-22, SCR-009).** When a show and a
   song, or a show and a YouTube video, play at once, the iPhone shows them together: one
   combined "Now playing" activity, not one activity per thing (owner chose the combined layout

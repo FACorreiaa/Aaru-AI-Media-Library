@@ -180,10 +180,16 @@ func (q *Queries) BoardEditPost(ctx context.Context, arg BoardEditPostParams) er
 const boardFeed = `-- name: BoardFeed :many
 SELECT b.id, b.user_id, p.handle, u.display_name, u.avatar_version, b.title_id, b.rating, b.body,
     b.spoiler_season, b.spoiler_episode, b.spoiler_ending, b.created_at, b.edited_at,
-    (SELECT count(*)::int FROM board_upvotes v WHERE v.post_id = b.id)::int AS upvotes,
+    (SELECT count(*)::int FROM board_upvotes v WHERE v.post_id = b.id
+        AND NOT EXISTS (SELECT 1 FROM social_blocks k
+            WHERE (k.blocker_id = $1::uuid AND k.blocked_id = v.user_id)
+               OR (k.blocker_id = v.user_id AND k.blocked_id = $1::uuid)))::int AS upvotes,
     EXISTS (SELECT 1 FROM board_upvotes v WHERE v.post_id = b.id AND v.user_id = $1::uuid)
         AS upvoted_by_viewer,
-    (SELECT count(*)::int FROM board_comments c WHERE c.post_id = b.id AND c.deleted_at IS NULL)::int
+    (SELECT count(*)::int FROM board_comments c WHERE c.post_id = b.id AND c.deleted_at IS NULL
+        AND NOT EXISTS (SELECT 1 FROM social_blocks k
+            WHERE (k.blocker_id = $1::uuid AND k.blocked_id = c.user_id)
+               OR (k.blocker_id = c.user_id AND k.blocked_id = $1::uuid)))::int
         AS comment_count
 FROM board_posts b
 JOIN profiles p ON p.user_id = b.user_id JOIN users u ON u.id = b.user_id
@@ -317,7 +323,9 @@ type BoardInsertPostParams struct {
 
 // The friends-only Board: posts, upvotes and comments (BOARD-001, PostgresBoardStore.swift).
 // Every post read selects the same columns, so internal/boards converts each row type to one.
-// Deleted posts are filtered by each read's WHERE.
+// Deleted posts are filtered by each read's WHERE. The upvote and comment counts leave out anyone
+// blocked in either direction with the viewer, as the upvoter and comment lists do, so a count
+// never disagrees with the list under it.
 func (q *Queries) BoardInsertPost(ctx context.Context, arg BoardInsertPostParams) error {
 	_, err := q.db.Exec(ctx, boardInsertPost,
 		arg.ID,
@@ -336,10 +344,16 @@ func (q *Queries) BoardInsertPost(ctx context.Context, arg BoardInsertPostParams
 const boardPost = `-- name: BoardPost :one
 SELECT b.id, b.user_id, p.handle, u.display_name, u.avatar_version, b.title_id, b.rating, b.body,
     b.spoiler_season, b.spoiler_episode, b.spoiler_ending, b.created_at, b.edited_at,
-    (SELECT count(*)::int FROM board_upvotes v WHERE v.post_id = b.id)::int AS upvotes,
+    (SELECT count(*)::int FROM board_upvotes v WHERE v.post_id = b.id
+        AND NOT EXISTS (SELECT 1 FROM social_blocks k
+            WHERE (k.blocker_id = $1::uuid AND k.blocked_id = v.user_id)
+               OR (k.blocker_id = v.user_id AND k.blocked_id = $1::uuid)))::int AS upvotes,
     EXISTS (SELECT 1 FROM board_upvotes v WHERE v.post_id = b.id AND v.user_id = $1::uuid)
         AS upvoted_by_viewer,
-    (SELECT count(*)::int FROM board_comments c WHERE c.post_id = b.id AND c.deleted_at IS NULL)::int
+    (SELECT count(*)::int FROM board_comments c WHERE c.post_id = b.id AND c.deleted_at IS NULL
+        AND NOT EXISTS (SELECT 1 FROM social_blocks k
+            WHERE (k.blocker_id = $1::uuid AND k.blocked_id = c.user_id)
+               OR (k.blocker_id = c.user_id AND k.blocked_id = $1::uuid)))::int
         AS comment_count
 FROM board_posts b
 JOIN profiles p ON p.user_id = b.user_id JOIN users u ON u.id = b.user_id
@@ -412,10 +426,16 @@ func (q *Queries) BoardRemoveUpvote(ctx context.Context, arg BoardRemoveUpvotePa
 const boardTitlePosts = `-- name: BoardTitlePosts :many
 SELECT b.id, b.user_id, p.handle, u.display_name, u.avatar_version, b.title_id, b.rating, b.body,
     b.spoiler_season, b.spoiler_episode, b.spoiler_ending, b.created_at, b.edited_at,
-    (SELECT count(*)::int FROM board_upvotes v WHERE v.post_id = b.id)::int AS upvotes,
+    (SELECT count(*)::int FROM board_upvotes v WHERE v.post_id = b.id
+        AND NOT EXISTS (SELECT 1 FROM social_blocks k
+            WHERE (k.blocker_id = $1::uuid AND k.blocked_id = v.user_id)
+               OR (k.blocker_id = v.user_id AND k.blocked_id = $1::uuid)))::int AS upvotes,
     EXISTS (SELECT 1 FROM board_upvotes v WHERE v.post_id = b.id AND v.user_id = $1::uuid)
         AS upvoted_by_viewer,
-    (SELECT count(*)::int FROM board_comments c WHERE c.post_id = b.id AND c.deleted_at IS NULL)::int
+    (SELECT count(*)::int FROM board_comments c WHERE c.post_id = b.id AND c.deleted_at IS NULL
+        AND NOT EXISTS (SELECT 1 FROM social_blocks k
+            WHERE (k.blocker_id = $1::uuid AND k.blocked_id = c.user_id)
+               OR (k.blocker_id = c.user_id AND k.blocked_id = $1::uuid)))::int
         AS comment_count
 FROM board_posts b
 JOIN profiles p ON p.user_id = b.user_id JOIN users u ON u.id = b.user_id
@@ -496,10 +516,16 @@ func (q *Queries) BoardTitlePosts(ctx context.Context, arg BoardTitlePostsParams
 const boardTop = `-- name: BoardTop :many
 SELECT b.id, b.user_id, p.handle, u.display_name, u.avatar_version, b.title_id, b.rating, b.body,
     b.spoiler_season, b.spoiler_episode, b.spoiler_ending, b.created_at, b.edited_at,
-    (SELECT count(*)::int FROM board_upvotes v WHERE v.post_id = b.id)::int AS upvotes,
+    (SELECT count(*)::int FROM board_upvotes v WHERE v.post_id = b.id
+        AND NOT EXISTS (SELECT 1 FROM social_blocks k
+            WHERE (k.blocker_id = $1::uuid AND k.blocked_id = v.user_id)
+               OR (k.blocker_id = v.user_id AND k.blocked_id = $1::uuid)))::int AS upvotes,
     EXISTS (SELECT 1 FROM board_upvotes v WHERE v.post_id = b.id AND v.user_id = $1::uuid)
         AS upvoted_by_viewer,
-    (SELECT count(*)::int FROM board_comments c WHERE c.post_id = b.id AND c.deleted_at IS NULL)::int
+    (SELECT count(*)::int FROM board_comments c WHERE c.post_id = b.id AND c.deleted_at IS NULL
+        AND NOT EXISTS (SELECT 1 FROM social_blocks k
+            WHERE (k.blocker_id = $1::uuid AND k.blocked_id = c.user_id)
+               OR (k.blocker_id = c.user_id AND k.blocked_id = $1::uuid)))::int
         AS comment_count
 FROM board_posts b
 JOIN profiles p ON p.user_id = b.user_id JOIN users u ON u.id = b.user_id
