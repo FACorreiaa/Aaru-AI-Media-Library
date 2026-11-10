@@ -247,7 +247,7 @@ function PostView(props: { page: Page }) {
         <Suspense>
           <ReportPostDialog
             open={asking() === 'report'}
-            post={post()}
+            reported={{ kind: 'post', id: post().id, author: post().author }}
             onClose={() => setAsking(null)}
           />
         </Suspense>

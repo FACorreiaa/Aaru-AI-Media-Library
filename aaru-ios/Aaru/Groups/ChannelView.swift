@@ -15,6 +15,7 @@ struct ChannelView: View {
     @State private var draft = ""
     @State private var editing: GroupMessage?
     @State private var deleting: GroupMessage?
+    @State private var reporting: GroupMessage?
     @State private var nearBottom = true
     /// Title channels: how the next message is marked for spoilers. Back to automatic after each.
     @State private var spoiler = SpoilerChoice.auto
@@ -169,6 +170,17 @@ struct ChannelView: View {
             } message: { _ in
                 Text("Everyone in the group stops seeing it.")
             }
+            .sheet(isPresented: Binding(get: { reporting != nil }, set: {
+                if !$0 {
+                    reporting = nil
+                }
+            })) {
+                if let message = reporting, let author = message.author {
+                    ReportPostSheet(noun: "message", authorName: author.inviteName) { reason, note in
+                        await groups.report(message, by: author, reason: reason, note: note)
+                    }
+                }
+            }
     }
 
     private static let bottomID = "bottom"
@@ -267,6 +279,11 @@ extension ChannelView {
             }
             if message.author?.userId == groups.myUserID || canModerate {
                 Button("Delete", systemImage: "trash", role: .destructive) { deleting = message }
+            }
+            // Someone else's message can be reported; @aaru's and a deleted account's have no
+            // author to report.
+            if let author = message.author, author.userId != groups.myUserID {
+                Button("Report", systemImage: "flag") { reporting = message }
             }
         }
     }

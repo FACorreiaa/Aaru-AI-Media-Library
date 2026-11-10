@@ -2,10 +2,12 @@ import {
   For,
   Match,
   Show,
+  Suspense,
   Switch,
   createEffect,
   createMemo,
   createSignal,
+  lazy,
   on,
   onCleanup,
   onMount,
@@ -67,6 +69,10 @@ import {
   ThinkingRow,
 } from './AgentParts'
 import { Monogram, useGroup, useShell, useVisiblePoll } from './shell'
+import type { Reported } from '../board/ReportPostDialog'
+
+// Reporting is rare: its dialog loads when someone first asks for it.
+const ReportPostDialog = lazy(() => import('../board/ReportPostDialog'))
 
 /**
  * MessageList (GRP-005): one channel's conversation and its composer. Flat rows grouped into
@@ -99,6 +105,9 @@ export function MessageList(props: {
   const [revealed, setRevealed] = createSignal<Set<string>>(new Set())
   const [editing, setEditing] = createSignal<string | null>(null)
   const [confirmDelete, setConfirmDelete] = createSignal<string | null>(null)
+  // The message someone is reporting. Kept after the dialog closes so it can play its exit.
+  const [reporting, setReporting] = createSignal<Reported | null>(null)
+  const [reportOpen, setReportOpen] = createSignal(false)
   const [typists, setTypists] = createSignal<Typist[]>([])
   // Title channels (GRP-007): how my next message is marked, and veils I lifted.
   const isTitle = createMemo(() => props.channel.kind === 'title')
@@ -531,6 +540,9 @@ export function MessageList(props: {
                     const m = () => row().message
                     const mine = () => m().author?.userId === meId()
                     const mentionsMe = () => m().mentions.includes(meId())
+                    // Someone else's message can be reported; @aaru's and a deleted
+                    // account's have no author to report.
+                    const reportable = () => !mine() && !!m().author
                     const hidden = () =>
                       m().fromBlocked && !revealed().has(m().id)
                     return (
@@ -671,7 +683,7 @@ export function MessageList(props: {
                           when={
                             !m().deleted &&
                             editing() !== m().id &&
-                            (mine() || manages())
+                            (mine() || manages() || reportable())
                           }
                         >
                           <div class="absolute -top-3 right-4 flex overflow-hidden rounded-lg border border-line bg-paper text-xs opacity-0 group-hover/msg:opacity-100 focus-within:opacity-100 md:right-6 [@media(hover:none)]:static [@media(hover:none)]:self-start [@media(hover:none)]:opacity-100">
@@ -685,14 +697,35 @@ export function MessageList(props: {
                                 Edit
                               </Button>
                             </Show>
-                            <Button
-                              variant="soft"
-                              size="bare"
-                              class="rounded-none px-2.5 py-1 font-normal text-danger"
-                              onClick={() => setConfirmDelete(m().id)}
-                            >
-                              Delete
-                            </Button>
+                            <Show when={mine() || manages()}>
+                              <Button
+                                variant="soft"
+                                size="bare"
+                                class="rounded-none px-2.5 py-1 font-normal text-danger"
+                                onClick={() => setConfirmDelete(m().id)}
+                              >
+                                Delete
+                              </Button>
+                            </Show>
+                            <Show when={reportable() && m().author}>
+                              {(author) => (
+                                <Button
+                                  variant="soft"
+                                  size="bare"
+                                  class="rounded-none px-2.5 py-1 font-normal"
+                                  onClick={() => {
+                                    setReporting({
+                                      kind: 'group-message',
+                                      id: m().id,
+                                      author: author(),
+                                    })
+                                    setReportOpen(true)
+                                  }}
+                                >
+                                  Report
+                                </Button>
+                              )}
+                            </Show>
                           </div>
                         </Show>
                       </article>
@@ -811,6 +844,18 @@ export function MessageList(props: {
         onTyping={() => sendTyping(groupId(), props.channel.id)}
         accessory={spoilerControl()}
       />
+      {/* Loaded on the first Report and kept, so it closes with its exit like any dialog. */}
+      <Show when={reporting()}>
+        {(reported) => (
+          <Suspense>
+            <ReportPostDialog
+              open={reportOpen()}
+              reported={reported()}
+              onClose={() => setReportOpen(false)}
+            />
+          </Suspense>
+        )}
+      </Show>
     </section>
   )
 }

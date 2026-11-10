@@ -1,12 +1,17 @@
 import AaruAPI
 import SwiftUI
 
-/// Report a friend's post (BOARD-003): why, from four reasons, and an optional note. It goes to
-/// Aaru through the user-report route with the post named; the friend is not told.
+/// Report a friend's post (BOARD-003) or a group message: why, from four reasons, and an optional
+/// note. It goes to Aaru through the user-report route with the post or message named; the author
+/// is not told.
 struct ReportPostSheet: View {
     typealias Reason = Components.Schemas.ReportCreate.ReasonPayload
 
-    let model: PostModel
+    /// "post" or "message": what the title says is being reported.
+    let noun: String
+    let authorName: String
+    /// Sends the report. Returns what went wrong, or nil when it was sent.
+    let report: (Reason, String?) async -> String?
 
     /// What the note may hold: the server takes 1,000 characters and the post's id goes first.
     private static let noteLimit = 900
@@ -15,12 +20,8 @@ struct ReportPostSheet: View {
     @State private var reason: Reason?
     @State private var note = ""
     @State private var sending = false
-    @State private var failed = false
+    @State private var problem: String?
     @State private var sent = false
-
-    private var authorName: String {
-        model.post?.author.inviteName ?? "They"
-    }
 
     var body: some View {
         NavigationStack {
@@ -36,7 +37,7 @@ struct ReportPostSheet: View {
                 }
             }
             .background(Color(.paper))
-            .navigationTitle("Report this post")
+            .navigationTitle("Report this \(noun)")
             #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)
             #endif
@@ -71,7 +72,7 @@ struct ReportPostSheet: View {
             } header: {
                 Text("Note (optional)")
             } footer: {
-                if failed, let problem = model.problem {
+                if let problem {
                     Text(problem).foregroundStyle(Color(.danger))
                 }
             }
@@ -106,16 +107,12 @@ struct ReportPostSheet: View {
         guard let reason, !sending else { return }
         // Set before the task starts, so a second tap can't file the report twice.
         sending = true
-        failed = false
+        problem = nil
         Task {
             let trimmed = note.trimmingCharacters(in: .whitespacesAndNewlines)
-            let reported = await model.report(reason: reason, note: trimmed.isEmpty ? nil : trimmed)
+            problem = await report(reason, trimmed.isEmpty ? nil : trimmed)
             sending = false
-            if reported {
-                sent = true
-            } else {
-                failed = true
-            }
+            sent = problem == nil
         }
     }
 }
