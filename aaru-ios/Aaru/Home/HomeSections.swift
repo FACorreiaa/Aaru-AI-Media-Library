@@ -8,7 +8,7 @@ extension HomeScreen {
     var header: some View {
         HStack(spacing: AaruSpace.medium) {
             OwlHead(size: 48, idle: true)
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: AaruSpace.xsmall) {
                 Text("The Field")
                     .font(.aaruDisplay(.largeTitle, weight: .semibold))
                     .foregroundStyle(Color(.ink))
@@ -19,7 +19,7 @@ extension HomeScreen {
                     .foregroundStyle(Color(.muted))
             }
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, AaruSpace.xlarge)
     }
 
     @ViewBuilder var tonightSection: some View {
@@ -32,7 +32,7 @@ extension HomeScreen {
                 onMarkSeasonWatched: { entry in Task { await model.markSeasonWatched(entry) } },
                 onMarkWatched: { entry in Task { await model.markNextWatched(entry) } }
             )
-            .padding(.horizontal, 20)
+            .padding(.horizontal, AaruSpace.xlarge)
         }
     }
 
@@ -40,7 +40,7 @@ extension HomeScreen {
     @ViewBuilder var composer: some View {
         if let imports {
             CaptureComposer(imports: imports) { openedCapture = $0 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, AaruSpace.xlarge)
         }
     }
 
@@ -52,8 +52,8 @@ extension HomeScreen {
     /// Captures and agent requests waiting for the user (AG-006, OUT-004), with the owl while any wait.
     @ViewBuilder var waitingSection: some View {
         if let api, !model.plans.isEmpty || !waitingCaptures.isEmpty {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 8) {
+            VStack(alignment: .leading, spacing: AaruSpace.medium) {
+                HStack(spacing: AaruSpace.small) {
                     Text("Waiting for you").eyebrow()
                         .accessibilityAddTraits(.isHeader)
                     AgentPresence(label: "Aaru is waiting for your answer")
@@ -75,7 +75,7 @@ extension HomeScreen {
                         .id("\(plan.id)-\(plan.status.rawValue)")
                 }
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, AaruSpace.xlarge)
         }
     }
 
@@ -85,7 +85,7 @@ extension HomeScreen {
                 onSearch: { router.showsSearch = true },
                 onImport: { router.openSettings(.imports) }
             )
-            .padding(.horizontal, 20)
+            .padding(.horizontal, AaruSpace.xlarge)
         }
     }
 
@@ -188,12 +188,12 @@ extension HomeScreen {
                 LastImportCard(job: job)
             }
             .buttonStyle(.plain)
-            .padding(.horizontal, 20)
+            .padding(.horizontal, AaruSpace.xlarge)
         }
         summary
         if let offered = RecapPeriod.offered(now: .now, calendar: model.calendar) {
             RecapBanner(period: offered) { recap = offered }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, AaruSpace.xlarge)
         }
         if !lists.lists.isEmpty {
             HomeRow(title: "Your lists", trailing: ("All lists", { router.select(.lists) })) {
@@ -219,7 +219,7 @@ extension HomeScreen {
                 StreakBar(progress: progress, isLink: true)
             }
             .buttonStyle(.plain)
-            .padding(.horizontal, 20)
+            .padding(.horizontal, AaruSpace.xlarge)
         }
         if let stats = model.weekStats {
             NavigationLink {
@@ -228,7 +228,7 @@ extension HomeScreen {
                 WeekStrip(stats: stats)
             }
             .buttonStyle(.plain)
-            .padding(.horizontal, 20)
+            .padding(.horizontal, AaruSpace.xlarge)
         }
         if let counts = model.counts, counts.total > 0 {
             CountChips(counts: counts) { onShowLibrary(LibraryFilter(status: $0)) }
@@ -246,21 +246,19 @@ extension HomeScreen {
         let rows = model.discoverHere
         if !rows.isEmpty {
             VStack(alignment: .leading, spacing: AaruSpace.section) {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: AaruSpace.xsmall) {
                     Divider().padding(.bottom, AaruSpace.medium)
                     HStack(alignment: .firstTextBaseline) {
                         Text("Discover").eyebrow()
                             .accessibilityAddTraits(.isHeader)
                         Spacer()
-                        Button("More on Discover") { onSelectTab(.discover) }
-                            .font(.subheadline.weight(.medium))
-                            .buttonStyle(.borderless)
+                        HomeRowLink(label: "More on Discover") { onSelectTab(.discover) }
                     }
                     Text("What is out there, the same for everyone.")
                         .font(.footnote)
                         .foregroundStyle(Color(.muted))
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, AaruSpace.xlarge)
                 ForEach(rows, id: \.id) { row in
                     discoverRow(row)
                 }

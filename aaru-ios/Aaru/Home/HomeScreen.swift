@@ -179,9 +179,9 @@ struct HomeScreen: View {
                 title: HomeEmptyCopy.headline,
                 message: "What you are watching, reading and listening to, and what airs next, lands here."
             ) {
-                Button("Browse Discover") { onSelectTab(.discover) }
-                    .buttonStyle(.borderedProminent)
                 Button("Search") { router.showsSearch = true }
+                    .buttonStyle(.borderedProminent)
+                Button("Browse Discover") { onSelectTab(.discover) }
                     .buttonStyle(.bordered)
                 Button(HomeEmptyCopy.importAction) { router.openSettings(.imports) }
                     .buttonStyle(.bordered)
@@ -194,7 +194,7 @@ struct HomeScreen: View {
                         .frame(maxWidth: .infinity)
                         .containerRelativeFrame(.vertical)
                 } else {
-                    sections.padding(.vertical, 16)
+                    sections.padding(.vertical, AaruSpace.large)
                 }
             }
             .refreshable { await reload() }
@@ -214,7 +214,7 @@ struct HomeScreen: View {
                 sideBlocks
                 discoverRows
             } else {
-                HStack(alignment: .top, spacing: 8) {
+                HStack(alignment: .top, spacing: AaruSpace.small) {
                     VStack(alignment: .leading, spacing: AaruSpace.section) {
                         tonightSection
                         welcome
@@ -222,7 +222,7 @@ struct HomeScreen: View {
                         discoverRows
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    VStack(alignment: .leading, spacing: 24) {
+                    VStack(alignment: .leading, spacing: AaruSpace.xxlarge) {
                         waitingSection
                         sideBlocks
                     }
@@ -236,7 +236,7 @@ struct HomeScreen: View {
     @ViewBuilder private var nowPlayingSection: some View {
         if !model.nowPlaying.isEmpty {
             NowPlayingCard(items: model.nowPlaying, wide: !compact)
-                .padding(.horizontal, 20)
+                .padding(.horizontal, AaruSpace.xlarge)
         }
     }
 

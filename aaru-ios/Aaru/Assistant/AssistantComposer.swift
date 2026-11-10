@@ -144,6 +144,8 @@ struct AssistantComposer: View {
         }
         .buttonStyle(.plain)
         .disabled(!canSend)
+        // Return is a new line with an iPad keyboard; this sends from the keys there and on the Mac.
+        .keyboardShortcut(.return, modifiers: .command)
         .help("Send")
     }
 
@@ -151,14 +153,20 @@ struct AssistantComposer: View {
         VStack(alignment: .leading, spacing: AaruSpace.xsmall) {
             Text("Aaru can't use the microphone. Turn it on in Settings.")
                 .foregroundStyle(Color(.muted))
-            Button(openSettingsTitle) {
+            Button {
                 if let url = URL(string: Self.micSettingsLink) {
                     openURL(url)
                 }
+            } label: {
+                Text(openSettingsTitle)
+                    .frame(minHeight: 44, alignment: .leading)
+                    .contentShape(.rect)
             }
             .fontWeight(.semibold)
             .foregroundStyle(Color(.accent))
             .buttonStyle(.plain)
+            // A 44 pt target on a one-line link, without opening a gap above the field.
+            .padding(.vertical, -AaruSpace.medium)
         }
         .font(.footnote)
     }

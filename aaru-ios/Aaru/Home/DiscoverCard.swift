@@ -59,7 +59,8 @@ struct DiscoverCard: View {
                 }
                 .overlay(alignment: .topLeading) {
                     if let badge {
-                        HomeChip(text: badge, tint: Color(.accent).opacity(0.9)).padding(6)
+                        // DESIGN.md "Mindspace": text on an accent fill is on-accent, never the scrim's light text.
+                        HomeChip(text: badge, tint: Color(.accent), foreground: Color(.onAccent)).padding(6)
                     }
                 }
                 .overlay(alignment: .bottomLeading) {
@@ -186,10 +187,10 @@ struct HomeWelcome: View {
             HStack(alignment: .center, spacing: AaruSpace.medium) {
                 symbol
                 copy
-                Spacer(minLength: 8)
+                Spacer(minLength: AaruSpace.small)
                 actions
             }
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: AaruSpace.medium) {
                 HStack(alignment: .top, spacing: AaruSpace.medium) {
                     symbol
                     copy
@@ -225,7 +226,7 @@ struct HomeWelcome: View {
     }
 
     private var actions: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: AaruSpace.small) {
             Button("Search", action: onSearch)
                 .buttonStyle(.borderedProminent)
             Button(HomeEmptyCopy.importAction, action: onImport)

@@ -192,9 +192,9 @@ struct AssistantCard: View {
         Label(title, systemImage: symbol)
             .labelStyle(.iconOnly)
             .font(.body.weight(.semibold))
-            .foregroundStyle(Color(.muted))
             .frame(minWidth: 44, minHeight: 44)
             .contentShape(.rect)
+            .hoverInk()
     }
 
     /// On the grabber and header only: the turns' scroll view keeps its own drag. Global, because

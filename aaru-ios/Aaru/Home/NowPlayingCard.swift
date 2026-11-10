@@ -14,12 +14,12 @@ struct NowPlayingCard: View {
 
     var body: some View {
         if let primary = items.first {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: AaruSpace.medium) {
                 Text(primary.eyebrow).eyebrow()
                     .accessibilityAddTraits(.isHeader)
                 VStack(alignment: .leading, spacing: 0) {
                     NowPlayingLink(item: primary) {
-                        HStack(alignment: .center, spacing: wide ? 20 : 14) {
+                        HStack(alignment: .center, spacing: wide ? AaruSpace.xlarge : AaruSpace.medium) {
                             HomeArt(url: artURL(primary), aspect: artAspect(primary))
                                 .frame(width: artWidth(primary))
                                 .clipShape(.rect(cornerRadius: AaruRadius.field, style: .continuous))
@@ -35,7 +35,7 @@ struct NowPlayingCard: View {
                     }
                     ForEach(items.dropFirst(), id: \.id) { item in
                         Divider()
-                            .padding(.vertical, 12)
+                            .padding(.vertical, AaruSpace.medium)
                         NowPlayingRow(item: item)
                     }
                 }
@@ -46,7 +46,7 @@ struct NowPlayingCard: View {
     }
 
     private func titles(_ item: NowPlayingItem) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: AaruSpace.xsmall) {
             Text(item.name)
                 .font(.aaruDisplay(wide ? .title2 : .title3))
                 .foregroundStyle(Color(.ink))
@@ -62,7 +62,7 @@ struct NowPlayingCard: View {
     }
 
     private func progress(_ item: NowPlayingItem, at date: Date) -> some View {
-        HStack(spacing: 12) {
+        HStack(spacing: AaruSpace.medium) {
             ProgressView(value: item.fraction(at: date) ?? 0)
                 .accessibilityLabel("Progress")
             Button {
@@ -114,7 +114,7 @@ private struct NowPlayingRow: View {
 
     var body: some View {
         NowPlayingLink(item: item) {
-            HStack(spacing: 12) {
+            HStack(spacing: AaruSpace.medium) {
                 HomeArt(url: item.artURL.flatMap(URL.init(string:)), aspect: 1)
                     .frame(width: 40)
                     .clipShape(.rect(cornerRadius: AaruRadius.thumb, style: .continuous))
@@ -128,7 +128,7 @@ private struct NowPlayingRow: View {
                         .foregroundStyle(Color(.muted))
                         .lineLimit(1)
                 }
-                Spacer(minLength: 8)
+                Spacer(minLength: AaruSpace.small)
                 TimelineView(.periodic(from: .now, by: 30)) { context in
                     if let label = trailing(at: context.date) {
                         Text(label)
@@ -219,7 +219,7 @@ extension NowPlayingItem {
                 NowPlayingCard(items: [.sample(), .sampleVideo, .sampleTrack])
                 NowPlayingCard(items: [.sampleTrack])
             }
-            .padding(20)
+            .padding(AaruSpace.xlarge)
         }
     }
 }
@@ -227,7 +227,7 @@ extension NowPlayingItem {
 #Preview("Now playing, wide · dark", traits: .fixedLayout(width: 900, height: 420)) {
     NavigationStack {
         NowPlayingCard(items: [.sample(), .sampleTrack], wide: true)
-            .padding(20)
+            .padding(AaruSpace.xlarge)
     }
     .preferredColorScheme(.dark)
 }
