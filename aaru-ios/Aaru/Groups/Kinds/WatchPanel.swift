@@ -1,9 +1,12 @@
 import AaruAPI
 import SwiftUI
 
-/// GRP-009: the watch party above a watch channel's chat. Lobby with a ready list, a countdown
-/// every member sees on the server's clock, reactions while it is live, and "Mark watched for
-/// me", which ticks only this user's library. Aaru never controls anyone's player.
+/// GRP-009, ROOM-005: the party above a watch channel's chat. Lobby with who has joined, a
+/// countdown every member sees on the server's clock, and reactions while it is live. Being ready
+/// is joining: when the host ends, the server marks the title for everyone who joined and left
+/// "Mark it for me" on, and the ended party offers Undo. Someone who switched it off, or never
+/// joined, keeps "Mark watched for me". A book or manga makes it a reading session. Aaru never
+/// controls anyone's player and shares no screen.
 struct WatchPanel: View {
     let groups: GroupsModel
     let groupID: String
@@ -35,13 +38,14 @@ struct WatchPanel: View {
                 ProgressView().frame(maxWidth: .infinity)
             } else if let party = model.party {
                 TitleCardRow(title: party.title, mine: nil)
-                    .overlay(alignment: .trailing) { episodeBadge(party) }
+                    .overlay(alignment: .trailing) { targetBadge(party) }
                 TimelineView(.periodic(from: .now, by: 0.25)) { context in
                     stage(party, at: context.date)
                 }
             } else {
                 HStack {
-                    Text("No watch party yet.").font(.callout).foregroundStyle(Color(.muted))
+                    Text("Nothing on yet. Watch or read something together.")
+                        .font(.callout).foregroundStyle(Color(.muted))
                     Spacer()
                     Button("Start one", systemImage: "play.rectangle") { opensParty = true }
                         .buttonStyle(.borderedProminent)
@@ -65,16 +69,16 @@ struct WatchPanel: View {
             }
         }
         .sheet(isPresented: $opensParty) {
-            OpenPartySheet(api: groups.api) { title, season, episode in
-                await model.open(title, season: season, episode: episode)
+            OpenPartySheet(api: groups.api) { title, target in
+                await model.open(title, target: target)
             }
         }
     }
 
     @ViewBuilder
-    private func episodeBadge(_ party: WatchParty) -> some View {
-        if let season = party.season, let episode = party.episode {
-            Text(EpisodeCode.text(season: season, episode: episode))
+    private func targetBadge(_ party: WatchParty) -> some View {
+        if let text = party.targetText {
+            Text(text)
                 .font(.caption.weight(.semibold))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 3)
@@ -99,6 +103,7 @@ struct WatchPanel: View {
     private func lobby(_ party: WatchParty) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             readyList(party)
+            checkOff
             HStack(spacing: 8) {
                 Button(amReady ? "Ready" : "I'm ready", systemImage: amReady ? "checkmark.circle.fill" : "circle") {
                     Task { await model.setReady(!amReady) }
@@ -138,11 +143,11 @@ struct WatchPanel: View {
     private func live(_ party: WatchParty) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
-                Label("Watching now", systemImage: "dot.radiowaves.left.and.right")
+                Label(party.isReading ? "Reading now" : "Watching now", systemImage: "dot.radiowaves.left.and.right")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(Color(.accent))
                 Spacer()
-                markWatchedButton(party)
+                mine(party, ended: false)
                 if isHost {
                     endButton
                 }
@@ -158,15 +163,18 @@ struct WatchPanel: View {
                         .accessibilityLabel("React \(emoji)")
                 }
             }
+            if amReady {
+                checkOff
+            }
         }
     }
 
     private func ended(_ party: WatchParty) -> some View {
         HStack(spacing: 8) {
-            Text("This party ended.").font(.callout).foregroundStyle(Color(.muted))
+            Text("This \(party.word.lowercased()) ended.").font(.callout).foregroundStyle(Color(.muted))
             Spacer()
             if party.startsAt != nil {
-                markWatchedButton(party)
+                mine(party, ended: true)
             }
             Button("Start another", systemImage: "play.rectangle") { opensParty = true }
                 .buttonStyle(.bordered)
@@ -177,27 +185,62 @@ struct WatchPanel: View {
     @ViewBuilder
     private func readyList(_ party: WatchParty) -> some View {
         if party.ready.isEmpty {
-            Text("Nobody is ready yet.").font(.caption).foregroundStyle(Color(.muted))
+            Text("Nobody has joined yet.").font(.caption).foregroundStyle(Color(.muted))
         } else {
             HStack(spacing: 4) {
                 ForEach(party.ready.prefix(8), id: \.userId) { user in
                     Monogram(text: user.monogram, avatarUrl: user.avatarUrl, size: 24)
                 }
-                Text("\(party.ready.count) ready").font(.caption).foregroundStyle(Color(.muted))
+                Text("\(party.ready.count) joined").font(.caption).foregroundStyle(Color(.muted))
             }
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Ready: \(party.ready.map(\.label).joined(separator: ", "))")
+            .accessibilityLabel("Joined: \(party.ready.map(\.label).joined(separator: ", "))")
         }
     }
 
-    private func markWatchedButton(_ party: WatchParty) -> some View {
-        let done = model.markedWatchedID == party.id
-        return Button(done ? "Marked watched" : "Mark watched for me", systemImage: done ? "checkmark" : "eye") {
-            Task { await model.markWatched() }
+    /// What joining means, and the member's own say on it. Before joining it is a sentence; after,
+    /// a switch that stays changeable until the host ends.
+    @ViewBuilder
+    private var checkOff: some View {
+        if amReady {
+            Toggle(isOn: Binding(
+                get: { model.autoMark },
+                set: { isOn in Task { await model.setReady(true, autoMark: isOn) } }
+            )) {
+                Text("Mark it for me").font(.callout)
+                Text("When the host ends, this is marked in your library. You can undo it after.")
+                    .font(.caption).foregroundStyle(Color(.muted))
+            }
+        } else {
+            Text("Joining means that when the host ends, this is marked in your library. You can switch that off.")
+                .font(.caption).foregroundStyle(Color(.muted))
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .buttonStyle(.bordered)
-        .disabled(done)
-        .help("Ticks it in your library only.")
+    }
+
+    /// This user's side of the check-off once the party has started: what was marked, with Undo;
+    /// or the tap, for someone the end will not mark.
+    @ViewBuilder
+    private func mine(_ party: WatchParty, ended: Bool) -> some View {
+        if model.markedForMe {
+            if let action = model.actionID, action == model.undoneActionID {
+                Label("Undone", systemImage: "arrow.uturn.backward")
+                    .font(.caption.weight(.semibold)).foregroundStyle(Color(.muted))
+            } else {
+                Label("Marked in your library", systemImage: "checkmark")
+                    .font(.caption.weight(.semibold)).foregroundStyle(Color(.accent))
+                if model.actionID != nil {
+                    Button("Undo") { Task { await model.undo() } }
+                        .buttonStyle(.bordered)
+                }
+            }
+        } else if ended || !(amReady && model.autoMark) {
+            Button(party.markLabel, systemImage: party.isReading ? "book" : "eye") {
+                Task { await model.markWatched() }
+            }
+            .buttonStyle(.bordered)
+            .help("Marks it in your library only.")
+        }
     }
 
     private var endButton: some View {
@@ -225,68 +268,5 @@ struct WatchPanel: View {
         guard groups.realtime?.sendReaction(group: groupID, channel: model.channelID, emoji: emoji) == true
         else { return }
         model.show(emoji, from: "You")
-    }
-}
-
-/// A new party: the title, and for a show the episode.
-private struct OpenPartySheet: View {
-    let api: Client?
-    let onOpen: (Components.Schemas.MediaRef, Int?, Int?) async -> Bool
-
-    @Environment(\.dismiss) private var dismiss
-    @State private var title: CatalogHit?
-    @State private var picksTitle = false
-    @State private var season = 1
-    @State private var episode = 1
-    @State private var saving = false
-
-    private var isShow: Bool {
-        title?._type == .show
-    }
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                Section("What are you watching?") {
-                    Button(title?.title ?? "Choose a title…", systemImage: "magnifyingglass") { picksTitle = true }
-                }
-                if isShow {
-                    Section("Episode") {
-                        Stepper("Season \(season)", value: $season, in: 0 ... 99)
-                        Stepper("Episode \(episode)", value: $episode, in: 1 ... 999)
-                    }
-                }
-                Section {
-                    EmptyView()
-                } footer: {
-                    Text("Everyone presses play on their own screen when the countdown reaches zero.")
-                }
-            }
-            .paperPage()
-            .navigationTitle("Watch party")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Open", action: open).disabled(title == nil || saving)
-                }
-            }
-            .sheet(isPresented: $picksTitle) {
-                TitlePickerSheet(api: api, navigationTitle: "Choose a title") { hit in
-                    title = hit
-                    return true
-                }
-            }
-        }
-    }
-
-    private func open() {
-        guard let title else { return }
-        Task {
-            saving = true
-            defer { saving = false }
-            if await onOpen(title.mediaRef, isShow ? season : nil, isShow ? episode : nil) {
-                dismiss()
-            }
-        }
     }
 }
