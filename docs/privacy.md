@@ -1,6 +1,6 @@
 # Privacy policy
 
-_Last updated 4 November 2026._
+_Last updated 10 November 2026._
 
 Aaru is a private media library: what you watch and read, kept for you. This page says what
 Aaru stores, who else sees any of it, and how to delete it. If anything here stops matching
@@ -143,8 +143,15 @@ In a channel about one title, Aaru uses your own progress in that title to hide 
 would spoil what you have not watched yet, and to mark what you write so it is hidden from
 people who are behind you. Nobody sees that mark but you. Your progress itself is shown to the
 group only if you switch on "Share my progress" for that group; it is off until you do. Titles
-added to a shared shelf show who added them. A watch party shows who is ready, and "Mark
-watched" changes only your own library.
+added to a shared shelf show who added them.
+
+**Watch parties and reading sessions.** A session shows the group who has joined. Joining means
+that when the host ends the session, Aaru marks its episode, film, chapter or book in your
+library, the same change as marking it yourself. The session says so before you join. You can
+switch that off for yourself in any session, and you can undo the change afterwards. Nothing is
+marked for a member who did not join, and nothing is marked if the session ends before its
+countdown starts. Aaru shares no screen, video or sound in a session: everyone plays or reads on
+their own.
 
 **Aaru in groups.** If you tag @aaru in a group, Aaru sends Anthropic (below) the last 30
 messages of that channel, what the channel is about, and, only when it helps answer you, titles
