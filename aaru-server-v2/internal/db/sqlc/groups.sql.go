@@ -242,7 +242,7 @@ func (q *Queries) EditGroupMessage(ctx context.Context, arg EditGroupMessagePara
 	return err
 }
 
-const endWatchParty = `-- name: EndWatchParty :exec
+const endWatchParty = `-- name: EndWatchParty :execrows
 UPDATE watch_sessions SET ended_at = $2 WHERE id = $1 AND ended_at IS NULL
 `
 
@@ -251,9 +251,12 @@ type EndWatchPartyParams struct {
 	EndedAt *time.Time
 }
 
-func (q *Queries) EndWatchParty(ctx context.Context, arg EndWatchPartyParams) error {
-	_, err := q.db.Exec(ctx, endWatchParty, arg.ID, arg.EndedAt)
-	return err
+func (q *Queries) EndWatchParty(ctx context.Context, arg EndWatchPartyParams) (int64, error) {
+	result, err := q.db.Exec(ctx, endWatchParty, arg.ID, arg.EndedAt)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const enqueueAgentReply = `-- name: EnqueueAgentReply :exec
@@ -1304,8 +1307,8 @@ func (q *Queries) InsertGroupMessage(ctx context.Context, arg InsertGroupMessage
 }
 
 const insertWatchParty = `-- name: InsertWatchParty :exec
-INSERT INTO watch_sessions (id, channel_id, title_id, season, episode, created_by, created_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
+INSERT INTO watch_sessions (id, channel_id, title_id, season, episode, created_by, created_at, chapter, volume, page)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 `
 
 type InsertWatchPartyParams struct {
@@ -1316,6 +1319,9 @@ type InsertWatchPartyParams struct {
 	Episode   *int32
 	CreatedBy *uuid.UUID
 	CreatedAt time.Time
+	Chapter   *int32
+	Volume    *int32
+	Page      *int32
 }
 
 func (q *Queries) InsertWatchParty(ctx context.Context, arg InsertWatchPartyParams) error {
@@ -1327,13 +1333,16 @@ func (q *Queries) InsertWatchParty(ctx context.Context, arg InsertWatchPartyPara
 		arg.Episode,
 		arg.CreatedBy,
 		arg.CreatedAt,
+		arg.Chapter,
+		arg.Volume,
+		arg.Page,
 	)
 	return err
 }
 
 const latestWatchParty = `-- name: LatestWatchParty :one
 SELECT s.id, s.channel_id, s.title_id, s.season, s.episode, s.created_by, p.handle, u.display_name,
-       u.avatar_version, s.starts_at, s.ended_at, s.created_at
+       u.avatar_version, s.starts_at, s.ended_at, s.created_at, s.chapter, s.volume, s.page
 FROM watch_sessions s
 LEFT JOIN profiles p ON p.user_id = s.created_by LEFT JOIN users u ON u.id = s.created_by
 WHERE s.channel_id = $1
@@ -1353,6 +1362,9 @@ type LatestWatchPartyRow struct {
 	StartsAt      *time.Time
 	EndedAt       *time.Time
 	CreatedAt     time.Time
+	Chapter       *int32
+	Volume        *int32
+	Page          *int32
 }
 
 func (q *Queries) LatestWatchParty(ctx context.Context, channelID uuid.UUID) (LatestWatchPartyRow, error) {
@@ -1371,6 +1383,9 @@ func (q *Queries) LatestWatchParty(ctx context.Context, channelID uuid.UUID) (La
 		&i.StartsAt,
 		&i.EndedAt,
 		&i.CreatedAt,
+		&i.Chapter,
+		&i.Volume,
+		&i.Page,
 	)
 	return i, err
 }
@@ -1574,17 +1589,46 @@ func (q *Queries) SetGroupShareProgress(ctx context.Context, arg SetGroupSharePr
 	return err
 }
 
+const setWatchMarked = `-- name: SetWatchMarked :exec
+UPDATE watch_ready SET marked_at = $1, action_id = $2
+WHERE session_id = $3 AND user_id = $4 AND marked_at IS NULL
+`
+
+type SetWatchMarkedParams struct {
+	MarkedAt  *time.Time
+	ActionID  *uuid.UUID
+	SessionID uuid.UUID
+	UserID    uuid.UUID
+}
+
+// The joined member's title was marked, by the end of the session or their own tap; once.
+func (q *Queries) SetWatchMarked(ctx context.Context, arg SetWatchMarkedParams) error {
+	_, err := q.db.Exec(ctx, setWatchMarked,
+		arg.MarkedAt,
+		arg.ActionID,
+		arg.SessionID,
+		arg.UserID,
+	)
+	return err
+}
+
 const setWatchReady = `-- name: SetWatchReady :exec
-INSERT INTO watch_ready (session_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING
+INSERT INTO watch_ready (session_id, user_id, auto_mark)
+VALUES ($1, $2, COALESCE($3::boolean, true))
+ON CONFLICT (session_id, user_id)
+DO UPDATE SET auto_mark = COALESCE($3::boolean, watch_ready.auto_mark)
 `
 
 type SetWatchReadyParams struct {
 	SessionID uuid.UUID
 	UserID    uuid.UUID
+	AutoMark  *bool
 }
 
+// A member joins, or changes "Mark it for me" (ROOM-005). A null auto_mark keeps what the row
+// has, and a new row starts with it on.
 func (q *Queries) SetWatchReady(ctx context.Context, arg SetWatchReadyParams) error {
-	_, err := q.db.Exec(ctx, setWatchReady, arg.SessionID, arg.UserID)
+	_, err := q.db.Exec(ctx, setWatchReady, arg.SessionID, arg.UserID, arg.AutoMark)
 	return err
 }
 
@@ -1657,7 +1701,7 @@ func (q *Queries) UpdateGroupChannel(ctx context.Context, arg UpdateGroupChannel
 }
 
 const watchPartyReady = `-- name: WatchPartyReady :many
-SELECT r.user_id, p.handle, u.display_name, u.avatar_version
+SELECT r.user_id, p.handle, u.display_name, u.avatar_version, r.auto_mark, r.marked_at, r.action_id
 FROM watch_ready r JOIN profiles p ON p.user_id = r.user_id JOIN users u ON u.id = r.user_id
 WHERE r.session_id = $1
 ORDER BY p.handle
@@ -1668,6 +1712,9 @@ type WatchPartyReadyRow struct {
 	Handle        string
 	DisplayName   *string
 	AvatarVersion *int64
+	AutoMark      bool
+	MarkedAt      *time.Time
+	ActionID      *uuid.UUID
 }
 
 func (q *Queries) WatchPartyReady(ctx context.Context, sessionID uuid.UUID) ([]WatchPartyReadyRow, error) {
@@ -1684,6 +1731,9 @@ func (q *Queries) WatchPartyReady(ctx context.Context, sessionID uuid.UUID) ([]W
 			&i.Handle,
 			&i.DisplayName,
 			&i.AvatarVersion,
+			&i.AutoMark,
+			&i.MarkedAt,
+			&i.ActionID,
 		); err != nil {
 			return nil, err
 		}

@@ -109,7 +109,7 @@ func (s *Server) GetWatchParty(ctx context.Context, req api.GetWatchPartyRequest
 	if err != nil {
 		return nil, err
 	}
-	return api.GetWatchParty200JSONResponse(partyViewDTO(found)), nil
+	return api.GetWatchParty200JSONResponse(partyViewDTO(found, user)), nil
 }
 
 // OpenWatchParty is POST …/channels/{channelId}/party.
@@ -121,18 +121,21 @@ func (s *Server) OpenWatchParty(ctx context.Context, req api.OpenWatchPartyReque
 	if err != nil {
 		return nil, err
 	}
-	var episode *groups.EpisodePoint
+	var target groups.PartyTarget
 	if req.Body.Season != nil && req.Body.Episode != nil {
-		episode = &groups.EpisodePoint{Season: *req.Body.Season, Episode: *req.Body.Episode}
+		target.Episode = &groups.EpisodePoint{Season: *req.Body.Season, Episode: *req.Body.Episode}
 	}
-	found, err := s.Groups.OpenParty(ctx, req.GroupId.ID(), req.ChannelId.ID(), MediaRefFromAPI(req.Body.Title), episode, user)
+	if req.Body.Chapter != nil || req.Body.Volume != nil || req.Body.Page != nil {
+		target.Reading = &groups.ReadingPoint{Chapter: req.Body.Chapter, Volume: req.Body.Volume, Page: req.Body.Page}
+	}
+	found, err := s.Groups.OpenParty(ctx, req.GroupId.ID(), req.ChannelId.ID(), MediaRefFromAPI(req.Body.Title), target, user)
 	if err != nil {
 		return nil, err
 	}
-	return api.OpenWatchParty200JSONResponse(partyViewDTO(&found)), nil
+	return api.OpenWatchParty200JSONResponse(partyViewDTO(&found, user)), nil
 }
 
-// SetWatchPartyReady is PUT …/party/ready.
+// SetWatchPartyReady is POST …/party/ready.
 func (s *Server) SetWatchPartyReady(ctx context.Context, req api.SetWatchPartyReadyRequestObject) (api.SetWatchPartyReadyResponseObject, error) {
 	if req.Body == nil {
 		return nil, apperr.BadRequest()
@@ -141,11 +144,11 @@ func (s *Server) SetWatchPartyReady(ctx context.Context, req api.SetWatchPartyRe
 	if err != nil {
 		return nil, err
 	}
-	found, err := s.Groups.SetReady(ctx, req.GroupId.ID(), req.ChannelId.ID(), req.Body.Ready, user)
+	found, err := s.Groups.SetReady(ctx, req.GroupId.ID(), req.ChannelId.ID(), req.Body.Ready, req.Body.AutoMark, user)
 	if err != nil {
 		return nil, err
 	}
-	return api.SetWatchPartyReady200JSONResponse(partyViewDTO(&found)), nil
+	return api.SetWatchPartyReady200JSONResponse(partyViewDTO(&found, user)), nil
 }
 
 // StartWatchParty is POST …/party/start: the countdown, from an optional body.
@@ -162,10 +165,10 @@ func (s *Server) StartWatchParty(ctx context.Context, req api.StartWatchPartyReq
 	if err != nil {
 		return nil, err
 	}
-	return api.StartWatchParty200JSONResponse(partyViewDTO(&found)), nil
+	return api.StartWatchParty200JSONResponse(partyViewDTO(&found, user)), nil
 }
 
-// EndWatchParty is POST …/party/end.
+// EndWatchParty is POST …/party/end: it also marks the title for everyone who joined (ROOM-005).
 func (s *Server) EndWatchParty(ctx context.Context, req api.EndWatchPartyRequestObject) (api.EndWatchPartyResponseObject, error) {
 	user, err := currentUser(ctx)
 	if err != nil {
@@ -175,7 +178,7 @@ func (s *Server) EndWatchParty(ctx context.Context, req api.EndWatchPartyRequest
 	if err != nil {
 		return nil, err
 	}
-	return api.EndWatchParty200JSONResponse(partyViewDTO(&found)), nil
+	return api.EndWatchParty200JSONResponse(partyViewDTO(&found, user)), nil
 }
 
 // MarkWatchPartyWatched is POST …/party/watched: the viewer's own library only.
@@ -228,13 +231,18 @@ func memberProgressDTO(m groups.MemberProgress) api.MemberProgress {
 	return dto
 }
 
-func partyViewDTO(found *groups.Party) api.WatchPartyView {
+// partyViewDTO is a party as one member sees it: the party, and their own side of the check-off.
+func partyViewDTO(found *groups.Party, viewer uuid.UUID) api.WatchPartyView {
 	now := time.Now()
-	view := api.WatchPartyView{ServerTime: apitime.From(now)}
+	view := api.WatchPartyView{ServerTime: apitime.From(now), AutoMark: true}
 	if found == nil {
 		return view
 	}
 	p := found.Party
+	if joined, in := p.Joined[viewer]; in {
+		view.AutoMark, view.MarkedForYou = joined.AutoMark, joined.MarkedAt != nil
+		view.ActionId = apiid.PtrOrNil(joined.ActionID)
+	}
 	party := api.WatchParty{
 		Id: apiid.From(p.ID), Title: TitleSummaryDTO(found.Title), State: api.WatchPartyState(p.State(now)),
 		StartsAt: apitime.PtrOrNil(p.StartsAt), EndedAt: apitime.PtrOrNil(p.EndedAt), Ready: SocialUserDTOs(p.Ready),
@@ -242,6 +250,9 @@ func partyViewDTO(found *groups.Party) api.WatchPartyView {
 	if p.Episode != nil {
 		season, episode := p.Episode.Season, p.Episode.Episode
 		party.Season, party.Episode = &season, &episode
+	}
+	if r := p.Reading; r != nil {
+		party.Chapter, party.Volume, party.Page = r.Chapter, r.Volume, r.Page
 	}
 	if p.CreatedBy != nil {
 		host := SocialUserDTO(*p.CreatedBy)

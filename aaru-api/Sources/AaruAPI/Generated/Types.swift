@@ -451,12 +451,12 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /v1/groups/{groupId}/channels/{channelId}/party`.
     /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/get(getWatchParty)`.
     func getWatchParty(_ input: Operations.GetWatchParty.Input) async throws -> Operations.GetWatchParty.Output
-    /// Open a party in the lobby. A show needs the episode. One open party per channel (409).
+    /// Open a party in the lobby. A show needs the episode; a manga can carry a chapter and volume, a book a page. One open party per channel (409).
     ///
     /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party`.
     /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/post(openWatchParty)`.
     func openWatchParty(_ input: Operations.OpenWatchParty.Input) async throws -> Operations.OpenWatchParty.Output
-    /// Say you are ready, or not.
+    /// Say you are ready, or not. Being ready is joining; autoMark is whether the end of the party marks the title for you.
     ///
     /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party/ready`.
     /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/ready/post(setWatchPartyReady)`.
@@ -466,12 +466,12 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party/start`.
     /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/start/post(startWatchParty)`.
     func startWatchParty(_ input: Operations.StartWatchParty.Input) async throws -> Operations.StartWatchParty.Output
-    /// End the party. The host or an admin.
+    /// End the party. The host or an admin. If the countdown had started, the title is marked for every member who joined and left autoMark on, as their own undoable action.
     ///
     /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party/end`.
     /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/end/post(endWatchParty)`.
     func endWatchParty(_ input: Operations.EndWatchParty.Input) async throws -> Operations.EndWatchParty.Output
-    /// Mark the party's episode, film or book watched in your own library. Nobody else's.
+    /// Mark the party's episode, chapter, page, film or book in your own library. For a member who switched autoMark off or did not join.
     ///
     /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party/watched`.
     /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/watched/post(markWatchPartyWatched)`.
@@ -2159,7 +2159,7 @@ extension APIProtocol {
             headers: headers
         ))
     }
-    /// Open a party in the lobby. A show needs the episode. One open party per channel (409).
+    /// Open a party in the lobby. A show needs the episode; a manga can carry a chapter and volume, a book a page. One open party per channel (409).
     ///
     /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party`.
     /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/post(openWatchParty)`.
@@ -2174,7 +2174,7 @@ extension APIProtocol {
             body: body
         ))
     }
-    /// Say you are ready, or not.
+    /// Say you are ready, or not. Being ready is joining; autoMark is whether the end of the party marks the title for you.
     ///
     /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party/ready`.
     /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/ready/post(setWatchPartyReady)`.
@@ -2204,7 +2204,7 @@ extension APIProtocol {
             body: body
         ))
     }
-    /// End the party. The host or an admin.
+    /// End the party. The host or an admin. If the countdown had started, the title is marked for every member who joined and left autoMark on, as their own undoable action.
     ///
     /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party/end`.
     /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/end/post(endWatchParty)`.
@@ -2217,7 +2217,7 @@ extension APIProtocol {
             headers: headers
         ))
     }
-    /// Mark the party's episode, film or book watched in your own library. Nobody else's.
+    /// Mark the party's episode, chapter, page, film or book in your own library. For a member who switched autoMark off or did not join.
     ///
     /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party/watched`.
     /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/watched/post(markWatchPartyWatched)`.
@@ -9180,6 +9180,18 @@ public enum Components {
             public var season: Swift.Int?
             /// - Remark: Generated from `#/components/schemas/WatchParty/episode`.
             public var episode: Swift.Int?
+            /// A manga reading session reads to this chapter.
+            ///
+            /// - Remark: Generated from `#/components/schemas/WatchParty/chapter`.
+            public var chapter: Swift.Int?
+            /// A manga reading session reads to this volume.
+            ///
+            /// - Remark: Generated from `#/components/schemas/WatchParty/volume`.
+            public var volume: Swift.Int?
+            /// A book reading session reads to this page.
+            ///
+            /// - Remark: Generated from `#/components/schemas/WatchParty/page`.
+            public var page: Swift.Int?
             /// - Remark: Generated from `#/components/schemas/WatchParty/state`.
             @frozen public enum StatePayload: String, Codable, Hashable, Sendable, CaseIterable {
                 case lobby = "lobby"
@@ -9204,6 +9216,9 @@ public enum Components {
             ///   - title:
             ///   - season:
             ///   - episode:
+            ///   - chapter: A manga reading session reads to this chapter.
+            ///   - volume: A manga reading session reads to this volume.
+            ///   - page: A book reading session reads to this page.
             ///   - state:
             ///   - startsAt:
             ///   - endedAt:
@@ -9214,6 +9229,9 @@ public enum Components {
                 title: Components.Schemas.TitleSummary,
                 season: Swift.Int? = nil,
                 episode: Swift.Int? = nil,
+                chapter: Swift.Int? = nil,
+                volume: Swift.Int? = nil,
+                page: Swift.Int? = nil,
                 state: Components.Schemas.WatchParty.StatePayload,
                 startsAt: Foundation.Date? = nil,
                 endedAt: Foundation.Date? = nil,
@@ -9224,6 +9242,9 @@ public enum Components {
                 self.title = title
                 self.season = season
                 self.episode = episode
+                self.chapter = chapter
+                self.volume = volume
+                self.page = page
                 self.state = state
                 self.startsAt = startsAt
                 self.endedAt = endedAt
@@ -9235,6 +9256,9 @@ public enum Components {
                 case title
                 case season
                 case episode
+                case chapter
+                case volume
+                case page
                 case state
                 case startsAt
                 case endedAt
@@ -9250,21 +9274,45 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/WatchPartyView/serverTime`.
             public var serverTime: Foundation.Date
+            /// Your own "Mark it for me": the end of the party marks the title for you. True until you switch it off.
+            ///
+            /// - Remark: Generated from `#/components/schemas/WatchPartyView/autoMark`.
+            public var autoMark: Swift.Bool
+            /// The party marked its title in your library, at its end or by your tap.
+            ///
+            /// - Remark: Generated from `#/components/schemas/WatchPartyView/markedForYou`.
+            public var markedForYou: Swift.Bool
+            /// The action that marked it for you, for POST /v1/actions/{id}/undo. Absent when your library already said so.
+            ///
+            /// - Remark: Generated from `#/components/schemas/WatchPartyView/actionId`.
+            public var actionId: Swift.String?
             /// Creates a new `WatchPartyView`.
             ///
             /// - Parameters:
             ///   - party:
             ///   - serverTime: Count down against this, not the device clock.
+            ///   - autoMark: Your own "Mark it for me": the end of the party marks the title for you. True until you switch it off.
+            ///   - markedForYou: The party marked its title in your library, at its end or by your tap.
+            ///   - actionId: The action that marked it for you, for POST /v1/actions/{id}/undo. Absent when your library already said so.
             public init(
                 party: Components.Schemas.WatchParty? = nil,
-                serverTime: Foundation.Date
+                serverTime: Foundation.Date,
+                autoMark: Swift.Bool,
+                markedForYou: Swift.Bool,
+                actionId: Swift.String? = nil
             ) {
                 self.party = party
                 self.serverTime = serverTime
+                self.autoMark = autoMark
+                self.markedForYou = markedForYou
+                self.actionId = actionId
             }
             public enum CodingKeys: String, CodingKey {
                 case party
                 case serverTime
+                case autoMark
+                case markedForYou
+                case actionId
             }
         }
         /// - Remark: Generated from `#/components/schemas/WatchPartyCreate`.
@@ -9275,40 +9323,68 @@ public enum Components {
             public var season: Swift.Int?
             /// - Remark: Generated from `#/components/schemas/WatchPartyCreate/episode`.
             public var episode: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/WatchPartyCreate/chapter`.
+            public var chapter: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/WatchPartyCreate/volume`.
+            public var volume: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/WatchPartyCreate/page`.
+            public var page: Swift.Int?
             /// Creates a new `WatchPartyCreate`.
             ///
             /// - Parameters:
             ///   - title:
             ///   - season:
             ///   - episode:
+            ///   - chapter:
+            ///   - volume:
+            ///   - page:
             public init(
                 title: Components.Schemas.MediaRef,
                 season: Swift.Int? = nil,
-                episode: Swift.Int? = nil
+                episode: Swift.Int? = nil,
+                chapter: Swift.Int? = nil,
+                volume: Swift.Int? = nil,
+                page: Swift.Int? = nil
             ) {
                 self.title = title
                 self.season = season
                 self.episode = episode
+                self.chapter = chapter
+                self.volume = volume
+                self.page = page
             }
             public enum CodingKeys: String, CodingKey {
                 case title
                 case season
                 case episode
+                case chapter
+                case volume
+                case page
             }
         }
         /// - Remark: Generated from `#/components/schemas/WatchPartyReady`.
         public struct WatchPartyReady: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/WatchPartyReady/ready`.
             public var ready: Swift.Bool
+            /// Leave out to keep what you chose; a first join starts with it on.
+            ///
+            /// - Remark: Generated from `#/components/schemas/WatchPartyReady/autoMark`.
+            public var autoMark: Swift.Bool?
             /// Creates a new `WatchPartyReady`.
             ///
             /// - Parameters:
             ///   - ready:
-            public init(ready: Swift.Bool) {
+            ///   - autoMark: Leave out to keep what you chose; a first join starts with it on.
+            public init(
+                ready: Swift.Bool,
+                autoMark: Swift.Bool? = nil
+            ) {
                 self.ready = ready
+                self.autoMark = autoMark
             }
             public enum CodingKeys: String, CodingKey {
                 case ready
+                case autoMark
             }
         }
         /// - Remark: Generated from `#/components/schemas/WatchPartyStart`.
@@ -27832,7 +27908,7 @@ public enum Operations {
             }
         }
     }
-    /// Open a party in the lobby. A show needs the episode. One open party per channel (409).
+    /// Open a party in the lobby. A show needs the episode; a manga can carry a chapter and volume, a book a page. One open party per channel (409).
     ///
     /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party`.
     /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/post(openWatchParty)`.
@@ -27995,7 +28071,7 @@ public enum Operations {
             }
         }
     }
-    /// Say you are ready, or not.
+    /// Say you are ready, or not. Being ready is joining; autoMark is whether the end of the party marks the title for you.
     ///
     /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party/ready`.
     /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/ready/post(setWatchPartyReady)`.
@@ -28321,7 +28397,7 @@ public enum Operations {
             }
         }
     }
-    /// End the party. The host or an admin.
+    /// End the party. The host or an admin. If the countdown had started, the title is marked for every member who joined and left autoMark on, as their own undoable action.
     ///
     /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party/end`.
     /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/end/post(endWatchParty)`.
@@ -28475,7 +28551,7 @@ public enum Operations {
             }
         }
     }
-    /// Mark the party's episode, film or book watched in your own library. Nobody else's.
+    /// Mark the party's episode, chapter, page, film or book in your own library. For a member who switched autoMark off or did not join.
     ///
     /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party/watched`.
     /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/watched/post(markWatchPartyWatched)`.

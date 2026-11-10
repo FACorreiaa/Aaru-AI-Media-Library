@@ -1259,7 +1259,7 @@ export interface paths {
     /** A watch channel's newest party, ended or not, and the server's clock for the countdown. */
     get: operations['getWatchParty']
     put?: never
-    /** Open a party in the lobby. A show needs the episode. One open party per channel (409). */
+    /** Open a party in the lobby. A show needs the episode; a manga can carry a chapter and volume, a book a page. One open party per channel (409). */
     post: operations['openWatchParty']
     delete?: never
     options?: never
@@ -1276,7 +1276,7 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Say you are ready, or not. */
+    /** Say you are ready, or not. Being ready is joining; autoMark is whether the end of the party marks the title for you. */
     post: operations['setWatchPartyReady']
     delete?: never
     options?: never
@@ -1310,7 +1310,7 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** End the party. The host or an admin. */
+    /** End the party. The host or an admin. If the countdown had started, the title is marked for every member who joined and left autoMark on, as their own undoable action. */
     post: operations['endWatchParty']
     delete?: never
     options?: never
@@ -1327,7 +1327,7 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Mark the party's episode, film or book watched in your own library. Nobody else's. */
+    /** Mark the party's episode, chapter, page, film or book in your own library. For a member who switched autoMark off or did not join. */
     post: operations['markWatchPartyWatched']
     delete?: never
     options?: never
@@ -4383,6 +4383,12 @@ export interface components {
       title: components['schemas']['TitleSummary']
       season?: number
       episode?: number
+      /** @description A manga reading session reads to this chapter. */
+      chapter?: number
+      /** @description A manga reading session reads to this volume. */
+      volume?: number
+      /** @description A book reading session reads to this page. */
+      page?: number
       /** @enum {string} */
       state: 'lobby' | 'countdown' | 'live' | 'ended'
       /** Format: date-time */
@@ -4399,14 +4405,28 @@ export interface components {
        * @description Count down against this, not the device clock.
        */
       serverTime: string
+      /** @description Your own "Mark it for me": the end of the party marks the title for you. True until you switch it off. */
+      autoMark: boolean
+      /** @description The party marked its title in your library, at its end or by your tap. */
+      markedForYou: boolean
+      /**
+       * Format: uuid
+       * @description The action that marked it for you, for POST /v1/actions/{id}/undo. Absent when your library already said so.
+       */
+      actionId?: string
     }
     WatchPartyCreate: {
       title: components['schemas']['MediaRef']
       season?: number
       episode?: number
+      chapter?: number
+      volume?: number
+      page?: number
     }
     WatchPartyReady: {
       ready: boolean
+      /** @description Leave out to keep what you chose; a first join starts with it on. */
+      autoMark?: boolean
     }
     WatchPartyStart: {
       /** @description 3–60, default 10. */

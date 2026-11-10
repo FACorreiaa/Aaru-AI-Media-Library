@@ -235,7 +235,8 @@ func TestGroupWatchParty(t *testing.T) {
 	assert.Equal(t, []string{"watch.reaction"}, anaSocket.types())
 	ended := decode[map[string]any](t, env.send(http.MethodPost, path+"/end", nil))
 	assert.Equal(t, "ended", ended["party"].(map[string]any)["state"])
-	// After the end, Ana ticks it for herself; nobody else's library changes.
+	// Ana joined, so the end ticked it for her (ROOM-005); her tap after it changes nothing more.
+	// The host never joined: their library is untouched.
 	assert.Equal(t, http.StatusNoContent, env.send(http.MethodPost, path+"/watched", nil, fx.ana.Token).Code)
 	hers := items(t, env.send(http.MethodGet, "/v1/library/items?type=show", nil, fx.ana.Token))
 	require.Len(t, hers, 1)

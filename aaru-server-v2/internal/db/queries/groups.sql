@@ -238,24 +238,34 @@ DELETE FROM group_channel_items WHERE channel_id = $1 AND title_id = $2 RETURNIN
 
 -- name: LatestWatchParty :one
 SELECT s.id, s.channel_id, s.title_id, s.season, s.episode, s.created_by, p.handle, u.display_name,
-       u.avatar_version, s.starts_at, s.ended_at, s.created_at
+       u.avatar_version, s.starts_at, s.ended_at, s.created_at, s.chapter, s.volume, s.page
 FROM watch_sessions s
 LEFT JOIN profiles p ON p.user_id = s.created_by LEFT JOIN users u ON u.id = s.created_by
 WHERE s.channel_id = $1
 ORDER BY s.created_at DESC LIMIT 1;
 
 -- name: WatchPartyReady :many
-SELECT r.user_id, p.handle, u.display_name, u.avatar_version
+SELECT r.user_id, p.handle, u.display_name, u.avatar_version, r.auto_mark, r.marked_at, r.action_id
 FROM watch_ready r JOIN profiles p ON p.user_id = r.user_id JOIN users u ON u.id = r.user_id
 WHERE r.session_id = $1
 ORDER BY p.handle;
 
 -- name: InsertWatchParty :exec
-INSERT INTO watch_sessions (id, channel_id, title_id, season, episode, created_by, created_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7);
+INSERT INTO watch_sessions (id, channel_id, title_id, season, episode, created_by, created_at, chapter, volume, page)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);
 
+-- A member joins, or changes "Mark it for me" (ROOM-005). A null auto_mark keeps what the row
+-- has, and a new row starts with it on.
 -- name: SetWatchReady :exec
-INSERT INTO watch_ready (session_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING;
+INSERT INTO watch_ready (session_id, user_id, auto_mark)
+VALUES (@session_id, @user_id, COALESCE(sqlc.narg('auto_mark')::boolean, true))
+ON CONFLICT (session_id, user_id)
+DO UPDATE SET auto_mark = COALESCE(sqlc.narg('auto_mark')::boolean, watch_ready.auto_mark);
+
+-- The joined member's title was marked, by the end of the session or their own tap; once.
+-- name: SetWatchMarked :exec
+UPDATE watch_ready SET marked_at = @marked_at, action_id = sqlc.narg('action_id')
+WHERE session_id = @session_id AND user_id = @user_id AND marked_at IS NULL;
 
 -- name: UnsetWatchReady :exec
 DELETE FROM watch_ready WHERE session_id = $1 AND user_id = $2;
@@ -263,7 +273,7 @@ DELETE FROM watch_ready WHERE session_id = $1 AND user_id = $2;
 -- name: StartWatchParty :exec
 UPDATE watch_sessions SET starts_at = $2 WHERE id = $1 AND ended_at IS NULL;
 
--- name: EndWatchParty :exec
+-- name: EndWatchParty :execrows
 UPDATE watch_sessions SET ended_at = $2 WHERE id = $1 AND ended_at IS NULL;
 
 -- Social reads (PostgresSocialStore). Groups and the Board read friendships and blocks themselves.

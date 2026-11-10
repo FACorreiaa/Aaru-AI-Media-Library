@@ -6884,7 +6884,7 @@ public struct Client: APIProtocol {
             }
         )
     }
-    /// Open a party in the lobby. A show needs the episode. One open party per channel (409).
+    /// Open a party in the lobby. A show needs the episode; a manga can carry a chapter and volume, a book a page. One open party per channel (409).
     ///
     /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party`.
     /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/post(openWatchParty)`.
@@ -6973,7 +6973,7 @@ public struct Client: APIProtocol {
             }
         )
     }
-    /// Say you are ready, or not.
+    /// Say you are ready, or not. Being ready is joining; autoMark is whether the end of the party marks the title for you.
     ///
     /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party/ready`.
     /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/ready/post(setWatchPartyReady)`.
@@ -7153,7 +7153,7 @@ public struct Client: APIProtocol {
             }
         )
     }
-    /// End the party. The host or an admin.
+    /// End the party. The host or an admin. If the countdown had started, the title is marked for every member who joined and left autoMark on, as their own undoable action.
     ///
     /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party/end`.
     /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/end/post(endWatchParty)`.
@@ -7233,7 +7233,7 @@ public struct Client: APIProtocol {
             }
         )
     }
-    /// Mark the party's episode, film or book watched in your own library. Nobody else's.
+    /// Mark the party's episode, chapter, page, film or book in your own library. For a member who switched autoMark off or did not join.
     ///
     /// - Remark: HTTP `POST /v1/groups/{groupId}/channels/{channelId}/party/watched`.
     /// - Remark: Generated from `#/paths//v1/groups/{groupId}/channels/{channelId}/party/watched/post(markWatchPartyWatched)`.

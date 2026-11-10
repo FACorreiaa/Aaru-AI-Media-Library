@@ -656,12 +656,17 @@ func (s *Store) LatestParty(ctx context.Context, channel uuid.UUID) (*WatchParty
 		ID: r.ID, ChannelID: r.ChannelID, TitleID: r.TitleID,
 		CreatedBy: optionalUser(r.CreatedBy, r.Handle, r.DisplayName, r.AvatarVersion),
 		StartsAt:  r.StartsAt, EndedAt: r.EndedAt, CreatedAt: r.CreatedAt, Ready: make([]User, len(ready)),
+		Joined: make(map[uuid.UUID]Joined, len(ready)),
 	}
 	if r.Season != nil && r.Episode != nil {
 		party.Episode = &EpisodePoint{Season: int(*r.Season), Episode: int(*r.Episode)}
 	}
+	if r.Chapter != nil || r.Volume != nil || r.Page != nil {
+		party.Reading = &ReadingPoint{Chapter: intPtr(r.Chapter), Volume: intPtr(r.Volume), Page: intPtr(r.Page)}
+	}
 	for i, u := range ready {
 		party.Ready[i] = user(u.UserID, u.Handle, u.DisplayName, u.AvatarVersion)
+		party.Joined[u.UserID] = Joined{AutoMark: u.AutoMark, MarkedAt: u.MarkedAt, ActionID: u.ActionID}
 	}
 	return party, nil
 }
@@ -672,6 +677,9 @@ func (s *Store) CreateParty(ctx context.Context, p WatchParty) error {
 	if p.Episode != nil {
 		season, episode := int32(p.Episode.Season), int32(p.Episode.Episode) //nolint:gosec // episode numbers are small
 		params.Season, params.Episode = &season, &episode
+	}
+	if r := p.Reading; r != nil {
+		params.Chapter, params.Volume, params.Page = int32Ptr(r.Chapter), int32Ptr(r.Volume), int32Ptr(r.Page)
 	}
 	if p.CreatedBy != nil {
 		id := p.CreatedBy.ID
@@ -686,11 +694,11 @@ func (s *Store) CreateParty(ctx context.Context, p WatchParty) error {
 	return nil
 }
 
-// SetReady marks or unmarks a member ready.
-func (s *Store) SetReady(ctx context.Context, session, user uuid.UUID, ready bool) error {
+// SetReady marks or unmarks a member ready. autoMark, when not nil, is their "Mark it for me".
+func (s *Store) SetReady(ctx context.Context, session, user uuid.UUID, ready bool, autoMark *bool) error {
 	var err error
 	if ready {
-		err = s.Q.SetWatchReady(ctx, sqlc.SetWatchReadyParams{SessionID: session, UserID: user})
+		err = s.Q.SetWatchReady(ctx, sqlc.SetWatchReadyParams{SessionID: session, UserID: user, AutoMark: autoMark})
 	} else {
 		err = s.Q.UnsetWatchReady(ctx, sqlc.UnsetWatchReadyParams{SessionID: session, UserID: user})
 	}
@@ -708,10 +716,38 @@ func (s *Store) StartParty(ctx context.Context, session uuid.UUID, startsAt time
 	return nil
 }
 
-// EndParty ends an open party.
-func (s *Store) EndParty(ctx context.Context, session uuid.UUID, now time.Time) error {
-	if err := s.Q.EndWatchParty(ctx, sqlc.EndWatchPartyParams{ID: session, EndedAt: &now}); err != nil {
-		return fmt.Errorf("end party: %w", err)
+// EndParty ends an open party. False when it had already ended, so only one caller runs the
+// check-off.
+func (s *Store) EndParty(ctx context.Context, session uuid.UUID, now time.Time) (bool, error) {
+	rows, err := s.Q.EndWatchParty(ctx, sqlc.EndWatchPartyParams{ID: session, EndedAt: &now})
+	if err != nil {
+		return false, fmt.Errorf("end party: %w", err)
+	}
+	return rows > 0, nil
+}
+
+// SetMarked records that a joined member's title was marked, and by which action. It writes once:
+// a later mark for the same member changes nothing.
+func (s *Store) SetMarked(ctx context.Context, session, user uuid.UUID, at time.Time, action *uuid.UUID) error {
+	err := s.Q.SetWatchMarked(ctx, sqlc.SetWatchMarkedParams{SessionID: session, UserID: user, MarkedAt: &at, ActionID: action})
+	if err != nil {
+		return fmt.Errorf("set marked: %w", err)
 	}
 	return nil
+}
+
+func intPtr(v *int32) *int {
+	if v == nil {
+		return nil
+	}
+	n := int(*v)
+	return &n
+}
+
+func int32Ptr(v *int) *int32 {
+	if v == nil {
+		return nil
+	}
+	n := int32(*v) //nolint:gosec // chapters, volumes and pages are small
+	return &n
 }

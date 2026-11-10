@@ -229,11 +229,36 @@ type WatchParty struct {
 	ChannelID uuid.UUID
 	TitleID   uuid.UUID
 	Episode   *EpisodePoint
+	// Reading is a reading session's target (ROOM-005); nil for a show, a film or no target.
+	Reading   *ReadingPoint
 	CreatedBy *User
 	StartsAt  *time.Time
 	EndedAt   *time.Time
 	CreatedAt time.Time
 	Ready     []User
+	// Joined is each ready member's say on the check-off, by user id (ROOM-005).
+	Joined map[uuid.UUID]Joined
+}
+
+// ReadingPoint is where a reading session reads to: a manga's chapter and volume, or a book's page.
+type ReadingPoint struct {
+	Chapter *int
+	Volume  *int
+	Page    *int
+}
+
+// Joined is a member's place in a party: whether the end marks the title for them, and the mark
+// once made. ActionID is the journal action Undo takes back; nil when nothing needed writing.
+type Joined struct {
+	AutoMark bool
+	MarkedAt *time.Time
+	ActionID *uuid.UUID
+}
+
+// PartyTarget is what a new party is for, beside its title.
+type PartyTarget struct {
+	Episode *EpisodePoint
+	Reading *ReadingPoint
 }
 
 // State is the party's state at a moment.

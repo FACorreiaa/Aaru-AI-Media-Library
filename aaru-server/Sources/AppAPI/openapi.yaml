@@ -1361,7 +1361,7 @@ paths:
           $ref: '#/components/responses/Error'
     post:
       operationId: openWatchParty
-      summary: Open a party in the lobby. A show needs the episode. One open party per channel (409).
+      summary: Open a party in the lobby. A show needs the episode; a manga can carry a chapter and volume, a book a page. One open party per channel (409).
       requestBody:
         required: true
         content:
@@ -1378,7 +1378,7 @@ paths:
   /v1/groups/{groupId}/channels/{channelId}/party/ready:
     post:
       operationId: setWatchPartyReady
-      summary: Say you are ready, or not.
+      summary: Say you are ready, or not. Being ready is joining; autoMark is whether the end of the party marks the title for you.
       parameters:
         - {name: groupId, in: path, required: true, schema: {type: string, format: uuid}}
         - {name: channelId, in: path, required: true, schema: {type: string, format: uuid}}
@@ -1417,7 +1417,7 @@ paths:
   /v1/groups/{groupId}/channels/{channelId}/party/end:
     post:
       operationId: endWatchParty
-      summary: End the party. The host or an admin.
+      summary: End the party. The host or an admin. If the countdown had started, the title is marked for every member who joined and left autoMark on, as their own undoable action.
       parameters:
         - {name: groupId, in: path, required: true, schema: {type: string, format: uuid}}
         - {name: channelId, in: path, required: true, schema: {type: string, format: uuid}}
@@ -1432,7 +1432,7 @@ paths:
   /v1/groups/{groupId}/channels/{channelId}/party/watched:
     post:
       operationId: markWatchPartyWatched
-      summary: Mark the party's episode, film or book watched in your own library. Nobody else's.
+      summary: Mark the party's episode, chapter, page, film or book in your own library. For a member who switched autoMark off or did not join.
       parameters:
         - {name: groupId, in: path, required: true, schema: {type: string, format: uuid}}
         - {name: channelId, in: path, required: true, schema: {type: string, format: uuid}}
@@ -5266,6 +5266,9 @@ components:
         title: {$ref: '#/components/schemas/TitleSummary'}
         season: {type: integer}
         episode: {type: integer}
+        chapter: {type: integer, description: 'A manga reading session reads to this chapter.'}
+        volume: {type: integer, description: 'A manga reading session reads to this volume.'}
+        page: {type: integer, description: 'A book reading session reads to this page.'}
         state:
           type: string
           enum: [lobby, countdown, live, ended]
@@ -5277,10 +5280,13 @@ components:
           items: {$ref: '#/components/schemas/SocialUser'}
     WatchPartyView:
       type: object
-      required: [serverTime]
+      required: [serverTime, autoMark, markedForYou]
       properties:
         party: {$ref: '#/components/schemas/WatchParty'}
         serverTime: {type: string, format: date-time, description: 'Count down against this, not the device clock.'}
+        autoMark: {type: boolean, description: 'Your own "Mark it for me": the end of the party marks the title for you. True until you switch it off.'}
+        markedForYou: {type: boolean, description: 'The party marked its title in your library, at its end or by your tap.'}
+        actionId: {type: string, format: uuid, description: 'The action that marked it for you, for POST /v1/actions/{id}/undo. Absent when your library already said so.'}
     WatchPartyCreate:
       type: object
       required: [title]
@@ -5288,11 +5294,15 @@ components:
         title: {$ref: '#/components/schemas/MediaRef'}
         season: {type: integer}
         episode: {type: integer}
+        chapter: {type: integer}
+        volume: {type: integer}
+        page: {type: integer}
     WatchPartyReady:
       type: object
       required: [ready]
       properties:
         ready: {type: boolean}
+        autoMark: {type: boolean, description: 'Leave out to keep what you chose; a first join starts with it on.'}
     WatchPartyStart:
       type: object
       properties:
