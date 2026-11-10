@@ -113,6 +113,11 @@ struct MainTabs: View {
                                 Button("Done") { linkedTitle = nil }
                             }
                         }
+                        // Related titles open inside the sheet, in the library or not.
+                        .navigationDestination(for: String.self) { id in
+                            LibraryEntryDestination(id: id, api: api, library: library, lists: lists)
+                        }
+                        .catalogDestination(api: api, library: library, lists: lists)
                 }
                 .assistantHost(api: api, library: library, lists: lists, isSheet: true)
             }

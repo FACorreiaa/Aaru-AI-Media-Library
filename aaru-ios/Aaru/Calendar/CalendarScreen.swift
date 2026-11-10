@@ -116,6 +116,8 @@ struct CalendarScreen: View {
                 .navigationDestination(for: String.self) { id in
                     LibraryEntryDestination(id: id, api: api, library: library, lists: lists)
                 }
+                // A related title outside the library opens its catalog page from here too.
+                .catalogDestination(api: api, library: library, lists: lists)
                 .safeAreaInset(edge: .bottom) {
                     ProblemBanner(message: feed.problem) { feed.problem = nil }
                 }

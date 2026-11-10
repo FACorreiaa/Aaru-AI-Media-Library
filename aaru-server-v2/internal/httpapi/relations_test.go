@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -124,6 +125,28 @@ func TestTitleRelationsRoute(t *testing.T) {
 
 	assert.Equal(t, http.StatusNotFound, h.do(http.MethodGet, "/v1/titles/"+uuid.NewString()+"/relations", bearer, nil).Code)
 	assert.Equal(t, http.StatusUnauthorized, h.do(http.MethodGet, "/v1/titles/"+titleID+"/relations", "", nil).Code)
+}
+
+// Adding a title by hand builds its graph in the background, so its page finds the answers cached.
+func TestAddingATitleWarmsItsRelations(t *testing.T) {
+	h, collectionReads := relationsHarness(t)
+	_, bearer := h.signIn()
+	rec := h.do(http.MethodPost, "/v1/library/items", bearer, map[string]any{
+		"mediaRef": map[string]any{"type": "movie", "ids": map[string]string{"tmdb": "120"}},
+	})
+	require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
+	titleID := decode[map[string]any](t, rec)["title"].(map[string]any)["id"].(string)
+
+	require.Eventually(t, func() bool {
+		var cached int
+		err := h.pool.QueryRow(context.Background(),
+			`SELECT count(*) FROM catalog_relations WHERE source = 'tmdb'`).Scan(&cached)
+		return err == nil && cached == 3 // the film and the two it leads to: the whole walk
+	}, 10*time.Second, 50*time.Millisecond, "the warm never cached TMDB's answers")
+
+	reads := collectionReads.Load()
+	require.Equal(t, http.StatusOK, h.do(http.MethodGet, "/v1/titles/"+titleID+"/relations", bearer, nil).Code)
+	assert.Equal(t, reads, collectionReads.Load(), "the page reads what the warm cached")
 }
 
 func uuidUpper(id uuid.UUID) string {

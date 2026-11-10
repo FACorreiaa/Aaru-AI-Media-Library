@@ -92,6 +92,9 @@ export function AssistantCard(props: {
   open: boolean
   /** Opened by a long press or ⌥ with the shortcut: listening at once. */
   listen: boolean
+  /** A question a page asked for the person (the shell's `askAssistant`): sent once the card is open. */
+  question: string | null
+  onAsked: () => void
   voice: boolean
   hint: () => ChatHint | undefined
   onOpenChange: (open: boolean) => void
@@ -405,6 +408,13 @@ export function AssistantCard(props: {
       },
     ),
   )
+
+  createEffect(() => {
+    const question = props.question
+    if (!props.open || !question) return
+    props.onAsked()
+    void ask(question, null)
+  })
 
   return (
     <Drawer

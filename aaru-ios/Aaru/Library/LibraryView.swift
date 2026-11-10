@@ -75,6 +75,8 @@ struct LibraryView: View {
                     // A missing item (removed elsewhere) says so instead of an empty screen (UX-071).
                     LibraryEntryDestination(id: id, api: api, library: library, lists: lists)
                 }
+                // A related title outside the library opens its catalog page from here too.
+                .catalogDestination(api: api, library: library, lists: lists)
                 .navigationDestination(for: NowGroupRoute.self) { route in
                     NowGroupView(route: route, library: library, api: api)
                 }

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -397,4 +398,98 @@ func TestChainOnlySourceIsNotAskedAboutSideTitles(t *testing.T) {
 	g := BuildRelationGraph(context.Background(), centre, []RelationSource{source}, OrderRelease)
 	assert.Len(t, g.Nodes, 3)
 	assert.ElementsMatch(t, []string{"anilist:1", "anilist:2"}, source.asked, "the OVA is shown, never asked about")
+}
+
+// A show based on a book series (Game of Thrones, on "A Song of Ice and Fire") is related to the
+// novels: the series item carries no id Aaru tracks, its parts do.
+func TestWikidataSeriesSourceStandsForItsBooks(t *testing.T) {
+	stub := stubFunc(func(req provider.Request) provider.Response {
+		q := urlQuery(req.URL)
+		switch {
+		case q.Get("action") == "query":
+			return provider.Response{Status: 200, Body: []byte(`{"query":{"search":[{"title":"Q23572"}]}}`)}
+		case q.Get("ids") == "Q23572":
+			return provider.Response{Status: 200, Body: []byte(`{"entities":{"Q23572":{"labels":{"en":{"value":"Game of Thrones"}},"claims":{
+"P4983":[{"rank":"normal","mainsnak":{"datavalue":{"value":"1399"}}}],
+"P345":[{"rank":"normal","mainsnak":{"datavalue":{"value":"tt0944947"}}}],
+"P144":[{"rank":"normal","mainsnak":{"datavalue":{"value":{"id":"Q45875"}}}}]}}}}`)}
+		case q.Get("ids") == "Q45875":
+			return provider.Response{Status: 200, Body: []byte(`{"entities":{"Q45875":{"labels":{"en":{"value":"A Song of Ice and Fire"}},"claims":{
+"P527":[{"rank":"normal","mainsnak":{"datavalue":{"value":{"id":"Q1751870"}}}},{"rank":"normal","mainsnak":{"datavalue":{"value":{"id":"Q10371726"}}}}]}}}}`)}
+		case q.Get("ids") == "Q1751870|Q10371726":
+			return provider.Response{Status: 200, Body: []byte(`{"entities":{
+"Q1751870":{"labels":{"en":{"value":"A Game of Thrones"}},"claims":{
+  "P648":[{"rank":"normal","mainsnak":{"datavalue":{"value":"OL1955941W"}}}],
+  "P436":[{"rank":"normal","mainsnak":{"datavalue":{"value":"5a2f4c3e-audiobook"}}}]}},
+"Q10371726":{"labels":{"en":{"value":"A Dream of Spring"}},"claims":{}}}}`)}
+		}
+		return provider.Response{Status: 404, Body: []byte(`{}`)}
+	})
+	w := &Wikidata{Client: testClient(stub, "wikidata")}
+	r, err := w.Relations(context.Background(), RelatedNode{Type: core.MediaShow, IDs: core.ExternalIDs{TMDB: "1399"}})
+	require.NoError(t, err)
+	require.NotNil(t, r.Self)
+	assert.Equal(t, "tt0944947", r.Self.IDs.IMDB, "what Wikidata knows about the title itself comes back")
+	require.Len(t, r.Edges, 1, "the unwritten book carries no id Aaru tracks")
+	assert.Equal(t, core.RelationSource, r.Edges[0].Relation)
+	assert.Equal(t, core.MediaBook, r.Edges[0].To.Type, "a novel with an audiobook is still a book")
+	assert.Equal(t, "OL1955941W", r.Edges[0].To.IDs.OpenLibrary)
+	assert.Empty(t, r.Edges[0].To.IDs.MusicBrainz)
+}
+
+// The Action API fails with HTTP 200 and an error object: a failure, never "nothing related".
+func TestWikidataErrorBodyIsAFailure(t *testing.T) {
+	stub := stubFunc(func(provider.Request) provider.Response {
+		return provider.Response{Status: 200, Body: []byte(`{"error":{"code":"ratelimited","info":"slow down"}}`)}
+	})
+	w := &Wikidata{Client: testClient(stub, "wikidata")}
+	_, err := w.Relations(context.Background(), RelatedNode{Type: core.MediaMovie, IDs: core.ExternalIDs{TMDB: "11"}})
+	require.Error(t, err)
+}
+
+// idSource answers only for nodes carrying the id it reads, as AniList does.
+type idSource struct {
+	name   string
+	key    func(RelatedNode) string
+	answer func(RelatedNode) Relations
+}
+
+func (s idSource) RelationSourceName() string       { return s.name }
+func (s idSource) RelationKey(n RelatedNode) string { return s.key(n) }
+func (s idSource) Relations(_ context.Context, n RelatedNode) (Relations, error) {
+	return s.answer(n), nil
+}
+
+// An anime kept as a TMDB show: Wikidata names its AniList id, and AniList is then asked about the
+// same node, so the show is one title in the graph and AniList's chain hangs from it.
+func TestRelationGraphAsksASourceAgainOnceAnotherNamesItsID(t *testing.T) {
+	byTMDB := idSource{name: "wikidata", key: func(n RelatedNode) string { return n.IDs.TMDB }, answer: func(RelatedNode) Relations {
+		return Relations{Self: &RelatedNode{Wikidata: "Q477916", IDs: core.ExternalIDs{AniList: "813"}}, Edges: []RelatedEdge{}}
+	}}
+	byAniList := idSource{name: "anilist", key: func(n RelatedNode) string { return n.IDs.AniList }, answer: func(n RelatedNode) Relations {
+		if n.IDs.AniList != "813" {
+			return Relations{Edges: []RelatedEdge{}}
+		}
+		return Relations{
+			Self:  &RelatedNode{Type: core.MediaShow, IsAnime: true, IDs: core.ExternalIDs{AniList: "813"}, Title: "Dragon Ball Z"},
+			Edges: []RelatedEdge{{To: RelatedNode{Type: core.MediaShow, IsAnime: true, IDs: core.ExternalIDs{AniList: "225"}, Title: "Dragon Ball GT"}, Relation: core.RelationSequel}},
+		}
+	}}
+	centre := RelatedNode{Type: core.MediaShow, IsAnime: true, IDs: core.ExternalIDs{TMDB: "12971"}, Title: "Dragon Ball Z"}
+	graph := BuildRelationGraph(context.Background(), centre, []RelationSource{byAniList, byTMDB}, OrderRelease)
+	require.Len(t, graph.Nodes, 2, "the show and its AniList entry are one title")
+	require.Len(t, graph.Edges, 1)
+	assert.True(t, graph.Nodes[0].Centre)
+	assert.Equal(t, "813", graph.Nodes[0].IDs.AniList)
+	assert.Equal(t, graph.Nodes[0].Key, graph.Edges[0].From)
+}
+
+// "Nothing related" is believed for a day, an answer with relations for a month.
+func TestEmptyRelationAnswersGoStaleInADay(t *testing.T) {
+	empty := Relations{Edges: []RelatedEdge{}}
+	full := Relations{Edges: []RelatedEdge{{To: film("121", "The Two Towers", "2002-12-18"), Relation: core.RelationSequel}}}
+	assert.True(t, relationsFresh(empty, 23*time.Hour))
+	assert.False(t, relationsFresh(empty, 25*time.Hour))
+	assert.True(t, relationsFresh(full, 29*24*time.Hour))
+	assert.False(t, relationsFresh(full, 31*24*time.Hour))
 }

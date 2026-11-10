@@ -176,7 +176,7 @@ func malKind(t core.MediaType) string {
 // BuildRelationGraph walks the sources out from centre, merges what they say by id, and places the
 // result. A source that fails leaves the graph partial; it never fails the graph.
 func BuildRelationGraph(ctx context.Context, centre RelatedNode, sources []RelationSource, order RelationOrder) RelationGraph {
-	b := &graphBuilder{byKey: map[string]int{}, seen: map[[2]int]bool{}, expanded: map[int]bool{}}
+	b := &graphBuilder{byKey: map[string]int{}, seen: map[[2]int]bool{}, asked: map[[2]int]bool{}}
 	if _, ok := b.add(centre); !ok {
 		return RelationGraph{Order: OrderRelease}
 	}
@@ -190,7 +190,7 @@ func BuildRelationGraph(ctx context.Context, centre RelatedNode, sources []Relat
 		cost, _, _ := b.walk()
 		var round []int
 		for i := range b.nodes {
-			if !b.expanded[i] && cost[i] < RelationReach {
+			if cost[i] < RelationReach && b.pending(i, cost[i], sources) {
 				round = append(round, i)
 			}
 		}
@@ -213,11 +213,31 @@ type graphEdge struct {
 }
 
 type graphBuilder struct {
-	nodes    []*GraphNode
-	byKey    map[string]int
-	edges    []graphEdge
-	seen     map[[2]int]bool
-	expanded map[int]bool
+	nodes []*GraphNode
+	byKey map[string]int
+	edges []graphEdge
+	seen  map[[2]int]bool
+	// asked holds the (node, source) pairs already asked. A node is asked again by a source that
+	// could not answer for it before: Wikidata naming a TMDB show's AniList id opens AniList's chain.
+	asked map[[2]int]bool
+}
+
+// askable is true when the source can answer for the node and has not been asked yet.
+func (b *graphBuilder) askable(i, si int, source RelationSource, cost int) bool {
+	if b.asked[[2]int{i, si}] || (cost > 0 && chainOnly(source)) {
+		return false
+	}
+	return source.RelationKey(b.nodes[i].RelatedNode) != ""
+}
+
+// pending is true while any source still has something to say about the node.
+func (b *graphBuilder) pending(i, cost int, sources []RelationSource) bool {
+	for si, source := range sources {
+		if b.askable(i, si, source, cost) {
+			return true
+		}
+	}
+	return false
 }
 
 // add is the node's index, merging it into a node it shares an id with; false when it has no id
@@ -353,9 +373,10 @@ func (b *graphBuilder) ask(ctx context.Context, round, cost []int, sources []Rel
 		results[ri] = make([]*Relations, len(sources))
 		node := b.nodes[i].RelatedNode
 		for si, source := range sources {
-			if source.RelationKey(node) == "" || (cost[i] > 0 && chainOnly(source)) {
+			if !b.askable(i, si, source, cost[i]) {
 				continue
 			}
+			b.asked[[2]int{i, si}] = true
 			g.Go(func() error {
 				r, err := source.Relations(gctx, node)
 				mu.Lock()
@@ -379,7 +400,6 @@ func (b *graphBuilder) ask(ctx context.Context, round, cost []int, sources []Rel
 // edges before the rest, so a full graph keeps the chain.
 func (b *graphBuilder) absorb(round []int, results [][]*Relations) {
 	for ri, i := range round {
-		b.expanded[i] = true
 		for _, r := range results[ri] {
 			if r != nil && r.Self != nil {
 				b.merge(i, *r.Self)

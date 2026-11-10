@@ -26,6 +26,10 @@ export type AppShellContext = {
   setMentions: (count: number) => void
   /** Opens the assistant's card (ASK-009); `listen` starts with the microphone. */
   openAssistant: (listen?: boolean) => void
+  /** Opens the card and asks this at once, as if typed there. Does nothing while Aaru is off. */
+  askAssistant: (question: string) => void
+  /** True while the assistant answers: a button that asks it shows only then. */
+  assistantAvailable: Accessor<boolean>
   /** The title a title page is showing, so a question there is about it. Null off one. */
   setAssistantTitle: (titleId: string | null) => void
 }

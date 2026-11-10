@@ -912,8 +912,8 @@ account or a stranger that has not happened yet.
 | IMP-019 | Open | BACKLOG IMP-019 | Bingers has an API only for paid plans; owner decides |
 | IMP-020 | Built, unverified | #172; CSVImportParser, TitleResolver, GoodreadsImportTests, BookYearToleranceTests; deployed f6cc317 (infra #456) | Stub catalog only; no real Goodreads export run yet |
 | BOOK-003 | Built, unverified | `plan_title_list`, `capture.ListName`, `imports.titleRows`, `ImportRow.lists`, components frame `importId` | Stub model only. "Review the list" in the Assistant card on iPhone, Mac and web opens the review; the waiting capture card and the push still lead there too |
-| GRAPH-001 | Built, unverified | `GET /v1/titles/{id}/relations`, `catalog/relations*.go`, `catalog/wikidata.go`, migration 00007 `catalog_relations` | Stub providers only; not run against live AniList, TMDB or Wikidata from the server yet |
-| GRAPH-002 | Built, unverified | `RelatedTitles.tsx`, `_shell.app_.graph.$titleId.tsx`, `TitleRelated.swift` | Builds and tests pass; not looked at on a screen; "Add the chain" moved to GRAPH-003 |
+| GRAPH-001 | Built, unverified | `GET /v1/titles/{id}/relations`, `catalog/relations*.go`, `catalog/wikidata.go`, migrations 00007 `catalog_relations` and 00010 (cache reset) | Run against live Wikidata and AniList 2026-11-10 (`relations_live_test.go`, `AARU_LIVE=1`): Fellowship, A New Hope, Game of Thrones, Dragon Ball Z, Attack on Titan and Frieren each answer a graph. TMDB collections not run live (no key on the dev machine); production not checked |
+| GRAPH-002 | Built, unverified | `RelatedTitles.tsx`, `_shell.app_.graph.$titleId.tsx`, `TitleRelated.swift` | Builds and tests pass; not looked at on a screen; "Add the chain" moved to GRAPH-003. 2026-11-10: a failed read says so with Try again (it was silent), Related sits above the episodes on Apple, edges are labelled there, related titles open from every stack |
 | GRAPH-003 | Built, unverified | `list_roadmaps`, `capture.Place`, `RoadmapSteps.tsx`, `RoadmapSteps.swift`, `POST /v1/titles/{id}/relations/chain` | Stub model only; not looked at on a screen |
 | GRAPH-004 | Built, unverified | `GET /v1/lists/{id}/graph`, `title_relations`, `RelationGraphCanvas` (web, Apple) | Stub model only; not looked at on a screen |
 | IMP-021 | Built, unverified | `POST /v1/imports/{id}/match-all`, `catalog/guess.go`, `imports/matchall.go`, `aaru-ios/Aaru/Capture/MatchAllButton.swift` | Web run locally: real Open Library, stub model, 8 of 10 rows filled in about 12 seconds. iOS builds and has not been tapped. Needs the API promoted |
@@ -3068,6 +3068,19 @@ card already has Add and List….
 - Each source's answer is cached 30 days in `catalog_relations`; a failed refresh serves the old one.
 - The caller's marks (status, library item) come from Aaru's database, an AniList season through the
   TMDB show it maps to. "Start here" is the first main-chain title not finished or dropped.
+
+- Audit, 2026-11-10 (the owner saw no relations anywhere): run live for the first time, Game of
+  Thrones came back alone (its one Wikidata link is "based on" a book series, an item with no id
+  Aaru tracks) and Dragon Ball Z was two nodes (the TMDB show and its AniList entry). Now a source or
+  adaptation Aaru cannot track stands for its parts (P527, at most 12), Wikidata's answer carries the
+  title's own ids, and a source is asked about a node once another source names the id it reads.
+  "Nothing related" is cached a day, not 30; the Action API's 200-with-error is a failure. Wikidata
+  has no link between Game of Thrones and House of the Dragon: shows of one fictional universe are
+  not related here (the 2026-11-06 bound: the chain and its adaptations, not the franchise).
+- Both clients hid a failed read exactly like "nothing related"; they now say so (GRAPH-002).
+- Owner, 2026-11-10: a title added by hand has its graph built in the background (`Warm`), so its
+  page does not wait on cold providers; and Related carries "Ask Aaru for more", which asks the owl
+  what else is set in the title's world (the asking exception; nothing joins the graph).
 
 **Done when:** Fellowship of the Ring, A New Hope, Attack on Titan and Frieren each answer a sensible
 graph from the live providers, and a second read calls none of them.

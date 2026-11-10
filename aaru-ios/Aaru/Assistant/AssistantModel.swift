@@ -103,9 +103,8 @@ final class AssistantModel {
                 decidedPlans = [:]
                 files.clear()
             }
-            // From idle only: while listening, toggling would stop the recording.
-            guard started == flowToken, presentation.listening, voiceAvailable, phase == .idle else { return }
-            toggleListening()
+            guard started == flowToken else { return }
+            begin(presentation)
         }
     }
 

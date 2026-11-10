@@ -161,6 +161,7 @@ export function AppShell(props: {
   const [askOpen, setAskOpen] = createSignal(false)
   const [askMounted, setAskMounted] = createSignal(false)
   const [askListening, setAskListening] = createSignal(false)
+  const [askQuestion, setAskQuestion] = createSignal<string | null>(null)
   const [askTitle, setAskTitle] = createSignal<string | null>(null)
   const location = useLocation()
   // Esc or Done returns focus to the control that opened Search.
@@ -197,6 +198,12 @@ export function AppShell(props: {
     setAskListening(listen)
     setAskMounted(true)
     setAskOpen(true)
+  }
+  // A button on a page asks for the person: the card opens with the question already sent.
+  function askAssistant(question: string) {
+    if (!assistant().assistant) return
+    setAskQuestion(question)
+    openAssistant()
   }
   const checkAssistant = () =>
     void getAssistantStatus()
@@ -278,6 +285,8 @@ export function AppShell(props: {
     previous,
     setMentions,
     openAssistant,
+    askAssistant,
+    assistantAvailable: () => assistant().assistant,
     setAssistantTitle: setAskTitle,
   }
 
@@ -351,6 +360,8 @@ export function AppShell(props: {
           <AssistantCard
             open={askOpen()}
             listen={askListening()}
+            question={askQuestion()}
+            onAsked={() => setAskQuestion(null)}
             voice={assistant().voice}
             hint={() => hintFor(location().pathname, askTitle())}
             onOpenChange={setAskOpen}

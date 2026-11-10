@@ -13,6 +13,9 @@ typealias RelationEdge = Components.Schemas.RelationEdge
 final class TitleRelationsModel {
     private(set) var graph: RelationGraph?
     private(set) var loading = false
+    /// True when the last read failed and there is no graph to show: the section says so and
+    /// offers to try again, where "nothing related" stays absent.
+    private(set) var failed = false
     var problem: String?
     @ObservationIgnored let api: Client?
     @ObservationIgnored private var titleID: String
@@ -37,10 +40,19 @@ final class TitleRelationsModel {
                 path: .init(id: titleID),
                 query: .init(order: order == .release ? nil : order)
             )
-            guard asked == (titleID, order), case let .ok(response) = output else { return }
+            guard asked == (titleID, order) else { return }
+            guard case let .ok(response) = output else {
+                failed = graph == nil
+                return
+            }
             graph = try response.body.json
             problem = nil
+            failed = false
         } catch {
+            // A page that moved on cancels its read: that is not a failure to show.
+            if !Task.isCancelled, !(error is CancellationError), asked == (titleID, order) {
+                failed = graph == nil
+            }
             return
         }
         if retryPartial, graph?.partial == true {

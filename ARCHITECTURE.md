@@ -424,17 +424,22 @@ as one TMDB show starts from its first AniList season, through `anime_mappings`)
 `BuildRelationGraph` (`relations.go`) walks out in rounds: each round asks every `RelationSource`
 that can answer for the titles not yet asked about, a few at a time. The sources are AniList
 (`relations`), TMDB (a film's collection, chained by release date) and Wikidata (`wikidata.go`,
-Action API: `haswbstatement` search, then `wbgetentities`). Answers are joined by any shared id
+Action API: `haswbstatement` search, then `wbgetentities`; a source or adaptation with no id Aaru
+tracks, such as a book series, stands for its parts). Wikidata's answer carries the title's other
+ids, and a source is asked about a title once another names the id it reads, so a TMDB show reaches
+AniList's chain. Answers are joined by any shared id
 (`NodeKeys`), never by name, and each pair is written forward (`core.Relation.Canonical`).
 
 A prequel or sequel in the same medium costs nothing to walk, anything else one hop; titles up to
 two hops are kept, at most 40 of them and 24 lookups. AniList answers for main-chain titles only
 (`ChainOnlySource`), and Wikidata keeps the items it read in memory for a day. A page waits 8 s;
-a graph cut short is finished in the background (`RelationService.warm`) so the cache fills. The server places the graph: the main chain on
+a graph cut short is finished in the background (`RelationService.warm`) so the cache fills, and a
+title added by hand is warmed at once (`Warm`, at most three walks at a time; imports are not warmed). The server places the graph: the main chain on
 lane 0 in release order (by date; an undated title keeps its place along the sequel links) or story
 order (a numbered Wikidata series, else the sequel links), and each other title in
 the column of the chain title it relates to, or a step from the title it continues, in the first
-free lane. Clients draw `rank` and `lane` as they come. Each source's answer is cached 30 days in
+free lane. Clients draw `rank` and `lane` as they come. Each source's answer is cached 30 days
+("nothing related" one day) in
 `catalog_relations` (catalog data, no user); the caller's marks and "Start here" are read from the
 library after the graph is built. The owl reads the same graph through the read-only
 `title_relations` chat tool (GRAPH-004) and checks a roadmap against it before proposing one.
