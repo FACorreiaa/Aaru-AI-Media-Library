@@ -3,8 +3,8 @@ import SwiftUI
 
 /// GRAPH-002: `RelatedRow`, the title room's Related section: the titles directly before and after
 /// this one, what it is based on and adapted into, and its side stories, each with the person's
-/// status and "Start here". Graph opens the whole `RelationGraph`. Absent when nothing is related
-/// or the read fails.
+/// status and "Start here". Graph opens the whole `RelationGraph`. Absent when nothing is related;
+/// a read that fails says so and offers to try again.
 struct TitleRelated: View {
     let api: Client?
     let titleID: String
@@ -48,6 +48,18 @@ struct TitleRelated: View {
                             }
                         }
                     }
+                }
+            } else if model.failed {
+                VStack(alignment: .leading, spacing: AaruSpace.small) {
+                    Text("Related").eyebrow()
+                        .accessibilityAddTraits(.isHeader)
+                    Text("Related titles could not be loaded.")
+                        .font(.subheadline)
+                        .foregroundStyle(Color(.muted))
+                    Button("Try again") { Task { await model.load() } }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                        .disabled(model.loading)
                 }
             } else {
                 Color.clear.frame(height: 0)
@@ -227,7 +239,11 @@ struct RelationGraphSheet: View {
         } else if model.loading {
             ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
-            ContentUnavailableView("Related titles could not be loaded", systemImage: "wifi.slash")
+            ContentUnavailableView {
+                Label("Related titles could not be loaded", systemImage: "wifi.slash")
+            } actions: {
+                Button("Try again") { Task { await model.load() } }
+            }
         }
     }
 }

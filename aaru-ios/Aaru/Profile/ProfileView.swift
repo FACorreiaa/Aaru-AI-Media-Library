@@ -48,6 +48,8 @@ struct ProfileView: View {
                 .navigationDestination(for: String.self) { id in
                     LibraryEntryDestination(id: id, api: api, library: library, lists: lists)
                 }
+                // A related title outside the library opens its catalog page from here too.
+                .catalogDestination(api: api, library: library, lists: lists)
                 .task { await model.load() }
                 .refreshable { await model.load() }
                 .recapStory($recap, api: api)

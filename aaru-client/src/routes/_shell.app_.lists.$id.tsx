@@ -1,5 +1,5 @@
 import { OwlEmpty } from '../components/Brand'
-import { createFileRoute } from '@tanstack/solid-router'
+import { Link, createFileRoute } from '@tanstack/solid-router'
 import { BackLink } from '../components/shell/BackLink'
 import {
   For,
@@ -15,7 +15,13 @@ import { AddControl } from '../components/AddControl'
 import { Poster } from '../components/Poster'
 import { TitleLink } from '../components/TitleLink'
 import { roadmapSections } from '../lib/lists/roadmap'
-import { Button, Dialog, DialogContent, DialogPortal } from '~/components/ui'
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogPortal,
+  buttonVariants,
+} from '~/components/ui'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { KINDS, statusLabel } from '../lib/library/model'
 import type { CatalogHit, LibraryStatus } from '../lib/library/model'
@@ -276,6 +282,19 @@ function ListPage() {
                 />
               </Suspense>
             )}
+          </Show>
+          {/* A plain list draws as a graph too, in its order (GRAPH-004): one made by "Add the
+              chain" has no steps, so its Graph link lives here and not in the roadmap's switch. */}
+          <Show when={!sections()}>
+            <div class="mt-8">
+              <Link
+                to="/app/lists/$id/graph"
+                params={{ id: detail().id }}
+                class={buttonVariants({ variant: 'outline', size: 'sm' })}
+              >
+                Graph
+              </Link>
+            </div>
           </Show>
           <Show when={view() === 'order' || !sections()}>
             <FilterField
