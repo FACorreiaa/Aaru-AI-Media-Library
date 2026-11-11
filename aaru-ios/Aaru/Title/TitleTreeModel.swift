@@ -162,6 +162,8 @@ extension TreeBranch {
         case .studio: role = "Studio"
         case .author: role = "Author"
         case .artist: role = "Artist"
+        case .leadActor: role = "Lead"
+        case .secondActor: role = "Also starring"
         }
         return label.map { "\(role) · \($0)" } ?? role
     }

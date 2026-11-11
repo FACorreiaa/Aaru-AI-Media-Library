@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"sync"
 	"testing"
 	"time"
 
@@ -90,7 +91,7 @@ func TestPersonBranchFoldsAnAnimesSeasonsAndDropsTheRootsOwn(t *testing.T) {
 			anime(filmID, "A film", "2022-06-01", core.MediaMovie, 100),
 			anime(lone, "Unmapped", "2010-01-01", core.MediaShow, 500),
 		},
-	})
+	}, nil)
 	require.True(t, ok)
 	assert.Equal(t, "WIT STUDIO", branch.Label)
 	var titles []string
@@ -102,4 +103,75 @@ func TestPersonBranchFoldsAnAnimesSeasonsAndDropsTheRootsOwn(t *testing.T) {
 	assert.Equal(t, []string{"Other", "A film", "Unmapped"}, titles,
 		"the root's second season is gone and the other show appears once, from its first season")
 	assert.Equal(t, []core.TreePick{core.PickNext, core.PickNext, core.PickBestKnown}, picks)
+}
+
+// castSource is a credit source with a director and two actors; fail names the people whose
+// works cannot be read.
+type castSource struct {
+	fail  map[string]bool
+	reads map[string]int
+	mu    sync.Mutex
+}
+
+func (c *castSource) CreditSourceName() string       { return "cast-test" }
+func (c *castSource) CreditKey(n RelatedNode) string { return "movie:" + n.IDs.TMDB }
+
+func (c *castSource) People(context.Context, RelatedNode) ([]Credit, error) {
+	c.count("people")
+	return []Credit{
+		{Kind: core.BranchDirector, ID: "1", Name: "A Director"},
+		{Kind: core.BranchDirector, ID: "9", Name: "A Co-director"},
+		{Kind: core.BranchLeadActor, ID: "2", Name: "A Lead", Media: core.MediaMovie},
+		{Kind: core.BranchSecondActor, ID: "3", Name: "A Second", Media: core.MediaMovie},
+	}, nil
+}
+
+func (c *castSource) Works(_ context.Context, credit Credit) ([]CreditedWork, error) {
+	c.count(credit.ID)
+	if c.fail[credit.ID] {
+		return nil, errors.New("provider down")
+	}
+	date := "2020-01-01"
+	return []CreditedWork{{Score: 1, RelatedNode: RelatedNode{
+		Type: core.MediaMovie, IDs: core.ExternalIDs{TMDB: "9" + credit.ID}, Title: "By " + credit.Name, ReleaseDate: &date,
+	}}}, nil
+}
+
+func (c *castSource) count(key string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.reads[key]++
+}
+
+// GRAPH-006: the cast is read only when asked for, and one person failing leaves the others.
+func TestTreePeopleAddTheCastWhenAskedAndSurviveOneFailing(t *testing.T) {
+	ctx := context.Background()
+	store := NewStore(testdb.New(t))
+	source := &castSource{fail: map[string]bool{"3": true}, reads: map[string]int{}}
+	service := NewTreeService(NewRelationService(store, nil, nil), []CreditSource{source}, nil)
+	centre := film(randomID(), "Root", "2019-01-01")
+	names := func(people []credited) []string {
+		out := make([]string, len(people))
+		for i, p := range people {
+			out[i] = p.credit.Name
+		}
+		return out
+	}
+
+	people, err := service.people(ctx, centre, false)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"A Director"}, names(people), "without the cast: the first person who made it, nobody else")
+	assert.Equal(t, map[string]int{"people": 1, "1": 1}, source.reads, "no actor's works are read unasked")
+
+	people, err = service.people(ctx, centre, true)
+	require.Error(t, err, "the second actor's works failed: the answer is short")
+	assert.Equal(t, []string{"A Director", "A Lead"}, names(people), "the others are still there, in order")
+	assert.Equal(t, map[string]int{"people": 1, "1": 1, "2": 1, "3": 1}, source.reads, "the title and the director come from the cache")
+
+	source.fail = nil
+	people, err = service.people(ctx, centre, true)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"A Director", "A Lead", "A Second"}, names(people))
+	assert.Equal(t, 2, source.reads["3"], "only what failed is read again")
+	assert.Equal(t, 1, source.reads["2"])
 }

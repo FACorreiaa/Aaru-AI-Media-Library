@@ -31,7 +31,9 @@ creator). AniList: a title's main studio or story staff, then `Studio.media` or 
 Open Library: the work's author key, then `search.json` by `author_key`. MusicBrainz: the artist
 credit, then a browse of the artist's release groups. Each goes through its provider's pacer above,
 so the limits do not change, and none carries who is asking. The credits are the ones already
-shown.
+shown. For a film or show the tree can also name the first two billed actors (GRAPH-006): the
+same `movie/{id}/credits` read, `aggregate_credits` appended to the `tv/{id}` read, and one more
+`person/{id}/movie_credits` or `tv_credits` call per actor, cached the same way.
 
 Discover rows (DISC-001, 2026-10-20) call TMDB, AniList and Open Library through one in-memory
 server cache: 6 h TTL, one fetch per list however many users ask, the stale copy served (and a

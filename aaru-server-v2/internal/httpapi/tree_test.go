@@ -14,7 +14,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// GRAPH-005: GET /v1/titles/{id}/tree against a stub TMDB: a film's director and its series.
+// GRAPH-005, GRAPH-006: GET /v1/titles/{id}/tree against a stub TMDB: a film's director, its
+// series, and its cast when asked for.
 
 func treeHarness(t *testing.T) (*harness, *atomic.Int32) {
 	t.Helper()
@@ -34,7 +35,26 @@ func treeHarness(t *testing.T) (*harness, *atomic.Int32) {
 			_, _ = w.Write([]byte(`{"parts":[` + films["122"] + `,` + films["120"] + `,` + films["121"] + `]}`))
 		case "/movie/120/credits":
 			creditReads.Add(1)
-			_, _ = w.Write([]byte(`{"crew":[{"id":108,"name":"Peter Jackson","job":"Director"}]}`))
+			_, _ = w.Write([]byte(`{"crew":[{"id":108,"name":"Peter Jackson","job":"Director"}],"cast":[
+{"id":110,"name":"Viggo Mortensen","order":1},{"id":109,"name":"Elijah Wood","order":0},{"id":111,"name":"Third Billed","order":2}]}`))
+		case "/person/109/movie_credits":
+			creditReads.Add(1)
+			_, _ = w.Write([]byte(`{"cast":[
+{"id":120,"title":"The Fellowship of the Ring","release_date":"2001-12-19","character":"Frodo","order":0,"vote_count":25000},
+{"id":121,"title":"The Two Towers","release_date":"2002-12-18","character":"Frodo","order":0,"vote_count":22000},
+{"id":254,"title":"King Kong","release_date":"2005-12-12","character":"A sailor","order":2,"vote_count":7000},
+{"id":38,"title":"Eternal Sunshine of the Spotless Mind","release_date":"2004-03-19","character":"Patrick","order":4,"vote_count":15000},
+{"id":187,"title":"Sin City","release_date":"2005-04-01","character":"Kevin","order":9,"vote_count":8000},
+{"id":9806,"title":"Everything Is Illuminated","release_date":"2005-09-16","character":"Jonathan","order":0,"vote_count":600},
+{"id":500,"title":"A documentary","release_date":"2006-01-01","character":"Self","order":0,"vote_count":50},
+{"id":501,"title":"Happy Feet","release_date":"2006-11-16","character":"Mumble (voice)","order":0,"vote_count":5000},
+{"id":502,"title":"The Good Son","release_date":"1993-09-24","character":"Mark","order":1,"vote_count":1500}]}`))
+		case "/person/110/movie_credits":
+			creditReads.Add(1)
+			_, _ = w.Write([]byte(`{"cast":[
+{"id":120,"title":"The Fellowship of the Ring","release_date":"2001-12-19","character":"Aragorn","order":1,"vote_count":25000},
+{"id":38,"title":"Eternal Sunshine of the Spotless Mind","release_date":"2004-03-19","character":"A neighbour","order":3,"vote_count":15000},
+{"id":59,"title":"A History of Violence","release_date":"2005-09-23","character":"Tom Stall","order":0,"vote_count":3000}]}`))
 		case "/movie/603/credits":
 			_, _ = w.Write([]byte(`{"crew":[]}`))
 		case "/person/108/movie_credits":
@@ -144,6 +164,33 @@ func TestTitleTreeRoute(t *testing.T) {
 	assert.Equal(t, int32(2), reads, "who directed it, then his films")
 	require.Equal(t, http.StatusOK, h.do(http.MethodGet, "/v1/titles/"+fellowship+"/tree", bearer, nil).Code)
 	assert.Equal(t, reads, creditReads.Load(), "the second tree is read from the cache")
+
+	// GRAPH-006: with the cast, the first two billed get a branch each after the director.
+	rec = h.do(http.MethodGet, "/v1/titles/"+fellowship+"/tree?cast=true", bearer, nil)
+	require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
+	tree = decode[map[string]any](t, rec)
+	assert.Equal(t, false, tree["partial"])
+	branches = tree["branches"].([]any)
+	require.Len(t, branches, 4, rec.Body.String())
+	kinds := make([]string, len(branches))
+	for i, b := range branches {
+		kinds[i] = b.(map[string]any)["kind"].(string)
+	}
+	assert.Equal(t, []string{"director", "lead_actor", "second_actor", "series"}, kinds)
+	lead := branches[1].(map[string]any)
+	assert.Equal(t, "Elijah Wood", lead["label"], "billed first, whatever order TMDB lists the cast in")
+	names, picks = titles(lead)
+	assert.Equal(t, []string{
+		"Eternal Sunshine of the Spotless Mind", "Everything Is Illuminated", "Happy Feet", "The Good Son",
+	}, names, "his parts: not the root or its sequels, not King Kong (the director's row has it), no cameo, nothing as himself")
+	assert.Equal(t, []string{"next", "next", "next", "best_known"}, picks)
+	second := branches[2].(map[string]any)
+	assert.Equal(t, "Viggo Mortensen", second["label"])
+	names, _ = titles(second)
+	assert.Equal(t, []string{"A History of Violence"}, names, "a title the lead's row shows is not shown again")
+	assert.Equal(t, reads+2, creditReads.Load(), "only the two actors' films are new reads")
+	require.Equal(t, http.StatusOK, h.do(http.MethodGet, "/v1/titles/"+fellowship+"/tree?cast=true", bearer, nil).Code)
+	assert.Equal(t, reads+2, creditReads.Load(), "then the cast is cached too")
 
 	// A film with no director on record and no series has a root and no branches.
 	rec = h.do(http.MethodGet, "/v1/titles/"+resolve("603")+"/tree", bearer, nil)

@@ -18,7 +18,14 @@ const (
 	BranchStudio     TreeBranchKind = "studio"
 	BranchAuthor     TreeBranchKind = "author"
 	BranchArtist     TreeBranchKind = "artist"
+	// A film's or show's first and second billed actor (GRAPH-006), sent only to a client that
+	// asks for the cast.
+	BranchLeadActor   TreeBranchKind = "lead_actor"
+	BranchSecondActor TreeBranchKind = "second_actor"
 )
+
+// IsCast is true for a branch of someone who acted in the title rather than made it.
+func (k TreeBranchKind) IsCast() bool { return k == BranchLeadActor || k == BranchSecondActor }
 
 // TreePick says why a title is in a title tree.
 type TreePick string

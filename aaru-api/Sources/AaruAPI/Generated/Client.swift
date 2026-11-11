@@ -11715,7 +11715,7 @@ public struct Client: APIProtocol {
             }
         )
     }
-    /// The title tree (GRAPH-005), "From here": the title as the root and up to three branches of up to five titles, the person who made it (a film's director, a show's creator, an anime's main studio, a manga's or book's author, an album's artist), its series and its adaptations, each marked with the caller's library. Catalog data, the same for every user: reading it writes nothing, and nothing in it is personal. A tree that is missing titles because a source failed or ran out of time says `partial`.
+    /// The title tree (GRAPH-005), "From here": the title as the root and branches of up to five titles, the person who made it (a film's director, a show's creator, an anime's main studio, a manga's or book's author, an album's artist), its series and its adaptations, each marked with the caller's library. With `cast=true` a film or show also has a branch for each of its first two billed actors (GRAPH-006). Catalog data, the same for every user: reading it writes nothing, and nothing in it is personal. A tree that is missing titles because a source failed or ran out of time says `partial`.
     ///
     /// - Remark: HTTP `GET /v1/titles/{id}/tree`.
     /// - Remark: Generated from `#/paths//v1/titles/{id}/tree/get(getTitleTree)`.
@@ -11735,6 +11735,13 @@ public struct Client: APIProtocol {
                     method: .get
                 )
                 suppressMutabilityWarning(&request)
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "cast",
+                    value: input.query.cast
+                )
                 converter.setAcceptHeader(
                     in: &request.headerFields,
                     contentTypes: input.headers.accept

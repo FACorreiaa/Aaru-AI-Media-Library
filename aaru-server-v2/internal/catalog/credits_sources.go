@@ -3,24 +3,55 @@ package catalog
 import (
 	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/provider"
+	"cmp"
 	"context"
 	"fmt"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
+	"unicode"
 )
 
-// MARK: - TMDB (GRAPH-005): a film's director, a show's creator
+// MARK: - TMDB (GRAPH-005, GRAPH-006): a film's director, a show's creator, and the first two billed
 
-// tmdbCredit is one entry of a person's credits: the film or show, their job on it, and TMDB's
-// vote count.
+// tmdbCredit is one entry of a person's credits: the film or show, their job on it (crew) or
+// their part in it (cast), and TMDB's vote count.
 type tmdbCredit struct {
 	tmdbDetail
 	Job       string `json:"job"`
 	VoteCount int    `json:"vote_count"`
 	// Video is true for a direct-to-video extra (a making-of, a concert film).
 	Video bool `json:"video"`
+	// Order is the person's billing in a film's cast, from 0; absent on crew and on shows.
+	Order     *int   `json:"order"`
+	Character string `json:"character"`
+	// EpisodeCount is how many episodes of a show they were in; 0 when TMDB does not say.
+	EpisodeCount int `json:"episode_count"`
 }
+
+// tmdbBilled is one entry of a title's cast, with its billing.
+type tmdbBilled struct {
+	ID    int    `json:"id"`
+	Name  string `json:"name"`
+	Order int    `json:"order"`
+}
+
+// An actor's branch leaves out cameos and appearances as themselves: a film counts when they are
+// billed in its first tmdbCastMaxOrder+1, a show when they were in tmdbCastMinEpisodes episodes
+// and it is not a talk or news show.
+const (
+	tmdbCastMaxOrder    = 4
+	tmdbCastMinEpisodes = 3
+	tmdbGenreNews       = 10763
+	tmdbGenreTalk       = 10767
+)
+
+// tmdbCastKinds are the cast a tree branches on, in billing order.
+var tmdbCastKinds = []core.TreeBranchKind{core.BranchLeadActor, core.BranchSecondActor}
+
+// tmdbSelfWords are the characters of someone appearing as themselves.
+var tmdbSelfWords = map[string]bool{"self": true, "himself": true, "herself": true, "themselves": true, "themself": true}
 
 // CreditSourceName names TMDB in the credit cache.
 func (t *TMDB) CreditSourceName() string { return "tmdb" }
@@ -39,8 +70,11 @@ func (t *TMDB) CreditKey(n RelatedNode) string {
 	return ""
 }
 
-// People is a film's first credited director, or a show's first creator.
+// People is a film's first credited director or a show's first creator, then the title's first
+// two billed actors. A show's billing is over all its seasons (`aggregate_credits`), read in the
+// same request as its creator.
 func (t *TMDB) People(ctx context.Context, n RelatedNode) ([]Credit, error) {
+	people := []Credit{}
 	if n.Type == core.MediaMovie {
 		var body struct {
 			Crew []struct {
@@ -48,51 +82,77 @@ func (t *TMDB) People(ctx context.Context, n RelatedNode) ([]Credit, error) {
 				Name string `json:"name"`
 				Job  string `json:"job"`
 			} `json:"crew"`
+			Cast []tmdbBilled `json:"cast"`
 		}
 		err := t.get(ctx, "movie/"+n.IDs.TMDB+"/credits", nil, &body)
 		if provider.IsNotFound(err) {
-			return []Credit{}, nil
+			return people, nil
 		}
 		if err != nil {
 			return nil, err
 		}
 		for _, c := range body.Crew {
 			if c.Job == "Director" && c.Name != "" {
-				return []Credit{{Kind: core.BranchDirector, ID: strconv.Itoa(c.ID), Name: c.Name}}, nil
+				people = append(people, Credit{Kind: core.BranchDirector, ID: strconv.Itoa(c.ID), Name: c.Name})
+				break
 			}
 		}
-		return []Credit{}, nil
+		return append(people, tmdbCast(body.Cast, core.MediaMovie)...), nil
 	}
 	var body struct {
 		CreatedBy []struct {
 			ID   int    `json:"id"`
 			Name string `json:"name"`
 		} `json:"created_by"`
+		AggregateCredits struct {
+			Cast []tmdbBilled `json:"cast"`
+		} `json:"aggregate_credits"`
 	}
-	err := t.get(ctx, "tv/"+n.IDs.TMDB, nil, &body)
+	err := t.get(ctx, "tv/"+n.IDs.TMDB, map[string]string{"append_to_response": "aggregate_credits"}, &body)
 	if provider.IsNotFound(err) {
-		return []Credit{}, nil
+		return people, nil
 	}
 	if err != nil {
 		return nil, err
 	}
 	for _, c := range body.CreatedBy {
 		if c.Name != "" {
-			return []Credit{{Kind: core.BranchCreator, ID: strconv.Itoa(c.ID), Name: c.Name}}, nil
+			people = append(people, Credit{Kind: core.BranchCreator, ID: strconv.Itoa(c.ID), Name: c.Name})
+			break
 		}
 	}
-	return []Credit{}, nil
+	return append(people, tmdbCast(body.AggregateCredits.Cast, core.MediaShow)...), nil
 }
 
-// Works are the films a director directed, or the shows a creator created. Adult titles and
-// direct-to-video extras are left out.
+// tmdbCast is the first two billed of a cast, as the lead and the second actor.
+func tmdbCast(cast []tmdbBilled, media core.MediaType) []Credit {
+	billed := slices.Clone(cast)
+	slices.SortStableFunc(billed, func(a, b tmdbBilled) int { return cmp.Compare(a.Order, b.Order) })
+	var out []Credit
+	seen := map[int]bool{}
+	for _, c := range billed {
+		if len(out) == len(tmdbCastKinds) {
+			break
+		}
+		if c.Name == "" || seen[c.ID] {
+			continue
+		}
+		seen[c.ID] = true
+		out = append(out, Credit{Kind: tmdbCastKinds[len(out)], ID: strconv.Itoa(c.ID), Name: c.Name, Media: media})
+	}
+	return out
+}
+
+// Works are the films a director directed, the shows a creator created, or the films or shows an
+// actor had a part in. Adult titles and direct-to-video extras are left out.
 func (t *TMDB) Works(ctx context.Context, credit Credit) ([]CreditedWork, error) {
 	path, job, mediaType := "person/"+credit.ID+"/movie_credits", "Director", core.MediaMovie
-	if credit.Kind == core.BranchCreator {
+	if credit.Kind == core.BranchCreator || credit.Media == core.MediaShow {
 		path, job, mediaType = "person/"+credit.ID+"/tv_credits", "Creator", core.MediaShow
 	}
 	var body struct {
 		Crew []tmdbCredit `json:"crew"`
+		Cast []tmdbCredit `json:"cast"`
 	}
 	err := t.get(ctx, path, nil, &body)
 	if provider.IsNotFound(err) {
@@ -101,10 +161,14 @@ func (t *TMDB) Works(ctx context.Context, credit Credit) ([]CreditedWork, error)
 	if err != nil {
 		return nil, err
 	}
+	entries, keep := body.Crew, func(c tmdbCredit) bool { return c.Job == job }
+	if credit.Kind.IsCast() {
+		entries, keep = body.Cast, func(c tmdbCredit) bool { return c.billedPart(mediaType) }
+	}
 	works := []CreditedWork{}
 	seen := map[int]bool{}
-	for _, c := range body.Crew {
-		if c.Job != job || c.Video || seen[c.ID] || (c.Adult != nil && *c.Adult) {
+	for _, c := range entries {
+		if !keep(c) || c.Video || seen[c.ID] || (c.Adult != nil && *c.Adult) {
 			continue
 		}
 		hit, ok := c.hit(mediaType)
@@ -118,6 +182,22 @@ func (t *TMDB) Works(ctx context.Context, credit Credit) ([]CreditedWork, error)
 		}})
 	}
 	return works, nil
+}
+
+// billedPart is true when a cast credit is a part worth a place in the actor's branch: not a
+// cameo, not a guest spot, not an appearance as themselves.
+func (c tmdbCredit) billedPart(mediaType core.MediaType) bool {
+	words := strings.FieldsFunc(strings.ToLower(c.Character), func(r rune) bool { return !unicode.IsLetter(r) })
+	if slices.ContainsFunc(words, func(w string) bool { return tmdbSelfWords[w] }) {
+		return false
+	}
+	if mediaType == core.MediaMovie {
+		return c.Order == nil || *c.Order <= tmdbCastMaxOrder
+	}
+	if slices.Contains(c.GenreIDs, tmdbGenreTalk) || slices.Contains(c.GenreIDs, tmdbGenreNews) {
+		return false
+	}
+	return c.EpisodeCount == 0 || c.EpisodeCount >= tmdbCastMinEpisodes
 }
 
 // MARK: - AniList (GRAPH-005): an anime's main studio, a manga's author

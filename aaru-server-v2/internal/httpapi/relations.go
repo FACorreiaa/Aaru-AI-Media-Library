@@ -136,7 +136,8 @@ func chainTitles(graph catalog.RelationGraph) ([]capture.Title, string) {
 }
 
 // GetTitleTree is GET /v1/titles/{id}/tree (GRAPH-005): where the title leads, marked with the
-// caller's own library. Reading it writes nothing.
+// caller's own library. `cast=true` adds a film's or show's first two billed actors (GRAPH-006);
+// a client that does not know those kinds does not ask. Reading it writes nothing.
 func (s *Server) GetTitleTree(ctx context.Context, req api.GetTitleTreeRequestObject) (api.GetTitleTreeResponseObject, error) {
 	if req.Id.ID() == uuid.Nil {
 		return nil, apperr.NotFound()
@@ -145,7 +146,7 @@ func (s *Server) GetTitleTree(ctx context.Context, req api.GetTitleTreeRequestOb
 	if err != nil {
 		return nil, err
 	}
-	tree, err := s.Catalog.Tree.Tree(ctx, req.Id.ID())
+	tree, err := s.Catalog.Tree.Tree(ctx, req.Id.ID(), req.Params.Cast != nil && *req.Params.Cast)
 	if err != nil {
 		return nil, err
 	}

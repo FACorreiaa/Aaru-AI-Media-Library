@@ -2495,12 +2495,13 @@ paths:
     get:
       operationId: getTitleTree
       summary: >-
-        The title tree (GRAPH-005), "From here": the title as the root and up to three branches of
-        up to five titles, the person who made it (a film's director, a show's creator, an anime's
-        main studio, a manga's or book's author, an album's artist), its series and its
-        adaptations, each marked with the caller's library. Catalog data, the same for every user:
-        reading it writes nothing, and nothing in it is personal. A tree that is missing titles
-        because a source failed or ran out of time says `partial`.
+        The title tree (GRAPH-005), "From here": the title as the root and branches of up to five
+        titles, the person who made it (a film's director, a show's creator, an anime's main
+        studio, a manga's or book's author, an album's artist), its series and its adaptations,
+        each marked with the caller's library. With `cast=true` a film or show also has a branch
+        for each of its first two billed actors (GRAPH-006). Catalog data, the same for every
+        user: reading it writes nothing, and nothing in it is personal. A tree that is missing
+        titles because a source failed or ran out of time says `partial`.
       parameters:
         - name: id
           in: path
@@ -2508,6 +2509,14 @@ paths:
           schema:
             type: string
             format: uuid
+        - name: cast
+          in: query
+          required: false
+          description: >-
+            True to add the `lead_actor` and `second_actor` branches of a film or show. Without
+            it the tree never holds those kinds, so a client that does not know them is safe.
+          schema:
+            type: boolean
       responses:
         '200':
           description: The tree.
@@ -6009,8 +6018,9 @@ components:
         branches:
           type: array
           description: >-
-            At most three, in the order to draw them: the person, the series, the adaptations. A
-            branch with no titles is left out, so this may be empty.
+            In the order to draw them: the person who made it, then with `cast=true` the lead and
+            the second actor, then the series and the adaptations. At most three without the cast
+            and five with it. A branch with no titles is left out, so this may be empty.
           items: {$ref: '#/components/schemas/TreeBranch'}
         partial:
           type: boolean
@@ -6019,8 +6029,10 @@ components:
       type: string
       description: >-
         What a branch of a title tree holds: the titles after this one in its `series`, what it is
-        based on or adapted into (`adaptation`), or works by the person who made it.
-      enum: [series, adaptation, director, creator, studio, author, artist]
+        based on or adapted into (`adaptation`), or works by the person who made it. `lead_actor`
+        and `second_actor` are a film's or show's first and second billed actor, and what else
+        they had a part in; they are sent only when the request says `cast=true`.
+      enum: [series, adaptation, director, creator, studio, author, artist, lead_actor, second_actor]
     TreePick:
       type: string
       description: >-

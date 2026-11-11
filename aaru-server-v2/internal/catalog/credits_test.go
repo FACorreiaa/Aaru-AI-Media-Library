@@ -88,6 +88,113 @@ func TestTMDBCreditsReadAShowsCreatorAndTheirShows(t *testing.T) {
 	assert.Equal(t, "Better Call Saul", works[1].Title)
 }
 
+// GRAPH-006: the first two billed of a film, and the films they had a real part in.
+func TestTMDBCreditsReadAFilmsCastAndAnActorsFilms(t *testing.T) {
+	stub := stubFunc(func(req provider.Request) provider.Response {
+		switch strings.TrimPrefix(urlPath(req.URL), "/3") {
+		case "/movie/329865/credits":
+			return provider.Response{Status: 200, Body: []byte(`{"cast":[
+{"id":1,"name":"Third Billed","order":2},
+{"id":17604,"name":"Jeremy Renner","order":1},
+{"id":9273,"name":"Amy Adams","order":0},
+{"id":9273,"name":"Amy Adams","order":0}],
+"crew":[{"id":137427,"name":"Denis Villeneuve","job":"Director"}]}`)}
+		case "/movie/2/credits":
+			return provider.Response{Status: 200, Body: []byte(`{"cast":[{"id":5,"name":"Only One","order":0},{"id":6,"name":"","order":1}],"crew":[]}`)}
+		case "/person/9273/movie_credits":
+			return provider.Response{Status: 200, Body: []byte(`{"crew":[
+{"id":90,"title":"Produced only","release_date":"2019-01-01","job":"Producer","vote_count":50}],"cast":[
+{"id":329865,"title":"Arrival","release_date":"2016-11-10","character":"Louise Banks","order":0,"vote_count":18000},
+{"id":283552,"title":"Nocturnal Animals","release_date":"2016-11-04","character":"Susan Morrow","order":0,"vote_count":9000},
+{"id":283552,"title":"Nocturnal Animals","release_date":"2016-11-04","character":"Susan Morrow","order":0,"vote_count":9000},
+{"id":91,"title":"A cameo","release_date":"2017-01-01","character":"Woman at bar","order":5,"vote_count":7000},
+{"id":92,"title":"A documentary","release_date":"2018-01-01","character":"Self - Narrator","order":0,"vote_count":300},
+{"id":93,"title":"A premiere","release_date":"2018-02-01","character":"Herself","order":1,"vote_count":300},
+{"id":94,"title":"Mr Selfridge: The Film","release_date":"2019-02-01","character":"Rose Selfridge","order":4,"vote_count":200},
+{"id":95,"title":"Making of","release_date":"2019-03-01","character":"Louise","order":0,"video":true},
+{"id":96,"title":"Not for here","release_date":"2001-01-01","character":"Someone","order":0,"adult":true},
+{"id":97,"title":"No billing known","release_date":"2020-01-01","character":"Lead","vote_count":10}]}`)}
+		}
+		return provider.Response{Status: 404, Body: []byte(`{}`)}
+	})
+	tmdb := &TMDB{Client: testClient(stub, "tmdb"), APIKey: "k"}
+	ctx := context.Background()
+
+	people, err := tmdb.People(ctx, film("329865", "Arrival", "2016-11-10"))
+	require.NoError(t, err)
+	require.Equal(t, []Credit{
+		{Kind: core.BranchDirector, ID: "137427", Name: "Denis Villeneuve"},
+		{Kind: core.BranchLeadActor, ID: "9273", Name: "Amy Adams", Media: core.MediaMovie},
+		{Kind: core.BranchSecondActor, ID: "17604", Name: "Jeremy Renner", Media: core.MediaMovie},
+	}, people, "the director, then the first two by billing, once each")
+	assert.Equal(t, "person:director:137427", people[0].cacheKey())
+	assert.Equal(t, "person:lead_actor:9273:movie", people[1].cacheKey(), "an actor's films and shows are cached apart")
+
+	works, err := tmdb.Works(ctx, people[1])
+	require.NoError(t, err)
+	titles := make([]string, len(works))
+	for i, w := range works {
+		titles[i] = w.Title
+	}
+	assert.Equal(t, []string{"Arrival", "Nocturnal Animals", "Mr Selfridge: The Film", "No billing known"}, titles,
+		"parts in the first five billed: no cameo, nothing as herself, no extra, no adult title, nothing she only produced")
+	assert.Equal(t, 9000, works[1].Score)
+	assert.Equal(t, core.MediaMovie, works[1].Type)
+
+	noDirector, err := tmdb.People(ctx, film("2", "No director", "2000-01-01"))
+	require.NoError(t, err)
+	assert.Equal(t, []Credit{{Kind: core.BranchLeadActor, ID: "5", Name: "Only One", Media: core.MediaMovie}}, noDirector)
+}
+
+// GRAPH-006: a show's billing is over all its seasons, read with its creator in one request.
+func TestTMDBCreditsReadAShowsCastAndAnActorsShows(t *testing.T) {
+	var query string
+	stub := stubFunc(func(req provider.Request) provider.Response {
+		switch strings.TrimPrefix(urlPath(req.URL), "/3") {
+		case "/tv/1396":
+			query = req.URL
+			return provider.Response{Status: 200, Body: []byte(`{"id":1396,"name":"Breaking Bad",
+"created_by":[{"id":66633,"name":"Vince Gilligan"}],
+"aggregate_credits":{"cast":[
+{"id":84497,"name":"Aaron Paul","order":1,"total_episode_count":62},
+{"id":17419,"name":"Bryan Cranston","order":0,"total_episode_count":62}]}}`)}
+		case "/person/17419/tv_credits":
+			return provider.Response{Status: 200, Body: []byte(`{"cast":[
+{"id":1396,"name":"Breaking Bad","first_air_date":"2008-01-20","character":"Walter White","episode_count":62,"vote_count":15000},
+{"id":2004,"name":"Malcolm in the Middle","first_air_date":"2000-01-09","character":"Hal","episode_count":151,"vote_count":4000},
+{"id":100,"name":"A late show","first_air_date":"1993-08-30","character":"Guest","episode_count":9,"genre_ids":[35,10767],"vote_count":900},
+{"id":101,"name":"The news","first_air_date":"1990-01-01","character":"Guest","episode_count":4,"genre_ids":[10763],"vote_count":90},
+{"id":102,"name":"An awards night","first_air_date":"2014-01-01","character":"Self","episode_count":5,"vote_count":80},
+{"id":103,"name":"A guest spot","first_air_date":"2012-01-01","character":"Dr. Tim Whatley","episode_count":2,"vote_count":7000},
+{"id":104,"name":"Your Honor","first_air_date":"2020-12-06","character":"Michael Desiato","vote_count":800}]}`)}
+		}
+		return provider.Response{Status: 404, Body: []byte(`{}`)}
+	})
+	tmdb := &TMDB{Client: testClient(stub, "tmdb"), APIKey: "k"}
+	ctx := context.Background()
+	show := RelatedNode{Type: core.MediaShow, IDs: core.ExternalIDs{TMDB: "1396"}, Title: "Breaking Bad"}
+
+	people, err := tmdb.People(ctx, show)
+	require.NoError(t, err)
+	require.Equal(t, []Credit{
+		{Kind: core.BranchCreator, ID: "66633", Name: "Vince Gilligan"},
+		{Kind: core.BranchLeadActor, ID: "17419", Name: "Bryan Cranston", Media: core.MediaShow},
+		{Kind: core.BranchSecondActor, ID: "84497", Name: "Aaron Paul", Media: core.MediaShow},
+	}, people)
+	assert.Contains(t, query, "append_to_response=aggregate_credits", "one request for the creator and the cast")
+	assert.Equal(t, "person:lead_actor:17419:show", people[1].cacheKey())
+
+	works, err := tmdb.Works(ctx, people[1])
+	require.NoError(t, err)
+	titles := make([]string, len(works))
+	for i, w := range works {
+		titles[i] = w.Title
+	}
+	assert.Equal(t, []string{"Breaking Bad", "Malcolm in the Middle", "Your Honor"}, titles,
+		"shows he had a part in: no talk show, no news, nothing as himself, no guest spot")
+	assert.Equal(t, core.MediaShow, works[0].Type)
+}
+
 func TestAniListCreditsReadAStudioAndAnAuthor(t *testing.T) {
 	stub := stubFunc(func(req provider.Request) provider.Response {
 		body := string(req.Body)
