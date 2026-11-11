@@ -49,7 +49,7 @@ Controller, on closing the release blockers (docs: `docs/privacy.md`, `docs/term
   testing needs the flag in the infra values.
 - **R4 Reports reach the owner.** Counter `aaru_social_reports_total{reason}` and one log line per
   report (id and reason only); read reports with the query in `docs/audit/security.md`. No admin UI. A Grafana alert on the counter is still to set up (owner).
-- Terms of use text is a draft until the owner approves it.
+- Terms of use text approved by the owner (2026-11-11).
 
 ## Decisions recorded 2026-11-10
 
@@ -1097,7 +1097,7 @@ what the file's own rules, `MARKETING.md`'s launch gate or App Store review alre
 | # | Blocker | State | Whose |
 | --- | --- | --- | --- |
 | 1 | Report a group message, and a person from their profile (split from GRP-016). Reports are wired only on Board posts | Done: group message 7656bdbc, profile report fix/release-blockers (2026-11-11) | code |
-| 2 | Terms of service: no `/terms` page and no item for one | Done pending owner approval of the text (`docs/terms.md`, 2026-11-11) | code; owner approves the text |
+| 2 | Terms of service: no `/terms` page and no item for one | Done: `/terms` from `docs/terms.md`, text approved by the owner 2026-11-11 | code |
 | 3 | Store submission: `fastlane/metadata/`, screenshots, privacy labels, review notes with a demo account | Open | code + owner |
 | 4 | SEC-002's minimum: re-authenticate before `DELETE /v1/me`, sign out everywhere, refuse Sandbox transactions for Plus. SEC-001…003 say "before the first strangers" and are unscheduled | Done: minimum in fix/release-blockers (2026-11-11), Sandbox behind `BILLING_ACCEPT_SANDBOX` | code |
 | 5 | Board counts include rows from blocked users | Done: dedb5a06 (2026-11-11) | code |
