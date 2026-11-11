@@ -123,6 +123,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/auth/sessions': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /** Sign out of other devices: end every session of this account except the one that asks. The caller stays signed in. */
+    delete: operations['signOutOtherDevices']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/me': {
     parameters: {
       query?: never
@@ -134,7 +151,7 @@ export interface paths {
     get: operations['getMe']
     put?: never
     post?: never
-    /** Delete the account and everything that belongs to it. */
+    /** Delete the account and everything that belongs to it. Only a session created in the last 10 minutes may do it; an older one gets 403 `reauth_required` and the user signs in again first. */
     delete: operations['deleteAccount']
     options?: never
     head?: never
@@ -167,7 +184,7 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** A purchase or a restore, from the Apple app that made it (BIL-002). The signed transaction must carry this account's `appAccountToken`; 409 `plus_other_account` when it names another, 422 `invalid_transaction` when it does not verify. */
+    /** A purchase or a restore, from the Apple app that made it (BIL-002). The signed transaction must carry this account's `appAccountToken`; 409 `plus_other_account` when it names another, 409 `sandbox_refused` for a Sandbox (TestFlight) purchase while the server does not accept them, 422 `invalid_transaction` when it does not verify. */
     post: operations['recordAppleTransaction']
     delete?: never
     options?: never
@@ -5873,6 +5890,26 @@ export interface operations {
       default: components['responses']['Error']
     }
   }
+  signOutOtherDevices: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Every other session is ended. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      401: components['responses']['Error']
+      default: components['responses']['Error']
+    }
+  }
   getMe: {
     parameters: {
       query?: never
@@ -5909,6 +5946,15 @@ export interface operations {
           [name: string]: unknown
         }
         content?: never
+      }
+      /** @description The session is older than 10 minutes (`reauth_required`). Nothing was deleted. */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
       }
       default: components['responses']['Error']
     }

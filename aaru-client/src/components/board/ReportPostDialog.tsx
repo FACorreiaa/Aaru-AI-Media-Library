@@ -28,9 +28,10 @@ const REASONS: { value: Reason; label: string }[] = [
   { value: 'other', label: 'Something else' },
 ]
 
-/** What is being reported: a Board post or a group message, by its id and author. */
+/** What is being reported: a Board post, a group message or a person, by its id and author. */
 export type Reported = {
-  kind: 'post' | 'group-message'
+  kind: 'post' | 'group-message' | 'person'
+  /** The post or message id; a person's handle for kind `person`. */
   id: string
   author: SocialUser
 }
@@ -45,7 +46,10 @@ export default function ReportPostDialog(props: {
   reported: Reported
   onClose: () => void
 }) {
-  const noun = () => (props.reported.kind === 'post' ? 'post' : 'message')
+  const noun = () =>
+    ({ post: 'post', 'group-message': 'message', person: 'person' })[
+      props.reported.kind
+    ]
   const [reason, setReason] = createSignal<Reason | null>(null)
   const [note, setNote] = createSignal('')
   const [sending, setSending] = createSignal(false)
@@ -65,7 +69,7 @@ export default function ReportPostDialog(props: {
       await reportPost({
         data: {
           authorId: props.reported.author.userId,
-          postId: props.reported.id,
+          refId: props.reported.id,
           kind: props.reported.kind,
           reason: why,
           note: note().trim() || undefined,

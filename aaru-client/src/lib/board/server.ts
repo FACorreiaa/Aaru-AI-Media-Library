@@ -5,6 +5,7 @@ import type { components } from '../api/schema'
 import { mediaRef } from '../groups/media-ref'
 import { check, checkEmpty } from '../groups/responses'
 import { sessionToken } from '../session/guard'
+import { reportNote } from './model'
 import type { BoardComment, BoardPost } from './model'
 
 // BOARD-002 on the web: the calls behind the friends-only Board. Every rule about who sees what
@@ -186,16 +187,17 @@ export const loadFromFriends = createServerFn({ method: 'GET' })
 export const REPORT_NOTE_LENGTH = 900
 
 /**
- * Reports a Board post or a group message through the user-report route. The note says which one
- * (`post:<id>` or `group-message:<id>`), then the reporter's words; the author is not told.
+ * Reports a Board post, a group message or a person's profile through the user-report route. The note says which one
+ * (`post:<id>`, `group-message:<id>` or `profile:@<handle>`), then the reporter's words; the author is not told.
  */
 export const reportPost = createServerFn({ method: 'POST' })
   .validator(
     z.object({
       authorId: uuid,
-      postId: uuid,
-      /** What `postId` names. A Board post unless said. */
-      kind: z.enum(['post', 'group-message']).default('post'),
+      /** A post or message id; for kind `person`, the person's handle. */
+      refId: z.string().min(1).max(100),
+      /** What `refId` names. A Board post unless said. */
+      kind: z.enum(['post', 'group-message', 'person']).default('post'),
       reason: z.enum(['spam', 'harassment', 'impersonation', 'other']),
       /** What the reporter adds; the server keeps notes under 1,000 characters in all. */
       note: z.string().max(REPORT_NOTE_LENGTH).optional(),
@@ -207,9 +209,7 @@ export const reportPost = createServerFn({ method: 'POST' })
         body: {
           userId: data.authorId,
           reason: data.reason,
-          note: [`${data.kind}:${data.postId}`, data.note?.trim()]
-            .filter(Boolean)
-            .join('\n'),
+          note: reportNote(data.kind, data.refId, data.note),
         },
       }),
       'That report was not sent.',

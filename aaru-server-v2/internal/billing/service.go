@@ -57,6 +57,8 @@ type Service struct {
 	// Apple is nil when billing is not configured; purchases then answer 503.
 	Apple AppleVerifier
 	Now   func() time.Time
+	// AcceptSandbox lets Sandbox (TestFlight) transactions grant Plus; false refuses them.
+	AcceptSandbox bool
 }
 
 func (s *Service) now() time.Time {
@@ -134,6 +136,10 @@ func (s *Service) RecordPurchase(ctx context.Context, jws string, userID uuid.UU
 		return State{}, apperr.New(http.StatusUnprocessableEntity, "invalid_transaction",
 			"Aaru could not confirm that purchase with the App Store.")
 	}
+	if t.Environment == "Sandbox" && !s.AcceptSandbox {
+		return State{}, apperr.New(http.StatusConflict, "sandbox_refused",
+			"Aaru does not accept test purchases here.")
+	}
 	if t.AppAccountToken == nil || *t.AppAccountToken != userID {
 		return State{}, apperr.New(http.StatusConflict, "plus_other_account",
 			"This App Store purchase belongs to another Aaru account. Sign in with that account to use it.")
@@ -158,6 +164,9 @@ func (s *Service) Notify(ctx context.Context, jws string) error {
 		return nil
 	}
 	t := *n.Transaction
+	if t.Environment == "Sandbox" && !s.AcceptSandbox {
+		return nil // acknowledged so Apple stops retrying; nothing is granted
+	}
 	owners, err := s.Q.EntitlementOwner(ctx, t.OriginalTransactionID)
 	if err != nil {
 		return fmt.Errorf("entitlement owner: %w", err)

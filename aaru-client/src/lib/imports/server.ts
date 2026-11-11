@@ -3,7 +3,7 @@ import { deleteCookie } from '@tanstack/solid-start/server'
 import { z } from 'zod'
 import { api } from '../api/client'
 import { MEDIA_TYPES } from '../media'
-import { errorMessage } from '../api/errors'
+import { errorMessage, isReauthRequired } from '../api/errors'
 import { SESSION_COOKIE } from '../session/cookie'
 import { sessionRejected, sessionToken } from '../session/guard'
 import type { components } from '../api/schema'
@@ -36,17 +36,22 @@ export const getAccount = createServerFn({ method: 'GET' }).handler(
     ),
 )
 
-/** Deletes the account on the server, then the session cookie here. */
+/**
+ * Deletes the account on the server, then the session cookie here. Answers `'reauth'` instead of
+ * deleting when the session is too old: the page then offers a fresh sign-in (R1).
+ */
 export const deleteAccount = createServerFn({ method: 'POST' }).handler(
-  async () => {
+  async (): Promise<'deleted' | 'reauth'> => {
     const result = await api(sessionToken()).DELETE('/v1/me')
     if (result.response.status === 401) sessionRejected()
+    if (isReauthRequired(result.response.status, result.error)) return 'reauth'
     if (!result.response.ok) {
       throw new Error(
         errorMessage(result.error, 'The account was not deleted.'),
       )
     }
     deleteCookie(SESSION_COOKIE, { path: '/' })
+    return 'deleted'
   },
 )
 
