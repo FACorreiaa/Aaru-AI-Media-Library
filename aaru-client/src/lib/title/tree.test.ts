@@ -2,8 +2,11 @@ import { describe, expect, it } from 'vitest'
 import {
   TREE,
   branchLabel,
+  currentFilter,
+  filterTree,
   hasBranches,
   tileState,
+  treeFilters,
   treeLayout,
   treeNodeLabel,
 } from './tree'
@@ -112,5 +115,79 @@ describe('tiles', () => {
     expect(hasBranches(tree)).toBe(true)
     expect(hasBranches({ ...tree, branches: [] })).toBe(false)
     expect(hasBranches(null)).toBe(false)
+  })
+})
+
+describe('the cast (GRAPH-006)', () => {
+  const film: TitleTree = {
+    partial: false,
+    root: node('root', { pick: 'root' }),
+    branches: [
+      { kind: 'director', label: 'Denis Villeneuve', nodes: [node('d')] },
+      { kind: 'lead_actor', label: 'Amy Adams', nodes: [node('l')] },
+      { kind: 'second_actor', label: 'Jeremy Renner', nodes: [node('s2')] },
+      { kind: 'series', nodes: [node('s')] },
+      { kind: 'adaptation', nodes: [node('a')] },
+    ],
+  }
+  const kinds = (t: TitleTree) => t.branches.map((b) => b.kind)
+
+  it("names the actors' rows by their part and their name", () => {
+    expect(branchLabel(film.branches[1])).toBe('Lead · Amy Adams')
+    expect(branchLabel(film.branches[2])).toBe('Also starring · Jeremy Renner')
+  })
+
+  it('offers All and a chip per person where there is room', () => {
+    expect(treeFilters(film, false)).toEqual([
+      { value: 'all', label: 'All' },
+      { value: 'director', label: 'Director' },
+      { value: 'lead_actor', label: 'Lead' },
+      { value: 'second_actor', label: '2nd' },
+    ])
+  })
+
+  it('has no All on a narrow screen, so one person shows at a time', () => {
+    const chips = treeFilters(film, true)
+    expect(chips.map((c) => c.value)).toEqual([
+      'director',
+      'lead_actor',
+      'second_actor',
+    ])
+    expect(currentFilter(chips, undefined)).toBe('director')
+    expect(kinds(filterTree(film, 'director'))).toEqual([
+      'director',
+      'series',
+      'adaptation',
+    ])
+  })
+
+  it('has no chips for a tree with one person, or with one that has titles', () => {
+    expect(treeFilters(tree, false)).toEqual([])
+    const oneLeft: TitleTree = {
+      ...film,
+      branches: [
+        film.branches[0],
+        { kind: 'lead_actor', label: 'Amy Adams', nodes: [] },
+      ],
+    }
+    expect(treeFilters(oneLeft, false)).toEqual([])
+    expect(currentFilter([], undefined)).toBe('all')
+  })
+
+  it('keeps the series and the adaptations whatever the chip', () => {
+    expect(kinds(filterTree(film, 'all'))).toEqual(kinds(film))
+    expect(kinds(filterTree(film, 'lead_actor'))).toEqual([
+      'lead_actor',
+      'series',
+      'adaptation',
+    ])
+  })
+
+  it('falls back to the first chip when the chosen one is no longer offered', () => {
+    // "All" was chosen on a wide window, then the window narrowed.
+    expect(currentFilter(treeFilters(film, true), 'all')).toBe('director')
+    expect(currentFilter(treeFilters(film, false), 'second_actor')).toBe(
+      'second_actor',
+    )
   })
 })

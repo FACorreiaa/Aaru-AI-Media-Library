@@ -2,6 +2,7 @@ import {
   For,
   Show,
   createEffect,
+  createMemo,
   createSignal,
   on,
   onCleanup,
@@ -18,21 +19,31 @@ import {
 } from '~/components/ui'
 import { cn } from '~/lib/utils'
 import { Poster } from './Poster'
+import { Segmented } from './Segmented'
 import { TitleLink } from './TitleLink'
+import { useIsMobile } from '../hooks/use-mobile'
 import { arrive } from '../lib/motion'
 import { statusLabel } from '../lib/library/model'
 import { loadTree } from '../lib/title/server'
 import {
   TREE,
   branchLabel,
+  currentFilter,
+  filterTree,
   hasBranches,
   tileState,
+  treeFilters,
   treeLayout,
   treeNodeKind,
   treeNodeLabel,
   treeNodeYear,
 } from '../lib/title/tree'
-import type { TileState, TitleTree, TreeNode } from '../lib/title/tree'
+import type {
+  TileState,
+  TitleTree,
+  TreeFilter,
+  TreeNode,
+} from '../lib/title/tree'
 
 // GRAPH-005: `TitleTree`, "From here". Where a title leads, in the manner of a game's skill
 // tree: the title on the left, a trunk down from it, and a row for the person who made it, for
@@ -87,7 +98,7 @@ export function TitleTreeSection(props: { tree: TitleTree | null }) {
           <h2 id="title-tree" class="eyebrow">
             From here
           </h2>
-          <TitleTreeCanvas tree={tree()} class="mt-3" />
+          <TitleTreeView tree={tree()} class="mt-3" />
         </section>
       )}
     </Show>
@@ -132,7 +143,7 @@ export function TitleTreeDialog(props: {
           </div>
           <Show when={props.tree}>
             {(tree) => (
-              <TitleTreeCanvas
+              <TitleTreeView
                 tree={tree()}
                 class="px-5 py-5"
                 entrance
@@ -143,6 +154,48 @@ export function TitleTreeDialog(props: {
         </DialogContent>
       </DialogPortal>
     </Dialog>
+  )
+}
+
+/** Below this width one person's row shows at a time (Tailwind's `sm`). */
+const COMPACT_MAX_PX = 639
+
+/**
+ * The tree with its chips (GRAPH-006). A film or show has a row each for its director, its lead
+ * and its second actor, and the chips narrow those rows to one person; a tree with one person
+ * has no chips. The choice filters what is already loaded and never reads the server.
+ */
+function TitleTreeView(props: {
+  tree: TitleTree
+  class?: string
+  entrance?: boolean
+  onOpen?: () => void
+}) {
+  const compact = useIsMobile(COMPACT_MAX_PX)
+  const [chosen, setChosen] = createSignal<TreeFilter>()
+  const filters = createMemo(() => treeFilters(props.tree, compact()))
+  const filter = () => currentFilter(filters(), chosen())
+  const shown = createMemo(() => filterTree(props.tree, filter()))
+  return (
+    <div class={props.class}>
+      <Show when={filters().length > 0}>
+        <Segmented
+          variant="chip"
+          label="Whose titles to show"
+          value={filter()}
+          options={filters()}
+          class="mb-4"
+          trackClass="flex-nowrap overflow-x-auto"
+          itemClass="min-h-11 px-4 text-sm whitespace-nowrap"
+          onChange={setChosen}
+        />
+      </Show>
+      <TitleTreeCanvas
+        tree={shown()}
+        entrance={props.entrance}
+        onOpen={props.onOpen}
+      />
+    </div>
   )
 }
 
@@ -166,7 +219,7 @@ export function TitleTreeCanvas(props: {
   /** A tile was opened: the dialog closes behind it. */
   onOpen?: () => void
 }) {
-  const layout = () => treeLayout(props.tree)
+  const layout = createMemo(() => treeLayout(props.tree))
   let canvas: HTMLDivElement | undefined
   onMount(() => {
     if (!props.entrance || !canvas) return

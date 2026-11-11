@@ -260,7 +260,8 @@ export const loadRelations = createServerFn({ method: 'GET' })
   })
 
 /** GRAPH-005: the title tree ("From here"), marked with the caller's library. A tree the server
- * cut short says `partial`; asking again a few seconds later finds the rest cached. */
+ * cut short says `partial`; asking again a few seconds later finds the rest cached. It asks for
+ * the cast (GRAPH-006): a film's or show's lead and second actor come as rows of their own. */
 export const loadTree = createServerFn({ method: 'GET' })
   .validator(z.object({ titleId: z.string().uuid() }))
   .handler(async ({ data }): Promise<TitleTree> => {
@@ -269,7 +270,7 @@ export const loadTree = createServerFn({ method: 'GET' })
       error,
       response,
     } = await api(sessionToken()).GET('/v1/titles/{id}/tree', {
-      params: { path: { id: data.titleId } },
+      params: { path: { id: data.titleId }, query: { cast: true } },
     })
     if (response.status === 401) sessionRejected()
     if (!tree)
