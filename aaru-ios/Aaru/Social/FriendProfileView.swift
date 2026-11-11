@@ -20,6 +20,10 @@ struct FriendProfileView: View {
     @State private var stage = Stage.loading
     @State private var recommending = false
     @State private var invitingToGroup = false
+    @State private var reporting = false
+    @State private var confirmsBlock = false
+    @State private var blockProblem: String?
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         Group {
@@ -73,6 +77,9 @@ struct FriendProfileView: View {
                         Button("Invite to a group", systemImage: "bubble.left.and.bubble.right") {
                             invitingToGroup = true
                         }
+                        Divider()
+                        Button("Report", systemImage: "exclamationmark.bubble") { reporting = true }
+                        Button("Block", systemImage: "hand.raised", role: .destructive) { confirmsBlock = true }
                     } label: {
                         Label("Actions", systemImage: "ellipsis.circle")
                     }
@@ -83,6 +90,30 @@ struct FriendProfileView: View {
             }
             .sheet(isPresented: $invitingToGroup) {
                 GroupInviteSheet(api: api, friend: friend)
+            }
+            .sheet(isPresented: $reporting) {
+                ReportPostSheet(noun: "person", authorName: friend.inviteName) { reason, note in
+                    await SocialModel(api: api).report(friend, reason: reason, note: note)
+                }
+            }
+            .confirmationDialog(
+                "Block \(friend.inviteName)?", isPresented: $confirmsBlock, titleVisibility: .visible
+            ) {
+                Button("Block", role: .destructive) { Task { await block() } }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("They are removed from your friends and can't see your library. You can unblock them in Settings.")
+            }
+            .alert("That person was not blocked.", isPresented: .init(
+                get: { blockProblem != nil }, set: {
+                    if !$0 {
+                        blockProblem = nil
+                    }
+                }
+            )) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(blockProblem ?? "")
             }
     }
 
@@ -134,6 +165,16 @@ struct FriendProfileView: View {
         case 0: "Nothing finished by both of you yet."
         case 1: "1 title finished by both of you"
         default: "\(count) titles finished by both of you"
+        }
+    }
+
+    private func block() async {
+        let model = SocialModel(api: api)
+        await model.block(friend)
+        if let problem = model.problem {
+            blockProblem = problem
+        } else {
+            dismiss()
         }
     }
 

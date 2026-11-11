@@ -113,7 +113,7 @@ struct SettingsPageView: View {
         case .about:
             AboutView()
         case .delete:
-            DeleteAccountPage(onDeleteAccount: context.onDeleteAccount)
+            DeleteAccountPage(onDeleteAccount: context.onDeleteAccount, onSignOut: context.onSignOut)
         }
     }
 }
