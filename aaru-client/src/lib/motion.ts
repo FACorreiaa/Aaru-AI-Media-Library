@@ -54,6 +54,34 @@ export function pop(el: Element): Promise<void> {
   return play(el, { transform: ['scale(0.85)', 'scale(1)'] }, 0.2)
 }
 
+/**
+ * Parts of one thing arriving one after another, after the tap that opened it: each fades up a
+ * few pixels, `gap` seconds behind the one before. They are hidden until their turn, and shown
+ * again whatever happens, so a failed load never leaves anything invisible.
+ */
+export async function arrive(els: Element[], gap = 0.04): Promise<void> {
+  if (still() || els.length === 0) return
+  const parts = els as Array<HTMLElement | SVGElement>
+  for (const el of parts) el.style.opacity = '0'
+  try {
+    const animate = await load()
+    await Promise.all(
+      parts.map((el, i) =>
+        animate(
+          el,
+          { opacity: [0, 1], transform: ['translateY(6px)', 'translateY(0)'] },
+          { duration: DURATION, ease: [...EASE_OUT], delay: i * gap },
+        ),
+      ),
+    )
+  } finally {
+    for (const el of parts) {
+      el.style.opacity = ''
+      el.style.transform = ''
+    }
+  }
+}
+
 /** A view arriving from one side: `direction` 1 comes from the right, -1 from the left. */
 export function slideIn(el: Element, direction: 1 | -1): Promise<void> {
   return play(el, {

@@ -43,15 +43,21 @@ final class TitleDetailModel {
     private(set) var loadFailed = false
     /// The last write that failed and was rolled back. Shown until the next action.
     var problem: String?
+    /// Counts the times a tap on this page made the title finished, as the server confirmed it:
+    /// the page opens "From here" on each (GRAPH-005). A load or an undo never counts.
+    private(set) var finishes = 0
 
     @ObservationIgnored let api: Client?
     @ObservationIgnored private let library: LibraryModel
     /// The undo toast, from the view's environment. Nil in previews.
     @ObservationIgnored var toasts: ToastCenter?
+    /// The status the server last confirmed, so an optimistic change is not mistaken for it.
+    @ObservationIgnored private var confirmedStatus: Components.Schemas.LibraryStatus
 
     /// `title` is for previews: the detail already loaded, nothing to fetch.
     init(entry: LibraryEntry, api: Client?, library: LibraryModel, title: TitleDetail? = nil) {
         self.entry = entry
+        confirmedStatus = entry.status
         self.api = api
         self.library = library
         self.title = title
@@ -217,7 +223,7 @@ final class TitleDetailModel {
         }
         switch await library.markShowWatched(entry.id, api: api) {
         case let .success(result):
-            apply(result.entry)
+            apply(result.entry, byTap: true)
             // The toast can outlive this page: the undo runs either way, the reload only while open.
             toasts?.showWatched(result) { [weak self, library, api] actionID in
                 let problem = await library.undo(actionID, api: api)
@@ -307,13 +313,14 @@ final class TitleDetailModel {
 
     /// The server's answer is the truth: it replaces the optimistic state and the shelf's row.
     private func commit(_ response: LibraryEntry) {
-        apply(response)
+        apply(response, byTap: true)
         var forShelf = response
         forShelf.watchedEpisodes = nil
         library.upsert(forShelf)
     }
 
-    private func apply(_ response: LibraryEntry) {
+    private func apply(_ response: LibraryEntry, byTap: Bool = false) {
+        noteStatus(response.status, byTap: byTap)
         entry = response
         if let episodes = response.watchedEpisodes {
             watched = Set(episodes.map { EpisodeKey(season: $0.season, number: $0.number) })
@@ -328,5 +335,15 @@ final class TitleDetailModel {
         }
         let code = EpisodeCode.short(season: key.season, number: key.number)
         problem = message ?? "\(code) was not saved. Aaru could not reach the server."
+    }
+}
+
+private extension TitleDetailModel {
+    /// Remembers the status the server confirmed, and counts a tap that made the title finished.
+    func noteStatus(_ status: LibraryStatus, byTap: Bool) {
+        if byTap, status == .finished, confirmedStatus != .finished {
+            finishes += 1
+        }
+        confirmedStatus = status
     }
 }
