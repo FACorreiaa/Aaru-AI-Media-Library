@@ -29,7 +29,8 @@ account. Aaru may close an account that it learns belongs to someone below that 
 
 You sign in with Apple, Google or your email. Keep your sign-in safe: you are responsible for what
 happens under your account. Give accurate details, one account per person. If you think someone
-else got into your account, sign out of your other devices in Settings and write to us.
+else got into your account, sign out of your other devices in Settings, remove anything you do not
+recognise under Settings, Connections, and write to us.
 
 Some actions ask you to sign in again first. Deleting your account is one: it needs a sign-in
 from the last 10 minutes.
@@ -112,7 +113,7 @@ service at risk. Where it can, it will tell you why.
 ## Changes to these terms
 
 If these terms change in a way that matters, the date at the top changes and
-Aaru emails you about it before it takes effect. If you don't agree, delete your account. Using Aaru after a change
+this page says what changed. If you don't agree, delete your account. Using Aaru after a change
 means you accept it.
 
 ## Contact

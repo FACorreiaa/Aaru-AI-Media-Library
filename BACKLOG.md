@@ -48,7 +48,7 @@ Controller, on closing the release blockers (docs: `docs/privacy.md`, `docs/term
   Sandbox transaction or notification grants nothing (409 `sandbox_refused`). TestFlight Plus
   testing needs the flag in the infra values.
 - **R4 Reports reach the owner.** Counter `aaru_social_reports_total{reason}` and one log line per
-  report (id and reason only); read reports with the query in `docs/audit/security.md`. No admin UI.
+  report (id and reason only); read reports with the query in `docs/audit/security.md`. No admin UI. A Grafana alert on the counter is still to set up (owner).
 - Terms of use text is a draft until the owner approves it.
 
 ## Decisions recorded 2026-11-10

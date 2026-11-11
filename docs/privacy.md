@@ -28,7 +28,8 @@ them. Your email is shown to you in your profile; nobody else sees it unless you
 Sign-in sessions are stored only as one-way hashes; on the web the session lives in a secure,
 HttpOnly cookie. Email sign-in codes are stored hashed and expire after 15 minutes.
 You can sign out of your other devices from Settings: "Sign out of other devices" ends every
-other sign-in of yours and keeps the one you are using. Deleting your account asks for a sign-in
+other sign-in of yours and keeps the one you are using. It does not remove connections (agents,
+scrobblers, MyAnimeList); remove those under Settings, Connections. Deleting your account asks for a sign-in
 from the last 10 minutes, so if you signed in earlier you are asked to sign in again first.
 
 **Your library.** The titles you add, their status, whether you own them, ratings, notes,

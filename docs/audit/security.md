@@ -79,7 +79,7 @@ limiters therefore key on the real client IP. A config change at the ingress wou
 ## Reading reports
 
 Reports reach the developer two ways (R4). Each saved report adds one to the Prometheus counter
-`aaru_social_reports_total{reason}`, which Grafana alerts on, and logs one line, `social report
+`aaru_social_reports_total{reason}` (a Grafana alert on it is still to be set up by the owner), and logs one line, `social report
 saved`, with the report id and reason (no note, no user ids). To read them, query the database:
 
 ```sql
