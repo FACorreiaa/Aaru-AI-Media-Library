@@ -1,6 +1,6 @@
 # Privacy policy
 
-_Last updated 10 November 2026._
+_Last updated 11 November 2026._
 
 Aaru is a private media library: what you watch and read, kept for you. This page says what
 Aaru stores, who else sees any of it, and how to delete it. If anything here stops matching
@@ -27,6 +27,10 @@ Aaru, your email address when the service shares it, and your first and last nam
 them. Your email is shown to you in your profile; nobody else sees it unless you share it (below).
 Sign-in sessions are stored only as one-way hashes; on the web the session lives in a secure,
 HttpOnly cookie. Email sign-in codes are stored hashed and expire after 15 minutes.
+You can sign out of your other devices from Settings: "Sign out of other devices" ends every
+other sign-in of yours and keeps the one you are using. It does not remove connections (agents,
+scrobblers, MyAnimeList); remove those under Settings, Connections. Deleting your account asks for a sign-in
+from the last 10 minutes, so if you signed in earlier you are asked to sign in again first.
 
 **Your library.** The titles you add, their status, whether you own them, ratings, notes,
 episode progress, your lists and saved shelves, and a short history of your changes so they
@@ -91,8 +95,11 @@ deletes it.
 **Your email.** Friends see your email only while "Friends can see my email" is on in your
 profile, and it is off until you turn it on. Group members never see it. An Apple "Hide My Email"
 address cannot be shared, because it takes mail only from Aaru. Aaru stores pending requests, who your friends are, who you blocked, and any report you
-send about another user (the reason and your note). The person you block or report is not
-told. Deleting your account removes all of it; a report someone sent about you keeps its reason
+send about another user, a Board post or a group message (the reason and your note). You can
+report a person from their profile too. The person you block or report is not
+told. When a report is saved, Aaru adds one to a count for its reason and writes one log line
+with the report's id and reason, never your note or anyone's account id. The developer reads
+reports in the database. Deleting your account removes all of it; a report someone sent about you keeps its reason
 but no longer points to you.
 
 **What your friends see.** Your friends, and only your friends, see what you are watching, what

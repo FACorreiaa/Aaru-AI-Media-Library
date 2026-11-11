@@ -1,13 +1,13 @@
 import AaruAPI
 import SwiftUI
 
-/// Report a friend's post (BOARD-003) or a group message: why, from four reasons, and an optional
+/// Report a friend's post (BOARD-003), a group message or a person: why, from four reasons, and an optional
 /// note. It goes to Aaru through the user-report route with the post or message named; the author
 /// is not told.
 struct ReportPostSheet: View {
     typealias Reason = Components.Schemas.ReportCreate.ReasonPayload
 
-    /// "post" or "message": what the title says is being reported.
+    /// "post", "message" or "person": what the title says is being reported.
     let noun: String
     let authorName: String
     /// Sends the report. Returns what went wrong, or nil when it was sent.

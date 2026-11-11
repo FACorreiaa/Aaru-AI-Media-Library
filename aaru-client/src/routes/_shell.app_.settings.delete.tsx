@@ -9,7 +9,11 @@ import { ConfirmDialog } from '../components/ConfirmDialog'
 import { SettingsPageTitle } from '../components/settings/SettingsNav'
 import { SettingsSection } from '../components/settings/SettingsSection'
 import { Alert, AlertDescription, Button } from '~/components/ui'
+import { REAUTH_MESSAGE } from '../lib/api/errors'
 import { deleteAccount } from '../lib/imports/server'
+import { forgetTonight } from '../lib/home/tonight-cache'
+import { forgetAccount } from '../lib/session/query'
+import { signOut } from '../lib/session/session'
 
 // Settings → Delete account (DESIGN.md §18, UX-021): its own last page, in danger styling.
 export const Route = createFileRoute('/_shell/app_/settings/delete')({
@@ -23,12 +27,16 @@ function DeleteAccount() {
   const [problem, setProblem] = createSignal<string | null>(null)
   const [confirming, setConfirming] = createSignal(false)
   const [deleting, setDeleting] = createSignal(false)
+  const [reauth, setReauth] = createSignal(false)
 
   async function remove() {
     setProblem(null)
     setDeleting(true)
     try {
-      await deleteAccount()
+      if ((await deleteAccount()) === 'reauth') {
+        setReauth(true)
+        return
+      }
       await router.invalidate()
       await navigate({ to: '/' })
     } catch (error) {
@@ -41,9 +49,33 @@ function DeleteAccount() {
     }
   }
 
+  // R1: a session older than ten minutes cannot delete; signing in again makes a fresh one.
+  async function signInAgain() {
+    await signOut()
+    forgetAccount(router.options.context.queryClient)
+    forgetTonight()
+    await router.invalidate()
+    await navigate({ to: '/sign-in' })
+  }
+
   return (
     <>
       <SettingsPageTitle title="Delete account" />
+      <Show when={reauth()}>
+        <Alert variant="destructive" class="mb-6">
+          <AlertDescription>
+            <p>{REAUTH_MESSAGE}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              class="mt-3"
+              onClick={() => void signInAgain()}
+            >
+              Sign in again
+            </Button>
+          </AlertDescription>
+        </Alert>
+      </Show>
       <Show when={problem()}>
         {(message) => (
           <Alert variant="destructive" class="mb-6">

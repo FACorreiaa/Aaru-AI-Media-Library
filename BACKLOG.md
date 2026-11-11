@@ -57,6 +57,21 @@ of a game's skill tree. "No need for a big tree or a second brain." This is the 
   studio, not its director); an album's branch has no stars (MusicBrainz has no count); the tree
   opens by itself only from the title page and has no off switch; the UI name "From here".
 
+Controller, on closing the release blockers (docs: `docs/privacy.md`, `docs/terms.md`,
+`docs/audit/security.md`).
+
+- **R1 Re-auth before delete.** `DELETE /v1/me` succeeds only when the presenting session was
+  created at most 10 minutes ago; otherwise 403 `reauth_required`, and the client offers "Sign in
+  again". No new column.
+- **R2 Sign out of other devices.** `DELETE /v1/auth/sessions` ends every session of the user but
+  the presenting one (204).
+- **R3 Sandbox refused.** `billing.accept_sandbox` (`BILLING_ACCEPT_SANDBOX`), default false: a
+  Sandbox transaction or notification grants nothing (409 `sandbox_refused`). TestFlight Plus
+  testing needs the flag in the infra values.
+- **R4 Reports reach the owner.** Counter `aaru_social_reports_total{reason}` and one log line per
+  report (id and reason only); read reports with the query in `docs/audit/security.md`. No admin UI. A Grafana alert on the counter is still to set up (owner).
+- Terms of use text approved by the owner (2026-11-11).
+
 ## Decisions recorded 2026-11-10
 
 Owner, 2026-11-10, on what the release is about: friends-only groups watching or reading
@@ -1058,7 +1073,7 @@ account or a stranger that has not happened yet.
 | MOAT-002 | Dropped (promoted) | now SCR-001/002 | |
 | MOAT-003 | Dropped (promoted) | now SCR-004 | |
 | SEC-001 | Documented, not scheduled | docs/audit/security.md | Low: `?token=` on validate-token reaches request logs; ingress access log keeps queries |
-| SEC-002 | Documented, not scheduled | docs/audit/security.md | Hardening list, no boundary violation |
+| SEC-002 | Minimum done (fix/release-blockers) | docs/audit/security.md | Re-auth before delete, sign out of other devices, Sandbox behind `BILLING_ACCEPT_SANDBOX` done 2026-11-11; the rest of the hardening list stays documented |
 | SEC-003 | Documented, not scheduled | ~/security-audit-skill/aaru/run-1 | 42 of 79 coverage units deferred; no independent verification ran |
 
 ### P0 progress log (from 2026-10-09; merged in #1, deployed 2026-10-15)
@@ -1103,11 +1118,11 @@ what the file's own rules, `MARKETING.md`'s launch gate or App Store review alre
 
 | # | Blocker | State | Whose |
 | --- | --- | --- | --- |
-| 1 | Report a group message, and a person from their profile (split from GRP-016). Reports are wired only on Board posts | Open | code |
-| 2 | Terms of service: no `/terms` page and no item for one | Open | code; owner approves the text |
+| 1 | Report a group message, and a person from their profile (split from GRP-016). Reports are wired only on Board posts | Done: group message 7656bdbc, profile report fix/release-blockers (2026-11-11) | code |
+| 2 | Terms of service: no `/terms` page and no item for one | Done: `/terms` from `docs/terms.md`, text approved by the owner 2026-11-11 | code |
 | 3 | Store submission: `fastlane/metadata/`, screenshots, privacy labels, review notes with a demo account | Open | code + owner |
-| 4 | SEC-002's minimum: re-authenticate before `DELETE /v1/me`, sign out everywhere, refuse Sandbox transactions for Plus. SEC-001…003 say "before the first strangers" and are unscheduled | Open | code |
-| 5 | Board counts include rows from blocked users | Open | code |
+| 4 | SEC-002's minimum: re-authenticate before `DELETE /v1/me`, sign out everywhere, refuse Sandbox transactions for Plus. SEC-001…003 say "before the first strangers" and are unscheduled | Done: minimum in fix/release-blockers (2026-11-11), Sandbox behind `BILLING_ACCEPT_SANDBOX` | code |
+| 5 | Board counts include rows from blocked users | Done: dedb5a06 (2026-11-11) | code |
 | 6 | Groups (GRP-001…013) and a full session never run on two devices; widgets, the Live Activity and universal links never seen on a device | Open | owner |
 | 7 | Trakt never connected on a real account; `INFRA_TOKEN` unset, so promote PRs are opened by hand | Open | owner |
 | 8 | The P2 gate: 0 strangers | Open | owner |

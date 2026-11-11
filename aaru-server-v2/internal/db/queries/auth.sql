@@ -79,6 +79,12 @@ INSERT INTO sessions (id, user_id, token_hash, expires_at) VALUES (@id, @user_id
 -- name: DeleteSession :exec
 DELETE FROM sessions WHERE token_hash = @token_hash;
 
+-- name: SessionCreatedAt :one
+SELECT created_at FROM sessions WHERE token_hash = @token_hash AND expires_at > @now;
+
+-- name: DeleteOtherSessions :exec
+DELETE FROM sessions WHERE user_id = @user_id AND token_hash <> @token_hash;
+
 -- Magic links and their 6-digit codes (AUTH-003, APP-002).
 
 -- name: CreateMagicLink :exec

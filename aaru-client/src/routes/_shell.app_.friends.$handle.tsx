@@ -1,5 +1,5 @@
-import { Link, createFileRoute } from '@tanstack/solid-router'
-import { For, Show, createSignal } from 'solid-js'
+import { Link, createFileRoute, useNavigate } from '@tanstack/solid-router'
+import { For, Show, createSignal, lazy } from 'solid-js'
 import type { JSX } from 'solid-js'
 import { FavoritesRow } from '../components/FavoritesRow'
 import { Poster } from '../components/Poster'
@@ -9,7 +9,7 @@ import {
   GroupInviteDialog,
   RecommendDialog,
 } from '../components/Recommendations'
-import { Button } from '~/components/ui'
+import { Button, toast } from '~/components/ui'
 import { lastShown } from '../lib/presence'
 import { kindOf } from '../lib/library/model'
 import { FRIEND_SHELF } from '../lib/achievements/model'
@@ -21,10 +21,20 @@ import {
   itemProgress,
   monogram,
 } from '../lib/social/model'
-import { loadFriendProfile } from '../lib/social/server'
+import { blockUser, loadFriendProfile } from '../lib/social/server'
 import type { FriendItem } from '../lib/social/server'
 import type { components } from '../lib/api/schema'
 import { Monogram } from '../components/groups/Monogram'
+
+const ReportPostDialog = lazy(
+  () => import('../components/board/ReportPostDialog'),
+)
+
+const ConfirmDialog = lazy(() =>
+  import('../components/ConfirmDialog').then((m) => ({
+    default: m.ConfirmDialog,
+  })),
+)
 
 type TitleSummary = components['schemas']['TitleSummary']
 
@@ -47,7 +57,27 @@ export const Route = createFileRoute('/_shell/app_/friends/$handle')({
 function Profile() {
   const loaded = Route.useLoaderData()
   const profile = () => loaded().profile
-  const [dialog, setDialog] = createSignal<'recommend' | 'group' | null>(null)
+  const navigate = useNavigate()
+  const [dialog, setDialog] = createSignal<
+    'recommend' | 'group' | 'report' | 'block' | null
+  >(null)
+  const [blocking, setBlocking] = createSignal(false)
+
+  // Block removes the friendship server-side, so the profile has nothing left to show.
+  async function block(userId: string) {
+    setBlocking(true)
+    try {
+      await blockUser({ data: { userId } })
+      setDialog(null)
+      await navigate({ to: '/app/friends' })
+    } catch (error) {
+      toast(
+        error instanceof Error ? error.message : 'That person was not blocked.',
+      )
+    } finally {
+      setBlocking(false)
+    }
+  }
   // Kept on its last value so the closing dialog plays its exit (WEB-011).
   const shownDialog = lastShown(dialog)
   return (
@@ -119,7 +149,44 @@ function Profile() {
                   >
                     Invite to a group
                   </Button>
+                  <Button
+                    size="sm"
+                    variant="quiet"
+                    onClick={() => setDialog('report')}
+                  >
+                    Report
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="quiet"
+                    onClick={() => setDialog('block')}
+                  >
+                    Block
+                  </Button>
                 </div>
+                <Show when={shownDialog() === 'report'}>
+                  <ReportPostDialog
+                    open={dialog() === 'report'}
+                    reported={{
+                      kind: 'person',
+                      id: friend().user.handle,
+                      author: friend().user,
+                    }}
+                    onClose={() => setDialog(null)}
+                  />
+                </Show>
+                <Show when={shownDialog() === 'block'}>
+                  <ConfirmDialog
+                    open={dialog() === 'block'}
+                    title={`Block ${name()}?`}
+                    description="They are removed from your friends and can’t see your library. You can unblock them in Settings."
+                    confirmLabel="Block"
+                    cancelLabel="Cancel"
+                    busy={blocking()}
+                    onConfirm={() => void block(friend().user.userId)}
+                    onCancel={() => setDialog(null)}
+                  />
+                </Show>
                 <Show when={friend().achievements}>
                   {(earned) => <FriendBadges achievements={earned()} />}
                 </Show>

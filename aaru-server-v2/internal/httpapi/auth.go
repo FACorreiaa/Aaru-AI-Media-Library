@@ -111,6 +111,22 @@ func (s *Server) SignOut(ctx context.Context, _ api.SignOutRequestObject) (api.S
 	return api.SignOut204Response{}, nil
 }
 
+// SignOutOtherDevices is `DELETE /v1/auth/sessions`: ends every session but the presented one.
+func (s *Server) SignOutOtherDevices(ctx context.Context, _ api.SignOutOtherDevicesRequestObject) (api.SignOutOtherDevicesResponseObject, error) {
+	userID, err := currentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	hash := reqctx.SessionTokenHash(ctx)
+	if hash == "" {
+		return nil, apperr.Unauthorized()
+	}
+	if err := s.Auth.SignOutOtherDevices(ctx, userID, hash); err != nil {
+		return nil, err
+	}
+	return api.SignOutOtherDevices204Response{}, nil
+}
+
 // GetMe is `GET /v1/me`.
 func (s *Server) GetMe(ctx context.Context, _ api.GetMeRequestObject) (api.GetMeResponseObject, error) {
 	userID, err := currentUser(ctx)
@@ -130,7 +146,7 @@ func (s *Server) DeleteAccount(ctx context.Context, _ api.DeleteAccountRequestOb
 	if err != nil {
 		return nil, err
 	}
-	if err := s.Auth.DeleteAccount(ctx, userID); err != nil {
+	if err := s.Auth.DeleteAccount(ctx, userID, reqctx.SessionTokenHash(ctx)); err != nil {
 		return nil, err
 	}
 	return api.DeleteAccount204Response{}, nil

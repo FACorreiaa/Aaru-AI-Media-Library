@@ -278,6 +278,25 @@ func (s *Store) deleteSession(ctx context.Context, tokenHash string) error {
 	return nil
 }
 
+// sessionCreatedAt is when the live session with this token hash was created.
+func (s *Store) sessionCreatedAt(ctx context.Context, tokenHash string, now time.Time) (time.Time, bool, error) {
+	created, err := s.q.SessionCreatedAt(ctx, sqlc.SessionCreatedAtParams{TokenHash: tokenHash, Now: now})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return time.Time{}, false, nil
+	}
+	if err != nil {
+		return time.Time{}, false, fmt.Errorf("session created at: %w", err)
+	}
+	return created, true, nil
+}
+
+func (s *Store) deleteOtherSessions(ctx context.Context, userID uuid.UUID, keepTokenHash string) error {
+	if err := s.q.DeleteOtherSessions(ctx, sqlc.DeleteOtherSessionsParams{UserID: userID, TokenHash: keepTokenHash}); err != nil {
+		return fmt.Errorf("delete other sessions: %w", err)
+	}
+	return nil
+}
+
 // CreateMagicLink stores a link's and its code's hashes.
 func (s *Store) CreateMagicLink(ctx context.Context, email, tokenHash, codeHash string, expiresAt time.Time) error {
 	err := s.q.CreateMagicLink(ctx, sqlc.CreateMagicLinkParams{ID: uuid.New(), Email: email, TokenHash: tokenHash, CodeHash: codeHash, ExpiresAt: expiresAt})
