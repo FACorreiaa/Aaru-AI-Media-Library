@@ -111,8 +111,8 @@ service at risk. Where it can, it will tell you why.
 
 ## Changes to these terms
 
-If these terms change in a way that matters, the date at the top changes and the apps tell you
-before you carry on using Aaru. If you don't agree, delete your account. Using Aaru after a change
+If these terms change in a way that matters, the date at the top changes and
+Aaru emails you about it before it takes effect. If you don't agree, delete your account. Using Aaru after a change
 means you accept it.
 
 ## Contact
