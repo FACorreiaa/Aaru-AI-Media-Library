@@ -220,8 +220,9 @@ TMDB and Wikidata."
 
 **From here (GRAPH-005, 2026-11-11, web, iPhone, iPad, Mac).** Under Related, a small tree in the
 manner of a game's skill tree: this title on the left, ringed in the accent, a trunk down from it,
-and a labelled row branching off for the series and for the person who made it (the director, the
-creator, the studio, the author, the artist, by name). Tiles are posters joined by straight and
+and a labelled row branching off for the person who made it (the director, the creator, the
+studio, the author, the artist, by name), for the series, and for what it is based on or adapted
+into. Tiles are posters joined by straight and
 right-angle lines. A title the person finished is lit: full colour with the accent ring. One in
 their library is full colour with its status. One they do not have is dimmed with a hairline ring,
 and still opens. In a person's row the first titles are what they made next, in order; the last two

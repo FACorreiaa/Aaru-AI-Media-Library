@@ -230,8 +230,8 @@ Use these words in code, APIs, and UI:
   never a library write and never a recommendation. The *main chain* is prequels and sequels in one
   medium; "Start here" is its first title the user has not finished or dropped
 - **Title tree** — where one title leads (GRAPH-005, owner 2026-11-11): the title as the root and
-  up to three *branches* of up to five titles, the series and the person who made it (director,
-  creator, studio, author, artist). A person's branch is what they made next, then their two *best
+  up to three *branches* of up to five titles: the person who made it (director, creator, studio,
+  author, artist), the series, and its adaptations. A person's branch is what they made next, then their two *best
   known* by the provider's own count, the same for every user. The UI says "From here". Catalog
   data like a Relation: never a library write, never a recommendation, never "for you"
 - **Discover** — provider-curated public rows (DISC-001: trending, on the air, new shows, in

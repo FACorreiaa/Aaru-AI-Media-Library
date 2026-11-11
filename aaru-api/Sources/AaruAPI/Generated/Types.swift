@@ -757,6 +757,11 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/titles/{id}/relations/chain`.
     /// - Remark: Generated from `#/paths//v1/titles/{id}/relations/chain/post(planRelationChain)`.
     func planRelationChain(_ input: Operations.PlanRelationChain.Input) async throws -> Operations.PlanRelationChain.Output
+    /// The title tree (GRAPH-005), "From here": the title as the root and up to three branches of up to five titles, the person who made it (a film's director, a show's creator, an anime's main studio, a manga's or book's author, an album's artist), its series and its adaptations, each marked with the caller's library. Catalog data, the same for every user: reading it writes nothing, and nothing in it is personal. A tree that is missing titles because a source failed or ran out of time says `partial`.
+    ///
+    /// - Remark: HTTP `GET /v1/titles/{id}/tree`.
+    /// - Remark: Generated from `#/paths//v1/titles/{id}/tree/get(getTitleTree)`.
+    func getTitleTree(_ input: Operations.GetTitleTree.Input) async throws -> Operations.GetTitleTree.Output
     /// Posts about this title by you and your friends, newest first.
     ///
     /// - Remark: HTTP `GET /v1/titles/{id}/posts`.
@@ -2868,6 +2873,19 @@ extension APIProtocol {
         try await planRelationChain(Operations.PlanRelationChain.Input(
             path: path,
             query: query,
+            headers: headers
+        ))
+    }
+    /// The title tree (GRAPH-005), "From here": the title as the root and up to three branches of up to five titles, the person who made it (a film's director, a show's creator, an anime's main studio, a manga's or book's author, an album's artist), its series and its adaptations, each marked with the caller's library. Catalog data, the same for every user: reading it writes nothing, and nothing in it is personal. A tree that is missing titles because a source failed or ran out of time says `partial`.
+    ///
+    /// - Remark: HTTP `GET /v1/titles/{id}/tree`.
+    /// - Remark: Generated from `#/paths//v1/titles/{id}/tree/get(getTitleTree)`.
+    public func getTitleTree(
+        path: Operations.GetTitleTree.Input.Path,
+        headers: Operations.GetTitleTree.Input.Headers = .init()
+    ) async throws -> Operations.GetTitleTree.Output {
+        try await getTitleTree(Operations.GetTitleTree.Input(
+            path: path,
             headers: headers
         ))
     }
@@ -11478,6 +11496,159 @@ public enum Components {
                 case from
                 case to
                 case relation
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/TitleTree`.
+        public struct TitleTree: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/TitleTree/root`.
+            public var root: Components.Schemas.TreeNode
+            /// At most three, in the order to draw them: the person, the series, the adaptations. A branch with no titles is left out, so this may be empty.
+            ///
+            /// - Remark: Generated from `#/components/schemas/TitleTree/branches`.
+            public var branches: [Components.Schemas.TreeBranch]
+            /// True when a source failed or ran out of time; the tree may miss titles.
+            ///
+            /// - Remark: Generated from `#/components/schemas/TitleTree/partial`.
+            public var partial: Swift.Bool
+            /// Creates a new `TitleTree`.
+            ///
+            /// - Parameters:
+            ///   - root:
+            ///   - branches: At most three, in the order to draw them: the person, the series, the adaptations. A branch with no titles is left out, so this may be empty.
+            ///   - partial: True when a source failed or ran out of time; the tree may miss titles.
+            public init(
+                root: Components.Schemas.TreeNode,
+                branches: [Components.Schemas.TreeBranch],
+                partial: Swift.Bool
+            ) {
+                self.root = root
+                self.branches = branches
+                self.partial = partial
+            }
+            public enum CodingKeys: String, CodingKey {
+                case root
+                case branches
+                case partial
+            }
+        }
+        /// What a branch of a title tree holds: the titles after this one in its `series`, what it is based on or adapted into (`adaptation`), or works by the person who made it.
+        ///
+        /// - Remark: Generated from `#/components/schemas/TreeBranchKind`.
+        @frozen public enum TreeBranchKind: String, Codable, Hashable, Sendable, CaseIterable {
+            case series = "series"
+            case adaptation = "adaptation"
+            case director = "director"
+            case creator = "creator"
+            case studio = "studio"
+            case author = "author"
+            case artist = "artist"
+        }
+        /// Why a title is in the tree. `root` is the title asked for. In a person's branch `next` is what they made after it, in release order, and `best_known` is one of their works with the highest count at the provider (TMDB votes, AniList popularity, Open Library reading logs), from any year and the same for every user. `series` and `adaptation` come from the relation graph.
+        ///
+        /// - Remark: Generated from `#/components/schemas/TreePick`.
+        @frozen public enum TreePick: String, Codable, Hashable, Sendable, CaseIterable {
+            case root = "root"
+            case next = "next"
+            case bestKnown = "best_known"
+            case series = "series"
+            case adaptation = "adaptation"
+        }
+        /// - Remark: Generated from `#/components/schemas/TreeBranch`.
+        public struct TreeBranch: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/TreeBranch/kind`.
+            public var kind: Components.Schemas.TreeBranchKind
+            /// The person's or studio's name. Absent for `series` and `adaptation`.
+            ///
+            /// - Remark: Generated from `#/components/schemas/TreeBranch/label`.
+            public var label: Swift.String?
+            /// One to five titles, in the order to draw them.
+            ///
+            /// - Remark: Generated from `#/components/schemas/TreeBranch/nodes`.
+            public var nodes: [Components.Schemas.TreeNode]
+            /// Creates a new `TreeBranch`.
+            ///
+            /// - Parameters:
+            ///   - kind:
+            ///   - label: The person's or studio's name. Absent for `series` and `adaptation`.
+            ///   - nodes: One to five titles, in the order to draw them.
+            public init(
+                kind: Components.Schemas.TreeBranchKind,
+                label: Swift.String? = nil,
+                nodes: [Components.Schemas.TreeNode]
+            ) {
+                self.kind = kind
+                self.label = label
+                self.nodes = nodes
+            }
+            public enum CodingKeys: String, CodingKey {
+                case kind
+                case label
+                case nodes
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/TreeNode`.
+        public struct TreeNode: Codable, Hashable, Sendable {
+            /// Stable within one tree.
+            ///
+            /// - Remark: Generated from `#/components/schemas/TreeNode/key`.
+            public var key: Swift.String
+            /// Opens the title (POST /v1/titles/resolve) or adds it, as a search hit does.
+            ///
+            /// - Remark: Generated from `#/components/schemas/TreeNode/ref`.
+            public var ref: Components.Schemas.MediaRef
+            /// - Remark: Generated from `#/components/schemas/TreeNode/isAnime`.
+            public var isAnime: Swift.Bool?
+            /// - Remark: Generated from `#/components/schemas/TreeNode/posterUrl`.
+            public var posterUrl: Swift.String?
+            /// `YYYY-MM-DD` when the source knows the day.
+            ///
+            /// - Remark: Generated from `#/components/schemas/TreeNode/releaseDate`.
+            public var releaseDate: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/TreeNode/pick`.
+            public var pick: Components.Schemas.TreePick
+            /// - Remark: Generated from `#/components/schemas/TreeNode/libraryItemId`.
+            public var libraryItemId: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/TreeNode/status`.
+            public var status: Components.Schemas.LibraryStatus?
+            /// Creates a new `TreeNode`.
+            ///
+            /// - Parameters:
+            ///   - key: Stable within one tree.
+            ///   - ref: Opens the title (POST /v1/titles/resolve) or adds it, as a search hit does.
+            ///   - isAnime:
+            ///   - posterUrl:
+            ///   - releaseDate: `YYYY-MM-DD` when the source knows the day.
+            ///   - pick:
+            ///   - libraryItemId:
+            ///   - status:
+            public init(
+                key: Swift.String,
+                ref: Components.Schemas.MediaRef,
+                isAnime: Swift.Bool? = nil,
+                posterUrl: Swift.String? = nil,
+                releaseDate: Swift.String? = nil,
+                pick: Components.Schemas.TreePick,
+                libraryItemId: Swift.String? = nil,
+                status: Components.Schemas.LibraryStatus? = nil
+            ) {
+                self.key = key
+                self.ref = ref
+                self.isAnime = isAnime
+                self.posterUrl = posterUrl
+                self.releaseDate = releaseDate
+                self.pick = pick
+                self.libraryItemId = libraryItemId
+                self.status = status
+            }
+            public enum CodingKeys: String, CodingKey {
+                case key
+                case ref
+                case isAnime
+                case posterUrl
+                case releaseDate
+                case pick
+                case libraryItemId
+                case status
             }
         }
         /// - Remark: Generated from `#/components/schemas/TitlePreview`.
@@ -36369,6 +36540,153 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/titles/{id}/relations/chain/post(planRelationChain)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// The title tree (GRAPH-005), "From here": the title as the root and up to three branches of up to five titles, the person who made it (a film's director, a show's creator, an anime's main studio, a manga's or book's author, an album's artist), its series and its adaptations, each marked with the caller's library. Catalog data, the same for every user: reading it writes nothing, and nothing in it is personal. A tree that is missing titles because a source failed or ran out of time says `partial`.
+    ///
+    /// - Remark: HTTP `GET /v1/titles/{id}/tree`.
+    /// - Remark: Generated from `#/paths//v1/titles/{id}/tree/get(getTitleTree)`.
+    public enum GetTitleTree {
+        public static let id: Swift.String = "getTitleTree"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/titles/{id}/tree/GET/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/titles/{id}/tree/GET/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.GetTitleTree.Input.Path
+            /// - Remark: Generated from `#/paths/v1/titles/{id}/tree/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetTitleTree.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetTitleTree.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetTitleTree.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.GetTitleTree.Input.Path,
+                headers: Operations.GetTitleTree.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/titles/{id}/tree/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/titles/{id}/tree/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.TitleTree)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.TitleTree {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetTitleTree.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetTitleTree.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The tree.
+            ///
+            /// - Remark: Generated from `#/paths//v1/titles/{id}/tree/get(getTitleTree)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetTitleTree.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetTitleTree.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/titles/{id}/tree/get(getTitleTree)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

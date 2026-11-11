@@ -2469,6 +2469,31 @@ paths:
               schema: {$ref: '#/components/schemas/ImportJob'}
         default:
           $ref: '#/components/responses/Error'
+  /v1/titles/{id}/tree:
+    get:
+      operationId: getTitleTree
+      summary: >-
+        The title tree (GRAPH-005), "From here": the title as the root and up to three branches of
+        up to five titles, the person who made it (a film's director, a show's creator, an anime's
+        main studio, a manga's or book's author, an album's artist), its series and its
+        adaptations, each marked with the caller's library. Catalog data, the same for every user:
+        reading it writes nothing, and nothing in it is personal. A tree that is missing titles
+        because a source failed or ran out of time says `partial`.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: The tree.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TitleTree'}
+        default:
+          $ref: '#/components/responses/Error'
   /v1/titles/{id}/posts:
     get:
       operationId: listTitlePosts
@@ -5954,6 +5979,61 @@ components:
         from: {type: string}
         to: {type: string}
         relation: {$ref: '#/components/schemas/Relation'}
+    TitleTree:
+      type: object
+      required: [root, branches, partial]
+      properties:
+        root: {$ref: '#/components/schemas/TreeNode'}
+        branches:
+          type: array
+          description: >-
+            At most three, in the order to draw them: the person, the series, the adaptations. A
+            branch with no titles is left out, so this may be empty.
+          items: {$ref: '#/components/schemas/TreeBranch'}
+        partial:
+          type: boolean
+          description: True when a source failed or ran out of time; the tree may miss titles.
+    TreeBranchKind:
+      type: string
+      description: >-
+        What a branch of a title tree holds: the titles after this one in its `series`, what it is
+        based on or adapted into (`adaptation`), or works by the person who made it.
+      enum: [series, adaptation, director, creator, studio, author, artist]
+    TreePick:
+      type: string
+      description: >-
+        Why a title is in the tree. `root` is the title asked for. In a person's branch `next` is
+        what they made after it, in release order, and `best_known` is one of their works with the
+        highest count at the provider (TMDB votes, AniList popularity, Open Library reading logs),
+        from any year and the same for every user. `series` and `adaptation` come from the relation
+        graph.
+      enum: [root, next, best_known, series, adaptation]
+    TreeBranch:
+      type: object
+      required: [kind, nodes]
+      properties:
+        kind: {$ref: '#/components/schemas/TreeBranchKind'}
+        label:
+          type: string
+          description: The person's or studio's name. Absent for `series` and `adaptation`.
+        nodes:
+          type: array
+          description: One to five titles, in the order to draw them.
+          items: {$ref: '#/components/schemas/TreeNode'}
+    TreeNode:
+      type: object
+      required: [key, ref, pick]
+      properties:
+        key: {type: string, description: Stable within one tree.}
+        ref:
+          $ref: '#/components/schemas/MediaRef'
+          description: Opens the title (POST /v1/titles/resolve) or adds it, as a search hit does.
+        isAnime: {type: boolean}
+        posterUrl: {type: string}
+        releaseDate: {type: string, description: '`YYYY-MM-DD` when the source knows the day.'}
+        pick: {$ref: '#/components/schemas/TreePick'}
+        libraryItemId: {type: string, format: uuid}
+        status: {$ref: '#/components/schemas/LibraryStatus'}
     TitlePreview:
       type: object
       required: [title]
