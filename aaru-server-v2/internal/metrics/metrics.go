@@ -29,7 +29,7 @@ var (
 	// LLMCalls are model calls by provider and result.
 	LLMCalls = counter("aaru_llm_calls_total", "Model calls by provider and result.", "provider", "result")
 	// SocialReports are saved user reports by reason; the owner alerts on it (R4).
-	SocialReports = counter("aaru_social_reports_total", "Saved user reports, by reason.", "reason")
+	SocialReports = socialReports()
 
 	inFlight = prometheus.NewGauge(prometheus.GaugeOpts{Name: "aaru_http_in_flight", Help: "HTTP requests being handled now."})
 	duration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
@@ -41,6 +41,19 @@ var (
 
 func init() {
 	Registry.MustRegister(inFlight, duration)
+}
+
+// reportReasons are social.ReportReason's values (social imports this package, so they are repeated here).
+var reportReasons = []string{"spam", "harassment", "impersonation", "other"}
+
+// socialReports starts every reason at 0: a series that first appears at 1 has no increase(),
+// so the report alert would miss the first report after a restart.
+func socialReports() *prometheus.CounterVec {
+	c := counter("aaru_social_reports_total", "Saved user reports, by reason.", "reason")
+	for _, r := range reportReasons {
+		c.WithLabelValues(r)
+	}
+	return c
 }
 
 func counter(name, help string, labels ...string) *prometheus.CounterVec {
@@ -91,7 +104,7 @@ func Reset() {
 	Scrobbles = counter("aaru_scrobbles_total", "Playback reports received, by player.", "source", "action")
 	Push = counter("aaru_push_total", "Push sends by channel (apns, web, live_activity) and result.", "channel", "result")
 	LLMCalls = counter("aaru_llm_calls_total", "Model calls by provider and result.", "provider", "result")
-	SocialReports = counter("aaru_social_reports_total", "Saved user reports, by reason.", "reason")
+	SocialReports = socialReports()
 	inFlight = prometheus.NewGauge(prometheus.GaugeOpts{Name: "aaru_http_in_flight", Help: "HTTP requests being handled now."})
 	duration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Name:    "aaru_http_request_duration_seconds",
