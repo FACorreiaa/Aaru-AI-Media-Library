@@ -259,6 +259,7 @@ GET    /v1/titles/{id}
 POST   /v1/titles/resolve                 # LIB-006: a MediaRef's page; catalog only, never the library
 GET    /v1/titles/{id}/relations          # GRAPH-001: the relation graph, marked with the caller's library
 POST   /v1/titles/{id}/relations/chain    # GRAPH-003: the main chain as a capture to review
+GET    /v1/titles/{id}/tree               # GRAPH-005: the title tree, marked with the caller's library
 GET    /v1/lists/{id}/graph               # GRAPH-004: a list (a roadmap) in the relation graph's shape
 
 GET    /v1/calendar?from=&to=             # CAL-001
@@ -443,6 +444,22 @@ free lane. Clients draw `rank` and `lane` as they come. Each source's answer is 
 `catalog_relations` (catalog data, no user); the caller's marks and "Start here" are read from the
 library after the graph is built. The owl reads the same graph through the read-only
 `title_relations` chat tool (GRAPH-004) and checks a roadmap against it before proposing one.
+
+### Title tree (GRAPH-005)
+
+`GET /v1/titles/{id}/tree` is a small tree from one title: the root and up to three branches of up
+to five titles. `catalog.TreeService` builds it from two things. The **series** branch is cut from
+the relation graph above (the main chain after the root, else its adaptations), so it costs no new
+provider call. The **person** branch asks a `CreditSource` twice: who made this title (a film's
+director and a show's creator from TMDB, an anime's main studio and a manga's story author from
+AniList, a book's author from Open Library, an album's artist from MusicBrainz), then that person's
+works. Both answers are keyed by the provider's own id, never a name, and cached 30 days in
+`catalog_credits` ("nothing found" one day; the stale row is served when a provider fails), through
+the adapters' shared pacers. `core` picks the branch: the next three works after the root by date,
+then the two with the highest provider count, marked `best_known`. The count is the provider's and
+the same for every user, so the tree is catalog data like Discover and not a recommendation. A page
+waits 4 s; a tree cut short is `partial` and finishes in the background. The caller's marks are
+read from the library after the tree is built, with the relation graph's matching.
 
 ### Discover (DISC-001)
 

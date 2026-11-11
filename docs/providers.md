@@ -24,6 +24,15 @@ render the **Credit** column; `/privacy` names every row that receives user data
 Commercial use of TMDB and AniList on these keys is **not** allowed: any paid plan in
 `BUSINESS.md` needs a TMDB commercial agreement and AniList's permission first.
 
+The title tree (GRAPH-005, 2026-11-11) adds two calls per title, both by id and both cached 30 days
+in `catalog_credits`: who made it, then that person's works. TMDB: `movie/{id}/credits` and
+`person/{id}/movie_credits` (a film's director), `tv/{id}` and `person/{id}/tv_credits` (a show's
+creator). AniList: a title's main studio or story staff, then `Studio.media` or `Staff.staffMedia`.
+Open Library: the work's author key, then `search.json` by `author_key`. MusicBrainz: the artist
+credit, then a browse of the artist's release groups. Each goes through its provider's pacer above,
+so the limits do not change, and none carries who is asking. The credits are the ones already
+shown.
+
 Discover rows (DISC-001, 2026-10-20) call TMDB, AniList and Open Library through one in-memory
 server cache: 6 h TTL, one fetch per list however many users ask, the stale copy served (and a
 5 min back-off) when a refresh fails, and no user data in the request or the cache; the
