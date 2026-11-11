@@ -448,16 +448,18 @@ library after the graph is built. The owl reads the same graph through the read-
 ### Title tree (GRAPH-005)
 
 `GET /v1/titles/{id}/tree` is a small tree from one title: the root and up to three branches of up
-to five titles. `catalog.TreeService` builds it from two things. The **series** branch is cut from
-the relation graph above (the main chain after the root, else its adaptations), so it costs no new
-provider call. The **person** branch asks a `CreditSource` twice: who made this title (a film's
+to five titles. `catalog.TreeService` builds it from two things. The **series** and **adaptation**
+branches are cut from the relation graph above (the main chain after the root; what the root is
+based on or adapted into), so they cost no new provider call. The **person** branch asks a `CreditSource` twice: who made this title (a film's
 director and a show's creator from TMDB, an anime's main studio and a manga's story author from
 AniList, a book's author from Open Library, an album's artist from MusicBrainz), then that person's
 works. Both answers are keyed by the provider's own id, never a name, and cached 30 days in
 `catalog_credits` ("nothing found" one day; the stale row is served when a provider fails), through
 the adapters' shared pacers. `core` picks the branch: the next three works after the root by date,
 then the two with the highest provider count, marked `best_known`. The count is the provider's and
-the same for every user, so the tree is catalog data like Discover and not a recommendation. A page
+the same for every user, so the tree is catalog data like Discover and not a recommendation. A work
+the graph already shows is left out of the person's branch, and a studio's seasons of one show are
+folded into one title through `anime_mappings`. A page
 waits 4 s; a tree cut short is `partial` and finishes in the background. The caller's marks are
 read from the library after the tree is built, with the relation graph's matching.
 

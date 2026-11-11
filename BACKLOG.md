@@ -42,9 +42,10 @@ of a game's skill tree. "No need for a big tree or a second brain." This is the 
 
 - **Where:** it opens when a title becomes finished on its page, and stays on the title page as
   "From here".
-- **Branches:** the series (the relation graph's main chain after the title) and the title's
-  person: a film's director, a show's creator, an anime's main studio, a manga's or book's author,
-  an album's artist. At most three branches of five titles.
+- **Branches:** the title's person, the series (the relation graph's main chain after the
+  title) and its adaptations (what it is based on or adapted into). The person is a film's
+  director, a show's creator, an anime's main studio, a manga's or book's author, an album's
+  artist. At most three branches of five titles.
 - **A person's branch is one row:** the next three works they made after the title, in release
   order, then their two best known from any year, starred. Titles the user finished show lit.
 - **"Best known" is the provider's own count** (TMDB votes, AniList popularity, Open Library
@@ -958,7 +959,7 @@ account or a stranger that has not happened yet.
 | GRAPH-002 | Built, unverified | `RelatedTitles.tsx`, `_shell.app_.graph.$titleId.tsx`, `TitleRelated.swift` | Builds and tests pass; not looked at on a screen; "Add the chain" moved to GRAPH-003. 2026-11-10: a failed read says so with Try again (it was silent), Related sits above the episodes on Apple, edges are labelled there, related titles open from every stack |
 | GRAPH-003 | Built, unverified | `list_roadmaps`, `capture.Place`, `RoadmapSteps.tsx`, `RoadmapSteps.swift`, `POST /v1/titles/{id}/relations/chain` | Stub model only; not looked at on a screen |
 | GRAPH-004 | Built, unverified | `GET /v1/lists/{id}/graph`, `title_relations`, `RelationGraphCanvas` (web, Apple) | Stub model only; not looked at on a screen |
-| GRAPH-005 | Open | BACKLOG GRAPH-005 | Specified 2026-11-11; nothing built |
+| GRAPH-005 | In progress | `GET /v1/titles/{id}/tree`, `catalog/tree.go`, `catalog/credits*.go`, `core/tree.go`, migration 00012 `catalog_credits` | Server built 2026-11-11; stub providers only. The new AniList, Open Library and MusicBrainz queries were run by hand against the live APIs; TMDB's were not (no key on the dev machine), so a show's creator branch (`tv_credits`, job Creator) is unproven. Clients not built |
 | IMP-021 | Built, unverified | `POST /v1/imports/{id}/match-all`, `catalog/guess.go`, `imports/matchall.go`, `aaru-ios/Aaru/Capture/MatchAllButton.swift` | Web run locally: real Open Library, stub model, 8 of 10 rows filled in about 12 seconds. iOS builds and has not been tapped. Needs the API promoted |
 | PRV-001 | Done | #27 8d5ddc3; docs/providers.md, AboutView.swift | privacy@ routing not set up |
 | CAT-011 | Done | #24 7edc80c; TVmazeAirTimes.swift | |
@@ -3194,14 +3195,19 @@ only: not yet asked of the real model.
 - `GET /v1/titles/{id}/tree`: the title as the root and up to three branches of up to five titles,
   each marked with the caller's library status. Catalog data: never a library write, never a
   recommendation.
-- Branches: **series**, from the relation graph (the main chain after the root; its adaptations when
-  there is none), and the title's **person**, read by the provider's id: a film's first credited
+- Branches, in this order: the title's **person**; **series**, the relation graph's main chain
+  after the root; **adaptation**, what the root is based on or adapted into, from the same graph.
+  The person is read by the provider's id: a film's first credited
   director and a show's first creator (TMDB), an anime's main studio and a manga's story author
   (AniList), a book's first author (Open Library), an album's first credited artist (MusicBrainz).
 - A person's branch: the next three works after the root by release date, then the two best known
   not already there (TMDB vote count, AniList popularity, Open Library reading-log count), marked
   `best_known`. Fewer than three later works leaves more room for best known. Undated works and the
   root itself are left out. An album's branch is the next five by date. An empty branch is left out.
+  A title the relation graph already shows is not repeated in the person's branch, and an anime
+  studio's seasons of one show count once (`anime_mappings`); the root's own seasons are left out.
+  AniList cannot list a studio's works from a date on, so a studio or author is read by their 50
+  most popular works.
 - A title's people and a person's works are cached 30 days in `catalog_credits` (no user data),
   "nothing found" one day, the stale copy served when a provider fails. A page waits 4 s; a tree cut
   short says `partial` and is finished in the background.

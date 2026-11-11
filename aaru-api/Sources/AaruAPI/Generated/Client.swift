@@ -11715,6 +11715,85 @@ public struct Client: APIProtocol {
             }
         )
     }
+    /// The title tree (GRAPH-005), "From here": the title as the root and up to three branches of up to five titles, the person who made it (a film's director, a show's creator, an anime's main studio, a manga's or book's author, an album's artist), its series and its adaptations, each marked with the caller's library. Catalog data, the same for every user: reading it writes nothing, and nothing in it is personal. A tree that is missing titles because a source failed or ran out of time says `partial`.
+    ///
+    /// - Remark: HTTP `GET /v1/titles/{id}/tree`.
+    /// - Remark: Generated from `#/paths//v1/titles/{id}/tree/get(getTitleTree)`.
+    public func getTitleTree(_ input: Operations.GetTitleTree.Input) async throws -> Operations.GetTitleTree.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.GetTitleTree.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/titles/{}/tree",
+                    parameters: [
+                        input.path.id
+                    ]
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .get
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.GetTitleTree.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.TitleTree.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                default:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(body: body)
+                    )
+                }
+            }
+        )
+    }
     /// Posts about this title by you and your friends, newest first.
     ///
     /// - Remark: HTTP `GET /v1/titles/{id}/posts`.

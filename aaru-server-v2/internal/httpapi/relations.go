@@ -134,3 +134,62 @@ func chainTitles(graph catalog.RelationGraph) ([]capture.Title, string) {
 	name := []rune(centre + " in " + string(graph.Order) + " order")
 	return titles, string(name[:min(len(name), capture.MaxListName)])
 }
+
+// GetTitleTree is GET /v1/titles/{id}/tree (GRAPH-005): where the title leads, marked with the
+// caller's own library. Reading it writes nothing.
+func (s *Server) GetTitleTree(ctx context.Context, req api.GetTitleTreeRequestObject) (api.GetTitleTreeResponseObject, error) {
+	if req.Id.ID() == uuid.Nil {
+		return nil, apperr.NotFound()
+	}
+	userID, err := currentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	tree, err := s.Catalog.Tree.Tree(ctx, req.Id.ID())
+	if err != nil {
+		return nil, err
+	}
+	marks, err := s.Catalog.Tree.Marks(ctx, userID, tree)
+	if err != nil {
+		return nil, err
+	}
+	return api.GetTitleTree200JSONResponse(TitleTreeDTO(tree, marks)), nil
+}
+
+// TitleTreeDTO is the tree's wire shape, with the caller's marks.
+func TitleTreeDTO(tree catalog.Tree, marks map[string]catalog.RelationMark) api.TitleTree {
+	node := func(n catalog.TreeNode, key string) api.TreeNode {
+		ids := ExternalIDsDTO(n.IDs)
+		title := n.Title
+		out := api.TreeNode{
+			Key: key, Pick: api.TreePick(n.Pick),
+			Ref:       api.MediaRef{Type: api.MediaType(n.Type), Ids: &ids, Title: &title, Year: n.Year},
+			PosterUrl: n.PosterURL, ReleaseDate: n.ReleaseDate,
+		}
+		if n.IsAnime {
+			anime := true
+			out.IsAnime = &anime
+		}
+		if m, ok := marks[key]; ok {
+			item := apiid.From(m.LibraryItemID)
+			st := api.LibraryStatus(m.Status)
+			out.LibraryItemId, out.Status = &item, &st
+		}
+		return out
+	}
+	out := api.TitleTree{
+		Root: node(tree.Root, tree.Root.Key), Branches: make([]api.TreeBranch, 0, len(tree.Branches)), Partial: tree.Partial,
+	}
+	for _, b := range tree.Branches {
+		branch := api.TreeBranch{Kind: api.TreeBranchKind(b.Kind), Nodes: make([]api.TreeNode, 0, len(b.Nodes))}
+		if b.Label != "" {
+			label := b.Label
+			branch.Label = &label
+		}
+		for _, n := range b.Nodes {
+			branch.Nodes = append(branch.Nodes, node(n, b.NodeKey(n)))
+		}
+		out.Branches = append(out.Branches, branch)
+	}
+	return out
+}

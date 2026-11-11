@@ -19,6 +19,9 @@ type Kit struct {
 	Refresher  *Refresher
 	// Relations builds relation graphs (GRAPH-001) over AniList, TMDB collections and Wikidata.
 	Relations *RelationService
+	// Tree builds title trees (GRAPH-005): the relation graph's series plus who made the title,
+	// from TMDB, AniList, Open Library and MusicBrainz.
+	Tree *TreeService
 	// Scores reads audience scores for the assistant (ASK-011): TMDB and AniList.
 	Scores *ScoreService
 	// MusicBrainz is the album adapter, also the recording matcher and the album
@@ -96,6 +99,13 @@ func NewKit(pool *pgxpool.Pool, providers Providers, log *slog.Logger) *Kit {
 		}
 	}
 	kit.Relations = NewRelationService(store, relationSources, log)
+	var creditSources []CreditSource
+	for _, p := range []any{providers.AniList, providers.TMDB, providers.OpenLibrary, providers.Music} {
+		if source, ok := p.(CreditSource); ok && source != nil {
+			creditSources = append(creditSources, source)
+		}
+	}
+	kit.Tree = NewTreeService(kit.Relations, creditSources, log)
 	kit.Scores = NewScoreService(providers.TMDB, providers.AniList, log)
 	if mb, ok := providers.Music.(*MusicBrainz); ok {
 		kit.MusicBrainz = mb
