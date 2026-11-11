@@ -102,7 +102,7 @@ struct FriendProfileView: View {
                 Button("Block", role: .destructive) { Task { await block() } }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text("They are removed from your friends and can't see your library. You can unblock them in Settings.")
+                Text("They are removed from your friends and can't see your library. You can unblock them in Friends.")
             }
             .alert("That person was not blocked.", isPresented: .init(
                 get: { blockProblem != nil }, set: {
