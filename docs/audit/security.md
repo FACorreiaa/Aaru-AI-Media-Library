@@ -54,8 +54,11 @@ limiters therefore key on the real client IP. A config change at the ingress wou
 
 - Google sign-in verifies the nonce only when the client sends one
   (`Auth/GoogleIdentityVerifier.swift`); both clients send one, so require it.
-- `DELETE /v1/me` needs only a session; there is no sign-out-everywhere; sessions last 90 days
-  without rotation (`API/AuthHandlers.swift`, `Auth/AuthService.swift`).
+- **Done 2026-11-11 (R1, R2).** `DELETE /v1/me` needs only a session; there is no
+  sign-out-everywhere. Now `DELETE /v1/me` succeeds only when the presenting session was created
+  at most 10 minutes ago (`sessions.created_at`), else 403 `reauth_required`; clients offer "Sign in
+  again". `DELETE /v1/auth/sessions` deletes every session of the user except the presenting one
+  and returns 204 ("Sign out of other devices"). Sessions still last 90 days without rotation.
 - A DCR client whose name contains "claude" is stored as kind `claude` / `claude_code`
   (`OAuth/OAuthService.swift`). The consent page shows the self-asserted name and the redirect
   host, so the kind adds little, but derive it from the redirect host, not the name. DCR clients
@@ -65,11 +68,25 @@ limiters therefore key on the real client IP. A config change at the ingress wou
 - An MCP or OAuth token with `library:write` can repeat tap-sized adds and updates up to the
   120/min token limit without a plan (`Agent/AgentTools.swift`). Intended per `CLAUDE.md`; a
   per-token rolling cap on unplanned writes would bound it.
-- Sandbox-environment App Store transactions grant Plus like Production ones
-  (`Billing/BillingTypes.swift`, `isActive`). Fine while TestFlight is the only channel; revisit
-  before an App Store release.
+- **Done 2026-11-11 (R3).** Sandbox-environment App Store transactions granted Plus like
+  Production ones. Now `billing.accept_sandbox` (env `BILLING_ACCEPT_SANDBOX`, default false): when
+  false, a Sandbox transaction grants nothing (the purchase endpoint answers 409
+  `sandbox_refused`; a Sandbox notification is acknowledged and ignored). TestFlight Plus testing
+  needs the flag set in the infra values.
 - Request logs keep query strings on ordinary routes (`/v1/search?q=`): user-typed text in logs.
   Drop queries by default and allowlist the few that matter.
+
+## Reading reports
+
+Reports reach the developer two ways (R4). Each saved report adds one to the Prometheus counter
+`aaru_social_reports_total{reason}`, which Grafana alerts on, and logs one line, `social report
+saved`, with the report id and reason (no note, no user ids). To read them, query the database:
+
+```sql
+SELECT created_at, reason, note FROM social_reports ORDER BY created_at DESC LIMIT 50;
+```
+
+There is no admin screen.
 
 ## Reviewed and clean at `cd4ea2f`
 
