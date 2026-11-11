@@ -6,6 +6,7 @@ import {
   hasOlder,
   mergeComments,
   prefillReply,
+  reportNote,
   ratingWords,
   replyTarget,
   reviewEffect,
@@ -219,5 +220,16 @@ describe('board model', () => {
     expect(prefillReply('so true', '', '@ben ')).toBe('@ben so true')
     expect(prefillReply('@ben ', '@ben ', '')).toBe('')
     expect(prefillReply('@ben hi', '@ben ', '')).toBe('hi')
+  })
+})
+
+describe('reportNote', () => {
+  it('names a person by profile handle', () => {
+    expect(reportNote('person', 'ana')).toBe('profile:@ana')
+    expect(reportNote('person', '@ana', '  rude  ')).toBe('profile:@ana\nrude')
+  })
+  it('names a post or message by id', () => {
+    expect(reportNote('post', 'p1', 'spam')).toBe('post:p1\nspam')
+    expect(reportNote('group-message', 'm1')).toBe('group-message:m1')
   })
 })
