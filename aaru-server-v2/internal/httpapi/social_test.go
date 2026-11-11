@@ -1,12 +1,14 @@
 package httpapi
 
 import (
+	"aaru-go-api/internal/metrics"
 	"aaru-go-api/internal/social"
 	"net/http"
 	"strings"
 	"testing"
 
 	"github.com/google/uuid"
+	dto "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -191,4 +193,23 @@ func TestHandleChangesAreLimitedAndResavingIsFree(t *testing.T) {
 	assert.Equal(t, http.StatusTooManyRequests, e.send(http.MethodPut, "/v1/me/profile", map[string]any{"handle": taken}).Code)
 	current := e.get("/v1/me")["handle"].(string)
 	assert.Equal(t, http.StatusOK, e.send(http.MethodPut, "/v1/me/profile", map[string]any{"handle": current, "displayName": "Ana"}).Code)
+}
+
+func reportCount(t *testing.T, reason string) float64 {
+	t.Helper()
+	var m dto.Metric
+	require.NoError(t, metrics.SocialReports.WithLabelValues(reason).Write(&m))
+	return m.GetCounter().GetValue()
+}
+
+func TestSavedReportsAreCountedByReason(t *testing.T) {
+	e := newSocialEnv(t)
+	e.claimHandle()
+	ana := e.friendlyUser()
+	before := reportCount(t, "harassment")
+	assert.Equal(t, http.StatusNoContent, e.send(http.MethodPost, "/v1/social/reports", map[string]any{"userId": ana.idString(), "reason": "harassment"}).Code)
+	assert.Equal(t, before+1, reportCount(t, "harassment"))
+	// A report that is refused is not counted.
+	assert.Equal(t, http.StatusNotFound, e.send(http.MethodPost, "/v1/social/reports", map[string]any{"userId": uuid.NewString(), "reason": "harassment"}).Code)
+	assert.Equal(t, before+1, reportCount(t, "harassment"))
 }

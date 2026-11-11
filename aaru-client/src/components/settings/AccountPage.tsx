@@ -1,9 +1,13 @@
 import { useNavigate, useRouter } from '@tanstack/solid-router'
-import { Show, createSignal } from 'solid-js'
+import { Show, createSignal, lazy } from 'solid-js'
 import { GoogleSignInButton } from '../GoogleSignInButton'
 import { AppearanceSection } from '../AppearanceSection'
-import { Alert, AlertDescription, Button } from '~/components/ui'
-import { linkGoogle, signOut } from '../../lib/session/session'
+import { Alert, AlertDescription, Button, toast } from '~/components/ui'
+import {
+  linkGoogle,
+  signOut,
+  signOutOtherDevices,
+} from '../../lib/session/session'
 import { forgetTonight } from '../../lib/home/tonight-cache'
 import { forgetAccount, forgetSession } from '../../lib/session/query'
 import type { AccountPageData } from '../../lib/settings/account'
@@ -12,6 +16,10 @@ import { FavoritesEditor } from './FavoritesEditor'
 import { ProfileEditor } from './ProfileEditor'
 import { SettingsPageTitle } from './SettingsNav'
 import { SettingsSection } from './SettingsSection'
+
+const ConfirmDialog = lazy(() =>
+  import('../ConfirmDialog').then((m) => ({ default: m.ConfirmDialog })),
+)
 
 const providerNames = {
   apple: 'Apple',
@@ -26,6 +34,28 @@ export function AccountPage(props: { data: AccountPageData }) {
   const navigate = useNavigate()
   const [account, setAccount] = createSignal(props.data.account)
   const [problem, setProblem] = createSignal<string | null>(null)
+  const [confirmingOthers, setConfirmingOthers] = createSignal(false)
+  const [signingOutOthers, setSigningOutOthers] = createSignal(false)
+  const [othersDone, setOthersDone] = createSignal(false)
+
+  async function leaveOthers() {
+    setProblem(null)
+    setSigningOutOthers(true)
+    try {
+      await signOutOtherDevices()
+      setOthersDone(true)
+      toast('Signed out of your other devices.')
+    } catch (error) {
+      setProblem(
+        error instanceof Error
+          ? error.message
+          : 'Other devices were not signed out.',
+      )
+    } finally {
+      setSigningOutOthers(false)
+      setConfirmingOthers(false)
+    }
+  }
 
   const providers = () =>
     account()
@@ -118,6 +148,32 @@ export function AccountPage(props: { data: AccountPageData }) {
           Sign out
         </Button>
       </SettingsSection>
+
+      <SettingsSection
+        title="Sign out of other devices"
+        description="Signs out every other browser and phone. You stay signed in here."
+      >
+        <Button variant="outline" onClick={() => setConfirmingOthers(true)}>
+          Sign out of other devices
+        </Button>
+        <Show when={othersDone()}>
+          <p class="mt-2 text-sm text-muted" role="status">
+            Done. Your other devices are signed out.
+          </p>
+        </Show>
+      </SettingsSection>
+      <Show when={confirmingOthers()}>
+        <ConfirmDialog
+          open={confirmingOthers()}
+          title="Sign out of other devices?"
+          description="Every other browser and phone will need to sign in again. This one stays signed in."
+          confirmLabel="Sign out of other devices"
+          cancelLabel="Cancel"
+          busy={signingOutOthers()}
+          onConfirm={() => void leaveOthers()}
+          onCancel={() => setConfirmingOthers(false)}
+        />
+      </Show>
     </>
   )
 }

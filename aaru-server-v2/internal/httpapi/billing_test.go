@@ -38,7 +38,7 @@ func TestAppleReachesTheNotificationRouteWithoutASession(t *testing.T) {
 
 func TestEntitlementReportsPlusAndCaptures(t *testing.T) {
 	var apple stubApple
-	h := newHarness(t, func(d *Deps) { d.Apple = &apple })
+	h := newHarness(t, func(d *Deps) { d.Apple = &apple; d.Config.AcceptSandbox = true })
 	user, bearer := h.signIn()
 	expires := time.Now().Add(24 * time.Hour)
 	apple.txs = map[string]billing.Transaction{"mine": {
@@ -64,4 +64,20 @@ func TestEntitlementReportsPlusAndCaptures(t *testing.T) {
 	assert.NotEmpty(t, plus["expiresAt"])
 	_, hasLimit := plus["capture"].(map[string]any)["limit"]
 	assert.False(t, hasLimit, "Plus has no monthly limit")
+}
+
+func TestSandboxPurchaseIsRefusedWith409UntilAccepted(t *testing.T) {
+	var apple stubApple
+	h := newHarness(t, func(d *Deps) { d.Apple = &apple })
+	user, bearer := h.signIn()
+	expires := time.Now().Add(24 * time.Hour)
+	apple.txs = map[string]billing.Transaction{"mine": {
+		OriginalTransactionID: uuid.NewString(), ProductID: "aaru_plus_monthly", Environment: "Sandbox",
+		AppAccountToken: &user, ExpiresAt: &expires, SignedAt: time.Now(),
+	}}
+	rec := h.do(http.MethodPost, "/v1/billing/apple/transactions", bearer, map[string]string{"signedTransaction": "mine"})
+	assert.Equal(t, http.StatusConflict, rec.Code)
+	assert.Equal(t, "sandbox_refused", decode[map[string]any](t, rec)["code"])
+	free := decode[map[string]any](t, h.do(http.MethodGet, "/v1/me/entitlement", bearer, nil))
+	assert.Equal(t, false, free["plus"])
 }

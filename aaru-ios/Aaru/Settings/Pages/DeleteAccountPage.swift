@@ -4,10 +4,11 @@ import SwiftUI
 /// of the Account pane on the Mac.
 struct DeleteAccountPage: View {
     var onDeleteAccount: () async -> String?
+    var onSignOut: () -> Void
 
     var body: some View {
         Form {
-            DeleteAccountSection(onDeleteAccount: onDeleteAccount)
+            DeleteAccountSection(onDeleteAccount: onDeleteAccount, onSignOut: onSignOut)
         }
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)
@@ -19,6 +20,8 @@ struct DeleteAccountPage: View {
 /// What goes, the way to keep a copy first, and the button, confirmed.
 struct DeleteAccountSection: View {
     var onDeleteAccount: () async -> String?
+    /// "Sign in again" after a delete the server refused for an old session.
+    var onSignOut: () -> Void
 
     @Environment(AppRouter.self) private var router
     @State private var confirms = false
@@ -49,6 +52,9 @@ struct DeleteAccountSection: View {
             }
             if let problem {
                 Text(problem).font(.footnote).foregroundStyle(Color(.danger))
+                if problem == AuthFlow.reauthMessage {
+                    Button("Sign in again", action: onSignOut)
+                }
             }
         } header: {
             Text("Delete account")

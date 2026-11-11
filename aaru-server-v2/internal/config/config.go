@@ -289,10 +289,13 @@ type Pprof struct {
 
 // App is everything serving needs.
 type App struct {
-	Postgres           Postgres
-	HTTP               HTTP
-	TMDBAPIKey         string
-	AppleAudiences     []string
+	Postgres       Postgres
+	HTTP           HTTP
+	TMDBAPIKey     string
+	AppleAudiences []string
+	// AcceptSandbox (BILLING_ACCEPT_SANDBOX, off unless true): whether App Store Sandbox
+	// transactions, which TestFlight purchases are, grant Plus. Production ones always do.
+	AcceptSandbox      bool
 	GoogleAudiences    []string
 	Email              *Email
 	ProviderUserAgent  string
@@ -346,6 +349,7 @@ func Load(r *Reader) (*App, error) {
 		},
 		TMDBAPIKey:         tmdb,
 		AppleAudiences:     list(r.String("apple.audiences", DefaultAppleAudiences)),
+		AcceptSandbox:      r.Bool("billing.accept_sandbox"),
 		GoogleAudiences:    list(r.String("google.client.ids", "")),
 		ProviderUserAgent:  r.String("open.library.user.agent", DefaultProviderUserAgent),
 		VAPIDConfigJSON:    r.Optional("vapid.config"),

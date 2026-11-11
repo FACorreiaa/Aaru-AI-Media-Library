@@ -65,6 +65,7 @@ struct AboutView: View {
             }
 
             Section {
+                Link("Terms of use", destination: Self.url("https://aaruapp.com/terms"))
                 Link("Privacy policy", destination: Self.url("https://aaruapp.com/privacy"))
                 Link("About Aaru on the web", destination: Self.url("https://aaruapp.com/about"))
                 Link("Contact", destination: Self.url("mailto:privacy@aaruapp.com"))
