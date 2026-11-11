@@ -14,6 +14,7 @@ import { Route as ShellRouteImport } from './routes/_shell'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as SignInRouteImport } from './routes/sign-in'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as DotwellKnownAppleAppSiteAssociationRouteImport } from './routes/[.]well-known/apple-app-site-association'
 import { Route as ShellAppRouteImport } from './routes/_shell.app'
 import { Route as AppExportRouteImport } from './routes/app_.export'
@@ -92,6 +93,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const SignInRoute = SignInRouteImport.update({
   id: '/sign-in',
   path: '/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DotwellKnownAppleAppSiteAssociationRoute =
@@ -383,6 +389,7 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
+  '/terms': typeof TermsRoute
   '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/app': typeof ShellAppRoute
   '/app/export': typeof AppExportRoute
@@ -444,6 +451,7 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
+  '/terms': typeof TermsRoute
   '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/app': typeof ShellAppRoute
   '/app/export': typeof AppExportRoute
@@ -504,6 +512,7 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
+  '/terms': typeof TermsRoute
   '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/_shell/app': typeof ShellAppRoute
   '/app_/export': typeof AppExportRoute
@@ -567,6 +576,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/privacy'
     | '/sign-in'
+    | '/terms'
     | '/.well-known/apple-app-site-association'
     | '/app'
     | '/app/export'
@@ -628,6 +638,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/privacy'
     | '/sign-in'
+    | '/terms'
     | '/.well-known/apple-app-site-association'
     | '/app'
     | '/app/export'
@@ -687,6 +698,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/privacy'
     | '/sign-in'
+    | '/terms'
     | '/.well-known/apple-app-site-association'
     | '/_shell/app'
     | '/app_/export'
@@ -750,6 +762,7 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   PrivacyRoute: typeof PrivacyRoute
   SignInRoute: typeof SignInRoute
+  TermsRoute: typeof TermsRoute
   DotwellKnownAppleAppSiteAssociationRoute: typeof DotwellKnownAppleAppSiteAssociationRoute
   AppExportRoute: typeof AppExportRoute
   AppWelcomeRoute: typeof AppWelcomeRoute
@@ -799,6 +812,13 @@ declare module '@tanstack/solid-router' {
       path: '/sign-in'
       fullPath: '/sign-in'
       preLoaderRoute: typeof SignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/.well-known/apple-app-site-association': {
@@ -1319,6 +1339,7 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   PrivacyRoute: PrivacyRoute,
   SignInRoute: SignInRoute,
+  TermsRoute: TermsRoute,
   DotwellKnownAppleAppSiteAssociationRoute:
     DotwellKnownAppleAppSiteAssociationRoute,
   AppExportRoute: AppExportRoute,

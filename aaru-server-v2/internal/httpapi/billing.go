@@ -69,5 +69,7 @@ func entitlementDTO(state billing.State, userID uuid.UUID) api.Entitlement {
 
 // billingService is the billing rules over this server's queries and Apple verifier.
 func (s *Server) billingService() *billing.Service {
-	return &billing.Service{Q: s.q, Apple: s.Apple}
+	return &billing.Service{
+		Q: s.q, Apple: s.Apple, AcceptSandbox: s.Config != nil && s.Config.AcceptSandbox,
+	}
 }

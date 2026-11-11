@@ -7,11 +7,13 @@ import (
 	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/gamification"
 	"aaru-go-api/internal/library"
+	"aaru-go-api/internal/metrics"
 	"aaru-go-api/internal/ratelimit"
 	"aaru-go-api/internal/telemetry"
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"regexp"
 	"strings"
@@ -462,9 +464,14 @@ func (s *Service) Report(ctx context.Context, target uuid.UUID, reason ReportRea
 			kept = &trimmed
 		}
 	}
-	return s.Store.SaveReport(ctx, Report{
-		ID: uuid.New(), Reporter: viewer, Target: target, Reason: reason, Note: kept, CreatedAt: s.now(),
-	})
+	report := Report{ID: uuid.New(), Reporter: viewer, Target: target, Reason: reason, Note: kept, CreatedAt: s.now()}
+	if err := s.Store.SaveReport(ctx, report); err != nil {
+		return err
+	}
+	// The owner alerts on the counter; the log line carries no note and no user ids.
+	metrics.SocialReports.WithLabelValues(string(reason)).Inc()
+	slog.InfoContext(ctx, "social report saved", "report_id", report.ID, "reason", string(reason))
+	return nil
 }
 
 // MARK: Rules

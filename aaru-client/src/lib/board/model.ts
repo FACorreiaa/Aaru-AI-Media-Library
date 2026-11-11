@@ -195,3 +195,20 @@ export function prefillReply(text: string, from: string, to: string): string {
   const rest = from && text.startsWith(from) ? text.slice(from.length) : text
   return rest.startsWith(to) ? rest : to + rest
 }
+
+/** What a report names: a Board post, a group message, or a person's profile (by handle). */
+export type ReportKind = 'post' | 'group-message' | 'person'
+
+/**
+ * The note a report carries: which thing it is about, then the reporter's words. A person is
+ * `profile:@<handle>`; a post or message is `<kind>:<id>`. The author is not told.
+ */
+export function reportNote(
+  kind: ReportKind,
+  ref: string,
+  words?: string,
+): string {
+  const subject =
+    kind === 'person' ? `profile:@${ref.replace(/^@/, '')}` : `${kind}:${ref}`
+  return [subject, words?.trim()].filter(Boolean).join('\n')
+}

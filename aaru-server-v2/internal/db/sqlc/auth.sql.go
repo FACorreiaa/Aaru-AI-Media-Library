@@ -191,6 +191,20 @@ func (q *Queries) CreateUserProgress(ctx context.Context, userID uuid.UUID) erro
 	return err
 }
 
+const deleteOtherSessions = `-- name: DeleteOtherSessions :exec
+DELETE FROM sessions WHERE user_id = $1 AND token_hash <> $2
+`
+
+type DeleteOtherSessionsParams struct {
+	UserID    uuid.UUID
+	TokenHash string
+}
+
+func (q *Queries) DeleteOtherSessions(ctx context.Context, arg DeleteOtherSessionsParams) error {
+	_, err := q.db.Exec(ctx, deleteOtherSessions, arg.UserID, arg.TokenHash)
+	return err
+}
+
 const deleteSession = `-- name: DeleteSession :exec
 DELETE FROM sessions WHERE token_hash = $1
 `
@@ -319,6 +333,22 @@ type PromoteNextOwnerParams struct {
 func (q *Queries) PromoteNextOwner(ctx context.Context, arg PromoteNextOwnerParams) error {
 	_, err := q.db.Exec(ctx, promoteNextOwner, arg.GroupID, arg.LeavingUserID)
 	return err
+}
+
+const sessionCreatedAt = `-- name: SessionCreatedAt :one
+SELECT created_at FROM sessions WHERE token_hash = $1 AND expires_at > $2
+`
+
+type SessionCreatedAtParams struct {
+	TokenHash string
+	Now       time.Time
+}
+
+func (q *Queries) SessionCreatedAt(ctx context.Context, arg SessionCreatedAtParams) (time.Time, error) {
+	row := q.db.QueryRow(ctx, sessionCreatedAt, arg.TokenHash, arg.Now)
+	var created_at time.Time
+	err := row.Scan(&created_at)
+	return created_at, err
 }
 
 const sessionUserID = `-- name: SessionUserID :one

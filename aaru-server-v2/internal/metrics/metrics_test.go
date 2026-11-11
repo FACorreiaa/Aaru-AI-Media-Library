@@ -65,3 +65,13 @@ func TestTheMetricsHandlerServesTheTextFormat(t *testing.T) {
 	assert.Contains(t, rec.Header().Get("Content-Type"), "text/plain; version=0.0.4; charset=utf-8")
 	assert.Contains(t, rec.Body.String(), "aaru_push_total{channel=\"apns\",result=\"sent\"} 1\n")
 }
+
+// A counter series that first appears at 1 has no increase() in Prometheus, so the
+// report alert would miss the first report after a restart. Every reason starts at 0.
+func TestSocialReportsStartAtZeroForEveryReason(t *testing.T) {
+	Reset()
+	text := render(t)
+	for _, reason := range []string{"spam", "harassment", "impersonation", "other"} {
+		assert.Contains(t, text, "aaru_social_reports_total{reason=\""+reason+"\"} 0\n")
+	}
+}

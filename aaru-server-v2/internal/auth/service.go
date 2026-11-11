@@ -228,9 +228,30 @@ func (s *Service) SignOut(ctx context.Context, tokenHash string) error {
 	return s.Store.deleteSession(ctx, tokenHash)
 }
 
-// DeleteAccount deletes the user and everything that is theirs (AUTH-004).
-func (s *Service) DeleteAccount(ctx context.Context, userID uuid.UUID) error {
+// ReauthWindow is how recent a sign-in must be to delete the account.
+const ReauthWindow = 10 * time.Minute
+
+// DeleteAccount deletes the user and everything that is theirs (AUTH-004). The presenting
+// session must be at most ReauthWindow old; otherwise 403 `reauth_required` and nothing is deleted.
+func (s *Service) DeleteAccount(ctx context.Context, userID uuid.UUID, tokenHash string) error {
+	now := s.now()
+	created, ok, err := s.Store.sessionCreatedAt(ctx, tokenHash, now)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return apperr.Unauthorized()
+	}
+	if now.Sub(created) > ReauthWindow {
+		return apperr.New(http.StatusForbidden, "reauth_required",
+			"For your safety, sign in again, then delete your account.")
+	}
 	return s.Store.deleteUser(ctx, userID)
+}
+
+// SignOutOtherDevices ends every session of the user except the presented one.
+func (s *Service) SignOutOtherDevices(ctx context.Context, userID uuid.UUID, keepTokenHash string) error {
+	return s.Store.deleteOtherSessions(ctx, userID, keepTokenHash)
 }
 
 func (s *Service) findOrCreateUser(ctx context.Context, identity Identity, displayName *string) (uuid.UUID, error) {

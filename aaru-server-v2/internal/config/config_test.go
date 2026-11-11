@@ -32,3 +32,16 @@ func TestTranscriptionConfig(t *testing.T) {
 	assert.Equal(t, "/v1", cfg.Transcription.BaseURL.Path)
 	assert.Equal(t, "Systran/faster-whisper-small", cfg.Transcription.Model)
 }
+
+func TestBillingAcceptSandboxIsOffUnlessSet(t *testing.T) {
+	base := map[string]string{"postgres.user": "u", "postgres.password": "p", "postgres.database": "d", "tmdb.api.key": "k"}
+	cfg, err := Load(NewReaderFrom(base))
+	require.NoError(t, err)
+	assert.False(t, cfg.AcceptSandbox)
+
+	base["billing.accept_sandbox"] = "true"
+	cfg, err = Load(NewReaderFrom(base))
+	require.NoError(t, err)
+	assert.True(t, cfg.AcceptSandbox)
+	assert.Equal(t, "BILLING_ACCEPT_SANDBOX", envName("billing.accept_sandbox"))
+}

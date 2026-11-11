@@ -131,6 +131,19 @@ paths:
           description: Signed out.
         default:
           $ref: '#/components/responses/Error'
+  /v1/auth/sessions:
+    delete:
+      operationId: signOutOtherDevices
+      summary: >-
+        Sign out of other devices: end every session of this account except the one that asks.
+        The caller stays signed in.
+      responses:
+        '204':
+          description: Every other session is ended.
+        '401':
+          $ref: '#/components/responses/Error'
+        default:
+          $ref: '#/components/responses/Error'
   /v1/me:
     get:
       operationId: getMe
@@ -146,10 +159,18 @@ paths:
           $ref: '#/components/responses/Error'
     delete:
       operationId: deleteAccount
-      summary: Delete the account and everything that belongs to it.
+      summary: >-
+        Delete the account and everything that belongs to it. Only a session created in the last
+        10 minutes may do it; an older one gets 403 `reauth_required` and the user signs in again first.
       responses:
         '204':
           description: Deleted.
+        '403':
+          description: The session is older than 10 minutes (`reauth_required`). Nothing was deleted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         default:
           $ref: '#/components/responses/Error'
   /v1/me/entitlement:
@@ -173,7 +194,8 @@ paths:
       summary: >-
         A purchase or a restore, from the Apple app that made it (BIL-002). The signed transaction
         must carry this account's `appAccountToken`; 409 `plus_other_account` when it names another,
-        422 `invalid_transaction` when it does not verify.
+        409 `sandbox_refused` for a Sandbox (TestFlight) purchase while the server does not accept
+        them, 422 `invalid_transaction` when it does not verify.
       requestBody:
         required: true
         content:

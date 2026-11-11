@@ -384,3 +384,41 @@ func TestSignInEmailLimitIsPerVisitorBehindTheWorker(t *testing.T) {
 	forged["X-Aaru-Web-Secret"] = "guess"
 	assert.Equal(t, http.StatusTooManyRequests, send(forged))
 }
+
+func TestDeleteAccountNeedsRecentSignIn(t *testing.T) {
+	h := authHarness(t, nil, nil)
+	ctx := context.Background()
+	old := h.signInApple(nil)
+	_, err := h.pool.Exec(ctx, `UPDATE sessions SET created_at = now() - interval '11 minutes' WHERE user_id = $1`, old.UserId.ID())
+	require.NoError(t, err)
+
+	rec := h.do(http.MethodDelete, "/v1/me", old.Token, nil)
+	assert.Equal(t, http.StatusForbidden, rec.Code)
+	assert.Equal(t, "reauth_required", decode[api.ErrorResponse](t, rec).Code)
+	assert.Equal(t, http.StatusOK, h.do(http.MethodGet, "/v1/me", old.Token, nil).Code, "the account is still there")
+
+	_, err = h.pool.Exec(ctx, `UPDATE sessions SET created_at = now() - interval '9 minutes' WHERE user_id = $1`, old.UserId.ID())
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusNoContent, h.do(http.MethodDelete, "/v1/me", old.Token, nil).Code)
+	assert.Equal(t, http.StatusUnauthorized, h.do(http.MethodGet, "/v1/me", old.Token, nil).Code)
+}
+
+func TestSignOutOtherDevicesKeepsThisOne(t *testing.T) {
+	h := authHarness(t, nil, nil)
+	ctx := context.Background()
+	a := h.signInApple(nil)
+	// A second session for the same account, as another device would have.
+	b := h.signInApple(nil)
+	require.Equal(t, a.UserId, b.UserId)
+	stranger := h.signIn
+	_, strangerToken := stranger()
+
+	assert.Equal(t, http.StatusUnauthorized, h.do(http.MethodDelete, "/v1/auth/sessions", "", nil).Code)
+	assert.Equal(t, http.StatusNoContent, h.do(http.MethodDelete, "/v1/auth/sessions", a.Token, nil).Code)
+	assert.Equal(t, http.StatusOK, h.do(http.MethodGet, "/v1/me", a.Token, nil).Code)
+	assert.Equal(t, http.StatusUnauthorized, h.do(http.MethodGet, "/v1/me", b.Token, nil).Code)
+	assert.Equal(t, http.StatusOK, h.do(http.MethodGet, "/v1/me", strangerToken, nil).Code, "other accounts are untouched")
+	var n int
+	require.NoError(t, h.pool.QueryRow(ctx, `SELECT count(*) FROM sessions WHERE user_id = $1`, a.UserId.ID()).Scan(&n))
+	assert.Equal(t, 1, n)
+}

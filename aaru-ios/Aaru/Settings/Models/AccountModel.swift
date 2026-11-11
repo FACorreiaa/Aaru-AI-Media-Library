@@ -9,6 +9,8 @@ import Observation
 final class AccountModel {
     private(set) var profile: Components.Schemas.Me?
     private(set) var linking = false
+    private(set) var signingOutOthers = false
+    private(set) var otherDevicesSignedOut = false
     var problem: String?
 
     @ObservationIgnored private let api: Client?
@@ -41,6 +43,26 @@ final class AccountModel {
             }
         } catch {
             problem = "Your account could not be loaded. Aaru could not reach the server."
+        }
+    }
+
+    /// Ends every other session of this account; this device stays signed in.
+    func signOutOtherDevices() async {
+        guard let api else { return }
+        signingOutOthers = true
+        otherDevicesSignedOut = false
+        problem = nil
+        defer { signingOutOthers = false }
+        do {
+            switch try await api.signOutOtherDevices() {
+            case .noContent: otherDevicesSignedOut = true
+            case let .unauthorized(error):
+                problem = (try? error.body.json.message) ?? "Your other devices were not signed out."
+            case let .default(_, error):
+                problem = (try? error.body.json.message) ?? "Your other devices were not signed out."
+            }
+        } catch {
+            problem = "Your other devices were not signed out. Aaru could not reach the server."
         }
     }
 
