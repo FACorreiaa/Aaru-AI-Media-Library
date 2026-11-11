@@ -4,10 +4,12 @@ import Foundation
 typealias TitleTree = Components.Schemas.TitleTree
 typealias TreeBranch = Components.Schemas.TreeBranch
 typealias TreeNode = Components.Schemas.TreeNode
+typealias TreeBranchKind = Components.Schemas.TreeBranchKind
 
 /// GRAPH-005: a title tree ("From here") as the server picked it. The server chooses every title;
 /// this model only loads it, and asks once more when the server cut a cold tree short. A failed
-/// read leaves no tree: the section is a signpost, and its absence takes nothing away.
+/// read leaves no tree: the section is a signpost, and its absence takes nothing away. It asks for
+/// the cast (GRAPH-006): a film's or show's lead and second actor come as rows of their own.
 @MainActor
 @Observable
 final class TitleTreeModel {
@@ -33,7 +35,9 @@ final class TitleTreeModel {
     func load(retryPartial: Bool = true) async {
         guard let api else { return }
         do {
-            guard case let .ok(response) = try await api.getTitleTree(path: .init(id: titleID)) else { return }
+            guard case let .ok(response) = try await api.getTitleTree(
+                path: .init(id: titleID), query: .init(cast: true)
+            ) else { return }
             tree = try response.body.json
         } catch {
             return
@@ -74,8 +78,10 @@ struct TitleTreeLayout {
         let index: Int
     }
 
+    /// A row is known by its branch's kind, which a tree holds once: a row keeps its identity,
+    /// and its tiles their posters, when a chip hides the rows above it (GRAPH-006).
     struct Row: Identifiable {
-        let id: Int
+        let id: String
         let branch: TreeBranch
         let origin: CGPoint
         let tiles: [Tile]
@@ -107,12 +113,12 @@ struct TitleTreeLayout {
         var index = 0
         var rows: [Row] = []
         var connectors: [Connector] = []
-        for (number, branch) in tree.branches.enumerated() where !branch.nodes.isEmpty {
+        for branch in tree.branches where !branch.nodes.isEmpty {
             let row = rows.count
             let tiles = branch.nodes.enumerated().map { place, node in
                 index += 1
                 return Tile(
-                    id: "\(number):\(node.key)", node: node,
+                    id: "\(branch.kind.rawValue):\(node.key)", node: node,
                     origin: CGPoint(x: firstX + CGFloat(place) * (Self.tileWidth + Self.gap), y: tileY(row)),
                     index: index
                 )
@@ -133,7 +139,7 @@ struct TitleTreeLayout {
                 ))
             }
             rows.append(Row(
-                id: number, branch: branch,
+                id: branch.kind.rawValue, branch: branch,
                 origin: CGPoint(x: firstX, y: Self.pad + CGFloat(row) * rowHeight), tiles: tiles
             ))
         }
@@ -145,6 +151,79 @@ struct TitleTreeLayout {
         root = Tile(id: "root", node: tree.root, origin: CGPoint(x: rootX, y: tileY(0)), index: 0)
         self.rows = rows
         self.connectors = connectors
+    }
+}
+
+// MARK: - One person at a time (GRAPH-006)
+
+/// A chip over the tree: every person's row, or one person's by its branch kind.
+enum TitleTreeFilter: Hashable {
+    case all
+    case person(TreeBranchKind)
+}
+
+extension TreeBranch {
+    /// A person's row, as against the series and the adaptations, which no chip hides.
+    var isPerson: Bool {
+        kind != .series && kind != .adaptation
+    }
+
+    /// The chip for this person's row. It names the part, not the person: the row's own label
+    /// carries the name, so three chips always fit one line.
+    var chip: String {
+        switch kind {
+        case .director: "Director"
+        case .creator: "Creator"
+        case .studio: "Studio"
+        case .author: "Author"
+        case .artist: "Artist"
+        case .leadActor: "Lead"
+        case .secondActor: "2nd"
+        case .series, .adaptation: ""
+        }
+    }
+}
+
+extension TitleTree {
+    /// The people whose rows have titles, in the order the server sent them.
+    private var people: [TreeBranch] {
+        branches.filter { $0.isPerson && !$0.nodes.isEmpty }
+    }
+
+    /// The chips for this tree: none unless it has two people or more. At compact width (iPhone)
+    /// there is no "All", so one person's row shows at a time and the section stays as short as
+    /// it was before the cast.
+    func filters(compact: Bool) -> [TitleTreeFilter] {
+        let people = people
+        guard people.count > 1 else { return [] }
+        let chips = people.map { TitleTreeFilter.person($0.kind) }
+        return compact ? chips : [.all] + chips
+    }
+
+    /// The chip in force: the one chosen while it is still offered, else the first.
+    func filter(chosen: TitleTreeFilter?, compact: Bool) -> TitleTreeFilter {
+        let offered = filters(compact: compact)
+        if let chosen, offered.contains(chosen) {
+            return chosen
+        }
+        return offered.first ?? .all
+    }
+
+    /// The tree with only the chosen person's row; the series and the adaptations always stay.
+    /// The server sent every row: this only chooses which are drawn, and reads nothing.
+    func showing(_ filter: TitleTreeFilter) -> TitleTree {
+        guard case let .person(kind) = filter else { return self }
+        var tree = self
+        tree.branches = branches.filter { !$0.isPerson || $0.kind == kind }
+        return tree
+    }
+
+    /// A chip's label.
+    func label(of filter: TitleTreeFilter) -> String {
+        switch filter {
+        case .all: "All"
+        case let .person(kind): branches.first { $0.kind == kind }?.chip ?? ""
+        }
     }
 }
 

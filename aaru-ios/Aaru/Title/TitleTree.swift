@@ -13,7 +13,7 @@ struct TitleFromHere: View {
                 VStack(alignment: .leading, spacing: AaruSpace.medium) {
                     Text("From here").eyebrow()
                         .accessibilityAddTraits(.isHeader)
-                    TitleTreeCanvas(tree: tree)
+                    TitleTreeFiltered(tree: tree)
                 }
             } else {
                 Color.clear.frame(height: 0)
@@ -41,7 +41,7 @@ struct TitleTreeSheet: View {
                         .font(.subheadline)
                         .foregroundStyle(Color(.muted))
                     if let tree = model.tree {
-                        TitleTreeCanvas(tree: tree, entrance: true)
+                        TitleTreeFiltered(tree: tree, entrance: true)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -65,6 +65,41 @@ struct TitleTreeSheet: View {
         .frame(minWidth: 680, minHeight: 420)
         #endif
     }
+}
+
+/// The tree under its chips (GRAPH-006). A film or show has a row each for its director, its lead
+/// and its second actor, and the chips narrow those rows to one person. An iPhone has no "All":
+/// one person's row at a time, so the section is no taller than it was. A tree with one person
+/// has no chips. A choice redraws from the tree already loaded and reads nothing.
+struct TitleTreeFiltered: View {
+    let tree: TitleTree
+    var entrance = false
+
+    @State private var chosen: TitleTreeFilter?
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    var body: some View {
+        let compact = sizeClass == .compact
+        let filters = tree.filters(compact: compact)
+        let filter = tree.filter(chosen: chosen, compact: compact)
+        VStack(alignment: .leading, spacing: AaruSpace.medium) {
+            if !filters.isEmpty {
+                Picker("Whose titles to show", selection: Binding(
+                    get: { filter },
+                    set: { chosen = $0 }
+                )) {
+                    ForEach(filters, id: \.self) { Text(tree.label(of: $0)).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .frame(maxWidth: Self.pickerMaxWidth)
+            }
+            TitleTreeCanvas(tree: tree.showing(filter), entrance: entrance)
+        }
+    }
+
+    /// Wide enough for four chips; on a Mac or iPad the picker does not stretch across the page.
+    private static let pickerMaxWidth: CGFloat = 400
 }
 
 /// The tree drawn: tiles over one layer of straight and right-angle lines, scrolled sideways when
@@ -225,7 +260,7 @@ struct TitleTreeTile: View {
         )
     }
     return ScrollView {
-        TitleTreeCanvas(tree: TitleTree(
+        TitleTreeFiltered(tree: TitleTree(
             root: node("Arrival", .root, .finished, 2016),
             branches: [
                 .init(kind: .director, label: "Denis Villeneuve", nodes: [
@@ -234,6 +269,14 @@ struct TitleTreeTile: View {
                     node("Dune: Part Two", .next, nil, 2024),
                     node("Sicario", .bestKnown, .inProgress, 2015),
                     node("Prisoners", .bestKnown, nil, 2013),
+                ]),
+                .init(kind: .leadActor, label: "Amy Adams", nodes: [
+                    node("Nocturnal Animals", .next, nil, 2016),
+                    node("Her", .bestKnown, .finished, 2013),
+                ]),
+                .init(kind: .secondActor, label: "Jeremy Renner", nodes: [
+                    node("Wind River", .next, nil, 2017),
+                    node("The Hurt Locker", .bestKnown, nil, 2008),
                 ]),
                 .init(kind: .series, nodes: [node("A sequel", .series, nil, 2027)]),
                 .init(kind: .adaptation, nodes: [
