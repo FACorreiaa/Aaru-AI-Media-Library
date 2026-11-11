@@ -7,6 +7,7 @@ import { sessionRejected, sessionToken } from '../session/guard'
 import type { LibraryEntry } from '../library/model'
 import type { ShowWatched, TitleDetail } from './model'
 import type { RelationGraph } from './relations'
+import type { TitleTree } from './tree'
 import { MEDIA_TYPES } from '../media'
 import { PREVIEW_PROVIDERS } from './preview'
 
@@ -256,6 +257,24 @@ export const loadRelations = createServerFn({ method: 'GET' })
         errorMessage(error, 'Related titles could not be loaded.'),
       )
     return graph
+  })
+
+/** GRAPH-005: the title tree ("From here"), marked with the caller's library. A tree the server
+ * cut short says `partial`; asking again a few seconds later finds the rest cached. */
+export const loadTree = createServerFn({ method: 'GET' })
+  .validator(z.object({ titleId: z.string().uuid() }))
+  .handler(async ({ data }): Promise<TitleTree> => {
+    const {
+      data: tree,
+      error,
+      response,
+    } = await api(sessionToken()).GET('/v1/titles/{id}/tree', {
+      params: { path: { id: data.titleId } },
+    })
+    if (response.status === 401) sessionRejected()
+    if (!tree)
+      throw new Error(errorMessage(error, 'The tree could not be loaded.'))
+    return tree
   })
 
 /** GRAPH-003: "Add the chain": the graph's main chain as a capture to review. Its job id. */

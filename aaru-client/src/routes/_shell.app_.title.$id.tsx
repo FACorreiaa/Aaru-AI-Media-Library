@@ -25,6 +25,11 @@ import { ShareDialog } from '../components/ShareDialog'
 import { EpisodeSheet } from '../components/EpisodeSheet'
 import { PostCard } from '../components/board/PostCard'
 import { RelatedTitles } from '../components/RelatedTitles'
+import {
+  TitleTreeDialog,
+  TitleTreeSection,
+  createTitleTree,
+} from '../components/TitleTree'
 import { Poster } from '../components/Poster'
 import { SeasonMap } from '../components/SeasonMap'
 import { Segmented } from '../components/Segmented'
@@ -85,6 +90,7 @@ import {
 } from '../lib/title/model'
 import { useAssistantTitle } from '../components/shell/context'
 import type { Episode, LibraryItemPatch, Season } from '../lib/title/model'
+import { hasBranches } from '../lib/title/tree'
 
 // APP-005 on the web: the Title room, at parity with the Apple apps' `TitleDetailView`. An album
 // (MUS-001) is a big square cover, its artist and genres, then the usual controls and its
@@ -210,10 +216,29 @@ function TitleRoom() {
     }
   }
 
+  // GRAPH-005: "From here", under Related, and opened once when a tap here finishes the title.
+  const fromHere = createTitleTree(() => entry().title.id)
+  const [treeOpen, setTreeOpen] = createSignal(false)
+  // Mounted on first open, then kept, so closing plays the exit (WEB-011).
+  const [treeOpenedOnce, setTreeOpenedOnce] = createSignal(false)
+  /** The status the server last confirmed, so an optimistic change is not mistaken for it. */
+  let confirmedStatus = page().entry.status
+  async function showWhereItLeads() {
+    // Read again: the root is finished now, and the tree lights it.
+    const tree = await fromHere.refresh()
+    if (!hasBranches(tree) || entry().status !== 'finished') return
+    setTreeOpenedOnce(true)
+    setTreeOpen(true)
+  }
+
   /** The server's answer is the truth: it replaces the optimistic state. */
   function commit(response: LibraryEntry) {
+    const finishedNow =
+      response.status === 'finished' && confirmedStatus !== 'finished'
+    confirmedStatus = response.status
     setEntry(response)
     if (response.watchedEpisodes) setWatched(watchedSet(response))
+    if (finishedNow) void showWhereItLeads()
   }
 
   async function toggle(season: number, number: number) {
@@ -588,6 +613,8 @@ function TitleRoom() {
 
             <RelatedTitles titleId={entry().title.id} />
 
+            <TitleTreeSection tree={fromHere.tree()} />
+
             <Show when={entry().title.type === 'show'}>
               <Show when={page().titleError}>
                 {(message) => (
@@ -906,6 +933,14 @@ function TitleRoom() {
               onClose={() => setOpened(null)}
             />
           )}
+        </Show>
+        <Show when={treeOpenedOnce()}>
+          <TitleTreeDialog
+            open={treeOpen()}
+            tree={fromHere.tree()}
+            name={entry().title.title}
+            onClose={() => setTreeOpen(false)}
+          />
         </Show>
         <Show when={recommendedOnce()}>
           <RecommendDialog
