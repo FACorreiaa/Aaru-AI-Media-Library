@@ -138,6 +138,8 @@ const PERSON: Partial<Record<TreeBranchKind, string>> = {
   studio: 'Studio',
   author: 'Author',
   artist: 'Artist',
+  lead_actor: 'Lead',
+  second_actor: 'Also starring',
 }
 
 /** "Director · Denis Villeneuve", "Series", "Adaptations". */
@@ -163,6 +165,68 @@ export function treeNodeLabel(node: TreeNode): string {
   ]
     .filter(Boolean)
     .join(', ')
+}
+
+// GRAPH-006: a film or show has a row for its director, its lead and its second actor. Chips
+// over the tree narrow those rows to one person. The server sent every row; a chip only chooses
+// which are drawn, and never reads anything.
+
+/** A chip: every person's row, or one person's by its branch kind. */
+export type TreeFilter = 'all' | TreeBranchKind
+
+export interface TreeFilterOption {
+  value: TreeFilter
+  label: string
+}
+
+/** A chip names the part, not the person: the row's own label carries the name. */
+const CHIP: Partial<Record<TreeBranchKind, string>> = {
+  ...PERSON,
+  second_actor: '2nd',
+}
+
+/** A person's row, as against the series and the adaptations, which no chip hides. */
+export function isPersonBranch(branch: TreeBranch): boolean {
+  return branch.kind !== 'series' && branch.kind !== 'adaptation'
+}
+
+/**
+ * The chips for a tree: none unless it has two people or more. On a narrow screen there is no
+ * "All", so one person's row shows at a time and the section stays as short as it was.
+ */
+export function treeFilters(
+  tree: TitleTree,
+  compact: boolean,
+): TreeFilterOption[] {
+  const people = tree.branches.filter(
+    (b) => isPersonBranch(b) && b.nodes.length > 0,
+  )
+  if (people.length < 2) return []
+  const chips: TreeFilterOption[] = people.map((b) => ({
+    value: b.kind,
+    label: CHIP[b.kind] ?? 'By',
+  }))
+  return compact ? chips : [{ value: 'all', label: 'All' }, ...chips]
+}
+
+/** The chip in force: the one chosen while it is still offered, else the first. */
+export function currentFilter(
+  options: readonly TreeFilterOption[],
+  chosen: TreeFilter | undefined,
+): TreeFilter {
+  if (chosen && options.some((o) => o.value === chosen)) return chosen
+  return options[0]?.value ?? 'all'
+}
+
+/** The tree with only the chosen person's row; the series and the adaptations always stay. */
+export function filterTree(tree: TitleTree, filter: TreeFilter): TitleTree {
+  if (filter === 'all') return tree
+  return {
+    ...tree,
+    branches: tree.branches.filter(
+      (b) => !isPersonBranch(b) || b.kind === filter,
+    ),
+  }
 }
 
 /** True when there is something to draw: a tree with no branch is not shown at all. */
