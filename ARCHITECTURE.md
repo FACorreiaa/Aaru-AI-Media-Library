@@ -463,6 +463,16 @@ folded into one title through `anime_mappings`. A page
 waits 4 s; a tree cut short is `partial` and finishes in the background. The caller's marks are
 read from the library after the tree is built, with the relation graph's matching.
 
+With `?cast=true` (GRAPH-006) a film or show also branches on its first two billed actors, kinds
+`lead_actor` and `second_actor`. TMDB's `People` already answers with them (a film's `cast` comes
+with its credits; a show's `aggregate_credits` is appended to the `tv/{id}` read), so the flag
+only decides whether their works are read: one more call each, the three people fetched together,
+one failing dropping its own row and marking the tree `partial`. An actor's works are their cast
+credits in the title's medium, without cameos, guest spots, talk and news shows, and parts as
+themselves; a title an earlier person's branch shows is not repeated. The flag exists because a
+client generated before the kinds existed cannot decode them. The clients filter the person rows
+themselves: there is no per-person request.
+
 ### Discover (DISC-001)
 
 `GET /v1/discover` is the one catalog read that is not a search: provider-curated public lists

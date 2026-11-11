@@ -15,11 +15,23 @@ import (
 
 // Credit is who a title tree branches on (GRAPH-005): a film's director, a show's creator, an
 // anime's studio, a book's or manga's author, an album's artist. ID is the provider's own id for
-// them; a person is never matched by name.
+// them; a person is never matched by name. A film or show also credits its first two billed actors
+// (GRAPH-006); Media is set for them only, and says which of their works to read: an actor in a
+// film branches on films, one in a show on shows.
 type Credit struct {
-	Kind core.TreeBranchKind `json:"kind"`
-	ID   string              `json:"id"`
-	Name string              `json:"name"`
+	Kind  core.TreeBranchKind `json:"kind"`
+	ID    string              `json:"id"`
+	Name  string              `json:"name"`
+	Media core.MediaType      `json:"media,omitempty"`
+}
+
+// cacheKey is the credit's key for its works in the cache.
+func (c Credit) cacheKey() string {
+	key := "person:" + string(c.Kind) + ":" + c.ID
+	if c.Media != "" {
+		key += ":" + string(c.Media)
+	}
+	return key
 }
 
 // CreditedWork is one title a credited person made. Score is the provider's own count for it
@@ -36,7 +48,8 @@ type CreditSource interface {
 	CreditSourceName() string
 	// CreditKey is the title's cache key at this source; "" when the source cannot answer for it.
 	CreditKey(n RelatedNode) string
-	// People are who made the title, the one a tree branches on first. Empty when unknown.
+	// People are who made the title, the one a tree branches on first, then its cast (a kind that
+	// IsCast) when the source has one. Empty when unknown.
 	People(ctx context.Context, n RelatedNode) ([]Credit, error)
 	// Works are the titles the credited person made, the asked title among them.
 	Works(ctx context.Context, credit Credit) ([]CreditedWork, error)

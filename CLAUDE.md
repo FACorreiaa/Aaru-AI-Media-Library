@@ -31,7 +31,7 @@ This file is the working contract for anyone — human or agent — changing the
 | Catalog — video | TMDB (also trending, on the air, new shows, in theaters for Discover) |
 | Catalog — anime | AniList GraphQL (with MAL ids); first-class from P1; this season + trending for Discover. While AniList is down, TMDB's Japanese animation stands in for search and Discover (CAT-021). AniDB's daily title dump adds alternate titles for matching only (CAT-022) |
 | Catalog — relations | AniList `relations`, TMDB collections and Wikidata (Action API, CC0, no key, ids only) for a title's relation graph: sequels, prequels, side stories and adaptations across kinds, story order from numbered series; cached 30 days in `catalog_relations` (GRAPH-001) |
-| Catalog — people | Who made a title and what else they made, for the title tree only (GRAPH-005): a film's director and a show's creator (TMDB), an anime's main studio and a manga's story author (AniList), a book's author (Open Library), an album's artist (MusicBrainz). Read by the provider's id, never by name; cached 30 days in `catalog_credits` |
+| Catalog — people | Who made a title and what else they made, for the title tree only (GRAPH-005): a film's director and a show's creator (TMDB), an anime's main studio and a manga's story author (AniList), a book's author (Open Library), an album's artist (MusicBrainz). Read by the provider's id, never by name; cached 30 days in `catalog_credits`. A film or show also names its first two billed actors (TMDB, GRAPH-006), and what else each had a part in |
 | Catalog — air times | TVmaze (no key, CC BY-SA): exact air times and network for TMDB shows, and the next episode's time on Discover's On air (DISC-003); TMDB stays the episode source |
 | Catalog — scores | TMDB vote average and the start of a few user reviews (films, shows), AniList average score (anime, manga), for the assistant's `title_scores` only: audience scores, credited, cached six hours in memory, never stored and never called critics' reviews (ASK-011) |
 | Where to watch | TMDB `watch/providers` (JustWatch data, credited): flat-rate services per country on Discover's On air (DISC-003, CAT-014 in part). The country comes from the device language, per request, never stored |
@@ -231,7 +231,9 @@ Use these words in code, APIs, and UI:
   medium; "Start here" is its first title the user has not finished or dropped
 - **Title tree** — where one title leads (GRAPH-005, owner 2026-11-11): the title as the root and
   up to three *branches* of up to five titles: the person who made it (director, creator, studio,
-  author, artist), the series, and its adaptations. A person's branch is what they made next, then their two *best
+  author, artist), the series, and its adaptations. A film or show has two more person branches,
+  its lead and second actor by the provider's billing (GRAPH-006), and the clients narrow the
+  person rows with chips; an iPhone shows one person's row at a time. A person's branch is what they made next, then their two *best
   known* by the provider's own count, the same for every user. The UI says "From here". Catalog
   data like a Relation: never a library write, never a recommendation, never "for you"
 - **Discover** — provider-curated public rows (DISC-001: trending, on the air, new shows, in
@@ -348,7 +350,7 @@ imports (MNG-001…002) and profile favorites (FAV-001), 2026-10-23; the Sports 
 Friends tab, and group reactions, replies, images and presence (SOC-008…011, NAV-004,
 GRP-013…017), 2026-10-27; the Aaru assistant, a one-to-one chat with voice (ASK-009), 2026-11-04; relation graphs and
 roadmap lists (GRAPH-001…004), 2026-11-06; the title tree, with a provider's "best known" count
-(GRAPH-005), 2026-11-11).
+(GRAPH-005), and its cast branches (GRAPH-006), 2026-11-11).
 
 ## Out of scope (do not add unless asked)
 

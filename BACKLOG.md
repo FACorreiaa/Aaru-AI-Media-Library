@@ -57,6 +57,22 @@ of a game's skill tree. "No need for a big tree or a second brain." This is the 
   studio, not its director); an album's branch has no stars (MusicBrainz has no count); the tree
   opens by itself only from the title page and has no off switch; the UI name "From here".
 
+Owner, 2026-11-11, later the same day: on films and shows, "From here" also branches on the
+**cast** (GRAPH-006): the lead actor and the second actor, each a row like the director's, with a
+way to narrow the rows to one person ("same director, same actor, same secondary actor"). This
+lifts GRAPH-005's "one person per kind" for films and shows only, and its three-branch limit there
+(five with the cast).
+
+- **Layout:** all the rows shown, with chips to narrow them: All / Director / Lead / 2nd.
+- **"Make sure the iOS view doesn't get cluttered", and careful with performance there.** On an
+  iPhone the chips have no All and one person's row shows at a time, so the section is as tall as
+  before plus one line of chips. A chip never reads the network.
+- Not the owner's, chosen while planning and open to change: lead and second are TMDB's billing
+  order 0 and 1 (a show's over all its seasons); an actor's row stays in the title's medium (films
+  for a film, shows for a show); cameos, guest spots and appearances as themselves are left out; a
+  title one person's row shows is not repeated in the next; the row labels "Lead" and "Also
+  starring".
+
 Controller, on closing the release blockers (docs: `docs/privacy.md`, `docs/terms.md`,
 `docs/audit/security.md`).
 
@@ -960,6 +976,7 @@ account or a stranger that has not happened yet.
 | GRAPH-003 | Built, unverified | `list_roadmaps`, `capture.Place`, `RoadmapSteps.tsx`, `RoadmapSteps.swift`, `POST /v1/titles/{id}/relations/chain` | Stub model only; not looked at on a screen |
 | GRAPH-004 | Built, unverified | `GET /v1/lists/{id}/graph`, `title_relations`, `RelationGraphCanvas` (web, Apple) | Stub model only; not looked at on a screen |
 | GRAPH-005 | Built, unverified | `GET /v1/titles/{id}/tree`, `catalog/tree.go`, `catalog/credits*.go`, `core/tree.go`, migration 00012 `catalog_credits` | Server built 2026-11-11; stub providers only. The new AniList, Open Library and MusicBrainz queries were run by hand against the live APIs; TMDB's were not (no key on the dev machine), so a show's creator branch (`tv_credits`, job Creator) is unproven. Web built 2026-11-11 (`TitleTree.tsx`, `lib/title/tree.ts`): looked at in headless Chrome against a local API for a book, a manga and an album, desktop and phone width, with the finish dialog; films and shows not seen (no TMDB key). Apple built 2026-11-11 (`TitleTree.swift`, `TitleTreeModel.swift`): iOS simulator and Mac builds pass; not looked at on a screen. Needs the API promoted |
+| GRAPH-006 | Built, unverified | `GET /v1/titles/{id}/tree?cast=true`, `catalog/credits_sources.go` (`tmdbCast`, `billedPart`), `catalog/tree.go` (`people`), `core/tree.go` | Server built 2026-11-11; stub TMDB only (no key on the dev machine), so `aggregate_credits` inside `append_to_response` and the cameo and talk-show filters are unproven on real data: run `credits_live_test.go` with `AARU_LIVE=1` and a key. Clients not built yet |
 | IMP-021 | Built, unverified | `POST /v1/imports/{id}/match-all`, `catalog/guess.go`, `imports/matchall.go`, `aaru-ios/Aaru/Capture/MatchAllButton.swift` | Web run locally: real Open Library, stub model, 8 of 10 rows filled in about 12 seconds. iOS builds and has not been tapped. Needs the API promoted |
 | PRV-001 | Done | #27 8d5ddc3; docs/providers.md, AboutView.swift | privacy@ routing not set up |
 | CAT-011 | Done | #24 7edc80c; TVmazeAirTimes.swift | |
@@ -3216,8 +3233,31 @@ only: not yet asked of the real model.
   in the library is dimmed, a best-known title carries a star. A title opens its page.
 - "From here" sits under Related on the title page. It also opens in a dialog (a sheet on Apple)
   when a tap on that page makes the title finished, and only when there is a branch to show.
-- Out: more than one person per kind (cast, co-directors), a person's page, the tree from card
-  menus, the owl emitting the tree.
+- Out: co-directors, a person's page, the tree from card menus, the owl emitting the tree. The
+  cast came in with GRAPH-006.
+
+### GRAPH-006 · The cast in the title tree · M · owner 2026-11-11
+**Needs:** GRAPH-005.
+- `GET /v1/titles/{id}/tree?cast=true`: for a film or show, two more person branches after the
+  director's or creator's, `lead_actor` and `second_actor`: TMDB's first and second billed, by
+  person id. A show's billing is over all its seasons (`aggregate_credits`, read in the same request
+  as its creator); a film's comes with the credits already read. No new call for who; one more per
+  actor for their works, the three people read together.
+- Without `cast=true` the answer is GRAPH-005's, with neither kind in it: a client built before the
+  kinds existed cannot decode them, so only a client that knows them asks.
+- An actor's branch is picked like any person's (next three, then best known by TMDB votes) from
+  their cast credits in the title's own medium. Left out: a film where they are billed sixth or
+  later, a show they were in for fewer than three episodes, talk and news shows, and any part
+  played as themselves. A title an earlier person's branch shows is not repeated.
+- One person's works failing drops that row and marks the tree `partial`; the others stay.
+- Cached in `catalog_credits` like the rest. A title's people are stored under a new key
+  (`title:v2:`), so trees cached before this get their cast at once. No migration.
+- Clients: the rows "Lead · name" and "Also starring · name" under the director's, and chips over
+  the tree when it has two or more person rows. Web and Apple at regular width (Mac, iPad): All /
+  Director / Lead / 2nd, starting on All. iPhone: no All, one person's row at a time, starting on
+  the first. The series and adaptation rows always stay. A chip filters what is already loaded.
+- Anime, manga, books and albums are unchanged.
+- Out: more than two actors, co-directors, an actor's works across media, a person's page.
 
 ## P2 · Web (`aaru-client`)
 

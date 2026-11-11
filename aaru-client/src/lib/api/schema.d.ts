@@ -2185,7 +2185,7 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** The title tree (GRAPH-005), "From here": the title as the root and up to three branches of up to five titles, the person who made it (a film's director, a show's creator, an anime's main studio, a manga's or book's author, an album's artist), its series and its adaptations, each marked with the caller's library. Catalog data, the same for every user: reading it writes nothing, and nothing in it is personal. A tree that is missing titles because a source failed or ran out of time says `partial`. */
+    /** The title tree (GRAPH-005), "From here": the title as the root and branches of up to five titles, the person who made it (a film's director, a show's creator, an anime's main studio, a manga's or book's author, an album's artist), its series and its adaptations, each marked with the caller's library. With `cast=true` a film or show also has a branch for each of its first two billed actors (GRAPH-006). Catalog data, the same for every user: reading it writes nothing, and nothing in it is personal. A tree that is missing titles because a source failed or ran out of time says `partial`. */
     get: operations['getTitleTree']
     put?: never
     post?: never
@@ -4931,13 +4931,13 @@ export interface components {
     }
     TitleTree: {
       root: components['schemas']['TreeNode']
-      /** @description At most three, in the order to draw them: the person, the series, the adaptations. A branch with no titles is left out, so this may be empty. */
+      /** @description In the order to draw them: the person who made it, then with `cast=true` the lead and the second actor, then the series and the adaptations. At most three without the cast and five with it. A branch with no titles is left out, so this may be empty. */
       branches: components['schemas']['TreeBranch'][]
       /** @description True when a source failed or ran out of time; the tree may miss titles. */
       partial: boolean
     }
     /**
-     * @description What a branch of a title tree holds: the titles after this one in its `series`, what it is based on or adapted into (`adaptation`), or works by the person who made it.
+     * @description What a branch of a title tree holds: the titles after this one in its `series`, what it is based on or adapted into (`adaptation`), or works by the person who made it. `lead_actor` and `second_actor` are a film's or show's first and second billed actor, and what else they had a part in; they are sent only when the request says `cast=true`.
      * @enum {string}
      */
     TreeBranchKind:
@@ -4948,6 +4948,8 @@ export interface components {
       | 'studio'
       | 'author'
       | 'artist'
+      | 'lead_actor'
+      | 'second_actor'
     /**
      * @description Why a title is in the tree. `root` is the title asked for. In a person's branch `next` is what they made after it, in release order, and `best_known` is one of their works with the highest count at the provider (TMDB votes, AniList popularity, Open Library reading logs), from any year and the same for every user. `series` and `adaptation` come from the relation graph.
      * @enum {string}
@@ -9344,7 +9346,10 @@ export interface operations {
   }
   getTitleTree: {
     parameters: {
-      query?: never
+      query?: {
+        /** @description True to add the `lead_actor` and `second_actor` branches of a film or show. Without it the tree never holds those kinds, so a client that does not know them is safe. */
+        cast?: boolean
+      }
       header?: never
       path: {
         id: string

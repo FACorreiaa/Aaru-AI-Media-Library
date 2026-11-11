@@ -38,8 +38,9 @@ type TreeBranch struct {
 	Nodes []TreeNode
 }
 
-// Tree is where one title leads (GRAPH-005): the title and up to three branches. Catalog data,
-// the same for every user. Partial is true when a source failed or ran out of time.
+// Tree is where one title leads (GRAPH-005): the title and its branches, the people first (one,
+// or three for a film or show read with its cast, GRAPH-006), then the series and the
+// adaptations. Catalog data, the same for every user. Partial is true when a source failed or ran out of time.
 type Tree struct {
 	Root     TreeNode
 	Branches []TreeBranch
@@ -75,8 +76,10 @@ type credited struct {
 	works  []CreditedWork
 }
 
-// Tree is the title's tree. A source that fails leaves it partial; it never fails the tree.
-func (s *TreeService) Tree(ctx context.Context, titleID uuid.UUID) (Tree, error) {
+// Tree is the title's tree. With cast, a film's or show's first two billed actors get a branch
+// each after the person who made it (GRAPH-006). A source that fails leaves the tree partial; it
+// never fails the tree.
+func (s *TreeService) Tree(ctx context.Context, titleID uuid.UUID, cast bool) (Tree, error) {
 	centre, err := s.Relations.centre(ctx, titleID)
 	if err != nil {
 		return Tree{}, err
@@ -87,7 +90,7 @@ func (s *TreeService) Tree(ctx context.Context, titleID uuid.UUID) (Tree, error)
 
 	var (
 		graph             RelationGraph
-		person            *credited
+		people            []credited
 		graphErr, credErr error
 	)
 	g, _ := safe.WithContext(pageCtx)
@@ -97,7 +100,7 @@ func (s *TreeService) Tree(ctx context.Context, titleID uuid.UUID) (Tree, error)
 		return nil
 	})
 	g.Go(func() error {
-		person, credErr = s.person(pageCtx, centre)
+		people, credErr = s.people(pageCtx, centre, cast)
 		return nil
 	})
 	_ = g.Wait()
@@ -106,50 +109,88 @@ func (s *TreeService) Tree(ctx context.Context, titleID uuid.UUID) (Tree, error)
 	tree.Partial = graphErr != nil || graph.Partial || credErr != nil
 	if credErr != nil {
 		if errors.Is(pageCtx.Err(), context.DeadlineExceeded) && ctx.Err() == nil {
-			s.warm(ctx, centre)
+			s.warm(ctx, centre, cast)
 		} else {
 			s.log.Warn("Title tree credits failed", "title", titleID.String(), "error", credErr.Error())
 		}
 	}
-	if person != nil {
-		if branch, ok := s.personBranch(ctx, centre, graph, *person); ok {
-			tree.Branches = append(tree.Branches, branch)
+	// A title one person's branch shows is not shown again in the next person's.
+	taken := map[string]bool{}
+	for _, p := range people {
+		branch, ok := s.personBranch(ctx, centre, graph, p, taken)
+		if !ok {
+			continue
+		}
+		tree.Branches = append(tree.Branches, branch)
+		for _, n := range branch.Nodes {
+			for _, k := range NodeKeys(n.RelatedNode) {
+				taken[k] = true
+			}
 		}
 	}
 	tree.Branches = append(tree.Branches, graphBranches(graph)...)
 	return tree, nil
 }
 
-// person asks the first source that knows the title who made it, then for their works.
-func (s *TreeService) person(ctx context.Context, centre RelatedNode) (*credited, error) {
+// people asks the first source that knows the title who made it, and with cast who is billed
+// first in it, then for each one's works, together. One person's works failing leaves the others:
+// the error says the answer is short.
+func (s *TreeService) people(ctx context.Context, centre RelatedNode, cast bool) ([]credited, error) {
 	for _, source := range s.Sources {
 		key := source.CreditKey(centre)
 		if key == "" {
 			continue
 		}
 		name := source.CreditSourceName()
-		people, err := cachedCredits(ctx, s.cache, name, "title:"+key, func(ctx context.Context) ([]Credit, error) {
+		// v2: an answer cached before GRAPH-006 has no cast in it.
+		all, err := cachedCredits(ctx, s.cache, name, "title:v2:"+key, func(ctx context.Context) ([]Credit, error) {
 			return source.People(ctx, centre)
 		})
 		if err != nil {
 			return nil, err
 		}
-		if len(people) == 0 {
+		var credits []Credit
+		made := false
+		for _, c := range all {
+			switch {
+			case c.Kind.IsCast() && cast:
+				credits = append(credits, c)
+			case !c.Kind.IsCast() && !made:
+				credits, made = append(credits, c), true
+			}
+		}
+		if len(credits) == 0 {
 			continue
 		}
-		credit := people[0]
-		works, err := cachedCredits(ctx, s.cache, name, "person:"+string(credit.Kind)+":"+credit.ID,
-			func(ctx context.Context) ([]CreditedWork, error) { return source.Works(ctx, credit) })
-		if err != nil {
-			return nil, err
+		found := make([]*credited, len(credits))
+		errs := make([]error, len(credits))
+		g, _ := safe.WithContext(ctx)
+		for i, credit := range credits {
+			g.Go(func() error {
+				works, err := cachedCredits(ctx, s.cache, name, credit.cacheKey(),
+					func(ctx context.Context) ([]CreditedWork, error) { return source.Works(ctx, credit) })
+				if err != nil {
+					errs[i] = err
+					return nil
+				}
+				found[i] = &credited{credit: credit, works: works}
+				return nil
+			})
 		}
-		return &credited{credit: credit, works: works}, nil
+		_ = g.Wait()
+		out := make([]credited, 0, len(found))
+		for _, p := range found {
+			if p != nil {
+				out = append(out, *p)
+			}
+		}
+		return out, errors.Join(errs...)
 	}
-	return nil, nil //nolint:nilnil // nil: no source knows who made it
+	return nil, nil
 }
 
 // warm reads the title's credits again past the page, detached from it, so they land in the cache.
-func (s *TreeService) warm(ctx context.Context, centre RelatedNode) {
+func (s *TreeService) warm(ctx context.Context, centre RelatedNode, cast bool) {
 	keys := NodeKeys(centre)
 	if len(keys) == 0 {
 		return
@@ -162,15 +203,18 @@ func (s *TreeService) warm(ctx context.Context, centre RelatedNode) {
 		defer cancel()
 		defer s.warming.Delete(keys[0])
 		defer func() { _ = recovered(s.log, "title tree warm", recover()) }()
-		if _, err := s.person(ctx, centre); err != nil {
+		if _, err := s.people(ctx, centre, cast); err != nil {
 			s.log.Warn("Title tree warm failed", "key", keys[0], "error", err.Error())
 		}
 	}()
 }
 
 // personBranch picks the person's branch: their works without the root, without what the relation
-// graph already shows, and with an anime's seasons folded into one title.
-func (s *TreeService) personBranch(ctx context.Context, centre RelatedNode, graph RelationGraph, p credited) (TreeBranch, bool) {
+// graph or an earlier person's branch (taken) already shows, and with an anime's seasons folded
+// into one title.
+func (s *TreeService) personBranch(
+	ctx context.Context, centre RelatedNode, graph RelationGraph, p credited, taken map[string]bool,
+) (TreeBranch, bool) {
 	rootKeys := map[string]bool{}
 	for _, k := range NodeKeys(centre) {
 		rootKeys[k] = true
@@ -197,7 +241,7 @@ func (s *TreeService) personBranch(ctx context.Context, centre RelatedNode, grap
 			}
 			continue
 		}
-		if slices.ContainsFunc(keys, func(k string) bool { return shown[k] }) {
+		if slices.ContainsFunc(keys, func(k string) bool { return shown[k] || taken[k] }) {
 			continue
 		}
 		works = append(works, w)

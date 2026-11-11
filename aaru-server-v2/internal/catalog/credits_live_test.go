@@ -48,27 +48,30 @@ func TestLiveCredits(t *testing.T) {
 			if err != nil || len(people) == 0 {
 				t.Fatalf("people: %v %v", people, err)
 			}
-			works, err := source.Works(ctx, people[0])
-			if err != nil || len(works) == 0 {
-				t.Fatalf("works of %s: %d %v", people[0].Name, len(works), err)
-			}
-			candidates := make([]core.TreeCandidate, 0, len(works))
-			kept := make([]CreditedWork, 0, len(works))
-			rootDate := treeDate(c.node)
-			ranked := false
-			for _, w := range works {
-				if NodeKeys(w.RelatedNode)[0] == NodeKeys(c.node)[0] {
-					rootDate = treeDate(w.RelatedNode)
-					continue
+			// Everyone the title credits: who made it, then a film's or show's first two billed.
+			for _, person := range people {
+				works, err := source.Works(ctx, person)
+				if err != nil || len(works) == 0 {
+					t.Fatalf("works of %s: %d %v", person.Name, len(works), err)
 				}
-				kept = append(kept, w)
-				candidates = append(candidates, core.TreeCandidate{Date: treeDate(w.RelatedNode), Score: w.Score})
-				ranked = ranked || w.Score > 0
-			}
-			t.Logf("%s %s (%s): %d works, root dated %s", people[0].Kind, people[0].Name, people[0].ID, len(works), rootDate)
-			for _, choice := range core.PickTreeBranch(candidates, rootDate, ranked) {
-				w := kept[choice.Index]
-				t.Logf("    %-10s %-10s %7d  %s", choice.Pick, treeDate(w.RelatedNode), w.Score, w.Title)
+				candidates := make([]core.TreeCandidate, 0, len(works))
+				kept := make([]CreditedWork, 0, len(works))
+				rootDate := treeDate(c.node)
+				ranked := false
+				for _, w := range works {
+					if NodeKeys(w.RelatedNode)[0] == NodeKeys(c.node)[0] {
+						rootDate = treeDate(w.RelatedNode)
+						continue
+					}
+					kept = append(kept, w)
+					candidates = append(candidates, core.TreeCandidate{Date: treeDate(w.RelatedNode), Score: w.Score})
+					ranked = ranked || w.Score > 0
+				}
+				t.Logf("%s %s (%s): %d works, root dated %s", person.Kind, person.Name, person.ID, len(works), rootDate)
+				for _, choice := range core.PickTreeBranch(candidates, rootDate, ranked) {
+					w := kept[choice.Index]
+					t.Logf("    %-10s %-10s %7d  %s", choice.Pick, treeDate(w.RelatedNode), w.Score, w.Title)
+				}
 			}
 		})
 	}

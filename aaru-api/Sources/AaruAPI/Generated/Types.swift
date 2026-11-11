@@ -762,7 +762,7 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/titles/{id}/relations/chain`.
     /// - Remark: Generated from `#/paths//v1/titles/{id}/relations/chain/post(planRelationChain)`.
     func planRelationChain(_ input: Operations.PlanRelationChain.Input) async throws -> Operations.PlanRelationChain.Output
-    /// The title tree (GRAPH-005), "From here": the title as the root and up to three branches of up to five titles, the person who made it (a film's director, a show's creator, an anime's main studio, a manga's or book's author, an album's artist), its series and its adaptations, each marked with the caller's library. Catalog data, the same for every user: reading it writes nothing, and nothing in it is personal. A tree that is missing titles because a source failed or ran out of time says `partial`.
+    /// The title tree (GRAPH-005), "From here": the title as the root and branches of up to five titles, the person who made it (a film's director, a show's creator, an anime's main studio, a manga's or book's author, an album's artist), its series and its adaptations, each marked with the caller's library. With `cast=true` a film or show also has a branch for each of its first two billed actors (GRAPH-006). Catalog data, the same for every user: reading it writes nothing, and nothing in it is personal. A tree that is missing titles because a source failed or ran out of time says `partial`.
     ///
     /// - Remark: HTTP `GET /v1/titles/{id}/tree`.
     /// - Remark: Generated from `#/paths//v1/titles/{id}/tree/get(getTitleTree)`.
@@ -2888,16 +2888,18 @@ extension APIProtocol {
             headers: headers
         ))
     }
-    /// The title tree (GRAPH-005), "From here": the title as the root and up to three branches of up to five titles, the person who made it (a film's director, a show's creator, an anime's main studio, a manga's or book's author, an album's artist), its series and its adaptations, each marked with the caller's library. Catalog data, the same for every user: reading it writes nothing, and nothing in it is personal. A tree that is missing titles because a source failed or ran out of time says `partial`.
+    /// The title tree (GRAPH-005), "From here": the title as the root and branches of up to five titles, the person who made it (a film's director, a show's creator, an anime's main studio, a manga's or book's author, an album's artist), its series and its adaptations, each marked with the caller's library. With `cast=true` a film or show also has a branch for each of its first two billed actors (GRAPH-006). Catalog data, the same for every user: reading it writes nothing, and nothing in it is personal. A tree that is missing titles because a source failed or ran out of time says `partial`.
     ///
     /// - Remark: HTTP `GET /v1/titles/{id}/tree`.
     /// - Remark: Generated from `#/paths//v1/titles/{id}/tree/get(getTitleTree)`.
     public func getTitleTree(
         path: Operations.GetTitleTree.Input.Path,
+        query: Operations.GetTitleTree.Input.Query = .init(),
         headers: Operations.GetTitleTree.Input.Headers = .init()
     ) async throws -> Operations.GetTitleTree.Output {
         try await getTitleTree(Operations.GetTitleTree.Input(
             path: path,
+            query: query,
             headers: headers
         ))
     }
@@ -11514,7 +11516,7 @@ public enum Components {
         public struct TitleTree: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/TitleTree/root`.
             public var root: Components.Schemas.TreeNode
-            /// At most three, in the order to draw them: the person, the series, the adaptations. A branch with no titles is left out, so this may be empty.
+            /// In the order to draw them: the person who made it, then with `cast=true` the lead and the second actor, then the series and the adaptations. At most three without the cast and five with it. A branch with no titles is left out, so this may be empty.
             ///
             /// - Remark: Generated from `#/components/schemas/TitleTree/branches`.
             public var branches: [Components.Schemas.TreeBranch]
@@ -11526,7 +11528,7 @@ public enum Components {
             ///
             /// - Parameters:
             ///   - root:
-            ///   - branches: At most three, in the order to draw them: the person, the series, the adaptations. A branch with no titles is left out, so this may be empty.
+            ///   - branches: In the order to draw them: the person who made it, then with `cast=true` the lead and the second actor, then the series and the adaptations. At most three without the cast and five with it. A branch with no titles is left out, so this may be empty.
             ///   - partial: True when a source failed or ran out of time; the tree may miss titles.
             public init(
                 root: Components.Schemas.TreeNode,
@@ -11543,7 +11545,7 @@ public enum Components {
                 case partial
             }
         }
-        /// What a branch of a title tree holds: the titles after this one in its `series`, what it is based on or adapted into (`adaptation`), or works by the person who made it.
+        /// What a branch of a title tree holds: the titles after this one in its `series`, what it is based on or adapted into (`adaptation`), or works by the person who made it. `lead_actor` and `second_actor` are a film's or show's first and second billed actor, and what else they had a part in; they are sent only when the request says `cast=true`.
         ///
         /// - Remark: Generated from `#/components/schemas/TreeBranchKind`.
         @frozen public enum TreeBranchKind: String, Codable, Hashable, Sendable, CaseIterable {
@@ -11554,6 +11556,8 @@ public enum Components {
             case studio = "studio"
             case author = "author"
             case artist = "artist"
+            case leadActor = "lead_actor"
+            case secondActor = "second_actor"
         }
         /// Why a title is in the tree. `root` is the title asked for. In a person's branch `next` is what they made after it, in release order, and `best_known` is one of their works with the highest count at the provider (TMDB votes, AniList popularity, Open Library reading logs), from any year and the same for every user. `series` and `adaptation` come from the relation graph.
         ///
@@ -36786,7 +36790,7 @@ public enum Operations {
             }
         }
     }
-    /// The title tree (GRAPH-005), "From here": the title as the root and up to three branches of up to five titles, the person who made it (a film's director, a show's creator, an anime's main studio, a manga's or book's author, an album's artist), its series and its adaptations, each marked with the caller's library. Catalog data, the same for every user: reading it writes nothing, and nothing in it is personal. A tree that is missing titles because a source failed or ran out of time says `partial`.
+    /// The title tree (GRAPH-005), "From here": the title as the root and branches of up to five titles, the person who made it (a film's director, a show's creator, an anime's main studio, a manga's or book's author, an album's artist), its series and its adaptations, each marked with the caller's library. With `cast=true` a film or show also has a branch for each of its first two billed actors (GRAPH-006). Catalog data, the same for every user: reading it writes nothing, and nothing in it is personal. A tree that is missing titles because a source failed or ran out of time says `partial`.
     ///
     /// - Remark: HTTP `GET /v1/titles/{id}/tree`.
     /// - Remark: Generated from `#/paths//v1/titles/{id}/tree/get(getTitleTree)`.
@@ -36806,6 +36810,21 @@ public enum Operations {
                 }
             }
             public var path: Operations.GetTitleTree.Input.Path
+            /// - Remark: Generated from `#/paths/v1/titles/{id}/tree/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// True to add the `lead_actor` and `second_actor` branches of a film or show. Without it the tree never holds those kinds, so a client that does not know them is safe.
+                ///
+                /// - Remark: Generated from `#/paths/v1/titles/{id}/tree/GET/query/cast`.
+                public var cast: Swift.Bool?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - cast: True to add the `lead_actor` and `second_actor` branches of a film or show. Without it the tree never holds those kinds, so a client that does not know them is safe.
+                public init(cast: Swift.Bool? = nil) {
+                    self.cast = cast
+                }
+            }
+            public var query: Operations.GetTitleTree.Input.Query
             /// - Remark: Generated from `#/paths/v1/titles/{id}/tree/GET/header`.
             public struct Headers: Sendable, Hashable {
                 public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetTitleTree.AcceptableContentType>]
@@ -36822,12 +36841,15 @@ public enum Operations {
             ///
             /// - Parameters:
             ///   - path:
+            ///   - query:
             ///   - headers:
             public init(
                 path: Operations.GetTitleTree.Input.Path,
+                query: Operations.GetTitleTree.Input.Query = .init(),
                 headers: Operations.GetTitleTree.Input.Headers = .init()
             ) {
                 self.path = path
+                self.query = query
                 self.headers = headers
             }
         }

@@ -230,7 +230,14 @@ are their best known, each with a small star. Three branches of five at most: it
 the graph, and Graph stays where it is. The tree never adds anything; a title opens its page. When
 a tap on the title page makes the title finished, the same tree opens once in a dialog (a sheet on
 Apple) titled "From here", the trunk and then the tiles arriving after the tap; Reduce Motion
-cross-fades. On the page it does not animate. No branch means no section and no dialog. The copy
+cross-fades. On the page it does not animate. No branch means no section and no dialog. A film or
+show also has a row for its lead actor ("Lead · name") and its second ("Also starring · name")
+under the director's (GRAPH-006), and one line of chips over the tree to narrow the person rows:
+All, Director, Lead, 2nd. Where there is room (the web, Mac, iPad) it starts on All, five rows at
+most. On an iPhone there is no All and one person's row shows at a time, so the section is no
+taller than it was: the phone is never given more rows than before. The series and adaptation
+rows stay whatever the chip says, a chip changes only the person row, and it never loads anything.
+No chips when there is one person. The copy
 never says "for you", "recommended" or "because you watched": it is who made this and what the
 catalog lists by them, the same for everyone. Flat as everything else: no shadow, and gold fills
 nothing.
