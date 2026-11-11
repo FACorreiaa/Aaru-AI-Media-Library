@@ -11,6 +11,7 @@ struct AccountPage: View {
     var onDeleteAccount: (() async -> String?)?
     /// Nil in previews.
     @Environment(PlusModel.self) private var plus: PlusModel?
+    @State private var confirmsOthers = false
 
     var body: some View {
         @Bindable var account = account
@@ -45,9 +46,27 @@ struct AccountPage: View {
             }
             Section {
                 Button("Sign out", action: onSignOut)
+                Button("Sign out of other devices") { confirmsOthers = true }
+                    .disabled(account.signingOutOthers)
+                    .confirmationDialog(
+                        "Sign out of other devices?", isPresented: $confirmsOthers, titleVisibility: .visible
+                    ) {
+                        Button("Sign out other devices", role: .destructive) {
+                            Task { await account.signOutOtherDevices() }
+                        }
+                        Button("Cancel", role: .cancel) {}
+                    } message: {
+                        Text(
+                            "Every other device signed in to Aaru will need to sign in again. This one stays signed in."
+                        )
+                    }
+            } footer: {
+                if account.otherDevicesSignedOut {
+                    Text("Done. Your other devices are signed out.")
+                }
             }
             if let onDeleteAccount {
-                DeleteAccountSection(onDeleteAccount: onDeleteAccount)
+                DeleteAccountSection(onDeleteAccount: onDeleteAccount, onSignOut: onSignOut)
             }
         }
         .settingsPage("Account", problem: $account.problem)

@@ -37,6 +37,11 @@ function About() {
             </Link>
           </li>
           <li>
+            <Link to="/terms" class={link}>
+              Terms of use
+            </Link>
+          </li>
+          <li>
             <Link to="/about" class={link}>
               About Aaru
             </Link>

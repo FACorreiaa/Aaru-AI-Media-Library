@@ -46,12 +46,17 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `DELETE /v1/auth/session`.
     /// - Remark: Generated from `#/paths//v1/auth/session/delete(signOut)`.
     func signOut(_ input: Operations.SignOut.Input) async throws -> Operations.SignOut.Output
+    /// Sign out of other devices: end every session of this account except the one that asks. The caller stays signed in.
+    ///
+    /// - Remark: HTTP `DELETE /v1/auth/sessions`.
+    /// - Remark: Generated from `#/paths//v1/auth/sessions/delete(signOutOtherDevices)`.
+    func signOutOtherDevices(_ input: Operations.SignOutOtherDevices.Input) async throws -> Operations.SignOutOtherDevices.Output
     /// The signed-in account.
     ///
     /// - Remark: HTTP `GET /v1/me`.
     /// - Remark: Generated from `#/paths//v1/me/get(getMe)`.
     func getMe(_ input: Operations.GetMe.Input) async throws -> Operations.GetMe.Output
-    /// Delete the account and everything that belongs to it.
+    /// Delete the account and everything that belongs to it. Only a session created in the last 10 minutes may do it; an older one gets 403 `reauth_required` and the user signs in again first.
     ///
     /// - Remark: HTTP `DELETE /v1/me`.
     /// - Remark: Generated from `#/paths//v1/me/delete(deleteAccount)`.
@@ -61,7 +66,7 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /v1/me/entitlement`.
     /// - Remark: Generated from `#/paths//v1/me/entitlement/get(getEntitlement)`.
     func getEntitlement(_ input: Operations.GetEntitlement.Input) async throws -> Operations.GetEntitlement.Output
-    /// A purchase or a restore, from the Apple app that made it (BIL-002). The signed transaction must carry this account's `appAccountToken`; 409 `plus_other_account` when it names another, 422 `invalid_transaction` when it does not verify.
+    /// A purchase or a restore, from the Apple app that made it (BIL-002). The signed transaction must carry this account's `appAccountToken`; 409 `plus_other_account` when it names another, 409 `sandbox_refused` for a Sandbox (TestFlight) purchase while the server does not accept them, 422 `invalid_transaction` when it does not verify.
     ///
     /// - Remark: HTTP `POST /v1/billing/apple/transactions`.
     /// - Remark: Generated from `#/paths//v1/billing/apple/transactions/post(recordAppleTransaction)`.
@@ -1148,6 +1153,13 @@ extension APIProtocol {
     public func signOut(headers: Operations.SignOut.Input.Headers = .init()) async throws -> Operations.SignOut.Output {
         try await signOut(Operations.SignOut.Input(headers: headers))
     }
+    /// Sign out of other devices: end every session of this account except the one that asks. The caller stays signed in.
+    ///
+    /// - Remark: HTTP `DELETE /v1/auth/sessions`.
+    /// - Remark: Generated from `#/paths//v1/auth/sessions/delete(signOutOtherDevices)`.
+    public func signOutOtherDevices(headers: Operations.SignOutOtherDevices.Input.Headers = .init()) async throws -> Operations.SignOutOtherDevices.Output {
+        try await signOutOtherDevices(Operations.SignOutOtherDevices.Input(headers: headers))
+    }
     /// The signed-in account.
     ///
     /// - Remark: HTTP `GET /v1/me`.
@@ -1155,7 +1167,7 @@ extension APIProtocol {
     public func getMe(headers: Operations.GetMe.Input.Headers = .init()) async throws -> Operations.GetMe.Output {
         try await getMe(Operations.GetMe.Input(headers: headers))
     }
-    /// Delete the account and everything that belongs to it.
+    /// Delete the account and everything that belongs to it. Only a session created in the last 10 minutes may do it; an older one gets 403 `reauth_required` and the user signs in again first.
     ///
     /// - Remark: HTTP `DELETE /v1/me`.
     /// - Remark: Generated from `#/paths//v1/me/delete(deleteAccount)`.
@@ -1169,7 +1181,7 @@ extension APIProtocol {
     public func getEntitlement(headers: Operations.GetEntitlement.Input.Headers = .init()) async throws -> Operations.GetEntitlement.Output {
         try await getEntitlement(Operations.GetEntitlement.Input(headers: headers))
     }
-    /// A purchase or a restore, from the Apple app that made it (BIL-002). The signed transaction must carry this account's `appAccountToken`; 409 `plus_other_account` when it names another, 422 `invalid_transaction` when it does not verify.
+    /// A purchase or a restore, from the Apple app that made it (BIL-002). The signed transaction must carry this account's `appAccountToken`; 409 `plus_other_account` when it names another, 409 `sandbox_refused` for a Sandbox (TestFlight) purchase while the server does not accept them, 422 `invalid_transaction` when it does not verify.
     ///
     /// - Remark: HTTP `POST /v1/billing/apple/transactions`.
     /// - Remark: Generated from `#/paths//v1/billing/apple/transactions/post(recordAppleTransaction)`.
@@ -16135,6 +16147,142 @@ public enum Operations {
             }
         }
     }
+    /// Sign out of other devices: end every session of this account except the one that asks. The caller stays signed in.
+    ///
+    /// - Remark: HTTP `DELETE /v1/auth/sessions`.
+    /// - Remark: Generated from `#/paths//v1/auth/sessions/delete(signOutOtherDevices)`.
+    public enum SignOutOtherDevices {
+        public static let id: Swift.String = "signOutOtherDevices"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/auth/sessions/DELETE/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SignOutOtherDevices.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SignOutOtherDevices.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.SignOutOtherDevices.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.SignOutOtherDevices.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Every other session is ended.
+            ///
+            /// - Remark: Generated from `#/paths//v1/auth/sessions/delete(signOutOtherDevices)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.SignOutOtherDevices.Output.NoContent)
+            /// Every other session is ended.
+            ///
+            /// - Remark: Generated from `#/paths//v1/auth/sessions/delete(signOutOtherDevices)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.SignOutOtherDevices.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/auth/sessions/delete(signOutOtherDevices)/responses/401`.
+            ///
+            /// HTTP response code: `401 unauthorized`.
+            case unauthorized(Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.unauthorized`.
+            ///
+            /// - Throws: An error if `self` is not `.unauthorized`.
+            /// - SeeAlso: `.unauthorized`.
+            public var unauthorized: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .unauthorized(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "unauthorized",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/auth/sessions/delete(signOutOtherDevices)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
     /// The signed-in account.
     ///
     /// - Remark: HTTP `GET /v1/me`.
@@ -16264,7 +16412,7 @@ public enum Operations {
             }
         }
     }
-    /// Delete the account and everything that belongs to it.
+    /// Delete the account and everything that belongs to it. Only a session created in the last 10 minutes may do it; an older one gets 403 `reauth_required` and the user signs in again first.
     ///
     /// - Remark: HTTP `DELETE /v1/me`.
     /// - Remark: Generated from `#/paths//v1/me/delete(deleteAccount)`.
@@ -16322,6 +16470,57 @@ public enum Operations {
                     default:
                         try throwUnexpectedResponseStatus(
                             expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            public struct Forbidden: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/DELETE/responses/403/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/me/DELETE/responses/403/content/application\/json`.
+                    case json(Components.Schemas.ErrorResponse)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ErrorResponse {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.DeleteAccount.Output.Forbidden.Body
+                /// Creates a new `Forbidden`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.DeleteAccount.Output.Forbidden.Body) {
+                    self.body = body
+                }
+            }
+            /// The session is older than 10 minutes (`reauth_required`). Nothing was deleted.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/delete(deleteAccount)/responses/403`.
+            ///
+            /// HTTP response code: `403 forbidden`.
+            case forbidden(Operations.DeleteAccount.Output.Forbidden)
+            /// The associated value of the enum case if `self` is `.forbidden`.
+            ///
+            /// - Throws: An error if `self` is not `.forbidden`.
+            /// - SeeAlso: `.forbidden`.
+            public var forbidden: Operations.DeleteAccount.Output.Forbidden {
+                get throws {
+                    switch self {
+                    case let .forbidden(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "forbidden",
                             response: self
                         )
                     }
@@ -16506,7 +16705,7 @@ public enum Operations {
             }
         }
     }
-    /// A purchase or a restore, from the Apple app that made it (BIL-002). The signed transaction must carry this account's `appAccountToken`; 409 `plus_other_account` when it names another, 422 `invalid_transaction` when it does not verify.
+    /// A purchase or a restore, from the Apple app that made it (BIL-002). The signed transaction must carry this account's `appAccountToken`; 409 `plus_other_account` when it names another, 409 `sandbox_refused` for a Sandbox (TestFlight) purchase while the server does not accept them, 422 `invalid_transaction` when it does not verify.
     ///
     /// - Remark: HTTP `POST /v1/billing/apple/transactions`.
     /// - Remark: Generated from `#/paths//v1/billing/apple/transactions/post(recordAppleTransaction)`.

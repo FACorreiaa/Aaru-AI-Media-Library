@@ -148,6 +148,20 @@ export const linkGoogle = createServerFn({ method: 'POST' })
     return me
   })
 
+/** Signs every other device out and keeps this one signed in (`DELETE /v1/auth/sessions`). */
+export const signOutOtherDevices = createServerFn({ method: 'POST' }).handler(
+  async () => {
+    const token = getCookie(SESSION_COOKIE)
+    if (!token) throw new Error('You are not signed in.')
+    const result = await api(token).DELETE('/v1/auth/sessions')
+    if (!result.response.ok) {
+      throw new Error(
+        errorMessage(result.error, 'Other devices were not signed out.'),
+      )
+    }
+  },
+)
+
 /** Ends the session on the server when it can, and always in this browser. */
 export const signOut = createServerFn({ method: 'POST' }).handler(async () => {
   const token = getCookie(SESSION_COOKIE)

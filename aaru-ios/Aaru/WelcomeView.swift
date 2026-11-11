@@ -118,6 +118,14 @@ struct WelcomeView: View {
             }
             Button("Continue with email", action: onContinueWithEmail)
                 .buttonStyle(OutlineCapsuleButtonStyle())
+            HStack(spacing: 6) {
+                Link("Terms", destination: URL(string: "https://aaruapp.com/terms") ?? .applicationDirectory)
+                Text("·")
+                Link("Privacy", destination: URL(string: "https://aaruapp.com/privacy") ?? .applicationDirectory)
+            }
+            .font(.footnote)
+            .foregroundStyle(Color(.muted))
+            .padding(.top, 4)
             #if DEBUG || BETA
                 APIStatusLabel(api: api)
                     .font(.caption2)

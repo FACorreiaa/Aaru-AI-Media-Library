@@ -74,6 +74,9 @@ struct AuthFlow {
         session.signOut()
     }
 
+    /// What a 403 `reauth_required` says: the session is older than 10 minutes, so sign in again first.
+    static let reauthMessage = "For your safety, sign in again, then delete your account."
+
     /// Deletes the account on the server, then signs out here. Returns a message on failure.
     func deleteAccount() async -> String? {
         guard let api else { return "This build has no server configured." }
@@ -82,6 +85,8 @@ struct AuthFlow {
             case .noContent:
                 session.signOut()
                 return nil
+            case .forbidden:
+                return Self.reauthMessage
             case let .default(_, error):
                 return (try? error.body.json.message) ?? "The account was not deleted."
             }

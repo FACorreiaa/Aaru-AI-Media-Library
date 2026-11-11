@@ -46,14 +46,18 @@ function About() {
       <Credits />
 
       <h2 class="mt-10 font-display text-2xl font-medium">
-        Privacy and contact
+        Privacy, terms and contact
       </h2>
       <p class="mt-4 leading-relaxed text-muted">
         Read the{' '}
         <Link to="/privacy" class={link}>
           privacy policy
         </Link>{' '}
-        for what Aaru stores and how to delete it. Questions:{' '}
+        for what Aaru stores and how to delete it, and the{' '}
+        <Link to="/terms" class={link}>
+          terms of use
+        </Link>{' '}
+        for the rules. Questions:{' '}
         <a href={`mailto:${CONTACT_EMAIL}`} class={link}>
           {CONTACT_EMAIL}
         </a>

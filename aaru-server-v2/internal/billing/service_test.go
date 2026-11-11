@@ -53,7 +53,7 @@ func tx(original string, token *uuid.UUID, signed time.Time, revoked *time.Time)
 	expires := time.Now().Add(24 * time.Hour)
 	return Transaction{
 		OriginalTransactionID: original, TransactionID: original + "1", BundleID: testBundle, ProductID: "aaru_plus_yearly",
-		Environment: "Sandbox", AppAccountToken: token, ExpiresAt: &expires, RevokedAt: revoked, SignedAt: signed,
+		Environment: "Production", AppAccountToken: token, ExpiresAt: &expires, RevokedAt: revoked, SignedAt: signed,
 	}
 }
 
@@ -159,3 +159,49 @@ func TestCapturesCountThisUTCMonth(t *testing.T) {
 }
 
 func ptr[T any](v T) *T { return &v }
+
+func TestSandboxGrantsNothingUnlessAccepted(t *testing.T) {
+	pool := testdb.New(t)
+	ctx := context.Background()
+	user := uuid.New()
+	_, err := pool.Exec(ctx, `INSERT INTO users (id) VALUES ($1)`, user)
+	require.NoError(t, err)
+	sandbox := func(original string) Transaction {
+		t := tx(original, &user, time.Now(), nil)
+		t.Environment = "Sandbox"
+		return t
+	}
+	apple := FakeApple{
+		Transactions:  map[string]Transaction{"test": sandbox("sb-1"), "live": tx("prod-1", &user, time.Now(), nil)},
+		Notifications: map[string]Notification{"renew": {Type: "DID_RENEW", Transaction: ptr(sandbox("sb-2"))}},
+	}
+
+	closed := &Service{Q: sqlc.New(pool), Apple: apple}
+	_, err = closed.RecordPurchase(ctx, "test", user)
+	assert.Equal(t, "sandbox_refused", code(err))
+	var apiErr *apperr.Error
+	require.ErrorAs(t, err, &apiErr)
+	assert.Equal(t, 409, apiErr.Status)
+	state, err := closed.State(ctx, user)
+	require.NoError(t, err)
+	assert.Nil(t, state.Plus, "no entitlement from a refused purchase")
+
+	require.NoError(t, closed.Notify(ctx, "renew"), "a Sandbox notification is acknowledged")
+	owners, err := sqlc.New(pool).EntitlementOwner(ctx, "sb-2")
+	require.NoError(t, err)
+	assert.Empty(t, owners, "and ignored")
+
+	bought, err := closed.RecordPurchase(ctx, "live", user)
+	require.NoError(t, err, "Production is unaffected")
+	assert.NotNil(t, bought.Plus)
+
+	other := uuid.New()
+	_, err = pool.Exec(ctx, `INSERT INTO users (id) VALUES ($1)`, other)
+	require.NoError(t, err)
+	open := &Service{Q: sqlc.New(pool), Apple: FakeApple{Transactions: map[string]Transaction{
+		"test": func() Transaction { t := sandbox("sb-3"); t.AppAccountToken = &other; return t }(),
+	}}, AcceptSandbox: true}
+	granted, err := open.RecordPurchase(ctx, "test", other)
+	require.NoError(t, err)
+	assert.NotNil(t, granted.Plus)
+}
