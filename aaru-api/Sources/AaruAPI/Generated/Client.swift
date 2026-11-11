@@ -606,6 +606,85 @@ public struct Client: APIProtocol {
             }
         )
     }
+    /// Sign out of other devices: end every session of this account except the one that asks. The caller stays signed in.
+    ///
+    /// - Remark: HTTP `DELETE /v1/auth/sessions`.
+    /// - Remark: Generated from `#/paths//v1/auth/sessions/delete(signOutOtherDevices)`.
+    public func signOutOtherDevices(_ input: Operations.SignOutOtherDevices.Input) async throws -> Operations.SignOutOtherDevices.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.SignOutOtherDevices.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/auth/sessions",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .delete
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 204:
+                    return .noContent(.init())
+                case 401:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .unauthorized(.init(body: body))
+                default:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(body: body)
+                    )
+                }
+            }
+        )
+    }
     /// The signed-in account.
     ///
     /// - Remark: HTTP `GET /v1/me`.
@@ -683,7 +762,7 @@ public struct Client: APIProtocol {
             }
         )
     }
-    /// Delete the account and everything that belongs to it.
+    /// Delete the account and everything that belongs to it. Only a session created in the last 10 minutes may do it; an older one gets 403 `reauth_required` and the user signs in again first.
     ///
     /// - Remark: HTTP `DELETE /v1/me`.
     /// - Remark: Generated from `#/paths//v1/me/delete(deleteAccount)`.
@@ -711,6 +790,28 @@ public struct Client: APIProtocol {
                 switch response.status.code {
                 case 204:
                     return .noContent(.init())
+                case 403:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.DeleteAccount.Output.Forbidden.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .forbidden(.init(body: body))
                 default:
                     let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
                     let body: Components.Responses._Error.Body
@@ -817,7 +918,7 @@ public struct Client: APIProtocol {
             }
         )
     }
-    /// A purchase or a restore, from the Apple app that made it (BIL-002). The signed transaction must carry this account's `appAccountToken`; 409 `plus_other_account` when it names another, 422 `invalid_transaction` when it does not verify.
+    /// A purchase or a restore, from the Apple app that made it (BIL-002). The signed transaction must carry this account's `appAccountToken`; 409 `plus_other_account` when it names another, 409 `sandbox_refused` for a Sandbox (TestFlight) purchase while the server does not accept them, 422 `invalid_transaction` when it does not verify.
     ///
     /// - Remark: HTTP `POST /v1/billing/apple/transactions`.
     /// - Remark: Generated from `#/paths//v1/billing/apple/transactions/post(recordAppleTransaction)`.

@@ -4,10918 +4,10875 @@
  */
 
 export interface paths {
-  '/v1/health': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Liveness and database reachability. Unauthenticated. */
-    get: operations['getHealth']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/auth/apple': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Exchange a Sign in with Apple identity token for a session. */
-    post: operations['signInWithApple']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/auth/google': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Exchange a Google ID token for a session. Creates the account on first use. */
-    post: operations['signInWithGoogle']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/me/identities/google': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Link a Google account to the signed-in account. Refused if it belongs to another account. */
-    post: operations['linkGoogle']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/auth/email/link': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Email a one-time sign-in link. Same answer whether or not an account exists. */
-    post: operations['requestMagicLink']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/auth/email/verify': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Exchange a magic-link token, or the email and its 6-digit code, for a session. Creates the account on first use. */
-    post: operations['verifyMagicLink']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/auth/session': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post?: never
-    /** End the current session. */
-    delete: operations['signOut']
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/me': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** The signed-in account. */
-    get: operations['getMe']
-    put?: never
-    post?: never
-    /** Delete the account and everything that belongs to it. */
-    delete: operations['deleteAccount']
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/me/entitlement': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Aaru Plus and this month's captures (BIL-001). The same on every client; Plus is bought in the Apple apps only. */
-    get: operations['getEntitlement']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/billing/apple/transactions': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** A purchase or a restore, from the Apple app that made it (BIL-002). The signed transaction must carry this account's `appAccountToken`; 409 `plus_other_account` when it names another, 422 `invalid_transaction` when it does not verify. */
-    post: operations['recordAppleTransaction']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/billing/apple/notifications': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** App Store Server Notifications v2 (BIL-003): renewals, expiries, refunds. Unauthenticated; the payload is verified up to Apple's root certificate. */
-    post: operations['receiveAppleNotification']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/me/profile': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    /** Claim or change your handle, and your first and last name (SOC-001b). Handles are how friends find you; others see the two names joined. Every field is optional: one left out keeps its value. At most 10 handle changes a user per hour, a taken handle included (429). */
-    put: operations['updateProfile']
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/me/avatar': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    /** Replace your avatar (SOC-001b) with one square JPEG of at most 1 MB; apps send 512px. Anything that is not a JPEG is refused with 415 `avatar_image_type`, a larger file with 413 `file_too_large`. It is seen by signed-in accounts wherever your name is, never signed out and never across a block. */
-    put: operations['uploadAvatar']
-    post?: never
-    /** Remove your avatar. Your monogram shows again everywhere. */
-    delete: operations['deleteAvatar']
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/users/{userId}/avatar': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Someone's avatar (SOC-001b), for any signed-in account. A block either way, an unknown user and no avatar are the same 404. Use the `avatarUrl` a response gave you: its `v` changes with every upload, so a cached image is never stale. */
-    get: operations['getUserAvatar']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/me/favorites': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Your favorites, an ordered top 10 per kind (FAV-001). Profile data, not your library. */
-    get: operations['getMyFavorites']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/me/favorites/{kind}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    /** Replace one kind's favorites with these titles, in this order: add, remove and reorder are all this call. Any catalog title, at most 10, each once, each of this kind; else 422. Not journaled. */
-    put: operations['setMyFavorites']
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/me/onboarding': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    /** End the first-run flow (ONB-001), finished or skipped. The first call wins; later calls change nothing. What the flow already saved stays. */
-    put: operations['finishOnboarding']
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/social/users/{handle}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** The user with exactly this handle and where they stand with you. 404 when nobody holds it or either of you blocked the other. A friend or yourself is free; anyone else, misses included, at most 60 a user per hour (429). */
-    get: operations['getSocialUser']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/social/friend-requests': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Pending requests to you and from you, newest first. */
-    get: operations['listFriendRequests']
-    put?: never
-    /** Ask someone to be friends, by handle. If they already asked you, you become friends. Needs your own handle. At most 30 a user per hour (429). */
-    post: operations['sendFriendRequest']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/social/friend-requests/{id}': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post?: never
-    /** Decline a request to you, or cancel one you sent. The other side is not told. */
-    delete: operations['withdrawFriendRequest']
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/social/friend-requests/{id}/accept': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post: operations['acceptFriendRequest']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/social/friends': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Your friends, by handle. */
-    get: operations['listFriends']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/social/friends/{userId}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post?: never
-    /** Unfriend. Silent; the other side is not told. */
-    delete: operations['removeFriend']
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/me/social-settings': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** What your friends may see. Strangers never see anything, whatever is set here. */
-    get: operations['getSocialSettings']
-    put: operations['updateSocialSettings']
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/me/progress': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Your points, level, streak and the badges you have not seen yet (GAM-001…004). Days are counted in the zone from `X-Timezone`, else the zone you last sent, else UTC. Clients read this after a write to show what was earned: one toast for a live unlock, one summary when `unseen.origin` is `batch` (an import or approved plan) or `backfill` (the first run). */
-    get: operations['getProgress']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/me/badges': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Every badge in the catalog with what you have of it. A hidden badge you have not earned comes back with only its id, family and `hidden`: no name, rule or progress. */
-    get: operations['listBadges']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/me/badges/seen': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Marks earned badges (by award id) as seen, so they leave `unseen`. */
-    post: operations['markBadgesSeen']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/me/points': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** The points ledger, newest first, a page at a time ("How you earned it"). */
-    get: operations['listPoints']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/social/leaderboard': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** The weekly friends board (GAM-005): you and friends who joined it, by points earned that week on each person's own local dates. Making friends and a first import do not count. Until you join (`leaderboardOptIn`), `optedIn` is false and nobody is listed. Never global. */
-    get: operations['getLeaderboard']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/social/friends/{userId}/profile': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** A friend's shelves and what you share. 404 for anyone who is not your friend. A friend who hides their library shows only their name (`sharing` false). */
-    get: operations['getFriendProfile']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/activity': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Your friends' last two weeks, newest first, one row per friend, title and day. Only dated episode ticks and finishes; imports never show. Friends who hide their library are left out. */
-    get: operations['listFriendActivity']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/activity/{id}/reaction': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description An ActivityItem id. */
-        id: string
-      }
-      cookie?: never
-    }
-    get?: never
-    /** React to a friend's activity row with one of six emoji; reacting again replaces it. Your own rows take none. 404 unless you can see the row. */
-    put: operations['setActivityReaction']
-    post?: never
-    delete: operations['clearActivityReaction']
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/social/recommendations': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Send a title to up to 10 friends, with an optional note of up to 140 characters. Anyone who is not your friend makes the whole request a 404. Needs your own handle. */
-    post: operations['recommendTitle']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/me/recommendations': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Titles friends sent you that you have not added or dismissed, newest first. Only from people who are still your friends. */
-    get: operations['listRecommendations']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/me/recommendations/{id}': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post?: never
-    delete: operations['dismissRecommendation']
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/me/recommendations/{id}/add': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Put the title on your Plan to watch, as a tap would. A title you already have keeps its status. Either way it leaves your recommendations. */
-    post: operations['addRecommendation']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/social/blocks': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** People you blocked. */
-    get: operations['listBlocks']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/social/blocks/{userId}': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        userId: string
-      }
-      cookie?: never
-    }
-    get?: never
-    /** Block. Ends any friendship and pending requests both ways; from then on each of you is a 404 to the other. */
-    put: operations['blockUser']
-    post?: never
-    delete: operations['unblockUser']
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/social/invites': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Your invite links that are still open, newest first. */
-    get: operations['listFriendInvites']
-    put?: never
-    /** Make a one-use invite link, live for 14 days, optionally carrying a title to watch together. Needs your own handle; at most 20 open at once. */
-    post: operations['createFriendInvite']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/social/invites/{code}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post?: never
-    /** Revoke one of your open invite links. Anyone opening it afterwards sees an invalid invite. */
-    delete: operations['revokeFriendInvite']
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/social/invites/{code}/redeem': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Accept an invite. You and the inviter become friends and the link is spent; already friends leaves it unspent. Needs your own handle. */
-    post: operations['redeemFriendInvite']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/invites/{code}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** What an invite link shows, signed in or not. Unauthenticated. 404 for any code that is unknown, spent, revoked, expired, or from someone who blocked you or whom you blocked. */
-    get: operations['getInvitePreview']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/shares': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Make a share link to one title, sport event or concert (SHR-002). Public and reusable, it never expires. The same target with the same note gives back the same link; a different note makes a new one. At most 60 an hour. */
-    post: operations['createShare']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/shares/{code}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** What a share link shows, signed in or not. Unauthenticated. The content shows to anyone; who sent it and the note show only to the sender and their friends, never across a block. 404 for an unknown code. */
-    get: operations['getSharePreview']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/social/reports': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Report a user to Aaru. The user is not told. */
-    post: operations['reportUser']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/groups': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Your groups, in the order you joined them, with unread and mention counts. */
-    get: operations['listGroups']
-    put?: never
-    /** Create a group you own, with a */
-    post: operations['createGroup']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/groups/{groupId}': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        groupId: string
-      }
-      cookie?: never
-    }
-    /** A group you are in, with its channels, members and pending invites. 404 to anyone else. */
-    get: operations['getGroup']
-    put?: never
-    post?: never
-    /** Delete the group, its channels and every message. Owner only. */
-    delete: operations['deleteGroup']
-    options?: never
-    head?: never
-    /** Rename the group. Owner and admins. */
-    patch: operations['updateGroup']
-    trace?: never
-  }
-  '/v1/groups/{groupId}/members/{userId}': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        groupId: string
-        userId: string
-      }
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post?: never
-    /** Remove a member, or yourself to leave. Admins remove members; the owner removes anyone and cannot leave. */
-    delete: operations['removeGroupMember']
-    options?: never
-    head?: never
-    /** Make a member an admin, or an admin a member. Owner only. */
-    patch: operations['updateGroupMember']
-    trace?: never
-  }
-  '/v1/groups/{groupId}/transfer': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Make another member the owner. You become an admin. */
-    post: operations['transferGroup']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/groups/{groupId}/invites': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Invite a friend. Inviting again, or someone already in, changes nothing. */
-    post: operations['inviteToGroup']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/me/group-invites': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Invites waiting for you, newest first. */
-    get: operations['listGroupInvites']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/group-invites/{id}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post?: never
-    /** Decline an invite to you, or cancel one you sent. */
-    delete: operations['declineGroupInvite']
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/group-invites/{id}/accept': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Join the group. */
-    post: operations['acceptGroupInvite']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/groups/{groupId}/channels': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Add a text channel. Owner and admins. */
-    post: operations['createChannel']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/groups/{groupId}/channels/{channelId}': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        groupId: string
-        channelId: string
-      }
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post?: never
-    /** Delete a channel and its messages. The first channel stays. Owner and admins. */
-    delete: operations['deleteChannel']
-    options?: never
-    head?: never
-    /** Rename a channel or set its topic. Owner and admins. */
-    patch: operations['updateChannel']
-    trace?: never
-  }
-  '/v1/groups/{groupId}/channels/{channelId}/messages': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        groupId: string
-        channelId: string
-      }
-      cookie?: never
-    }
-    /** Messages oldest first. Without a cursor, the latest page. */
-    get: operations['listMessages']
-    put?: never
-    /** Post a message. A retry with the same clientNonce returns the first message. */
-    post: operations['postMessage']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/groups/{groupId}/channels/{channelId}/messages/{messageId}': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        groupId: string
-        channelId: string
-        messageId: string
-      }
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post?: never
-    /** Delete your message, or any message as owner or admin. The row stays, empty. */
-    delete: operations['deleteMessage']
-    options?: never
-    head?: never
-    /** Edit your own message. */
-    patch: operations['editMessage']
-    trace?: never
-  }
-  '/v1/board': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** The Board feed. Posts by you and your friends. `top` is this week's most upvoted, at most 10. */
-    get: operations['listBoard']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/board/posts': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Post to the Board. Needs a handle. */
-    post: operations['createBoardPost']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/board/posts/{postId}': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        postId: string
-      }
-      cookie?: never
-    }
-    /** One post. 404 unless it is yours or a friend's. */
-    get: operations['getBoardPost']
-    put?: never
-    post?: never
-    /** Delete your own post. */
-    delete: operations['deleteBoardPost']
-    options?: never
-    head?: never
-    /** Edit your own post. */
-    patch: operations['editBoardPost']
-    trace?: never
-  }
-  '/v1/board/posts/{postId}/upvote': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        postId: string
-      }
-      cookie?: never
-    }
-    get?: never
-    /** Upvote a post. Upvoting twice counts once. 404 unless the post is yours or a friend's. */
-    put: operations['upvoteBoardPost']
-    post?: never
-    /** Take your upvote back. Fine if you never gave one. */
-    delete: operations['removeBoardPostUpvote']
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/board/posts/{postId}/upvotes': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        postId: string
-      }
-      cookie?: never
-    }
-    /** Who upvoted a post, minus anyone blocked either way with you. */
-    get: operations['listBoardPostUpvoters']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/board/posts/{postId}/comments': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        postId: string
-      }
-      cookie?: never
-    }
-    /** Comments on a post, oldest first, minus anyone blocked either way with you. A deleted comment with replies stays as an empty row; one without is dropped. A page can come back shorter than the limit. */
-    get: operations['listBoardComments']
-    put?: never
-    /** Comment on a post. A reply to a reply hangs off the top-level comment. 404 unless the post is yours or a friend's. */
-    post: operations['createBoardComment']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/board/posts/{postId}/comments/{commentId}': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        postId: string
-        commentId: string
-      }
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post?: never
-    /** Delete a comment. Its author or the post's author can. */
-    delete: operations['deleteBoardComment']
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/groups/{groupId}/channels/{channelId}/read': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Mark the channel read up to a message. The read point never moves back. */
-    post: operations['markChannelRead']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/realtime/ticket': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** A single-use ticket, valid 60 seconds, for opening the realtime socket from a browser, which cannot send an Authorization header on a WebSocket. Apps send their bearer token on the upgrade instead. */
-    post: operations['createRealtimeTicket']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/groups/{groupId}/me': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    /** Your own settings in a group. shareProgress shows your progress in its title channels; muted stops its mention alerts. Both are off by default. */
-    put: operations['updateMyMembership']
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/groups/{groupId}/channels/{channelId}/progress': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** A title channel's title, your progress, and the progress of members who share theirs in this group. */
-    get: operations['getChannelProgress']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/groups/{groupId}/channels/{channelId}/items': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        groupId: string
-        channelId: string
-      }
-      cookie?: never
-    }
-    /** A shelf channel's titles, with your own library status for each. */
-    get: operations['listChannelItems']
-    put?: never
-    /** Add a title to a shelf channel. Any member can; adding one already there changes nothing. */
-    post: operations['addChannelItem']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/groups/{groupId}/channels/{channelId}/items/{titleId}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post?: never
-    /** Take a title off a shelf channel. Any member can. */
-    delete: operations['removeChannelItem']
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/groups/{groupId}/channels/{channelId}/party': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        groupId: string
-        channelId: string
-      }
-      cookie?: never
-    }
-    /** A watch channel's newest party, ended or not, and the server's clock for the countdown. */
-    get: operations['getWatchParty']
-    put?: never
-    /** Open a party in the lobby. A show needs the episode; a manga can carry a chapter and volume, a book a page. One open party per channel (409). */
-    post: operations['openWatchParty']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/groups/{groupId}/channels/{channelId}/party/ready': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Say you are ready, or not. Being ready is joining; autoMark is whether the end of the party marks the title for you. */
-    post: operations['setWatchPartyReady']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/groups/{groupId}/channels/{channelId}/party/start': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Start the countdown. The host or an admin. */
-    post: operations['startWatchParty']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/groups/{groupId}/channels/{channelId}/party/end': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** End the party. The host or an admin. If the countdown had started, the title is marked for every member who joined and left autoMark on, as their own undoable action. */
-    post: operations['endWatchParty']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/groups/{groupId}/channels/{channelId}/party/watched': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Mark the party's episode, chapter, page, film or book in your own library. For a member who switched autoMark off or did not join. */
-    post: operations['markWatchPartyWatched']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/devices': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    /** Register this device for pushes. A token registered again moves to this user. */
-    put: operations['registerDevice']
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/devices/{token}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post?: never
-    delete: operations['unregisterDevice']
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/devices/live-activity': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    /** Hand over an ActivityKit push token (SCR-008, SCR-009): the device's push-to-start token for `NowPlayingActivityAttributes` (`start`), or the running "Now playing" activity's own token (`update`). The server then starts, updates and ends the activity from what plays. */
-    put: operations['registerLiveActivityToken']
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/web-push/key': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** The VAPID public key a browser subscribes with. 503 `push_unavailable` when web push is off. */
-    get: operations['getWebPushKey']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/web-push/subscriptions': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    /** Save this browser's push subscription. Saved again, it moves to this user. */
-    put: operations['saveWebPushSubscription']
-    post?: never
-    delete: operations['deleteWebPushSubscription']
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/agent/tokens': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** The user's live agent tokens (OUT-001), newest first. Secrets are never returned. */
-    get: operations['listAgentTokens']
-    put?: never
-    /** Mint a token for an outside caller. A Stremio token's answer carries the addon's install links; an MCP client's carries its setup, with the secret filled in. The secret is shown once. */
-    post: operations['createAgentToken']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/plans': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Changes outside agents asked for that wait for the user (OUT-004), newest first. Only a signed-in session reaches the plan routes; an agent token never does. */
-    get: operations['listPlans']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/plans/{id}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations['getPlan']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/plans/{id}/approve': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Apply the plan as one undoable action named after its agent. 409 `plan_stale` when the library changed since it was made (nothing is written), `plan_expired`, or `plan_decided`. */
-    post: operations['approvePlan']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/plans/{id}/deny': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Refuse the plan. Nothing is written; the plan stays as the record of what was asked. */
-    post: operations['denyPlan']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/oauth/requests/{id}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** A connection an app asked for over OAuth (Claude's custom connector), for the consent page. Expires ten minutes after the app asked. */
-    get: operations['getOAuthRequest']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/oauth/requests/{id}/approve': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Allow the app. Only the browser that started the request holds its binding (the `aaru_oauth` cookie the API set); the answer is where to send the browser next. */
-    post: operations['approveOAuthRequest']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/oauth/requests/{id}/deny': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post: operations['denyOAuthRequest']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/agent/setup/{kind}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** How to connect one MCP client (OUT-004), with a placeholder where the secret goes, so Settings can show the steps before a token exists. */
-    get: operations['getAgentSetup']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/agent/tokens/{id}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post?: never
-    /** Revoke a token. Its addon stops answering at once. */
-    delete: operations['revokeAgentToken']
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/me/notifications': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations['getNotificationSettings']
-    /** Changes the switches sent; any left out keep their value. */
-    put: operations['updateNotificationSettings']
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/me/profile/stats': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** All-time numbers for the profile (GAM-006b), from the library as it is: every ticked episode counts, imported and undated ones too, so these can exceed `/v1/me/stats?span=all`, which counts dated activity only. */
-    get: operations['getProfileStats']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/me/stats': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** What the user watched and read in one calendar year or month of their time zone (GAM-006a), in all time (GAM-006c), or in the last 7 or 30 days (GAM-006d). Derived only from their own library. Imported history counts only where it carries a real date. */
-    get: operations['getStats']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/me/now-playing': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** What players are playing for you now: Stremio and streaming sites through the browser extension (SCR-008), a music scrobbler's `playing_now` and YouTube videos (SCR-009). `positionMs` is where a player was at `updatedAt`; a client adds the time since while `state` is `playing`. A report too old to believe no longer counts. */
-    get: operations['getNowPlaying']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/me/listens': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Your listening log, newest first (MUS-005): what music scrobblers sent with your music token over ListenBrainz's protocol at `/listenbrainz/1/submit-listens`. */
-    get: operations['listListens']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/me/listens/top': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Your most played artists, tracks or albums over a period (MUS-005). The period is chosen as for `/v1/me/stats`: a year, a month of it, or a span. */
-    get: operations['getTopListens']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/search': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Search the catalog. Results are catalog projections, never library rows. */
-    get: operations['searchCatalog']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/discover': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Provider-curated public rows for Home (trending, airing, this season).
-     * @description The same lists for every user, cached by the server. Items the caller already has carry `libraryItemId`. A row whose provider is down is left out.
-     */
-    get: operations['getDiscover']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/onboarding/rows': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Rows of well-known titles of one kind to pick from in the first-run flow (ONB-001).
-     * @description Popular first, then rows by genre (by subject for books). Catalog data, the same for every user and cached by the server; items the caller has carry `libraryItemId`. A row whose provider is down is left out; manga has none while AniList is down, and anime comes from TMDB's Japanese animation then, with a `note`.
-     */
-    get: operations['getOnboardingRows']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/onboarding/picks': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Add the titles picked in one step of the first-run flow, each with its status (ONB-001).
-     * @description One journaled action (one undo), journal kind `onboarding`: the picks were watched, read or heard before, so their ticks carry no date, they earn no points and no streak day, and the Recap leaves them out. A status other than `wishlist` counts as set by hand, so a later import never moves it back. A title already in the library is returned unchanged. A ref that resolves to no title is left out of `items` and counted in `missed`. 1 to 60 items, else 422.
-     */
-    post: operations['addOnboardingPicks']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/onboarding/related': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Titles related to the ones picked (ONB-001): prequels, sequels, side stories, spin-offs, adaptations and sources from each title's relation graph (GRAPH-001).
-     * @description Catalog data joined by id, never a recommendation: nothing is read from other users and nothing is ranked by taste. Titles already in the caller's library are left out, each title once under the first pick it relates to, at most 30 shared across the picks in turn so one long franchise cannot fill them, grouped by pick in the order the picks were sent. Graphs not cached yet get a few seconds; `partial` says some were cut short (they keep loading for the next call).
-     */
-    post: operations['getOnboardingRelated']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/discover/season': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * One season's titles for the Seasons view (DISC-002), a page at a time.
-     * @description A season is a calendar quarter in UTC: winter Jan–Mar, spring Apr–Jun, summer Jul–Sep, fall Oct–Dec. Anime by AniList's broadcast season, new shows by first air date, returning shows by an episode airing that season, films by first release. The same lists for every user, cached by the server; items the caller has carry `libraryItemId`.
-     */
-    get: operations['getDiscoverSeason']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/discover/on-air': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Shows airing this week, grouped by channel or streamer (DISC-003).
-     * @description TMDB's on-the-air shows, the same for every user and cached by the server, each with its next episode and the channel it premieres on. `airsAt` is the exact instant when `airTimeKnown` (from TVmaze), else the UTC day: show the date only. Channels with the most shows come first, "Other" (no known channel) last. With `region`, each show also lists the services it streams on there (JustWatch data through TMDB; credit JustWatch where shown). Items the caller has carry `libraryItemId`. Empty `channels` when the provider is down and nothing is cached.
-     */
-    get: operations['getDiscoverOnAir']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/concerts/near': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Music events around a point or the saved "Concerts near" city (MUS-003), soonest first.
-     * @description POST so a position never sits in a URL. Coordinates are rounded to two decimals (about a kilometre) and used for this request only: never stored, never logged. With no coordinates the saved city is the centre; with neither, 409 `no_place`. The same list for everyone in the same area, cached by the server and linked out to Ticketmaster for tickets.
-     */
-    post: operations['getConcertsNear']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/concerts/search': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Music events matching an artist's name, near a place or anywhere (MUS-010), soonest first.
-     * @description POST so neither the name nor a position sits in a URL. The name goes to Ticketmaster as free text, so other acts whose events carry the word can match. `near` searches around a one-off point or the saved city like `/v1/concerts/near` (with neither, 409 `no_place`); `anywhere` sends the name alone, and each concert's `distanceKm` is worked out by the server from the point or saved city when there is one. Neither name nor position is logged; the same list for everyone, cached by the server.
-     */
-    post: operations['searchConcerts']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/concerts/performers': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Performers whose name matches what the user typed, to pick one before a search (MUS-010).
-     * @description Ticketmaster's own performer list for the name, best first, up to eight. Picking one and sending its `id` as `performerId` to `/v1/concerts/search` lists only that performer's concerts. POST so the name never sits in a URL; not logged, cached by the server.
-     */
-    post: operations['searchConcertPerformers']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/concerts/artists': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Upcoming concerts by the artists of the user's albums (MUS-003).
-     * @description Derived from the user's own library, like the calendar; dropped albums aside. An artist counts only when Ticketmaster lists them with the same MusicBrainz id. Artists added in the last hour may still be `pending`.
-     */
-    get: operations['getArtistConcerts']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/concerts/places': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Cities matching what the user typed, for the "Concerts near" picker (MUS-003). */
-    get: operations['searchConcertPlaces']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/me/concert-place': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** The saved "Concerts near" city, and whether concerts are on at all. */
-    get: operations['getConcertPlace']
-    /** Saves the "Concerts near" city, rounded to two decimals. */
-    put: operations['saveConcertPlace']
-    post?: never
-    /** Forgets the "Concerts near" city. */
-    delete: operations['deleteConcertPlace']
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/sports/suggested': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * The first-run picks for Sports (SPT-002).
-     * @description A fixed list of leagues and promotions (Premier League, La Liga, NBA, NFL, UFC, WWE…) with their badges once known. The same for everyone; never a recommendation.
-     */
-    get: operations['getSportSuggestions']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/sports/search': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Leagues, teams and players by name, from the sports provider (SPT-002). */
-    get: operations['searchSports']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/sports/favorites': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Each followed league, team and player with what is live, next and last (SPT-002).
-     * @description Near-live: scores refresh about every two minutes for football, NFL, NBA, MLB and NHL. UFC and WWE cards have results, not live scores. Entries still being fetched come back `pending`; ask again in a few seconds.
-     */
-    get: operations['getSportFavorites']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/sports/schedule': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** One day of events for the leagues the user follows, favorites highlighted (SPT-002). */
-    get: operations['getSportSchedule']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/sports/events/{id}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** One event with its live line and where to watch it (SPT-002, SPT-005). */
-    get: operations['getSportEvent']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/me/sport-follows': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** The leagues, teams and players the user follows in Sports, oldest first. */
-    get: operations['listSportFollows']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/me/sport-follows/{kind}/{providerId}': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        kind: components['schemas']['SportEntityKind']
-        providerId: string
-      }
-      cookie?: never
-    }
-    get?: never
-    /**
-     * Follows a league, team or player by the sports provider's id. Idempotent.
-     * @description Sports only: never a library write, never journaled, never shown to friends. 404 when the provider does not know the id, 409 `too_many_follows` past 100, 503 when Sports are off.
-     */
-    put: operations['followSport']
-    post?: never
-    /** Stops following. Idempotent. */
-    delete: operations['unfollowSport']
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/me/sport-settings': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** The country "Where to watch" looks at, and whether Sports are on at all. */
-    get: operations['getSportSettings']
-    /** Saves the "Where to watch" country; absent or null clears it. */
-    put: operations['saveSportSettings']
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/titles/resolve': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** The page for a catalog ref, in the library or not (LIB-006). Resolving may add the title to the catalog; it never adds it to the library. */
-    post: operations['resolveTitle']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/titles/{id}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** A title from the catalog. Shows include their seasons and episodes. */
-    get: operations['getTitle']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/titles/{id}/relations': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** The title's relation graph (GRAPH-001): prequels, sequels, side stories and adaptations across kinds, from AniList, TMDB collections and Wikidata, placed for drawing and marked with the caller's library. Catalog data: reading it writes nothing. A graph that is missing titles because a source failed or ran out of time says `partial`. */
-    get: operations['getTitleRelations']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/titles/{id}/relations/chain': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** "Add the chain" (GRAPH-003): the main chain of the title's relation graph, in the graph's order, as a capture to review, with exact ids. Approving adds what is not in the library to Plan to watch or read and makes a list in that order. Spends one capture, as any capture does; writes nothing to the library by itself. */
-    post: operations['planRelationChain']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/titles/{id}/posts': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Posts about this title by you and your friends, newest first. */
-    get: operations['listTitlePosts']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/library/watching': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Films, shows and anime in progress with what Library's Watching page shows (APP-018): the next episode to watch with its name and what is left, and a show's status and next airing. Anime in the backlog are included with `entry.inBacklog`. Newest change first. */
-    get: operations['listWatching']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/library/items': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** The user's library, most recently updated first. Shelves use the same filters. */
-    get: operations['listLibraryItems']
-    put?: never
-    /** Add a title to the library. Adding the same title again returns the existing item. */
-    post: operations['addLibraryItem']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/library/items/{id}': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    get: operations['getLibraryItem']
-    put?: never
-    post?: never
-    delete: operations['deleteLibraryItem']
-    options?: never
-    head?: never
-    patch: operations['updateLibraryItem']
-    trace?: never
-  }
-  '/v1/library/items/{id}/episodes/{season}/{episode}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put: operations['setEpisodeWatched']
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/library/items/{id}/seasons/{season}/watched': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Mark every aired episode of a season watched, as one undoable action. */
-    post: operations['markSeasonWatched']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/library/items/{id}/watched': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Mark a whole show watched (PROG-005): every aired regular episode, as one undoable action with the watch dates unknown, so the Recap and Insights do not count them as today. The show becomes finished; a running one moves back to in progress when an episode it has not ticked airs. 422 for anything but a show. */
-    post: operations['markShowWatched']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/library/sync': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Items changed and ids deleted since a previous sync token (all items when absent). */
-    get: operations['syncLibrary']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/actions': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** The action journal, newest first. Backs the undo ribbon. */
-    get: operations['listActions']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/actions/{id}/undo': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Apply an action's inverse. Journaled as its own action; undoing twice is 409. */
-    post: operations['undoAction']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/lists': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations['listLists']
-    put?: never
-    post: operations['createList']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/lists/{id}': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    get: operations['getList']
-    put?: never
-    post?: never
-    delete: operations['deleteList']
-    options?: never
-    head?: never
-    patch: operations['renameList']
-    trace?: never
-  }
-  '/v1/lists/{id}/graph': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    /** The list drawn as a graph (GRAPH-004), in the relation graph's shape: its steps left to right (a column per title), titles read side by side in one column, optional titles hanging under the title before them off the main chain, and "Start here" on the first main-chain title not finished or dropped. A plain list is its titles in order. */
-    get: operations['getListGraph']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/lists/{id}/items': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Add a title to a list. It need not be in the library. */
-    post: operations['addListItem']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/lists/{id}/items/{titleId}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post?: never
-    delete: operations['removeListItem']
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/lists/{id}/order': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put: operations['reorderList']
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/imports': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** The user's imports, newest first. */
-    get: operations['listImports']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/chats': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** The caller's chats with Aaru, latest first, 30 a page (ASK-011). A chat nobody has asked anything in is left out. */
-    get: operations['listChats']
-    put?: never
-    /** Start a Chat with Aaru (ASK-009), a one-to-one thread only its user can read. */
-    post: operations['createChat']
-    /** Delete all of the caller's chats with Aaru, their turns with them. */
-    delete: operations['deleteChats']
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/chats/status': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Whether Aaru and voice are on, so clients hide the owl and the mic when the server has them off. */
-    get: operations['getChatStatus']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/chats/transcribe': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Turn a spoken question into text (ASK-009). The audio is held in memory while it is read and never stored. 413 `file_too_large` over 8 MB, 413 `audio_too_long` when `X-Audio-Seconds` says over 60, 422 `transcription_empty` when no words were heard, 429 `rate_limited` past 40 an hour, 503 `transcription_unavailable` when voice is off. */
-    post: operations['transcribeChatAudio']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/chats/{id}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** One chat with its turns, oldest first, so it can be read again and continued (ASK-011). The latest 200 turns. 404 for a chat that is not the caller's. */
-    get: operations['getChat']
-    put?: never
-    post?: never
-    /** Delete one of the caller's chats, its turns and files with it (ASK-011). */
-    delete: operations['deleteChat']
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/chats/{id}/turns': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Ask Aaru (ASK-009). The answer is a stream of server-sent events, each frame an `event:` line with its type and a `data:` line with JSON: `status` and `delta` carry ChatTextFrame, `components` ChatComponentsFrame, `done` ChatDoneFrame, `error` ChatErrorFrame. Lines starting with `:` are heartbeats. Once the stream has begun, a failure can only be an `error` frame: a send past the daily cap is a 200 with one `error` frame, code `resting`. Before it begins: 404 for a chat that is not the caller's, 409 `chat_busy` while the chat is still answering, 422 for a body that is over 4000 characters or blank with no attachments, 422 `attachment_gone` when an attachment is no longer kept, 503 `agent_unavailable` when Aaru is off. Hanging up stops the turn and keeps what was written. */
-    post: operations['createChatTurn']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/chats/{id}/attachments': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Attach one file to a chat (ASK-010), for the next turn to carry by id. The body is the file itself, sent with its own Content-Type (application/octet-stream when unknown); the server reads its bytes, not its name or type, to decide what it is. Pictures (JPEG, PNG, GIF, WebP, 5 MB), PDFs (10 MB, 100 pages, no encryption or active content), text and Markdown, the import exports (CSV, MAL XML or .xml.gz, iCal; 5 MB) and listening histories (JSON, 24 MB). Anything else, a program, an archive, or a file whose name disagrees with its bytes, is 422 `validation_failed` with the reason. 413 `file_too_large`, 404 for a chat that is not the caller's, 409 `chat_attachments_full` past 20 files in a chat, 429 `rate_limited` past 40 files an hour. A file is kept for an hour, then deleted. */
-    post: operations['createChatAttachment']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/chats/{id}/attachments/{attachmentId}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post?: never
-    /** Remove a file from a chat before it is sent, or after (ASK-010). */
-    delete: operations['deleteChatAttachment']
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/me/export': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Everything Aaru holds for the caller, to keep or move elsewhere (GDPR portability).
-     * @description `json` (default) is complete: account, every library item with ratings, notes and every watched episode, lists and shelves. `csv` is one row per library item in the column layout Aaru's own "Any site" import reads, so it can be re-imported here or opened in a spreadsheet.
-     */
-    get: operations['exportAccount']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/imports/csv': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Upload an export file. It is parsed now, matched in the background, and written only after approval. */
-    post: operations['createCSVImport']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/imports/cat': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Import shows from Pogdesign CAT: a pasted list (one show per line, `Name` or `Name (2026)`) or the exported iCal file. Parsed now, matched in the background, written only after approval. Every show is planned as wishlist; CAT's watched episodes do not come across. */
-    post: operations['createCATImport']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/imports/cat/feed': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Import shows from the user's CAT iCal link (https://www.pogdesign.co.uk/cat/download_ics/… or generate_ics/…). The calendar is read once, now; the link holds the user's CAT key and is not kept. */
-    post: operations['createCATFeedImport']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/imports/capture': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Capture (AG-006): pasted text, up to five images, or a link to a title on TMDB, AniList or Open Library, planned like any import and written only after approval. Links are read from the URL alone, never fetched. Text and images are read by Aaru's model in the background and deleted once read. An account starts 30 captures a UTC day; the next is refused with 429 `capture_fair_use`. Letterboxd and IMDb links are refused with `capture_use_csv`, other links with `capture_unsupported_url`; more than five images with `capture_too_many_images`; `capture_unavailable` (503) means no model is configured. */
-    post: operations['createCaptureImport']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/imports/anilist': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Import a public AniList anime and manga list by username. Read and matched in the background, written only after approval. */
-    post: operations['createAniListImport']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/imports/lastfm': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Import a Last.fm account's scrobbles by username (MUS-004). Read in the background into the listening log, written only after approval. A second import of the same account reads only what came after the last one. 503 `lastfm_unavailable` when the server has no Last.fm key. */
-    post: operations['createLastFMImport']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/imports/listenbrainz': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Import a ListenBrainz account's listens by username (MUS-004). Read in the background into the listening log, written only after approval. A second import of the same account reads only what came after the last one. */
-    post: operations['createListenBrainzImport']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/imports/stremio/link': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Start a Stremio history import. Show the user `link` (or `qrcode`) to approve on stremio.com, then poll POST /v1/imports/stremio/link/{code}. No password reaches Aaru; the session the code opens is used for one library read, then logged out. */
-    post: operations['startStremioLink']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/imports/stremio/link/{code}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Ask whether the code was approved. 204 while pending (ask again in a few seconds); 202 with the queued import once approved; 410 `stremio_link_expired` when the code ran out. */
-    post: operations['pollStremioLink']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/imports/trakt': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Import the connected Trakt account. Read and matched in the background, written only after approval. */
-    post: operations['createTraktImport']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/imports/trakt/connect': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Start connecting Trakt (PKCE). Open the returned address in a browser. Trakt then redirects to GET /v1/imports/trakt/callback (a plain redirect route outside this spec: its Location must not be percent-encoded), which sends the browser on to `returnTo` with `trakt=connected|denied|failed`. */
-    post: operations['connectTrakt']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/imports/trakt/connection': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations['getTraktConnection']
-    put?: never
-    post?: never
-    /** Revoke the Trakt tokens on Trakt, then forget them. Imported items stay. */
-    delete: operations['disconnectTrakt']
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/connections/mal/connect': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Start connecting MyAnimeList (PKCE, `plain`, the only method MAL accepts). Open the returned address in a browser. MAL then redirects to GET /v1/connections/mal/callback (a plain redirect route outside this spec), which sends the browser on to `returnTo` with `mal=connected|denied|failed`. Once connected, anime progress written from then on is pushed to the MAL list (SCR-005). */
-    post: operations['connectMAL']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/connections/mal': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations['getMALConnection']
-    put?: never
-    post?: never
-    /** Forget the MyAnimeList tokens. Nothing more is pushed; the MAL list and the library stay as they are. */
-    delete: operations['disconnectMAL']
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/connections/mal/pull': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** A client opened Aaru: read the MyAnimeList list back on the next pass (SCR-010). Ignored when MAL is not connected or was read in the last 10 minutes, so clients call it on every open. */
-    post: operations['requestMALPull']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/imports/{id}': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    /** One import with every row and what its plan does with it. */
-    get: operations['getImport']
-    put?: never
-    post?: never
-    /** Discard an import. Library items it already created stay; undo the import action for those. */
-    delete: operations['deleteImport']
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/imports/{id}/apply': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Approve the plan. Writes it as one undoable action. */
-    post: operations['applyImport']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/imports/{id}/undo': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Undo an applied listening-history import (MUS-004): deletes the listens it wrote and the import. 409 `import_not_listens` for a library import (undo its action instead), 409 `import_not_applied` before it is applied (delete it instead). */
-    post: operations['undoListenImport']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/imports/{id}/match-all': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Find a best guess for the plan's unmatched rows (IMP-021): the "Match all" button. A guess joins the plan like a pick and shows what it found, so the person checks it before approving; nothing is written here. One call does what fits in a few seconds, so a client calls again while `remaining` goes down, and stops when it does not. Only while the plan waits. */
-    post: operations['matchAllImportRows']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/imports/{id}/rows/{index}/left-out': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Untick one row of a plan before approving it, or tick it again (BOOK-001). Only a row the plan would write, and only while the plan waits. The job's counts follow. Approving with every row unticked is refused with `import_nothing_chosen`. */
-    post: operations['leaveOutImportRow']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/imports/{id}/rows/{index}/resolve': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Match one unmatched row by hand (IMP-011), with a title the person picked from a search. Before the plan is approved the pick joins the plan; after it, the row is written at once as its own undoable action. The source's status, rating and ticks come with it, merged like any import row. */
-    post: operations['resolveImportRow']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/shelves': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations['listShelves']
-    put?: never
-    post: operations['createShelf']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/shelves/{id}': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post?: never
-    delete: operations['deleteShelf']
-    options?: never
-    head?: never
-    patch: operations['updateShelf']
-    trace?: never
-  }
-  '/v1/shelves/{id}/items': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** The shelf's query, resolved now. Same DTO as GET /v1/library/items. */
-    get: operations['listShelfItems']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/calendar': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Episodes of tracked shows airing in [from, to), at most 42 days (a month grid). Times are UTC. */
-    get: operations['getCalendar']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/up-next': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Continue Watching, Start Watching, status counts and Unfinished business for the home screen, in one call. */
-    get: operations['getUpNext']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/tonight': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** One to three things to start tonight (AG-005), ranked from the user's own library: the next episode of shows in progress, today's airings, books in progress, wishlist films. Reasons are templates; no model is called. */
-    get: operations['getTonight']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/v1/tonight/{id}/feedback': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** "Not tonight" hides the item until the local day ends; "rejected" (not for me) weighs against it for 14 days. */
-    post: operations['sendTonightFeedback']
-    /** Takes back today's "Not tonight" or "Not for me" on the item (the Undo after either). Nothing to take back is still 204. */
-    delete: operations['clearTonightFeedback']
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
+    "/v1/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Liveness and database reachability. Unauthenticated. */
+        get: operations["getHealth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/apple": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Exchange a Sign in with Apple identity token for a session. */
+        post: operations["signInWithApple"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/google": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Exchange a Google ID token for a session. Creates the account on first use. */
+        post: operations["signInWithGoogle"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/identities/google": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Link a Google account to the signed-in account. Refused if it belongs to another account. */
+        post: operations["linkGoogle"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/email/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Email a one-time sign-in link. Same answer whether or not an account exists. */
+        post: operations["requestMagicLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/email/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Exchange a magic-link token, or the email and its 6-digit code, for a session. Creates the account on first use. */
+        post: operations["verifyMagicLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** End the current session. */
+        delete: operations["signOut"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Sign out of other devices: end every session of this account except the one that asks. The caller stays signed in. */
+        delete: operations["signOutOtherDevices"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The signed-in account. */
+        get: operations["getMe"];
+        put?: never;
+        post?: never;
+        /** Delete the account and everything that belongs to it. Only a session created in the last 10 minutes may do it; an older one gets 403 `reauth_required` and the user signs in again first. */
+        delete: operations["deleteAccount"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/entitlement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Aaru Plus and this month's captures (BIL-001). The same on every client; Plus is bought in the Apple apps only. */
+        get: operations["getEntitlement"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/billing/apple/transactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** A purchase or a restore, from the Apple app that made it (BIL-002). The signed transaction must carry this account's `appAccountToken`; 409 `plus_other_account` when it names another, 409 `sandbox_refused` for a Sandbox (TestFlight) purchase while the server does not accept them, 422 `invalid_transaction` when it does not verify. */
+        post: operations["recordAppleTransaction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/billing/apple/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** App Store Server Notifications v2 (BIL-003): renewals, expiries, refunds. Unauthenticated; the payload is verified up to Apple's root certificate. */
+        post: operations["receiveAppleNotification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Claim or change your handle, and your first and last name (SOC-001b). Handles are how friends find you; others see the two names joined. Every field is optional: one left out keeps its value. At most 10 handle changes a user per hour, a taken handle included (429). */
+        put: operations["updateProfile"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/avatar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Replace your avatar (SOC-001b) with one square JPEG of at most 1 MB; apps send 512px. Anything that is not a JPEG is refused with 415 `avatar_image_type`, a larger file with 413 `file_too_large`. It is seen by signed-in accounts wherever your name is, never signed out and never across a block. */
+        put: operations["uploadAvatar"];
+        post?: never;
+        /** Remove your avatar. Your monogram shows again everywhere. */
+        delete: operations["deleteAvatar"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/users/{userId}/avatar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Someone's avatar (SOC-001b), for any signed-in account. A block either way, an unknown user and no avatar are the same 404. Use the `avatarUrl` a response gave you: its `v` changes with every upload, so a cached image is never stale. */
+        get: operations["getUserAvatar"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/favorites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Your favorites, an ordered top 10 per kind (FAV-001). Profile data, not your library. */
+        get: operations["getMyFavorites"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/favorites/{kind}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Replace one kind's favorites with these titles, in this order: add, remove and reorder are all this call. Any catalog title, at most 10, each once, each of this kind; else 422. Not journaled. */
+        put: operations["setMyFavorites"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/onboarding": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** End the first-run flow (ONB-001), finished or skipped. The first call wins; later calls change nothing. What the flow already saved stays. */
+        put: operations["finishOnboarding"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/social/users/{handle}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The user with exactly this handle and where they stand with you. 404 when nobody holds it or either of you blocked the other. A friend or yourself is free; anyone else, misses included, at most 60 a user per hour (429). */
+        get: operations["getSocialUser"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/social/friend-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Pending requests to you and from you, newest first. */
+        get: operations["listFriendRequests"];
+        put?: never;
+        /** Ask someone to be friends, by handle. If they already asked you, you become friends. Needs your own handle. At most 30 a user per hour (429). */
+        post: operations["sendFriendRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/social/friend-requests/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Decline a request to you, or cancel one you sent. The other side is not told. */
+        delete: operations["withdrawFriendRequest"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/social/friend-requests/{id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["acceptFriendRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/social/friends": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Your friends, by handle. */
+        get: operations["listFriends"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/social/friends/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Unfriend. Silent; the other side is not told. */
+        delete: operations["removeFriend"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/social-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What your friends may see. Strangers never see anything, whatever is set here. */
+        get: operations["getSocialSettings"];
+        put: operations["updateSocialSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Your points, level, streak and the badges you have not seen yet (GAM-001…004). Days are counted in the zone from `X-Timezone`, else the zone you last sent, else UTC. Clients read this after a write to show what was earned: one toast for a live unlock, one summary when `unseen.origin` is `batch` (an import or approved plan) or `backfill` (the first run). */
+        get: operations["getProgress"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/badges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every badge in the catalog with what you have of it. A hidden badge you have not earned comes back with only its id, family and `hidden`: no name, rule or progress. */
+        get: operations["listBadges"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/badges/seen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Marks earned badges (by award id) as seen, so they leave `unseen`. */
+        post: operations["markBadgesSeen"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/points": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The points ledger, newest first, a page at a time ("How you earned it"). */
+        get: operations["listPoints"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/social/leaderboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The weekly friends board (GAM-005): you and friends who joined it, by points earned that week on each person's own local dates. Making friends and a first import do not count. Until you join (`leaderboardOptIn`), `optedIn` is false and nobody is listed. Never global. */
+        get: operations["getLeaderboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/social/friends/{userId}/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A friend's shelves and what you share. 404 for anyone who is not your friend. A friend who hides their library shows only their name (`sharing` false). */
+        get: operations["getFriendProfile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Your friends' last two weeks, newest first, one row per friend, title and day. Only dated episode ticks and finishes; imports never show. Friends who hide their library are left out. */
+        get: operations["listFriendActivity"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/activity/{id}/reaction": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description An ActivityItem id. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** React to a friend's activity row with one of six emoji; reacting again replaces it. Your own rows take none. 404 unless you can see the row. */
+        put: operations["setActivityReaction"];
+        post?: never;
+        delete: operations["clearActivityReaction"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/social/recommendations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send a title to up to 10 friends, with an optional note of up to 140 characters. Anyone who is not your friend makes the whole request a 404. Needs your own handle. */
+        post: operations["recommendTitle"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/recommendations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Titles friends sent you that you have not added or dismissed, newest first. Only from people who are still your friends. */
+        get: operations["listRecommendations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/recommendations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["dismissRecommendation"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/recommendations/{id}/add": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Put the title on your Plan to watch, as a tap would. A title you already have keeps its status. Either way it leaves your recommendations. */
+        post: operations["addRecommendation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/social/blocks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** People you blocked. */
+        get: operations["listBlocks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/social/blocks/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** Block. Ends any friendship and pending requests both ways; from then on each of you is a 404 to the other. */
+        put: operations["blockUser"];
+        post?: never;
+        delete: operations["unblockUser"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/social/invites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Your invite links that are still open, newest first. */
+        get: operations["listFriendInvites"];
+        put?: never;
+        /** Make a one-use invite link, live for 14 days, optionally carrying a title to watch together. Needs your own handle; at most 20 open at once. */
+        post: operations["createFriendInvite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/social/invites/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke one of your open invite links. Anyone opening it afterwards sees an invalid invite. */
+        delete: operations["revokeFriendInvite"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/social/invites/{code}/redeem": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept an invite. You and the inviter become friends and the link is spent; already friends leaves it unspent. Needs your own handle. */
+        post: operations["redeemFriendInvite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/invites/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What an invite link shows, signed in or not. Unauthenticated. 404 for any code that is unknown, spent, revoked, expired, or from someone who blocked you or whom you blocked. */
+        get: operations["getInvitePreview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/shares": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Make a share link to one title, sport event or concert (SHR-002). Public and reusable, it never expires. The same target with the same note gives back the same link; a different note makes a new one. At most 60 an hour. */
+        post: operations["createShare"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/shares/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What a share link shows, signed in or not. Unauthenticated. The content shows to anyone; who sent it and the note show only to the sender and their friends, never across a block. 404 for an unknown code. */
+        get: operations["getSharePreview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/social/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Report a user to Aaru. The user is not told. */
+        post: operations["reportUser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Your groups, in the order you joined them, with unread and mention counts. */
+        get: operations["listGroups"];
+        put?: never;
+        /** Create a group you own, with a */
+        post: operations["createGroup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/groups/{groupId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+            };
+            cookie?: never;
+        };
+        /** A group you are in, with its channels, members and pending invites. 404 to anyone else. */
+        get: operations["getGroup"];
+        put?: never;
+        post?: never;
+        /** Delete the group, its channels and every message. Owner only. */
+        delete: operations["deleteGroup"];
+        options?: never;
+        head?: never;
+        /** Rename the group. Owner and admins. */
+        patch: operations["updateGroup"];
+        trace?: never;
+    };
+    "/v1/groups/{groupId}/members/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+                userId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a member, or yourself to leave. Admins remove members; the owner removes anyone and cannot leave. */
+        delete: operations["removeGroupMember"];
+        options?: never;
+        head?: never;
+        /** Make a member an admin, or an admin a member. Owner only. */
+        patch: operations["updateGroupMember"];
+        trace?: never;
+    };
+    "/v1/groups/{groupId}/transfer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Make another member the owner. You become an admin. */
+        post: operations["transferGroup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/groups/{groupId}/invites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Invite a friend. Inviting again, or someone already in, changes nothing. */
+        post: operations["inviteToGroup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/group-invites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Invites waiting for you, newest first. */
+        get: operations["listGroupInvites"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/group-invites/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Decline an invite to you, or cancel one you sent. */
+        delete: operations["declineGroupInvite"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/group-invites/{id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Join the group. */
+        post: operations["acceptGroupInvite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/groups/{groupId}/channels": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add a text channel. Owner and admins. */
+        post: operations["createChannel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/groups/{groupId}/channels/{channelId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+                channelId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a channel and its messages. The first channel stays. Owner and admins. */
+        delete: operations["deleteChannel"];
+        options?: never;
+        head?: never;
+        /** Rename a channel or set its topic. Owner and admins. */
+        patch: operations["updateChannel"];
+        trace?: never;
+    };
+    "/v1/groups/{groupId}/channels/{channelId}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+                channelId: string;
+            };
+            cookie?: never;
+        };
+        /** Messages oldest first. Without a cursor, the latest page. */
+        get: operations["listMessages"];
+        put?: never;
+        /** Post a message. A retry with the same clientNonce returns the first message. */
+        post: operations["postMessage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/groups/{groupId}/channels/{channelId}/messages/{messageId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+                channelId: string;
+                messageId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete your message, or any message as owner or admin. The row stays, empty. */
+        delete: operations["deleteMessage"];
+        options?: never;
+        head?: never;
+        /** Edit your own message. */
+        patch: operations["editMessage"];
+        trace?: never;
+    };
+    "/v1/board": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The Board feed. Posts by you and your friends. `top` is this week's most upvoted, at most 10. */
+        get: operations["listBoard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/board/posts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post to the Board. Needs a handle. */
+        post: operations["createBoardPost"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/board/posts/{postId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postId: string;
+            };
+            cookie?: never;
+        };
+        /** One post. 404 unless it is yours or a friend's. */
+        get: operations["getBoardPost"];
+        put?: never;
+        post?: never;
+        /** Delete your own post. */
+        delete: operations["deleteBoardPost"];
+        options?: never;
+        head?: never;
+        /** Edit your own post. */
+        patch: operations["editBoardPost"];
+        trace?: never;
+    };
+    "/v1/board/posts/{postId}/upvote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** Upvote a post. Upvoting twice counts once. 404 unless the post is yours or a friend's. */
+        put: operations["upvoteBoardPost"];
+        post?: never;
+        /** Take your upvote back. Fine if you never gave one. */
+        delete: operations["removeBoardPostUpvote"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/board/posts/{postId}/upvotes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postId: string;
+            };
+            cookie?: never;
+        };
+        /** Who upvoted a post, minus anyone blocked either way with you. */
+        get: operations["listBoardPostUpvoters"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/board/posts/{postId}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postId: string;
+            };
+            cookie?: never;
+        };
+        /** Comments on a post, oldest first, minus anyone blocked either way with you. A deleted comment with replies stays as an empty row; one without is dropped. A page can come back shorter than the limit. */
+        get: operations["listBoardComments"];
+        put?: never;
+        /** Comment on a post. A reply to a reply hangs off the top-level comment. 404 unless the post is yours or a friend's. */
+        post: operations["createBoardComment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/board/posts/{postId}/comments/{commentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postId: string;
+                commentId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a comment. Its author or the post's author can. */
+        delete: operations["deleteBoardComment"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/groups/{groupId}/channels/{channelId}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark the channel read up to a message. The read point never moves back. */
+        post: operations["markChannelRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/realtime/ticket": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** A single-use ticket, valid 60 seconds, for opening the realtime socket from a browser, which cannot send an Authorization header on a WebSocket. Apps send their bearer token on the upgrade instead. */
+        post: operations["createRealtimeTicket"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/groups/{groupId}/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Your own settings in a group. shareProgress shows your progress in its title channels; muted stops its mention alerts. Both are off by default. */
+        put: operations["updateMyMembership"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/groups/{groupId}/channels/{channelId}/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A title channel's title, your progress, and the progress of members who share theirs in this group. */
+        get: operations["getChannelProgress"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/groups/{groupId}/channels/{channelId}/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+                channelId: string;
+            };
+            cookie?: never;
+        };
+        /** A shelf channel's titles, with your own library status for each. */
+        get: operations["listChannelItems"];
+        put?: never;
+        /** Add a title to a shelf channel. Any member can; adding one already there changes nothing. */
+        post: operations["addChannelItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/groups/{groupId}/channels/{channelId}/items/{titleId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Take a title off a shelf channel. Any member can. */
+        delete: operations["removeChannelItem"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/groups/{groupId}/channels/{channelId}/party": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+                channelId: string;
+            };
+            cookie?: never;
+        };
+        /** A watch channel's newest party, ended or not, and the server's clock for the countdown. */
+        get: operations["getWatchParty"];
+        put?: never;
+        /** Open a party in the lobby. A show needs the episode; a manga can carry a chapter and volume, a book a page. One open party per channel (409). */
+        post: operations["openWatchParty"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/groups/{groupId}/channels/{channelId}/party/ready": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Say you are ready, or not. Being ready is joining; autoMark is whether the end of the party marks the title for you. */
+        post: operations["setWatchPartyReady"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/groups/{groupId}/channels/{channelId}/party/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start the countdown. The host or an admin. */
+        post: operations["startWatchParty"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/groups/{groupId}/channels/{channelId}/party/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** End the party. The host or an admin. If the countdown had started, the title is marked for every member who joined and left autoMark on, as their own undoable action. */
+        post: operations["endWatchParty"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/groups/{groupId}/channels/{channelId}/party/watched": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark the party's episode, chapter, page, film or book in your own library. For a member who switched autoMark off or did not join. */
+        post: operations["markWatchPartyWatched"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/devices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Register this device for pushes. A token registered again moves to this user. */
+        put: operations["registerDevice"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/devices/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["unregisterDevice"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/devices/live-activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Hand over an ActivityKit push token (SCR-008, SCR-009): the device's push-to-start token for `NowPlayingActivityAttributes` (`start`), or the running "Now playing" activity's own token (`update`). The server then starts, updates and ends the activity from what plays. */
+        put: operations["registerLiveActivityToken"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/web-push/key": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The VAPID public key a browser subscribes with. 503 `push_unavailable` when web push is off. */
+        get: operations["getWebPushKey"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/web-push/subscriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Save this browser's push subscription. Saved again, it moves to this user. */
+        put: operations["saveWebPushSubscription"];
+        post?: never;
+        delete: operations["deleteWebPushSubscription"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agent/tokens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The user's live agent tokens (OUT-001), newest first. Secrets are never returned. */
+        get: operations["listAgentTokens"];
+        put?: never;
+        /** Mint a token for an outside caller. A Stremio token's answer carries the addon's install links; an MCP client's carries its setup, with the secret filled in. The secret is shown once. */
+        post: operations["createAgentToken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Changes outside agents asked for that wait for the user (OUT-004), newest first. Only a signed-in session reaches the plan routes; an agent token never does. */
+        get: operations["listPlans"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/plans/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getPlan"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/plans/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Apply the plan as one undoable action named after its agent. 409 `plan_stale` when the library changed since it was made (nothing is written), `plan_expired`, or `plan_decided`. */
+        post: operations["approvePlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/plans/{id}/deny": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refuse the plan. Nothing is written; the plan stays as the record of what was asked. */
+        post: operations["denyPlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/oauth/requests/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A connection an app asked for over OAuth (Claude's custom connector), for the consent page. Expires ten minutes after the app asked. */
+        get: operations["getOAuthRequest"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/oauth/requests/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Allow the app. Only the browser that started the request holds its binding (the `aaru_oauth` cookie the API set); the answer is where to send the browser next. */
+        post: operations["approveOAuthRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/oauth/requests/{id}/deny": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["denyOAuthRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agent/setup/{kind}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** How to connect one MCP client (OUT-004), with a placeholder where the secret goes, so Settings can show the steps before a token exists. */
+        get: operations["getAgentSetup"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/agent/tokens/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke a token. Its addon stops answering at once. */
+        delete: operations["revokeAgentToken"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getNotificationSettings"];
+        /** Changes the switches sent; any left out keep their value. */
+        put: operations["updateNotificationSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/profile/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** All-time numbers for the profile (GAM-006b), from the library as it is: every ticked episode counts, imported and undated ones too, so these can exceed `/v1/me/stats?span=all`, which counts dated activity only. */
+        get: operations["getProfileStats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What the user watched and read in one calendar year or month of their time zone (GAM-006a), in all time (GAM-006c), or in the last 7 or 30 days (GAM-006d). Derived only from their own library. Imported history counts only where it carries a real date. */
+        get: operations["getStats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/now-playing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What players are playing for you now: Stremio and streaming sites through the browser extension (SCR-008), a music scrobbler's `playing_now` and YouTube videos (SCR-009). `positionMs` is where a player was at `updatedAt`; a client adds the time since while `state` is `playing`. A report too old to believe no longer counts. */
+        get: operations["getNowPlaying"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/listens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Your listening log, newest first (MUS-005): what music scrobblers sent with your music token over ListenBrainz's protocol at `/listenbrainz/1/submit-listens`. */
+        get: operations["listListens"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/listens/top": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Your most played artists, tracks or albums over a period (MUS-005). The period is chosen as for `/v1/me/stats`: a year, a month of it, or a span. */
+        get: operations["getTopListens"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search the catalog. Results are catalog projections, never library rows. */
+        get: operations["searchCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/discover": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Provider-curated public rows for Home (trending, airing, this season).
+         * @description The same lists for every user, cached by the server. Items the caller already has carry `libraryItemId`. A row whose provider is down is left out.
+         */
+        get: operations["getDiscover"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/onboarding/rows": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Rows of well-known titles of one kind to pick from in the first-run flow (ONB-001).
+         * @description Popular first, then rows by genre (by subject for books). Catalog data, the same for every user and cached by the server; items the caller has carry `libraryItemId`. A row whose provider is down is left out; manga has none while AniList is down, and anime comes from TMDB's Japanese animation then, with a `note`.
+         */
+        get: operations["getOnboardingRows"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/onboarding/picks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add the titles picked in one step of the first-run flow, each with its status (ONB-001).
+         * @description One journaled action (one undo), journal kind `onboarding`: the picks were watched, read or heard before, so their ticks carry no date, they earn no points and no streak day, and the Recap leaves them out. A status other than `wishlist` counts as set by hand, so a later import never moves it back. A title already in the library is returned unchanged. A ref that resolves to no title is left out of `items` and counted in `missed`. 1 to 60 items, else 422.
+         */
+        post: operations["addOnboardingPicks"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/onboarding/related": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Titles related to the ones picked (ONB-001): prequels, sequels, side stories, spin-offs, adaptations and sources from each title's relation graph (GRAPH-001).
+         * @description Catalog data joined by id, never a recommendation: nothing is read from other users and nothing is ranked by taste. Titles already in the caller's library are left out, each title once under the first pick it relates to, at most 30 shared across the picks in turn so one long franchise cannot fill them, grouped by pick in the order the picks were sent. Graphs not cached yet get a few seconds; `partial` says some were cut short (they keep loading for the next call).
+         */
+        post: operations["getOnboardingRelated"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/discover/season": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One season's titles for the Seasons view (DISC-002), a page at a time.
+         * @description A season is a calendar quarter in UTC: winter Jan–Mar, spring Apr–Jun, summer Jul–Sep, fall Oct–Dec. Anime by AniList's broadcast season, new shows by first air date, returning shows by an episode airing that season, films by first release. The same lists for every user, cached by the server; items the caller has carry `libraryItemId`.
+         */
+        get: operations["getDiscoverSeason"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/discover/on-air": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Shows airing this week, grouped by channel or streamer (DISC-003).
+         * @description TMDB's on-the-air shows, the same for every user and cached by the server, each with its next episode and the channel it premieres on. `airsAt` is the exact instant when `airTimeKnown` (from TVmaze), else the UTC day: show the date only. Channels with the most shows come first, "Other" (no known channel) last. With `region`, each show also lists the services it streams on there (JustWatch data through TMDB; credit JustWatch where shown). Items the caller has carry `libraryItemId`. Empty `channels` when the provider is down and nothing is cached.
+         */
+        get: operations["getDiscoverOnAir"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/concerts/near": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Music events around a point or the saved "Concerts near" city (MUS-003), soonest first.
+         * @description POST so a position never sits in a URL. Coordinates are rounded to two decimals (about a kilometre) and used for this request only: never stored, never logged. With no coordinates the saved city is the centre; with neither, 409 `no_place`. The same list for everyone in the same area, cached by the server and linked out to Ticketmaster for tickets.
+         */
+        post: operations["getConcertsNear"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/concerts/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Music events matching an artist's name, near a place or anywhere (MUS-010), soonest first.
+         * @description POST so neither the name nor a position sits in a URL. The name goes to Ticketmaster as free text, so other acts whose events carry the word can match. `near` searches around a one-off point or the saved city like `/v1/concerts/near` (with neither, 409 `no_place`); `anywhere` sends the name alone, and each concert's `distanceKm` is worked out by the server from the point or saved city when there is one. Neither name nor position is logged; the same list for everyone, cached by the server.
+         */
+        post: operations["searchConcerts"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/concerts/performers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Performers whose name matches what the user typed, to pick one before a search (MUS-010).
+         * @description Ticketmaster's own performer list for the name, best first, up to eight. Picking one and sending its `id` as `performerId` to `/v1/concerts/search` lists only that performer's concerts. POST so the name never sits in a URL; not logged, cached by the server.
+         */
+        post: operations["searchConcertPerformers"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/concerts/artists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Upcoming concerts by the artists of the user's albums (MUS-003).
+         * @description Derived from the user's own library, like the calendar; dropped albums aside. An artist counts only when Ticketmaster lists them with the same MusicBrainz id. Artists added in the last hour may still be `pending`.
+         */
+        get: operations["getArtistConcerts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/concerts/places": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Cities matching what the user typed, for the "Concerts near" picker (MUS-003). */
+        get: operations["searchConcertPlaces"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/concert-place": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The saved "Concerts near" city, and whether concerts are on at all. */
+        get: operations["getConcertPlace"];
+        /** Saves the "Concerts near" city, rounded to two decimals. */
+        put: operations["saveConcertPlace"];
+        post?: never;
+        /** Forgets the "Concerts near" city. */
+        delete: operations["deleteConcertPlace"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sports/suggested": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The first-run picks for Sports (SPT-002).
+         * @description A fixed list of leagues and promotions (Premier League, La Liga, NBA, NFL, UFC, WWE…) with their badges once known. The same for everyone; never a recommendation.
+         */
+        get: operations["getSportSuggestions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sports/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Leagues, teams and players by name, from the sports provider (SPT-002). */
+        get: operations["searchSports"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sports/favorites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Each followed league, team and player with what is live, next and last (SPT-002).
+         * @description Near-live: scores refresh about every two minutes for football, NFL, NBA, MLB and NHL. UFC and WWE cards have results, not live scores. Entries still being fetched come back `pending`; ask again in a few seconds.
+         */
+        get: operations["getSportFavorites"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sports/schedule": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One day of events for the leagues the user follows, favorites highlighted (SPT-002). */
+        get: operations["getSportSchedule"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sports/events/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One event with its live line and where to watch it (SPT-002, SPT-005). */
+        get: operations["getSportEvent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/sport-follows": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The leagues, teams and players the user follows in Sports, oldest first. */
+        get: operations["listSportFollows"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/sport-follows/{kind}/{providerId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kind: components["schemas"]["SportEntityKind"];
+                providerId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Follows a league, team or player by the sports provider's id. Idempotent.
+         * @description Sports only: never a library write, never journaled, never shown to friends. 404 when the provider does not know the id, 409 `too_many_follows` past 100, 503 when Sports are off.
+         */
+        put: operations["followSport"];
+        post?: never;
+        /** Stops following. Idempotent. */
+        delete: operations["unfollowSport"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/sport-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The country "Where to watch" looks at, and whether Sports are on at all. */
+        get: operations["getSportSettings"];
+        /** Saves the "Where to watch" country; absent or null clears it. */
+        put: operations["saveSportSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/titles/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** The page for a catalog ref, in the library or not (LIB-006). Resolving may add the title to the catalog; it never adds it to the library. */
+        post: operations["resolveTitle"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/titles/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A title from the catalog. Shows include their seasons and episodes. */
+        get: operations["getTitle"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/titles/{id}/relations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The title's relation graph (GRAPH-001): prequels, sequels, side stories and adaptations across kinds, from AniList, TMDB collections and Wikidata, placed for drawing and marked with the caller's library. Catalog data: reading it writes nothing. A graph that is missing titles because a source failed or ran out of time says `partial`. */
+        get: operations["getTitleRelations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/titles/{id}/relations/chain": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** "Add the chain" (GRAPH-003): the main chain of the title's relation graph, in the graph's order, as a capture to review, with exact ids. Approving adds what is not in the library to Plan to watch or read and makes a list in that order. Spends one capture, as any capture does; writes nothing to the library by itself. */
+        post: operations["planRelationChain"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/titles/{id}/posts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Posts about this title by you and your friends, newest first. */
+        get: operations["listTitlePosts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/library/watching": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Films, shows and anime in progress with what Library's Watching page shows (APP-018): the next episode to watch with its name and what is left, and a show's status and next airing. Anime in the backlog are included with `entry.inBacklog`. Newest change first. */
+        get: operations["listWatching"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/library/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The user's library, most recently updated first. Shelves use the same filters. */
+        get: operations["listLibraryItems"];
+        put?: never;
+        /** Add a title to the library. Adding the same title again returns the existing item. */
+        post: operations["addLibraryItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/library/items/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get: operations["getLibraryItem"];
+        put?: never;
+        post?: never;
+        delete: operations["deleteLibraryItem"];
+        options?: never;
+        head?: never;
+        patch: operations["updateLibraryItem"];
+        trace?: never;
+    };
+    "/v1/library/items/{id}/episodes/{season}/{episode}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["setEpisodeWatched"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/library/items/{id}/seasons/{season}/watched": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark every aired episode of a season watched, as one undoable action. */
+        post: operations["markSeasonWatched"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/library/items/{id}/watched": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark a whole show watched (PROG-005): every aired regular episode, as one undoable action with the watch dates unknown, so the Recap and Insights do not count them as today. The show becomes finished; a running one moves back to in progress when an episode it has not ticked airs. 422 for anything but a show. */
+        post: operations["markShowWatched"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/library/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Items changed and ids deleted since a previous sync token (all items when absent). */
+        get: operations["syncLibrary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/actions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The action journal, newest first. Backs the undo ribbon. */
+        get: operations["listActions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/actions/{id}/undo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Apply an action's inverse. Journaled as its own action; undoing twice is 409. */
+        post: operations["undoAction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/lists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listLists"];
+        put?: never;
+        post: operations["createList"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/lists/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get: operations["getList"];
+        put?: never;
+        post?: never;
+        delete: operations["deleteList"];
+        options?: never;
+        head?: never;
+        patch: operations["renameList"];
+        trace?: never;
+    };
+    "/v1/lists/{id}/graph": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** The list drawn as a graph (GRAPH-004), in the relation graph's shape: its steps left to right (a column per title), titles read side by side in one column, optional titles hanging under the title before them off the main chain, and "Start here" on the first main-chain title not finished or dropped. A plain list is its titles in order. */
+        get: operations["getListGraph"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/lists/{id}/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add a title to a list. It need not be in the library. */
+        post: operations["addListItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/lists/{id}/items/{titleId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["removeListItem"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/lists/{id}/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["reorderList"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The user's imports, newest first. */
+        get: operations["listImports"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/chats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The caller's chats with Aaru, latest first, 30 a page (ASK-011). A chat nobody has asked anything in is left out. */
+        get: operations["listChats"];
+        put?: never;
+        /** Start a Chat with Aaru (ASK-009), a one-to-one thread only its user can read. */
+        post: operations["createChat"];
+        /** Delete all of the caller's chats with Aaru, their turns with them. */
+        delete: operations["deleteChats"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/chats/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Whether Aaru and voice are on, so clients hide the owl and the mic when the server has them off. */
+        get: operations["getChatStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/chats/transcribe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Turn a spoken question into text (ASK-009). The audio is held in memory while it is read and never stored. 413 `file_too_large` over 8 MB, 413 `audio_too_long` when `X-Audio-Seconds` says over 60, 422 `transcription_empty` when no words were heard, 429 `rate_limited` past 40 an hour, 503 `transcription_unavailable` when voice is off. */
+        post: operations["transcribeChatAudio"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/chats/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One chat with its turns, oldest first, so it can be read again and continued (ASK-011). The latest 200 turns. 404 for a chat that is not the caller's. */
+        get: operations["getChat"];
+        put?: never;
+        post?: never;
+        /** Delete one of the caller's chats, its turns and files with it (ASK-011). */
+        delete: operations["deleteChat"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/chats/{id}/turns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ask Aaru (ASK-009). The answer is a stream of server-sent events, each frame an `event:` line with its type and a `data:` line with JSON: `status` and `delta` carry ChatTextFrame, `components` ChatComponentsFrame, `done` ChatDoneFrame, `error` ChatErrorFrame. Lines starting with `:` are heartbeats. Once the stream has begun, a failure can only be an `error` frame: a send past the daily cap is a 200 with one `error` frame, code `resting`. Before it begins: 404 for a chat that is not the caller's, 409 `chat_busy` while the chat is still answering, 422 for a body that is over 4000 characters or blank with no attachments, 422 `attachment_gone` when an attachment is no longer kept, 503 `agent_unavailable` when Aaru is off. Hanging up stops the turn and keeps what was written. */
+        post: operations["createChatTurn"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/chats/{id}/attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Attach one file to a chat (ASK-010), for the next turn to carry by id. The body is the file itself, sent with its own Content-Type (application/octet-stream when unknown); the server reads its bytes, not its name or type, to decide what it is. Pictures (JPEG, PNG, GIF, WebP, 5 MB), PDFs (10 MB, 100 pages, no encryption or active content), text and Markdown, the import exports (CSV, MAL XML or .xml.gz, iCal; 5 MB) and listening histories (JSON, 24 MB). Anything else, a program, an archive, or a file whose name disagrees with its bytes, is 422 `validation_failed` with the reason. 413 `file_too_large`, 404 for a chat that is not the caller's, 409 `chat_attachments_full` past 20 files in a chat, 429 `rate_limited` past 40 files an hour. A file is kept for an hour, then deleted. */
+        post: operations["createChatAttachment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/chats/{id}/attachments/{attachmentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a file from a chat before it is sent, or after (ASK-010). */
+        delete: operations["deleteChatAttachment"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Everything Aaru holds for the caller, to keep or move elsewhere (GDPR portability).
+         * @description `json` (default) is complete: account, every library item with ratings, notes and every watched episode, lists and shelves. `csv` is one row per library item in the column layout Aaru's own "Any site" import reads, so it can be re-imported here or opened in a spreadsheet.
+         */
+        get: operations["exportAccount"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/imports/csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload an export file. It is parsed now, matched in the background, and written only after approval. */
+        post: operations["createCSVImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/imports/cat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import shows from Pogdesign CAT: a pasted list (one show per line, `Name` or `Name (2026)`) or the exported iCal file. Parsed now, matched in the background, written only after approval. Every show is planned as wishlist; CAT's watched episodes do not come across. */
+        post: operations["createCATImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/imports/cat/feed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import shows from the user's CAT iCal link (https://www.pogdesign.co.uk/cat/download_ics/… or generate_ics/…). The calendar is read once, now; the link holds the user's CAT key and is not kept. */
+        post: operations["createCATFeedImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/imports/capture": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Capture (AG-006): pasted text, up to five images, or a link to a title on TMDB, AniList or Open Library, planned like any import and written only after approval. Links are read from the URL alone, never fetched. Text and images are read by Aaru's model in the background and deleted once read. An account starts 30 captures a UTC day; the next is refused with 429 `capture_fair_use`. Letterboxd and IMDb links are refused with `capture_use_csv`, other links with `capture_unsupported_url`; more than five images with `capture_too_many_images`; `capture_unavailable` (503) means no model is configured. */
+        post: operations["createCaptureImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/imports/anilist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import a public AniList anime and manga list by username. Read and matched in the background, written only after approval. */
+        post: operations["createAniListImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/imports/lastfm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import a Last.fm account's scrobbles by username (MUS-004). Read in the background into the listening log, written only after approval. A second import of the same account reads only what came after the last one. 503 `lastfm_unavailable` when the server has no Last.fm key. */
+        post: operations["createLastFMImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/imports/listenbrainz": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import a ListenBrainz account's listens by username (MUS-004). Read in the background into the listening log, written only after approval. A second import of the same account reads only what came after the last one. */
+        post: operations["createListenBrainzImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/imports/stremio/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start a Stremio history import. Show the user `link` (or `qrcode`) to approve on stremio.com, then poll POST /v1/imports/stremio/link/{code}. No password reaches Aaru; the session the code opens is used for one library read, then logged out. */
+        post: operations["startStremioLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/imports/stremio/link/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ask whether the code was approved. 204 while pending (ask again in a few seconds); 202 with the queued import once approved; 410 `stremio_link_expired` when the code ran out. */
+        post: operations["pollStremioLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/imports/trakt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import the connected Trakt account. Read and matched in the background, written only after approval. */
+        post: operations["createTraktImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/imports/trakt/connect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start connecting Trakt (PKCE). Open the returned address in a browser. Trakt then redirects to GET /v1/imports/trakt/callback (a plain redirect route outside this spec: its Location must not be percent-encoded), which sends the browser on to `returnTo` with `trakt=connected|denied|failed`. */
+        post: operations["connectTrakt"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/imports/trakt/connection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getTraktConnection"];
+        put?: never;
+        post?: never;
+        /** Revoke the Trakt tokens on Trakt, then forget them. Imported items stay. */
+        delete: operations["disconnectTrakt"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/connections/mal/connect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start connecting MyAnimeList (PKCE, `plain`, the only method MAL accepts). Open the returned address in a browser. MAL then redirects to GET /v1/connections/mal/callback (a plain redirect route outside this spec), which sends the browser on to `returnTo` with `mal=connected|denied|failed`. Once connected, anime progress written from then on is pushed to the MAL list (SCR-005). */
+        post: operations["connectMAL"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/connections/mal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getMALConnection"];
+        put?: never;
+        post?: never;
+        /** Forget the MyAnimeList tokens. Nothing more is pushed; the MAL list and the library stay as they are. */
+        delete: operations["disconnectMAL"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/connections/mal/pull": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** A client opened Aaru: read the MyAnimeList list back on the next pass (SCR-010). Ignored when MAL is not connected or was read in the last 10 minutes, so clients call it on every open. */
+        post: operations["requestMALPull"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/imports/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** One import with every row and what its plan does with it. */
+        get: operations["getImport"];
+        put?: never;
+        post?: never;
+        /** Discard an import. Library items it already created stay; undo the import action for those. */
+        delete: operations["deleteImport"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/imports/{id}/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve the plan. Writes it as one undoable action. */
+        post: operations["applyImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/imports/{id}/undo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Undo an applied listening-history import (MUS-004): deletes the listens it wrote and the import. 409 `import_not_listens` for a library import (undo its action instead), 409 `import_not_applied` before it is applied (delete it instead). */
+        post: operations["undoListenImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/imports/{id}/match-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Find a best guess for the plan's unmatched rows (IMP-021): the "Match all" button. A guess joins the plan like a pick and shows what it found, so the person checks it before approving; nothing is written here. One call does what fits in a few seconds, so a client calls again while `remaining` goes down, and stops when it does not. Only while the plan waits. */
+        post: operations["matchAllImportRows"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/imports/{id}/rows/{index}/left-out": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Untick one row of a plan before approving it, or tick it again (BOOK-001). Only a row the plan would write, and only while the plan waits. The job's counts follow. Approving with every row unticked is refused with `import_nothing_chosen`. */
+        post: operations["leaveOutImportRow"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/imports/{id}/rows/{index}/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Match one unmatched row by hand (IMP-011), with a title the person picked from a search. Before the plan is approved the pick joins the plan; after it, the row is written at once as its own undoable action. The source's status, rating and ticks come with it, merged like any import row. */
+        post: operations["resolveImportRow"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/shelves": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listShelves"];
+        put?: never;
+        post: operations["createShelf"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/shelves/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["deleteShelf"];
+        options?: never;
+        head?: never;
+        patch: operations["updateShelf"];
+        trace?: never;
+    };
+    "/v1/shelves/{id}/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The shelf's query, resolved now. Same DTO as GET /v1/library/items. */
+        get: operations["listShelfItems"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/calendar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Episodes of tracked shows airing in [from, to), at most 42 days (a month grid). Times are UTC. */
+        get: operations["getCalendar"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/up-next": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Continue Watching, Start Watching, status counts and Unfinished business for the home screen, in one call. */
+        get: operations["getUpNext"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/tonight": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One to three things to start tonight (AG-005), ranked from the user's own library: the next episode of shows in progress, today's airings, books in progress, wishlist films. Reasons are templates; no model is called. */
+        get: operations["getTonight"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/tonight/{id}/feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** "Not tonight" hides the item until the local day ends; "rejected" (not for me) weighs against it for 14 days. */
+        post: operations["sendTonightFeedback"];
+        /** Takes back today's "Not tonight" or "Not for me" on the item (the Undo after either). Nothing to take back is still 204. */
+        delete: operations["clearTonightFeedback"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
-export type webhooks = Record<string, never>
+export type webhooks = Record<string, never>;
 export interface components {
-  schemas: {
-    AgentToken: {
-      /** Format: uuid */
-      id: string
-      name: string
-      kind: components['schemas']['AgentTokenKind']
-      scopes: (
-        'library:read' | 'library:write' | 'scrobble:write' | 'imports:write'
-      )[]
-      /** Format: date-time */
-      createdAt: string
-      /**
-       * Format: date-time
-       * @description Recorded at most once an hour.
-       */
-      lastUsedAt?: string
-    }
-    AgentTokenCreate: {
-      kind: components['schemas']['AgentTokenKind']
-      name?: string
-      /** @description Adds `library:write`. For Stremio, its "unwatched" and "add to library" reach Aaru; removing from Stremio's library never deletes anything in Aaru. For an MCP client, it may change one item directly, as a tap does; anything larger waits for approval in Aaru. Off by default. */
-      allowLibraryWrites?: boolean
-      /** @description MCP clients only: adds `imports:write`, so the agent may hand Aaru a list to import. The import is reviewed and approved in Aaru like any other. Off by default. */
-      allowImports?: boolean
-      /** @description Music tokens only: which scrobbler this token is for. It names the token and picks the setup steps in `music`. `other` when left out. */
-      scrobbler?: components['schemas']['MusicScrobbler']
-    }
-    AgentPlan: {
-      /** Format: uuid */
-      id: string
-      /** @enum {string} */
-      status: 'pending' | 'applied' | 'denied' | 'stale' | 'expired'
-      /** @description The connection that asked, as the user named it. */
-      agentName: string
-      summary: string
-      changes: {
-        text: string
-        /** Format: uuid */
-        titleId: string
-        title: string
-        type: components['schemas']['MediaType']
-        posterUrl?: string
-        /** @description Absent when the change adds the title. */
-        libraryItemId?: string
-      }[]
-      counts: {
-        adds: number
-        updates: number
-        removes: number
-        episodes: number
-      }
-      /** Format: date-time */
-      createdAt: string
-      /** Format: date-time */
-      expiresAt: string
-      /** Format: date-time */
-      decidedAt?: string
-      /** @description The journaled action, once applied; undo it like any other. */
-      actionId?: string
-    }
-    OAuthConsentRequest: {
-      /** Format: uuid */
-      id: string
-      /** @description The name the app registered with. Apps name themselves; show the host too. */
-      clientName: string
-      /** @description Where the app returns the user. This part an impostor cannot fake. */
-      redirectHost: string
-      kind: components['schemas']['AgentTokenKind']
-      /** Format: date-time */
-      expiresAt: string
-    }
-    OAuthRedirect: {
-      redirectTo: string
-    }
-    /**
-     * @description Which outside caller a token is for. The MCP kinds differ only in the setup shown; they reach the same tools. `browser` is Aaru's browser extension and `music` a music scrobbler speaking ListenBrainz's protocol (MUS-005); both can only scrobble.
-     * @enum {string}
-     */
-    AgentTokenKind:
-      | 'stremio'
-      | 'claude_code'
-      | 'codex'
-      | 'hermes'
-      | 'gemini'
-      | 'other'
-      | 'claude'
-      | 'browser'
-      | 'music'
-    /** @enum {string} */
-    AgentMCPKind:
-      'claude' | 'claude_code' | 'codex' | 'hermes' | 'gemini' | 'other'
-    /** @enum {string} */
-    MusicScrobbler:
-      'web_scrobbler' | 'pano_scrobbler' | 'navidrome' | 'jellyfin' | 'other'
-    /** @description How to point one scrobbler at Aaru (MUS-007): numbered steps, some with a link to open and values to copy. The token appears in full only here, right after minting. */
-    MusicSetup: {
-      scrobbler: components['schemas']['MusicScrobbler']
-      title: string
-      /** @description The full `submit-listens` URL, for clients that ask for it. */
-      submitUrl: string
-      /** @description The ListenBrainz-style root, for clients that add `1/submit-listens` themselves. */
-      baseUrl: string
-      steps: {
-        text: string
-        link?: {
-          label: string
-          url: string
-        }
-        /** @description Values to copy, each with the label the scrobbler shows next to its field. */
-        fields?: {
-          label: string
-          value: string
-          /** @description The token. Clients mask it until copied. */
-          secret?: boolean
-        }[]
-      }[]
-    }
-    /** @description How to connect one MCP client: the endpoint, then steps to copy. Before a token exists the secret reads `PASTE_YOUR_TOKEN_HERE`. */
-    AgentSetup: {
-      kind: components['schemas']['AgentMCPKind']
-      title: string
-      /**
-       * @description `token`: create a token in Aaru and paste it. `oauth`: add Aaru in the client, which sends the user to Aaru to approve; no token to copy.
-       * @enum {string}
-       */
-      auth: 'token' | 'oauth'
-      /** @description The MCP endpoint (streamable HTTP). */
-      url: string
-      steps: {
-        label: string
+    schemas: {
+        AgentToken: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            kind: components["schemas"]["AgentTokenKind"];
+            scopes: ("library:read" | "library:write" | "scrobble:write" | "imports:write")[];
+            /** Format: date-time */
+            createdAt: string;
+            /**
+             * Format: date-time
+             * @description Recorded at most once an hour.
+             */
+            lastUsedAt?: string;
+        };
+        AgentTokenCreate: {
+            kind: components["schemas"]["AgentTokenKind"];
+            name?: string;
+            /** @description Adds `library:write`. For Stremio, its "unwatched" and "add to library" reach Aaru; removing from Stremio's library never deletes anything in Aaru. For an MCP client, it may change one item directly, as a tap does; anything larger waits for approval in Aaru. Off by default. */
+            allowLibraryWrites?: boolean;
+            /** @description MCP clients only: adds `imports:write`, so the agent may hand Aaru a list to import. The import is reviewed and approved in Aaru like any other. Off by default. */
+            allowImports?: boolean;
+            /** @description Music tokens only: which scrobbler this token is for. It names the token and picks the setup steps in `music`. `other` when left out. */
+            scrobbler?: components["schemas"]["MusicScrobbler"];
+        };
+        AgentPlan: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "pending" | "applied" | "denied" | "stale" | "expired";
+            /** @description The connection that asked, as the user named it. */
+            agentName: string;
+            summary: string;
+            changes: {
+                text: string;
+                /** Format: uuid */
+                titleId: string;
+                title: string;
+                type: components["schemas"]["MediaType"];
+                posterUrl?: string;
+                /** @description Absent when the change adds the title. */
+                libraryItemId?: string;
+            }[];
+            counts: {
+                adds: number;
+                updates: number;
+                removes: number;
+                episodes: number;
+            };
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            expiresAt: string;
+            /** Format: date-time */
+            decidedAt?: string;
+            /** @description The journaled action, once applied; undo it like any other. */
+            actionId?: string;
+        };
+        OAuthConsentRequest: {
+            /** Format: uuid */
+            id: string;
+            /** @description The name the app registered with. Apps name themselves; show the host too. */
+            clientName: string;
+            /** @description Where the app returns the user. This part an impostor cannot fake. */
+            redirectHost: string;
+            kind: components["schemas"]["AgentTokenKind"];
+            /** Format: date-time */
+            expiresAt: string;
+        };
+        OAuthRedirect: {
+            redirectTo: string;
+        };
+        /**
+         * @description Which outside caller a token is for. The MCP kinds differ only in the setup shown; they reach the same tools. `browser` is Aaru's browser extension and `music` a music scrobbler speaking ListenBrainz's protocol (MUS-005); both can only scrobble.
+         * @enum {string}
+         */
+        AgentTokenKind: "stremio" | "claude_code" | "codex" | "hermes" | "gemini" | "other" | "claude" | "browser" | "music";
         /** @enum {string} */
-        language: 'bash' | 'json' | 'toml' | 'yaml' | 'text'
-        text: string
-        note?: string
-      }[]
-      /** @description A message to paste into the agent once it is connected. */
-      prompt: string
-    }
-    AgentTokenCreated: {
-      token: components['schemas']['AgentToken']
-      /** @description Shown once. Anyone holding it, or the install links, can use the token. */
-      secret: string
-      /** @description Only for a Stremio token. */
-      stremio?: {
-        manifestUrl: string
-        /** @description The `stremio://` link that opens the Stremio app. */
-        installUrl: string
-        webInstallUrl: string
-      }
-      setup?: components['schemas']['AgentSetup']
-      music?: components['schemas']['MusicSetup']
-    }
-    /** @description The one error shape every route returns. */
-    ErrorResponse: {
-      /** @description Stable machine-readable code, e.g. `not_found`, `validation_failed`. */
-      code: string
-      /** @description Human-readable explanation. Never contains internal detail. */
-      message: string
-      /** @description Optional per-field detail, keyed by request field name (e.g. `rating`). */
-      details?: {
-        [key: string]: string
-      }
-    }
-    /**
-     * @description Cursor pagination envelope. List routes return `{ items: [...], page: PageInfo }`.
-     *     Cursors are keyed on `(updated_at, id)`; a null `nextCursor` means the last page.
-     */
-    PageInfo: {
-      nextCursor?: string | null
-    }
-    AppleSignInRequest: {
-      /** @description The JWT from ASAuthorizationAppleIDCredential / Sign in with Apple JS. */
-      identityToken: string
-      /** @description The raw nonce whose SHA-256 the client sent to Apple. */
-      nonce: string
-      /** @description Apple sends the name only on the first authorization; pass it then. */
-      displayName?: string
-    }
-    MagicLinkRequest: {
-      email: string
-    }
-    /** @description Either `token` (from the link) or `email` and `code` (from the same email). */
-    MagicLinkVerifyRequest: {
-      token?: string
-      email?: string
-      /** @description Six digits; spaces and dashes are ignored. */
-      code?: string
-    }
-    TraktConnectRequest: {
-      /** @description Where the browser goes after Trakt (the app's `aaru://` scheme or the web app). Must be allowed by the server. */
-      returnTo: string
-    }
-    TraktConnectStart: {
-      authorizeUrl: string
-    }
-    TraktConnection: {
-      connected: boolean
-      username?: string
-      /** Format: date-time */
-      connectedAt?: string
-    }
-    MALConnectRequest: {
-      /** @description Where the browser goes after MyAnimeList (the app's `aaru://` scheme or the web app). Must be allowed by the server. */
-      returnTo: string
-    }
-    MALConnectStart: {
-      authorizeUrl: string
-    }
-    MALConnection: {
-      connected: boolean
-      username?: string
-      /** Format: date-time */
-      connectedAt?: string
-      /** @description MyAnimeList refused the tokens. Nothing is pushed until the user connects again. */
-      needsReconnect: boolean
-      /**
-       * Format: date-time
-       * @description When Aaru last read the MyAnimeList list back (SCR-010).
-       */
-      pulledAt?: string
-      /** @description Entries removed on MyAnimeList, newest first, at most 100. Aaru keeps its items for them; the list is what a weekly full read found missing. */
-      removed: components['schemas']['MALRemovedEntry'][]
-    }
-    MALRemovedEntry: {
-      malId: string
-      title?: string
-      /** Format: date-time */
-      removedAt: string
-    }
-    StremioLink: {
-      code: string
-      /**
-       * Format: uri
-       * @description The stremio.com page where the user approves the code.
-       */
-      link: string
-      /**
-       * Format: uri
-       * @description A QR image of `link`, for scanning with a phone.
-       */
-      qrcode: string
-      /** Format: date-time */
-      expiresAt: string
-    }
-    ImportJob: {
-      /** Format: uuid */
-      id: string
-      /**
-       * @description `lastfm`, `listenbrainz`, `spotify_json` and `youtube_takeout` are listening history (MUS-004): they have no rows, are applied into the listening log, and undo with POST /v1/imports/{id}/undo.
-       * @enum {string}
-       */
-      source:
-        | 'trakt'
-        | 'stremio'
-        | 'imdb_csv'
-        | 'letterboxd_csv'
-        | 'goodreads_csv'
-        | 'cat_list'
-        | 'cat_ics'
-        | 'netflix_csv'
-        | 'tvtime_csv'
-        | 'mal_xml'
-        | 'anilist'
-        | 'csv'
-        | 'capture'
-        | 'lastfm'
-        | 'listenbrainz'
-        | 'spotify_json'
-        | 'youtube_takeout'
-      /**
-       * @description `planned` waits for approval; nothing is written before it.
-       * @enum {string}
-       */
-      state:
-        'queued' | 'running' | 'planned' | 'succeeded' | 'failed' | 'partial'
-      stats: components['schemas']['ImportStats']
-      errorSummary?: string
-      /** @description The uploaded file's name, or the username for an `anilist`, `lastfm` or `listenbrainz` import. */
-      filename?: string
-      /** Format: date-time */
-      createdAt: string
-      /** Format: date-time */
-      updatedAt: string
-      /** @description Rows read from the file or provider. 0 for a Trakt, AniList, Last.fm or ListenBrainz import until the worker has read the account. For listening history, the plays read that are music. */
-      rowsTotal: number
-      /** @description Rows matched so far while `running` (IMP-017); back to 0 when a failed attempt is retried. With `rowsTotal` it is the import's progress. */
-      rowsMatched: number
-      /**
-       * Format: uuid
-       * @description The action that applied the plan, once approved and if it wrote anything. Undo it with POST /v1/actions/{id}/undo.
-       */
-      actionId?: string
-    }
-    ImportStats: {
-      created: number
-      updated: number
-      skipped: number
-      unmatched: number
-      /** @description Listening history only (MUS-004): plays left out by rule (podcasts, plays under 30 s, videos that are not music). */
-      ignored?: number
-    }
-    ListenAccount: {
-      /** @description The account's username, 1–64 characters. */
-      username: string
-    }
-    ImportList: {
-      items: components['schemas']['ImportJob'][]
-    }
-    ImportRow: {
-      index: number
-      title: string
-      year?: number
-      author?: string
-      /** @description Unticked in the review; the plan does not write it. */
-      leftOut?: boolean
-      guess?: components['schemas']['ImportRowGuess']
-      /** @description Match all has yet to try this unmatched row. */
-      guessable?: boolean
-      /** @description Lists this row joins once approved. A capture's order keeps its rows in order (BOOK-003). */
-      lists?: string[]
-      type: components['schemas']['MediaType']
-      sourceKey?: string
-      ids?: components['schemas']['ExternalIds']
-      status?: components['schemas']['LibraryStatus']
-      rating?: number
-      /** @enum {string} */
-      outcome: 'pending' | 'create' | 'update' | 'skip' | 'unmatched'
-      reason?: string
-      /** Format: uuid */
-      titleId?: string
-      roadmap?: components['schemas']['RoadmapPlace']
-    }
-    /** @description A row's place in a roadmap the owl planned (GRAPH-003): its numbered step with that step's heading and note, its own note, whether it is optional (it joins the list, not Plan to read) and the pair it is read side by side with. */
-    RoadmapPlace: {
-      /** @description From 1; 0 when the title belongs to no step. */
-      step: number
-      heading?: string
-      stepNote?: string
-      note?: string
-      optional?: boolean
-      pair?: number
-    }
-    /** @description The title Match all chose for a row (IMP-021), for the person to check. Absent on a row they matched themselves. */
-    ImportRowGuess: {
-      title: string
-      byline?: string
-      posterUrl?: string
-    }
-    ImportDetail: {
-      job: components['schemas']['ImportJob']
-      /**
-       * Format: uuid
-       * @description The list an approved import's titles joined, when it named one (ASK-011).
-       */
-      listId?: string
-      rows: components['schemas']['ImportRow'][]
-    }
-    DeviceRegistration: {
-      /** @description The APNs device token */
-      token: string
-      /**
-       * @description `sandbox` for Xcode builds; `production` for TestFlight and the App Store.
-       * @enum {string}
-       */
-      environment: 'sandbox' | 'production'
-      bundleId: string
-    }
-    LiveActivityRegistration: {
-      /** @description The ActivityKit push token */
-      token: string
-      /**
-       * @description `start` is the device's push-to-start token; `update` one activity's own.
-       * @enum {string}
-       */
-      kind: 'start' | 'update'
-      /**
-       * Format: uuid
-       * @deprecated
-       * @description Ignored since SCR-009, when one activity shows everything playing.
-       */
-      watchEventId?: string
-      /** @enum {string} */
-      environment: 'sandbox' | 'production'
-      bundleId: string
-    }
-    NowPlayingReply: {
-      /** @description The newest library episode or movie playing; kept for clients older than `items`. */
-      nowPlaying?: components['schemas']['NowPlaying']
-      /** @description Everything playing now (SCR-009), in the Live Activity's order: library episodes, movies and videos first, newest first, then tracks. Empty when nothing plays. */
-      items: components['schemas']['NowPlayingItem'][]
-    }
-    NowPlaying: {
-      /** Format: uuid */
-      watchEventId: string
-      /**
-       * Format: uuid
-       * @description Absent when the title is not in the library yet.
-       */
-      libraryItemId?: string
-      title: components['schemas']['TitleSummary']
-      episode?: components['schemas']['EpisodeRef']
-      episodeName?: string
-      /** @enum {string} */
-      source: 'stremio' | 'netflix' | 'disney_plus' | 'prime_video'
-      /** @enum {string} */
-      state: 'playing' | 'paused'
-      /**
-       * Format: int64
-       * @description Where the player was at `updatedAt`.
-       */
-      positionMs: number
-      /**
-       * Format: int64
-       * @description The player's duration, else the catalog runtime; 0 when neither is known.
-       */
-      durationMs: number
-      /** Format: date-time */
-      updatedAt: string
-    }
-    NowPlayingItem: {
-      /** @description The watch event or the play; a new id means the next thing plays. */
-      id: string
-      /** @enum {string} */
-      kind: 'episode' | 'movie' | 'track' | 'video'
-      /** @description The show, film, track or video name. */
-      name: string
-      /** @description "S1 · E8 · Lanterns", the artist, or the channel. */
-      subtitle?: string
-      /** @description Where it plays, as a person reads it: "Stremio", "YouTube Music". */
-      service?: string
-      /** @enum {string} */
-      source:
-        | 'stremio'
-        | 'netflix'
-        | 'disney_plus'
-        | 'prime_video'
-        | 'listenbrainz'
-        | 'youtube'
-      /** @enum {string} */
-      state: 'playing' | 'paused'
-      /**
-       * Format: int64
-       * @description Where the player was at `updatedAt`; a client adds the time since while `playing`.
-       */
-      positionMs: number
-      /**
-       * Format: int64
-       * @description 0 when unknown.
-       */
-      durationMs: number
-      /** Format: date-time */
-      updatedAt: string
-      /** @description Poster, cover or video thumbnail. */
-      artworkUrl?: string
-      /** @description Tracks and videos: where it plays, when the player said. */
-      originUrl?: string
-      /**
-       * Format: uuid
-       * @description Episodes and movies, always in the library.
-       */
-      libraryItemId?: string
-      /** @description Episodes and movies only. */
-      title?: components['schemas']['TitleSummary']
-      episode?: components['schemas']['EpisodeRef']
-    }
-    WebPushKey: {
-      /** @description VAPID public key, base64url: the browser's applicationServerKey. */
-      publicKey: string
-    }
-    /** @description `PushSubscription.toJSON()` as the browser gives it. */
-    WebPushSubscription: {
-      endpoint: string
-      keys: {
-        p256dh: string
-        auth: string
-      }
-    }
-    NotificationSettings: {
-      /** @description Push when a new episode of a show you are watching airs. */
-      airing: boolean
-      /** @description Push when someone tags you in a group you have not muted. The alert never holds the message. */
-      groupMentions: boolean
-      /** @description Push when a friend invites you into a group. */
-      groupInvites: boolean
-    }
-    NotificationSettingsUpdate: {
-      airing?: boolean
-      groupMentions?: boolean
-      groupInvites?: boolean
-    }
-    GoogleSignInRequest: {
-      idToken: string
-      /** @description The nonce sent with the Google sign-in, if any. Must come back in the token. */
-      nonce?: string
-    }
-    Session: {
-      /** @description Bearer token, sent in the Authorization header as `Bearer <token>`. */
-      token: string
-      /** Format: uuid */
-      userId: string
-      /** Format: date-time */
-      expiresAt: string
-    }
-    Me: {
-      /** Format: uuid */
-      userId: string
-      /** @description The first and last name joined; what friends and groups see. */
-      displayName?: string
-      firstName?: string
-      lastName?: string
-      /** @description Absent until the user claims one in PUT /v1/me/profile. */
-      handle?: string
-      providers: ('apple' | 'email' | 'google')[]
-      /** @description The address friends may see when you share it: the email sign-in's, else Google's, else Apple's. Absent when no sign-in has one. */
-      email?: string
-      /** @description False without an email, or for an Apple private relay address, which friends cannot write to. Always sent since SOC-001b; optional so apps built before the server ships still read `Me`. */
-      emailShareable?: boolean
-      /** @description Path to `GET /v1/users/{userId}/avatar` with its version. Absent without an avatar. */
-      avatarUrl?: string
-      /** @description True until the first-run flow is finished or skipped (ONB-001); accounts made before it shipped never see it. Always sent; optional so apps built before the server ships still read `Me`. */
-      onboardingPending?: boolean
-    }
-    OnboardingFinish: {
-      /** @description True when the user left with Skip rather than reaching the end. */
-      skipped: boolean
-    }
-    OnboardingPicks: {
-      items: components['schemas']['AddLibraryItem'][]
-    }
-    OnboardingPicked: {
-      items: components['schemas']['OnboardingPickedItem'][]
-      /** @description Refs that resolved to no title. */
-      missed: number
-      /**
-       * Format: uuid
-       * @description The journaled action, for undo. Absent when nothing changed.
-       */
-      actionId?: string
-    }
-    OnboardingPickedItem: {
-      /** @description Position in the request's `items`. */
-      index: number
-      /** Format: uuid */
-      libraryItemId: string
-      /** Format: uuid */
-      titleId: string
-    }
-    OnboardingRelatedRequest: {
-      titleIds: string[]
-    }
-    OnboardingRelated: {
-      items: components['schemas']['OnboardingRelatedItem'][]
-      /** @description True when a graph failed or ran out of time. */
-      partial: boolean
-    }
-    OnboardingRelatedItem: {
-      hit: components['schemas']['CatalogHit']
-      /** @description How `hit` stands to the picked title, read "`hit` is the pick's `relation`". */
-      relation: components['schemas']['Relation']
-      /** Format: uuid */
-      fromTitleId: string
-      /** @description The picked title's name */
-      fromTitle: string
-    }
-    Entitlement: {
-      /** @description Aaru Plus is active. */
-      plus: boolean
-      /** @description The App Store product keeping Plus active. */
-      productId?: string
-      /**
-       * Format: date-time
-       * @description When the current period ends; it renews unless cancelled.
-       */
-      expiresAt?: string
-      /** @description Bought in the App Store sandbox (TestFlight). */
-      sandbox?: boolean
-      /**
-       * Format: uuid
-       * @description What the Apple app sets as a purchase's `appAccountToken`.
-       */
-      appAccountToken: string
-      capture: {
-        /** @description Captures started this UTC month. */
-        used: number
-        /** @description The month's limit. No longer sent; older clients read it as optional. */
-        limit?: number
-        /** Format: date-time */
-        resetsAt: string
-      }
-    }
-    /** @description A field left out keeps its saved value. */
-    ProfileUpdate: {
-      /** @description 3–20 of a–z, 0–9 and _. Stored lowercase. */
-      handle?: string
-      /** @description Empty clears it. */
-      firstName?: string
-      /** @description Empty clears it. */
-      lastName?: string
-      /** @description Deprecated: what apps before SOC-001b send in place of the two names. Ignored when either name is sent; the saved names joined is no change, anything else splits at the first space. Empty clears both. */
-      displayName?: string
-    }
-    SocialUser: {
-      /** Format: uuid */
-      userId: string
-      handle: string
-      displayName?: string
-      /** @description Path to `GET /v1/users/{userId}/avatar` with its version (SOC-001b). Absent without an avatar, and never on a route a signed-out caller can read. */
-      avatarUrl?: string
-    }
-    SocialUserView: {
-      user: components['schemas']['SocialUser']
-      /** @enum {string} */
-      relationship: 'none' | 'friend' | 'outgoing' | 'incoming' | 'self'
-    }
-    SocialUserList: {
-      items: components['schemas']['SocialUser'][]
-    }
-    /** @description On PUT, a field left out keeps its saved value (older apps send only `shareLibraryWithFriends`). Responses always carry every field. */
-    SocialSettings: {
-      /** @description Friends see your shelves, activity and what you share. On by default. */
-      shareLibraryWithFriends: boolean
-      /** @description Friends see your level and badges (never ones about notes or owned items). On by default. */
-      showAchievementsToFriends?: boolean
-      /** @description You join the weekly friends board, and see it. Off by default. */
-      leaderboardOptIn?: boolean
-      /** @description Friends see your email on your profile (SOC-001b). Off by default; group members never see it. */
-      shareEmailWithFriends?: boolean
-    }
-    /** @description One title on a friend's shelf. Never their notes. */
-    FriendItem: {
-      title: components['schemas']['TitleSummary']
-      status: components['schemas']['LibraryStatus']
-      rating?: number
-      /** @description Shows. The last episode they ticked. */
-      lastSeason?: number
-      lastEpisode?: number
-      bookPage?: number
-      /** @description Manga. The last chapter they read. */
-      mangaChapter?: number
-      /** Format: date-time */
-      finishedAt?: string
-      /** Format: date-time */
-      updatedAt: string
-    }
-    KindCounts: {
-      movie: number
-      show: number
-      anime: number
-      book: number
-      album: number
-      /** @description MNG-001. Absent from servers before it. */
-      manga?: number
-    }
-    FriendCompare: {
-      /** @description Titles you both plan to watch or read. */
-      bothWant: components['schemas']['TitleSummary'][]
-      bothFinished: number
-      /** @description Titles they rated 8 or more that you don't have. */
-      theyLoved: components['schemas']['TitleSummary'][]
-    }
-    FriendProfile: {
-      user: components['schemas']['SocialUser']
-      /** Format: date-time */
-      friendsSince: string
-      /** @description False when they hide their library; nothing below is sent then. */
-      sharing: boolean
-      counts?: components['schemas']['KindCounts']
-      watching?: components['schemas']['FriendItem'][]
-      recentlyFinished?: components['schemas']['FriendItem'][]
-      compare?: components['schemas']['FriendCompare']
-      achievements?: components['schemas']['FriendAchievements']
-      /** @description Their top 10s (FAV-001). Sent only while they share their library. */
-      favorites?: components['schemas']['Favorites']
-      /** @description Their email, sent only while they share it (SOC-001b), whether or not they share their library. */
-      email?: string
-    }
-    /**
-     * @description A favorites kind. Anime is any anime, film or series.
-     * @enum {string}
-     */
-    FavoriteKind: 'film' | 'show' | 'anime' | 'manga' | 'book' | 'album'
-    /** @description An ordered top 10 per kind (FAV-001), first is the favorite. */
-    Favorites: {
-      film: components['schemas']['TitleSummary'][]
-      show: components['schemas']['TitleSummary'][]
-      anime: components['schemas']['TitleSummary'][]
-      manga: components['schemas']['TitleSummary'][]
-      book: components['schemas']['TitleSummary'][]
-      album: components['schemas']['TitleSummary'][]
-    }
-    FavoritesUpdate: {
-      /** @description The whole kind, in order. Empty clears it. More than 10 is a 422. */
-      items: components['schemas']['MediaRef'][]
-    }
-    /** @description Absent when the friend turned off showing their badges and level. */
-    FriendAchievements: {
-      level: number
-      /** @description Their highest tier of each earned badge, newest first. Never private badges. */
-      badges: components['schemas']['BadgeAward'][]
-    }
-    /** @enum {string} */
-    BadgeFamily:
-      | 'films'
-      | 'shows'
-      | 'anime'
-      | 'books'
-      | 'music'
-      | 'ratings'
-      | 'lists'
-      | 'imports'
-      | 'discovery'
-      | 'streaks'
-      | 'social'
-    /**
-     * @description A live write (toast), an import or approved plan (one summary), or the first run.
-     * @enum {string}
-     */
-    BadgeOrigin: 'live' | 'batch' | 'backfill'
-    BadgeAward: {
-      /**
-       * Format: uuid
-       * @description The award; send it to /v1/me/badges/seen.
-       */
-      id: string
-      /** @description The badge id, such as `films`. */
-      badge: string
-      name: string
-      family: components['schemas']['BadgeFamily']
-      /** @description 1–4. Bronze */
-      tier: number
-      maxTier: number
-      /** Format: date-time */
-      awardedAt: string
-      origin: components['schemas']['BadgeOrigin']
-      /** @description A live award of a tiered badge's top tier, or of a hidden badge. Show the full card once. */
-      reveal: boolean
-    }
-    BadgeTier: {
-      tier: number
-      threshold: number
-      description: string
-      /** Format: date-time */
-      awardedAt?: string
-    }
-    Badge: {
-      id: string
-      family: components['schemas']['BadgeFamily']
-      hidden: boolean
-      earned: boolean
-      /** @description The highest tier earned; 0 for none. */
-      tier: number
-      maxTier: number
-      /** @description Never shown to friends. */
-      private?: boolean
-      /** @description Absent for a hidden badge not yet earned. */
-      name?: string
-      /** @description What the next tier asks */
-      description?: string
-      /** @description Toward the next tier. Absent once every tier is earned, and for hidden badges. */
-      progress?: {
-        current: number
-        target: number
-      }
-      tiers?: components['schemas']['BadgeTier'][]
-    }
-    BadgeList: {
-      items: components['schemas']['Badge'][]
-    }
-    StreakDayState: {
-      /** Format: date */
-      date: string
-      active: boolean
-    }
-    StreakState: {
-      /** @description Days in the streak still alive; 0 when broken. */
-      current: number
-      longest: number
-      /** @description Today already counts. */
-      today: boolean
-      /** @description The last seven local dates, oldest first. */
-      days: components['schemas']['StreakDayState'][]
-    }
-    Progress: {
-      total: number
-      level: number
-      /** @description Points where this level began. */
-      levelStart: number
-      nextLevelAt: number
-      /** @description This ISO week's points as the board counts them. */
-      weekPoints: number
-      streak: components['schemas']['StreakState']
-      unseen: {
-        count: number
-        origin: components['schemas']['BadgeOrigin']
-        /** @description The newest five. */
-        items: components['schemas']['BadgeAward'][]
-      }
-    }
-    PointsEventItem: {
-      /** Format: uuid */
-      id: string
-      /** @description episode, movie_finished, book_finished, album_finished, season_bonus, scrobble_bonus, book_progress, listen, room_attended, friend_added, import_first, streak_milestone */
-      kind: string
-      points: number
-      title?: components['schemas']['TitleSummary']
-      /** Format: date */
-      day: string
-      /** Format: date-time */
-      at: string
-      /** @description Points taken back by an undo or a short friendship. */
-      revocation: boolean
-    }
-    PointsPage: {
-      items: components['schemas']['PointsEventItem'][]
-      /** Format: date-time */
-      nextBefore?: string
-    }
-    LeaderboardEntry: {
-      user: components['schemas']['SocialUser']
-      points: number
-      /** @description Equal points share a rank. */
-      rank: number
-      you: boolean
-    }
-    Leaderboard: {
-      week: string
-      /** Format: date */
-      from: string
-      /** Format: date */
-      until: string
-      optedIn: boolean
-      entries: components['schemas']['LeaderboardEntry'][]
-    }
-    ActivityItem: {
-      /** @description Stable per friend, title and day. */
-      id: string
-      user: components['schemas']['SocialUser']
-      title: components['schemas']['TitleSummary']
-      /**
-       * Format: date
-       * @description The UTC day.
-       */
-      day: string
-      /** @description Episodes ticked that day. */
-      episodes: number
-      lastSeason?: number
-      lastEpisode?: number
-      finished: boolean
-      rating?: number
-      /** Format: date-time */
-      at: string
-      /** @description How many of each emoji, most first. Absent when none. */
-      reactions?: components['schemas']['ReactionCount'][]
-      /** @description Your own reaction on this row. */
-      myReaction?: string
-    }
-    ReactionCount: {
-      emoji: string
-      count: number
-    }
-    ReactionSet: {
-      /** @enum {string} */
-      emoji: '❤️' | '😂' | '😮' | '😭' | '🔥' | '👏'
-    }
-    RecommendationCreate: {
-      to: string[]
-      title: components['schemas']['MediaRef']
-      note?: string
-    }
-    RecommendationItem: {
-      /** Format: uuid */
-      id: string
-      from: components['schemas']['SocialUser']
-      title: components['schemas']['TitleSummary']
-      note?: string
-      /** Format: date-time */
-      createdAt: string
-    }
-    RecommendationList: {
-      items: components['schemas']['RecommendationItem'][]
-    }
-    ActivityPage: {
-      items: components['schemas']['ActivityItem'][]
-      /**
-       * Format: date-time
-       * @description Pass as `before` for the next page; absent on the last one.
-       */
-      nextBefore?: string
-    }
-    FriendInvite: {
-      code: string
-      /** @description The link to share: https://aaruapp.com/i/{code}. */
-      url: string
-      /** Format: date-time */
-      createdAt: string
-      /** Format: date-time */
-      expiresAt: string
-      title?: components['schemas']['TitleSummary']
-    }
-    FriendInviteList: {
-      items: components['schemas']['FriendInvite'][]
-    }
-    FriendInviteCreate: {
-      title?: components['schemas']['MediaRef']
-    }
-    InvitePreview: {
-      inviter: components['schemas']['SocialUser']
-      title?: components['schemas']['TitleSummary']
-      /** Format: date-time */
-      expiresAt: string
-      /**
-       * @description Where you stand with the inviter. Absent when signed out.
-       * @enum {string}
-       */
-      relationship?: 'none' | 'friend' | 'outgoing' | 'incoming' | 'self'
-    }
-    /** @enum {string} */
-    ShareKind: 'title' | 'sport_event' | 'concert'
-    ShareTargetInput: {
-      kind: components['schemas']['ShareKind']
-      ref?: components['schemas']['MediaRef']
-      /** @description The provider's event id, for `sport_event` (TheSportsDB, digits) and `concert` (Ticketmaster). */
-      id?: string
-    }
-    ShareCreate: {
-      target: components['schemas']['ShareTargetInput']
-      /** @description Up to 140 characters, trimmed; blank is none. Only the sender's friends see it. */
-      note?: string
-    }
-    ShareLink: {
-      code: string
-      url: string
-    }
-    ShareSender: {
-      user: components['schemas']['SocialUser']
-      note?: string
-    }
-    SharePreview: {
-      kind: components['schemas']['ShareKind']
-      /** @description The provider could not give the event right now (sports or concerts off, over budget, or the event is gone). The content field is then absent. */
-      unavailable: boolean
-      title?: components['schemas']['TitleDetail']
-      sportEvent?: components['schemas']['SportEvent']
-      concert?: components['schemas']['Concert']
-      from?: components['schemas']['ShareSender']
-      /**
-       * Format: uuid
-       * @description The signed-in viewer's own item for a shared title, when they have it.
-       */
-      libraryItemId?: string
-      status?: components['schemas']['LibraryStatus']
-    }
-    InviteRedeem: {
-      /** @description Also put the invite's title on your Plan to watch. A title you already have is left alone. */
-      addTitle: boolean
-    }
-    InviteRedemption: {
-      friend: components['schemas']['SocialUser']
-      titleAdded: boolean
-    }
-    FriendRequest: {
-      /** Format: uuid */
-      id: string
-      /** @description The other person. */
-      user: components['schemas']['SocialUser']
-      /** Format: date-time */
-      createdAt: string
-    }
-    FriendRequests: {
-      incoming: components['schemas']['FriendRequest'][]
-      outgoing: components['schemas']['FriendRequest'][]
-    }
-    FriendRequestCreate: {
-      handle: string
-    }
-    ReportCreate: {
-      /** Format: uuid */
-      userId: string
-      /** @enum {string} */
-      reason: 'spam' | 'harassment' | 'impersonation' | 'other'
-      note?: string
-    }
-    /** @enum {string} */
-    GroupRole: 'owner' | 'admin' | 'member'
-    GroupSummary: {
-      /** Format: uuid */
-      id: string
-      name: string
-      role: components['schemas']['GroupRole']
-      /** Format: uuid */
-      defaultChannelId: string
-      /** @description Messages from others since you last read */
-      unread: number
-      /** @description Unread messages that tag you. */
-      mentions: number
-      /** @description You show your progress in this group's title channels. */
-      shareProgress: boolean
-      /** @description Mentions in this group send you no alerts. */
-      muted: boolean
-    }
-    GroupList: {
-      items: components['schemas']['GroupSummary'][]
-    }
-    GroupMember: {
-      user: components['schemas']['SocialUser']
-      role: components['schemas']['GroupRole']
-      /** Format: date-time */
-      joinedAt: string
-      shareProgress: boolean
-    }
-    Channel: {
-      /** Format: uuid */
-      id: string
-      kind: components['schemas']['ChannelKind']
-      /** @description What a title channel is about. */
-      title?: components['schemas']['TitleSummary']
-      /** @description Lowercase, dashes for spaces: movie-night. */
-      name: string
-      topic?: string
-      position: number
-      /** @description The #general every group starts with. Cannot be deleted. */
-      isDefault: boolean
-      unread: number
-      mentions: number
-    }
-    GroupDetail: {
-      group: components['schemas']['GroupSummary']
-      channels: components['schemas']['Channel'][]
-      members: components['schemas']['GroupMember'][]
-      /** @description Friends invited who have not answered yet. */
-      invited: components['schemas']['SocialUser'][]
-      /** @description @aaru answers in this group. When false, hide it from mentions. */
-      agent: boolean
-    }
-    GroupCreate: {
-      name: string
-    }
-    GroupMemberUpdate: {
-      /** @enum {string} */
-      role: 'admin' | 'member'
-    }
-    UserRef: {
-      /** Format: uuid */
-      userId: string
-    }
-    GroupInvite: {
-      /** Format: uuid */
-      id: string
-      /** Format: uuid */
-      groupId: string
-      groupName: string
-      inviter: components['schemas']['SocialUser']
-      /** Format: date-time */
-      createdAt: string
-    }
-    GroupInviteList: {
-      items: components['schemas']['GroupInvite'][]
-    }
-    /**
-     * @description text: chat. title: one title, with the spoiler guard. watch: watch parties. shelf: a shared list.
-     * @enum {string}
-     */
-    ChannelKind: 'text' | 'title' | 'watch' | 'shelf'
-    ChannelCreate: {
-      kind?: components['schemas']['ChannelKind']
-      /** @description Required, except a title channel takes its title's name. */
-      name?: string
-      topic?: string
-      /** @description Required for a title channel. */
-      title?: components['schemas']['MediaRef']
-    }
-    ChannelUpdate: {
-      /** @description Absent leaves it unchanged. */
-      name?: string
-      /** @description Absent leaves it unchanged; empty clears it. */
-      topic?: string
-    }
-    GroupMessage: {
-      /** Format: uuid */
-      id: string
-      /** Format: uuid */
-      channelId: string
-      /** @description Absent once the author deleted their account. */
-      author?: components['schemas']['SocialUser']
-      /** @description Empty when deleted. */
-      body: string
-      /** @description Members the message tags. */
-      mentions: string[]
-      /** @description The message tags @aaru. */
-      mentionsAgent: boolean
-      /** @description You blocked the author. Show it collapsed. */
-      fromBlocked: boolean
-      deleted: boolean
-      /** Format: date-time */
-      createdAt: string
-      /** Format: date-time */
-      editedAt?: string
-      /** @description Only on your own messages: the clientNonce you posted with, to match a pending send to its echo. */
-      clientNonce?: string
-      /** @description Only on your own messages: it says where you are in the title. */
-      spoiler?: components['schemas']['SpoilerStamp']
-      /** @description It may spoil what you have not watched yet: show it veiled until you tap. */
-      veiled: boolean
-      /** @description Written by @aaru. It has no author. */
-      fromAgent: boolean
-      /**
-       * Format: uuid
-       * @description The mention an @aaru reply answers.
-       */
-      replyTo?: string
-      /** @description Cards on an @aaru reply. Catalog titles only; their buttons are the viewer's own taps. */
-      components?: components['schemas']['MessageComponent'][]
-    }
-    MessageComponent: {
-      /** @enum {string} */
-      type: 'title'
-      title: components['schemas']['TitleSummary']
-    }
-    GroupMessagePage: {
-      items: components['schemas']['GroupMessage'][]
-    }
-    MessageCreate: {
-      body: string
-      /** @description Makes a retry safe. */
-      clientNonce?: string
-      /** @description Title channels: stamp by hand. Absent: stamped from your progress. */
-      spoiler?: components['schemas']['SpoilerStamp']
-      /** @description Title channels: no stamp at all. */
-      spoilerFree?: boolean
-    }
-    BoardComment: {
-      /** Format: uuid */
-      id: string
-      /** Format: uuid */
-      postId: string
-      /** @description Absent for Aaru's comments and for deleted comments. */
-      author?: components['schemas']['SocialUser']
-      /** @description Empty when deleted. */
-      body: string
-      /** @description Friends the comment tags. */
-      mentions: string[]
-      /** @description The comment tags @aaru. Recorded only; Aaru does not answer on the Board yet. */
-      mentionsAgent: boolean
-      deleted: boolean
-      /** Format: date-time */
-      createdAt: string
-      /** @description Written by @aaru. It has no author. */
-      fromAgent: boolean
-      /**
-       * Format: uuid
-       * @description The top-level comment this one answers. Never a reply itself.
-       */
-      replyTo?: string
-      mine?: boolean
-    }
-    BoardCommentCreate: {
-      body: string
-      /** Format: uuid */
-      replyTo?: string
-    }
-    BoardCommentPage: {
-      items: components['schemas']['BoardComment'][]
-      /**
-       * Format: uuid
-       * @description Pass as `after` for the next page. Null on the last page. A page can be empty or short with a `next` still set, because deleted and blocked rows are skipped after the page is cut; keep following it.
-       */
-      next?: string | null
-    }
-    BoardPost: {
-      /** Format: uuid */
-      id: string
-      author: components['schemas']['SocialUser']
-      title?: components['schemas']['TitleSummary']
-      /** @description Needs a title. */
-      rating?: number
-      body: string
-      /** @description Only on your own posts: it says where you are in the title. */
-      spoiler?: components['schemas']['SpoilerStamp']
-      /** Format: date-time */
-      createdAt: string
-      /** Format: date-time */
-      editedAt?: string
-      upvotes: number
-      upvotedByMe: boolean
-      commentCount: number
-      /** @description It may spoil what you have not watched yet: show it veiled until you tap. */
-      veiled: boolean
-      mine: boolean
-    }
-    BoardPostPage: {
-      items: components['schemas']['BoardPost'][]
-    }
-    BoardPostCreate: {
-      body: string
-      title?: components['schemas']['MediaRef']
-      /** @description Needs a title. */
-      rating?: number
-      /** @description With a title: stamp by hand. Absent: stamped from your progress. */
-      spoiler?: components['schemas']['SpoilerStamp']
-      /** @description With a title: no stamp at all. */
-      spoilerFree?: boolean
-    }
-    BoardPostEdit: {
-      body: string
-    }
-    MessageUpdate: {
-      body: string
-    }
-    ReadMark: {
-      /** Format: uuid */
-      messageId: string
-    }
-    RealtimeTicket: {
-      ticket: string
-      /** @description The wss:// URL to open, ticket included. */
-      url: string
-      /** Format: date-time */
-      expiresAt: string
-    }
-    /** @description One frame from GET /v1/ws (a WebSocket). The socket is never the source of truth: on `ready` (every connect and reconnect), refetch what is on screen with REST. */
-    RealtimeEvent: {
-      /** @enum {string} */
-      type:
-        | 'ready'
-        | 'message.created'
-        | 'message.updated'
-        | 'message.deleted'
-        | 'typing'
-        | 'read'
-        | 'group.updated'
-        | 'group.removed'
-        | 'invites.changed'
-        | 'shelf.updated'
-        | 'watch.updated'
-        | 'watch.reaction'
-        | 'agent.thinking'
-      /** Format: uuid */
-      groupId?: string
-      /** Format: uuid */
-      channelId?: string
-      /**
-       * Format: uuid
-       * @description agent.thinking: the mention being answered.
-       */
-      messageId?: string
-      message?: components['schemas']['GroupMessage']
-      /** @description Who is typing, or reacting. */
-      user?: components['schemas']['SocialUser']
-      /** @description watch.reaction only. */
-      emoji?: string
-    }
-    /** @description One frame a client sends on GET /v1/ws. At most one typing frame per channel every 3 seconds, and one reaction a second, counts. */
-    RealtimeCommand: {
-      /** @enum {string} */
-      type: 'typing' | 'react'
-      /** @description react only: one of 😂 😱 😭 ❤️ 👏 🔥. */
-      emoji?: string
-      /** Format: uuid */
-      groupId: string
-      /** Format: uuid */
-      channelId: string
-    }
-    /** @description Any field left out keeps its value. */
-    MembershipUpdate: {
-      shareProgress?: boolean
-      muted?: boolean
-    }
-    /** @description How far into the title a reader must be to read the message unveiled. An episode, or the ending. */
-    SpoilerStamp: {
-      season?: number
-      episode?: number
-      ending?: boolean
-    }
-    MemberProgress: {
-      user: components['schemas']['SocialUser']
-      /** @description Absent when it is not in their library. */
-      status?: components['schemas']['LibraryStatus']
-      /** @description The furthest episode they ticked. */
-      season?: number
-      episode?: number
-    }
-    ChannelProgress: {
-      title: components['schemas']['TitleSummary']
-      mine?: components['schemas']['MemberProgress']
-      /** @description Only members who share their progress in this group. */
-      members: components['schemas']['MemberProgress'][]
-    }
-    ChannelItem: {
-      title: components['schemas']['TitleSummary']
-      addedBy?: components['schemas']['SocialUser']
-      /** Format: date-time */
-      addedAt: string
-      /** @description Yours */
-      myStatus?: components['schemas']['LibraryStatus']
-    }
-    ChannelItemList: {
-      items: components['schemas']['ChannelItem'][]
-    }
-    ChannelItemCreate: {
-      title: components['schemas']['MediaRef']
-    }
-    WatchParty: {
-      /** Format: uuid */
-      id: string
-      title: components['schemas']['TitleSummary']
-      season?: number
-      episode?: number
-      /** @description A manga reading session reads to this chapter. */
-      chapter?: number
-      /** @description A manga reading session reads to this volume. */
-      volume?: number
-      /** @description A book reading session reads to this page. */
-      page?: number
-      /** @enum {string} */
-      state: 'lobby' | 'countdown' | 'live' | 'ended'
-      /** Format: date-time */
-      startsAt?: string
-      /** Format: date-time */
-      endedAt?: string
-      host?: components['schemas']['SocialUser']
-      ready: components['schemas']['SocialUser'][]
-    }
-    WatchPartyView: {
-      party?: components['schemas']['WatchParty']
-      /**
-       * Format: date-time
-       * @description Count down against this, not the device clock.
-       */
-      serverTime: string
-      /** @description Your own "Mark it for me": the end of the party marks the title for you. True until you switch it off. */
-      autoMark: boolean
-      /** @description The party marked its title in your library, at its end or by your tap. */
-      markedForYou: boolean
-      /**
-       * Format: uuid
-       * @description The action that marked it for you, for POST /v1/actions/{id}/undo. Absent when your library already said so.
-       */
-      actionId?: string
-    }
-    WatchPartyCreate: {
-      title: components['schemas']['MediaRef']
-      season?: number
-      episode?: number
-      chapter?: number
-      volume?: number
-      page?: number
-    }
-    WatchPartyReady: {
-      ready: boolean
-      /** @description Leave out to keep what you chose; a first join starts with it on. */
-      autoMark?: boolean
-    }
-    WatchPartyStart: {
-      /** @description 3–60, default 10. */
-      countdownSeconds?: number
-    }
-    /** @description Provider identifiers known for a title. Absent means unknown. */
-    ExternalIds: {
-      tmdb?: string
-      imdb?: string
-      trakt?: string
-      tvdb?: string
-      isbn?: string
-      openLibrary?: string
-      anilist?: string
-      mal?: string
-      anidb?: string
-      /** @description An album's MusicBrainz release-group id (MUS-001). */
-      musicbrainz?: string
-    }
-    /**
-     * @description `album` (MUS-001) is a MusicBrainz release group of type Album or EP: status, rating and notes, no progress. `manga` (MNG-001) is one AniList work of type MANGA (manga, manhwa, manhua, one-shots and light novels), read by chapter and volume.
-     * @enum {string}
-     */
-    MediaType: 'movie' | 'show' | 'book' | 'album' | 'manga'
-    CatalogHit: {
-      type: components['schemas']['MediaType']
-      title: string
-      originalTitle?: string
-      year?: number
-      posterUrl?: string
-      overview?: string
-      /** @description Authors, for books and manga; the artist credit, for albums. */
-      byline?: string
-      isAnime: boolean
-      ids: components['schemas']['ExternalIds']
-      /** @description The caller's library item for this title, when they have one. Discover and onboarding rows only. */
-      libraryItemId?: string
-      /** @description YYYY-MM-DD. A film's first release or a show's first air date (TMDB), an anime's start date (AniList). Absent when the provider has no full date. */
-      releaseDate?: string
-    }
-    SearchResults: {
-      items: components['schemas']['CatalogHit'][]
-      /** @description True when one provider of an `all` search failed or ran out of time, so the items come from the other alone. An `anime` search is also incomplete while AniList is down and TMDB stands in. */
-      incomplete: boolean
-      /** @description Why the items are partial, in words to show, e.g. AniList being down while TMDB's Japanese animation stands in. */
-      notice?: string
-    }
-    /**
-     * @description What a Discover row holds (DISC-004), as Library's kinds: anime is its own kind. Discover shows film, show and anime rows; the Books, Manga and Music pages show their own.
-     * @enum {string}
-     */
-    DiscoverRowKind: 'film' | 'show' | 'anime' | 'manga' | 'book' | 'album'
-    DiscoverRow: {
-      /** @description Stable row key, e.g. `tv_trending`, `anime_season`, `books_trending`, `manga_trending`, `music_new`. Not an enum: the server may add rows, and clients render any row they get. */
-      id: string
-      kind: components['schemas']['DiscoverRowKind']
-      /** @description Display title, e.g. "Fall 2026 anime". */
-      title: string
-      items: components['schemas']['CatalogHit'][]
-      /** @description Where a stand-in row came from, e.g. TMDB while AniList is down. */
-      note?: string
-      /** @description True when only the kind's own page shows this row, never Home (BOOK-002). Absent otherwise. */
-      kindPageOnly?: boolean
-    }
-    DiscoverRows: {
-      rows: components['schemas']['DiscoverRow'][]
-    }
-    DiscoverOnAir: {
-      channels: components['schemas']['OnAirChannel'][]
-      /**
-       * Format: date-time
-       * @description When the server fetched the guide.
-       */
-      updatedAt?: string
-    }
-    OnAirChannel: {
-      /** @description Network or streaming service ("HBO", "Netflix", "BBC One"), or "Other". */
-      name: string
-      /** @description The channel's logo (TMDB), small, on a transparent background. */
-      logoUrl?: string
-      /** @description Soonest next episode first. */
-      shows: components['schemas']['OnAirShow'][]
-    }
-    OnAirShow: {
-      item: components['schemas']['CatalogHit']
-      nextEpisode: components['schemas']['OnAirEpisode']
-      /** @description Up to three services the show streams on in `region`, besides its own channel. Absent without a region or when there is no data for it. */
-      streamsOn?: components['schemas']['WatchProvider'][]
-      /** @description TMDB's page of every way to watch the show in `region`. */
-      watchLink?: string
-    }
-    OnAirEpisode: {
-      season: number
-      number: number
-      name?: string
-      /** Format: date-time */
-      airsAt: string
-      /** @description False while only the day is known; `airsAt` is then midnight UTC of that day. */
-      airTimeKnown: boolean
-    }
-    WatchProvider: {
-      name: string
-      logoUrl?: string
-    }
-    SeasonPage: {
-      /** @enum {string} */
-      kind: 'anime' | 'shows_new' | 'shows_returning' | 'movies'
-      /** @enum {string} */
-      season: 'winter' | 'spring' | 'summer' | 'fall'
-      year: number
-      /** @description First day of the season, YYYY-MM-DD. */
-      from: string
-      /** @description Last day of the season, YYYY-MM-DD. */
-      until: string
-      /** @description Display name, e.g. "Fall 2026". */
-      title: string
-      items: components['schemas']['CatalogHit'][]
-      page: number
-      hasMore: boolean
-      /** @description The provider's count for the whole season, when it gives one. */
-      total?: number
-      /** @description The provider did not answer and nothing was cached; not an empty season. */
-      unavailable: boolean
-    }
-    /** @description One music event from Ticketmaster. Tickets are bought there, never in Aaru. */
-    Concert: {
-      id: string
-      name: string
-      /** @description The acts on the bill, headliner first. */
-      artists: string[]
-      /**
-       * Format: date-time
-       * @description The exact start, when announced.
-       */
-      startsAt?: string
-      /** @description The day at the venue, YYYY-MM-DD. */
-      localDate: string
-      /** @description The time at the venue, HH:mm, when announced. */
-      localTime?: string
-      venue?: string
-      city?: string
-      country?: string
-      /** @description From the searched point, or from the point or saved city for an `anywhere` search. Absent for "Your artists on tour", and when the venue's position is unknown. */
-      distanceKm?: number
-      /** @description Ticketmaster's event page. */
-      url: string
-      /** @description Ticketmaster's image for the event, referenced, never hosted. */
-      imageUrl?: string
-    }
-    /** @enum {string} */
-    SportEntityKind: 'league' | 'team' | 'player'
-    /** @description A league (or promotion: UFC, WWE), team or player from the sports provider, by its id. Catalog data for Sports only; never a Title. */
-    SportEntity: {
-      kind: components['schemas']['SportEntityKind']
-      /** @description The provider's id. */
-      id: string
-      name: string
-      /** @description The provider's sport: Soccer, Basketball, American Football, Fighting… */
-      sport: string
-      /** @description Badge */
-      badgeUrl?: string
-      country?: string
-      leagueId?: string
-      /** @description A player's team (a fighter's division). */
-      teamId?: string
-      teamName?: string
-      /** @description Whether the user follows it. */
-      following: boolean
-    }
-    SportEntityList: {
-      items: components['schemas']['SportEntity'][]
-      /** @description True when Sports are off on this server. */
-      unavailable: boolean
-    }
-    SportFollowList: {
-      items: components['schemas']['SportEntity'][]
-    }
-    SportSide: {
-      id?: string
-      name: string
-      badgeUrl?: string
-      score?: number
-    }
-    /** @enum {string} */
-    SportEventStatus:
-      'scheduled' | 'live' | 'finished' | 'postponed' | 'cancelled'
-    /** @description One match, game or card (a UFC or WWE event has no home and away). Catalog data, kept no longer than the cache. */
-    SportEvent: {
-      id: string
-      sport: string
-      name: string
-      leagueId?: string
-      league?: string
-      leagueBadgeUrl?: string
-      home?: components['schemas']['SportSide']
-      away?: components['schemas']['SportSide']
-      /**
-       * Format: date-time
-       * @description The exact start
-       */
-      startsAt?: string
-      /** @description The UTC day, YYYY-MM-DD. */
-      day: string
-      status: components['schemas']['SportEventStatus']
-      /** @description The live clock or period: "67", "HT", "Q3". Live only. */
-      progress?: string
-      venue?: string
-      round?: string
-      imageUrl?: string
-      /** @description A followed team or player's team plays in it. */
-      isFavorite: boolean
-    }
-    SportFavorite: {
-      entity: components['schemas']['SportEntity']
-      live: components['schemas']['SportEvent'][]
-      next?: components['schemas']['SportEvent']
-      last?: components['schemas']['SportEvent']
-      /** @description Still being fetched; ask again in a few seconds. */
-      pending: boolean
-    }
-    SportFavorites: {
-      items: components['schemas']['SportFavorite'][]
-      unavailable: boolean
-    }
-    SportScheduleGroup: {
-      leagueId?: string
-      league: string
-      sport: string
-      badgeUrl?: string
-      events: components['schemas']['SportEvent'][]
-    }
-    SportSchedule: {
-      date: string
-      /** @description Leagues with a favorite first, then by name. */
-      groups: components['schemas']['SportScheduleGroup'][]
-      /** @description Some leagues are still being fetched. */
-      pending: boolean
-      unavailable: boolean
-    }
-    SportBroadcast: {
-      channel: string
-      country?: string
-      logoUrl?: string
-    }
-    SportEventDetail: {
-      event: components['schemas']['SportEvent']
-      /** @description Channels in the "Where to watch" country. Empty when none is chosen. */
-      inYourCountry: components['schemas']['SportBroadcast'][]
-      /** @description Every other channel the provider lists, by country. */
-      elsewhere: components['schemas']['SportBroadcast'][]
-      watchCountryCode?: string
-    }
-    SportSettings: {
-      /** @description ISO 3166-1 alpha-2. */
-      watchCountryCode?: string
-      /** @description False when Sports are off on this server; clients hide the Sports tab. */
-      available: boolean
-    }
-    SportSettingsInput: {
-      /** @description ISO 3166-1 alpha-2; null or absent clears it. */
-      watchCountryCode?: string | null
-    }
-    SportsExport: {
-      follows: components['schemas']['SportEntity'][]
-      watchCountryCode?: string
-    }
-    ConcertPlace: {
-      /** @description 1 to 200 characters. */
-      name: string
-      region?: string
-      country?: string
-      /** @description ISO 3166-1 alpha-2. */
-      countryCode?: string
-      /** @description Rounded to two decimals by the server. */
-      latitude: number
-      /** @description Rounded to two decimals by the server. */
-      longitude: number
-    }
-    ConcertPlaceList: {
-      items: components['schemas']['ConcertPlace'][]
-    }
-    ConcertPlaceSetting: {
-      place?: components['schemas']['ConcertPlace']
-      /** @description False when concerts are off on this server; clients hide the Concerts view. */
-      available: boolean
-    }
-    ConcertsNearRequest: {
-      /** @description Sent with `longitude` for a one-off position; absent uses the saved city. */
-      latitude?: number
-      longitude?: number
-      /** @enum {integer} */
-      radiusKm: 25 | 50 | 100
-      /**
-       * @description 1-based, at most 10.
-       * @default 1
-       */
-      page: number
-    }
-    ConcertPage: {
-      place?: components['schemas']['ConcertPlace']
-      radiusKm: number
-      items: components['schemas']['Concert'][]
-      page: number
-      hasMore: boolean
-      /** @description Concerts are off, or Ticketmaster did not answer and nothing was cached. */
-      unavailable: boolean
-    }
-    /**
-     * @description `near` the point or saved city, inside `radiusKm`; `anywhere` for every upcoming date.
-     * @enum {string}
-     */
-    ConcertSearchScope: 'near' | 'anywhere'
-    ConcertSearchRequest: {
-      /** @description The artist's name, 2 to 100 characters. Not logged. */
-      q: string
-      /** @description A performer's `id` from `/v1/concerts/performers`: only their concerts. Absent searches `q` as free text. Letters, digits, `-` and `_`, at most 64. */
-      performerId?: string
-      scope: components['schemas']['ConcertSearchScope']
-      /** @description Sent with `longitude` for a one-off position; absent uses the saved city. */
-      latitude?: number
-      longitude?: number
-      /**
-       * @description Used by `near` only.
-       * @enum {integer}
-       */
-      radiusKm: 25 | 50 | 100
-      /**
-       * @description 1-based, at most 10.
-       * @default 1
-       */
-      page: number
-    }
-    ConcertSearchPage: {
-      /** @description The name as searched, trimmed. */
-      query: string
-      /** @description The performer searched by, when one was picked. */
-      performerId?: string
-      scope: components['schemas']['ConcertSearchScope']
-      place?: components['schemas']['ConcertPlace']
-      /** @description Present for `near`. */
-      radiusKm?: number
-      items: components['schemas']['Concert'][]
-      page: number
-      hasMore: boolean
-      /** @description Concerts are off, or Ticketmaster did not answer and nothing was cached. */
-      unavailable: boolean
-    }
-    ConcertPerformerRequest: {
-      /** @description The name as typed, 2 to 100 characters. Not logged. */
-      q: string
-    }
-    /** @description One performer as Ticketmaster lists them. */
-    ConcertPerformer: {
-      id: string
-      name: string
-      /** @description Ticketmaster's picture of the performer, referenced, never hosted. */
-      imageUrl?: string
-    }
-    ConcertPerformerList: {
-      items: components['schemas']['ConcertPerformer'][]
-      /** @description Concerts are off, or Ticketmaster did not answer and nothing was cached. */
-      unavailable: boolean
-    }
-    ArtistConcerts: {
-      items: components['schemas']['Concert'][]
-      /** @description Library artists Ticketmaster knows. */
-      matched: number
-      /** @description Library artists not looked up yet. */
-      pending: number
-      unavailable: boolean
-    }
-    Episode: {
-      season: number
-      number: number
-      name?: string
-      /** @description The episode's synopsis, when the catalog has one. */
-      overview?: string
-      /** @description A frame from the episode (TMDB, referenced, never hosted). */
-      stillUrl?: string
-      /** Format: date-time */
-      airsAt?: string
-      /** @description True when `airsAt` is the exact broadcast time; false when only the date is known. */
-      airTimeKnown: boolean
-      runtimeMinutes?: number
-    }
-    Season: {
-      number: number
-      episodes: components['schemas']['Episode'][]
-    }
-    TitleDetail: {
-      /** Format: uuid */
-      id: string
-      type: components['schemas']['MediaType']
-      title: string
-      originalTitle?: string
-      year?: number
-      synopsis?: string
-      posterUrl?: string
-      isAnime: boolean
-      ids: components['schemas']['ExternalIds']
-      /** @enum {string} */
-      status?: 'upcoming' | 'returning' | 'ended' | 'canceled'
-      runtimeMinutes?: number
-      /** @description Shows only. */
-      seasons?: components['schemas']['Season'][]
-      /** @description Authors, for books and manga; the artist credit, for albums. */
-      byline?: string
-      /** @description Albums only (MUS-001), at most five, most tagged first. */
-      genres?: string[]
-      /** @description Albums only: the tracklist of the album's earliest official release, by disc then position. Absent when MusicBrainz could not be reached and none is stored yet. */
-      tracks?: components['schemas']['AlbumTrack'][]
-    }
-    /** @enum {string} */
-    RelationOrder: 'release' | 'story'
-    /**
-     * @description How one title stands to another (GRAPH-001), read "`to` is `from`'s relation". Edges are written forward: a prequel arrives as the other title's `sequel`, a source as the other title's `adaptation`, a parent as the other title's `side_story`, so the first three values below never appear on an edge but keep the vocabulary whole.
-     * @enum {string}
-     */
-    Relation:
-      | 'prequel'
-      | 'sequel'
-      | 'side_story'
-      | 'spin_off'
-      | 'adaptation'
-      | 'source'
-      | 'alternative'
-      | 'summary'
-      | 'parent'
-      | 'other'
-    RelationGraph: {
-      /** @description Ordered by `rank`, then `lane`. */
-      nodes: components['schemas']['RelationNode'][]
-      edges: components['schemas']['RelationEdge'][]
-      order: components['schemas']['RelationOrder']
-      /** @description True when the main chain has a story order that differs from release order. */
-      storyOrderAvailable: boolean
-      /** @description True when a source failed or ran out of time; the graph may miss titles. */
-      partial: boolean
-      /** @description Key of the first main-chain title, in this order, the caller has not finished or dropped. Absent when every one is done. */
-      startHere?: string
-    }
-    RelationNode: {
-      /** @description Stable within one graph. */
-      key: string
-      /** @description Opens the title (POST /v1/titles/resolve) or adds it, as a search hit does. */
-      ref: components['schemas']['MediaRef']
-      isAnime?: boolean
-      posterUrl?: string
-      /** @description `YYYY-MM-DD` when the source knows the day. */
-      releaseDate?: string
-      /** @description The source's own word for it (`tv`, `movie`, `ova`, `novel`…), for a label. */
-      format?: string
-      /** @description Column, from 0: the order along the main chain. */
-      rank: number
-      /** @description Row: 0 is the main chain, 1 and on hang below it. */
-      lane: number
-      mainChain: boolean
-      /** @description The title the graph was asked for. */
-      centre: boolean
-      /** Format: uuid */
-      libraryItemId?: string
-      status?: components['schemas']['LibraryStatus']
-    }
-    RelationEdge: {
-      from: string
-      to: string
-      relation: components['schemas']['Relation']
-    }
-    TitlePreview: {
-      title: components['schemas']['TitleDetail']
-      /**
-       * Format: uuid
-       * @description Set when the title is in the caller's library; its title page is then the one to open.
-       */
-      libraryItemId?: string
-    }
-    AlbumTrack: {
-      disc: number
-      position: number
-      name: string
-      lengthMs?: number
-    }
-    /**
-     * @description Consumption only. `on_hold` is paused on purpose (LIB-007): it ranks with `in_progress` for imports, is left off Up Next, Tonight, the calendar and airing alerts, and a new tick moves it back to `in_progress`. Labels are per kind; `on_hold` reads "On hold" for every kind.
-     * @enum {string}
-     */
-    LibraryStatus:
-      'wishlist' | 'in_progress' | 'on_hold' | 'finished' | 'dropped'
-    /** @description A title by Aaru id, by provider ids, or by title + year. */
-    MediaRef: {
-      /** Format: uuid */
-      titleId?: string
-      type: components['schemas']['MediaType']
-      ids?: components['schemas']['ExternalIds']
-      title?: string
-      year?: number
-    }
-    AddLibraryItem: {
-      mediaRef: components['schemas']['MediaRef']
-      status?: components['schemas']['LibraryStatus']
-    }
-    LibraryItemPatch: {
-      /** @description `finished` on a show marks the whole show watched, as `POST …/watched` does (PROG-005): a running show moves back to in progress when an episode it has not ticked airs. */
-      status?: components['schemas']['LibraryStatus']
-      /** @description 1–10 in 0.5 steps. */
-      rating?: number
-      notes?: string
-      isOwned?: boolean
-      bookPage?: number
-      bookPercent?: number
-      /** @description Manga only. The last chapter read. */
-      mangaChapter?: number
-      /** @description Manga only. The last volume read. */
-      mangaVolume?: number
-      /** @description Fields to empty. */
-      clear?: ('rating' | 'notes' | 'bookProgress' | 'mangaProgress')[]
-    }
-    EpisodeWatched: {
-      watched: boolean
-    }
-    EpisodeRef: {
-      season: number
-      number: number
-    }
-    /** @description Specials (season 0) are not counted. */
-    ShowProgress: {
-      watchedCount: number
-      airedCount: number
-      nextEpisode?: components['schemas']['EpisodeRef']
-    }
-    BookProgress: {
-      page?: number
-      percent?: number
-    }
-    /** @description MNG-001. Either or both. */
-    MangaProgress: {
-      chapter?: number
-      volume?: number
-    }
-    TitleSummary: {
-      /** Format: uuid */
-      id: string
-      type: components['schemas']['MediaType']
-      title: string
-      originalTitle?: string
-      year?: number
-      posterUrl?: string
-      /** @description Wide art (TMDB backdrop, AniList banner), for banners such as the week grid. */
-      backdropUrl?: string
-      /** @description Shows only. Network or streaming service ("HBO", "Netflix", "Crunchyroll"). */
-      network?: string
-      /** @description Authors, for books and manga; the artist credit, for albums. */
-      byline?: string
-      /** @description Books only, when known (Open Library's median across editions). */
-      pageCount?: number
-      /** @description Manga only, once AniList knows it (absent while a series runs). */
-      chapterCount?: number
-      /** @description Manga only, once AniList knows it. */
-      volumeCount?: number
-      isAnime: boolean
-      ids: components['schemas']['ExternalIds']
-    }
-    LibraryEntry: {
-      /** Format: uuid */
-      id: string
-      title: components['schemas']['TitleSummary']
-      status: components['schemas']['LibraryStatus']
-      rating?: number
-      notes?: string
-      isOwned: boolean
-      /** Format: date-time */
-      addedAt: string
-      /** Format: date-time */
-      updatedAt: string
-      /** Format: date-time */
-      finishedAt?: string
-      progress?: components['schemas']['ShowProgress']
-      bookProgress?: components['schemas']['BookProgress']
-      mangaProgress?: components['schemas']['MangaProgress']
-      /**
-       * Format: date-time
-       * @description The newest episode tick the user made in Aaru. Imported, pulled and restored ticks do not count. Absent when there is none.
-       */
-      lastWatchedAt?: string
-      /** @description APP-018 · an anime in progress the user never touched in Aaru: its status came from an import and it has no tick made in Aaru. Derived on every read; the status stays `in_progress`. Library's Now leaves these out of Watching. */
-      inBacklog: boolean
-      /**
-       * @description Every watched episode of a show, in order. Only on single-item responses (the item,
-       *     and episode and season writes); lists and sync leave it out.
-       */
-      watchedEpisodes?: components['schemas']['EpisodeRef'][]
-    }
-    ChatCreated: {
-      /** Format: uuid */
-      id: string
-    }
-    /** @description One chat in the caller's history. `title` is the start of its first question. */
-    ChatSummary: {
-      /** Format: uuid */
-      id: string
-      title?: string
-      /** Format: date-time */
-      createdAt: string
-      /** Format: date-time */
-      updatedAt: string
-    }
-    ChatList: {
-      items: components['schemas']['ChatSummary'][]
-      page: components['schemas']['PageInfo']
-    }
-    Chat: {
-      /** Format: uuid */
-      id: string
-      title?: string
-      /** Format: date-time */
-      createdAt: string
-      /** Format: date-time */
-      updatedAt: string
-      turns: components['schemas']['ChatTurn'][]
-    }
-    /** @description One stored turn. An agent turn's `components` are what its tools left, read again now: a title, plan or import that has since gone is left out. */
-    ChatTurn: {
-      /** Format: uuid */
-      id: string
-      /** @enum {string} */
-      role: 'user' | 'agent'
-      body: string
-      /** @enum {string} */
-      state: 'streaming' | 'done' | 'failed' | 'stopped'
-      /** Format: date-time */
-      createdAt: string
-      components?: components['schemas']['ChatComponentsFrame']
-    }
-    /** @description A list Aaru sent to be matched, as Aaru named it (ASK-011): the titles in their steps, before any is matched. It is shown in the reply; the import at `importId` is where it is reviewed and approved. A plain list is one step with no heading. */
-    ChatRoadmap: {
-      listName?: string
-      steps: components['schemas']['ChatRoadmapStep'][]
-    }
-    ChatRoadmapStep: {
-      heading?: string
-      note?: string
-      items: components['schemas']['ChatRoadmapItem'][]
-    }
-    ChatRoadmapItem: {
-      title: string
-      /** @enum {string} */
-      type: 'movie' | 'show' | 'book' | 'manga'
-      year?: number
-      author?: string
-      /** @description What to read or watch in it, such as issue numbers. */
-      note?: string
-      optional?: boolean
-      /** @description The same number on titles read or watched side by side. */
-      pair?: number
-    }
-    ChatStatus: {
-      /** @description Aaru can answer. False hides the owl. */
-      assistant: boolean
-      /** @description Spoken questions can be read. False hides the mic. */
-      voice: boolean
-    }
-    /** @description Where the user is. A screen the server does not know and a title the catalog does not have are dropped. */
-    ChatHint: {
-      /** @description One of home, discover, library, calendar, lists, friends, groups, books, manga, music, sports, insights, title. */
-      screen: string
-      /** Format: uuid */
-      titleId?: string
-    }
-    ChatTurnRequest: {
-      /** @description The question. May be blank only when the turn carries attachments. */
-      body: string
-      hint?: components['schemas']['ChatHint']
-      /** @description Files attached to this chat with createChatAttachment, sent with this turn. */
-      attachments?: string[]
-    }
-    /** @description One file in a chat (ASK-010). `kind` is what Aaru does with it: a picture, PDF or text is read with the question; an export or a listening history is read on Aaru's server, and Aaru can turn it into an import the user reviews. */
-    ChatAttachment: {
-      /** Format: uuid */
-      id: string
-      /** @enum {string} */
-      kind: 'image' | 'pdf' | 'text' | 'export' | 'listens'
-      name: string
-      /** @description Bytes. */
-      size: number
-      /** @description What an export or a listening history is, as an import source (`letterboxd_csv`, `spotify_json`, …). */
-      source?: string
-      /** @description An export's rows or a history's plays. */
-      rows?: number
-      /** @description What the chip says, such as "a Letterboxd export of 412 rows". */
-      summary: string
-    }
-    ChatTranscript: {
-      text: string
-      /** @description The language the service detected. Empty when it did not say. */
-      language: string
-    }
-    /** @description The data of a `status` frame (what Aaru is doing) or a `delta` frame (the next words of the answer). */
-    ChatTextFrame: {
-      text: string
-    }
-    /** @description The data of a `components` frame, what the turn's tools left for the client. */
-    ChatComponentsFrame: {
-      titles?: components['schemas']['TitleSummary'][]
-      plan?: components['schemas']['AgentPlan']
-      /**
-       * Format: uuid
-       * @description A list Aaru sent to be matched (BOOK-003), reviewed at `/v1/imports/{id}` like any capture.
-       */
-      importId?: string
-      roadmap?: components['schemas']['ChatRoadmap']
-      /**
-       * Format: uuid
-       * @description A single change Aaru applied, undone at `/v1/actions/{id}/undo`.
-       */
-      actionId?: string
-      actionSummary?: string
-    }
-    /** @description The data of a `done` frame, the last of a turn that answered. */
-    ChatDoneFrame: {
-      /** Format: uuid */
-      turnId: string
-    }
-    /** @description The data of an `error` frame, the last of a turn that did not answer. */
-    ChatErrorFrame: {
-      /** @enum {string} */
-      code: 'resting' | 'try_again'
-      message: string
-    }
-    ChatExport: {
-      title?: string
-      /** Format: date-time */
-      createdAt: string
-      turns: components['schemas']['ChatExportTurn'][]
-    }
-    ChatExportTurn: {
-      /** @enum {string} */
-      role: 'user' | 'agent'
-      body: string
-      /** Format: date-time */
-      createdAt: string
-    }
-    AccountExport: {
-      /** Format: date-time */
-      exportedAt: string
-      account: components['schemas']['Me']
-      /**
-       * Format: byte
-       * @description Your avatar (SOC-001b) as base64 JPEG. Absent without one.
-       */
-      avatarJpeg?: string
-      /** @description Every library item; shows carry `watchedEpisodes`. */
-      library: components['schemas']['LibraryEntry'][]
-      lists: {
-        name: string
-        /** Format: date-time */
-        createdAt: string
-        items: components['schemas']['TitleSummary'][]
-      }[]
-      shelves: components['schemas']['Shelf'][]
-      friends?: components['schemas']['SocialUser'][]
-      blocked?: components['schemas']['SocialUser'][]
-      groups?: {
-        name: string
-        role: components['schemas']['GroupRole']
-      }[]
-      /** @description Messages you wrote in groups, oldest first. */
-      groupMessages?: {
-        group: string
-        channel: string
-        body: string
-        /** Format: date-time */
-        createdAt: string
-      }[]
-      /** @description Every listen in your listening log, newest first (MUS-005). */
-      listens?: components['schemas']['Listen'][]
-      favorites?: components['schemas']['Favorites']
-      sports?: components['schemas']['SportsExport']
-      /** @description Your chats with Aaru, oldest first, with their turns. */
-      chats?: components['schemas']['ChatExport'][]
-    }
-    LibraryPage: {
-      items: components['schemas']['LibraryEntry'][]
-      page: components['schemas']['PageInfo']
-    }
-    LibrarySync: {
-      items: components['schemas']['LibraryEntry'][]
-      deleted: string[]
-      token: string
-    }
-    Action: {
-      /** Format: uuid */
-      id: string
-      /** @enum {string} */
-      actor: 'user' | 'agent' | 'external_agent'
-      kind: string
-      summary: string
-      itemIds: string[]
-      /** Format: date-time */
-      createdAt: string
-      /** Format: date-time */
-      undoneAt?: string
-      /** Format: uuid */
-      undoOf?: string
-      /** @description The connected app that made it (an agent token's name); absent for your own writes. */
-      agentName?: string
-    }
-    ActionList: {
-      items: components['schemas']['Action'][]
-    }
-    ListSummary: {
-      /** Format: uuid */
-      id: string
-      name: string
-      itemCount: number
-      /** Format: date-time */
-      createdAt: string
-      /** Format: date-time */
-      updatedAt: string
-    }
-    ListList: {
-      items: components['schemas']['ListSummary'][]
-    }
-    ListDetail: {
-      /** Format: uuid */
-      id: string
-      name: string
-      /** @description Superseded by `items`; kept for clients that predate it. */
-      titles: components['schemas']['TitleSummary'][]
-      /** @description The members in list order. */
-      items: components['schemas']['ListItem'][]
-      /** Format: date-time */
-      createdAt: string
-      /** Format: date-time */
-      updatedAt: string
-      roadmap?: components['schemas']['ListRoadmap']
-    }
-    /** @description A list the owl planned in steps (GRAPH-003). Steps are in order; inside a step the list's own order decides. A member not named in any step was added by hand. `missing` are titles Aaru could not find, as the plan wrote them. */
-    ListRoadmap: {
-      steps: components['schemas']['ListRoadmapStep'][]
-    }
-    ListRoadmapStep: {
-      heading: string
-      note?: string
-      missing?: string[]
-      items: components['schemas']['ListRoadmapItem'][]
-    }
-    ListRoadmapItem: {
-      /** Format: uuid */
-      titleId: string
-      note?: string
-      optional?: boolean
-      /** @description Titles with the same pair are read or watched side by side. */
-      pair?: number
-    }
-    /** @description One list member. `entry` is the caller's library row when the title is in the library. Shows carry `showStatus` and `nextAiring` (the first episode not aired yet) once their episodes are loaded. */
-    ListItem: {
-      title: components['schemas']['TitleSummary']
-      entry?: components['schemas']['LibraryEntry']
-      /** @enum {string} */
-      showStatus?: 'upcoming' | 'returning' | 'ended' | 'canceled'
-      nextAiring?: components['schemas']['UpcomingEpisode']
-    }
-    Watching: {
-      items: components['schemas']['WatchingItem'][]
-    }
-    /** @description One title in progress. Shows whose episodes are loaded carry `showStatus` and `nextAiring` (the first episode not aired yet); a show with an aired episode left to watch carries `nextName`, `nextRuntimeMinutes`, `remainingCount` and `remainingMinutes` (aired, unwatched, specials left out), as Up Next's ContinueEntry does. */
-    WatchingItem: {
-      entry: components['schemas']['LibraryEntry']
-      /** @enum {string} */
-      showStatus?: 'upcoming' | 'returning' | 'ended' | 'canceled'
-      nextAiring?: components['schemas']['UpcomingEpisode']
-      nextName?: string
-      nextRuntimeMinutes?: number
-      remainingCount?: number
-      remainingMinutes?: number
-    }
-    UpcomingEpisode: {
-      season: number
-      number: number
-      episodeName?: string
-      /** Format: date-time */
-      airsAt: string
-      /** @description False when the source gives only a date, as on CalendarEntry. */
-      airTimeKnown: boolean
-    }
-    CreateList: {
-      name: string
-    }
-    RenameList: {
-      name: string
-    }
-    AddListItem: {
-      mediaRef: components['schemas']['MediaRef']
-    }
-    ListOrder: {
-      titleIds: string[]
-    }
-    /** @description The same filters GET /v1/library/items accepts. */
-    ShelfFilter: {
-      type?: components['schemas']['MediaType']
-      anime?: boolean
-      status?: components['schemas']['LibraryStatus']
-      owned?: boolean
-      /** Format: uuid */
-      list?: string
-    }
-    Shelf: {
-      /** Format: uuid */
-      id: string
-      name: string
-      filter: components['schemas']['ShelfFilter']
-      isPinned: boolean
-    }
-    ShelfList: {
-      items: components['schemas']['Shelf'][]
-    }
-    CreateShelf: {
-      name: string
-      filter: components['schemas']['ShelfFilter']
-      isPinned?: boolean
-    }
-    UpdateShelf: {
-      name?: string
-      filter?: components['schemas']['ShelfFilter']
-      isPinned?: boolean
-    }
-    CalendarEntry: {
-      /** Format: uuid */
-      libraryItemId: string
-      title: components['schemas']['TitleSummary']
-      season: number
-      number: number
-      episodeName?: string
-      /** @description The episode's synopsis, when the catalog has one (TMDB; AniList has none). */
-      episodeOverview?: string
-      /** @description The episode's still image (TMDB), when the catalog has one. */
-      stillUrl?: string
-      /** Format: date-time */
-      airsAt: string
-      /** @description False when the source gives only a date: airsAt is midnight UTC of that date, and clients show the day (taken in UTC) without a time. */
-      airTimeKnown: boolean
-      runtimeMinutes?: number
-      watched: boolean
-      /** @enum {string} */
-      kind: 'premiere' | 'finale' | 'regular'
-    }
-    Calendar: {
-      items: components['schemas']['CalendarEntry'][]
-      /** @description Tracked shows whose episodes have not been loaded yet (CAL-004), as after an import. Their episodes are missing from `items` until they load; ask again while this is above 0. */
-      pendingShows?: number
-    }
-    ContinueEntry: {
-      /** Format: uuid */
-      libraryItemId: string
-      title: components['schemas']['TitleSummary']
-      next: components['schemas']['EpisodeRef']
-      nextName?: string
-      nextRuntimeMinutes?: number
-      /** @description Aired, unwatched episodes including the next one. Specials excluded. */
-      remainingCount: number
-      remainingMinutes: number
-      /** @description The next episode is the last of its season. */
-      isFinale: boolean
-    }
-    StartEntry: {
-      /** Format: uuid */
-      libraryItemId: string
-      title: components['schemas']['TitleSummary']
-      runtimeMinutes?: number
-    }
-    TonightPick: {
-      /** Format: uuid */
-      libraryItemId: string
-      title: components['schemas']['TitleSummary']
-      /**
-       * @description continue: the next aired episode of a show in progress. airing: an episode airing today. reading: a book in progress. start: a wishlist film.
-       * @enum {string}
-       */
-      kind: 'continue' | 'airing' | 'reading' | 'start'
-      episode?: components['schemas']['EpisodeRef']
-      episodeName?: string
-      minutes?: number
-      /** Format: date-time */
-      airsAt?: string
-      airTimeKnown: boolean
-      /** @description Why it is here, e.g. "52 min · 3 left" or "Airs 21:00 · 44 min". */
-      reason: string
-    }
-    Tonight: {
-      /**
-       * Format: date
-       * @description The local day the strip is for.
-       */
-      day: string
-      picks: components['schemas']['TonightPick'][]
-    }
-    TonightFeedback: {
-      /** @enum {string} */
-      verdict: 'rejected' | 'not_tonight'
-    }
-    UpNext: {
-      continueWatching: components['schemas']['ContinueEntry'][]
-      startWatching: components['schemas']['StartEntry'][]
-      counts?: components['schemas']['LibraryCounts']
-      /** @description Unfinished business (UPN-002): every dropped item, and every in-progress item last changed 30 or more days ago that is not in `continueWatching`. Newest change first, at most 20. */
-      unfinished?: components['schemas']['UnfinishedEntry'][]
-    }
-    /** @description The user's library items per status. */
-    LibraryCounts: {
-      wishlist: number
-      inProgress: number
-      onHold: number
-      finished: number
-      dropped: number
-    }
-    UnfinishedEntry: {
-      /** Format: uuid */
-      libraryItemId: string
-      title: components['schemas']['TitleSummary']
-      /**
-       * @description `dropped` is the status; `stalled` is in progress and untouched for 30 days.
-       * @enum {string}
-       */
-      reason: 'dropped' | 'stalled'
-      /**
-       * Format: date-time
-       * @description The item's last change.
-       */
-      since: string
-      next?: components['schemas']['EpisodeRef']
-    }
-    /** @description `busiest` is the bucket with the most time (minutes, then episodes, then finishes). `mostEpisodes` is the bucket with the most episodes; it is absent when no episodes were watched or the top count is shared, so a tie names no winner. `prior` is the totals of the equal-length window just before a rolling span, for deltas; it is absent for calendar spans. `biggestDay` is the single local day with the most time (then episodes), the earliest on a tie. */
-    Stats: {
-      /** @enum {string} */
-      span: 'month' | 'year' | 'all' | 'last7' | 'last30'
-      /** @description The last year the period touches; for `all`, the current year. */
-      year: number
-      month?: number
-      /** @description First day of a rolling span (YYYY-MM-DD); absent for calendar spans. */
-      from?: string
-      /** @description Last day of a rolling span (YYYY-MM-DD, inclusive, today); absent for calendar spans. */
-      until?: string
-      timeZone: string
-      /** @description The period is not over yet in the user's time zone (always true for `all`). */
-      isPartial: boolean
-      totals: components['schemas']['StatsTotals']
-      prior?: components['schemas']['StatsTotals']
-      /** @description Movie, show, anime and book, always, in that order; then album (MUS-001) and manga (MNG-001), each only when the period finished one. They sum to `totals`. */
-      byKind: components['schemas']['StatsKind'][]
-      /** @description One per month of the year, one per day of the month or rolling span, or one per year (all time) from the first active year to this one, in order. */
-      buckets: components['schemas']['StatsBucket'][]
-      busiest?: components['schemas']['StatsBucket']
-      mostEpisodes?: components['schemas']['StatsBucket']
-      longestRun?: components['schemas']['StatsRun']
-      /** @description Most time spent, at most five. */
-      topTitles: components['schemas']['StatsTitle'][]
-      ratings: components['schemas']['StatsRatings']
-      first?: components['schemas']['StatsMoment']
-      last?: components['schemas']['StatsMoment']
-      /** @description GAM-006e: the three genres with the most time, from films, shows and anime (books have none). Empty until the titles' genres are stored. */
-      topGenres: components['schemas']['StatsGenre'][]
-      biggestDay?: components['schemas']['StatsBucket']
-      /**
-       * @description GAM-006e: one word for the period from the user's own numbers, the first rule that holds: `binger` (a day of 6+ episodes or 14 days in a row), `bookworm` (books are most of 2+ finishes), `anime` (anime is most of the time), `completionist` (24+ finished), `explorer` (3+ kinds), else `steady`. Absent when nothing happened.
-       * @enum {string}
-       */
-      persona?:
-        | 'binger'
-        | 'bookworm'
-        | 'anime'
-        | 'completionist'
-        | 'explorer'
-        | 'steady'
-      music?: components['schemas']['StatsMusic']
-    }
-    /** @description MUS-008: the period's listening, apart from the library's numbers (listening never adds to them). Absent when nothing was heard. */
-    StatsMusic: {
-      listens: number
-      /** @description Listens whose length is known */
-      minutes: number
-      /** @description The previous equal-length window; rolling spans only. */
-      priorListens?: number
-      priorMinutes?: number
-      topArtist?: {
-        artist: string
-        count: number
-        minutes: number
-        coverUrl?: string
-      }
-      /** @description The top artist's three most played tracks. */
-      topArtistTracks: {
-        track: string
-        count: number
-      }[]
-    }
-    ShowWatched: {
-      entry: components['schemas']['LibraryEntry']
-      /** @description Absent when every aired episode was already watched and nothing changed. */
-      action?: components['schemas']['Action']
-      /** @description Episodes this ticked. */
-      episodes: number
-    }
-    ProfileStats: {
-      /** Format: date-time */
-      memberSince?: string
-      episodesWatched: number
-      /** @description Ticked episodes' runtime plus finished films' runtime. Books have no minutes. */
-      minutesWatched: number
-      /** @description Page counts of finished books, where known. */
-      pagesRead: number
-      shows: components['schemas']['LibraryCounts']
-      /** @description Anime counts here only, never again as a show or film. */
-      anime: components['schemas']['LibraryCounts']
-      movies: components['schemas']['LibraryCounts']
-      books: components['schemas']['LibraryCounts']
-      /** @description Movie, show, anime and book; `finished` is the finished count. */
-      byKind: components['schemas']['StatsKind'][]
-      /** @description Up to eight genres by time, films, shows and anime only. */
-      topGenres: components['schemas']['StatsGenre'][]
-      /** @description Up to five networks or services by time. */
-      topNetworks: components['schemas']['StatsGenre'][]
-      /** @description Up to three titles with the most time. */
-      mostWatched: components['schemas']['StatsTitle'][]
-      /** @description Every rated item, whatever its status. */
-      ratings: components['schemas']['StatsRatings']
-    }
-    StatsGenre: {
-      name: string
-      minutes: number
-      /** @description How many titles in the period carried this genre. */
-      titles: number
-    }
-    /** @description One play of a track a scrobbler sent (MUS-005). Never a library item: listening does not change the library. */
-    Listen: {
-      id: string
-      /**
-       * Format: date-time
-       * @description When the track started.
-       */
-      listenedAt: string
-      artist: string
-      track: string
-      album?: string
-      durationMs?: number
-      /** @description The album's Cover Art Archive cover when Aaru knows the album. */
-      coverUrl?: string
-      /** @description Where it played */
-      originUrl?: string
-      /** @description The scrobbler, e.g. "Web Scrobbler". */
-      client?: string
-      /** @description Where it was heard, e.g. "YouTube Music". */
-      musicService?: string
-      /** @description The album once MusicBrainz identified it (MUS-006): by Aaru's title id when the album is in the catalog, always by its MusicBrainz id. Open or add it like a search hit. */
-      albumRef?: components['schemas']['MediaRef']
-    }
-    ListenPage: {
-      items: components['schemas']['Listen'][]
-      /**
-       * Format: date-time
-       * @description Pass as `before` for the next page; absent on the last page.
-       */
-      next?: string
-    }
-    ListenTop: {
-      /** @enum {string} */
-      by: 'artist' | 'track' | 'album'
-      /** @enum {string} */
-      span: 'month' | 'year' | 'all' | 'last7' | 'last30'
-      year: number
-      month?: number
-      timeZone: string
-      /** @description Every listen in the period. */
-      listens: number
-      /** @description Their length summed */
-      minutes: number
-      items: {
-        artist: string
-        /** @description Present when ranking tracks. */
-        track?: string
-        /** @description Present when ranking albums. */
-        album?: string
-        count: number
-        minutes: number
-        /** @description The cover of the newest identified album among the row's listens. */
-        coverUrl?: string
-        /** @description Ranking tracks or albums: that album, by MusicBrainz id, and by Aaru's title id once it is in the catalog. */
-        albumRef?: components['schemas']['MediaRef']
-      }[]
-    }
-    StatsTotals: {
-      episodesWatched: number
-      /** @description Episode runtimes plus finished movies. Books have no minutes. */
-      minutesWatched: number
-      activeDays: number
-      moviesFinished: number
-      showsFinished: number
-      /** @description Anime shows and films. Not counted again as shows or movies. */
-      animeFinished: number
-      booksFinished: number
-      /** @description MUS-001. Albums have no minutes. */
-      albumsFinished: number
-      /** @description MNG-001. Manga has no minutes. */
-      mangaFinished?: number
-    }
-    StatsKind: {
-      /**
-       * @description Anime is its own kind, films and shows alike; never counted again as either.
-       * @enum {string}
-       */
-      kind: 'movie' | 'show' | 'anime' | 'book' | 'album' | 'manga'
-      episodes: number
-      minutes: number
-      finished: number
-    }
-    StatsBucket: {
-      /** @description First local day of the bucket, YYYY-MM-DD. */
-      start: string
-      episodes: number
-      minutes: number
-      finished: number
-    }
-    StatsRun: {
-      days: number
-      /** @description YYYY-MM-DD */
-      start: string
-      /** @description YYYY-MM-DD, inclusive. */
-      end: string
-    }
-    StatsTitle: {
-      title: components['schemas']['TitleSummary']
-      episodes: number
-      minutes: number
-    }
-    StatsRatings: {
-      /** @description Titles finished in the period that have a rating. */
-      count: number
-      mean?: number
-      highest?: components['schemas']['TitleSummary']
-      highestRating?: number
-      /** @description Ten counts of those ratings on the 1–10 scale. Index n holds ratings above n up to n + 1, so a half star rounds up: 7.5 counts as 8 (index 7), 1 is index 0, 10 is index 9. */
-      distribution: number[]
-    }
-    StatsMoment: {
-      title: components['schemas']['TitleSummary']
-      /** Format: date-time */
-      at: string
-    }
-    Health: {
-      /** @enum {string} */
-      status: 'ok' | 'unavailable'
-    }
-  }
-  responses: {
-    /** @description Any error, in the shared shape. */
-    Error: {
-      headers: {
-        [name: string]: unknown
-      }
-      content: {
-        'application/json': components['schemas']['ErrorResponse']
-      }
-    }
-  }
-  parameters: {
-    /** @description Opaque cursor from a previous page's `page.nextCursor`. */
-    Cursor: string
-    Limit: number
-  }
-  requestBodies: never
-  headers: never
-  pathItems: never
+        AgentMCPKind: "claude" | "claude_code" | "codex" | "hermes" | "gemini" | "other";
+        /** @enum {string} */
+        MusicScrobbler: "web_scrobbler" | "pano_scrobbler" | "navidrome" | "jellyfin" | "other";
+        /** @description How to point one scrobbler at Aaru (MUS-007): numbered steps, some with a link to open and values to copy. The token appears in full only here, right after minting. */
+        MusicSetup: {
+            scrobbler: components["schemas"]["MusicScrobbler"];
+            title: string;
+            /** @description The full `submit-listens` URL, for clients that ask for it. */
+            submitUrl: string;
+            /** @description The ListenBrainz-style root, for clients that add `1/submit-listens` themselves. */
+            baseUrl: string;
+            steps: {
+                text: string;
+                link?: {
+                    label: string;
+                    url: string;
+                };
+                /** @description Values to copy, each with the label the scrobbler shows next to its field. */
+                fields?: {
+                    label: string;
+                    value: string;
+                    /** @description The token. Clients mask it until copied. */
+                    secret?: boolean;
+                }[];
+            }[];
+        };
+        /** @description How to connect one MCP client: the endpoint, then steps to copy. Before a token exists the secret reads `PASTE_YOUR_TOKEN_HERE`. */
+        AgentSetup: {
+            kind: components["schemas"]["AgentMCPKind"];
+            title: string;
+            /**
+             * @description `token`: create a token in Aaru and paste it. `oauth`: add Aaru in the client, which sends the user to Aaru to approve; no token to copy.
+             * @enum {string}
+             */
+            auth: "token" | "oauth";
+            /** @description The MCP endpoint (streamable HTTP). */
+            url: string;
+            steps: {
+                label: string;
+                /** @enum {string} */
+                language: "bash" | "json" | "toml" | "yaml" | "text";
+                text: string;
+                note?: string;
+            }[];
+            /** @description A message to paste into the agent once it is connected. */
+            prompt: string;
+        };
+        AgentTokenCreated: {
+            token: components["schemas"]["AgentToken"];
+            /** @description Shown once. Anyone holding it, or the install links, can use the token. */
+            secret: string;
+            /** @description Only for a Stremio token. */
+            stremio?: {
+                manifestUrl: string;
+                /** @description The `stremio://` link that opens the Stremio app. */
+                installUrl: string;
+                webInstallUrl: string;
+            };
+            setup?: components["schemas"]["AgentSetup"];
+            music?: components["schemas"]["MusicSetup"];
+        };
+        /** @description The one error shape every route returns. */
+        ErrorResponse: {
+            /** @description Stable machine-readable code, e.g. `not_found`, `validation_failed`. */
+            code: string;
+            /** @description Human-readable explanation. Never contains internal detail. */
+            message: string;
+            /** @description Optional per-field detail, keyed by request field name (e.g. `rating`). */
+            details?: {
+                [key: string]: string;
+            };
+        };
+        /**
+         * @description Cursor pagination envelope. List routes return `{ items: [...], page: PageInfo }`.
+         *     Cursors are keyed on `(updated_at, id)`; a null `nextCursor` means the last page.
+         */
+        PageInfo: {
+            nextCursor?: string | null;
+        };
+        AppleSignInRequest: {
+            /** @description The JWT from ASAuthorizationAppleIDCredential / Sign in with Apple JS. */
+            identityToken: string;
+            /** @description The raw nonce whose SHA-256 the client sent to Apple. */
+            nonce: string;
+            /** @description Apple sends the name only on the first authorization; pass it then. */
+            displayName?: string;
+        };
+        MagicLinkRequest: {
+            email: string;
+        };
+        /** @description Either `token` (from the link) or `email` and `code` (from the same email). */
+        MagicLinkVerifyRequest: {
+            token?: string;
+            email?: string;
+            /** @description Six digits; spaces and dashes are ignored. */
+            code?: string;
+        };
+        TraktConnectRequest: {
+            /** @description Where the browser goes after Trakt (the app's `aaru://` scheme or the web app). Must be allowed by the server. */
+            returnTo: string;
+        };
+        TraktConnectStart: {
+            authorizeUrl: string;
+        };
+        TraktConnection: {
+            connected: boolean;
+            username?: string;
+            /** Format: date-time */
+            connectedAt?: string;
+        };
+        MALConnectRequest: {
+            /** @description Where the browser goes after MyAnimeList (the app's `aaru://` scheme or the web app). Must be allowed by the server. */
+            returnTo: string;
+        };
+        MALConnectStart: {
+            authorizeUrl: string;
+        };
+        MALConnection: {
+            connected: boolean;
+            username?: string;
+            /** Format: date-time */
+            connectedAt?: string;
+            /** @description MyAnimeList refused the tokens. Nothing is pushed until the user connects again. */
+            needsReconnect: boolean;
+            /**
+             * Format: date-time
+             * @description When Aaru last read the MyAnimeList list back (SCR-010).
+             */
+            pulledAt?: string;
+            /** @description Entries removed on MyAnimeList, newest first, at most 100. Aaru keeps its items for them; the list is what a weekly full read found missing. */
+            removed: components["schemas"]["MALRemovedEntry"][];
+        };
+        MALRemovedEntry: {
+            malId: string;
+            title?: string;
+            /** Format: date-time */
+            removedAt: string;
+        };
+        StremioLink: {
+            code: string;
+            /**
+             * Format: uri
+             * @description The stremio.com page where the user approves the code.
+             */
+            link: string;
+            /**
+             * Format: uri
+             * @description A QR image of `link`, for scanning with a phone.
+             */
+            qrcode: string;
+            /** Format: date-time */
+            expiresAt: string;
+        };
+        ImportJob: {
+            /** Format: uuid */
+            id: string;
+            /**
+             * @description `lastfm`, `listenbrainz`, `spotify_json` and `youtube_takeout` are listening history (MUS-004): they have no rows, are applied into the listening log, and undo with POST /v1/imports/{id}/undo.
+             * @enum {string}
+             */
+            source: "trakt" | "stremio" | "imdb_csv" | "letterboxd_csv" | "goodreads_csv" | "cat_list" | "cat_ics" | "netflix_csv" | "tvtime_csv" | "mal_xml" | "anilist" | "csv" | "capture" | "lastfm" | "listenbrainz" | "spotify_json" | "youtube_takeout";
+            /**
+             * @description `planned` waits for approval; nothing is written before it.
+             * @enum {string}
+             */
+            state: "queued" | "running" | "planned" | "succeeded" | "failed" | "partial";
+            stats: components["schemas"]["ImportStats"];
+            errorSummary?: string;
+            /** @description The uploaded file's name, or the username for an `anilist`, `lastfm` or `listenbrainz` import. */
+            filename?: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            /** @description Rows read from the file or provider. 0 for a Trakt, AniList, Last.fm or ListenBrainz import until the worker has read the account. For listening history, the plays read that are music. */
+            rowsTotal: number;
+            /** @description Rows matched so far while `running` (IMP-017); back to 0 when a failed attempt is retried. With `rowsTotal` it is the import's progress. */
+            rowsMatched: number;
+            /**
+             * Format: uuid
+             * @description The action that applied the plan, once approved and if it wrote anything. Undo it with POST /v1/actions/{id}/undo.
+             */
+            actionId?: string;
+        };
+        ImportStats: {
+            created: number;
+            updated: number;
+            skipped: number;
+            unmatched: number;
+            /** @description Listening history only (MUS-004): plays left out by rule (podcasts, plays under 30 s, videos that are not music). */
+            ignored?: number;
+        };
+        ListenAccount: {
+            /** @description The account's username, 1–64 characters. */
+            username: string;
+        };
+        ImportList: {
+            items: components["schemas"]["ImportJob"][];
+        };
+        ImportRow: {
+            index: number;
+            title: string;
+            year?: number;
+            author?: string;
+            /** @description Unticked in the review; the plan does not write it. */
+            leftOut?: boolean;
+            guess?: components["schemas"]["ImportRowGuess"];
+            /** @description Match all has yet to try this unmatched row. */
+            guessable?: boolean;
+            /** @description Lists this row joins once approved. A capture's order keeps its rows in order (BOOK-003). */
+            lists?: string[];
+            type: components["schemas"]["MediaType"];
+            sourceKey?: string;
+            ids?: components["schemas"]["ExternalIds"];
+            status?: components["schemas"]["LibraryStatus"];
+            rating?: number;
+            /** @enum {string} */
+            outcome: "pending" | "create" | "update" | "skip" | "unmatched";
+            reason?: string;
+            /** Format: uuid */
+            titleId?: string;
+            roadmap?: components["schemas"]["RoadmapPlace"];
+        };
+        /** @description A row's place in a roadmap the owl planned (GRAPH-003): its numbered step with that step's heading and note, its own note, whether it is optional (it joins the list, not Plan to read) and the pair it is read side by side with. */
+        RoadmapPlace: {
+            /** @description From 1; 0 when the title belongs to no step. */
+            step: number;
+            heading?: string;
+            stepNote?: string;
+            note?: string;
+            optional?: boolean;
+            pair?: number;
+        };
+        /** @description The title Match all chose for a row (IMP-021), for the person to check. Absent on a row they matched themselves. */
+        ImportRowGuess: {
+            title: string;
+            byline?: string;
+            posterUrl?: string;
+        };
+        ImportDetail: {
+            job: components["schemas"]["ImportJob"];
+            /**
+             * Format: uuid
+             * @description The list an approved import's titles joined, when it named one (ASK-011).
+             */
+            listId?: string;
+            rows: components["schemas"]["ImportRow"][];
+        };
+        DeviceRegistration: {
+            /** @description The APNs device token */
+            token: string;
+            /**
+             * @description `sandbox` for Xcode builds; `production` for TestFlight and the App Store.
+             * @enum {string}
+             */
+            environment: "sandbox" | "production";
+            bundleId: string;
+        };
+        LiveActivityRegistration: {
+            /** @description The ActivityKit push token */
+            token: string;
+            /**
+             * @description `start` is the device's push-to-start token; `update` one activity's own.
+             * @enum {string}
+             */
+            kind: "start" | "update";
+            /**
+             * Format: uuid
+             * @deprecated
+             * @description Ignored since SCR-009, when one activity shows everything playing.
+             */
+            watchEventId?: string;
+            /** @enum {string} */
+            environment: "sandbox" | "production";
+            bundleId: string;
+        };
+        NowPlayingReply: {
+            /** @description The newest library episode or movie playing; kept for clients older than `items`. */
+            nowPlaying?: components["schemas"]["NowPlaying"];
+            /** @description Everything playing now (SCR-009), in the Live Activity's order: library episodes, movies and videos first, newest first, then tracks. Empty when nothing plays. */
+            items: components["schemas"]["NowPlayingItem"][];
+        };
+        NowPlaying: {
+            /** Format: uuid */
+            watchEventId: string;
+            /**
+             * Format: uuid
+             * @description Absent when the title is not in the library yet.
+             */
+            libraryItemId?: string;
+            title: components["schemas"]["TitleSummary"];
+            episode?: components["schemas"]["EpisodeRef"];
+            episodeName?: string;
+            /** @enum {string} */
+            source: "stremio" | "netflix" | "disney_plus" | "prime_video";
+            /** @enum {string} */
+            state: "playing" | "paused";
+            /**
+             * Format: int64
+             * @description Where the player was at `updatedAt`.
+             */
+            positionMs: number;
+            /**
+             * Format: int64
+             * @description The player's duration, else the catalog runtime; 0 when neither is known.
+             */
+            durationMs: number;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        NowPlayingItem: {
+            /** @description The watch event or the play; a new id means the next thing plays. */
+            id: string;
+            /** @enum {string} */
+            kind: "episode" | "movie" | "track" | "video";
+            /** @description The show, film, track or video name. */
+            name: string;
+            /** @description "S1 · E8 · Lanterns", the artist, or the channel. */
+            subtitle?: string;
+            /** @description Where it plays, as a person reads it: "Stremio", "YouTube Music". */
+            service?: string;
+            /** @enum {string} */
+            source: "stremio" | "netflix" | "disney_plus" | "prime_video" | "listenbrainz" | "youtube";
+            /** @enum {string} */
+            state: "playing" | "paused";
+            /**
+             * Format: int64
+             * @description Where the player was at `updatedAt`; a client adds the time since while `playing`.
+             */
+            positionMs: number;
+            /**
+             * Format: int64
+             * @description 0 when unknown.
+             */
+            durationMs: number;
+            /** Format: date-time */
+            updatedAt: string;
+            /** @description Poster, cover or video thumbnail. */
+            artworkUrl?: string;
+            /** @description Tracks and videos: where it plays, when the player said. */
+            originUrl?: string;
+            /**
+             * Format: uuid
+             * @description Episodes and movies, always in the library.
+             */
+            libraryItemId?: string;
+            /** @description Episodes and movies only. */
+            title?: components["schemas"]["TitleSummary"];
+            episode?: components["schemas"]["EpisodeRef"];
+        };
+        WebPushKey: {
+            /** @description VAPID public key, base64url: the browser's applicationServerKey. */
+            publicKey: string;
+        };
+        /** @description `PushSubscription.toJSON()` as the browser gives it. */
+        WebPushSubscription: {
+            endpoint: string;
+            keys: {
+                p256dh: string;
+                auth: string;
+            };
+        };
+        NotificationSettings: {
+            /** @description Push when a new episode of a show you are watching airs. */
+            airing: boolean;
+            /** @description Push when someone tags you in a group you have not muted. The alert never holds the message. */
+            groupMentions: boolean;
+            /** @description Push when a friend invites you into a group. */
+            groupInvites: boolean;
+        };
+        NotificationSettingsUpdate: {
+            airing?: boolean;
+            groupMentions?: boolean;
+            groupInvites?: boolean;
+        };
+        GoogleSignInRequest: {
+            idToken: string;
+            /** @description The nonce sent with the Google sign-in, if any. Must come back in the token. */
+            nonce?: string;
+        };
+        Session: {
+            /** @description Bearer token, sent in the Authorization header as `Bearer <token>`. */
+            token: string;
+            /** Format: uuid */
+            userId: string;
+            /** Format: date-time */
+            expiresAt: string;
+        };
+        Me: {
+            /** Format: uuid */
+            userId: string;
+            /** @description The first and last name joined; what friends and groups see. */
+            displayName?: string;
+            firstName?: string;
+            lastName?: string;
+            /** @description Absent until the user claims one in PUT /v1/me/profile. */
+            handle?: string;
+            providers: ("apple" | "email" | "google")[];
+            /** @description The address friends may see when you share it: the email sign-in's, else Google's, else Apple's. Absent when no sign-in has one. */
+            email?: string;
+            /** @description False without an email, or for an Apple private relay address, which friends cannot write to. Always sent since SOC-001b; optional so apps built before the server ships still read `Me`. */
+            emailShareable?: boolean;
+            /** @description Path to `GET /v1/users/{userId}/avatar` with its version. Absent without an avatar. */
+            avatarUrl?: string;
+            /** @description True until the first-run flow is finished or skipped (ONB-001); accounts made before it shipped never see it. Always sent; optional so apps built before the server ships still read `Me`. */
+            onboardingPending?: boolean;
+        };
+        OnboardingFinish: {
+            /** @description True when the user left with Skip rather than reaching the end. */
+            skipped: boolean;
+        };
+        OnboardingPicks: {
+            items: components["schemas"]["AddLibraryItem"][];
+        };
+        OnboardingPicked: {
+            items: components["schemas"]["OnboardingPickedItem"][];
+            /** @description Refs that resolved to no title. */
+            missed: number;
+            /**
+             * Format: uuid
+             * @description The journaled action, for undo. Absent when nothing changed.
+             */
+            actionId?: string;
+        };
+        OnboardingPickedItem: {
+            /** @description Position in the request's `items`. */
+            index: number;
+            /** Format: uuid */
+            libraryItemId: string;
+            /** Format: uuid */
+            titleId: string;
+        };
+        OnboardingRelatedRequest: {
+            titleIds: string[];
+        };
+        OnboardingRelated: {
+            items: components["schemas"]["OnboardingRelatedItem"][];
+            /** @description True when a graph failed or ran out of time. */
+            partial: boolean;
+        };
+        OnboardingRelatedItem: {
+            hit: components["schemas"]["CatalogHit"];
+            /** @description How `hit` stands to the picked title, read "`hit` is the pick's `relation`". */
+            relation: components["schemas"]["Relation"];
+            /** Format: uuid */
+            fromTitleId: string;
+            /** @description The picked title's name */
+            fromTitle: string;
+        };
+        Entitlement: {
+            /** @description Aaru Plus is active. */
+            plus: boolean;
+            /** @description The App Store product keeping Plus active. */
+            productId?: string;
+            /**
+             * Format: date-time
+             * @description When the current period ends; it renews unless cancelled.
+             */
+            expiresAt?: string;
+            /** @description Bought in the App Store sandbox (TestFlight). */
+            sandbox?: boolean;
+            /**
+             * Format: uuid
+             * @description What the Apple app sets as a purchase's `appAccountToken`.
+             */
+            appAccountToken: string;
+            capture: {
+                /** @description Captures started this UTC month. */
+                used: number;
+                /** @description The month's limit. No longer sent; older clients read it as optional. */
+                limit?: number;
+                /** Format: date-time */
+                resetsAt: string;
+            };
+        };
+        /** @description A field left out keeps its saved value. */
+        ProfileUpdate: {
+            /** @description 3–20 of a–z, 0–9 and _. Stored lowercase. */
+            handle?: string;
+            /** @description Empty clears it. */
+            firstName?: string;
+            /** @description Empty clears it. */
+            lastName?: string;
+            /** @description Deprecated: what apps before SOC-001b send in place of the two names. Ignored when either name is sent; the saved names joined is no change, anything else splits at the first space. Empty clears both. */
+            displayName?: string;
+        };
+        SocialUser: {
+            /** Format: uuid */
+            userId: string;
+            handle: string;
+            displayName?: string;
+            /** @description Path to `GET /v1/users/{userId}/avatar` with its version (SOC-001b). Absent without an avatar, and never on a route a signed-out caller can read. */
+            avatarUrl?: string;
+        };
+        SocialUserView: {
+            user: components["schemas"]["SocialUser"];
+            /** @enum {string} */
+            relationship: "none" | "friend" | "outgoing" | "incoming" | "self";
+        };
+        SocialUserList: {
+            items: components["schemas"]["SocialUser"][];
+        };
+        /** @description On PUT, a field left out keeps its saved value (older apps send only `shareLibraryWithFriends`). Responses always carry every field. */
+        SocialSettings: {
+            /** @description Friends see your shelves, activity and what you share. On by default. */
+            shareLibraryWithFriends: boolean;
+            /** @description Friends see your level and badges (never ones about notes or owned items). On by default. */
+            showAchievementsToFriends?: boolean;
+            /** @description You join the weekly friends board, and see it. Off by default. */
+            leaderboardOptIn?: boolean;
+            /** @description Friends see your email on your profile (SOC-001b). Off by default; group members never see it. */
+            shareEmailWithFriends?: boolean;
+        };
+        /** @description One title on a friend's shelf. Never their notes. */
+        FriendItem: {
+            title: components["schemas"]["TitleSummary"];
+            status: components["schemas"]["LibraryStatus"];
+            rating?: number;
+            /** @description Shows. The last episode they ticked. */
+            lastSeason?: number;
+            lastEpisode?: number;
+            bookPage?: number;
+            /** @description Manga. The last chapter they read. */
+            mangaChapter?: number;
+            /** Format: date-time */
+            finishedAt?: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        KindCounts: {
+            movie: number;
+            show: number;
+            anime: number;
+            book: number;
+            album: number;
+            /** @description MNG-001. Absent from servers before it. */
+            manga?: number;
+        };
+        FriendCompare: {
+            /** @description Titles you both plan to watch or read. */
+            bothWant: components["schemas"]["TitleSummary"][];
+            bothFinished: number;
+            /** @description Titles they rated 8 or more that you don't have. */
+            theyLoved: components["schemas"]["TitleSummary"][];
+        };
+        FriendProfile: {
+            user: components["schemas"]["SocialUser"];
+            /** Format: date-time */
+            friendsSince: string;
+            /** @description False when they hide their library; nothing below is sent then. */
+            sharing: boolean;
+            counts?: components["schemas"]["KindCounts"];
+            watching?: components["schemas"]["FriendItem"][];
+            recentlyFinished?: components["schemas"]["FriendItem"][];
+            compare?: components["schemas"]["FriendCompare"];
+            achievements?: components["schemas"]["FriendAchievements"];
+            /** @description Their top 10s (FAV-001). Sent only while they share their library. */
+            favorites?: components["schemas"]["Favorites"];
+            /** @description Their email, sent only while they share it (SOC-001b), whether or not they share their library. */
+            email?: string;
+        };
+        /**
+         * @description A favorites kind. Anime is any anime, film or series.
+         * @enum {string}
+         */
+        FavoriteKind: "film" | "show" | "anime" | "manga" | "book" | "album";
+        /** @description An ordered top 10 per kind (FAV-001), first is the favorite. */
+        Favorites: {
+            film: components["schemas"]["TitleSummary"][];
+            show: components["schemas"]["TitleSummary"][];
+            anime: components["schemas"]["TitleSummary"][];
+            manga: components["schemas"]["TitleSummary"][];
+            book: components["schemas"]["TitleSummary"][];
+            album: components["schemas"]["TitleSummary"][];
+        };
+        FavoritesUpdate: {
+            /** @description The whole kind, in order. Empty clears it. More than 10 is a 422. */
+            items: components["schemas"]["MediaRef"][];
+        };
+        /** @description Absent when the friend turned off showing their badges and level. */
+        FriendAchievements: {
+            level: number;
+            /** @description Their highest tier of each earned badge, newest first. Never private badges. */
+            badges: components["schemas"]["BadgeAward"][];
+        };
+        /** @enum {string} */
+        BadgeFamily: "films" | "shows" | "anime" | "books" | "music" | "ratings" | "lists" | "imports" | "discovery" | "streaks" | "social";
+        /**
+         * @description A live write (toast), an import or approved plan (one summary), or the first run.
+         * @enum {string}
+         */
+        BadgeOrigin: "live" | "batch" | "backfill";
+        BadgeAward: {
+            /**
+             * Format: uuid
+             * @description The award; send it to /v1/me/badges/seen.
+             */
+            id: string;
+            /** @description The badge id, such as `films`. */
+            badge: string;
+            name: string;
+            family: components["schemas"]["BadgeFamily"];
+            /** @description 1–4. Bronze */
+            tier: number;
+            maxTier: number;
+            /** Format: date-time */
+            awardedAt: string;
+            origin: components["schemas"]["BadgeOrigin"];
+            /** @description A live award of a tiered badge's top tier, or of a hidden badge. Show the full card once. */
+            reveal: boolean;
+        };
+        BadgeTier: {
+            tier: number;
+            threshold: number;
+            description: string;
+            /** Format: date-time */
+            awardedAt?: string;
+        };
+        Badge: {
+            id: string;
+            family: components["schemas"]["BadgeFamily"];
+            hidden: boolean;
+            earned: boolean;
+            /** @description The highest tier earned; 0 for none. */
+            tier: number;
+            maxTier: number;
+            /** @description Never shown to friends. */
+            private?: boolean;
+            /** @description Absent for a hidden badge not yet earned. */
+            name?: string;
+            /** @description What the next tier asks */
+            description?: string;
+            /** @description Toward the next tier. Absent once every tier is earned, and for hidden badges. */
+            progress?: {
+                current: number;
+                target: number;
+            };
+            tiers?: components["schemas"]["BadgeTier"][];
+        };
+        BadgeList: {
+            items: components["schemas"]["Badge"][];
+        };
+        StreakDayState: {
+            /** Format: date */
+            date: string;
+            active: boolean;
+        };
+        StreakState: {
+            /** @description Days in the streak still alive; 0 when broken. */
+            current: number;
+            longest: number;
+            /** @description Today already counts. */
+            today: boolean;
+            /** @description The last seven local dates, oldest first. */
+            days: components["schemas"]["StreakDayState"][];
+        };
+        Progress: {
+            total: number;
+            level: number;
+            /** @description Points where this level began. */
+            levelStart: number;
+            nextLevelAt: number;
+            /** @description This ISO week's points as the board counts them. */
+            weekPoints: number;
+            streak: components["schemas"]["StreakState"];
+            unseen: {
+                count: number;
+                origin: components["schemas"]["BadgeOrigin"];
+                /** @description The newest five. */
+                items: components["schemas"]["BadgeAward"][];
+            };
+        };
+        PointsEventItem: {
+            /** Format: uuid */
+            id: string;
+            /** @description episode, movie_finished, book_finished, album_finished, season_bonus, scrobble_bonus, book_progress, listen, room_attended, friend_added, import_first, streak_milestone */
+            kind: string;
+            points: number;
+            title?: components["schemas"]["TitleSummary"];
+            /** Format: date */
+            day: string;
+            /** Format: date-time */
+            at: string;
+            /** @description Points taken back by an undo or a short friendship. */
+            revocation: boolean;
+        };
+        PointsPage: {
+            items: components["schemas"]["PointsEventItem"][];
+            /** Format: date-time */
+            nextBefore?: string;
+        };
+        LeaderboardEntry: {
+            user: components["schemas"]["SocialUser"];
+            points: number;
+            /** @description Equal points share a rank. */
+            rank: number;
+            you: boolean;
+        };
+        Leaderboard: {
+            week: string;
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            until: string;
+            optedIn: boolean;
+            entries: components["schemas"]["LeaderboardEntry"][];
+        };
+        ActivityItem: {
+            /** @description Stable per friend, title and day. */
+            id: string;
+            user: components["schemas"]["SocialUser"];
+            title: components["schemas"]["TitleSummary"];
+            /**
+             * Format: date
+             * @description The UTC day.
+             */
+            day: string;
+            /** @description Episodes ticked that day. */
+            episodes: number;
+            lastSeason?: number;
+            lastEpisode?: number;
+            finished: boolean;
+            rating?: number;
+            /** Format: date-time */
+            at: string;
+            /** @description How many of each emoji, most first. Absent when none. */
+            reactions?: components["schemas"]["ReactionCount"][];
+            /** @description Your own reaction on this row. */
+            myReaction?: string;
+        };
+        ReactionCount: {
+            emoji: string;
+            count: number;
+        };
+        ReactionSet: {
+            /** @enum {string} */
+            emoji: "❤️" | "😂" | "😮" | "😭" | "🔥" | "👏";
+        };
+        RecommendationCreate: {
+            to: string[];
+            title: components["schemas"]["MediaRef"];
+            note?: string;
+        };
+        RecommendationItem: {
+            /** Format: uuid */
+            id: string;
+            from: components["schemas"]["SocialUser"];
+            title: components["schemas"]["TitleSummary"];
+            note?: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        RecommendationList: {
+            items: components["schemas"]["RecommendationItem"][];
+        };
+        ActivityPage: {
+            items: components["schemas"]["ActivityItem"][];
+            /**
+             * Format: date-time
+             * @description Pass as `before` for the next page; absent on the last one.
+             */
+            nextBefore?: string;
+        };
+        FriendInvite: {
+            code: string;
+            /** @description The link to share: https://aaruapp.com/i/{code}. */
+            url: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            expiresAt: string;
+            title?: components["schemas"]["TitleSummary"];
+        };
+        FriendInviteList: {
+            items: components["schemas"]["FriendInvite"][];
+        };
+        FriendInviteCreate: {
+            title?: components["schemas"]["MediaRef"];
+        };
+        InvitePreview: {
+            inviter: components["schemas"]["SocialUser"];
+            title?: components["schemas"]["TitleSummary"];
+            /** Format: date-time */
+            expiresAt: string;
+            /**
+             * @description Where you stand with the inviter. Absent when signed out.
+             * @enum {string}
+             */
+            relationship?: "none" | "friend" | "outgoing" | "incoming" | "self";
+        };
+        /** @enum {string} */
+        ShareKind: "title" | "sport_event" | "concert";
+        ShareTargetInput: {
+            kind: components["schemas"]["ShareKind"];
+            ref?: components["schemas"]["MediaRef"];
+            /** @description The provider's event id, for `sport_event` (TheSportsDB, digits) and `concert` (Ticketmaster). */
+            id?: string;
+        };
+        ShareCreate: {
+            target: components["schemas"]["ShareTargetInput"];
+            /** @description Up to 140 characters, trimmed; blank is none. Only the sender's friends see it. */
+            note?: string;
+        };
+        ShareLink: {
+            code: string;
+            url: string;
+        };
+        ShareSender: {
+            user: components["schemas"]["SocialUser"];
+            note?: string;
+        };
+        SharePreview: {
+            kind: components["schemas"]["ShareKind"];
+            /** @description The provider could not give the event right now (sports or concerts off, over budget, or the event is gone). The content field is then absent. */
+            unavailable: boolean;
+            title?: components["schemas"]["TitleDetail"];
+            sportEvent?: components["schemas"]["SportEvent"];
+            concert?: components["schemas"]["Concert"];
+            from?: components["schemas"]["ShareSender"];
+            /**
+             * Format: uuid
+             * @description The signed-in viewer's own item for a shared title, when they have it.
+             */
+            libraryItemId?: string;
+            status?: components["schemas"]["LibraryStatus"];
+        };
+        InviteRedeem: {
+            /** @description Also put the invite's title on your Plan to watch. A title you already have is left alone. */
+            addTitle: boolean;
+        };
+        InviteRedemption: {
+            friend: components["schemas"]["SocialUser"];
+            titleAdded: boolean;
+        };
+        FriendRequest: {
+            /** Format: uuid */
+            id: string;
+            /** @description The other person. */
+            user: components["schemas"]["SocialUser"];
+            /** Format: date-time */
+            createdAt: string;
+        };
+        FriendRequests: {
+            incoming: components["schemas"]["FriendRequest"][];
+            outgoing: components["schemas"]["FriendRequest"][];
+        };
+        FriendRequestCreate: {
+            handle: string;
+        };
+        ReportCreate: {
+            /** Format: uuid */
+            userId: string;
+            /** @enum {string} */
+            reason: "spam" | "harassment" | "impersonation" | "other";
+            note?: string;
+        };
+        /** @enum {string} */
+        GroupRole: "owner" | "admin" | "member";
+        GroupSummary: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            role: components["schemas"]["GroupRole"];
+            /** Format: uuid */
+            defaultChannelId: string;
+            /** @description Messages from others since you last read */
+            unread: number;
+            /** @description Unread messages that tag you. */
+            mentions: number;
+            /** @description You show your progress in this group's title channels. */
+            shareProgress: boolean;
+            /** @description Mentions in this group send you no alerts. */
+            muted: boolean;
+        };
+        GroupList: {
+            items: components["schemas"]["GroupSummary"][];
+        };
+        GroupMember: {
+            user: components["schemas"]["SocialUser"];
+            role: components["schemas"]["GroupRole"];
+            /** Format: date-time */
+            joinedAt: string;
+            shareProgress: boolean;
+        };
+        Channel: {
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["ChannelKind"];
+            /** @description What a title channel is about. */
+            title?: components["schemas"]["TitleSummary"];
+            /** @description Lowercase, dashes for spaces: movie-night. */
+            name: string;
+            topic?: string;
+            position: number;
+            /** @description The #general every group starts with. Cannot be deleted. */
+            isDefault: boolean;
+            unread: number;
+            mentions: number;
+        };
+        GroupDetail: {
+            group: components["schemas"]["GroupSummary"];
+            channels: components["schemas"]["Channel"][];
+            members: components["schemas"]["GroupMember"][];
+            /** @description Friends invited who have not answered yet. */
+            invited: components["schemas"]["SocialUser"][];
+            /** @description @aaru answers in this group. When false, hide it from mentions. */
+            agent: boolean;
+        };
+        GroupCreate: {
+            name: string;
+        };
+        GroupMemberUpdate: {
+            /** @enum {string} */
+            role: "admin" | "member";
+        };
+        UserRef: {
+            /** Format: uuid */
+            userId: string;
+        };
+        GroupInvite: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            groupId: string;
+            groupName: string;
+            inviter: components["schemas"]["SocialUser"];
+            /** Format: date-time */
+            createdAt: string;
+        };
+        GroupInviteList: {
+            items: components["schemas"]["GroupInvite"][];
+        };
+        /**
+         * @description text: chat. title: one title, with the spoiler guard. watch: watch parties. shelf: a shared list.
+         * @enum {string}
+         */
+        ChannelKind: "text" | "title" | "watch" | "shelf";
+        ChannelCreate: {
+            kind?: components["schemas"]["ChannelKind"];
+            /** @description Required, except a title channel takes its title's name. */
+            name?: string;
+            topic?: string;
+            /** @description Required for a title channel. */
+            title?: components["schemas"]["MediaRef"];
+        };
+        ChannelUpdate: {
+            /** @description Absent leaves it unchanged. */
+            name?: string;
+            /** @description Absent leaves it unchanged; empty clears it. */
+            topic?: string;
+        };
+        GroupMessage: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            channelId: string;
+            /** @description Absent once the author deleted their account. */
+            author?: components["schemas"]["SocialUser"];
+            /** @description Empty when deleted. */
+            body: string;
+            /** @description Members the message tags. */
+            mentions: string[];
+            /** @description The message tags @aaru. */
+            mentionsAgent: boolean;
+            /** @description You blocked the author. Show it collapsed. */
+            fromBlocked: boolean;
+            deleted: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            editedAt?: string;
+            /** @description Only on your own messages: the clientNonce you posted with, to match a pending send to its echo. */
+            clientNonce?: string;
+            /** @description Only on your own messages: it says where you are in the title. */
+            spoiler?: components["schemas"]["SpoilerStamp"];
+            /** @description It may spoil what you have not watched yet: show it veiled until you tap. */
+            veiled: boolean;
+            /** @description Written by @aaru. It has no author. */
+            fromAgent: boolean;
+            /**
+             * Format: uuid
+             * @description The mention an @aaru reply answers.
+             */
+            replyTo?: string;
+            /** @description Cards on an @aaru reply. Catalog titles only; their buttons are the viewer's own taps. */
+            components?: components["schemas"]["MessageComponent"][];
+        };
+        MessageComponent: {
+            /** @enum {string} */
+            type: "title";
+            title: components["schemas"]["TitleSummary"];
+        };
+        GroupMessagePage: {
+            items: components["schemas"]["GroupMessage"][];
+        };
+        MessageCreate: {
+            body: string;
+            /** @description Makes a retry safe. */
+            clientNonce?: string;
+            /** @description Title channels: stamp by hand. Absent: stamped from your progress. */
+            spoiler?: components["schemas"]["SpoilerStamp"];
+            /** @description Title channels: no stamp at all. */
+            spoilerFree?: boolean;
+        };
+        BoardComment: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            postId: string;
+            /** @description Absent for Aaru's comments and for deleted comments. */
+            author?: components["schemas"]["SocialUser"];
+            /** @description Empty when deleted. */
+            body: string;
+            /** @description Friends the comment tags. */
+            mentions: string[];
+            /** @description The comment tags @aaru. Recorded only; Aaru does not answer on the Board yet. */
+            mentionsAgent: boolean;
+            deleted: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            /** @description Written by @aaru. It has no author. */
+            fromAgent: boolean;
+            /**
+             * Format: uuid
+             * @description The top-level comment this one answers. Never a reply itself.
+             */
+            replyTo?: string;
+            mine?: boolean;
+        };
+        BoardCommentCreate: {
+            body: string;
+            /** Format: uuid */
+            replyTo?: string;
+        };
+        BoardCommentPage: {
+            items: components["schemas"]["BoardComment"][];
+            /**
+             * Format: uuid
+             * @description Pass as `after` for the next page. Null on the last page. A page can be empty or short with a `next` still set, because deleted and blocked rows are skipped after the page is cut; keep following it.
+             */
+            next?: string | null;
+        };
+        BoardPost: {
+            /** Format: uuid */
+            id: string;
+            author: components["schemas"]["SocialUser"];
+            title?: components["schemas"]["TitleSummary"];
+            /** @description Needs a title. */
+            rating?: number;
+            body: string;
+            /** @description Only on your own posts: it says where you are in the title. */
+            spoiler?: components["schemas"]["SpoilerStamp"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            editedAt?: string;
+            upvotes: number;
+            upvotedByMe: boolean;
+            commentCount: number;
+            /** @description It may spoil what you have not watched yet: show it veiled until you tap. */
+            veiled: boolean;
+            mine: boolean;
+        };
+        BoardPostPage: {
+            items: components["schemas"]["BoardPost"][];
+        };
+        BoardPostCreate: {
+            body: string;
+            title?: components["schemas"]["MediaRef"];
+            /** @description Needs a title. */
+            rating?: number;
+            /** @description With a title: stamp by hand. Absent: stamped from your progress. */
+            spoiler?: components["schemas"]["SpoilerStamp"];
+            /** @description With a title: no stamp at all. */
+            spoilerFree?: boolean;
+        };
+        BoardPostEdit: {
+            body: string;
+        };
+        MessageUpdate: {
+            body: string;
+        };
+        ReadMark: {
+            /** Format: uuid */
+            messageId: string;
+        };
+        RealtimeTicket: {
+            ticket: string;
+            /** @description The wss:// URL to open, ticket included. */
+            url: string;
+            /** Format: date-time */
+            expiresAt: string;
+        };
+        /** @description One frame from GET /v1/ws (a WebSocket). The socket is never the source of truth: on `ready` (every connect and reconnect), refetch what is on screen with REST. */
+        RealtimeEvent: {
+            /** @enum {string} */
+            type: "ready" | "message.created" | "message.updated" | "message.deleted" | "typing" | "read" | "group.updated" | "group.removed" | "invites.changed" | "shelf.updated" | "watch.updated" | "watch.reaction" | "agent.thinking";
+            /** Format: uuid */
+            groupId?: string;
+            /** Format: uuid */
+            channelId?: string;
+            /**
+             * Format: uuid
+             * @description agent.thinking: the mention being answered.
+             */
+            messageId?: string;
+            message?: components["schemas"]["GroupMessage"];
+            /** @description Who is typing, or reacting. */
+            user?: components["schemas"]["SocialUser"];
+            /** @description watch.reaction only. */
+            emoji?: string;
+        };
+        /** @description One frame a client sends on GET /v1/ws. At most one typing frame per channel every 3 seconds, and one reaction a second, counts. */
+        RealtimeCommand: {
+            /** @enum {string} */
+            type: "typing" | "react";
+            /** @description react only: one of 😂 😱 😭 ❤️ 👏 🔥. */
+            emoji?: string;
+            /** Format: uuid */
+            groupId: string;
+            /** Format: uuid */
+            channelId: string;
+        };
+        /** @description Any field left out keeps its value. */
+        MembershipUpdate: {
+            shareProgress?: boolean;
+            muted?: boolean;
+        };
+        /** @description How far into the title a reader must be to read the message unveiled. An episode, or the ending. */
+        SpoilerStamp: {
+            season?: number;
+            episode?: number;
+            ending?: boolean;
+        };
+        MemberProgress: {
+            user: components["schemas"]["SocialUser"];
+            /** @description Absent when it is not in their library. */
+            status?: components["schemas"]["LibraryStatus"];
+            /** @description The furthest episode they ticked. */
+            season?: number;
+            episode?: number;
+        };
+        ChannelProgress: {
+            title: components["schemas"]["TitleSummary"];
+            mine?: components["schemas"]["MemberProgress"];
+            /** @description Only members who share their progress in this group. */
+            members: components["schemas"]["MemberProgress"][];
+        };
+        ChannelItem: {
+            title: components["schemas"]["TitleSummary"];
+            addedBy?: components["schemas"]["SocialUser"];
+            /** Format: date-time */
+            addedAt: string;
+            /** @description Yours */
+            myStatus?: components["schemas"]["LibraryStatus"];
+        };
+        ChannelItemList: {
+            items: components["schemas"]["ChannelItem"][];
+        };
+        ChannelItemCreate: {
+            title: components["schemas"]["MediaRef"];
+        };
+        WatchParty: {
+            /** Format: uuid */
+            id: string;
+            title: components["schemas"]["TitleSummary"];
+            season?: number;
+            episode?: number;
+            /** @description A manga reading session reads to this chapter. */
+            chapter?: number;
+            /** @description A manga reading session reads to this volume. */
+            volume?: number;
+            /** @description A book reading session reads to this page. */
+            page?: number;
+            /** @enum {string} */
+            state: "lobby" | "countdown" | "live" | "ended";
+            /** Format: date-time */
+            startsAt?: string;
+            /** Format: date-time */
+            endedAt?: string;
+            host?: components["schemas"]["SocialUser"];
+            ready: components["schemas"]["SocialUser"][];
+        };
+        WatchPartyView: {
+            party?: components["schemas"]["WatchParty"];
+            /**
+             * Format: date-time
+             * @description Count down against this, not the device clock.
+             */
+            serverTime: string;
+            /** @description Your own "Mark it for me": the end of the party marks the title for you. True until you switch it off. */
+            autoMark: boolean;
+            /** @description The party marked its title in your library, at its end or by your tap. */
+            markedForYou: boolean;
+            /**
+             * Format: uuid
+             * @description The action that marked it for you, for POST /v1/actions/{id}/undo. Absent when your library already said so.
+             */
+            actionId?: string;
+        };
+        WatchPartyCreate: {
+            title: components["schemas"]["MediaRef"];
+            season?: number;
+            episode?: number;
+            chapter?: number;
+            volume?: number;
+            page?: number;
+        };
+        WatchPartyReady: {
+            ready: boolean;
+            /** @description Leave out to keep what you chose; a first join starts with it on. */
+            autoMark?: boolean;
+        };
+        WatchPartyStart: {
+            /** @description 3–60, default 10. */
+            countdownSeconds?: number;
+        };
+        /** @description Provider identifiers known for a title. Absent means unknown. */
+        ExternalIds: {
+            tmdb?: string;
+            imdb?: string;
+            trakt?: string;
+            tvdb?: string;
+            isbn?: string;
+            openLibrary?: string;
+            anilist?: string;
+            mal?: string;
+            anidb?: string;
+            /** @description An album's MusicBrainz release-group id (MUS-001). */
+            musicbrainz?: string;
+        };
+        /**
+         * @description `album` (MUS-001) is a MusicBrainz release group of type Album or EP: status, rating and notes, no progress. `manga` (MNG-001) is one AniList work of type MANGA (manga, manhwa, manhua, one-shots and light novels), read by chapter and volume.
+         * @enum {string}
+         */
+        MediaType: "movie" | "show" | "book" | "album" | "manga";
+        CatalogHit: {
+            type: components["schemas"]["MediaType"];
+            title: string;
+            originalTitle?: string;
+            year?: number;
+            posterUrl?: string;
+            overview?: string;
+            /** @description Authors, for books and manga; the artist credit, for albums. */
+            byline?: string;
+            isAnime: boolean;
+            ids: components["schemas"]["ExternalIds"];
+            /** @description The caller's library item for this title, when they have one. Discover and onboarding rows only. */
+            libraryItemId?: string;
+            /** @description YYYY-MM-DD. A film's first release or a show's first air date (TMDB), an anime's start date (AniList). Absent when the provider has no full date. */
+            releaseDate?: string;
+        };
+        SearchResults: {
+            items: components["schemas"]["CatalogHit"][];
+            /** @description True when one provider of an `all` search failed or ran out of time, so the items come from the other alone. An `anime` search is also incomplete while AniList is down and TMDB stands in. */
+            incomplete: boolean;
+            /** @description Why the items are partial, in words to show, e.g. AniList being down while TMDB's Japanese animation stands in. */
+            notice?: string;
+        };
+        /**
+         * @description What a Discover row holds (DISC-004), as Library's kinds: anime is its own kind. Discover shows film, show and anime rows; the Books, Manga and Music pages show their own.
+         * @enum {string}
+         */
+        DiscoverRowKind: "film" | "show" | "anime" | "manga" | "book" | "album";
+        DiscoverRow: {
+            /** @description Stable row key, e.g. `tv_trending`, `anime_season`, `books_trending`, `manga_trending`, `music_new`. Not an enum: the server may add rows, and clients render any row they get. */
+            id: string;
+            kind: components["schemas"]["DiscoverRowKind"];
+            /** @description Display title, e.g. "Fall 2026 anime". */
+            title: string;
+            items: components["schemas"]["CatalogHit"][];
+            /** @description Where a stand-in row came from, e.g. TMDB while AniList is down. */
+            note?: string;
+            /** @description True when only the kind's own page shows this row, never Home (BOOK-002). Absent otherwise. */
+            kindPageOnly?: boolean;
+        };
+        DiscoverRows: {
+            rows: components["schemas"]["DiscoverRow"][];
+        };
+        DiscoverOnAir: {
+            channels: components["schemas"]["OnAirChannel"][];
+            /**
+             * Format: date-time
+             * @description When the server fetched the guide.
+             */
+            updatedAt?: string;
+        };
+        OnAirChannel: {
+            /** @description Network or streaming service ("HBO", "Netflix", "BBC One"), or "Other". */
+            name: string;
+            /** @description The channel's logo (TMDB), small, on a transparent background. */
+            logoUrl?: string;
+            /** @description Soonest next episode first. */
+            shows: components["schemas"]["OnAirShow"][];
+        };
+        OnAirShow: {
+            item: components["schemas"]["CatalogHit"];
+            nextEpisode: components["schemas"]["OnAirEpisode"];
+            /** @description Up to three services the show streams on in `region`, besides its own channel. Absent without a region or when there is no data for it. */
+            streamsOn?: components["schemas"]["WatchProvider"][];
+            /** @description TMDB's page of every way to watch the show in `region`. */
+            watchLink?: string;
+        };
+        OnAirEpisode: {
+            season: number;
+            number: number;
+            name?: string;
+            /** Format: date-time */
+            airsAt: string;
+            /** @description False while only the day is known; `airsAt` is then midnight UTC of that day. */
+            airTimeKnown: boolean;
+        };
+        WatchProvider: {
+            name: string;
+            logoUrl?: string;
+        };
+        SeasonPage: {
+            /** @enum {string} */
+            kind: "anime" | "shows_new" | "shows_returning" | "movies";
+            /** @enum {string} */
+            season: "winter" | "spring" | "summer" | "fall";
+            year: number;
+            /** @description First day of the season, YYYY-MM-DD. */
+            from: string;
+            /** @description Last day of the season, YYYY-MM-DD. */
+            until: string;
+            /** @description Display name, e.g. "Fall 2026". */
+            title: string;
+            items: components["schemas"]["CatalogHit"][];
+            page: number;
+            hasMore: boolean;
+            /** @description The provider's count for the whole season, when it gives one. */
+            total?: number;
+            /** @description The provider did not answer and nothing was cached; not an empty season. */
+            unavailable: boolean;
+        };
+        /** @description One music event from Ticketmaster. Tickets are bought there, never in Aaru. */
+        Concert: {
+            id: string;
+            name: string;
+            /** @description The acts on the bill, headliner first. */
+            artists: string[];
+            /**
+             * Format: date-time
+             * @description The exact start, when announced.
+             */
+            startsAt?: string;
+            /** @description The day at the venue, YYYY-MM-DD. */
+            localDate: string;
+            /** @description The time at the venue, HH:mm, when announced. */
+            localTime?: string;
+            venue?: string;
+            city?: string;
+            country?: string;
+            /** @description From the searched point, or from the point or saved city for an `anywhere` search. Absent for "Your artists on tour", and when the venue's position is unknown. */
+            distanceKm?: number;
+            /** @description Ticketmaster's event page. */
+            url: string;
+            /** @description Ticketmaster's image for the event, referenced, never hosted. */
+            imageUrl?: string;
+        };
+        /** @enum {string} */
+        SportEntityKind: "league" | "team" | "player";
+        /** @description A league (or promotion: UFC, WWE), team or player from the sports provider, by its id. Catalog data for Sports only; never a Title. */
+        SportEntity: {
+            kind: components["schemas"]["SportEntityKind"];
+            /** @description The provider's id. */
+            id: string;
+            name: string;
+            /** @description The provider's sport: Soccer, Basketball, American Football, Fighting… */
+            sport: string;
+            /** @description Badge */
+            badgeUrl?: string;
+            country?: string;
+            leagueId?: string;
+            /** @description A player's team (a fighter's division). */
+            teamId?: string;
+            teamName?: string;
+            /** @description Whether the user follows it. */
+            following: boolean;
+        };
+        SportEntityList: {
+            items: components["schemas"]["SportEntity"][];
+            /** @description True when Sports are off on this server. */
+            unavailable: boolean;
+        };
+        SportFollowList: {
+            items: components["schemas"]["SportEntity"][];
+        };
+        SportSide: {
+            id?: string;
+            name: string;
+            badgeUrl?: string;
+            score?: number;
+        };
+        /** @enum {string} */
+        SportEventStatus: "scheduled" | "live" | "finished" | "postponed" | "cancelled";
+        /** @description One match, game or card (a UFC or WWE event has no home and away). Catalog data, kept no longer than the cache. */
+        SportEvent: {
+            id: string;
+            sport: string;
+            name: string;
+            leagueId?: string;
+            league?: string;
+            leagueBadgeUrl?: string;
+            home?: components["schemas"]["SportSide"];
+            away?: components["schemas"]["SportSide"];
+            /**
+             * Format: date-time
+             * @description The exact start
+             */
+            startsAt?: string;
+            /** @description The UTC day, YYYY-MM-DD. */
+            day: string;
+            status: components["schemas"]["SportEventStatus"];
+            /** @description The live clock or period: "67", "HT", "Q3". Live only. */
+            progress?: string;
+            venue?: string;
+            round?: string;
+            imageUrl?: string;
+            /** @description A followed team or player's team plays in it. */
+            isFavorite: boolean;
+        };
+        SportFavorite: {
+            entity: components["schemas"]["SportEntity"];
+            live: components["schemas"]["SportEvent"][];
+            next?: components["schemas"]["SportEvent"];
+            last?: components["schemas"]["SportEvent"];
+            /** @description Still being fetched; ask again in a few seconds. */
+            pending: boolean;
+        };
+        SportFavorites: {
+            items: components["schemas"]["SportFavorite"][];
+            unavailable: boolean;
+        };
+        SportScheduleGroup: {
+            leagueId?: string;
+            league: string;
+            sport: string;
+            badgeUrl?: string;
+            events: components["schemas"]["SportEvent"][];
+        };
+        SportSchedule: {
+            date: string;
+            /** @description Leagues with a favorite first, then by name. */
+            groups: components["schemas"]["SportScheduleGroup"][];
+            /** @description Some leagues are still being fetched. */
+            pending: boolean;
+            unavailable: boolean;
+        };
+        SportBroadcast: {
+            channel: string;
+            country?: string;
+            logoUrl?: string;
+        };
+        SportEventDetail: {
+            event: components["schemas"]["SportEvent"];
+            /** @description Channels in the "Where to watch" country. Empty when none is chosen. */
+            inYourCountry: components["schemas"]["SportBroadcast"][];
+            /** @description Every other channel the provider lists, by country. */
+            elsewhere: components["schemas"]["SportBroadcast"][];
+            watchCountryCode?: string;
+        };
+        SportSettings: {
+            /** @description ISO 3166-1 alpha-2. */
+            watchCountryCode?: string;
+            /** @description False when Sports are off on this server; clients hide the Sports tab. */
+            available: boolean;
+        };
+        SportSettingsInput: {
+            /** @description ISO 3166-1 alpha-2; null or absent clears it. */
+            watchCountryCode?: string | null;
+        };
+        SportsExport: {
+            follows: components["schemas"]["SportEntity"][];
+            watchCountryCode?: string;
+        };
+        ConcertPlace: {
+            /** @description 1 to 200 characters. */
+            name: string;
+            region?: string;
+            country?: string;
+            /** @description ISO 3166-1 alpha-2. */
+            countryCode?: string;
+            /** @description Rounded to two decimals by the server. */
+            latitude: number;
+            /** @description Rounded to two decimals by the server. */
+            longitude: number;
+        };
+        ConcertPlaceList: {
+            items: components["schemas"]["ConcertPlace"][];
+        };
+        ConcertPlaceSetting: {
+            place?: components["schemas"]["ConcertPlace"];
+            /** @description False when concerts are off on this server; clients hide the Concerts view. */
+            available: boolean;
+        };
+        ConcertsNearRequest: {
+            /** @description Sent with `longitude` for a one-off position; absent uses the saved city. */
+            latitude?: number;
+            longitude?: number;
+            /** @enum {integer} */
+            radiusKm: 25 | 50 | 100;
+            /**
+             * @description 1-based, at most 10.
+             * @default 1
+             */
+            page: number;
+        };
+        ConcertPage: {
+            place?: components["schemas"]["ConcertPlace"];
+            radiusKm: number;
+            items: components["schemas"]["Concert"][];
+            page: number;
+            hasMore: boolean;
+            /** @description Concerts are off, or Ticketmaster did not answer and nothing was cached. */
+            unavailable: boolean;
+        };
+        /**
+         * @description `near` the point or saved city, inside `radiusKm`; `anywhere` for every upcoming date.
+         * @enum {string}
+         */
+        ConcertSearchScope: "near" | "anywhere";
+        ConcertSearchRequest: {
+            /** @description The artist's name, 2 to 100 characters. Not logged. */
+            q: string;
+            /** @description A performer's `id` from `/v1/concerts/performers`: only their concerts. Absent searches `q` as free text. Letters, digits, `-` and `_`, at most 64. */
+            performerId?: string;
+            scope: components["schemas"]["ConcertSearchScope"];
+            /** @description Sent with `longitude` for a one-off position; absent uses the saved city. */
+            latitude?: number;
+            longitude?: number;
+            /**
+             * @description Used by `near` only.
+             * @enum {integer}
+             */
+            radiusKm: 25 | 50 | 100;
+            /**
+             * @description 1-based, at most 10.
+             * @default 1
+             */
+            page: number;
+        };
+        ConcertSearchPage: {
+            /** @description The name as searched, trimmed. */
+            query: string;
+            /** @description The performer searched by, when one was picked. */
+            performerId?: string;
+            scope: components["schemas"]["ConcertSearchScope"];
+            place?: components["schemas"]["ConcertPlace"];
+            /** @description Present for `near`. */
+            radiusKm?: number;
+            items: components["schemas"]["Concert"][];
+            page: number;
+            hasMore: boolean;
+            /** @description Concerts are off, or Ticketmaster did not answer and nothing was cached. */
+            unavailable: boolean;
+        };
+        ConcertPerformerRequest: {
+            /** @description The name as typed, 2 to 100 characters. Not logged. */
+            q: string;
+        };
+        /** @description One performer as Ticketmaster lists them. */
+        ConcertPerformer: {
+            id: string;
+            name: string;
+            /** @description Ticketmaster's picture of the performer, referenced, never hosted. */
+            imageUrl?: string;
+        };
+        ConcertPerformerList: {
+            items: components["schemas"]["ConcertPerformer"][];
+            /** @description Concerts are off, or Ticketmaster did not answer and nothing was cached. */
+            unavailable: boolean;
+        };
+        ArtistConcerts: {
+            items: components["schemas"]["Concert"][];
+            /** @description Library artists Ticketmaster knows. */
+            matched: number;
+            /** @description Library artists not looked up yet. */
+            pending: number;
+            unavailable: boolean;
+        };
+        Episode: {
+            season: number;
+            number: number;
+            name?: string;
+            /** @description The episode's synopsis, when the catalog has one. */
+            overview?: string;
+            /** @description A frame from the episode (TMDB, referenced, never hosted). */
+            stillUrl?: string;
+            /** Format: date-time */
+            airsAt?: string;
+            /** @description True when `airsAt` is the exact broadcast time; false when only the date is known. */
+            airTimeKnown: boolean;
+            runtimeMinutes?: number;
+        };
+        Season: {
+            number: number;
+            episodes: components["schemas"]["Episode"][];
+        };
+        TitleDetail: {
+            /** Format: uuid */
+            id: string;
+            type: components["schemas"]["MediaType"];
+            title: string;
+            originalTitle?: string;
+            year?: number;
+            synopsis?: string;
+            posterUrl?: string;
+            isAnime: boolean;
+            ids: components["schemas"]["ExternalIds"];
+            /** @enum {string} */
+            status?: "upcoming" | "returning" | "ended" | "canceled";
+            runtimeMinutes?: number;
+            /** @description Shows only. */
+            seasons?: components["schemas"]["Season"][];
+            /** @description Authors, for books and manga; the artist credit, for albums. */
+            byline?: string;
+            /** @description Albums only (MUS-001), at most five, most tagged first. */
+            genres?: string[];
+            /** @description Albums only: the tracklist of the album's earliest official release, by disc then position. Absent when MusicBrainz could not be reached and none is stored yet. */
+            tracks?: components["schemas"]["AlbumTrack"][];
+        };
+        /** @enum {string} */
+        RelationOrder: "release" | "story";
+        /**
+         * @description How one title stands to another (GRAPH-001), read "`to` is `from`'s relation". Edges are written forward: a prequel arrives as the other title's `sequel`, a source as the other title's `adaptation`, a parent as the other title's `side_story`, so the first three values below never appear on an edge but keep the vocabulary whole.
+         * @enum {string}
+         */
+        Relation: "prequel" | "sequel" | "side_story" | "spin_off" | "adaptation" | "source" | "alternative" | "summary" | "parent" | "other";
+        RelationGraph: {
+            /** @description Ordered by `rank`, then `lane`. */
+            nodes: components["schemas"]["RelationNode"][];
+            edges: components["schemas"]["RelationEdge"][];
+            order: components["schemas"]["RelationOrder"];
+            /** @description True when the main chain has a story order that differs from release order. */
+            storyOrderAvailable: boolean;
+            /** @description True when a source failed or ran out of time; the graph may miss titles. */
+            partial: boolean;
+            /** @description Key of the first main-chain title, in this order, the caller has not finished or dropped. Absent when every one is done. */
+            startHere?: string;
+        };
+        RelationNode: {
+            /** @description Stable within one graph. */
+            key: string;
+            /** @description Opens the title (POST /v1/titles/resolve) or adds it, as a search hit does. */
+            ref: components["schemas"]["MediaRef"];
+            isAnime?: boolean;
+            posterUrl?: string;
+            /** @description `YYYY-MM-DD` when the source knows the day. */
+            releaseDate?: string;
+            /** @description The source's own word for it (`tv`, `movie`, `ova`, `novel`…), for a label. */
+            format?: string;
+            /** @description Column, from 0: the order along the main chain. */
+            rank: number;
+            /** @description Row: 0 is the main chain, 1 and on hang below it. */
+            lane: number;
+            mainChain: boolean;
+            /** @description The title the graph was asked for. */
+            centre: boolean;
+            /** Format: uuid */
+            libraryItemId?: string;
+            status?: components["schemas"]["LibraryStatus"];
+        };
+        RelationEdge: {
+            from: string;
+            to: string;
+            relation: components["schemas"]["Relation"];
+        };
+        TitlePreview: {
+            title: components["schemas"]["TitleDetail"];
+            /**
+             * Format: uuid
+             * @description Set when the title is in the caller's library; its title page is then the one to open.
+             */
+            libraryItemId?: string;
+        };
+        AlbumTrack: {
+            disc: number;
+            position: number;
+            name: string;
+            lengthMs?: number;
+        };
+        /**
+         * @description Consumption only. `on_hold` is paused on purpose (LIB-007): it ranks with `in_progress` for imports, is left off Up Next, Tonight, the calendar and airing alerts, and a new tick moves it back to `in_progress`. Labels are per kind; `on_hold` reads "On hold" for every kind.
+         * @enum {string}
+         */
+        LibraryStatus: "wishlist" | "in_progress" | "on_hold" | "finished" | "dropped";
+        /** @description A title by Aaru id, by provider ids, or by title + year. */
+        MediaRef: {
+            /** Format: uuid */
+            titleId?: string;
+            type: components["schemas"]["MediaType"];
+            ids?: components["schemas"]["ExternalIds"];
+            title?: string;
+            year?: number;
+        };
+        AddLibraryItem: {
+            mediaRef: components["schemas"]["MediaRef"];
+            status?: components["schemas"]["LibraryStatus"];
+        };
+        LibraryItemPatch: {
+            /** @description `finished` on a show marks the whole show watched, as `POST …/watched` does (PROG-005): a running show moves back to in progress when an episode it has not ticked airs. */
+            status?: components["schemas"]["LibraryStatus"];
+            /** @description 1–10 in 0.5 steps. */
+            rating?: number;
+            notes?: string;
+            isOwned?: boolean;
+            bookPage?: number;
+            bookPercent?: number;
+            /** @description Manga only. The last chapter read. */
+            mangaChapter?: number;
+            /** @description Manga only. The last volume read. */
+            mangaVolume?: number;
+            /** @description Fields to empty. */
+            clear?: ("rating" | "notes" | "bookProgress" | "mangaProgress")[];
+        };
+        EpisodeWatched: {
+            watched: boolean;
+        };
+        EpisodeRef: {
+            season: number;
+            number: number;
+        };
+        /** @description Specials (season 0) are not counted. */
+        ShowProgress: {
+            watchedCount: number;
+            airedCount: number;
+            nextEpisode?: components["schemas"]["EpisodeRef"];
+        };
+        BookProgress: {
+            page?: number;
+            percent?: number;
+        };
+        /** @description MNG-001. Either or both. */
+        MangaProgress: {
+            chapter?: number;
+            volume?: number;
+        };
+        TitleSummary: {
+            /** Format: uuid */
+            id: string;
+            type: components["schemas"]["MediaType"];
+            title: string;
+            originalTitle?: string;
+            year?: number;
+            posterUrl?: string;
+            /** @description Wide art (TMDB backdrop, AniList banner), for banners such as the week grid. */
+            backdropUrl?: string;
+            /** @description Shows only. Network or streaming service ("HBO", "Netflix", "Crunchyroll"). */
+            network?: string;
+            /** @description Authors, for books and manga; the artist credit, for albums. */
+            byline?: string;
+            /** @description Books only, when known (Open Library's median across editions). */
+            pageCount?: number;
+            /** @description Manga only, once AniList knows it (absent while a series runs). */
+            chapterCount?: number;
+            /** @description Manga only, once AniList knows it. */
+            volumeCount?: number;
+            isAnime: boolean;
+            ids: components["schemas"]["ExternalIds"];
+        };
+        LibraryEntry: {
+            /** Format: uuid */
+            id: string;
+            title: components["schemas"]["TitleSummary"];
+            status: components["schemas"]["LibraryStatus"];
+            rating?: number;
+            notes?: string;
+            isOwned: boolean;
+            /** Format: date-time */
+            addedAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            /** Format: date-time */
+            finishedAt?: string;
+            progress?: components["schemas"]["ShowProgress"];
+            bookProgress?: components["schemas"]["BookProgress"];
+            mangaProgress?: components["schemas"]["MangaProgress"];
+            /**
+             * Format: date-time
+             * @description The newest episode tick the user made in Aaru. Imported, pulled and restored ticks do not count. Absent when there is none.
+             */
+            lastWatchedAt?: string;
+            /** @description APP-018 · an anime in progress the user never touched in Aaru: its status came from an import and it has no tick made in Aaru. Derived on every read; the status stays `in_progress`. Library's Now leaves these out of Watching. */
+            inBacklog: boolean;
+            /**
+             * @description Every watched episode of a show, in order. Only on single-item responses (the item,
+             *     and episode and season writes); lists and sync leave it out.
+             */
+            watchedEpisodes?: components["schemas"]["EpisodeRef"][];
+        };
+        ChatCreated: {
+            /** Format: uuid */
+            id: string;
+        };
+        /** @description One chat in the caller's history. `title` is the start of its first question. */
+        ChatSummary: {
+            /** Format: uuid */
+            id: string;
+            title?: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        ChatList: {
+            items: components["schemas"]["ChatSummary"][];
+            page: components["schemas"]["PageInfo"];
+        };
+        Chat: {
+            /** Format: uuid */
+            id: string;
+            title?: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            turns: components["schemas"]["ChatTurn"][];
+        };
+        /** @description One stored turn. An agent turn's `components` are what its tools left, read again now: a title, plan or import that has since gone is left out. */
+        ChatTurn: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            role: "user" | "agent";
+            body: string;
+            /** @enum {string} */
+            state: "streaming" | "done" | "failed" | "stopped";
+            /** Format: date-time */
+            createdAt: string;
+            components?: components["schemas"]["ChatComponentsFrame"];
+        };
+        /** @description A list Aaru sent to be matched, as Aaru named it (ASK-011): the titles in their steps, before any is matched. It is shown in the reply; the import at `importId` is where it is reviewed and approved. A plain list is one step with no heading. */
+        ChatRoadmap: {
+            listName?: string;
+            steps: components["schemas"]["ChatRoadmapStep"][];
+        };
+        ChatRoadmapStep: {
+            heading?: string;
+            note?: string;
+            items: components["schemas"]["ChatRoadmapItem"][];
+        };
+        ChatRoadmapItem: {
+            title: string;
+            /** @enum {string} */
+            type: "movie" | "show" | "book" | "manga";
+            year?: number;
+            author?: string;
+            /** @description What to read or watch in it, such as issue numbers. */
+            note?: string;
+            optional?: boolean;
+            /** @description The same number on titles read or watched side by side. */
+            pair?: number;
+        };
+        ChatStatus: {
+            /** @description Aaru can answer. False hides the owl. */
+            assistant: boolean;
+            /** @description Spoken questions can be read. False hides the mic. */
+            voice: boolean;
+        };
+        /** @description Where the user is. A screen the server does not know and a title the catalog does not have are dropped. */
+        ChatHint: {
+            /** @description One of home, discover, library, calendar, lists, friends, groups, books, manga, music, sports, insights, title. */
+            screen: string;
+            /** Format: uuid */
+            titleId?: string;
+        };
+        ChatTurnRequest: {
+            /** @description The question. May be blank only when the turn carries attachments. */
+            body: string;
+            hint?: components["schemas"]["ChatHint"];
+            /** @description Files attached to this chat with createChatAttachment, sent with this turn. */
+            attachments?: string[];
+        };
+        /** @description One file in a chat (ASK-010). `kind` is what Aaru does with it: a picture, PDF or text is read with the question; an export or a listening history is read on Aaru's server, and Aaru can turn it into an import the user reviews. */
+        ChatAttachment: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            kind: "image" | "pdf" | "text" | "export" | "listens";
+            name: string;
+            /** @description Bytes. */
+            size: number;
+            /** @description What an export or a listening history is, as an import source (`letterboxd_csv`, `spotify_json`, …). */
+            source?: string;
+            /** @description An export's rows or a history's plays. */
+            rows?: number;
+            /** @description What the chip says, such as "a Letterboxd export of 412 rows". */
+            summary: string;
+        };
+        ChatTranscript: {
+            text: string;
+            /** @description The language the service detected. Empty when it did not say. */
+            language: string;
+        };
+        /** @description The data of a `status` frame (what Aaru is doing) or a `delta` frame (the next words of the answer). */
+        ChatTextFrame: {
+            text: string;
+        };
+        /** @description The data of a `components` frame, what the turn's tools left for the client. */
+        ChatComponentsFrame: {
+            titles?: components["schemas"]["TitleSummary"][];
+            plan?: components["schemas"]["AgentPlan"];
+            /**
+             * Format: uuid
+             * @description A list Aaru sent to be matched (BOOK-003), reviewed at `/v1/imports/{id}` like any capture.
+             */
+            importId?: string;
+            roadmap?: components["schemas"]["ChatRoadmap"];
+            /**
+             * Format: uuid
+             * @description A single change Aaru applied, undone at `/v1/actions/{id}/undo`.
+             */
+            actionId?: string;
+            actionSummary?: string;
+        };
+        /** @description The data of a `done` frame, the last of a turn that answered. */
+        ChatDoneFrame: {
+            /** Format: uuid */
+            turnId: string;
+        };
+        /** @description The data of an `error` frame, the last of a turn that did not answer. */
+        ChatErrorFrame: {
+            /** @enum {string} */
+            code: "resting" | "try_again";
+            message: string;
+        };
+        ChatExport: {
+            title?: string;
+            /** Format: date-time */
+            createdAt: string;
+            turns: components["schemas"]["ChatExportTurn"][];
+        };
+        ChatExportTurn: {
+            /** @enum {string} */
+            role: "user" | "agent";
+            body: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        AccountExport: {
+            /** Format: date-time */
+            exportedAt: string;
+            account: components["schemas"]["Me"];
+            /**
+             * Format: byte
+             * @description Your avatar (SOC-001b) as base64 JPEG. Absent without one.
+             */
+            avatarJpeg?: string;
+            /** @description Every library item; shows carry `watchedEpisodes`. */
+            library: components["schemas"]["LibraryEntry"][];
+            lists: {
+                name: string;
+                /** Format: date-time */
+                createdAt: string;
+                items: components["schemas"]["TitleSummary"][];
+            }[];
+            shelves: components["schemas"]["Shelf"][];
+            friends?: components["schemas"]["SocialUser"][];
+            blocked?: components["schemas"]["SocialUser"][];
+            groups?: {
+                name: string;
+                role: components["schemas"]["GroupRole"];
+            }[];
+            /** @description Messages you wrote in groups, oldest first. */
+            groupMessages?: {
+                group: string;
+                channel: string;
+                body: string;
+                /** Format: date-time */
+                createdAt: string;
+            }[];
+            /** @description Every listen in your listening log, newest first (MUS-005). */
+            listens?: components["schemas"]["Listen"][];
+            favorites?: components["schemas"]["Favorites"];
+            sports?: components["schemas"]["SportsExport"];
+            /** @description Your chats with Aaru, oldest first, with their turns. */
+            chats?: components["schemas"]["ChatExport"][];
+        };
+        LibraryPage: {
+            items: components["schemas"]["LibraryEntry"][];
+            page: components["schemas"]["PageInfo"];
+        };
+        LibrarySync: {
+            items: components["schemas"]["LibraryEntry"][];
+            deleted: string[];
+            token: string;
+        };
+        Action: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            actor: "user" | "agent" | "external_agent";
+            kind: string;
+            summary: string;
+            itemIds: string[];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            undoneAt?: string;
+            /** Format: uuid */
+            undoOf?: string;
+            /** @description The connected app that made it (an agent token's name); absent for your own writes. */
+            agentName?: string;
+        };
+        ActionList: {
+            items: components["schemas"]["Action"][];
+        };
+        ListSummary: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            itemCount: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        ListList: {
+            items: components["schemas"]["ListSummary"][];
+        };
+        ListDetail: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** @description Superseded by `items`; kept for clients that predate it. */
+            titles: components["schemas"]["TitleSummary"][];
+            /** @description The members in list order. */
+            items: components["schemas"]["ListItem"][];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            roadmap?: components["schemas"]["ListRoadmap"];
+        };
+        /** @description A list the owl planned in steps (GRAPH-003). Steps are in order; inside a step the list's own order decides. A member not named in any step was added by hand. `missing` are titles Aaru could not find, as the plan wrote them. */
+        ListRoadmap: {
+            steps: components["schemas"]["ListRoadmapStep"][];
+        };
+        ListRoadmapStep: {
+            heading: string;
+            note?: string;
+            missing?: string[];
+            items: components["schemas"]["ListRoadmapItem"][];
+        };
+        ListRoadmapItem: {
+            /** Format: uuid */
+            titleId: string;
+            note?: string;
+            optional?: boolean;
+            /** @description Titles with the same pair are read or watched side by side. */
+            pair?: number;
+        };
+        /** @description One list member. `entry` is the caller's library row when the title is in the library. Shows carry `showStatus` and `nextAiring` (the first episode not aired yet) once their episodes are loaded. */
+        ListItem: {
+            title: components["schemas"]["TitleSummary"];
+            entry?: components["schemas"]["LibraryEntry"];
+            /** @enum {string} */
+            showStatus?: "upcoming" | "returning" | "ended" | "canceled";
+            nextAiring?: components["schemas"]["UpcomingEpisode"];
+        };
+        Watching: {
+            items: components["schemas"]["WatchingItem"][];
+        };
+        /** @description One title in progress. Shows whose episodes are loaded carry `showStatus` and `nextAiring` (the first episode not aired yet); a show with an aired episode left to watch carries `nextName`, `nextRuntimeMinutes`, `remainingCount` and `remainingMinutes` (aired, unwatched, specials left out), as Up Next's ContinueEntry does. */
+        WatchingItem: {
+            entry: components["schemas"]["LibraryEntry"];
+            /** @enum {string} */
+            showStatus?: "upcoming" | "returning" | "ended" | "canceled";
+            nextAiring?: components["schemas"]["UpcomingEpisode"];
+            nextName?: string;
+            nextRuntimeMinutes?: number;
+            remainingCount?: number;
+            remainingMinutes?: number;
+        };
+        UpcomingEpisode: {
+            season: number;
+            number: number;
+            episodeName?: string;
+            /** Format: date-time */
+            airsAt: string;
+            /** @description False when the source gives only a date, as on CalendarEntry. */
+            airTimeKnown: boolean;
+        };
+        CreateList: {
+            name: string;
+        };
+        RenameList: {
+            name: string;
+        };
+        AddListItem: {
+            mediaRef: components["schemas"]["MediaRef"];
+        };
+        ListOrder: {
+            titleIds: string[];
+        };
+        /** @description The same filters GET /v1/library/items accepts. */
+        ShelfFilter: {
+            type?: components["schemas"]["MediaType"];
+            anime?: boolean;
+            status?: components["schemas"]["LibraryStatus"];
+            owned?: boolean;
+            /** Format: uuid */
+            list?: string;
+        };
+        Shelf: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            filter: components["schemas"]["ShelfFilter"];
+            isPinned: boolean;
+        };
+        ShelfList: {
+            items: components["schemas"]["Shelf"][];
+        };
+        CreateShelf: {
+            name: string;
+            filter: components["schemas"]["ShelfFilter"];
+            isPinned?: boolean;
+        };
+        UpdateShelf: {
+            name?: string;
+            filter?: components["schemas"]["ShelfFilter"];
+            isPinned?: boolean;
+        };
+        CalendarEntry: {
+            /** Format: uuid */
+            libraryItemId: string;
+            title: components["schemas"]["TitleSummary"];
+            season: number;
+            number: number;
+            episodeName?: string;
+            /** @description The episode's synopsis, when the catalog has one (TMDB; AniList has none). */
+            episodeOverview?: string;
+            /** @description The episode's still image (TMDB), when the catalog has one. */
+            stillUrl?: string;
+            /** Format: date-time */
+            airsAt: string;
+            /** @description False when the source gives only a date: airsAt is midnight UTC of that date, and clients show the day (taken in UTC) without a time. */
+            airTimeKnown: boolean;
+            runtimeMinutes?: number;
+            watched: boolean;
+            /** @enum {string} */
+            kind: "premiere" | "finale" | "regular";
+        };
+        Calendar: {
+            items: components["schemas"]["CalendarEntry"][];
+            /** @description Tracked shows whose episodes have not been loaded yet (CAL-004), as after an import. Their episodes are missing from `items` until they load; ask again while this is above 0. */
+            pendingShows?: number;
+        };
+        ContinueEntry: {
+            /** Format: uuid */
+            libraryItemId: string;
+            title: components["schemas"]["TitleSummary"];
+            next: components["schemas"]["EpisodeRef"];
+            nextName?: string;
+            nextRuntimeMinutes?: number;
+            /** @description Aired, unwatched episodes including the next one. Specials excluded. */
+            remainingCount: number;
+            remainingMinutes: number;
+            /** @description The next episode is the last of its season. */
+            isFinale: boolean;
+        };
+        StartEntry: {
+            /** Format: uuid */
+            libraryItemId: string;
+            title: components["schemas"]["TitleSummary"];
+            runtimeMinutes?: number;
+        };
+        TonightPick: {
+            /** Format: uuid */
+            libraryItemId: string;
+            title: components["schemas"]["TitleSummary"];
+            /**
+             * @description continue: the next aired episode of a show in progress. airing: an episode airing today. reading: a book in progress. start: a wishlist film.
+             * @enum {string}
+             */
+            kind: "continue" | "airing" | "reading" | "start";
+            episode?: components["schemas"]["EpisodeRef"];
+            episodeName?: string;
+            minutes?: number;
+            /** Format: date-time */
+            airsAt?: string;
+            airTimeKnown: boolean;
+            /** @description Why it is here, e.g. "52 min · 3 left" or "Airs 21:00 · 44 min". */
+            reason: string;
+        };
+        Tonight: {
+            /**
+             * Format: date
+             * @description The local day the strip is for.
+             */
+            day: string;
+            picks: components["schemas"]["TonightPick"][];
+        };
+        TonightFeedback: {
+            /** @enum {string} */
+            verdict: "rejected" | "not_tonight";
+        };
+        UpNext: {
+            continueWatching: components["schemas"]["ContinueEntry"][];
+            startWatching: components["schemas"]["StartEntry"][];
+            counts?: components["schemas"]["LibraryCounts"];
+            /** @description Unfinished business (UPN-002): every dropped item, and every in-progress item last changed 30 or more days ago that is not in `continueWatching`. Newest change first, at most 20. */
+            unfinished?: components["schemas"]["UnfinishedEntry"][];
+        };
+        /** @description The user's library items per status. */
+        LibraryCounts: {
+            wishlist: number;
+            inProgress: number;
+            onHold: number;
+            finished: number;
+            dropped: number;
+        };
+        UnfinishedEntry: {
+            /** Format: uuid */
+            libraryItemId: string;
+            title: components["schemas"]["TitleSummary"];
+            /**
+             * @description `dropped` is the status; `stalled` is in progress and untouched for 30 days.
+             * @enum {string}
+             */
+            reason: "dropped" | "stalled";
+            /**
+             * Format: date-time
+             * @description The item's last change.
+             */
+            since: string;
+            next?: components["schemas"]["EpisodeRef"];
+        };
+        /** @description `busiest` is the bucket with the most time (minutes, then episodes, then finishes). `mostEpisodes` is the bucket with the most episodes; it is absent when no episodes were watched or the top count is shared, so a tie names no winner. `prior` is the totals of the equal-length window just before a rolling span, for deltas; it is absent for calendar spans. `biggestDay` is the single local day with the most time (then episodes), the earliest on a tie. */
+        Stats: {
+            /** @enum {string} */
+            span: "month" | "year" | "all" | "last7" | "last30";
+            /** @description The last year the period touches; for `all`, the current year. */
+            year: number;
+            month?: number;
+            /** @description First day of a rolling span (YYYY-MM-DD); absent for calendar spans. */
+            from?: string;
+            /** @description Last day of a rolling span (YYYY-MM-DD, inclusive, today); absent for calendar spans. */
+            until?: string;
+            timeZone: string;
+            /** @description The period is not over yet in the user's time zone (always true for `all`). */
+            isPartial: boolean;
+            totals: components["schemas"]["StatsTotals"];
+            prior?: components["schemas"]["StatsTotals"];
+            /** @description Movie, show, anime and book, always, in that order; then album (MUS-001) and manga (MNG-001), each only when the period finished one. They sum to `totals`. */
+            byKind: components["schemas"]["StatsKind"][];
+            /** @description One per month of the year, one per day of the month or rolling span, or one per year (all time) from the first active year to this one, in order. */
+            buckets: components["schemas"]["StatsBucket"][];
+            busiest?: components["schemas"]["StatsBucket"];
+            mostEpisodes?: components["schemas"]["StatsBucket"];
+            longestRun?: components["schemas"]["StatsRun"];
+            /** @description Most time spent, at most five. */
+            topTitles: components["schemas"]["StatsTitle"][];
+            ratings: components["schemas"]["StatsRatings"];
+            first?: components["schemas"]["StatsMoment"];
+            last?: components["schemas"]["StatsMoment"];
+            /** @description GAM-006e: the three genres with the most time, from films, shows and anime (books have none). Empty until the titles' genres are stored. */
+            topGenres: components["schemas"]["StatsGenre"][];
+            biggestDay?: components["schemas"]["StatsBucket"];
+            /**
+             * @description GAM-006e: one word for the period from the user's own numbers, the first rule that holds: `binger` (a day of 6+ episodes or 14 days in a row), `bookworm` (books are most of 2+ finishes), `anime` (anime is most of the time), `completionist` (24+ finished), `explorer` (3+ kinds), else `steady`. Absent when nothing happened.
+             * @enum {string}
+             */
+            persona?: "binger" | "bookworm" | "anime" | "completionist" | "explorer" | "steady";
+            music?: components["schemas"]["StatsMusic"];
+        };
+        /** @description MUS-008: the period's listening, apart from the library's numbers (listening never adds to them). Absent when nothing was heard. */
+        StatsMusic: {
+            listens: number;
+            /** @description Listens whose length is known */
+            minutes: number;
+            /** @description The previous equal-length window; rolling spans only. */
+            priorListens?: number;
+            priorMinutes?: number;
+            topArtist?: {
+                artist: string;
+                count: number;
+                minutes: number;
+                coverUrl?: string;
+            };
+            /** @description The top artist's three most played tracks. */
+            topArtistTracks: {
+                track: string;
+                count: number;
+            }[];
+        };
+        ShowWatched: {
+            entry: components["schemas"]["LibraryEntry"];
+            /** @description Absent when every aired episode was already watched and nothing changed. */
+            action?: components["schemas"]["Action"];
+            /** @description Episodes this ticked. */
+            episodes: number;
+        };
+        ProfileStats: {
+            /** Format: date-time */
+            memberSince?: string;
+            episodesWatched: number;
+            /** @description Ticked episodes' runtime plus finished films' runtime. Books have no minutes. */
+            minutesWatched: number;
+            /** @description Page counts of finished books, where known. */
+            pagesRead: number;
+            shows: components["schemas"]["LibraryCounts"];
+            /** @description Anime counts here only, never again as a show or film. */
+            anime: components["schemas"]["LibraryCounts"];
+            movies: components["schemas"]["LibraryCounts"];
+            books: components["schemas"]["LibraryCounts"];
+            /** @description Movie, show, anime and book; `finished` is the finished count. */
+            byKind: components["schemas"]["StatsKind"][];
+            /** @description Up to eight genres by time, films, shows and anime only. */
+            topGenres: components["schemas"]["StatsGenre"][];
+            /** @description Up to five networks or services by time. */
+            topNetworks: components["schemas"]["StatsGenre"][];
+            /** @description Up to three titles with the most time. */
+            mostWatched: components["schemas"]["StatsTitle"][];
+            /** @description Every rated item, whatever its status. */
+            ratings: components["schemas"]["StatsRatings"];
+        };
+        StatsGenre: {
+            name: string;
+            minutes: number;
+            /** @description How many titles in the period carried this genre. */
+            titles: number;
+        };
+        /** @description One play of a track a scrobbler sent (MUS-005). Never a library item: listening does not change the library. */
+        Listen: {
+            id: string;
+            /**
+             * Format: date-time
+             * @description When the track started.
+             */
+            listenedAt: string;
+            artist: string;
+            track: string;
+            album?: string;
+            durationMs?: number;
+            /** @description The album's Cover Art Archive cover when Aaru knows the album. */
+            coverUrl?: string;
+            /** @description Where it played */
+            originUrl?: string;
+            /** @description The scrobbler, e.g. "Web Scrobbler". */
+            client?: string;
+            /** @description Where it was heard, e.g. "YouTube Music". */
+            musicService?: string;
+            /** @description The album once MusicBrainz identified it (MUS-006): by Aaru's title id when the album is in the catalog, always by its MusicBrainz id. Open or add it like a search hit. */
+            albumRef?: components["schemas"]["MediaRef"];
+        };
+        ListenPage: {
+            items: components["schemas"]["Listen"][];
+            /**
+             * Format: date-time
+             * @description Pass as `before` for the next page; absent on the last page.
+             */
+            next?: string;
+        };
+        ListenTop: {
+            /** @enum {string} */
+            by: "artist" | "track" | "album";
+            /** @enum {string} */
+            span: "month" | "year" | "all" | "last7" | "last30";
+            year: number;
+            month?: number;
+            timeZone: string;
+            /** @description Every listen in the period. */
+            listens: number;
+            /** @description Their length summed */
+            minutes: number;
+            items: {
+                artist: string;
+                /** @description Present when ranking tracks. */
+                track?: string;
+                /** @description Present when ranking albums. */
+                album?: string;
+                count: number;
+                minutes: number;
+                /** @description The cover of the newest identified album among the row's listens. */
+                coverUrl?: string;
+                /** @description Ranking tracks or albums: that album, by MusicBrainz id, and by Aaru's title id once it is in the catalog. */
+                albumRef?: components["schemas"]["MediaRef"];
+            }[];
+        };
+        StatsTotals: {
+            episodesWatched: number;
+            /** @description Episode runtimes plus finished movies. Books have no minutes. */
+            minutesWatched: number;
+            activeDays: number;
+            moviesFinished: number;
+            showsFinished: number;
+            /** @description Anime shows and films. Not counted again as shows or movies. */
+            animeFinished: number;
+            booksFinished: number;
+            /** @description MUS-001. Albums have no minutes. */
+            albumsFinished: number;
+            /** @description MNG-001. Manga has no minutes. */
+            mangaFinished?: number;
+        };
+        StatsKind: {
+            /**
+             * @description Anime is its own kind, films and shows alike; never counted again as either.
+             * @enum {string}
+             */
+            kind: "movie" | "show" | "anime" | "book" | "album" | "manga";
+            episodes: number;
+            minutes: number;
+            finished: number;
+        };
+        StatsBucket: {
+            /** @description First local day of the bucket, YYYY-MM-DD. */
+            start: string;
+            episodes: number;
+            minutes: number;
+            finished: number;
+        };
+        StatsRun: {
+            days: number;
+            /** @description YYYY-MM-DD */
+            start: string;
+            /** @description YYYY-MM-DD, inclusive. */
+            end: string;
+        };
+        StatsTitle: {
+            title: components["schemas"]["TitleSummary"];
+            episodes: number;
+            minutes: number;
+        };
+        StatsRatings: {
+            /** @description Titles finished in the period that have a rating. */
+            count: number;
+            mean?: number;
+            highest?: components["schemas"]["TitleSummary"];
+            highestRating?: number;
+            /** @description Ten counts of those ratings on the 1–10 scale. Index n holds ratings above n up to n + 1, so a half star rounds up: 7.5 counts as 8 (index 7), 1 is index 0, 10 is index 9. */
+            distribution: number[];
+        };
+        StatsMoment: {
+            title: components["schemas"]["TitleSummary"];
+            /** Format: date-time */
+            at: string;
+        };
+        Health: {
+            /** @enum {string} */
+            status: "ok" | "unavailable";
+        };
+    };
+    responses: {
+        /** @description Any error, in the shared shape. */
+        Error: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+    };
+    parameters: {
+        /** @description Opaque cursor from a previous page's `page.nextCursor`. */
+        Cursor: string;
+        Limit: number;
+    };
+    requestBodies: never;
+    headers: never;
+    pathItems: never;
 }
-export type $defs = Record<string, never>
+export type $defs = Record<string, never>;
 export interface operations {
-  getHealth: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The server is up and can reach its database. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['Health']
-        }
-      }
-      /** @description The server is up but a dependency is not reachable. */
-      503: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['Health']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  signInWithApple: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['AppleSignInRequest']
-      }
-    }
-    responses: {
-      /** @description Signed in. The token is shown once. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['Session']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  signInWithGoogle: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['GoogleSignInRequest']
-      }
-    }
-    responses: {
-      /** @description Signed in. The token is shown once. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['Session']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  linkGoogle: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['GoogleSignInRequest']
-      }
-    }
-    responses: {
-      /** @description Linked. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['Me']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  requestMagicLink: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['MagicLinkRequest']
-      }
-    }
-    responses: {
-      /** @description The link was sent (or would have been). */
-      202: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  verifyMagicLink: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['MagicLinkVerifyRequest']
-      }
-    }
-    responses: {
-      /** @description Signed in. The token is shown once. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['Session']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  signOut: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Signed out. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getMe: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The account. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['Me']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  deleteAccount: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Deleted. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getEntitlement: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The account's entitlement. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['Entitlement']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  recordAppleTransaction: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': {
-          /** @description StoreKit 2's `jwsRepresentation`. */
-          signedTransaction: string
-        }
-      }
-    }
-    responses: {
-      /** @description The entitlement after it. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['Entitlement']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  receiveAppleNotification: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': {
-          signedPayload: string
-        }
-      }
-    }
-    responses: {
-      /** @description Received. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  updateProfile: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ProfileUpdate']
-      }
-    }
-    responses: {
-      /** @description Your account. It carries every field `SocialUser` did, so apps from before SOC-001b read it unchanged. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['Me']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  uploadAvatar: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'image/jpeg': string
-      }
-    }
-    responses: {
-      /** @description Your account, with the new `avatarUrl`. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['Me']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  deleteAvatar: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Your account, without `avatarUrl`. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['Me']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getUserAvatar: {
-    parameters: {
-      query?: {
-        /** @description The avatar's version, for caches only. */
-        v?: number
-      }
-      header?: never
-      path: {
-        userId: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The JPEG, with `Cache-Control` for a week in a private cache. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'image/jpeg': string
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getMyFavorites: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Every kind, each in your order; an empty list for a kind with none. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['Favorites']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  setMyFavorites: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        kind: components['schemas']['FavoriteKind']
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['FavoritesUpdate']
-      }
-    }
-    responses: {
-      /** @description All your favorites after the change. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['Favorites']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  finishOnboarding: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['OnboardingFinish']
-      }
-    }
-    responses: {
-      /** @description Onboarding is over for this account. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getSocialUser: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        handle: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The user. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['SocialUserView']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  listFriendRequests: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Both directions. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['FriendRequests']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  sendFriendRequest: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['FriendRequestCreate']
-      }
-    }
-    responses: {
-      /** @description The user and where you now stand (outgoing or friend). */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['SocialUserView']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  withdrawFriendRequest: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Gone. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  acceptFriendRequest: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The new friend. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['SocialUser']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  listFriends: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description OK. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['SocialUserList']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  removeFriend: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        userId: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description No longer friends. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getSocialSettings: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Your settings. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['SocialSettings']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  updateSocialSettings: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['SocialSettings']
-      }
-    }
-    responses: {
-      /** @description Saved. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['SocialSettings']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getProgress: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Your progress. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['Progress']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  listBadges: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The catalog. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['BadgeList']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  markBadgesSeen: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': {
-          ids: string[]
-        }
-      }
-    }
-    responses: {
-      /** @description Seen. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  listPoints: {
-    parameters: {
-      query?: {
-        before?: string
-        /** @description 1–100, 50 unless asked. */
-        limit?: number
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description A page of the ledger. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['PointsPage']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getLeaderboard: {
-    parameters: {
-      query?: {
-        /** @description An ISO week such as `2026-W43`. Absent means this week in your zone. */
-        week?: string
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The board. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['Leaderboard']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getFriendProfile: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        userId: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The profile. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['FriendProfile']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  listFriendActivity: {
-    parameters: {
-      query?: {
-        /** @description The `nextBefore` of the previous page. */
-        before?: string
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description One page. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ActivityPage']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  setActivityReaction: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description An ActivityItem id. */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ReactionSet']
-      }
-    }
-    responses: {
-      /** @description Saved. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  clearActivityReaction: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description An ActivityItem id. */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Removed. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  recommendTitle: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['RecommendationCreate']
-      }
-    }
-    responses: {
-      /** @description Sent. A title already waiting for the same friend is not sent twice. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  listRecommendations: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description OK. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['RecommendationList']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  dismissRecommendation: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Dismissed. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  addRecommendation: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Added. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  listBlocks: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description OK. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['SocialUserList']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  blockUser: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        userId: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Blocked. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  unblockUser: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        userId: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Unblocked. Friendship does not come back. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  listFriendInvites: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description OK. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['FriendInviteList']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  createFriendInvite: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['FriendInviteCreate']
-      }
-    }
-    responses: {
-      /** @description The new link. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['FriendInvite']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  revokeFriendInvite: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        code: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Revoked. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  redeemFriendInvite: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        code: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['InviteRedeem']
-      }
-    }
-    responses: {
-      /** @description The new friend. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['InviteRedemption']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getInvitePreview: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        code: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Who sent it and the title it carries. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['InvitePreview']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  createShare: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ShareCreate']
-      }
-    }
-    responses: {
-      /** @description The link. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ShareLink']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getSharePreview: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        code: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The shared content. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['SharePreview']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  reportUser: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ReportCreate']
-      }
-    }
-    responses: {
-      /** @description Received. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  listGroups: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description OK. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['GroupList']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  createGroup: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['GroupCreate']
-      }
-    }
-    responses: {
-      /** @description The new group. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['GroupDetail']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getGroup: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        groupId: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description OK. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['GroupDetail']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  deleteGroup: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        groupId: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Gone. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  updateGroup: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        groupId: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['GroupCreate']
-      }
-    }
-    responses: {
-      /** @description The group. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['GroupDetail']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  removeGroupMember: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        groupId: string
-        userId: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Removed. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  updateGroupMember: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        groupId: string
-        userId: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['GroupMemberUpdate']
-      }
-    }
-    responses: {
-      /** @description Changed. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  transferGroup: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        groupId: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['UserRef']
-      }
-    }
-    responses: {
-      /** @description Transferred. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  inviteToGroup: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        groupId: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['UserRef']
-      }
-    }
-    responses: {
-      /** @description Invited. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  listGroupInvites: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description OK. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['GroupInviteList']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  declineGroupInvite: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Gone. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  acceptGroupInvite: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The group you joined. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['GroupSummary']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  createChannel: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        groupId: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ChannelCreate']
-      }
-    }
-    responses: {
-      /** @description The channel. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['Channel']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  deleteChannel: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        groupId: string
-        channelId: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Gone. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  updateChannel: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        groupId: string
-        channelId: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ChannelUpdate']
-      }
-    }
-    responses: {
-      /** @description The channel. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['Channel']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  listMessages: {
-    parameters: {
-      query?: {
-        /** @description Messages older than this one. */
-        before?: string
-        /** @description Messages newer than this one. */
-        after?: string
-        /** @description 1–100, default 50. */
-        limit?: number
-      }
-      header?: never
-      path: {
-        groupId: string
-        channelId: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description OK. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['GroupMessagePage']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  postMessage: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        groupId: string
-        channelId: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['MessageCreate']
-      }
-    }
-    responses: {
-      /** @description The message. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['GroupMessage']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  deleteMessage: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        groupId: string
-        channelId: string
-        messageId: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Deleted. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  editMessage: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        groupId: string
-        channelId: string
-        messageId: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['MessageUpdate']
-      }
-    }
-    responses: {
-      /** @description The message. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['GroupMessage']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  listBoard: {
-    parameters: {
-      query?: {
-        sort?: 'recent' | 'top'
-        /** @description Posts older than this one. Ignored by `top`. */
-        before?: string
-        /** @description 1–50, default 20. */
-        limit?: number
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description OK. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['BoardPostPage']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  createBoardPost: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['BoardPostCreate']
-      }
-    }
-    responses: {
-      /** @description The post. */
-      201: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['BoardPost']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getBoardPost: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        postId: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The post. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['BoardPost']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  deleteBoardPost: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        postId: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Deleted. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  editBoardPost: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        postId: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['BoardPostEdit']
-      }
-    }
-    responses: {
-      /** @description The post. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['BoardPost']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  upvoteBoardPost: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        postId: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Upvoted. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  removeBoardPostUpvote: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        postId: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Removed. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  listBoardPostUpvoters: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        postId: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The upvoters. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['SocialUserList']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  listBoardComments: {
-    parameters: {
-      query?: {
-        /** @description The id of the last comment seen. */
-        after?: string
-        limit?: number
-      }
-      header?: never
-      path: {
-        postId: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The comments. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['BoardCommentPage']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  createBoardComment: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        postId: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['BoardCommentCreate']
-      }
-    }
-    responses: {
-      /** @description The comment. */
-      201: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['BoardComment']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  deleteBoardComment: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        postId: string
-        commentId: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Deleted. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  markChannelRead: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        groupId: string
-        channelId: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ReadMark']
-      }
-    }
-    responses: {
-      /** @description Marked. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  createRealtimeTicket: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The ticket and the socket URL to open with it. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['RealtimeTicket']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  updateMyMembership: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        groupId: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['MembershipUpdate']
-      }
-    }
-    responses: {
-      /** @description OK. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['GroupSummary']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getChannelProgress: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        groupId: string
-        channelId: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description OK. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ChannelProgress']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  listChannelItems: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        groupId: string
-        channelId: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description OK. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ChannelItemList']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  addChannelItem: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        groupId: string
-        channelId: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ChannelItemCreate']
-      }
-    }
-    responses: {
-      /** @description The shelf. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ChannelItemList']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  removeChannelItem: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        groupId: string
-        channelId: string
-        titleId: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Removed. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getWatchParty: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        groupId: string
-        channelId: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description OK. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['WatchPartyView']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  openWatchParty: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        groupId: string
-        channelId: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['WatchPartyCreate']
-      }
-    }
-    responses: {
-      /** @description OK. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['WatchPartyView']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  setWatchPartyReady: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        groupId: string
-        channelId: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['WatchPartyReady']
-      }
-    }
-    responses: {
-      /** @description OK. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['WatchPartyView']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  startWatchParty: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        groupId: string
-        channelId: string
-      }
-      cookie?: never
-    }
-    requestBody?: {
-      content: {
-        'application/json': components['schemas']['WatchPartyStart']
-      }
-    }
-    responses: {
-      /** @description OK. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['WatchPartyView']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  endWatchParty: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        groupId: string
-        channelId: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description OK. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['WatchPartyView']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  markWatchPartyWatched: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        groupId: string
-        channelId: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Marked. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  registerDevice: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['DeviceRegistration']
-      }
-    }
-    responses: {
-      /** @description Registered. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  unregisterDevice: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        token: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Forgotten. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  registerLiveActivityToken: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['LiveActivityRegistration']
-      }
-    }
-    responses: {
-      /** @description Registered. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getWebPushKey: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The key. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['WebPushKey']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  saveWebPushSubscription: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['WebPushSubscription']
-      }
-    }
-    responses: {
-      /** @description Saved. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  deleteWebPushSubscription: {
-    parameters: {
-      query: {
-        endpoint: string
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Forgotten. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  listAgentTokens: {
-    parameters: {
-      query?: {
-        /** @description Which surface's tokens: the Stremio addon, MCP clients, the browser extension (`scrobble`), or music scrobblers (`music`). Defaults to `stremio`, so Apple builds that only know the Stremio kind never see another kind. */
-        for?: 'stremio' | 'mcp' | 'scrobble' | 'music'
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Live tokens. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': {
-            items: components['schemas']['AgentToken'][]
-          }
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  createAgentToken: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['AgentTokenCreate']
-      }
-    }
-    responses: {
-      /** @description Minted. */
-      201: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['AgentTokenCreated']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  listPlans: {
-    parameters: {
-      query?: {
-        /** @description `pending` (default) leaves out decided and expired plans. */
-        status?: 'pending' | 'all'
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Plans. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': {
-            items: components['schemas']['AgentPlan'][]
-          }
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getPlan: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The plan. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['AgentPlan']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  approvePlan: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Applied. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': {
-            plan: components['schemas']['AgentPlan']
-            action: components['schemas']['Action']
-          }
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  denyPlan: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Denied. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['AgentPlan']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getOAuthRequest: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The request. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['OAuthConsentRequest']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  approveOAuthRequest: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': {
-          binding: string
-          name?: string
-          allowLibraryWrites?: boolean
-        }
-      }
-    }
-    responses: {
-      /** @description Send the browser here. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['OAuthRedirect']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  denyOAuthRequest: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': {
-          binding: string
-        }
-      }
-    }
-    responses: {
-      /** @description Send the browser here. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['OAuthRedirect']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getAgentSetup: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        kind: components['schemas']['AgentMCPKind']
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The client's setup. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['AgentSetup']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  revokeAgentToken: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Revoked. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getNotificationSettings: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The user's notification choices. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['NotificationSettings']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  updateNotificationSettings: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['NotificationSettingsUpdate']
-      }
-    }
-    responses: {
-      /** @description Saved. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['NotificationSettings']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getProfileStats: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The profile's stats. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ProfileStats']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getStats: {
-    parameters: {
-      query?: {
-        /** @description Required unless `span` is sent. */
-        year?: number
-        /** @description `all` is all time: every year from the first active one through the current year, one bucket per year, so its totals equal the years' summed. `last7` and `last30` are the 7 or 30 days ending today, one bucket per day, with `prior` holding the window just before. A span takes no `year` or `month` (422 otherwise). */
-        span?: 'all' | 'last7' | 'last30'
-        /** @description 1–12. Absent means the whole year. */
-        month?: number
-        /** @description IANA time zone for day and month boundaries. Absent means UTC. */
-        tz?: string
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The period's stats. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['Stats']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getNowPlaying: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description What plays, if anything. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['NowPlayingReply']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  listListens: {
-    parameters: {
-      query?: {
-        /** @description Only listens that started before this time; the previous page's `next`. */
-        before?: string
-        /** @description 1–100, default 20. */
-        limit?: number
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description A page of listens. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ListenPage']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getTopListens: {
-    parameters: {
-      query: {
-        by: 'artist' | 'track' | 'album'
-        /** @description Required unless `span` is sent. */
-        year?: number
-        span?: 'all' | 'last7' | 'last30'
-        /** @description 1–12. Absent means the whole year. */
-        month?: number
-        /** @description IANA time zone for day and month boundaries. Absent means UTC. */
-        tz?: string
-        /** @description 1–50, default 10. */
-        limit?: number
-        /** @description Only this artist's listens, compared case- and space-folded (MUS-008). */
-        artist?: string
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The period's top list. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ListenTop']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  searchCatalog: {
-    parameters: {
-      query: {
-        q: string
-        /** @description `all` searches films, shows and anime together (TMDB and AniList in parallel, merged; books and albums are never included); `anime` searches AniList; `movie`/`show` TMDB; `book` Open Library; `album` MusicBrainz (albums and EPs, MUS-001); `manga` AniList (MNG-001; empty and incomplete while AniList is down). */
-        type: 'all' | 'movie' | 'show' | 'anime' | 'book' | 'album' | 'manga'
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Matches, best first. With `all`, exact title matches lead, then TMDB and AniList hits alternate, at most 40; a TMDB show is left out only when an AniList hit in the same results is mapped to it, and that hit then carries `ids.tmdb`. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['SearchResults']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getDiscover: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Rows in display order. Empty rows are left out. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['DiscoverRows']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getOnboardingRows: {
-    parameters: {
-      query: {
-        kind: components['schemas']['DiscoverRowKind']
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Rows in display order. Empty rows are left out. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['DiscoverRows']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  addOnboardingPicks: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['OnboardingPicks']
-      }
-    }
-    responses: {
-      /** @description The library items, in the order sent. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['OnboardingPicked']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getOnboardingRelated: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['OnboardingRelatedRequest']
-      }
-    }
-    responses: {
-      /** @description The related titles. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['OnboardingRelated']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getDiscoverSeason: {
-    parameters: {
-      query: {
-        kind: 'anime' | 'shows_new' | 'shows_returning' | 'movies'
-        season: 'winter' | 'spring' | 'summer' | 'fall'
-        /** @description 1970 to next year; anything else is 422 `validation_failed`. */
-        year: number
-        /** @description 1-based, at most 20. */
-        page?: number
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The page. `unavailable` when the provider is down and nothing is cached. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['SeasonPage']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getDiscoverOnAir: {
-    parameters: {
-      query?: {
-        /** @description ISO 3166-1 alpha-2, e.g. `US`, `PT`, from the device's language settings. Used for this request only and never stored. Anything but two letters is 422 `validation_failed`. */
-        region?: string
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The guide. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['DiscoverOnAir']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getConcertsNear: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ConcertsNearRequest']
-      }
-    }
-    responses: {
-      /** @description The page. `unavailable` when concerts are off or the provider is down. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ConcertPage']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  searchConcerts: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ConcertSearchRequest']
-      }
-    }
-    responses: {
-      /** @description The page. `unavailable` when concerts are off or the provider is down. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ConcertSearchPage']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  searchConcertPerformers: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ConcertPerformerRequest']
-      }
-    }
-    responses: {
-      /** @description The performers. `unavailable` when concerts are off or the provider is down. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ConcertPerformerList']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getArtistConcerts: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The concerts. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ArtistConcerts']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  searchConcertPlaces: {
-    parameters: {
-      query: {
-        /** @description 2 to 100 characters. Not logged. */
-        q: string
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Up to eight places, best first. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ConcertPlaceList']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getConcertPlace: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The setting. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ConcertPlaceSetting']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  saveConcertPlace: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ConcertPlace']
-      }
-    }
-    responses: {
-      /** @description Saved. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ConcertPlaceSetting']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  deleteConcertPlace: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Removed, or there was none. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getSportSuggestions: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The picks. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['SportEntityList']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  searchSports: {
-    parameters: {
-      query: {
-        /** @description 2 to 100 characters. */
-        q: string
-        /** @description Absent searches all three. */
-        kind?: components['schemas']['SportEntityKind']
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Up to ten of each kind, leagues first. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['SportEntityList']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getSportFavorites: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The favorites, in follow order. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['SportFavorites']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getSportSchedule: {
-    parameters: {
-      query: {
-        /** @description The local day, YYYY-MM-DD. */
-        date: string
-        /** @description The IANA time zone the day is in. Default UTC. */
-        tz?: string
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The day, grouped by league. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['SportSchedule']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getSportEvent: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The event. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['SportEventDetail']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  listSportFollows: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The follows. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['SportFollowList']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  followSport: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        kind: components['schemas']['SportEntityKind']
-        providerId: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Followed. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['SportEntity']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  unfollowSport: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        kind: components['schemas']['SportEntityKind']
-        providerId: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Not followed any more, or never was. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getSportSettings: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The settings. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['SportSettings']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  saveSportSettings: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['SportSettingsInput']
-      }
-    }
-    responses: {
-      /** @description Saved. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['SportSettings']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  resolveTitle: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['MediaRef']
-      }
-    }
-    responses: {
-      /** @description The title, and the caller's library item when they have it. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['TitlePreview']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getTitle: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The title. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['TitleDetail']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getTitleRelations: {
-    parameters: {
-      query?: {
-        /** @description `release` (default) or `story`. Story order needs numbered series in the data; when `storyOrderAvailable` is false the graph comes back in release order. */
-        order?: components['schemas']['RelationOrder']
-      }
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The graph. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['RelationGraph']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  planRelationChain: {
-    parameters: {
-      query?: {
-        order?: components['schemas']['RelationOrder']
-      }
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Queued for review. */
-      202: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ImportJob']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  listTitlePosts: {
-    parameters: {
-      query?: {
-        /** @description 1–50, default 20. */
-        limit?: number
-      }
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description OK. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['BoardPostPage']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  listWatching: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The titles in progress. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['Watching']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  listLibraryItems: {
-    parameters: {
-      query?: {
-        type?: components['schemas']['MediaType']
-        anime?: boolean
-        status?: components['schemas']['LibraryStatus']
-        owned?: boolean
-        list?: string
-        /** @description Opaque cursor from a previous page's `page.nextCursor`. */
-        cursor?: components['parameters']['Cursor']
-        limit?: components['parameters']['Limit']
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description One page. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['LibraryPage']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  addLibraryItem: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['AddLibraryItem']
-      }
-    }
-    responses: {
-      /** @description The item. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['LibraryEntry']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getLibraryItem: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The item. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['LibraryEntry']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  deleteLibraryItem: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Removed. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  updateLibraryItem: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['LibraryItemPatch']
-      }
-    }
-    responses: {
-      /** @description The updated item. */
-      200: {
-        headers: {
-          /** @description The journaled action this write made, for `POST /v1/actions/{id}/undo`. Absent when the patch changed nothing. */
-          'Aaru-Action'?: string
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['LibraryEntry']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  setEpisodeWatched: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-        season: number
-        episode: number
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['EpisodeWatched']
-      }
-    }
-    responses: {
-      /** @description The item with updated progress. */
-      200: {
-        headers: {
-          /** @description The journaled action this write made, for `POST /v1/actions/{id}/undo`. */
-          'Aaru-Action'?: string
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['LibraryEntry']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  markSeasonWatched: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-        season: number
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The item with updated progress. */
-      200: {
-        headers: {
-          /** @description The journaled action this write made, for `POST /v1/actions/{id}/undo`. */
-          'Aaru-Action'?: string
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['LibraryEntry']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  markShowWatched: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The item, the action to undo it with, and how many episodes it ticked. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ShowWatched']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  syncLibrary: {
-    parameters: {
-      query?: {
-        since?: string
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The changes and the token for next time. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['LibrarySync']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  listActions: {
-    parameters: {
-      query?: {
-        limit?: components['parameters']['Limit']
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Actions. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ActionList']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  undoAction: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The undo, as an action. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['Action']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  listLists: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description OK. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ListList']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  createList: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['CreateList']
-      }
-    }
-    responses: {
-      /** @description The new list. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ListDetail']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getList: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description OK. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ListDetail']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  deleteList: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Deleted. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  renameList: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['RenameList']
-      }
-    }
-    responses: {
-      /** @description OK. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ListDetail']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getListGraph: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description OK. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['RelationGraph']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  addListItem: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['AddListItem']
-      }
-    }
-    responses: {
-      /** @description OK. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ListDetail']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  removeListItem: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-        titleId: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description OK. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ListDetail']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  reorderList: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ListOrder']
-      }
-    }
-    responses: {
-      /** @description OK. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ListDetail']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  listImports: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Up to 50 imports. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ImportList']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  listChats: {
-    parameters: {
-      query?: {
-        /** @description Opaque cursor from a previous page's `page.nextCursor`. */
-        cursor?: components['parameters']['Cursor']
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description One page of chats. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ChatList']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  createChat: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The new chat. */
-      201: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ChatCreated']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  deleteChats: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Deleted. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getChatStatus: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description What is on. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ChatStatus']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  transcribeChatAudio: {
-    parameters: {
-      query?: never
-      header?: {
-        /** @description How long the recording is, as the client measured it. */
-        'X-Audio-Seconds'?: number
-      }
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/octet-stream': string
-        'audio/*': string
-      }
-    }
-    responses: {
-      /** @description What was said. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ChatTranscript']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getChat: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The chat. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['Chat']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  deleteChat: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Deleted, or already gone. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  createChatTurn: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ChatTurnRequest']
-      }
-    }
-    responses: {
-      /** @description The answer, as it is written. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'text/event-stream': string
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  createChatAttachment: {
-    parameters: {
-      query?: {
-        /** @description The file's name, shown on its chip and checked against its bytes. Empty for pasted text. */
-        filename?: string
-      }
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/octet-stream': string
-        '*/*': string
-      }
-    }
-    responses: {
-      /** @description The file, as the chat will use it. */
-      201: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ChatAttachment']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  deleteChatAttachment: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-        attachmentId: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Removed, or already gone. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  exportAccount: {
-    parameters: {
-      query?: {
-        format?: 'json' | 'csv'
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The export, as a download. */
-      200: {
-        headers: {
-          'Content-Disposition'?: string
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['AccountExport']
-          'text/csv': string
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  createCSVImport: {
-    parameters: {
-      query: {
-        /** @description `auto` detects the format: MyAnimeList-format XML, anime or manga (also exported by Kitsu and AniList), an IMDb, Letterboxd, Netflix viewing activity, TV Time or Goodreads CSV, or any other CSV read by its column names (`csv`); for an `application/octet-stream` body, Spotify's extended streaming history or Google Takeout's YouTube watch history. `spotify` and `youtube` are listening history (MUS-004): their plays go to the listening log, never the library, and the job's stats count new listens (`created`), listens already in the log (`skipped`) and plays left out (`ignored`). `tvtime` takes one CSV from TV Time's export at a time: `tvtime-series-episodes.csv`, `tvtime-series.csv` or `tvtime-movies.csv` (Export my data), or `tracking-prod-records-v2.csv`, `tracking-prod-records.csv`, `followed_tv_show.csv` or `seen_episode.csv` (GDPR export). */
-        source:
-          | 'auto'
-          | 'imdb'
-          | 'letterboxd'
-          | 'netflix'
-          | 'tvtime'
-          | 'goodreads'
-          | 'mal'
-          | 'csv'
-          | 'spotify'
-          | 'youtube'
-        /** @description The file's name. Letterboxd's watchlist export is told apart by it. */
-        filename?: string
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'text/csv': string
-        'application/xml': string
-        'application/octet-stream': string
-      }
-    }
-    responses: {
-      /** @description Queued for matching. */
-      202: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ImportJob']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  createCATImport: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'text/plain': string
-        'text/calendar': string
-      }
-    }
-    responses: {
-      /** @description Queued for matching. */
-      202: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ImportJob']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  createCATFeedImport: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': {
-          /** @description The iCal link from CAT. */
-          url: string
-        }
-      }
-    }
-    responses: {
-      /** @description Queued for matching. */
-      202: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ImportJob']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  createCaptureImport: {
-    parameters: {
-      query?: {
-        /** @description Read this kind only (BOOK-001). A link names its own kind. */
-        kind?: 'book'
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': {
-          text?: string
-          url?: string
-        }
-        'multipart/form-data': {
-          image?: string[]
-        }
-        'image/jpeg': string
-        'image/png': string
-        'image/gif': string
-        'image/webp': string
-      }
-    }
-    responses: {
-      /** @description Queued for reading and matching. */
-      202: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ImportJob']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  createAniListImport: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': {
-          /** @description AniList username: 2–20 letters, digits or underscores. */
-          username: string
-        }
-      }
-    }
-    responses: {
-      /** @description Queued. */
-      202: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ImportJob']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  createLastFMImport: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ListenAccount']
-      }
-    }
-    responses: {
-      /** @description Queued. */
-      202: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ImportJob']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  createListenBrainzImport: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ListenAccount']
-      }
-    }
-    responses: {
-      /** @description Queued. */
-      202: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ImportJob']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  startStremioLink: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description A code to approve. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['StremioLink']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  pollStremioLink: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        code: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Approved. The library was read and its import queued. */
-      202: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ImportJob']
-        }
-      }
-      /** @description Not approved yet. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  createTraktImport: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Queued. */
-      202: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ImportJob']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  connectTrakt: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['TraktConnectRequest']
-      }
-    }
-    responses: {
-      /** @description Where to send the browser. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['TraktConnectStart']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getTraktConnection: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Whether Trakt is connected. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['TraktConnection']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  disconnectTrakt: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Disconnected. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  connectMAL: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['MALConnectRequest']
-      }
-    }
-    responses: {
-      /** @description Where to send the browser. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['MALConnectStart']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getMALConnection: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Whether MyAnimeList is connected, and whether it must be connected again. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['MALConnection']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  disconnectMAL: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Disconnected. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  requestMALPull: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Asked, or not needed. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getImport: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The import. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ImportDetail']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  deleteImport: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Discarded. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  applyImport: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Applied. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ImportJob']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  undoListenImport: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Undone. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  matchAllImportRows: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Saved. The job's counts, the rows this call changed, and how many are left to try. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': {
-            job: components['schemas']['ImportJob']
-            rows: components['schemas']['ImportRow'][]
-            remaining: number
-          }
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  leaveOutImportRow: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-        index: number
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': {
-          leftOut: boolean
-        }
-      }
-    }
-    responses: {
-      /** @description Saved. The job's counts and the row as it now stands. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': {
-            job: components['schemas']['ImportJob']
-            row: components['schemas']['ImportRow']
-          }
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  resolveImportRow: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-        index: number
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': {
-          mediaRef: components['schemas']['MediaRef']
-        }
-      }
-    }
-    responses: {
-      /** @description Matched. The job's counts and the row as it now stands. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': {
-            job: components['schemas']['ImportJob']
-            row: components['schemas']['ImportRow']
-          }
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  listShelves: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description OK. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ShelfList']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  createShelf: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['CreateShelf']
-      }
-    }
-    responses: {
-      /** @description The new shelf. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['Shelf']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  deleteShelf: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Deleted. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  updateShelf: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['UpdateShelf']
-      }
-    }
-    responses: {
-      /** @description OK. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['Shelf']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  listShelfItems: {
-    parameters: {
-      query?: {
-        /** @description Opaque cursor from a previous page's `page.nextCursor`. */
-        cursor?: components['parameters']['Cursor']
-        limit?: components['parameters']['Limit']
-      }
-      header?: never
-      path: {
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description OK. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['LibraryPage']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getCalendar: {
-    parameters: {
-      query: {
-        from: string
-        to: string
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Episodes, by air time. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['Calendar']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getUpNext: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The home rows. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['UpNext']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  getTonight: {
-    parameters: {
-      query?: {
-        /** @description IANA time zone for "today" and air times. Absent means UTC. */
-        tz?: string
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The strip for the local day. */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['Tonight']
-        }
-      }
-      default: components['responses']['Error']
-    }
-  }
-  sendTonightFeedback: {
-    parameters: {
-      query?: {
-        /** @description IANA time zone for the local day. Absent means UTC. */
-        tz?: string
-      }
-      header?: never
-      path: {
-        /** @description The library item. */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['TonightFeedback']
-      }
-    }
-    responses: {
-      /** @description Recorded. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
-  clearTonightFeedback: {
-    parameters: {
-      query?: {
-        /** @description IANA time zone for the local day. Absent means UTC. */
-        tz?: string
-      }
-      header?: never
-      path: {
-        /** @description The library item. */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Cleared. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      default: components['responses']['Error']
-    }
-  }
+    getHealth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The server is up and can reach its database. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Health"];
+                };
+            };
+            /** @description The server is up but a dependency is not reachable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Health"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    signInWithApple: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AppleSignInRequest"];
+            };
+        };
+        responses: {
+            /** @description Signed in. The token is shown once. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Session"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    signInWithGoogle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoogleSignInRequest"];
+            };
+        };
+        responses: {
+            /** @description Signed in. The token is shown once. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Session"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    linkGoogle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoogleSignInRequest"];
+            };
+        };
+        responses: {
+            /** @description Linked. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Me"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    requestMagicLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MagicLinkRequest"];
+            };
+        };
+        responses: {
+            /** @description The link was sent (or would have been). */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    verifyMagicLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MagicLinkVerifyRequest"];
+            };
+        };
+        responses: {
+            /** @description Signed in. The token is shown once. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Session"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    signOut: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Signed out. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    signOutOtherDevices: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every other session is ended. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Error"];
+            default: components["responses"]["Error"];
+        };
+    };
+    getMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The account. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Me"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The session is older than 10 minutes (`reauth_required`). Nothing was deleted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getEntitlement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The account's entitlement. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Entitlement"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    recordAppleTransaction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description StoreKit 2's `jwsRepresentation`. */
+                    signedTransaction: string;
+                };
+            };
+        };
+        responses: {
+            /** @description The entitlement after it. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Entitlement"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    receiveAppleNotification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    signedPayload: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Received. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    updateProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileUpdate"];
+            };
+        };
+        responses: {
+            /** @description Your account. It carries every field `SocialUser` did, so apps from before SOC-001b read it unchanged. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Me"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    uploadAvatar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "image/jpeg": string;
+            };
+        };
+        responses: {
+            /** @description Your account, with the new `avatarUrl`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Me"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteAvatar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Your account, without `avatarUrl`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Me"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getUserAvatar: {
+        parameters: {
+            query?: {
+                /** @description The avatar's version, for caches only. */
+                v?: number;
+            };
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The JPEG, with `Cache-Control` for a week in a private cache. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getMyFavorites: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every kind, each in your order; an empty list for a kind with none. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Favorites"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    setMyFavorites: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kind: components["schemas"]["FavoriteKind"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FavoritesUpdate"];
+            };
+        };
+        responses: {
+            /** @description All your favorites after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Favorites"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    finishOnboarding: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OnboardingFinish"];
+            };
+        };
+        responses: {
+            /** @description Onboarding is over for this account. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getSocialUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                handle: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The user. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SocialUserView"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listFriendRequests: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Both directions. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FriendRequests"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    sendFriendRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FriendRequestCreate"];
+            };
+        };
+        responses: {
+            /** @description The user and where you now stand (outgoing or friend). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SocialUserView"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    withdrawFriendRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Gone. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    acceptFriendRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The new friend. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SocialUser"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listFriends: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SocialUserList"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    removeFriend: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No longer friends. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getSocialSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Your settings. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SocialSettings"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    updateSocialSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SocialSettings"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SocialSettings"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getProgress: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Your progress. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Progress"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listBadges: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The catalog. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BadgeList"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    markBadgesSeen: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    ids: string[];
+                };
+            };
+        };
+        responses: {
+            /** @description Seen. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listPoints: {
+        parameters: {
+            query?: {
+                before?: string;
+                /** @description 1–100, 50 unless asked. */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of the ledger. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PointsPage"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getLeaderboard: {
+        parameters: {
+            query?: {
+                /** @description An ISO week such as `2026-W43`. Absent means this week in your zone. */
+                week?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The board. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Leaderboard"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getFriendProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The profile. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FriendProfile"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listFriendActivity: {
+        parameters: {
+            query?: {
+                /** @description The `nextBefore` of the previous page. */
+                before?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One page. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityPage"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    setActivityReaction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description An ActivityItem id. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReactionSet"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    clearActivityReaction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description An ActivityItem id. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removed. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    recommendTitle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecommendationCreate"];
+            };
+        };
+        responses: {
+            /** @description Sent. A title already waiting for the same friend is not sent twice. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listRecommendations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecommendationList"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    dismissRecommendation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Dismissed. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    addRecommendation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Added. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listBlocks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SocialUserList"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    blockUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Blocked. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    unblockUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Unblocked. Friendship does not come back. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listFriendInvites: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FriendInviteList"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    createFriendInvite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FriendInviteCreate"];
+            };
+        };
+        responses: {
+            /** @description The new link. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FriendInvite"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    revokeFriendInvite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Revoked. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    redeemFriendInvite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InviteRedeem"];
+            };
+        };
+        responses: {
+            /** @description The new friend. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InviteRedemption"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getInvitePreview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Who sent it and the title it carries. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvitePreview"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    createShare: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShareCreate"];
+            };
+        };
+        responses: {
+            /** @description The link. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShareLink"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getSharePreview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The shared content. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SharePreview"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    reportUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportCreate"];
+            };
+        };
+        responses: {
+            /** @description Received. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listGroups: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupList"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    createGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GroupCreate"];
+            };
+        };
+        responses: {
+            /** @description The new group. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupDetail"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupDetail"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Gone. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    updateGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GroupCreate"];
+            };
+        };
+        responses: {
+            /** @description The group. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupDetail"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    removeGroupMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removed. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    updateGroupMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GroupMemberUpdate"];
+            };
+        };
+        responses: {
+            /** @description Changed. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    transferGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserRef"];
+            };
+        };
+        responses: {
+            /** @description Transferred. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    inviteToGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserRef"];
+            };
+        };
+        responses: {
+            /** @description Invited. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listGroupInvites: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupInviteList"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    declineGroupInvite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Gone. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    acceptGroupInvite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The group you joined. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupSummary"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    createChannel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChannelCreate"];
+            };
+        };
+        responses: {
+            /** @description The channel. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Channel"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteChannel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+                channelId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Gone. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    updateChannel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+                channelId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChannelUpdate"];
+            };
+        };
+        responses: {
+            /** @description The channel. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Channel"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listMessages: {
+        parameters: {
+            query?: {
+                /** @description Messages older than this one. */
+                before?: string;
+                /** @description Messages newer than this one. */
+                after?: string;
+                /** @description 1–100, default 50. */
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                groupId: string;
+                channelId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupMessagePage"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    postMessage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+                channelId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MessageCreate"];
+            };
+        };
+        responses: {
+            /** @description The message. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupMessage"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteMessage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+                channelId: string;
+                messageId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    editMessage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+                channelId: string;
+                messageId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MessageUpdate"];
+            };
+        };
+        responses: {
+            /** @description The message. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupMessage"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listBoard: {
+        parameters: {
+            query?: {
+                sort?: "recent" | "top";
+                /** @description Posts older than this one. Ignored by `top`. */
+                before?: string;
+                /** @description 1–50, default 20. */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BoardPostPage"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    createBoardPost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BoardPostCreate"];
+            };
+        };
+        responses: {
+            /** @description The post. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BoardPost"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getBoardPost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The post. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BoardPost"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteBoardPost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    editBoardPost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BoardPostEdit"];
+            };
+        };
+        responses: {
+            /** @description The post. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BoardPost"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    upvoteBoardPost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Upvoted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    removeBoardPostUpvote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removed. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listBoardPostUpvoters: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The upvoters. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SocialUserList"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listBoardComments: {
+        parameters: {
+            query?: {
+                /** @description The id of the last comment seen. */
+                after?: string;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                postId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The comments. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BoardCommentPage"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    createBoardComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BoardCommentCreate"];
+            };
+        };
+        responses: {
+            /** @description The comment. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BoardComment"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteBoardComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postId: string;
+                commentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    markChannelRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+                channelId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReadMark"];
+            };
+        };
+        responses: {
+            /** @description Marked. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    createRealtimeTicket: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The ticket and the socket URL to open with it. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RealtimeTicket"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    updateMyMembership: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MembershipUpdate"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupSummary"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getChannelProgress: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+                channelId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChannelProgress"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listChannelItems: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+                channelId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChannelItemList"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    addChannelItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+                channelId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChannelItemCreate"];
+            };
+        };
+        responses: {
+            /** @description The shelf. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChannelItemList"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    removeChannelItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+                channelId: string;
+                titleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removed. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getWatchParty: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+                channelId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WatchPartyView"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    openWatchParty: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+                channelId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WatchPartyCreate"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WatchPartyView"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    setWatchPartyReady: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+                channelId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WatchPartyReady"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WatchPartyView"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    startWatchParty: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+                channelId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["WatchPartyStart"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WatchPartyView"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    endWatchParty: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+                channelId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WatchPartyView"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    markWatchPartyWatched: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+                channelId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Marked. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    registerDevice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeviceRegistration"];
+            };
+        };
+        responses: {
+            /** @description Registered. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    unregisterDevice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Forgotten. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    registerLiveActivityToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LiveActivityRegistration"];
+            };
+        };
+        responses: {
+            /** @description Registered. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getWebPushKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The key. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebPushKey"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    saveWebPushSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WebPushSubscription"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteWebPushSubscription: {
+        parameters: {
+            query: {
+                endpoint: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Forgotten. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listAgentTokens: {
+        parameters: {
+            query?: {
+                /** @description Which surface's tokens: the Stremio addon, MCP clients, the browser extension (`scrobble`), or music scrobblers (`music`). Defaults to `stremio`, so Apple builds that only know the Stremio kind never see another kind. */
+                for?: "stremio" | "mcp" | "scrobble" | "music";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Live tokens. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["AgentToken"][];
+                    };
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    createAgentToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgentTokenCreate"];
+            };
+        };
+        responses: {
+            /** @description Minted. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentTokenCreated"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listPlans: {
+        parameters: {
+            query?: {
+                /** @description `pending` (default) leaves out decided and expired plans. */
+                status?: "pending" | "all";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Plans. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["AgentPlan"][];
+                    };
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The plan. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentPlan"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    approvePlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Applied. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        plan: components["schemas"]["AgentPlan"];
+                        action: components["schemas"]["Action"];
+                    };
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    denyPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Denied. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentPlan"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getOAuthRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The request. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OAuthConsentRequest"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    approveOAuthRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    binding: string;
+                    name?: string;
+                    allowLibraryWrites?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Send the browser here. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OAuthRedirect"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    denyOAuthRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    binding: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Send the browser here. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OAuthRedirect"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getAgentSetup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kind: components["schemas"]["AgentMCPKind"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The client's setup. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentSetup"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    revokeAgentToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Revoked. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getNotificationSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The user's notification choices. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationSettings"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    updateNotificationSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotificationSettingsUpdate"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationSettings"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getProfileStats: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The profile's stats. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileStats"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getStats: {
+        parameters: {
+            query?: {
+                /** @description Required unless `span` is sent. */
+                year?: number;
+                /** @description `all` is all time: every year from the first active one through the current year, one bucket per year, so its totals equal the years' summed. `last7` and `last30` are the 7 or 30 days ending today, one bucket per day, with `prior` holding the window just before. A span takes no `year` or `month` (422 otherwise). */
+                span?: "all" | "last7" | "last30";
+                /** @description 1–12. Absent means the whole year. */
+                month?: number;
+                /** @description IANA time zone for day and month boundaries. Absent means UTC. */
+                tz?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The period's stats. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Stats"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getNowPlaying: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What plays, if anything. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NowPlayingReply"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listListens: {
+        parameters: {
+            query?: {
+                /** @description Only listens that started before this time; the previous page's `next`. */
+                before?: string;
+                /** @description 1–100, default 20. */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of listens. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListenPage"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getTopListens: {
+        parameters: {
+            query: {
+                by: "artist" | "track" | "album";
+                /** @description Required unless `span` is sent. */
+                year?: number;
+                span?: "all" | "last7" | "last30";
+                /** @description 1–12. Absent means the whole year. */
+                month?: number;
+                /** @description IANA time zone for day and month boundaries. Absent means UTC. */
+                tz?: string;
+                /** @description 1–50, default 10. */
+                limit?: number;
+                /** @description Only this artist's listens, compared case- and space-folded (MUS-008). */
+                artist?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The period's top list. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListenTop"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    searchCatalog: {
+        parameters: {
+            query: {
+                q: string;
+                /** @description `all` searches films, shows and anime together (TMDB and AniList in parallel, merged; books and albums are never included); `anime` searches AniList; `movie`/`show` TMDB; `book` Open Library; `album` MusicBrainz (albums and EPs, MUS-001); `manga` AniList (MNG-001; empty and incomplete while AniList is down). */
+                type: "all" | "movie" | "show" | "anime" | "book" | "album" | "manga";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Matches, best first. With `all`, exact title matches lead, then TMDB and AniList hits alternate, at most 40; a TMDB show is left out only when an AniList hit in the same results is mapped to it, and that hit then carries `ids.tmdb`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchResults"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getDiscover: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Rows in display order. Empty rows are left out. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoverRows"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getOnboardingRows: {
+        parameters: {
+            query: {
+                kind: components["schemas"]["DiscoverRowKind"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Rows in display order. Empty rows are left out. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoverRows"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    addOnboardingPicks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OnboardingPicks"];
+            };
+        };
+        responses: {
+            /** @description The library items, in the order sent. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OnboardingPicked"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getOnboardingRelated: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OnboardingRelatedRequest"];
+            };
+        };
+        responses: {
+            /** @description The related titles. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OnboardingRelated"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getDiscoverSeason: {
+        parameters: {
+            query: {
+                kind: "anime" | "shows_new" | "shows_returning" | "movies";
+                season: "winter" | "spring" | "summer" | "fall";
+                /** @description 1970 to next year; anything else is 422 `validation_failed`. */
+                year: number;
+                /** @description 1-based, at most 20. */
+                page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The page. `unavailable` when the provider is down and nothing is cached. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeasonPage"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getDiscoverOnAir: {
+        parameters: {
+            query?: {
+                /** @description ISO 3166-1 alpha-2, e.g. `US`, `PT`, from the device's language settings. Used for this request only and never stored. Anything but two letters is 422 `validation_failed`. */
+                region?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The guide. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoverOnAir"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getConcertsNear: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConcertsNearRequest"];
+            };
+        };
+        responses: {
+            /** @description The page. `unavailable` when concerts are off or the provider is down. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConcertPage"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    searchConcerts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConcertSearchRequest"];
+            };
+        };
+        responses: {
+            /** @description The page. `unavailable` when concerts are off or the provider is down. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConcertSearchPage"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    searchConcertPerformers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConcertPerformerRequest"];
+            };
+        };
+        responses: {
+            /** @description The performers. `unavailable` when concerts are off or the provider is down. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConcertPerformerList"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getArtistConcerts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The concerts. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtistConcerts"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    searchConcertPlaces: {
+        parameters: {
+            query: {
+                /** @description 2 to 100 characters. Not logged. */
+                q: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Up to eight places, best first. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConcertPlaceList"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getConcertPlace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The setting. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConcertPlaceSetting"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    saveConcertPlace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConcertPlace"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConcertPlaceSetting"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteConcertPlace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removed, or there was none. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getSportSuggestions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The picks. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SportEntityList"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    searchSports: {
+        parameters: {
+            query: {
+                /** @description 2 to 100 characters. */
+                q: string;
+                /** @description Absent searches all three. */
+                kind?: components["schemas"]["SportEntityKind"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Up to ten of each kind, leagues first. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SportEntityList"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getSportFavorites: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The favorites, in follow order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SportFavorites"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getSportSchedule: {
+        parameters: {
+            query: {
+                /** @description The local day, YYYY-MM-DD. */
+                date: string;
+                /** @description The IANA time zone the day is in. Default UTC. */
+                tz?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The day, grouped by league. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SportSchedule"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getSportEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The event. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SportEventDetail"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listSportFollows: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The follows. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SportFollowList"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    followSport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kind: components["schemas"]["SportEntityKind"];
+                providerId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Followed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SportEntity"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    unfollowSport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kind: components["schemas"]["SportEntityKind"];
+                providerId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Not followed any more, or never was. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getSportSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The settings. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SportSettings"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    saveSportSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SportSettingsInput"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SportSettings"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    resolveTitle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MediaRef"];
+            };
+        };
+        responses: {
+            /** @description The title, and the caller's library item when they have it. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TitlePreview"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getTitle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The title. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TitleDetail"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getTitleRelations: {
+        parameters: {
+            query?: {
+                /** @description `release` (default) or `story`. Story order needs numbered series in the data; when `storyOrderAvailable` is false the graph comes back in release order. */
+                order?: components["schemas"]["RelationOrder"];
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The graph. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RelationGraph"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    planRelationChain: {
+        parameters: {
+            query?: {
+                order?: components["schemas"]["RelationOrder"];
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Queued for review. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportJob"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listTitlePosts: {
+        parameters: {
+            query?: {
+                /** @description 1–50, default 20. */
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BoardPostPage"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listWatching: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The titles in progress. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Watching"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listLibraryItems: {
+        parameters: {
+            query?: {
+                type?: components["schemas"]["MediaType"];
+                anime?: boolean;
+                status?: components["schemas"]["LibraryStatus"];
+                owned?: boolean;
+                list?: string;
+                /** @description Opaque cursor from a previous page's `page.nextCursor`. */
+                cursor?: components["parameters"]["Cursor"];
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One page. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibraryPage"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    addLibraryItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddLibraryItem"];
+            };
+        };
+        responses: {
+            /** @description The item. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibraryEntry"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getLibraryItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The item. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibraryEntry"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteLibraryItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removed. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    updateLibraryItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LibraryItemPatch"];
+            };
+        };
+        responses: {
+            /** @description The updated item. */
+            200: {
+                headers: {
+                    /** @description The journaled action this write made, for `POST /v1/actions/{id}/undo`. Absent when the patch changed nothing. */
+                    "Aaru-Action"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibraryEntry"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    setEpisodeWatched: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                season: number;
+                episode: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EpisodeWatched"];
+            };
+        };
+        responses: {
+            /** @description The item with updated progress. */
+            200: {
+                headers: {
+                    /** @description The journaled action this write made, for `POST /v1/actions/{id}/undo`. */
+                    "Aaru-Action"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibraryEntry"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    markSeasonWatched: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                season: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The item with updated progress. */
+            200: {
+                headers: {
+                    /** @description The journaled action this write made, for `POST /v1/actions/{id}/undo`. */
+                    "Aaru-Action"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibraryEntry"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    markShowWatched: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The item, the action to undo it with, and how many episodes it ticked. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShowWatched"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    syncLibrary: {
+        parameters: {
+            query?: {
+                since?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The changes and the token for next time. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibrarySync"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listActions: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Actions. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActionList"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    undoAction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The undo, as an action. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Action"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listLists: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListList"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    createList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateList"];
+            };
+        };
+        responses: {
+            /** @description The new list. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListDetail"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListDetail"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    renameList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RenameList"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListDetail"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getListGraph: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RelationGraph"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    addListItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddListItem"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListDetail"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    removeListItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                titleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListDetail"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    reorderList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ListOrder"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListDetail"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listImports: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Up to 50 imports. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportList"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listChats: {
+        parameters: {
+            query?: {
+                /** @description Opaque cursor from a previous page's `page.nextCursor`. */
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One page of chats. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatList"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    createChat: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The new chat. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatCreated"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteChats: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getChatStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What is on. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatStatus"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    transcribeChatAudio: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description How long the recording is, as the client measured it. */
+                "X-Audio-Seconds"?: number;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/octet-stream": string;
+                "audio/*": string;
+            };
+        };
+        responses: {
+            /** @description What was said. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatTranscript"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getChat: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The chat. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Chat"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteChat: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted, or already gone. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    createChatTurn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatTurnRequest"];
+            };
+        };
+        responses: {
+            /** @description The answer, as it is written. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": string;
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    createChatAttachment: {
+        parameters: {
+            query?: {
+                /** @description The file's name, shown on its chip and checked against its bytes. Empty for pasted text. */
+                filename?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/octet-stream": string;
+                "*/*": string;
+            };
+        };
+        responses: {
+            /** @description The file, as the chat will use it. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatAttachment"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteChatAttachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                attachmentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removed, or already gone. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    exportAccount: {
+        parameters: {
+            query?: {
+                format?: "json" | "csv";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The export, as a download. */
+            200: {
+                headers: {
+                    "Content-Disposition"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountExport"];
+                    "text/csv": string;
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    createCSVImport: {
+        parameters: {
+            query: {
+                /** @description `auto` detects the format: MyAnimeList-format XML, anime or manga (also exported by Kitsu and AniList), an IMDb, Letterboxd, Netflix viewing activity, TV Time or Goodreads CSV, or any other CSV read by its column names (`csv`); for an `application/octet-stream` body, Spotify's extended streaming history or Google Takeout's YouTube watch history. `spotify` and `youtube` are listening history (MUS-004): their plays go to the listening log, never the library, and the job's stats count new listens (`created`), listens already in the log (`skipped`) and plays left out (`ignored`). `tvtime` takes one CSV from TV Time's export at a time: `tvtime-series-episodes.csv`, `tvtime-series.csv` or `tvtime-movies.csv` (Export my data), or `tracking-prod-records-v2.csv`, `tracking-prod-records.csv`, `followed_tv_show.csv` or `seen_episode.csv` (GDPR export). */
+                source: "auto" | "imdb" | "letterboxd" | "netflix" | "tvtime" | "goodreads" | "mal" | "csv" | "spotify" | "youtube";
+                /** @description The file's name. Letterboxd's watchlist export is told apart by it. */
+                filename?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "text/csv": string;
+                "application/xml": string;
+                "application/octet-stream": string;
+            };
+        };
+        responses: {
+            /** @description Queued for matching. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportJob"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    createCATImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "text/plain": string;
+                "text/calendar": string;
+            };
+        };
+        responses: {
+            /** @description Queued for matching. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportJob"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    createCATFeedImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description The iCal link from CAT. */
+                    url: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Queued for matching. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportJob"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    createCaptureImport: {
+        parameters: {
+            query?: {
+                /** @description Read this kind only (BOOK-001). A link names its own kind. */
+                kind?: "book";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    text?: string;
+                    url?: string;
+                };
+                "multipart/form-data": {
+                    image?: string[];
+                };
+                "image/jpeg": string;
+                "image/png": string;
+                "image/gif": string;
+                "image/webp": string;
+            };
+        };
+        responses: {
+            /** @description Queued for reading and matching. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportJob"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    createAniListImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description AniList username: 2–20 letters, digits or underscores. */
+                    username: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Queued. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportJob"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    createLastFMImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ListenAccount"];
+            };
+        };
+        responses: {
+            /** @description Queued. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportJob"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    createListenBrainzImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ListenAccount"];
+            };
+        };
+        responses: {
+            /** @description Queued. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportJob"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    startStremioLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A code to approve. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StremioLink"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    pollStremioLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Approved. The library was read and its import queued. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportJob"];
+                };
+            };
+            /** @description Not approved yet. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    createTraktImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Queued. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportJob"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    connectTrakt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TraktConnectRequest"];
+            };
+        };
+        responses: {
+            /** @description Where to send the browser. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TraktConnectStart"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getTraktConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Whether Trakt is connected. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TraktConnection"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    disconnectTrakt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Disconnected. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    connectMAL: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MALConnectRequest"];
+            };
+        };
+        responses: {
+            /** @description Where to send the browser. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MALConnectStart"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getMALConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Whether MyAnimeList is connected, and whether it must be connected again. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MALConnection"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    disconnectMAL: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Disconnected. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    requestMALPull: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Asked, or not needed. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The import. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportDetail"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Discarded. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    applyImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Applied. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportJob"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    undoListenImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Undone. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    matchAllImportRows: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Saved. The job's counts, the rows this call changed, and how many are left to try. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        job: components["schemas"]["ImportJob"];
+                        rows: components["schemas"]["ImportRow"][];
+                        remaining: number;
+                    };
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    leaveOutImportRow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                index: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    leftOut: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Saved. The job's counts and the row as it now stands. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        job: components["schemas"]["ImportJob"];
+                        row: components["schemas"]["ImportRow"];
+                    };
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    resolveImportRow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                index: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    mediaRef: components["schemas"]["MediaRef"];
+                };
+            };
+        };
+        responses: {
+            /** @description Matched. The job's counts and the row as it now stands. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        job: components["schemas"]["ImportJob"];
+                        row: components["schemas"]["ImportRow"];
+                    };
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listShelves: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShelfList"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    createShelf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateShelf"];
+            };
+        };
+        responses: {
+            /** @description The new shelf. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Shelf"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteShelf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    updateShelf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateShelf"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Shelf"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listShelfItems: {
+        parameters: {
+            query?: {
+                /** @description Opaque cursor from a previous page's `page.nextCursor`. */
+                cursor?: components["parameters"]["Cursor"];
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibraryPage"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getCalendar: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Episodes, by air time. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Calendar"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getUpNext: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The home rows. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpNext"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getTonight: {
+        parameters: {
+            query?: {
+                /** @description IANA time zone for "today" and air times. Absent means UTC. */
+                tz?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The strip for the local day. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Tonight"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    sendTonightFeedback: {
+        parameters: {
+            query?: {
+                /** @description IANA time zone for the local day. Absent means UTC. */
+                tz?: string;
+            };
+            header?: never;
+            path: {
+                /** @description The library item. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TonightFeedback"];
+            };
+        };
+        responses: {
+            /** @description Recorded. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    clearTonightFeedback: {
+        parameters: {
+            query?: {
+                /** @description IANA time zone for the local day. Absent means UTC. */
+                tz?: string;
+            };
+            header?: never;
+            path: {
+                /** @description The library item. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Cleared. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
 }
