@@ -16,6 +16,9 @@ struct TitleDetailView: View {
     @State private var recommends = false
     @State private var shares = false
     @State private var confirmsRemoval = false
+    /// "From here" (GRAPH-005): the section's tree, and the sheet a finish opens.
+    @State private var fromHere: TitleTreeModel
+    @State private var showsFromHere = false
     /// Nil in previews and outside the signed-in app.
     @Environment(GroupsModel.self) private var groups: GroupsModel?
     @Environment(ToastCenter.self) private var toasts: ToastCenter?
@@ -40,6 +43,7 @@ struct TitleDetailView: View {
     /// `title` is for previews: the detail already loaded.
     init(entry: LibraryEntry, api: Client?, library: LibraryModel, lists: ListsModel, title: TitleDetail? = nil) {
         _model = State(initialValue: TitleDetailModel(entry: entry, api: api, library: library, title: title))
+        _fromHere = State(initialValue: TitleTreeModel(api: api, titleID: entry.title.id))
         self.lists = lists
         self.library = library
     }
@@ -117,6 +121,20 @@ struct TitleDetailView: View {
             }
         } message: {
             Text(TitleRemoval.message)
+        }
+        // A tap here finished the title: read the tree again, so it lights the root, and open it
+        // when there is a branch to show.
+        .onChange(of: model.finishes) {
+            Task {
+                await fromHere.load(retryPartial: false)
+                if fromHere.hasBranches, model.entry.status == .finished {
+                    showsFromHere = true
+                }
+            }
+        }
+        .sheet(isPresented: $showsFromHere) {
+            TitleTreeSheet(model: fromHere, name: entry.title.title, library: library, lists: lists)
+                .closesOnSheetsRequest()
         }
         .sheet(isPresented: $recommends) {
             RecommendSheet(
@@ -283,6 +301,7 @@ extension TitleDetailView {
         }
         // Above the episodes: under a long season list nobody finds what to watch first (GRAPH-002).
         TitleRelated(api: model.api, titleID: entry.title.id, library: library, lists: lists)
+        TitleFromHere(model: fromHere)
         if model.isShow {
             TitleSeasons(model: model, expanded: $expandedSeasons, onOpen: { openEpisode = $0 }, retry: load)
         }
