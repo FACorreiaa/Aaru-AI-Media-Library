@@ -1,6 +1,6 @@
 # Terms of use
 
-_Last updated 11 November 2026. Draft: the developer has not yet approved this text._
+_Last updated 11 November 2026._
 
 Aaru is a private media library, with friends-only groups for watching or reading together.
 These terms say what you can expect from Aaru and what Aaru expects from you. How your data is
