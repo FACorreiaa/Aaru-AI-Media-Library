@@ -218,6 +218,22 @@ show of one universe; the owl's answer is its own suggestion, reviewed before an
 and never joins the graph. Credit: "Relations from AniList,
 TMDB and Wikidata."
 
+**From here (GRAPH-005, 2026-11-11, web, iPhone, iPad, Mac).** Under Related, a small tree in the
+manner of a game's skill tree: this title on the left, ringed in the accent, a trunk down from it,
+and a labelled row branching off for the series and for the person who made it (the director, the
+creator, the studio, the author, the artist, by name). Tiles are posters joined by straight and
+right-angle lines. A title the person finished is lit: full colour with the accent ring. One in
+their library is full colour with its status. One they do not have is dimmed with a hairline ring,
+and still opens. In a person's row the first titles are what they made next, in order; the last two
+are their best known, each with a small star. Three branches of five at most: it is a signpost, not
+the graph, and Graph stays where it is. The tree never adds anything; a title opens its page. When
+a tap on the title page makes the title finished, the same tree opens once in a dialog (a sheet on
+Apple) titled "From here", the trunk and then the tiles arriving after the tap; Reduce Motion
+cross-fades. On the page it does not animate. No branch means no section and no dialog. The copy
+never says "for you", "recommended" or "because you watched": it is who made this and what the
+catalog lists by them, the same for everyone. Flat as everything else: no shadow, and gold fills
+nothing.
+
 **Roadmaps (GRAPH-003, 2026-11-06, web, iPhone, iPad, Mac).** Ask the owl what to read before
 Secret Wars and the answer is a roadmap: numbered steps in the reply, and the same steps sent for
 review, every row showing its step, note, Optional and side-by-side pair. Approve makes a list that
