@@ -429,8 +429,15 @@ func TestOnboardingRelatedIsPartialWhenGraphsRunOutOfTime(t *testing.T) {
 	assert.True(t, related.Partial)
 	assert.Empty(t, related.Items)
 	assert.Less(t, time.Since(started), 2*time.Second, "one deadline for every graph, not one each")
-	_, warming := env.service.warming.Load("tmdb:movie:1")
-	assert.True(t, warming, "a graph cut short keeps loading for the next call")
+	// The picks run out of time together and only relationWarmLimit walks run at once, so which
+	// of them keep loading is not fixed: count them instead of naming one.
+	warming := 0
+	env.service.warming.Range(func(key, _ any) bool {
+		assert.Regexp(t, `^tmdb:movie:[1-5]$`, key)
+		warming++
+		return true
+	})
+	assert.Equal(t, relationWarmLimit, warming, "graphs cut short keep loading for the next call, up to the limit")
 }
 
 func TestOnboardingRelatedTakesOneToThirtyTitles(t *testing.T) {
