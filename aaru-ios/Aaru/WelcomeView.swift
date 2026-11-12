@@ -83,7 +83,7 @@ struct WelcomeView: View {
                 .foregroundStyle(Color(.muted))
                 .fixedSize(horizontal: false, vertical: true)
             VStack(alignment: .leading, spacing: AaruSpace.large) {
-                Pillar(symbol: "square.stack.3d.up", text: "One library, four plain statuses")
+                Pillar(symbol: "square.stack.3d.up", text: "One library, five plain statuses")
                 Pillar(symbol: "lock", text: "Private by default. No public profile, no ads")
                 Pillar(symbol: "arrow.down.doc", text: "Bring your history from Trakt, IMDb, Letterboxd and Goodreads")
             }

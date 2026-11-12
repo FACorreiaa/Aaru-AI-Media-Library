@@ -9,6 +9,13 @@ struct KindsStep: View {
     let onImport: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    /// Two across on an iPhone, three on an iPad or a Mac. A column that only has to be 150 wide
+    /// puts six across on an iPad, and the label breaks inside the word.
+    private var columns: Int {
+        sizeClass == .regular ? 3 : 2
+    }
 
     var body: some View {
         OnboardingPage(
@@ -18,7 +25,7 @@ struct KindsStep: View {
             showsOwl: true
         ) {
             LazyVGrid(
-                columns: [GridItem(.adaptive(minimum: 150), spacing: AaruSpace.medium)],
+                columns: Array(repeating: GridItem(.flexible(), spacing: AaruSpace.medium), count: columns),
                 spacing: AaruSpace.medium
             ) {
                 ForEach(OnboardingKind.allCases) { kind in
