@@ -1441,7 +1441,11 @@ sets, brand assets), main wins.
   as above, and so does every other screen. One more place on the web (owner, 2026-11-12, beta
   first): the landing page's hero, above the headline, where the same owl stands on its stack of
   books. It moves the same way and follows the same rules; where the model is not set, the hero
-  has no owl.
+  has no owl. And one more on every client (owner, 2026-11-12, beta first): the first run's
+  opening screen, where the 3D owl is **curious**: its head tilted, one ear flicking now and
+  then, its eyes a little wider. It is the curious pose in motion, not a new pose; the curious
+  still shows first and stays wherever the model cannot be drawn. Sleeping and celebrating have
+  no motion yet.
 - **Tagline.** "Your stories. Your world."
 - **Enforced.** `.github/workflows/ci-brand.yml` runs `scripts/generate-tokens.mjs --check` and
   `scripts/brand-guard.sh`: no colour literals outside the generated tokens, no serif or bundled

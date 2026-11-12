@@ -20,8 +20,7 @@ struct OnboardingPage<Content: View, Footer: View>: View {
             VStack(alignment: .leading, spacing: AaruSpace.section) {
                 VStack(alignment: .leading, spacing: AaruSpace.small) {
                     if showsOwl {
-                        OwlMedallion(size: 96, pose: .curious)
-                            .padding(.bottom, AaruSpace.small)
+                        owl.padding(.bottom, AaruSpace.small)
                     }
                     Text(title)
                         .font(.aaruDisplay(.largeTitle, weight: .bold))
@@ -72,6 +71,18 @@ struct OnboardingPage<Content: View, Footer: View>: View {
         .padding(.horizontal, 20)
         .padding(.vertical, AaruSpace.medium)
         .background(Color(.paper))
+    }
+
+    /// The curious owl, decorative. On the beta channel it is the 3D owl, off the disc (BRD-011,
+    /// an experiment); the App Store build shows the still.
+    @ViewBuilder private var owl: some View {
+        #if DEBUG || BETA
+            Owl3DView(label: Text(verbatim: ""), pose: .curious)
+                .frame(height: 150)
+                .accessibilityHidden(true)
+        #else
+            OwlMedallion(size: 96, pose: .curious)
+        #endif
     }
 }
 

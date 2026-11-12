@@ -4,6 +4,7 @@ import {
   LOOK_AT,
   POSTER_POSE,
   STANDING,
+  STATES,
   approach,
   blinkScale,
   blinkSeconds,
@@ -15,8 +16,8 @@ import {
 // The same expected values are in aaru-ios/AaruTests/OwlMotionTests.swift: the web and the
 // Apple owl must move alike.
 
-function track(target: string, property: string) {
-  const found = STANDING.find(
+function track(target: string, property: string, tracks = STANDING) {
+  const found = tracks.find(
     (t) => (t.joint ?? t.material) === target && t.property === property,
   )
   if (!found) throw new Error(`no ${target} ${property} track`)
@@ -48,6 +49,31 @@ describe('sampleTrack', () => {
     const glow = track('amber', 'emissiveScale')
     expect(sampleTrack(glow, 0)).toBeCloseTo(0.85, 6)
     expect(sampleTrack(glow, 2)).toBeCloseTo(1.2, 6)
+  })
+})
+
+describe('curious', () => {
+  it('tilts the head and keeps it tilted', () => {
+    const tilt = track('Head', 'rotateZDegrees', STATES.curious)
+    expect(sampleTrack(tilt, 0)).toBeCloseTo(12, 6)
+    expect(sampleTrack(tilt, 1.5)).toBeCloseTo(13.5, 6)
+    expect(sampleTrack(tilt, 3)).toBeCloseTo(15, 6)
+  })
+
+  it('flicks one ear late in its period', () => {
+    const flick = track('EarL', 'rotateZDegrees', STATES.curious)
+    expect(sampleTrack(flick, 4)).toBeCloseTo(0, 6)
+    expect(sampleTrack(flick, 4.325)).toBeCloseTo(-7, 6)
+    expect(sampleTrack(flick, 4.45)).toBeCloseTo(-14, 6)
+  })
+
+  it('widens both pupils alike', () => {
+    for (const name of ['PupilL', 'PupilR']) {
+      const wide = track(name, 'scale', STATES.curious)
+      expect(sampleTrack(wide, 0)).toBeCloseTo(1.12, 6)
+      expect(sampleTrack(wide, 1.25)).toBeCloseTo(1.15, 6)
+      expect(sampleTrack(wide, 2.5)).toBeCloseTo(1.18, 6)
+    }
   })
 })
 

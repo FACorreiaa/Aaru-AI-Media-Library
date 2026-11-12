@@ -4,6 +4,7 @@ import { safeNext } from '../lib/oauth/model'
 import { welcomeNext } from '../lib/onboarding/next'
 import { optionalString } from '../lib/search-params'
 import { requireSession } from '../lib/session/query'
+import { getFirstRunConfig } from '../lib/session/session'
 
 // ONB-001: a new account's first run (DESIGN.md §0a), full screen and outside the app shell,
 // at `/app/welcome?next=…`. The shell sends a pending account here; once the flow is finished
@@ -19,14 +20,19 @@ export const Route = createFileRoute('/app_/welcome')({
     if (!session.onboardingPending) throw redirect({ href: next })
     return { next }
   },
+  loader: () => getFirstRunConfig(),
   component: Welcome,
 })
 
 function Welcome() {
   const context = Route.useRouteContext()
+  const config = Route.useLoaderData()
   return (
     <main class="min-h-dvh bg-paper text-ink">
-      <OnboardingFlow next={context().next} />
+      <OnboardingFlow
+        next={context().next}
+        owl3dModelUrl={config().owl3dModelUrl}
+      />
     </main>
   )
 }

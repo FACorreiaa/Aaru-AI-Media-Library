@@ -18,7 +18,7 @@ import {
   BLINK,
   LOOK_AT,
   POSTER_POSE,
-  STANDING,
+  STATES,
   approach,
   blinkScale,
   blinkSeconds,
@@ -27,7 +27,7 @@ import {
   sampleTrack,
 } from '../owl-motion'
 import type { Material, Mesh, MeshStandardMaterial, Object3D } from 'three'
-import type { Look } from '../owl-motion'
+import type { Look, OwlState } from '../owl-motion'
 
 export interface OwlScene {
   /** Where to look: each from -1 to 1 across the page, right and up positive. */
@@ -60,6 +60,8 @@ interface Joint {
   x: number
   y: number
   z: number
+  /** The rest scale, one number: every joint a track scales is the same on each axis. */
+  scale: number
   /** Degrees, the rest plus the poster pose. */
   pitch: number
   yaw: number
@@ -82,6 +84,8 @@ export async function mountOwl(
   options: {
     modelUrl: string
     framing?: OwlFraming
+    /** What the owl is doing. Left out: standing at rest. */
+    state?: OwlState
     onFirstFrame: () => void
   },
 ): Promise<OwlScene> {
@@ -142,6 +146,7 @@ export async function mountOwl(
       x: node.position.x,
       y: node.position.y,
       z: node.position.z,
+      scale: node.scale.x,
       pitch: MathUtils.radToDeg(node.rotation.x),
       yaw: MathUtils.radToDeg(node.rotation.y) + (stance.rotateYDegrees ?? 0),
       roll: MathUtils.radToDeg(node.rotation.z) + (stance.rotateZDegrees ?? 0),
@@ -171,6 +176,7 @@ export async function mountOwl(
     }
   })
 
+  const tracks = STATES[options.state ?? 'standing']
   const look: Look = lookToward(LOOK_AT, 0, 0)
   let target: Look = look
   let seconds = 0
@@ -206,17 +212,17 @@ export async function mountOwl(
     // Each joint starts the frame at its posed rest; the tracks and the look add to it.
     const moved = new Map<
       Joint,
-      { y: number; pitch: number; yaw: number; roll: number }
+      { y: number; pitch: number; yaw: number; roll: number; scale: number }
     >()
     const offsets = (j: Joint) => {
       let entry = moved.get(j)
       if (!entry) {
-        entry = { y: 0, pitch: 0, yaw: 0, roll: 0 }
+        entry = { y: 0, pitch: 0, yaw: 0, roll: 0, scale: 1 }
         moved.set(j, entry)
       }
       return entry
     }
-    for (const track of STANDING) {
+    for (const track of tracks) {
       const value = sampleTrack(track, seconds)
       if (track.material) {
         for (const light of lit.get(track.material) ?? []) {
@@ -231,6 +237,7 @@ export async function mountOwl(
       else if (track.property === 'rotateXDegrees') entry.pitch += value
       else if (track.property === 'rotateYDegrees') entry.yaw += value
       else if (track.property === 'rotateZDegrees') entry.roll += value
+      else if (track.property === 'scale') entry.scale *= value
     }
     const head = joint('Head')
     if (head) {
@@ -245,6 +252,8 @@ export async function mountOwl(
         MathUtils.degToRad(j.yaw + entry.yaw),
         MathUtils.degToRad(j.roll + entry.roll),
       )
+      // The lids are never among these: the blink below is the one thing that scales them.
+      j.node.scale.setScalar(j.scale * entry.scale)
     }
     for (const name of ['PupilL', 'PupilR']) {
       const pupil = joint(name)

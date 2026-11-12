@@ -1412,6 +1412,8 @@ The owl is four stills. The owner supplied a 3D model; `docs/brand/owl_3d.py` tu
 
 Landing hero (owner, 2026-11-12, after the recoloured owl): on the beta web the landing page's hero shows the owl on its stack of books (`owl-on-books.glb`, `OWL_3D_BOOKS_MODEL_URL`), above the headline, with the same motion and the same fallbacks. Production keeps a hero without the owl until the owner has seen it on beta; the first run's opening screen is next.
 
+Curious, and the first run (owner, 2026-11-12: "curious motion first"): `design/owl-motion.json` gains a second state, `curious` (the head tilted 12 to 15 degrees, one ear flicking, the pupils a little wider), and a `scale` property; both drivers play a state by name and hold the same test values. The first run's opening screen shows it in place of the curious still: on the beta web (`OWL_3D_FIRST_RUN_MODEL_URL`) and in Debug and Beta builds on iPhone and Mac. There the Apple owl does not follow a finger: the screen is all buttons.
+
 **Done when:** the 3D owl is on beta.aaruapp.com's sign-in page and in a TestFlight build's Welcome screen, on iPhone and Mac; the production web build and the Release app show the still and carry no model; the sign-in route's own size budget is unchanged; and the owner has said go or no-go, written here with the measurements.
 
 ## P0 · M1 — Server foundation

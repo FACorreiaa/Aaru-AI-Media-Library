@@ -1,6 +1,7 @@
 import { createSignal, onCleanup, onMount } from 'solid-js'
 import { prefersReducedMotion } from '~/lib/reduced-motion'
 import { OwlStill } from './Brand'
+import type { OwlState } from '~/lib/owl-motion'
 import type { OwlScene } from '~/lib/owl3d/scene'
 
 /** The viewer asked their browser to spend less data. */
@@ -14,8 +15,8 @@ function savesData(): boolean {
  * (`FRAMES.books` in scene.ts), so the owl does not jump when the canvas takes over. */
 const ON_BOOKS_STILL = 'origin-center -translate-y-[8%] scale-[0.72]'
 
-/** The owl in 3D, off the night disc (BRD-011: the web's sign-in page and, on its stack of
- * books, the landing page's hero). It stands at rest, breathes, blinks and looks toward the
+/** The owl in 3D, off the night disc (BRD-011: the web's sign-in page, on its stack of
+ * books the landing page's hero, and curious on the first run's opening screen). It stands at rest, breathes, blinks and looks toward the
  * pointer. The still is the first paint and carries the words for a screen reader; the canvas
  * replaces it only once a frame is drawn, and never under reduced motion, Save-Data, without
  * WebGL, or when the model fails to load. One per page: each is a WebGL context. */
@@ -26,6 +27,9 @@ export function Owl3D(props: {
   /** The model is the owl on its books: the camera stands back to hold the stack, and the
    * still waits where the owl will stand. */
   onBooks?: boolean
+  /** What the owl is doing: standing at rest, or curious (the first run's opening screen).
+   * The still is the same pose. */
+  state?: OwlState
   class?: string
   decorative?: boolean
 }) {
@@ -62,6 +66,7 @@ export function Owl3D(props: {
         const mounted = await mountOwl(canvas, {
           modelUrl: props.modelUrl,
           framing: props.onBooks ? 'books' : 'owl',
+          state: props.state,
           onFirstFrame: () => setLive(true),
         })
         if (gone) {
@@ -103,6 +108,7 @@ export function Owl3D(props: {
     >
       <OwlStill
         decorative={props.decorative}
+        pose={props.state}
         class={`absolute inset-0 h-full w-full transition-opacity duration-(--motion-slow) ${props.onBooks ? ON_BOOKS_STILL : ''} ${live() ? 'opacity-0' : ''}`}
       />
       <canvas
