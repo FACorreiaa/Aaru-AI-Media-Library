@@ -1,0 +1,1 @@
+tracker,movies,tv,anime,manga,books,albums,watchlist,episodes,calendar,trakt,letterboxd,goodreads

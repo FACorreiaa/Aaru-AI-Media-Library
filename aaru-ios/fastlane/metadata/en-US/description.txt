@@ -1,0 +1,31 @@
+Aaru is one private library for everything you watch, read and listen to: films, shows, anime, manga, books and albums.
+
+Keep what you plan to start, what you are in the middle of, and what you finished. Tick episodes and chapters as you go, and see what airs this week and what is next.
+
+BRING YOUR HISTORY
+Import what you already keep elsewhere: Trakt, Stremio, IMDb, Letterboxd, Goodreads, Netflix viewing activity, TV Time, MyAnimeList and AniList, a spreadsheet, or a list pasted from your notes. Aaru shows you what it matched before anything is added.
+
+SEE WHAT IS NEXT
+- Up Next and a week view of the episodes you follow, with alerts when one airs
+- Widgets and a Live Activity for what you are watching now
+- Discover: what is trending, on the air and new this season, the same for everyone
+- From here: where a title leads, by the people who made it and its series
+
+ASK AARU
+Ask in your own words, typed or spoken: what to watch tonight from your own list, where you left off, the order to read a series in. A single change happens like a tap; anything larger is a plan you approve first.
+
+PRIVATE BY DEFAULT
+A new account shows nothing to anyone. There is no public profile, no feed, no ads and no tracking. Friends are people you add yourself, and what they see is up to you.
+
+WITH FRIENDS, IF YOU WANT
+- Groups for the people you watch and read with
+- Watch parties and reading sessions with a countdown: everyone presses play on their own
+- Send a friend a title, or share a link to one
+
+ON EVERY SCREEN
+iPhone, iPad and Mac, and the web at aaruapp.com. Export everything you keep, or delete your account, from Settings at any time.
+
+Aaru uses the TMDB API but is not endorsed or certified by TMDB. Aaru uses Trakt but is not endorsed or certified by Trakt. Catalog data also comes from AniList, Open Library, MusicBrainz, TVmaze and JustWatch.
+
+Terms of use: https://aaruapp.com/terms
+Privacy policy: https://aaruapp.com/privacy
