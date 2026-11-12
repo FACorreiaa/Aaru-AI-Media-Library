@@ -9,7 +9,9 @@ Z-up, no normals, no joints, no eyelids. This script, standard library only:
   3. halves the densest hidden spheres, merges parts that share a material inside a joint;
   4. adds smooth normals with a crease angle;
   5. adds an eyelid over each eye (closed by scaling, see `owl-rig.json`);
-  6. makes the ceramic glossier and the amber and cyan lights brighter;
+  6. makes the ceramic glossier and the amber and cyan lights brighter, and paints the parts the
+     source left white or silver in the poster's colours (`PAINT`): the eyes' amber ring, the
+     wings graded from pale to slate with ember edges, ice-blue neck and ear feathers;
   7. writes `owl.glb`, `owl-on-books.glb` (web), `Owl.usdz`, `OwlOnBooks.usdz` (Apple) and
      `owl-rig.json` (joint names, rest transforms, the poster pose).
 
@@ -41,10 +43,69 @@ LOOKS = {
     "ceramic": (0.24, 0.0, 0.8, None, 0),
     "eyeglass": (0.04, 0.0, 1.0, None, 0),
     "pupil": (0.05, 0.0, 1.0, None, 0),
-    "amber": (0.22, 0.3, 0.0, (1.0, 0.52, 0.14), 2.5),
-    "amber_light": (0.23, 0.1, 0.0, (1.0, 0.62, 0.24), 3.0),
+    # A strong glow clips to pale yellow in both renderers: the hue carries the ember, not the strength.
+    "amber": (0.22, 0.3, 0.0, (1.0, 0.33, 0.02), 1.0),
+    "amber_light": (0.23, 0.1, 0.0, (1.0, 0.42, 0.06), 1.1),
     "cyan": (0.24, 0.1, 0.0, (0.28, 0.72, 1.0), 2.0),
     "highlight": (0.2, 0.0, 0.0, (1.0, 1.0, 1.0), 1.0),
+    "bezel": (0.30, 0.6, 0.0, None, 0),
+    "plume_1": (0.30, 0.15, 0.6, None, 0),
+    "plume_2": (0.32, 0.2, 0.5, None, 0),
+    "plume_3": (0.34, 0.25, 0.4, None, 0),
+    "plume_4": (0.36, 0.3, 0.3, None, 0),
+    "plume_5": (0.38, 0.35, 0.3, None, 0),
+    "covert_1": (0.22, 0.0, 0.9, None, 0),
+    "covert_2": (0.24, 0.05, 0.8, None, 0),
+    "ice_1": (0.24, 0.1, 0.6, (0.30, 0.62, 1.0), 0.35),
+    "ice_2": (0.26, 0.15, 0.5, (0.22, 0.50, 1.0), 0.5),
+}
+
+# The poster's colours: base colour by name, for materials the source does not have and for
+# the two ambers, which the source makes too pale to read as ember. Gloss and glow are in LOOKS.
+COLOURS = {
+    "amber": (0.60, 0.22, 0.03),
+    "amber_light": (0.80, 0.40, 0.10),
+    "bezel": (0.10, 0.09, 0.10),
+    "plume_1": (0.62, 0.72, 0.88),
+    "plume_2": (0.42, 0.53, 0.74),
+    "plume_3": (0.28, 0.37, 0.58),
+    "plume_4": (0.18, 0.24, 0.42),
+    "plume_5": (0.10, 0.14, 0.26),
+    "covert_1": (0.80, 0.87, 0.97),
+    "covert_2": (0.62, 0.74, 0.93),
+    "ice_1": (0.66, 0.82, 0.98),
+    "ice_2": (0.42, 0.66, 0.94),
+}
+
+# Which parts take which colour: the part's name without its side letter, then the material.
+# The source builds the wings from white, silver and ceramic; the poster grades them from pale
+# at the shoulder to slate at the tips, with ember along the edges, and rings the eyes in amber.
+PAINT = {
+    "eye outer copper bezel": "bezel",
+    "primary flight feather 1": "plume_1",
+    "primary flight feather 2": "plume_1",
+    "primary flight feather 3": "plume_2",
+    "primary flight feather 4": "plume_2",
+    "primary flight feather 5": "plume_3",
+    "primary flight feather 6": "plume_3",
+    "primary flight feather 7": "plume_4",
+    "primary flight feather 8": "plume_4",
+    "long flight tip 0": "plume_4",
+    "long flight tip 1": "amber",
+    "long flight tip 2": "plume_5",
+    "long flight tip 3": "amber",
+    "porcelain upper overlay 1": "covert_1",
+    "porcelain upper overlay 2": "covert_2",
+    "neck secondary cyan feather 0": "ice_1",
+    "neck secondary cyan feather 2": "ice_2",
+    "ear lower silver": "ice_1",
+    "lower haunch": "plume_3",
+    "fine chest silver seam": "amber",
+    "Tail underside feather 0": "plume_2",
+    "Tail underside feather 1": "plume_4",
+    "Tail underside feather 2": "plume_2",
+    "Tail underside feather 3": "plume_4",
+    "Tail underside feather 4": "plume_2",
 }
 
 
@@ -325,7 +386,23 @@ def build(owl_parts, book_parts, lift):
     return joints, meshes, halved
 
 
+def paint(parts):
+    """The owl's parts with the poster's colours: a part named in PAINT takes that material."""
+    unused = set(PAINT)
+    painted = []
+    for part in parts:
+        name = part["name"]
+        plain = name[2:] if name[:2] in ("L ", "R ") else name
+        unused.discard(plain)
+        painted.append({**part, "material": PAINT.get(plain, part["material"])})
+    if unused:
+        raise SystemExit(f"PAINT names parts the source does not have: {sorted(unused)}")
+    return painted
+
+
 def looks(materials):
+    blank = {"roughness": 0.3, "metallic": 0.0, "emissive": (0.0, 0.0, 0.0)}
+    materials = {**materials, **{name: {**blank, "color": colour} for name, colour in COLOURS.items()}}
     result = {}
     for name, mat in materials.items():
         rough, metal, coat, glow, strength = LOOKS.get(name, (mat["roughness"], mat["metallic"], 0.0, None, 0))
@@ -517,6 +594,7 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
 
     owl, materials = read_glb(args.owl)
+    owl = paint(owl)
     variants = [("owl.glb", "Owl.usdz", "Owl", [], 0.0, materials)]
     if args.books:
         scene, scene_materials = read_glb(args.books)
