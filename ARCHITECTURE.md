@@ -1281,7 +1281,7 @@ SvelteKit scaffold). Same screens as the Apple apps, in the same order they ship
   `/app/week` redirects to `/app/calendar`.
 - The owl in 3D (BRD-011, beta only): when `OWL_3D_MODEL_URL` is set (staging), the sign-in page
   swaps the still for `Owl3D`, which loads `three` and `owl.glb` in the browser only, after first
-  paint. The model comes from an Aaru-owned Cloudflare bucket, versioned by path and cached for a
+  paint. The model comes from `cdn.aaruapp.com` (a static Worker, `docs/brand/cdn`), versioned by path and cached for a
   year; the Worker never imports `three`. Production has no such var and no 3D.
 
 ## Tracking integrations (Phase 3)
