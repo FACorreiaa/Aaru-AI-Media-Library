@@ -1283,10 +1283,10 @@ SvelteKit scaffold). Same screens as the Apple apps, in the same order they ship
   `notifications`, `import`, `connections`, `data`, `about`, `delete`) with a rail from 768px
   and a list below; the old slugs (`connected`, `imports`, `recaps`) and hashes redirect.
   `/app/week` redirects to `/app/calendar`.
-- The owl in 3D (BRD-011, beta only): when `OWL_3D_MODEL_URL` is set (staging), the sign-in page
+- The owl in 3D (BRD-011): when `OWL_3D_MODEL_URL` is set (staging, and production since 2026-11-12), the sign-in page
   swaps the still for `Owl3D`, which loads `three` and `owl.glb` in the browser only, after first
   paint. The model comes from `cdn.aaruapp.com` (a static Worker, `docs/brand/cdn`), versioned by path and cached for a
-  year; the Worker never imports `three`. Production has no such var and no 3D.
+  year; the Worker never imports `three`. Empty, the page shows the still on the disc.
 
 ## Tracking integrations (Phase 3)
 

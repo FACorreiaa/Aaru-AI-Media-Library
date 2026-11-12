@@ -55,7 +55,7 @@ export const getSignInConfig = createServerFn({ method: 'GET' }).handler(
   async () => ({
     appleServicesId: env.APPLE_SERVICES_ID || null,
     googleClientId: env.GOOGLE_CLIENT_ID || null,
-    // BRD-011: where the 3D owl's model is. Set on the beta channel only; empty means the still.
+    // BRD-011: where the 3D owl's model is. Empty means the still on the disc.
     owl3dModelUrl: env.OWL_3D_MODEL_URL || null,
   }),
 )

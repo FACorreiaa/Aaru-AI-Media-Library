@@ -126,7 +126,7 @@ function SignIn() {
 
   return (
     <main class="mx-auto grid min-h-[100dvh] max-w-5xl items-center gap-12 px-5 py-10 md:grid-cols-2 md:px-8">
-      {/* BRD-011, beta only: the owl in 3D, and on a phone too, where the still is left out. */}
+      {/* BRD-011: the owl in 3D, and on a phone too, where the still is left out. */}
       <Show
         when={config().owl3dModelUrl}
         fallback={
