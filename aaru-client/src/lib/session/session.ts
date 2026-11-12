@@ -60,6 +60,14 @@ export const getSignInConfig = createServerFn({ method: 'GET' }).handler(
   }),
 )
 
+/** What the first run needs from the Worker's settings (ONB-001). */
+export const getFirstRunConfig = createServerFn({ method: 'GET' }).handler(
+  async () => ({
+    // BRD-011: where the 3D owl's model is, for the opening screen. Empty means the still.
+    owl3dModelUrl: env.OWL_3D_FIRST_RUN_MODEL_URL || null,
+  }),
+)
+
 /** What the landing page needs from the Worker's settings. It reads no cookie and no session:
  * the page stays the same for everyone (LAND-001). */
 export const getLandingConfig = createServerFn({ method: 'GET' }).handler(

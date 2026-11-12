@@ -34,6 +34,9 @@
     // The 3D owl on its books, in the landing page's hero (BRD-011): the address of
     // `owl-on-books.glb`. Empty means no owl in the hero. Beta only until the owner has seen it.
     "OWL_3D_BOOKS_MODEL_URL": "",
+    // The curious 3D owl on the first run's opening screen (BRD-011): the address of `owl.glb`.
+    // Empty means the still on the disc. Beta only until the owner has seen it.
+    "OWL_3D_FIRST_RUN_MODEL_URL": "",
   },
   // www answers with a permanent redirect to the apex (src/start.ts).
   "routes": [
@@ -53,6 +56,7 @@
         // overwrite.
         "OWL_3D_MODEL_URL": "https://cdn.aaruapp.com/aaru/owl3d/v2/owl.glb",
         "OWL_3D_BOOKS_MODEL_URL": "https://cdn.aaruapp.com/aaru/owl3d/v2/owl-on-books.glb",
+        "OWL_3D_FIRST_RUN_MODEL_URL": "https://cdn.aaruapp.com/aaru/owl3d/v2/owl.glb",
       },
       "routes": [{ "pattern": "beta.aaruapp.com", "custom_domain": true }],
     },

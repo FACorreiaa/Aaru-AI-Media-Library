@@ -3,7 +3,8 @@ import SwiftUI
 
 /// The owl in 3D, off the night disc (BRD-011: an experiment on the beta channel; DESIGN.md
 /// "Brand"). It stands at rest in the poster's pose, breathes, blinks and looks toward the
-/// pointer or a finger. The still shows until the model's first frame, and stays under Reduce
+/// pointer or a finger; with `pose: .curious` (the first run's opening screen) it tilts its
+/// head, flicks an ear and widens its eyes. The still shows until the model's first frame, and stays under Reduce
 /// Motion, in Low Power Mode, and when the model cannot be read.
 ///
 /// Left out of the Release build (`Release.xcconfig`); `WelcomeView` picks the still there.
@@ -12,6 +13,9 @@ struct Owl3DView: View {
     let label: Text
     /// Where the pointer or a finger is, in global coordinates. Nil: the owl looks ahead.
     var pointer: CGPoint?
+    /// Standing or curious: the still is this pose, and so is the motion. The other poses have
+    /// no motion yet and play as standing.
+    var pose = OwlPose.standing
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var stage = OwlStage()
@@ -23,13 +27,13 @@ struct Owl3DView: View {
 
     var body: some View {
         ZStack {
-            Image(.mascot)
+            Image(pose.image)
                 .renderingMode(.original)
                 .resizable()
                 .scaledToFit()
                 .opacity(draws && stage.isLive ? 0 : 1)
             if draws {
-                OwlScene(stage: stage)
+                OwlScene(stage: stage, state: pose == .curious ? .curious : .standing)
                     .opacity(stage.isLive ? 1 : 0)
             }
         }
@@ -80,11 +84,12 @@ extension View {
 /// stands on whatever SwiftUI draws behind it.
 private struct OwlScene: View {
     let stage: OwlStage
+    let state: OwlMotion.StateName
 
     var body: some View {
         RealityView { content in
             content.camera = .virtual
-            guard let owl = await stage.load() else { return }
+            guard let owl = await stage.load(state) else { return }
             content.add(owl)
             for entity in stage.rig {
                 content.add(entity)
@@ -127,6 +132,7 @@ final class OwlStage {
         var pitch = 0.0
         var yaw = 0.0
         var roll = 0.0
+        var scale = 1.0
 
         mutating func add(_ value: Double, to property: OwlMotion.Property) {
             switch property {
@@ -134,6 +140,7 @@ final class OwlStage {
             case .rotateXDegrees: pitch += value
             case .rotateYDegrees: yaw += value
             case .rotateZDegrees: roll += value
+            case .scale: scale *= value
             case .emissiveScale: break
             }
         }
@@ -146,6 +153,7 @@ final class OwlStage {
     }
 
     @ObservationIgnored private var motion: OwlMotion?
+    @ObservationIgnored private var tracks: [OwlMotion.Track] = []
     @ObservationIgnored private var joints: [String: Joint] = [:]
     @ObservationIgnored private var lights: [String: [Light]] = [:]
     @ObservationIgnored private var look = OwlMotion.Look()
@@ -155,13 +163,14 @@ final class OwlStage {
 
     /// Reads the model and the motion from the bundle and poses the owl. Nil when either is
     /// missing: the still stays.
-    func load() async -> Entity? {
+    func load(_ state: OwlMotion.StateName = .standing) async -> Entity? {
         guard let motion = try? OwlMotion.load(), let pose = try? OwlRig.load().posterPose,
               let model = try? await Entity(named: "Owl", in: .main)
         else { return nil }
         // The file wraps the rig in an entity that is also called Owl: start below it.
         let root = model.findEntity(named: "Root") ?? model
-        let names = Set(motion.standing.compactMap(\.joint) + motion.blink.joints + pose.keys)
+        let tracks = motion.tracks(for: state)
+        let names = Set(tracks.compactMap(\.joint) + motion.blink.joints + pose.keys)
             .union(["Head", "PupilL", "PupilR"])
         for name in names {
             guard let entity = root.findEntity(named: name) else { continue }
@@ -171,10 +180,11 @@ final class OwlStage {
                 yaw: pose[name]?.rotateYDegrees ?? 0, roll: pose[name]?.rotateZDegrees ?? 0
             )
         }
-        for material in Set(motion.standing.compactMap(\.material)) {
+        for material in Set(tracks.compactMap(\.material)) {
             lights[material] = lit(by: material, under: root)
         }
         self.motion = motion
+        self.tracks = tracks
         blinkAt = motion.blink.wait(random: .random(in: 0 ... 1))
         rig = [
             camera(),
@@ -211,7 +221,7 @@ final class OwlStage {
         }
         let lid = Float(blink.scale(sinceStart: seconds - blinkAt))
 
-        for (name, offsets) in offsets(from: motion.standing) {
+        for (name, offsets) in offsets(from: tracks) {
             guard let joint = joints[name] else { continue }
             var position = joint.position
             position.y += Float(offsets.lift)
@@ -225,9 +235,9 @@ final class OwlStage {
                 * turn(joint.yaw + offsets.yaw, about: [0, 1, 0])
                 * turn(offsets.pitch, about: [1, 0, 0])
                 * turn(joint.roll + offsets.roll, about: [0, 0, 1])
-            if blink.joints.contains(name) {
-                joint.entity.scale = [joint.scale.x, lid, lid]
-            }
+            joint.entity.scale = blink.joints.contains(name)
+                ? [joint.scale.x, lid, lid]
+                : joint.scale * Float(offsets.scale)
         }
         if delta > 0 {
             isLive = true

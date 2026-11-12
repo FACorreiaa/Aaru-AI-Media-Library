@@ -13,8 +13,12 @@ struct OwlMotionTests {
         rig = try OwlRig.load()
     }
 
-    private func track(_ target: String, _ property: OwlMotion.Property) throws -> OwlMotion.Track {
-        try #require(motion.standing.first { ($0.joint ?? $0.material) == target && $0.property == property })
+    private func track(
+        _ target: String, _ property: OwlMotion.Property, in state: OwlMotion.StateName = .standing
+    ) throws -> OwlMotion.Track {
+        try #require(motion.tracks(for: state).first {
+            ($0.joint ?? $0.material) == target && $0.property == property
+        })
     }
 
     private func near(_ value: Double, _ expected: Double) -> Bool {
@@ -45,6 +49,29 @@ struct OwlMotionTests {
         let glow = try track("amber", .emissiveScale)
         #expect(near(glow.value(at: 0), 0.85))
         #expect(near(glow.value(at: 2), 1.2))
+    }
+
+    @Test func theCuriousHeadTiltsAndStaysTilted() throws {
+        let tilt = try track("Head", .rotateZDegrees, in: .curious)
+        #expect(near(tilt.value(at: 0), 12))
+        #expect(near(tilt.value(at: 1.5), 13.5))
+        #expect(near(tilt.value(at: 3), 15))
+    }
+
+    @Test func oneEarFlicksLateInItsPeriod() throws {
+        let flick = try track("EarL", .rotateZDegrees, in: .curious)
+        #expect(near(flick.value(at: 4), 0))
+        #expect(near(flick.value(at: 4.325), -7))
+        #expect(near(flick.value(at: 4.45), -14))
+    }
+
+    @Test func bothPupilsWidenAlike() throws {
+        for name in ["PupilL", "PupilR"] {
+            let wide = try track(name, .scale, in: .curious)
+            #expect(near(wide.value(at: 0), 1.12))
+            #expect(near(wide.value(at: 1.25), 1.15))
+            #expect(near(wide.value(at: 2.5), 1.18))
+        }
     }
 
     @Test func aBlinkShutsHoldsAndOpens() {

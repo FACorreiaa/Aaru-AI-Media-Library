@@ -63,7 +63,11 @@ function message(error: unknown, fallback: string): string {
   return error instanceof Error && error.message ? error.message : fallback
 }
 
-export function OnboardingFlow(props: { next: string }) {
+export function OnboardingFlow(props: {
+  next: string
+  /** BRD-011: where the 3D owl's model is. Null: the opening screen keeps the still. */
+  owl3dModelUrl: string | null
+}) {
   const router = useRouter()
   const navigate = useNavigate()
   const [step, setStep] = createSignal<Step>('kinds')
@@ -302,6 +306,7 @@ export function OnboardingFlow(props: { next: string }) {
               onImport={() => void end(false, '/app/settings/import')}
               busy={busy()}
               problem={problem()}
+              owl3dModelUrl={props.owl3dModelUrl}
             />
           </Match>
           <Match when={stepKind(step())} keyed>

@@ -6,6 +6,7 @@ import type { MediaKind } from '../../lib/library/model'
 import { ONBOARDING_KINDS } from '../../lib/onboarding/model'
 import { MascotMedallion } from '../Brand'
 import { KindCard } from '../KindCard'
+import { Owl3D } from '../Owl3D'
 import { PillButton, StepFrame } from './StepFrame'
 import type { Problem } from './StepFrame'
 
@@ -34,19 +35,35 @@ export function KindsStep(props: {
   onImport: () => void
   busy: boolean
   problem: Problem | null
+  /** BRD-011: where the 3D owl's model is. Null: the still on the disc. */
+  owl3dModelUrl: string | null
 }) {
   return (
     <StepFrame
       title="What do you keep?"
       body="Pick everything you watch, read or listen to. You can add the rest any time."
       lead={
-        <MascotMedallion
-          idle
-          decorative
-          priority
-          pose="curious"
-          class="mb-6 w-20 md:w-24"
-        />
+        <Show
+          when={props.owl3dModelUrl}
+          fallback={
+            <MascotMedallion
+              idle
+              decorative
+              priority
+              pose="curious"
+              class="mb-6 w-20 md:w-24"
+            />
+          }
+        >
+          {(modelUrl) => (
+            <Owl3D
+              modelUrl={modelUrl()}
+              state="curious"
+              decorative
+              class="mb-6 w-28 md:w-36"
+            />
+          )}
+        </Show>
       }
       problem={props.problem}
       footer={

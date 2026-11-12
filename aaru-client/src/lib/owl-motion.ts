@@ -24,6 +24,7 @@ export interface Track {
     | 'rotateYDegrees'
     | 'rotateZDegrees'
     | 'emissiveScale'
+    | 'scale'
   periodSeconds: number
   easing: Easing
   keyframes: Array<Keyframe>
@@ -53,7 +54,14 @@ export interface Look {
   pupilY: number
 }
 
-export const STANDING = data.states.standing.tracks as Array<Track>
+/** What the owl is doing: at rest, or curious (its head tilted, an ear flicking, wide eyes). */
+export type OwlState = 'standing' | 'curious'
+
+export const STATES: Record<OwlState, Array<Track>> = {
+  standing: data.states.standing.tracks as Array<Track>,
+  curious: data.states.curious.tracks as Array<Track>,
+}
+export const STANDING = STATES.standing
 export const BLINK = data.blink as Blink
 export const LOOK_AT: LookAt = data.lookAt
 /** The poster's stance: degrees added to a joint's rest, by joint name. */

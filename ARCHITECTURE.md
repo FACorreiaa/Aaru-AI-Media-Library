@@ -1203,7 +1203,7 @@ Local cache: display last successful library fetch offline. No offline write que
 
 Prefer a single multiplatform target for iPhone and Mac.
 
-The owl in 3D (BRD-011) is `Owl3DView`, a non-AR `RealityView` on Welcome, compiled only into
+The owl in 3D (BRD-011) is `Owl3DView`, a non-AR `RealityView` on Welcome and (curious) on the first run's opening screen, iPhone and Mac, compiled only into
 Debug and Beta builds. `Owl.usdz` is in the app bundle; `Release.xcconfig` leaves it out. Motion is
 `design/owl-motion.json`, the same data the web plays.
 
@@ -1288,7 +1288,9 @@ SvelteKit scaffold). Same screens as the Apple apps, in the same order they ship
   paint. The model comes from `cdn.aaruapp.com` (a static Worker, `docs/brand/cdn`), versioned by path and cached for a
   year; the Worker never imports `three`. Empty, the page shows the still on the disc. The landing
   page's hero does the same with `owl-on-books.glb` when `OWL_3D_BOOKS_MODEL_URL` is set (staging
-  only for now): its loader reads that one setting and no session. Empty, the hero has no owl.
+  only for now): its loader reads that one setting and no session. Empty, the hero has no owl. The
+  first run's opening screen draws the curious owl (`states.curious` in `design/owl-motion.json`)
+  when `OWL_3D_FIRST_RUN_MODEL_URL` is set (staging only for now); empty, it is the still on the disc.
 
 ## Tracking integrations (Phase 3)
 

@@ -32,7 +32,7 @@ struct OwlMotion: Decodable, Sendable {
     }
 
     enum Property: String, Decodable, Sendable {
-        case translateY, rotateXDegrees, rotateYDegrees, rotateZDegrees, emissiveScale
+        case translateY, rotateXDegrees, rotateYDegrees, rotateZDegrees, emissiveScale, scale
     }
 
     struct Track: Decodable, Sendable {
@@ -137,9 +137,14 @@ struct OwlMotion: Decodable, Sendable {
     let blink: Blink
     let lookAt: LookAt
 
-    /// The owl at rest: the one state the experiment plays.
-    var standing: [Track] {
-        states["standing"]?.tracks ?? []
+    /// What the owl is doing: at rest, or curious (its head tilted, an ear flicking, wide eyes).
+    enum StateName: String, Sendable {
+        case standing, curious
+    }
+
+    /// The tracks one state plays.
+    func tracks(for state: StateName) -> [Track] {
+        states[state.rawValue]?.tracks ?? []
     }
 
     /// One frame's step from `current` toward `target`: quick at first, never past it.
