@@ -98,6 +98,26 @@ export function MascotMedallion(props: {
   )
 }
 
+/** The standing owl alone, without the disc: what `Owl3D` shows until its model is drawn, and
+ * keeps when it cannot draw one (BRD-011). Everywhere else the owl is on the disc. */
+export function OwlStill(props: { class?: string; decorative?: boolean }) {
+  const art = POSES.standing
+  return (
+    <img
+      src={art.src}
+      srcset={`${art.src} 1x, ${art.src2x} 2x`}
+      alt={
+        props.decorative
+          ? ''
+          : "Aaru's mascot, a small white robot owl with glowing amber eyes"
+      }
+      width={art.width}
+      height={art.height}
+      class={`object-contain ${props.class ?? ''}`}
+    />
+  )
+}
+
 /** The owl's head on the night disc: Aaru's own mark, for the agent (DESIGN.md "Brand"). It
  * breathes only while Aaru is working and, with `idle`, floats calmly otherwise: never both,
  * and still under reduced motion. */

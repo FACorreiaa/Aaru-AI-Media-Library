@@ -13,6 +13,7 @@ import type { AppleCredential } from '../components/AppleSignInButton'
 import { GoogleSignInButton } from '../components/GoogleSignInButton'
 import type { GoogleCredential } from '../components/GoogleSignInButton'
 import { MascotMedallion, Wordmark } from '../components/Brand'
+import { Owl3D } from '../components/Owl3D'
 import { LegalLinks } from '../components/LegalPage'
 import {
   Button,
@@ -125,7 +126,20 @@ function SignIn() {
 
   return (
     <main class="mx-auto grid min-h-[100dvh] max-w-5xl items-center gap-12 px-5 py-10 md:grid-cols-2 md:px-8">
-      <MascotMedallion class="mx-auto hidden w-full max-w-sm md:block" />
+      {/* BRD-011, beta only: the owl in 3D, and on a phone too, where the still is left out. */}
+      <Show
+        when={config().owl3dModelUrl}
+        fallback={
+          <MascotMedallion class="mx-auto hidden w-full max-w-sm md:block" />
+        }
+      >
+        {(modelUrl) => (
+          <Owl3D
+            modelUrl={modelUrl()}
+            class="mx-auto w-40 md:w-full md:max-w-xs"
+          />
+        )}
+      </Show>
       <div class="w-full max-w-md">
         <Wordmark class="h-9 w-auto" />
         <h1 class="mt-8 font-display text-4xl leading-tight font-medium tracking-tight text-balance">
