@@ -43,6 +43,8 @@ go or no-go at the end; the plan is `docs/superpowers/plans/2026-11-12-owl-3d-ex
 
 - **Beta only.** The 3D owl is on the staging Worker and in Debug and Beta builds. The production
   web and the App Store build show the stills, and the App Store build does not carry the model.
+  *Changed the same day for the web:* after the recolour (#288) the owner put the 3D owl on the
+  production sign-in page too. The App Store build is unchanged: still the medallion, no model.
 - **Off the disc.** On the sign-in page and the Welcome screen the 3D owl stands full-body, without
   the `night` disc. DESIGN.md "Brand" records this as the experiment's one exception.
 - **First cut:** the standing owl at rest (a breath, a blink, a slow drift of the head) that looks

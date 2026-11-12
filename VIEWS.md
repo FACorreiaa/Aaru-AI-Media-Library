@@ -242,11 +242,11 @@ like the Board components above. They are not in the catalog and the agent never
 the chrome is the host's, and an answer fills the card only with components from the catalog
 (`TitleCard`, `Shelf`, `PlanCard` and the rest).
 
-## The owl in 3D (app chrome, beta only)
+## The owl in 3D (app chrome)
 
-`Owl3D` on the web and `Owl3DView` on Apple (BRD-011) draw the 3D owl on the sign-in page and the
-Welcome screen of the beta channel. They are app chrome, like the assistant card: not in the
-catalog, never emitted by the agent, and absent from production builds.
+`Owl3D` on the web and `Owl3DView` on Apple (BRD-011) draw the 3D owl on the web's sign-in page and,
+in Debug and Beta builds, on the Welcome screen. They are app chrome, like the assistant card: not
+in the catalog, never emitted by the agent, and absent from the App Store build.
 
 ## Agent emission rules
 

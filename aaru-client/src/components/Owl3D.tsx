@@ -10,7 +10,7 @@ function savesData(): boolean {
   return connection?.saveData === true
 }
 
-/** The owl in 3D, off the night disc (BRD-011: an experiment on the beta channel). It stands at
+/** The owl in 3D, off the night disc (BRD-011: on the web's sign-in page, beta and production). It stands at
  * rest, breathes, blinks and looks toward the pointer. The still is the first paint and carries
  * the words for a screen reader; the canvas replaces it only once a frame is drawn, and never
  * under reduced motion, Save-Data, without WebGL, or when the model fails to load. One per

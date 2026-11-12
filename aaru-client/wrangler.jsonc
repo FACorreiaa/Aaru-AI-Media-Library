@@ -27,9 +27,10 @@
     // reads it at runtime; the build bakes the same value into the browser chunk
     // (vite.config.ts). Empty turns reporting off in both.
     "SENTRY_DSN": "https://463ded6ff8bd2387b8a15f2710cc3b16@o4510766840872960.ingest.de.sentry.io/4512299384635472",
-    // The 3D owl on the sign-in page (BRD-011, an experiment): the address of `owl.glb`. Empty
-    // means the still, which is what production shows; only staging sets it.
-    "OWL_3D_MODEL_URL": "",
+    // The 3D owl on the sign-in page (BRD-011): the address of `owl.glb` on Aaru's own static
+    // Worker (docs/brand/cdn). Empty means the still on the disc. Production shows the owl since
+    // 2026-11-12; staging may point at a newer cut first.
+    "OWL_3D_MODEL_URL": "https://cdn.aaruapp.com/aaru/owl3d/v2/owl.glb",
   },
   // www answers with a permanent redirect to the apex (src/start.ts).
   "routes": [
