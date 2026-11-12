@@ -48,9 +48,10 @@ the Developer portal. Release signing goes through fastlane match (REL-004).
 
 ```bash
 cd aaru-ios && bundle install
-bundle exec fastlane beta          # Beta config -> TestFlight (internal), iOS
+bundle exec fastlane beta          # Beta config -> TestFlight (internal), iOS then macOS
 bundle exec fastlane release       # Release config -> App Store, phased
 bundle exec fastlane hotfix        # Release config -> App Store, not phased
+bundle exec fastlane metadata      # store copy in fastlane/metadata -> App Store Connect, no build
 bundle exec fastlane seed_signing  # refresh match profiles by hand
 ```
 
@@ -63,9 +64,21 @@ beta job skips with a notice.
 beta lane signs read-only; dispatch **Seed signing** once to create Aaru's profiles there, and
 again after an entitlement change or a certificate renewal.
 
-**macOS** builds in CI but does not upload yet: the Mac App Store also needs a Mac Installer
-Distribution certificate, which the match repo does not hold. Add one, then add `macos` to
-`PLATFORMS` in the Fastfile.
+**macOS** ships beside iOS: every lane runs once per platform in the Fastfile's `PLATFORMS`.
+The Mac App Store takes a signed `.pkg`, which needs a Mac Installer Distribution certificate
+beside the distribution one. **Seed signing** creates it in the match repo the first time it
+runs with `macos` in `PLATFORMS`, with Aaru's four Mac profiles; the beta and release lanes only
+read it. Both app records in App Store Connect need the macOS platform added before the first
+Mac upload. The Mac app is sandboxed and may read and write only the files the person picks
+(`ENABLE_USER_SELECTED_FILES`), which imports and the data export use. Mac push is not on yet:
+the Mac profile has no Push capability.
+
+**Store copy** lives in `fastlane/metadata/` (one `en-US` listing for both platforms) and goes
+up with `release`, or alone with `metadata`. App Review's contact and demo account come from the
+`REVIEW_*` secrets, never from a file. Screenshots are still added in App Store Connect.
+
+**Icons** are the owl (the beta one carries a BETA band). BRD-003 asks for a 2048 px master
+before an App Store release.
 
 **Icons** are placeholders (reed field at dusk; the beta one carries a BETA band). The real
 logo and store metadata come with the first production release.

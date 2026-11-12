@@ -18,6 +18,9 @@ export function LegalLinks(props: { class?: string }) {
       <Link to="/terms" class="py-3 hover:text-ink md:py-0">
         Terms
       </Link>
+      <Link to="/support" class="py-3 hover:text-ink md:py-0">
+        Support
+      </Link>
     </nav>
   )
 }

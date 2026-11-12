@@ -14,6 +14,7 @@ import { Route as ShellRouteImport } from './routes/_shell'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as SignInRouteImport } from './routes/sign-in'
+import { Route as SupportRouteImport } from './routes/support'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as DotwellKnownAppleAppSiteAssociationRouteImport } from './routes/[.]well-known/apple-app-site-association'
 import { Route as ShellAppRouteImport } from './routes/_shell.app'
@@ -93,6 +94,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const SignInRoute = SignInRouteImport.update({
   id: '/sign-in',
   path: '/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SupportRoute = SupportRouteImport.update({
+  id: '/support',
+  path: '/support',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TermsRoute = TermsRouteImport.update({
@@ -389,6 +395,7 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
+  '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
   '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/app': typeof ShellAppRoute
@@ -451,6 +458,7 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
+  '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
   '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/app': typeof ShellAppRoute
@@ -512,6 +520,7 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/privacy': typeof PrivacyRoute
   '/sign-in': typeof SignInRoute
+  '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
   '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/_shell/app': typeof ShellAppRoute
@@ -576,6 +585,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/privacy'
     | '/sign-in'
+    | '/support'
     | '/terms'
     | '/.well-known/apple-app-site-association'
     | '/app'
@@ -638,6 +648,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/privacy'
     | '/sign-in'
+    | '/support'
     | '/terms'
     | '/.well-known/apple-app-site-association'
     | '/app'
@@ -698,6 +709,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/privacy'
     | '/sign-in'
+    | '/support'
     | '/terms'
     | '/.well-known/apple-app-site-association'
     | '/_shell/app'
@@ -762,6 +774,7 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   PrivacyRoute: typeof PrivacyRoute
   SignInRoute: typeof SignInRoute
+  SupportRoute: typeof SupportRoute
   TermsRoute: typeof TermsRoute
   DotwellKnownAppleAppSiteAssociationRoute: typeof DotwellKnownAppleAppSiteAssociationRoute
   AppExportRoute: typeof AppExportRoute
@@ -812,6 +825,13 @@ declare module '@tanstack/solid-router' {
       path: '/sign-in'
       fullPath: '/sign-in'
       preLoaderRoute: typeof SignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/support': {
+      id: '/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof SupportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/terms': {
@@ -1339,6 +1359,7 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   PrivacyRoute: PrivacyRoute,
   SignInRoute: SignInRoute,
+  SupportRoute: SupportRoute,
   TermsRoute: TermsRoute,
   DotwellKnownAppleAppSiteAssociationRoute:
     DotwellKnownAppleAppSiteAssociationRoute,
@@ -1357,13 +1378,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/solid-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

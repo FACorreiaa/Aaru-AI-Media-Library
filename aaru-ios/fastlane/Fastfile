@@ -1,12 +1,14 @@
-# Aaru release lanes (BACKLOG REL-004). One multiplatform target; the lanes
-# ship iOS. macOS joins PLATFORMS once the team has a Mac Installer
-# Distribution certificate in the match repo (see aaru-ios/README.md).
+# Aaru release lanes (BACKLOG REL-004). One multiplatform target, shipped to
+# iPhone/iPad and to the Mac: every lane runs once per entry of PLATFORMS.
 #
 #   beta         Beta config (bundle id + .beta) -> TestFlight, internal testers
 #   release      Release config -> App Store, phased, submitted for review
 #   hotfix       Release config -> App Store, not phased
+#   metadata     store copy from fastlane/metadata -> App Store Connect, no build
 #   seed_signing turns on the App IDs' capabilities and reissues Aaru's match profiles
-#                (run before the first beta and after any entitlement change)
+#                (run before the first beta and after any entitlement change). It is
+#                the only lane that may create a certificate: the Mac App Store's
+#                Mac Installer Distribution certificate, the first time it runs.
 #
 # Both Beta and Release talk to the production API; beta is client-side only.
 
@@ -17,7 +19,36 @@ TEAM_ID = "84X9WYBF36"
 BUNDLE_ID = "com.fernandocorreia.aaru"
 BETA_BUNDLE_ID = "com.fernandocorreia.aaru.beta"
 SCHEMES = { "Beta" => "Aaru Beta", "Release" => "Aaru" }.freeze
-PLATFORMS = %w[ios].freeze
+PLATFORMS = %w[ios macos].freeze
+
+# deliver's name for a platform.
+def store_platform(platform)
+  platform == "macos" ? "osx" : "ios"
+end
+
+# The Mac App Store takes a signed .pkg, so a Mac build needs the installer certificate too.
+def installer_cert_types(platform)
+  platform == "macos" ? ["mac_installer_distribution"] : nil
+end
+
+# Who App Review can reach, the account it signs in with, and the notes it reads. The
+# contact and the demo account come from the environment (GitHub secrets REVIEW_*), never
+# from a file here: the demo password signs in to production. Nil while they are unset, so
+# a lane still runs and the review information is filled in App Store Connect instead.
+def review_information
+  keys = %w[REVIEW_FIRST_NAME REVIEW_LAST_NAME REVIEW_EMAIL REVIEW_PHONE REVIEW_DEMO_USER REVIEW_DEMO_PASSWORD]
+  return nil if keys.any? { |key| ENV[key].to_s.empty? }
+
+  {
+    first_name: ENV["REVIEW_FIRST_NAME"],
+    last_name: ENV["REVIEW_LAST_NAME"],
+    email_address: ENV["REVIEW_EMAIL"],
+    phone_number: ENV["REVIEW_PHONE"],
+    demo_user: ENV["REVIEW_DEMO_USER"],
+    demo_password: ENV["REVIEW_DEMO_PASSWORD"],
+    notes: File.read(File.join(__dir__, "metadata/review_information/notes.txt"))
+  }
+end
 
 platform :ios do
   desc "Build the Beta configuration and upload it to TestFlight (internal)"
@@ -43,6 +74,24 @@ platform :ios do
     store_release(options.merge(phased: false))
   end
 
+  desc "Upload the store copy in fastlane/metadata, without a build or a review submission"
+  lane :metadata do
+    api_key = asc_api_key
+    PLATFORMS.each do |platform|
+      upload_to_app_store(
+        api_key: api_key,
+        app_identifier: BUNDLE_ID,
+        platform: store_platform(platform),
+        skip_binary_upload: true,
+        submit_for_review: false,
+        force: true,
+        skip_screenshots: !File.directory?("screenshots"),
+        precheck_include_in_app_purchases: false,
+        app_review_information: review_information
+      )
+    end
+  end
+
   desc "Create App Store profiles for every Aaru id and push them to the match repo"
   lane :seed_signing do
     api_key = asc_api_key
@@ -50,8 +99,17 @@ platform :ios do
     enable_capabilities
     PLATFORMS.each do |platform|
       # force: a capability turned on since the last run is only in a newly issued profile.
-      # Profiles only; certificates are never minted here.
-      match(type: "appstore", platform: platform, readonly: false, force: true, api_key: api_key)
+      # The iOS distribution certificate is never minted here (the team is at its limit and
+      # the repo holds it). The Mac App Store needs one more, a Mac Installer Distribution
+      # certificate to sign the .pkg: match creates it on the first run and reuses it after.
+      match(
+        type: "appstore",
+        platform: platform,
+        additional_cert_types: installer_cert_types(platform),
+        readonly: false,
+        force: true,
+        api_key: api_key
+      )
     end
   end
 
@@ -68,17 +126,23 @@ platform :ios do
       upload_to_app_store(
         api_key: api_key,
         app_identifier: BUNDLE_ID,
-        platform: platform == "ios" ? "ios" : "osx",
+        platform: store_platform(platform),
         pkg: platform == "macos" ? lane_context[SharedValues::PKG_OUTPUT_PATH] : nil,
         submit_for_review: true,
         automatic_release: true,
         phased_release: options[:phased],
         precheck_include_in_app_purchases: false,
         force: true,
-        # Store copy and screenshots are edited in App Store Connect until
-        # metadata/ exists in this repo.
         skip_metadata: !File.directory?("metadata"),
-        skip_screenshots: !File.directory?("screenshots")
+        # Screenshots are added in App Store Connect until screenshots/ exists here.
+        skip_screenshots: !File.directory?("screenshots"),
+        app_review_information: review_information,
+        # The app uses only the system's own encryption (HTTPS), as its Info.plist says
+        # (ITSAppUsesNonExemptEncryption = NO), and shows no ads.
+        submission_information: {
+          export_compliance_uses_encryption: false,
+          add_id_info_uses_idfa: false
+        }
       )
     end
   end
@@ -94,7 +158,7 @@ platform :ios do
     match(
       type: "appstore",
       platform: platform,
-      additional_cert_types: macos ? ["mac_installer_distribution"] : nil,
+      additional_cert_types: installer_cert_types(platform),
       readonly: options.fetch(:readonly, is_ci),
       api_key: api_key
     )

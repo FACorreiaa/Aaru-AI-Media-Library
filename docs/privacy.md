@@ -1,6 +1,6 @@
 # Privacy policy
 
-_Last updated 11 November 2026._
+_Last updated 12 November 2026._
 
 Aaru is a private media library: what you watch and read, kept for you. This page says what
 Aaru stores, who else sees any of it, and how to delete it. If anything here stops matching
@@ -241,6 +241,12 @@ browser type and app version, and the page address without anything after the `?
 includes your name, email, what is in your library or what you wrote. On Netflix, Disney+ and
 Prime Video the extension reports only the site, never the page you were on.
 
+**Server logs and health.** Aaru's server keeps a log line for each request (what was asked for
+as a route, how long it took, and whether it worked) and counts of the same, so the developer can
+see that Aaru is up and where it is slow. Tokens and sign-in addresses are removed before a line
+is written, and a line never holds your name, your email, what is in your library or what you
+wrote. They go to Grafana Cloud.
+
 **Product counts.** Aaru's server notes a few events so the developer can see which parts of Aaru
 are used: an account was created and how (Apple, Google or email), an import finished and from
 where, a title was added or changed and by whom (you, an agent, an import or a player), a list or
@@ -302,6 +308,8 @@ Aaru only uses these services, and only for the purpose listed:
   are or your country.
 - **Open-Meteo** turns the city you type for "Concerts near" into a place. It receives that
   text only.
+- **Grafana Cloud** receives the server logs and health counts described above, from Aaru's
+  server only.
 - **Sentry** (Germany) receives the error reports described above.
 - **PostHog** (European Union) receives the product counts described above, from Aaru's server
   only.

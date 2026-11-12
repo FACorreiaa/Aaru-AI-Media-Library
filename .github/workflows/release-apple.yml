@@ -1,7 +1,9 @@
-# iOS + macOS release pipeline (REL-004).
-#   "Apple CI" green on main -> TestFlight build of Aaru Beta (beta lane)
-#   manual dispatch          -> App Store release or hotfix, gated by the
-#                               GitHub environment "app-store" (required reviewer)
+# iOS + macOS release pipeline (REL-004). Every lane builds and uploads twice: iPhone/iPad,
+# then the Mac.
+#   "Apple CI" green on main -> TestFlight builds of Aaru Beta (beta lane)
+#   manual dispatch          -> App Store release or hotfix, or the store copy alone
+#                               (metadata), gated by the GitHub environment "app-store"
+#                               (required reviewer)
 #
 # Required repo secrets:
 #   ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 (base64 .p8)  — App Store Connect API key
@@ -10,6 +12,10 @@
 #                                                          Contents:Read on NorthAIProject/north-ios-certificates
 #                                                          (Read+Write for the Seed signing workflow)
 #   SECRETS_XCCONFIG                                     — contents of Config/Secrets.xcconfig (optional)
+#   SENTRY_AUTH_TOKEN                                    — crash symbols to Sentry (optional: skipped when unset)
+#   REVIEW_FIRST_NAME, REVIEW_LAST_NAME, REVIEW_EMAIL,
+#   REVIEW_PHONE, REVIEW_DEMO_USER, REVIEW_DEMO_PASSWORD — App Review's contact and demo account (optional:
+#                                                          left to App Store Connect while any is unset)
 name: Apple Release
 
 on:
@@ -23,7 +29,7 @@ on:
         description: Release lane
         required: true
         type: choice
-        options: [release, hotfix]
+        options: [release, hotfix, metadata]
         default: release
       version:
         description: Marketing version (e.g. 1.0) — empty keeps current
@@ -45,7 +51,7 @@ jobs:
       github.event.workflow_run.conclusion == 'success'
     name: TestFlight (Aaru Beta)
     runs-on: macos-15
-    timeout-minutes: 90
+    timeout-minutes: 120 # two archives: iOS, then macOS
     steps:
       # Until the signing secrets exist, skip with a notice instead of failing
       # every push to main.
@@ -105,7 +111,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     name: App Store (${{ inputs.lane }})
     runs-on: macos-15
-    timeout-minutes: 120
+    timeout-minutes: 150 # two archives and two uploads
     environment: app-store # required reviewer = manual gate
     steps:
       - uses: actions/checkout@v7
@@ -131,8 +137,16 @@ jobs:
       - name: Fastlane ${{ inputs.lane }}
         run: bundle exec fastlane ${{ inputs.lane }} ${{ inputs.version != '' && format('version:{0}', inputs.version) || '' }}
         env:
+          # dSYMs to Sentry, as the beta job does: a store crash is symbolicated too.
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
           MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+          REVIEW_FIRST_NAME: ${{ secrets.REVIEW_FIRST_NAME }}
+          REVIEW_LAST_NAME: ${{ secrets.REVIEW_LAST_NAME }}
+          REVIEW_EMAIL: ${{ secrets.REVIEW_EMAIL }}
+          REVIEW_PHONE: ${{ secrets.REVIEW_PHONE }}
+          REVIEW_DEMO_USER: ${{ secrets.REVIEW_DEMO_USER }}
+          REVIEW_DEMO_PASSWORD: ${{ secrets.REVIEW_DEMO_PASSWORD }}
