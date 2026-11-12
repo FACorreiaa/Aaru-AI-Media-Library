@@ -34,6 +34,29 @@ library layer stay separate, external IDs stored whenever known, no second backe
 - **Anime is first-class from P1** (AniList catalog, `anilist`/`mal`/`anidb` external IDs).
 - DMs are **Signal-grade (libsignal)**. Licence and web support are OPEN — see DM-003, DM-004.
 
+## Decisions recorded 2026-11-12
+
+Owner, 2026-11-12: try the owl as a real-time 3D character on the web and in the Apple app, see it
+live on the beta site and on TestFlight before the App Store release, and decide there whether it
+is worth having, here and for the other apps' mascots. This is **BRD-011**, an experiment with a
+go or no-go at the end; the plan is `docs/superpowers/plans/2026-11-12-owl-3d-experiment.md`.
+
+- **Beta only.** The 3D owl is on the staging Worker and in Debug and Beta builds. The production
+  web and the App Store build show the stills, and the App Store build does not carry the model.
+- **Off the disc.** On the sign-in page and the Welcome screen the 3D owl stands full-body, without
+  the `night` disc. DESIGN.md "Brand" records this as the experiment's one exception.
+- **First cut:** the standing owl at rest (a breath, a blink, a slow drift of the head) that looks
+  toward the pointer or a touch. The other three poses, the landing hero, the first run and the
+  placement audit wait for the verdict.
+- **Where the model lives:** the web loads `owl.glb` from an Aaru-owned Cloudflare bucket, never
+  from git; the Apple app carries `Owl.usdz` in its bundle, committed. The source GLBs stay
+  outside the repo.
+- Not the owner's, chosen while planning and open to change: the motion is data
+  (`design/owl-motion.json`) played by one small driver per client, so both move alike and the
+  other apps can take the same shape; the model's address is the web's switch (`OWL_3D_MODEL_URL`,
+  set for staging only); a phone shows the 3D owl on the sign-in page, where the still is hidden
+  today.
+
 ## Decisions recorded 2026-11-11
 
 Owner, 2026-11-11: after finishing a title, show a small tree of where to go from it, with the look
@@ -867,6 +890,7 @@ account or a stranger that has not happened yet.
 | BRD-008 | Built | #161 (source + generator); #162 (web surfaces); #163 (web type + motion); this PR (Apple: card/well/field/lift, radii, alpha, spacing, Settings tiles on tokens, brand guard for system colours) | Owner checks a menu, a dialog, the drawer, a card and the recap in both appearances on beta web, once with Reduce Motion |
 | BRD-010 | Built | this PR; `docs/brand/owl_icon_appearances.py` | Dark + tinted app icon (iOS 18), extension popup on the tokens, PWA manifest rule. Owner checks the icon in all three Home Screen modes |
 | BRD-009 | Built | this PR; `WidgetAssets.xcassets` gets every role | Widgets on the tokens: generated colour sets, `widgetAccentable`, text styles, Gauge. Owner checks the widget gallery in light, dark and tinted |
+| BRD-011 | Open | `design/owl-motion.json`, `design/owl-rig.json` (this PR); web and Apple follow | Owl in 3D, beta only: three.js on the sign-in page, RealityKit on Welcome. Owner judges on beta web and TestFlight: go or no-go |
 | DSN-002 | Built | #102, #103, #104, this PR; `npm run tokens:check` in Web CI; screenshots on beta.aaruapp.com (light + dark, real data) and iPhone/iPad simulators | Widgets, Dynamic Type at accessibility sizes, VoiceOver and the Mac layout not yet checked on a device (TestFlight from 35cfb64) |
 | SRV-001 | Done | #1; no `getHello`/WebSocket in code | |
 | SRV-002 | Done | #1; `openapi.yaml` `/v1` + shared error schema | |
@@ -1381,6 +1405,10 @@ The widget extension had its own string palette (`Color("Paper")`, accent called
 The app icon had one appearance; iOS 18 asks for dark and tinted. `docs/brand/owl_icon_appearances.py` renders both from the traced A-mark: dark is the mark on flat night navy without the hologram glow, tinted is the mark alone in grey on transparent for the system to tint; the Beta set keeps its band. The extension popup takes the web's eyebrow (12 px, 0.12 em), the pill radius and the motion tokens instead of its own values. The PWA manifest's two colours are the dark paper by design (one splash for both appearances), written by the generator and documented in DESIGN.md.
 
 **Done when:** both `AppIcon*` sets carry `dark` and `tinted` 1024 images and the catalog compiles; the owner has seen the icon in default, dark and tinted modes on an iOS 18 Home Screen.
+### BRD-011 · Owl in 3D, beta-only experiment · M · owner, 2026-11-12
+The owl is four stills. The owner supplied a 3D model; `docs/brand/owl_3d.py` turns it into a jointed, lit `owl.glb` and `Owl.usdz` (16 joints, eyelids, no baked clips). This item puts that owl on one signed-out screen per client, on the beta channel only: `Owl3D` (three.js, its own lazy chunk, the model from Aaru's bucket) on the web's sign-in page, and `Owl3DView` (RealityKit, the model in the bundle) on Welcome. It stands off the `night` disc, breathes, blinks and looks toward the pointer or a touch; the motion is `design/owl-motion.json`, played by `owl-motion.ts` and `OwlMotion.swift` and tested against the same numbers. The still shows first and stays under Reduce Motion, Save-Data, Low Power Mode, without WebGL, or when the model fails to load. Decisions 2026-11-12.
+
+**Done when:** the 3D owl is on beta.aaruapp.com's sign-in page and in a TestFlight build's Welcome screen, on iPhone and Mac; the production web build and the Release app show the still and carry no model; the sign-in route's own size budget is unchanged; and the owner has said go or no-go, written here with the measurements.
 
 ## P0 · M1 — Server foundation
 

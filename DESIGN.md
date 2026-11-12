@@ -1430,6 +1430,14 @@ sets, brand assets), main wins.
   **breath** means Aaru is working; **idle** (a slow float and an amber glow behind the eyes) is
   the owl at rest, on Home and empty states only. Errors and recap cards stay still. Under
   Reduce Motion the owl never moves.
+- **The owl in 3D (BRD-011, owner 2026-11-12: an experiment, beta only).** On the staging web and
+  in Debug and Beta builds, the owl on the sign-in page and the Welcome screen is the 3D model,
+  full-body and **off the `night` disc**: the one exception to the rule above, kept to those two
+  screens until the owner's verdict. It is the standing owl at rest: a breath, a blink, a slow
+  drift of the head, an amber pulse, and a look toward the pointer or a touch. Its lights are the
+  `gold` and `accent` tokens, and the soft amber glow sits behind it in place of the disc. The
+  still (without the disc) shows first and stays under Reduce Motion, Save-Data and Low Power
+  Mode, and whenever the model cannot be drawn. Production shows the stills on the disc, as above.
 - **Tagline.** "Your stories. Your world."
 - **Enforced.** `.github/workflows/ci-brand.yml` runs `scripts/generate-tokens.mjs --check` and
   `scripts/brand-guard.sh`: no colour literals outside the generated tokens, no serif or bundled

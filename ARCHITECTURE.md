@@ -1199,6 +1199,10 @@ Local cache: display last successful library fetch offline. No offline write que
 
 Prefer a single multiplatform target for iPhone and Mac.
 
+The owl in 3D (BRD-011) is `Owl3DView`, a non-AR `RealityView` on Welcome, compiled only into
+Debug and Beta builds. `Owl.usdz` is in the app bundle; `Release.xcconfig` leaves it out. Motion is
+`design/owl-motion.json`, the same data the web plays.
+
 Screens are composed from the `VIEWS.md` component catalog. Every component must be usable
 by direct touch before the agent is allowed to emit it — a failed model call should degrade
 to a working screen, never a blank one.
@@ -1275,6 +1279,10 @@ SvelteKit scaffold). Same screens as the Apple apps, in the same order they ship
   `notifications`, `import`, `connections`, `data`, `about`, `delete`) with a rail from 768px
   and a list below; the old slugs (`connected`, `imports`, `recaps`) and hashes redirect.
   `/app/week` redirects to `/app/calendar`.
+- The owl in 3D (BRD-011, beta only): when `OWL_3D_MODEL_URL` is set (staging), the sign-in page
+  swaps the still for `Owl3D`, which loads `three` and `owl.glb` in the browser only, after first
+  paint. The model comes from an Aaru-owned Cloudflare bucket, versioned by path and cached for a
+  year; the Worker never imports `three`. Production has no such var and no 3D.
 
 ## Tracking integrations (Phase 3)
 

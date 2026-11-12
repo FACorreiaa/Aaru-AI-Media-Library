@@ -53,4 +53,13 @@ webserif=$(git grep -IniE 'ui-serif|Newsreader|Georgia|@font-face' -- 'aaru-clie
 retired=$(git grep -IniE 'heron|reed[ -]?mark' -- 'aaru-client/src' 'aaru-ios' 'aaru-extension/src' || true)
 [ -z "$retired" ] || fail "Retired mark. The owl (OwlMark / Image(.owlMark)) is Aaru's mark now." "$retired"
 
+# The 3D owl's rig and motion (BRD-011) are written once, in design/. Each client carries a copy
+# so it can bundle it; a copy that differs would make the web and the Apple owl move apart.
+for name in owl-motion.json owl-rig.json; do
+  for copy in "aaru-client/src/lib/owl3d/$name" "aaru-ios/Aaru/Resources/$name"; do
+    [ ! -f "$copy" ] || cmp -s "design/$name" "$copy" ||
+      fail "$copy differs from design/$name." "cp design/$name $copy"
+  done
+done
+
 exit $status
