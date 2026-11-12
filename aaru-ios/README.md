@@ -80,9 +80,6 @@ up with `release`, or alone with `metadata`. App Review's contact and demo accou
 **Icons** are the owl (the beta one carries a BETA band). BRD-003 asks for a 2048 px master
 before an App Store release.
 
-**Icons** are placeholders (reed field at dusk; the beta one carries a BETA band). The real
-logo and store metadata come with the first production release.
-
 ## Text and the String Catalog
 
 English only for now. Every string the app shows is in a String Catalog so a language can be
