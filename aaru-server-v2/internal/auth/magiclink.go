@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"time"
 )
@@ -71,8 +72,15 @@ func (s *ResendSender) Send(ctx context.Context, email, link, code string) error
 		return errEmailNotSent
 	}
 	defer func() { _ = resp.Body.Close() }()
-	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 64<<10))
+	body, _ := io.ReadAll(io.LimitReader(resp.Body, 64<<10))
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		// Resend says why in `name` (`validation_error`: an unverified sending domain, a key
+		// from another account). Its `message` can repeat the address, so it is not logged.
+		var refusal struct {
+			Name string `json:"name"`
+		}
+		_ = json.Unmarshal(body, &refusal)
+		slog.WarnContext(ctx, "Resend refused the sign-in email", "status", resp.StatusCode, "reason", refusal.Name)
 		return errEmailNotSent
 	}
 	return nil

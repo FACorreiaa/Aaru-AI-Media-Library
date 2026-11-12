@@ -49,6 +49,14 @@ type MagicLinks struct {
 	LinkBaseURL *url.URL
 }
 
+// ReviewAccount is App Review's way in: Email's sign-in code is always Code, and no mail is
+// sent for it. Everything else about the code is unchanged: it works once per request, expires,
+// and locks after MaxCodeAttempts wrong tries.
+type ReviewAccount struct {
+	Email string
+	Code  string
+}
+
 // Service is AuthService.
 type Service struct {
 	Store *Store
@@ -57,6 +65,8 @@ type Service struct {
 	MagicLinks *MagicLinks
 	// Google is nil when Google sign-in is not configured (no GOOGLE_CLIENT_IDS).
 	Google GoogleVerifying
+	// Review is nil unless a review account is configured (REVIEW_EMAIL and REVIEW_CODE).
+	Review *ReviewAccount
 	// OnAccountCreated, when set, hears of every new account (the `account_created`
 	// product event). Never fails a sign-in.
 	OnAccountCreated func(ctx context.Context, userID uuid.UUID, provider Provider)
@@ -169,8 +179,16 @@ func (s *Service) RequestMagicLink(ctx context.Context, rawEmail, clientAddress 
 	}
 	secret := token.Generate()
 	code := token.EmailCode()
+	review := s.Review != nil && email == s.Review.Email
+	if review {
+		code = s.Review.Code
+	}
 	if err := s.Store.CreateMagicLink(ctx, email, token.Hash(secret), token.EmailCodeHash(code, email), now.Add(MagicLinkLifetime)); err != nil {
 		return err
+	}
+	if review {
+		// The reviewer has the code already and no inbox to read: nothing is sent.
+		return nil
 	}
 	link := *s.MagicLinks.LinkBaseURL
 	// Appended after any query the base URL has; the token is base64url, so it needs no escaping.

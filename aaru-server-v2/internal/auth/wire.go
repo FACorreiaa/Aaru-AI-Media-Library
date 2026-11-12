@@ -23,5 +23,9 @@ func FromConfig(cfg *config.App, pool *pgxpool.Pool, client *http.Client) (*Serv
 	if len(cfg.GoogleAudiences) > 0 {
 		google = GoogleVerifier{Audiences: cfg.GoogleAudiences, JWKS: NewJWKSCache(client, GoogleKeysURL)}
 	}
-	return NewService(NewStore(pool), apple, magicLinks, google), NewAgentTokenService(pool, cfg.PublicBaseURL)
+	service := NewService(NewStore(pool), apple, magicLinks, google)
+	if cfg.Review != nil {
+		service.Review = &ReviewAccount{Email: cfg.Review.Email, Code: cfg.Review.Code}
+	}
+	return service, NewAgentTokenService(pool, cfg.PublicBaseURL)
 }
