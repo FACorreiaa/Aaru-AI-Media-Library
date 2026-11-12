@@ -16,6 +16,10 @@ struct WelcomeView: View {
 
     @Environment(\.colorScheme) private var scheme
     @State private var nonce = ""
+    #if DEBUG || BETA
+        /// Where the pointer or a finger is, for the 3D owl to look at (BRD-011).
+        @State private var owlPointer: CGPoint?
+    #endif
 
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var sizeClass
@@ -31,7 +35,7 @@ struct WelcomeView: View {
             Group {
                 if isWide {
                     HStack(alignment: .center, spacing: AaruSpace.page) {
-                        OwlMedallion.welcome
+                        owl
                             .frame(maxWidth: 380)
                         VStack(alignment: .leading, spacing: 32) {
                             copy
@@ -42,7 +46,7 @@ struct WelcomeView: View {
                     .padding(48)
                 } else {
                     VStack(alignment: .leading, spacing: AaruSpace.section) {
-                        OwlMedallion.welcome
+                        owl
                             .frame(maxWidth: 230)
                             .frame(maxWidth: .infinity)
                         copy
@@ -66,6 +70,9 @@ struct WelcomeView: View {
         }
         .background(Color(.paper).ignoresSafeArea())
         .foregroundStyle(Color(.ink))
+        #if DEBUG || BETA
+            .owlFollows($owlPointer)
+        #endif
     }
 
     private var copy: some View {
@@ -136,10 +143,16 @@ struct WelcomeView: View {
     }
 }
 
-private extension OwlMedallion {
-    /// The owl introduced, with what it is for VoiceOver.
-    static var welcome: OwlMedallion {
-        OwlMedallion(label: Text("Aaru's mascot, a small white robot owl with glowing amber eyes"))
+private extension WelcomeView {
+    /// The owl introduced, with what it is for VoiceOver. On the beta channel it is the 3D owl,
+    /// off the disc (BRD-011, an experiment); the App Store build shows the still.
+    @ViewBuilder var owl: some View {
+        let label = Text("Aaru's mascot, a small white robot owl with glowing amber eyes")
+        #if DEBUG || BETA
+            Owl3DView(label: label, pointer: owlPointer)
+        #else
+            OwlMedallion(label: label)
+        #endif
     }
 }
 

@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "about": "How the 3D owl moves (BRD-011). Read by aaru-client/src/lib/owl-motion.ts and aaru-ios/Aaru/Design/OwlMotion.swift, which must give the same numbers. Joints are named in owl-rig.json. Every value is an offset from the posed rest: translations in model units (the owl is one unit tall), rotations in degrees, emissiveScale a multiplier (1 is rest). A track loops every periodSeconds; a keyframe's t is the fraction of that period, and the easing shapes each span between two keyframes.",
+  "states": {
+    "standing": {
+      "kind": "loop",
+      "tracks": [
+        {
+          "joint": "Body",
+          "property": "translateY",
+          "periodSeconds": 4.5,
+          "easing": "sine",
+          "keyframes": [
+            { "t": 0, "v": 0 },
+            { "t": 0.5, "v": 0.012 },
+            { "t": 1, "v": 0 }
+          ]
+        },
+        {
+          "joint": "Head",
+          "property": "rotateYDegrees",
+          "periodSeconds": 11,
+          "easing": "sine",
+          "keyframes": [
+            { "t": 0, "v": 0 },
+            { "t": 0.3, "v": 2.5 },
+            { "t": 0.7, "v": -2 },
+            { "t": 1, "v": 0 }
+          ]
+        },
+        {
+          "joint": "Head",
+          "property": "rotateXDegrees",
+          "periodSeconds": 7,
+          "easing": "sine",
+          "keyframes": [
+            { "t": 0, "v": 0 },
+            { "t": 0.5, "v": 1.5 },
+            { "t": 1, "v": 0 }
+          ]
+        },
+        {
+          "material": "amber",
+          "property": "emissiveScale",
+          "periodSeconds": 4,
+          "easing": "sine",
+          "keyframes": [
+            { "t": 0, "v": 0.85 },
+            { "t": 0.5, "v": 1.2 },
+            { "t": 1, "v": 0.85 }
+          ]
+        }
+      ]
+    }
+  },
+  "blink": {
+    "joints": ["LidL", "LidR"],
+    "open": 0.001,
+    "shut": 1,
+    "intervalSeconds": [4, 7],
+    "closeSeconds": 0.08,
+    "holdSeconds": 0.05,
+    "openSeconds": 0.14
+  },
+  "lookAt": {
+    "headYawDegrees": 14,
+    "headPitchDegrees": 8,
+    "pupilOffset": 0.02,
+    "timeConstantSeconds": 0.18
+  }
+}
