@@ -1438,7 +1438,10 @@ sets, brand assets), main wins.
   `gold` and `accent` tokens, and the soft amber glow sits behind it in place of the disc. The
   still (without the disc) shows first and stays under Reduce Motion, Save-Data and Low Power
   Mode, and whenever the model cannot be drawn. The App Store build shows the still on the disc,
-  as above, and so does every other screen.
+  as above, and so does every other screen. One more place on the web (owner, 2026-11-12, beta
+  first): the landing page's hero, above the headline, where the same owl stands on its stack of
+  books. It moves the same way and follows the same rules; where the model is not set, the hero
+  has no owl.
 - **Tagline.** "Your stories. Your world."
 - **Enforced.** `.github/workflows/ci-brand.yml` runs `scripts/generate-tokens.mjs --check` and
   `scripts/brand-guard.sh`: no colour literals outside the generated tokens, no serif or bundled

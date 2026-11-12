@@ -60,6 +60,15 @@ export const getSignInConfig = createServerFn({ method: 'GET' }).handler(
   }),
 )
 
+/** What the landing page needs from the Worker's settings. It reads no cookie and no session:
+ * the page stays the same for everyone (LAND-001). */
+export const getLandingConfig = createServerFn({ method: 'GET' }).handler(
+  async () => ({
+    // BRD-011: where the 3D owl on its books is. Empty means no owl in the hero.
+    owl3dBooksModelUrl: env.OWL_3D_BOOKS_MODEL_URL || null,
+  }),
+)
+
 export const sendCode = createServerFn({ method: 'POST' })
   .validator(z.object({ email: z.string().trim().min(3) }))
   .handler(async ({ data }) => {

@@ -1,6 +1,7 @@
 import { Link, createFileRoute } from '@tanstack/solid-router'
-import { For } from 'solid-js'
+import { For, Show } from 'solid-js'
 import { MascotMedallion, Wordmark } from '../components/Brand'
+import { Owl3D } from '../components/Owl3D'
 import { ImportSources } from '../components/ImportSources'
 import { KindCard } from '../components/KindCard'
 import { LegalLinks } from '../components/LegalPage'
@@ -10,6 +11,7 @@ import { cardClass } from '~/components/ui'
 // No `cn` here: it brings tailwind-merge, and the landing page joins no conflicting classes.
 import { FAN, KIND_CARDS } from '../lib/landing/art'
 import { DISCORD_URL, SITE_URL, X_URL } from '../lib/site'
+import { getLandingConfig } from '../lib/session/session'
 import { useSignedIn } from '../lib/session/use-signed-in'
 import appIcon from '../assets/brand/app-icon.webp'
 import tmdbLogo from '../assets/brand/tmdb-blue-short.svg'
@@ -20,6 +22,7 @@ const description =
 
 // LAND-001: static marketing page. It never reads the session.
 export const Route = createFileRoute('/')({
+  loader: () => getLandingConfig(),
   head: () => ({
     meta: [
       { title },
@@ -77,6 +80,7 @@ function XIcon(props: { class?: string }) {
 
 function Landing() {
   const signedIn = useSignedIn()
+  const config = Route.useLoaderData()
   return (
     <>
       <header class="mx-auto flex h-18 max-w-6xl items-center justify-between px-5 md:px-8">
@@ -121,6 +125,17 @@ function Landing() {
       <main>
         <section class="overflow-hidden">
           <div class="mx-auto flex max-w-4xl flex-col items-center px-5 pt-10 text-center md:px-8 md:pt-16">
+            {/* BRD-011: the owl on its books, in 3D, where the model is set. */}
+            <Show when={config().owl3dBooksModelUrl}>
+              {(modelUrl) => (
+                <Owl3D
+                  modelUrl={modelUrl()}
+                  onBooks
+                  decorative
+                  class="rise mb-6 w-36 md:mb-8 md:w-48"
+                />
+              )}
+            </Show>
             <a
               href="#kinds"
               class="rise inline-flex items-center gap-2 rounded-full border border-line bg-surface/70 px-4 py-1.5 text-sm font-medium text-muted transition-colors hover:text-ink"

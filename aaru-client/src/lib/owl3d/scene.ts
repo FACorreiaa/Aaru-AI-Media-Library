@@ -41,8 +41,16 @@ export interface OwlScene {
 
 // The owl is one unit tall and stands on the origin (owl-rig.json "space").
 const FIELD_OF_VIEW = 30
-const CAMERA = { x: 0, y: 0.54, z: 2.2 }
-const AIM = { x: 0, y: 0.5, z: 0 }
+/** What the camera frames: the owl alone, or the owl on its stack of books
+ * (`owl-on-books.glb`, a quarter of a unit taller and the same joints). */
+export type OwlFraming = 'owl' | 'books'
+const FRAMES: Record<
+  OwlFraming,
+  { cameraY: number; cameraZ: number; aimY: number }
+> = {
+  owl: { cameraY: 0.54, cameraZ: 2.2, aimY: 0.5 },
+  books: { cameraY: 0.68, cameraZ: 2.75, aimY: 0.64 },
+}
 const MAX_PIXEL_RATIO = 2
 /** A frame that took longer (a tab coming back) moves the owl this far and no further. */
 const MAX_STEP_SECONDS = 0.1
@@ -71,7 +79,11 @@ function isStandard(material: Material): material is MeshStandardMaterial {
  * frame is on the canvas. */
 export async function mountOwl(
   canvas: HTMLCanvasElement,
-  options: { modelUrl: string; onFirstFrame: () => void },
+  options: {
+    modelUrl: string
+    framing?: OwlFraming
+    onFirstFrame: () => void
+  },
 ): Promise<OwlScene> {
   const renderer = new WebGLRenderer({
     canvas,
@@ -102,8 +114,9 @@ export async function mountOwl(
   scene.add(key, rim)
 
   const camera = new PerspectiveCamera(FIELD_OF_VIEW, 1, 0.1, 20)
-  camera.position.set(CAMERA.x, CAMERA.y, CAMERA.z)
-  camera.lookAt(AIM.x, AIM.y, AIM.z)
+  const frame = FRAMES[options.framing ?? 'owl']
+  camera.position.set(0, frame.cameraY, frame.cameraZ)
+  camera.lookAt(0, frame.aimY, 0)
 
   let model: Object3D
   try {
@@ -259,14 +272,14 @@ export async function mountOwl(
     camera.updateProjectionMatrix()
   }
 
-  let frame = 0
+  let request = 0
   let last = 0
   let running = false
   let drawn = false
   let disposed = false
 
   function draw(now: number) {
-    frame = 0
+    request = 0
     if (!running || disposed) return
     const delta = last ? Math.min((now - last) / 1000, MAX_STEP_SECONDS) : 0
     last = now
@@ -276,7 +289,7 @@ export async function mountOwl(
       drawn = true
       options.onFirstFrame()
     }
-    frame = requestAnimationFrame(draw)
+    request = requestAnimationFrame(draw)
   }
 
   resize()
@@ -290,13 +303,13 @@ export async function mountOwl(
       running = next
       // The time away is not played back: the owl carries on from where it stopped.
       last = 0
-      if (running && !frame) frame = requestAnimationFrame(draw)
+      if (running && !request) request = requestAnimationFrame(draw)
     },
     resize,
     dispose() {
       disposed = true
       running = false
-      if (frame) cancelAnimationFrame(frame)
+      if (request) cancelAnimationFrame(request)
       for (const geometry of geometries) geometry.dispose()
       for (const material of materials) material.dispose()
       environment.dispose()

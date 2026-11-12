@@ -10,14 +10,22 @@ function savesData(): boolean {
   return connection?.saveData === true
 }
 
-/** The owl in 3D, off the night disc (BRD-011: on the web's sign-in page, beta and production). It stands at
- * rest, breathes, blinks and looks toward the pointer. The still is the first paint and carries
- * the words for a screen reader; the canvas replaces it only once a frame is drawn, and never
- * under reduced motion, Save-Data, without WebGL, or when the model fails to load. One per
- * page: each is a WebGL context. */
+/** The still, placed where the owl stands in the wider frame that holds the books
+ * (`FRAMES.books` in scene.ts), so the owl does not jump when the canvas takes over. */
+const ON_BOOKS_STILL = 'origin-center -translate-y-[8%] scale-[0.72]'
+
+/** The owl in 3D, off the night disc (BRD-011: the web's sign-in page and, on its stack of
+ * books, the landing page's hero). It stands at rest, breathes, blinks and looks toward the
+ * pointer. The still is the first paint and carries the words for a screen reader; the canvas
+ * replaces it only once a frame is drawn, and never under reduced motion, Save-Data, without
+ * WebGL, or when the model fails to load. One per page: each is a WebGL context. */
 export function Owl3D(props: {
-  /** Where `owl.glb` is (`OWL_3D_MODEL_URL`). */
+  /** Where the model is: `owl.glb` (`OWL_3D_MODEL_URL`), or with `onBooks`
+   * `owl-on-books.glb` (`OWL_3D_BOOKS_MODEL_URL`). */
   modelUrl: string
+  /** The model is the owl on its books: the camera stands back to hold the stack, and the
+   * still waits where the owl will stand. */
+  onBooks?: boolean
   class?: string
   decorative?: boolean
 }) {
@@ -53,6 +61,7 @@ export function Owl3D(props: {
         const { mountOwl } = await import('~/lib/owl3d/scene')
         const mounted = await mountOwl(canvas, {
           modelUrl: props.modelUrl,
+          framing: props.onBooks ? 'books' : 'owl',
           onFirstFrame: () => setLive(true),
         })
         if (gone) {
@@ -94,7 +103,7 @@ export function Owl3D(props: {
     >
       <OwlStill
         decorative={props.decorative}
-        class={`absolute inset-0 h-full w-full transition-opacity duration-(--motion-slow) ${live() ? 'opacity-0' : ''}`}
+        class={`absolute inset-0 h-full w-full transition-opacity duration-(--motion-slow) ${props.onBooks ? ON_BOOKS_STILL : ''} ${live() ? 'opacity-0' : ''}`}
       />
       <canvas
         ref={canvas}

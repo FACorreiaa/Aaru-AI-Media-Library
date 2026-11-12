@@ -1286,7 +1286,9 @@ SvelteKit scaffold). Same screens as the Apple apps, in the same order they ship
 - The owl in 3D (BRD-011): when `OWL_3D_MODEL_URL` is set (staging, and production since 2026-11-12), the sign-in page
   swaps the still for `Owl3D`, which loads `three` and `owl.glb` in the browser only, after first
   paint. The model comes from `cdn.aaruapp.com` (a static Worker, `docs/brand/cdn`), versioned by path and cached for a
-  year; the Worker never imports `three`. Empty, the page shows the still on the disc.
+  year; the Worker never imports `three`. Empty, the page shows the still on the disc. The landing
+  page's hero does the same with `owl-on-books.glb` when `OWL_3D_BOOKS_MODEL_URL` is set (staging
+  only for now): its loader reads that one setting and no session. Empty, the hero has no owl.
 
 ## Tracking integrations (Phase 3)
 

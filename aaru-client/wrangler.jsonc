@@ -31,6 +31,9 @@
     // Worker (docs/brand/cdn). Empty means the still on the disc. Production shows the owl since
     // 2026-11-12; staging may point at a newer cut first.
     "OWL_3D_MODEL_URL": "https://cdn.aaruapp.com/aaru/owl3d/v2/owl.glb",
+    // The 3D owl on its books, in the landing page's hero (BRD-011): the address of
+    // `owl-on-books.glb`. Empty means no owl in the hero. Beta only until the owner has seen it.
+    "OWL_3D_BOOKS_MODEL_URL": "",
   },
   // www answers with a permanent redirect to the apex (src/start.ts).
   "routes": [
@@ -49,6 +52,7 @@
         // Aaru's own static Worker (docs/brand/cdn). A new cut of the model is a new path, never an
         // overwrite.
         "OWL_3D_MODEL_URL": "https://cdn.aaruapp.com/aaru/owl3d/v2/owl.glb",
+        "OWL_3D_BOOKS_MODEL_URL": "https://cdn.aaruapp.com/aaru/owl3d/v2/owl-on-books.glb",
       },
       "routes": [{ "pattern": "beta.aaruapp.com", "custom_domain": true }],
     },
