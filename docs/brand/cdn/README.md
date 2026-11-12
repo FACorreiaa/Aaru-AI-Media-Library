@@ -3,8 +3,8 @@
 Aaru's own address for brand media that is too heavy for git. Today it holds one file: the 3D
 owl's model for the web (BRD-011), which the staging Worker's `OWL_3D_MODEL_URL` points at.
 
-It is a Cloudflare Worker with static assets and no code (`wrangler.jsonc` here). R2 is not
-enabled on the account, and a single small file does not need it.
+It is a Cloudflare Worker with static assets and no code (`wrangler.jsonc` here). A single small file does not
+need a bucket. `R2.md` says when that changes and how to move without changing an address.
 
 ## Rules
 
