@@ -51,6 +51,20 @@ def review_information
 end
 
 platform :ios do
+  desc "Run the app's unit tests on an iPhone simulator"
+  lane :test do
+    # Which simulators exist depends on the Xcode installed, so take the first iPhone it has.
+    device = ENV["TEST_SIMULATOR"] ||
+             sh("xcrun simctl list devices available | grep -m1 -oE 'iPhone [0-9]+[^(]*'", log: false).strip
+    run_tests(
+      project: "Aaru.xcodeproj",
+      scheme: "Aaru",
+      destination: "platform=iOS Simulator,name=#{device}",
+      xcargs: "CODE_SIGNING_ALLOWED=NO",
+      output_types: ""
+    )
+  end
+
   desc "Build the Beta configuration and upload it to TestFlight (internal)"
   lane :beta do
     api_key = asc_api_key
