@@ -100,7 +100,7 @@ final class GroupsModel {
             hasLoaded = true
             loadProblem = nil
         } catch {
-            let message = "Your groups could not be loaded. Aaru could not reach the server."
+            let message = String(localized: "Your groups could not be loaded. Aaru could not reach the server.")
             if hasLoaded {
                 problem = message
             } else {
@@ -133,10 +133,13 @@ final class GroupsModel {
                 // Gone, or no longer a member: only then does the group leave the list (UX-065).
                 forgetGroup(groupID)
             case let .default(_, error):
-                detailFailed(groupID, (try? error.body.json.message) ?? "That group could not be loaded.")
+                detailFailed(
+                    groupID,
+                    (try? error.body.json.message) ?? String(localized: "That group could not be loaded.")
+                )
             }
         } catch {
-            detailFailed(groupID, "That group could not be loaded. Aaru could not reach the server.")
+            detailFailed(groupID, String(localized: "That group could not be loaded. Aaru could not reach the server."))
         }
     }
 
@@ -157,7 +160,7 @@ final class GroupsModel {
     func create(named name: String) async -> GroupDetail? {
         guard let api else { return nil }
         var created: GroupDetail?
-        await run("The group was not created.") {
+        await run(String(localized: "The group was not created.")) {
             switch try await api.createGroup(body: .json(.init(name: name))) {
             case let .ok(response):
                 let detail = try response.body.json
@@ -172,7 +175,7 @@ final class GroupsModel {
 
     func rename(_ groupID: String, to name: String) async -> Bool {
         guard let api else { return false }
-        return await run("The group was not renamed.") {
+        return await run(String(localized: "The group was not renamed.")) {
             switch try await api.updateGroup(path: .init(groupId: groupID), body: .json(.init(name: name))) {
             case let .ok(response):
                 let detail = try response.body.json
@@ -187,7 +190,7 @@ final class GroupsModel {
 
     func delete(_ groupID: String) async -> Bool {
         guard let api else { return false }
-        return await run("The group was not deleted.") {
+        return await run(String(localized: "The group was not deleted.")) {
             switch try await api.deleteGroup(path: .init(groupId: groupID)) {
             case .noContent: forgetGroup(groupID)
             case let .default(_, error): throw Failure(try? error.body.json)
@@ -204,7 +207,7 @@ final class GroupsModel {
 
     func invite(_ friend: SocialUser, to groupID: String) async {
         guard let api else { return }
-        await run("That invite was not sent.") {
+        await run(String(localized: "That invite was not sent.")) {
             switch try await api.inviteToGroup(
                 path: .init(groupId: groupID), body: .json(.init(userId: friend.userId))
             ) {
@@ -217,7 +220,7 @@ final class GroupsModel {
     func accept(_ invite: GroupInvite) async -> GroupSummary? {
         guard let api else { return nil }
         var joined: GroupSummary?
-        await run("That invite could not be accepted.") {
+        await run(String(localized: "That invite could not be accepted.")) {
             switch try await api.acceptGroupInvite(path: .init(id: invite.id)) {
             case let .ok(response):
                 let group = try response.body.json
@@ -234,7 +237,7 @@ final class GroupsModel {
 
     func decline(_ invite: GroupInvite) async {
         guard let api else { return }
-        await run("That invite is already gone.") {
+        await run(String(localized: "That invite is already gone.")) {
             switch try await api.declineGroupInvite(path: .init(id: invite.id)) {
             case .noContent: invites.removeAll { $0.id == invite.id }
             case let .default(_, error): throw Failure(try? error.body.json)
@@ -289,7 +292,7 @@ final class GroupsModel {
             }
             problem = failure.response?.message ?? fallback
         } catch {
-            problem = "\(fallback) Aaru could not reach the server."
+            problem = String(localized: "\(fallback) Aaru could not reach the server.")
         }
         return false
     }
@@ -300,7 +303,7 @@ final class GroupsModel {
 extension GroupsModel {
     func setAdmin(_ member: GroupMember, in groupID: String, _ isAdmin: Bool) async {
         guard let api else { return }
-        await run("That role was not changed.") {
+        await run(String(localized: "That role was not changed.")) {
             switch try await api.updateGroupMember(
                 path: .init(groupId: groupID, userId: member.user.userId),
                 body: .json(.init(role: isAdmin ? .admin : .member))
@@ -315,7 +318,7 @@ extension GroupsModel {
     @discardableResult
     func remove(_ userID: String, from groupID: String) async -> Bool {
         guard let api else { return false }
-        return await run("That member was not removed.") {
+        return await run(String(localized: "That member was not removed.")) {
             switch try await api.removeGroupMember(path: .init(groupId: groupID, userId: userID)) {
             case .noContent:
                 if userID == myUserID {
@@ -330,7 +333,7 @@ extension GroupsModel {
 
     func transfer(_ groupID: String, to member: GroupMember) async {
         guard let api else { return }
-        await run("Ownership was not transferred.") {
+        await run(String(localized: "Ownership was not transferred.")) {
             switch try await api.transferGroup(
                 path: .init(groupId: groupID), body: .json(.init(userId: member.user.userId))
             ) {
@@ -345,7 +348,7 @@ extension GroupsModel {
     /// Mutes or unmutes the group's mention alerts on every device (GRP-012).
     func setMuted(_ groupID: String, _ muted: Bool) async {
         guard let api else { return }
-        await run("That setting was not saved.") {
+        await run(String(localized: "That setting was not saved.")) {
             switch try await api.updateMyMembership(path: .init(groupId: groupID), body: .json(.init(muted: muted))) {
             case let .ok(response):
                 let summary = try response.body.json

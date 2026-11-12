@@ -12,11 +12,11 @@ enum InsightsSpan: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .last7: "7 days"
-        case .last30: "30 days"
-        case .month: "Month"
-        case .year: "Year"
-        case .all: "All time"
+        case .last7: String(localized: "7 days")
+        case .last30: String(localized: "30 days")
+        case .month: String(localized: "Month")
+        case .year: String(localized: "Year")
+        case .all: String(localized: "All time")
         }
     }
 
@@ -45,11 +45,11 @@ struct InsightsPeriod: Hashable {
     /// "Last 7 days", "October 2026", "2026", "All time".
     var label: String {
         switch span {
-        case .last7: "Last 7 days"
-        case .last30: "Last 30 days"
+        case .last7: String(localized: "Last 7 days")
+        case .last30: String(localized: "Last 30 days")
         case .month: RecapPeriod(year: year, month: month).label
         case .year: "\(year)"
-        case .all: "All time"
+        case .all: String(localized: "All time")
         }
     }
 
@@ -157,7 +157,7 @@ final class InsightsModel {
         )
         do {
             guard case let .ok(response) = try await api.getStats(query: query) else {
-                problem = "Insights could not be loaded."
+                problem = String(localized: "Insights could not be loaded.")
                 return
             }
             loaded[wanted] = try response.body.json
@@ -165,7 +165,7 @@ final class InsightsModel {
         } catch is CancellationError {
             return
         } catch {
-            problem = "Aaru could not reach the server."
+            problem = String(localized: "Aaru could not reach the server.")
         }
     }
 }

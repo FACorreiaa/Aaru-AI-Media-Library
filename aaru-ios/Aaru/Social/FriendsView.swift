@@ -26,7 +26,7 @@ struct FriendsPage: View {
                 NavigationLink {
                     ProfileEditor(model: social)
                 } label: {
-                    LabeledContent("Handle", value: social.handle.map { "@\($0)" } ?? "Choose one")
+                    LabeledContent("Handle", value: social.handle.map { "@\($0)" } ?? String(localized: "Choose one"))
                 }
                 NavigationLink(destination: FavoritesEditor(model: favorites)) {
                     Label("Favorites", systemImage: "star")
@@ -70,15 +70,15 @@ struct FriendsPage: View {
             } header: {
                 Text("Friends")
             } footer: {
-                Text(
-                    "Friends find you by your exact handle and see what you're watching and finished. Nobody else "
-                        + "ever does."
-                )
+                Text(String(localized: """
+                Friends find you by your exact handle and see what you're watching and finished. Nobody else \
+                ever does.
+                """))
             }
             ConcertPlaceSection(model: concerts) { social.problem = $0 }
             SportSettingsSection(model: sportSettings) { social.problem = $0 }
         }
-        .settingsPage("Friends & privacy", problem: $social.problem)
+        .settingsPage(String(localized: "Friends & privacy"), problem: $social.problem)
         .refreshable { await social.load() }
         .task { await social.load() }
     }
@@ -257,7 +257,7 @@ struct FriendsView: View {
                 pickedInvite = nil
             },
             content: {
-                TitlePickerSheet(api: model.api, navigationTitle: "Watch together") { hit in
+                TitlePickerSheet(api: model.api, navigationTitle: String(localized: "Watch together")) { hit in
                     pickedInvite = await model.invite(with: hit)
                     return pickedInvite != nil
                 }
@@ -317,7 +317,8 @@ private struct YouCard: View {
             Text("You").eyebrow()
             Text("Level \(progress.level) · \(StreakWords.headline(progress.streak.current))")
                 .font(.aaruDisplay(.title3))
-            Text("\(progress.weekPoints.formatted()) points this week" + (handle.map { " · @\($0)" } ?? ""))
+            Text(String(localized: "\(progress.weekPoints.formatted()) points this week") +
+                (handle.map { " · @\($0)" } ?? ""))
                 .font(.subheadline)
                 .monospacedDigit()
                 .foregroundStyle(Color(.muted))

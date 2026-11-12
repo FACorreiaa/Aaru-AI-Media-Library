@@ -44,7 +44,7 @@ final class AssistantModel {
 
     private static let mutedKey = "assistant.muted"
     static let maxQuestionScalars = 4000
-    private static let notHeard = "I didn't catch that. Try again, or type."
+    private static let notHeard = String(localized: "I didn't catch that. Try again, or type.")
     /// A recorder that stops itself from here on has reached its 60 s limit.
     private static let capSeconds: Double = 59
 
@@ -327,7 +327,7 @@ private extension AssistantModel {
         do {
             try recorder.start()
         } catch {
-            voiceProblem = "The mic could not start. You can still type."
+            voiceProblem = String(localized: "The mic could not start. You can still type.")
             phase = .idle
             return
         }
@@ -381,11 +381,11 @@ private extension AssistantModel {
         case .notHeard:
             voiceProblem = Self.notHeard
         case .tooLong:
-            voiceProblem = "That was too long. Try a shorter question."
+            voiceProblem = String(localized: "That was too long. Try a shorter question.")
         case .tooMany:
-            voiceProblem = "Too many spoken questions for now. You can still type."
+            voiceProblem = String(localized: "Too many spoken questions for now. You can still type.")
         case .off:
-            voiceProblem = "Voice is off right now. You can still type."
+            voiceProblem = String(localized: "Voice is off right now. You can still type.")
             refreshStatusSoon()
         case let .failed(problem):
             voiceProblem = problem

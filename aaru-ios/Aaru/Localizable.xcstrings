@@ -1,0 +1,6495 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "" : {
+
+    },
+    " " : {
+
+    },
+    "  %@" : {
+
+    },
+    "  (edited)" : {
+
+    },
+    " When someone tags @aaru, it reads this channel's recent group messages to answer." : {
+
+    },
+    " in one day." : {
+
+    },
+    " left" : {
+
+    },
+    " · Edited" : {
+
+    },
+    " · can send imports" : {
+
+    },
+    "#" : {
+
+    },
+    "#%@" : {
+
+    },
+    "%@ %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@"
+          }
+        }
+      }
+    },
+    "%@ %@ was not saved." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@ was not saved."
+          }
+        }
+      }
+    },
+    "%@ %@%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@%3$@"
+          }
+        }
+      }
+    },
+    "%@ %@%@%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@%3$@%4$@"
+          }
+        }
+      }
+    },
+    "%@ %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$lld"
+          }
+        }
+      }
+    },
+    "%@ %lld · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$lld · %3$@"
+          }
+        }
+      }
+    },
+    "%@ (%@)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ (%2$@)"
+          }
+        }
+      }
+    },
+    "%@ / %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ / %2$@"
+          }
+        }
+      }
+    },
+    "%@ Aaru could not reach the server." : {
+
+    },
+    "%@ Search still works." : {
+
+    },
+    "%@ a %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ a %2$@"
+          }
+        }
+      }
+    },
+    "%@ added" : {
+
+    },
+    "%@ airing today" : {
+
+    },
+    "%@ albums listened" : {
+
+    },
+    "%@ and %@ are typing…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ and %2$@ are typing…"
+          }
+        }
+      }
+    },
+    "%@ and finished" : {
+
+    },
+    "%@ anywhere" : {
+
+    },
+    "%@ artist" : {
+
+    },
+    "%@ artists" : {
+
+    },
+    "%@ asks" : {
+
+    },
+    "%@ badges earned" : {
+
+    },
+    "%@ can no longer reach your library." : {
+
+    },
+    "%@ could not be added to %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ could not be added to %2$@."
+          }
+        }
+      }
+    },
+    "%@ could not be added." : {
+
+    },
+    "%@ could not be loaded" : {
+
+    },
+    "%@ could not be marked watched." : {
+
+    },
+    "%@ could not be marked watched. Aaru could not reach the server." : {
+
+    },
+    "%@ could not be matched to that row." : {
+
+    },
+    "%@ could not be read, or is larger than 24 MB." : {
+
+    },
+    "%@ could not be set aside." : {
+
+    },
+    "%@ could not be set aside. Aaru could not reach the server." : {
+
+    },
+    "%@ days" : {
+
+    },
+    "%@ days in a row" : {
+
+    },
+    "%@ details" : {
+
+    },
+    "%@ episodes" : {
+
+    },
+    "%@ episodes, %@ minutes." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ episodes, %2$@ minutes."
+          }
+        }
+      }
+    },
+    "%@ evening" : {
+
+    },
+    "%@ every %@ %@s" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ every %2$@ %3$@s"
+          }
+        }
+      }
+    },
+    "%@ finished" : {
+
+    },
+    "%@ from the period before" : {
+
+    },
+    "%@ h" : {
+
+    },
+    "%@ hours" : {
+
+    },
+    "%@ hours of %@, across %@ " : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ hours of %2$@, across %3$@ "
+          }
+        }
+      }
+    },
+    "%@ in %lld steps" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ in %2$lld steps"
+          }
+        }
+      }
+    },
+    "%@ in 1 step" : {
+
+    },
+    "%@ in Aaru" : {
+
+    },
+    "%@ in progress" : {
+
+    },
+    "%@ invited you to Aaru." : {
+
+    },
+    "%@ is caught up" : {
+
+    },
+    "%@ is on your %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ is on your %2$@."
+          }
+        }
+      }
+    },
+    "%@ is typing…" : {
+
+    },
+    "%@ keeps their library to themselves." : {
+
+    },
+    "%@ kilometres" : {
+
+    },
+    "%@ left" : {
+
+    },
+    "%@ left · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ left · %2$@"
+          }
+        }
+      }
+    },
+    "%@ loved, you haven't" : {
+
+    },
+    "%@ min" : {
+
+    },
+    "%@ minutes" : {
+
+    },
+    "%@ minutes." : {
+
+    },
+    "%@ more artist" : {
+
+    },
+    "%@ more artists" : {
+
+    },
+    "%@ morning" : {
+
+    },
+    "%@ near %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ near %2$@"
+          }
+        }
+      }
+    },
+    "%@ near you" : {
+
+    },
+    "%@ need a pick" : {
+
+    },
+    "%@ night" : {
+
+    },
+    "%@ of %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ of %2$@"
+          }
+        }
+      }
+    },
+    "%@ of %@ episodes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ of %2$@ episodes"
+          }
+        }
+      }
+    },
+    "%@ on %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ on %2$@"
+          }
+        }
+      }
+    },
+    "%@ pages" : {
+
+    },
+    "%@ plays" : {
+
+    },
+    "%@ points this week" : {
+
+    },
+    "%@ points · %@ this week" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ points · %2$@ this week"
+          }
+        }
+      }
+    },
+    "%@ progress" : {
+
+    },
+    "%@ reading" : {
+
+    },
+    "%@ recommends **%@**" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ recommends **%2$@**"
+          }
+        }
+      }
+    },
+    "%@ removed" : {
+
+    },
+    "%@ seasons · %@ episodes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ seasons · %2$@ episodes"
+          }
+        }
+      }
+    },
+    "%@ so far" : {
+
+    },
+    "%@ titles" : {
+
+    },
+    "%@ titles finished by both of you" : {
+
+    },
+    "%@ to level %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ to level %2$lld"
+          }
+        }
+      }
+    },
+    "%@ tracks" : {
+
+    },
+    "%@ updated" : {
+
+    },
+    "%@ was not added." : {
+
+    },
+    "%@ was not added. Aaru could not reach the server." : {
+
+    },
+    "%@ was not changed." : {
+
+    },
+    "%@ was not changed. Aaru could not reach the server." : {
+
+    },
+    "%@ was not disconnected." : {
+
+    },
+    "%@ was not disconnected. Aaru could not reach the server." : {
+
+    },
+    "%@ was not matched. Aaru could not reach the server." : {
+
+    },
+    "%@ was not removed." : {
+
+    },
+    "%@ was not removed. Aaru could not reach the server." : {
+
+    },
+    "%@ was not saved. Aaru could not reach the server." : {
+
+    },
+    "%@ watching" : {
+
+    },
+    "%@ won't know you reported it." : {
+
+    },
+    "%@ · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "%@ · %@ hours" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$@ hours"
+          }
+        }
+      }
+    },
+    "%@ · %@ · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$@ · %3$@"
+          }
+        }
+      }
+    },
+    "%@ · earned" : {
+
+    },
+    "%@ · filled in %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · filled in %2$@"
+          }
+        }
+      }
+    },
+    "%@ · nothing changes until you approve" : {
+
+    },
+    "%@ · nothing is added until you review" : {
+
+    },
+    "%@ – %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ – %2$@"
+          }
+        }
+      }
+    },
+    "%@ – %@ · Private to you" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ – %2$@ · Private to you"
+          }
+        }
+      }
+    },
+    "%@%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@%2$@"
+          }
+        }
+      }
+    },
+    "%@'s badges" : {
+
+    },
+    "%@, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@"
+          }
+        }
+      }
+    },
+    "%@, %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$lld"
+          }
+        }
+      }
+    },
+    "%@, %lld episodes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$lld episodes"
+          }
+        }
+      }
+    },
+    "%@, in your library" : {
+
+    },
+    "%@, saved" : {
+
+    },
+    "%@, today" : {
+
+    },
+    "%@-day streak" : {
+
+    },
+    "%@. Touch and hold for a status." : {
+
+    },
+    "%@. Touch and hold for the menu." : {
+
+    },
+    "%@. Undo is available." : {
+
+    },
+    "%@: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@: %2$@"
+          }
+        }
+      }
+    },
+    "%@h" : {
+
+    },
+    "%@h %@m" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@h %2$@m"
+          }
+        }
+      }
+    },
+    "%@h %lldm" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@h %2$lldm"
+          }
+        }
+      }
+    },
+    "%@m" : {
+
+    },
+    "%lld" : {
+
+    },
+    "%lld / %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld / %2$lld"
+          }
+        }
+      }
+    },
+    "%lld albums" : {
+
+    },
+    "%lld anime in your backlog →" : {
+
+    },
+    "%lld asking" : {
+
+    },
+    "%lld badges" : {
+
+    },
+    "%lld characters left" : {
+
+    },
+    "%lld characters over" : {
+
+    },
+    "%lld comments" : {
+
+    },
+    "%lld days in a row" : {
+
+    },
+    "%lld episodes" : {
+
+    },
+    "%lld h %lld min" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld h %2$lld min"
+          }
+        }
+      }
+    },
+    "%lld is the most one screen saves. Continue, then add more from Search." : {
+
+    },
+    "%lld joined" : {
+
+    },
+    "%lld left" : {
+
+    },
+    "%lld mentions" : {
+
+    },
+    "%lld min" : {
+
+    },
+    "%lld minutes" : {
+
+    },
+    "%lld of %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld of %2$lld"
+          }
+        }
+      }
+    },
+    "%lld of %lld episodes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld of %2$lld episodes"
+          }
+        }
+      }
+    },
+    "%lld of 10" : {
+
+    },
+    "%lld seconds" : {
+
+    },
+    "%lld shows" : {
+
+    },
+    "%lld star%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld star%2$@"
+          }
+        }
+      }
+    },
+    "%lld titles" : {
+
+    },
+    "%lld titles couldn't be found in the catalog. Continue to go on without them." : {
+
+    },
+    "%lld upvotes" : {
+
+    },
+    "%lld, %@, %lld points" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld, %2$@, %3$lld points"
+          }
+        }
+      }
+    },
+    "%lld. %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld. %2$@"
+          }
+        }
+      }
+    },
+    "%lldm" : {
+
+    },
+    "+%lld" : {
+
+    },
+    ", today" : {
+
+    },
+    "1 album listened" : {
+
+    },
+    "1 anime in your backlog →" : {
+
+    },
+    "1 badge" : {
+
+    },
+    "1 comment" : {
+
+    },
+    "1 day" : {
+
+    },
+    "1 episode" : {
+
+    },
+    "1 mention" : {
+
+    },
+    "1 minute" : {
+
+    },
+    "1 needs a pick" : {
+
+    },
+    "1 play" : {
+
+    },
+    "1 season · %@ episodes" : {
+
+    },
+    "1 show" : {
+
+    },
+    "1 title" : {
+
+    },
+    "1 title finished by both of you" : {
+
+    },
+    "1 track" : {
+
+    },
+    "1 upvote" : {
+
+    },
+    "1-day streak" : {
+
+    },
+    "2nd" : {
+
+    },
+    "30 days" : {
+
+    },
+    "7 days" : {
+
+    },
+    "???" : {
+
+    },
+    "@" : {
+
+    },
+    "@%@" : {
+
+    },
+    "@%@ · Friends since %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "@%1$@ · Friends since %2$@"
+          }
+        }
+      }
+    },
+    "A CSV from any other site, or a spreadsheet. Aaru reads the columns." : {
+
+    },
+    "A browser extension for Chrome, Firefox, Edge and Safari. Covers YouTube, YouTube Music, Spotify and Apple Music in the browser." : {
+
+    },
+    "A chat with Aaru" : {
+
+    },
+    "A connection" : {
+
+    },
+    "A friend in the group can invite them back." : {
+
+    },
+    "A hidden one, found." : {
+
+    },
+    "A link works once, for two weeks. Whoever opens it joins Aaru and becomes your friend." : {
+
+    },
+    "A list the whole group adds to." : {
+
+    },
+    "A little, often. Stories at your own pace." : {
+
+    },
+    "A match's channels in this country show first. Aaru keeps only the country." : {
+
+    },
+    "A month or a year of what you watched, read and listened to, played as a story." : {
+
+    },
+    "A new episode is out" : {
+
+    },
+    "A private library for everything you watch, read and listen to." : {
+
+    },
+    "A weekly board, just for friends" : {
+
+    },
+    "A whole ChatGPT chat, screenshots, a photo of a list, or a request like “X-Men books in reading order”. Nothing is added until you approve." : {
+
+    },
+    "Aaru" : {
+
+    },
+    "Aaru Plus" : {
+
+    },
+    "Aaru adds no streams. You play things with the add-ons you already use." : {
+
+    },
+    "Aaru and your MyAnimeList list keep each other up to date: status, watched episodes and score, one entry per season. Only changes from now on, and neither list is overwritten: changes on MyAnimeList come in when you open Aaru and only move forward. Removing an anime on one side leaves it on the other." : {
+
+    },
+    "Aaru can't use the microphone. Turn it on in Settings." : {
+
+    },
+    "Aaru can't use your location. Allow it in Settings, or choose a city." : {
+
+    },
+    "Aaru changed your library" : {
+
+    },
+    "Aaru could not confirm the purchase." : {
+
+    },
+    "Aaru could not open that picture." : {
+
+    },
+    "Aaru could not open that title." : {
+
+    },
+    "Aaru could not plan the chain." : {
+
+    },
+    "Aaru could not reach the server." : {
+
+    },
+    "Aaru could not reach the server. Check your connection and try again." : {
+
+    },
+    "Aaru could not reach the server. Nothing was changed." : {
+
+    },
+    "Aaru could not reach the server. The purchase is kept; Aaru tries again next time." : {
+
+    },
+    "Aaru could not reach the server. Try again in a moment." : {
+
+    },
+    "Aaru could not start the Live Activity. Try again." : {
+
+    },
+    "Aaru could not take that capture." : {
+
+    },
+    "Aaru gives badges now. You've already earned %@." : {
+
+    },
+    "Aaru is matching this import" : {
+
+    },
+    "Aaru is reading your capture" : {
+
+    },
+    "Aaru is thinking…" : {
+
+    },
+    "Aaru is waiting for your answer" : {
+
+    },
+    "Aaru is working" : {
+
+    },
+    "Aaru keeps only the city you pick, to look for concerts around it." : {
+
+    },
+    "Aaru keeps your chats until you delete them, one at a time or all at once." : {
+
+    },
+    "Aaru matches every row first and shows you the plan. Nothing changes until you approve it, and an import undoes in one step from History, in Your data." : {
+
+    },
+    "Aaru reads the books in the picture" : {
+
+    },
+    "Aaru reads the titles in the picture" : {
+
+    },
+    "Aaru reads your watched history, episodes, watchlist, ratings and lists, and shows you the plan first. Importing again only fills gaps. Free Trakt accounts can connect two apps.\n\nAaru uses Trakt but is not endorsed or certified by Trakt." : {
+
+    },
+    "Aaru stops updating and reading your MyAnimeList list. Both lists stay as they are." : {
+
+    },
+    "Aaru tells you when a new episode of a show you're watching is out." : {
+
+    },
+    "Aaru uses Trakt but is not endorsed or certified by Trakt." : {
+
+    },
+    "Aaru will look at it." : {
+
+    },
+    "Aaru · answers when tagged" : {
+
+    },
+    "Aaru's mascot, a small white robot owl with glowing amber eyes" : {
+
+    },
+    "Aaru, assistant" : {
+
+    },
+    "About" : {
+
+    },
+    "About Aaru on the web" : {
+
+    },
+    "About sharing" : {
+
+    },
+    "Accept" : {
+
+    },
+    "Account" : {
+
+    },
+    "Account → Profile → Viewing activity → Download all. One profile per file." : {
+
+    },
+    "Achievements" : {
+
+    },
+    "Across %@ finished titles." : {
+
+    },
+    "Across 1 finished title." : {
+
+    },
+    "Actions" : {
+
+    },
+    "Actions for %@" : {
+
+    },
+    "Active" : {
+
+    },
+    "Active on %@ of the last %@ days" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Active on %1$@ of the last %2$@ days"
+          }
+        }
+      }
+    },
+    "Adaptations" : {
+
+    },
+    "Add" : {
+
+    },
+    "Add %@" : {
+
+    },
+    "Add %@ as a friend" : {
+
+    },
+    "Add %@ listens" : {
+
+    },
+    "Add %@ to your library" : {
+
+    },
+    "Add a friend" : {
+
+    },
+    "Add a note" : {
+
+    },
+    "Add a screenshot" : {
+
+    },
+    "Add a title" : {
+
+    },
+    "Add friends" : {
+
+    },
+    "Add photo" : {
+
+    },
+    "Add shows you follow and their new episodes appear here." : {
+
+    },
+    "Add something to see what's next" : {
+
+    },
+    "Add the chain" : {
+
+    },
+    "Add titles" : {
+
+    },
+    "Add to #%@" : {
+
+    },
+    "Add to %@" : {
+
+    },
+    "Add to list" : {
+
+    },
+    "Add to list…" : {
+
+    },
+    "Add to my %@" : {
+
+    },
+    "Add to my Aaru" : {
+
+    },
+    "Add to my library" : {
+
+    },
+    "Add “%@” to a list" : {
+
+    },
+    "Added" : {
+
+    },
+    "Added %@ listens" : {
+
+    },
+    "Added 1 listen" : {
+
+    },
+    "Added by %@" : {
+
+    },
+    "Added by hand" : {
+
+    },
+    "Added to %@" : {
+
+    },
+    "Adding…" : {
+
+    },
+    "Adds as %@. Hold for other statuses." : {
+
+    },
+    "Adds it as %@" : {
+
+    },
+    "Adds it as %@. Touch and hold for a status or a list." : {
+
+    },
+    "Adds it as %@. Touch and hold for another status." : {
+
+    },
+    "Admins" : {
+
+    },
+    "After" : {
+
+    },
+    "Agent" : {
+
+    },
+    "Agents" : {
+
+    },
+    "Air times from TVmaze" : {
+
+    },
+    "Aired %@" : {
+
+    },
+    "Airing soon" : {
+
+    },
+    "Airs %@" : {
+
+    },
+    "Airs next" : {
+
+    },
+    "Airs today" : {
+
+    },
+    "Album" : {
+
+    },
+    "Album finished" : {
+
+    },
+    "Album or artist" : {
+
+    },
+    "Album rows from ListenBrainz" : {
+
+    },
+    "Albums" : {
+
+    },
+    "Albums you mark Listening show here." : {
+
+    },
+    "Alerts go to your iPhone and your browsers." : {
+
+    },
+    "All" : {
+
+    },
+    "All %@" : {
+
+    },
+    "All episodes" : {
+
+    },
+    "All events matching “%@”" : {
+
+    },
+    "All listens" : {
+
+    },
+    "All listens ›" : {
+
+    },
+    "All lists" : {
+
+    },
+    "All seasons" : {
+
+    },
+    "All time" : {
+
+    },
+    "Allow Stremio to change my library" : {
+
+    },
+    "Allow changes" : {
+
+    },
+    "Allow imports" : {
+
+    },
+    "Already caught up" : {
+
+    },
+    "Already in your library" : {
+
+    },
+    "Already in your log" : {
+
+    },
+    "Already there" : {
+
+    },
+    "Also on %@" : {
+
+    },
+    "Also starring" : {
+
+    },
+    "Also tonight" : {
+
+    },
+    "An app for Android, Windows and Linux that sends whatever plays, Spotify and YouTube Music included." : {
+
+    },
+    "An import" : {
+
+    },
+    "And %lld more" : {
+
+    },
+    "And one more" : {
+
+    },
+    "Anime" : {
+
+    },
+    "Anime backlog" : {
+
+    },
+    "Anime data from AniList" : {
+
+    },
+    "Anime id mappings from Fribb/anime-lists" : {
+
+    },
+    "Anime that came in as watching from an import and that you have not started here. They stay in progress; tick an episode to bring one up." : {
+
+    },
+    "Any other CSV" : {
+
+    },
+    "Anyone in the group can add a title." : {
+
+    },
+    "Anyone who hasn't watched up to this episode sees it veiled until they tap it." : {
+
+    },
+    "Anyone with the link sees it. Only your friends see that you sent it." : {
+
+    },
+    "Anything that lets you set its ListenBrainz server." : {
+
+    },
+    "Anything worth remembering" : {
+
+    },
+    "Anywhere" : {
+
+    },
+    "Appearance" : {
+
+    },
+    "Apple did not return a sign-in token. Try again." : {
+
+    },
+    "Applied. You can undo it from History." : {
+
+    },
+    "Applied: %@" : {
+
+    },
+    "Approve" : {
+
+    },
+    "Approve also saves these in order as the list “%@”." : {
+
+    },
+    "Approve and import" : {
+
+    },
+    "Approve on stremio.com" : {
+
+    },
+    "Approve on the page it opens." : {
+
+    },
+    "Approve the install in Stremio. Your rows appear on Stremio’s board and load as you scroll to them." : {
+
+    },
+    "April" : {
+
+    },
+    "Artist" : {
+
+    },
+    "Artists" : {
+
+    },
+    "Ask Aaru" : {
+
+    },
+    "Ask Aaru (⌘K)" : {
+
+    },
+    "Ask Aaru for more" : {
+
+    },
+    "Ask Spotify for your Extended streaming history (Account → Privacy). Unzip it and add one Streaming_History_Audio file at a time. Podcasts and plays under 30 s are left out." : {
+
+    },
+    "Ask about your library, what's airing, or anything you're tracking." : {
+
+    },
+    "Ask me to rate Aaru" : {
+
+    },
+    "Ask whoever sent it for a new one." : {
+
+    },
+    "Asking you" : {
+
+    },
+    "Assistant" : {
+
+    },
+    "At your progress" : {
+
+    },
+    "Attach a file" : {
+
+    },
+    "August" : {
+
+    },
+    "Author" : {
+
+    },
+    "Average %@ from %@ ratings" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Average %1$@ from %2$@ ratings"
+          }
+        }
+      }
+    },
+    "Average %@ from 1 rating" : {
+
+    },
+    "A–Z" : {
+
+    },
+    "Back" : {
+
+    },
+    "Back to chat" : {
+
+    },
+    "Badge" : {
+
+    },
+    "Based on" : {
+
+    },
+    "Before" : {
+
+    },
+    "Best guess for “%@”" : {
+
+    },
+    "Block" : {
+
+    },
+    "Block %@?" : {
+
+    },
+    "Block @%@?" : {
+
+    },
+    "Blocked" : {
+
+    },
+    "Board" : {
+
+    },
+    "Book" : {
+
+    },
+    "Book data from Open Library" : {
+
+    },
+    "Book finished" : {
+
+    },
+    "Bookends" : {
+
+    },
+    "Books" : {
+
+    },
+    "Bring your history" : {
+
+    },
+    "Bring your history from Trakt, IMDb, Letterboxd and Goodreads" : {
+
+    },
+    "Bring your history instead" : {
+
+    },
+    "Bronze" : {
+
+    },
+    "Browse Discover" : {
+
+    },
+    "Browser extension" : {
+
+    },
+    "By channel" : {
+
+    },
+    "By kind" : {
+
+    },
+    "Calendar" : {
+
+    },
+    "Can change one item at a time" : {
+
+    },
+    "Cancel" : {
+
+    },
+    "Cancel this import" : {
+
+    },
+    "Canceled" : {
+
+    },
+    "Cancelled" : {
+
+    },
+    "Capture" : {
+
+    },
+    "Captures without a monthly limit" : {
+
+    },
+    "Caught up" : {
+
+    },
+    "Caught up on %@ aired episodes" : {
+
+    },
+    "Caught up on 1 aired episode" : {
+
+    },
+    "Caught up · next %@" : {
+
+    },
+    "Centre" : {
+
+    },
+    "Ch. %@" : {
+
+    },
+    "Ch. %@ of %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Ch. %1$@ of %2$@"
+          }
+        }
+      }
+    },
+    "Change" : {
+
+    },
+    "Change photo" : {
+
+    },
+    "Change the guess for %@" : {
+
+    },
+    "Channel" : {
+
+    },
+    "Channels" : {
+
+    },
+    "Chapter" : {
+
+    },
+    "Chapter %@" : {
+
+    },
+    "Chat" : {
+
+    },
+    "Chats" : {
+
+    },
+    "Chats with Aaru" : {
+
+    },
+    "Check against your library" : {
+
+    },
+    "Check against your listening log" : {
+
+    },
+    "Check the spelling or try a new search." : {
+
+    },
+    "Check the spelling, or try the name as the tickets show it." : {
+
+    },
+    "Check your email" : {
+
+    },
+    "Checking %@ — back within the hour" : {
+
+    },
+    "Choose" : {
+
+    },
+    "Choose a city" : {
+
+    },
+    "Choose a city to keep, or use your approximate location once." : {
+
+    },
+    "Choose a country" : {
+
+    },
+    "Choose a handle" : {
+
+    },
+    "Choose a handle first, so friends see who is talking." : {
+
+    },
+    "Choose a handle so %@ knows it's you" : {
+
+    },
+    "Choose a list" : {
+
+    },
+    "Choose a title" : {
+
+    },
+    "Choose a title…" : {
+
+    },
+    "Choose one" : {
+
+    },
+    "Choose the .ics file" : {
+
+    },
+    "Choose the city to look around." : {
+
+    },
+    "Choose whether Stremio may also change your library, then tap Connect Stremio." : {
+
+    },
+    "Choose your country to see its channels first." : {
+
+    },
+    "City" : {
+
+    },
+    "City search by Open-Meteo" : {
+
+    },
+    "City search isn't answering" : {
+
+    },
+    "Claude, Claude Code, Codex, Hermes, Gemini CLI or any MCP client can read your library. If you allow changes, it changes one item at a time, and you can undo it in History, in Your data. The browser extension marks what you finish on streaming sites." : {
+
+    },
+    "Clear" : {
+
+    },
+    "Clear filters" : {
+
+    },
+    "Click Aaru in the toolbar, then Connect." : {
+
+    },
+    "Close" : {
+
+    },
+    "Code" : {
+
+    },
+    "Code %@" : {
+
+    },
+    "Collapsed" : {
+
+    },
+    "Comment" : {
+
+    },
+    "Comment (⌘↩)" : {
+
+    },
+    "Comment deleted" : {
+
+    },
+    "Comment on this post" : {
+
+    },
+    "Comments" : {
+
+    },
+    "Concert listings aren't answering" : {
+
+    },
+    "Concert listings aren't answering right now." : {
+
+    },
+    "Concerts" : {
+
+    },
+    "Concerts could not be loaded" : {
+
+    },
+    "Concerts from Ticketmaster" : {
+
+    },
+    "Concerts near" : {
+
+    },
+    "Concerts near you on Aaru" : {
+
+    },
+    "Connect %@" : {
+
+    },
+    "Connect MyAnimeList" : {
+
+    },
+    "Connect Stremio" : {
+
+    },
+    "Connect Trakt" : {
+
+    },
+    "Connect a scrobbler" : {
+
+    },
+    "Connect a scrobbler, and what you play shows up here." : {
+
+    },
+    "Connect an agent" : {
+
+    },
+    "Connected as" : {
+
+    },
+    "Connected browsers appear in Settings → Connections, where you can disconnect them." : {
+
+    },
+    "Connections" : {
+
+    },
+    "Contact" : {
+
+    },
+    "Continue" : {
+
+    },
+    "Continue (%lld)" : {
+
+    },
+    "Continue watching" : {
+
+    },
+    "Continue with Google" : {
+
+    },
+    "Continue with email" : {
+
+    },
+    "Copied" : {
+
+    },
+    "Copy" : {
+
+    },
+    "Copy %@" : {
+
+    },
+    "Copy link" : {
+
+    },
+    "Copy text" : {
+
+    },
+    "Could not sign in" : {
+
+    },
+    "Couldn't load Discover" : {
+
+    },
+    "Couldn't load Home" : {
+
+    },
+    "Couldn't load Insights" : {
+
+    },
+    "Couldn't load On air" : {
+
+    },
+    "Couldn't load Sports" : {
+
+    },
+    "Couldn't load the schedule" : {
+
+    },
+    "Couldn't load this" : {
+
+    },
+    "Couldn't load this event" : {
+
+    },
+    "Couldn't load this list" : {
+
+    },
+    "Couldn't load this profile" : {
+
+    },
+    "Couldn't load titles" : {
+
+    },
+    "Couldn't load your groups" : {
+
+    },
+    "Couldn't load your profile" : {
+
+    },
+    "Couldn't open #%@" : {
+
+    },
+    "Couldn't open this channel" : {
+
+    },
+    "Couldn't open this group" : {
+
+    },
+    "Country" : {
+
+    },
+    "Counts down to the next episode of a show you follow." : {
+
+    },
+    "Covers from the Cover Art Archive" : {
+
+    },
+    "Create" : {
+
+    },
+    "Create a group" : {
+
+    },
+    "Create link" : {
+
+    },
+    "Creating…" : {
+
+    },
+    "Creator" : {
+
+    },
+    "Credits" : {
+
+    },
+    "Dark" : {
+
+    },
+    "Data: TheSportsDB" : {
+
+    },
+    "Day" : {
+
+    },
+    "December" : {
+
+    },
+    "Decline" : {
+
+    },
+    "Delete" : {
+
+    },
+    "Delete #%@?" : {
+
+    },
+    "Delete %@?" : {
+
+    },
+    "Delete account" : {
+
+    },
+    "Delete account and library" : {
+
+    },
+    "Delete account?" : {
+
+    },
+    "Delete channel" : {
+
+    },
+    "Delete chat" : {
+
+    },
+    "Delete comment" : {
+
+    },
+    "Delete group" : {
+
+    },
+    "Delete list" : {
+
+    },
+    "Delete my chats" : {
+
+    },
+    "Delete my chats with Aaru" : {
+
+    },
+    "Delete post" : {
+
+    },
+    "Delete the chat: %@" : {
+
+    },
+    "Delete this chat?" : {
+
+    },
+    "Delete this comment?" : {
+
+    },
+    "Delete this group message?" : {
+
+    },
+    "Delete this post?" : {
+
+    },
+    "Delete your chats with Aaru?" : {
+
+    },
+    "Delete “%@”?" : {
+
+    },
+    "Deleted" : {
+
+    },
+    "Deleted account" : {
+
+    },
+    "Deletes your library, lists, imports, friends and sessions from Aaru for good." : {
+
+    },
+    "Delete…" : {
+
+    },
+    "Did you finish?" : {
+
+    },
+    "Director" : {
+
+    },
+    "Disc %lld" : {
+
+    },
+    "Discard" : {
+
+    },
+    "Discard this plan?" : {
+
+    },
+    "Disconnect" : {
+
+    },
+    "Disconnect %@?" : {
+
+    },
+    "Disconnect MyAnimeList?" : {
+
+    },
+    "Disconnect Trakt" : {
+
+    },
+    "Discover" : {
+
+    },
+    "Discover could not be refreshed. Showing the last lists." : {
+
+    },
+    "Discover is not available right now." : {
+
+    },
+    "Discuss %@" : {
+
+    },
+    "Discuss in a group…" : {
+
+    },
+    "Dismiss" : {
+
+    },
+    "Dismisses this message" : {
+
+    },
+    "Done" : {
+
+    },
+    "Done. Your other devices are signed out." : {
+
+    },
+    "Dropped" : {
+
+    },
+    "Each listen counts on the day you played it. Left out: podcasts, plays under 30 s and videos that are not music." : {
+
+    },
+    "Earlier" : {
+
+    },
+    "Earlier activity could not be loaded." : {
+
+    },
+    "Edit" : {
+
+    },
+    "Edit channel" : {
+
+    },
+    "Edit post" : {
+
+    },
+    "Edit profile" : {
+
+    },
+    "Edit your post" : {
+
+    },
+    "Editing" : {
+
+    },
+    "Elsewhere" : {
+
+    },
+    "Email" : {
+
+    },
+    "End" : {
+
+    },
+    "Ended" : {
+
+    },
+    "Ends %@" : {
+
+    },
+    "Ends at %@" : {
+
+    },
+    "Ends setup. What you saved stays." : {
+
+    },
+    "Enter a handle." : {
+
+    },
+    "Episode" : {
+
+    },
+    "Episode %@" : {
+
+    },
+    "Episode %lld" : {
+
+    },
+    "Episode %lld, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Episode %1$lld, %2$@"
+          }
+        }
+      }
+    },
+    "Episode details" : {
+
+    },
+    "Episodes" : {
+
+    },
+    "Episodes didn't load" : {
+
+    },
+    "Event" : {
+
+    },
+    "Every change to your library, newest first: yours, an import's or a connection's, with Undo." : {
+
+    },
+    "Every channel and group message goes, for everyone. This can't be undone." : {
+
+    },
+    "Every group message in it goes, for everyone." : {
+
+    },
+    "Every other device signed in to Aaru will need to sign in again. This one stays signed in." : {
+
+    },
+    "Every tier, earned." : {
+
+    },
+    "Everyone in the group stops seeing it." : {
+
+    },
+    "Everyone presses play on their own screen when the countdown reaches zero. When the host ends, it is marked for everyone who joined." : {
+
+    },
+    "Everyone reads on their own. When the host ends, it is marked for everyone who joined." : {
+
+    },
+    "Everything (JSON)" : {
+
+    },
+    "Everything you watch, read and listen to, in one library." : {
+
+    },
+    "Everything you watched, read and listened to, from your own library. Tap to go on." : {
+
+    },
+    "Expanded" : {
+
+    },
+    "Expired. Nothing changed." : {
+
+    },
+    "Expires in %lld days" : {
+
+    },
+    "Expires today" : {
+
+    },
+    "Expires tomorrow" : {
+
+    },
+    "Explains who can read group messages" : {
+
+    },
+    "Export" : {
+
+    },
+    "Export your data first" : {
+
+    },
+    "Failed" : {
+
+    },
+    "Favorite %lld" : {
+
+    },
+    "Favorites" : {
+
+    },
+    "Favorites could not be refreshed." : {
+
+    },
+    "February" : {
+
+    },
+    "Fetching fixtures…" : {
+
+    },
+    "Fetching more leagues…" : {
+
+    },
+    "Fetching your leagues…" : {
+
+    },
+    "Files" : {
+
+    },
+    "Filled in" : {
+
+    },
+    "Film" : {
+
+    },
+    "Film finished" : {
+
+    },
+    "Films" : {
+
+    },
+    "Films, shows, anime, books and albums, private by default." : {
+
+    },
+    "Films, shows, anime, books: you went everywhere." : {
+
+    },
+    "Filter Discover" : {
+
+    },
+    "Filter this list" : {
+
+    },
+    "Filter your library" : {
+
+    },
+    "Filter your lists" : {
+
+    },
+    "Filters" : {
+
+    },
+    "Final" : {
+
+    },
+    "Finale" : {
+
+    },
+    "Finale · %@" : {
+
+    },
+    "Finales" : {
+
+    },
+    "Find %@" : {
+
+    },
+    "Find a league or a team" : {
+
+    },
+    "Find a title" : {
+
+    },
+    "Find in Sports" : {
+
+    },
+    "Find it" : {
+
+    },
+    "Find it searches the catalog. The title you choose goes in your library at once, and can be undone from History." : {
+
+    },
+    "Find it searches the catalog. The title you choose joins the plan." : {
+
+    },
+    "Find leagues and teams" : {
+
+    },
+    "Finish an episode or a film on Netflix, Disney+ or Prime Video in your browser and it is marked watched here. A YouTube video shows in Now playing while it plays. The extension can’t read your library." : {
+
+    },
+    "Finished" : {
+
+    },
+    "Finished %@" : {
+
+    },
+    "Finishing an episode in Stremio’s player ticks it too." : {
+
+    },
+    "First" : {
+
+    },
+    "First name (optional)" : {
+
+    },
+    "Follow" : {
+
+    },
+    "Follow %@" : {
+
+    },
+    "Follow a league or a team" : {
+
+    },
+    "Follow sports on Aaru" : {
+
+    },
+    "Following" : {
+
+    },
+    "Following %@" : {
+
+    },
+    "Follows" : {
+
+    },
+    "For you from friends" : {
+
+    },
+    "For your safety, sign in again, then delete your account." : {
+
+    },
+    "Friends" : {
+
+    },
+    "Friends & privacy" : {
+
+    },
+    "Friends and the people in your groups see your photo. It is cropped to a square on this device." : {
+
+    },
+    "Friends can see my email" : {
+
+    },
+    "Friends didn't load" : {
+
+    },
+    "Friends find you by your exact handle and see what you're watching and finished. Nobody else ever does." : {
+
+    },
+    "Friends find you by your exact handle. 3–20 letters, numbers or underscores." : {
+
+    },
+    "Friends find you by your exact handle. Your name is what they see." : {
+
+    },
+    "Friends see who you are by your handle. Nobody can search or browse for you." : {
+
+    },
+    "Friends who haven't watched this far see it veiled. Only you see the mark." : {
+
+    },
+    "From %@" : {
+
+    },
+    "From friends" : {
+
+    },
+    "From here" : {
+
+    },
+    "Gathering your %@…" : {
+
+    },
+    "Genres" : {
+
+    },
+    "Genres: %@" : {
+
+    },
+    "Get Aaru Plus" : {
+
+    },
+    "Go" : {
+
+    },
+    "Gold" : {
+
+    },
+    "Google Takeout → YouTube and YouTube Music → history, in JSON. Add watch-history.json: YouTube Music plays and artist Topic channels come in, other videos are left out." : {
+
+    },
+    "Google did not finish the sign-in. Try again." : {
+
+    },
+    "Google did not return a sign-in token. Try again." : {
+
+    },
+    "Google sign-in is misconfigured." : {
+
+    },
+    "Google was not linked." : {
+
+    },
+    "Google was not linked. Aaru could not reach the server." : {
+
+    },
+    "Got it: %@ — %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Got it: %1$@ — %2$@"
+          }
+        }
+      }
+    },
+    "Graph" : {
+
+    },
+    "Grid" : {
+
+    },
+    "Group" : {
+
+    },
+    "Group actions" : {
+
+    },
+    "Group by" : {
+
+    },
+    "Group invites" : {
+
+    },
+    "Group messages are stored on Aaru's server in a form it can read, so the group works on all your devices. Only members of this group can see them." : {
+
+    },
+    "Group messages there hide spoilers from anyone who hasn't caught up." : {
+
+    },
+    "Groups" : {
+
+    },
+    "Groups need a handle, so friends see who is talking." : {
+
+    },
+    "Handle" : {
+
+    },
+    "Harassment" : {
+
+    },
+    "Have a Goodreads export? Import it" : {
+
+    },
+    "Hidden badge, not yet earned" : {
+
+    },
+    "Hidden: from someone you blocked" : {
+
+    },
+    "Hide" : {
+
+    },
+    "Hide watched" : {
+
+    },
+    "Hides the backlog" : {
+
+    },
+    "Hides who shares their progress" : {
+
+    },
+    "Highest: %@, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Highest: %1$@, %2$@"
+          }
+        }
+      }
+    },
+    "History" : {
+
+    },
+    "History and lost links" : {
+
+    },
+    "History didn't load" : {
+
+    },
+    "History import from Trakt" : {
+
+    },
+    "Home" : {
+
+    },
+    "Home could not be refreshed." : {
+
+    },
+    "Hours" : {
+
+    },
+    "How to set it up" : {
+
+    },
+    "How you earned it" : {
+
+    },
+    "I didn't catch that. Try again, or type." : {
+
+    },
+    "I'm ready" : {
+
+    },
+    "Import" : {
+
+    },
+    "Import books" : {
+
+    },
+    "Import from %@" : {
+
+    },
+    "Import from AniList" : {
+
+    },
+    "Import from Stremio" : {
+
+    },
+    "Import from Trakt" : {
+
+    },
+    "Import from link" : {
+
+    },
+    "Import list" : {
+
+    },
+    "Import your Stremio history" : {
+
+    },
+    "Imported" : {
+
+    },
+    "Imported %@ titles" : {
+
+    },
+    "Imported 1 title" : {
+
+    },
+    "Imported, %@ unmatched" : {
+
+    },
+    "Imports" : {
+
+    },
+    "Imports from %@" : {
+
+    },
+    "In %@" : {
+
+    },
+    "In %lld days" : {
+
+    },
+    "In Aaru since %@" : {
+
+    },
+    "In CAT, signed in: copy the “Download iCal File” link. Aaru reads it once and doesn't keep it." : {
+
+    },
+    "In group" : {
+
+    },
+    "In line" : {
+
+    },
+    "In order" : {
+
+    },
+    "In progress" : {
+
+    },
+    "In your library" : {
+
+    },
+    "In your library · %@" : {
+
+    },
+    "Includes episodes without a watch date, so these numbers can be higher than Insights." : {
+
+    },
+    "Insights" : {
+
+    },
+    "Insights could not be loaded." : {
+
+    },
+    "Install Aaru for Chrome or Firefox." : {
+
+    },
+    "Install on Stremio Web" : {
+
+    },
+    "Invite" : {
+
+    },
+    "Invite a friend" : {
+
+    },
+    "Invite friends" : {
+
+    },
+    "Invite someone from Lately." : {
+
+    },
+    "Invite to a group" : {
+
+    },
+    "Invite to watch something together" : {
+
+    },
+    "Invited" : {
+
+    },
+    "Invites" : {
+
+    },
+    "Invites work once and last two weeks. Ask your friend for a new link." : {
+
+    },
+    "It can hand Aaru a list to import. You review it here before anything is added." : {
+
+    },
+    "It may have been removed on another device." : {
+
+    },
+    "It stops sending listens at once. Listens already in your log stay." : {
+
+    },
+    "It was deleted, or you and its author are no longer friends." : {
+
+    },
+    "It works once, for the first person who opens it, for two weeks." : {
+
+    },
+    "It's just you so far." : {
+
+    },
+    "Its comments and upvotes go with it." : {
+
+    },
+    "Its status, rating, notes and progress go with it. You can undo this in Settings → Your data → History." : {
+
+    },
+    "JSON has your account, library, lists, favorites, friends, groups, listens and chats. The CSV opens in Numbers or Excel and can be imported back into Aaru." : {
+
+    },
+    "January" : {
+
+    },
+    "Join" : {
+
+    },
+    "Join me on Aaru." : {
+
+    },
+    "Join the board" : {
+
+    },
+    "Join the weekly friends board" : {
+
+    },
+    "Join to see this week's points next to friends who joined too. It starts over every Monday, and nobody outside your friends ever sees it." : {
+
+    },
+    "Join us on Discord" : {
+
+    },
+    "Joined: %@" : {
+
+    },
+    "Joining means that when the host ends, this is marked in your library. You can switch that off." : {
+
+    },
+    "July" : {
+
+    },
+    "Jump to present" : {
+
+    },
+    "June" : {
+
+    },
+    "Just started" : {
+
+    },
+    "Keep it" : {
+
+    },
+    "Keeping up" : {
+
+    },
+    "Keeps Aaru independent" : {
+
+    },
+    "Kind" : {
+
+    },
+    "LIVE" : {
+
+    },
+    "Last" : {
+
+    },
+    "Last 30 days" : {
+
+    },
+    "Last 7 days" : {
+
+    },
+    "Last import" : {
+
+    },
+    "Last listen: %@ — %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Last listen: %1$@ — %2$@"
+          }
+        }
+      }
+    },
+    "Last name (optional)" : {
+
+    },
+    "Last one aired" : {
+
+    },
+    "Last read" : {
+
+    },
+    "Last result" : {
+
+    },
+    "Lately" : {
+
+    },
+    "Layout" : {
+
+    },
+    "Lead" : {
+
+    },
+    "League" : {
+
+    },
+    "Leagues" : {
+
+    },
+    "Leagues, teams, players" : {
+
+    },
+    "Leave" : {
+
+    },
+    "Leave %@?" : {
+
+    },
+    "Leave group" : {
+
+    },
+    "Leave group…" : {
+
+    },
+    "Leave out %@" : {
+
+    },
+    "Left out" : {
+
+    },
+    "Level %lld" : {
+
+    },
+    "Level %lld · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Level %1$lld · %2$@"
+          }
+        }
+      }
+    },
+    "Library" : {
+
+    },
+    "Library item" : {
+
+    },
+    "Library spreadsheet (CSV)" : {
+
+    },
+    "Licensed under CC BY-SA 4.0" : {
+
+    },
+    "Licensed under MIT" : {
+
+    },
+    "Light" : {
+
+    },
+    "Light novel" : {
+
+    },
+    "Link Google account" : {
+
+    },
+    "List" : {
+
+    },
+    "Listen" : {
+
+    },
+    "Listen to %@ with me." : {
+
+    },
+    "Listened" : {
+
+    },
+    "Listening" : {
+
+    },
+    "Listening…" : {
+
+    },
+    "Listens" : {
+
+    },
+    "Lists" : {
+
+    },
+    "Live" : {
+
+    },
+    "Live Activities are off for Aaru. Turn them on in Settings → Aaru." : {
+
+    },
+    "Live · %@" : {
+
+    },
+    "Load earlier" : {
+
+    },
+    "Load more" : {
+
+    },
+    "Loading %@" : {
+
+    },
+    "Loading concerts" : {
+
+    },
+    "Loading episodes for %lld shows…" : {
+
+    },
+    "Loading episodes for %lld show…" : {
+
+    },
+    "Loading your artists' concerts" : {
+
+    },
+    "Loading your imports…" : {
+
+    },
+    "Loading…" : {
+
+    },
+    "Locating…" : {
+
+    },
+    "Location" : {
+
+    },
+    "Longest run" : {
+
+    },
+    "Longest: %@ days" : {
+
+    },
+    "Looking for artists" : {
+
+    },
+    "Lowercase, with dashes for spaces." : {
+
+    },
+    "MCP client" : {
+
+    },
+    "MY RECAP" : {
+
+    },
+    "Main story" : {
+
+    },
+    "Make @%@ the owner?" : {
+
+    },
+    "Make a place to talk with friends." : {
+
+    },
+    "Make admin" : {
+
+    },
+    "Make one for a theme, a marathon or a book club." : {
+
+    },
+    "Make owner" : {
+
+    },
+    "Make owner…" : {
+
+    },
+    "Make someone else owner first, in Members. Then you can leave, or delete the group instead." : {
+
+    },
+    "Manage subscription" : {
+
+    },
+    "Manga" : {
+
+    },
+    "Manga, manhwa or light novel" : {
+
+    },
+    "Map" : {
+
+    },
+    "Map of the %lld kilometre area around %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Map of the %1$lld kilometre area around %2$@"
+          }
+        }
+      }
+    },
+    "March" : {
+
+    },
+    "Mark %@ %@ watched" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Mark %1$@ %2$@ watched"
+          }
+        }
+      }
+    },
+    "Mark %@ S%lld · E%lld watched" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Mark %1$@ S%2$lld · E%3$lld watched"
+          }
+        }
+      }
+    },
+    "Mark %@ watched" : {
+
+    },
+    "Mark Episode Watched" : {
+
+    },
+    "Mark Now Playing Watched" : {
+
+    },
+    "Mark it for me" : {
+
+    },
+    "Mark listened" : {
+
+    },
+    "Mark listened for me" : {
+
+    },
+    "Mark read" : {
+
+    },
+    "Mark read for me" : {
+
+    },
+    "Mark season %lld watched" : {
+
+    },
+    "Mark show watched" : {
+
+    },
+    "Mark unwatched" : {
+
+    },
+    "Mark unwatched: %@ %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Mark unwatched: %1$@ %2$@"
+          }
+        }
+      }
+    },
+    "Mark watched" : {
+
+    },
+    "Mark watched for me" : {
+
+    },
+    "Mark watched: %@ %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Mark watched: %1$@ %2$@"
+          }
+        }
+      }
+    },
+    "Marked %@ episodes of %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Marked %1$@ episodes of %2$@"
+          }
+        }
+      }
+    },
+    "Marked %@ read" : {
+
+    },
+    "Marked %@ watched" : {
+
+    },
+    "Marked 1 episode of %@" : {
+
+    },
+    "Marked as a spoiler: %@" : {
+
+    },
+    "Marked in your library" : {
+
+    },
+    "Marking an episode or film watched in Stremio ticks it here. It shows in your history with an undo." : {
+
+    },
+    "Marking unwatched and adding to Stremio's library reach Aaru. Removing never deletes here." : {
+
+    },
+    "Marks it %@" : {
+
+    },
+    "Marks it in your library only." : {
+
+    },
+    "Marks the next episode of a show as watched in Aaru." : {
+
+    },
+    "Marks what you watch · %@" : {
+
+    },
+    "Match" : {
+
+    },
+    "Match all" : {
+
+    },
+    "Match all did not finish." : {
+
+    },
+    "Match all did not finish. Aaru could not reach the server." : {
+
+    },
+    "Match each title to the catalog" : {
+
+    },
+    "Matching %lld of %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Matching %1$lld of %2$lld"
+          }
+        }
+      }
+    },
+    "Matching titles…" : {
+
+    },
+    "Matching titles… %lld%%" : {
+
+    },
+    "May" : {
+
+    },
+    "May spoil what you haven't watched yet" : {
+
+    },
+    "Members" : {
+
+    },
+    "Mentions in groups" : {
+
+    },
+    "Missed" : {
+
+    },
+    "Missed didn't load" : {
+
+    },
+    "Month" : {
+
+    },
+    "More" : {
+
+    },
+    "More comments could not be loaded." : {
+
+    },
+    "More concerts could not be loaded." : {
+
+    },
+    "More for %@" : {
+
+    },
+    "More from %@" : {
+
+    },
+    "More from what you picked" : {
+
+    },
+    "More on Discover" : {
+
+    },
+    "Most episodes in %@." : {
+
+    },
+    "Most episodes on %@." : {
+
+    },
+    "Most of your hours went to anime." : {
+
+    },
+    "Most time with" : {
+
+    },
+    "Most watched" : {
+
+    },
+    "Most watched: %@" : {
+
+    },
+    "Moved in" : {
+
+    },
+    "Movies" : {
+
+    },
+    "Music" : {
+
+    },
+    "Music data from MusicBrainz" : {
+
+    },
+    "Music history" : {
+
+    },
+    "Music log" : {
+
+    },
+    "Music scrobbler" : {
+
+    },
+    "Mute mentions" : {
+
+    },
+    "My Aaru recap" : {
+
+    },
+    "MyAnimeList" : {
+
+    },
+    "MyAnimeList could not be reached. Aaru could not reach the server." : {
+
+    },
+    "MyAnimeList could not be reached. Try again." : {
+
+    },
+    "MyAnimeList could not finish connecting. Try again." : {
+
+    },
+    "MyAnimeList entry %@" : {
+
+    },
+    "MyAnimeList is not available right now. Try again later." : {
+
+    },
+    "MyAnimeList stopped accepting Aaru. Nothing is sent until you reconnect." : {
+
+    },
+    "MyAnimeList was not disconnected. Aaru could not reach the server." : {
+
+    },
+    "MyAnimeList was not disconnected. Try again." : {
+
+    },
+    "Name" : {
+
+    },
+    "Name and handle" : {
+
+    },
+    "Name, handle, sign-in" : {
+
+    },
+    "Named after the title" : {
+
+    },
+    "Near %@" : {
+
+    },
+    "Near you" : {
+
+    },
+    "Never miss a new episode" : {
+
+    },
+    "New" : {
+
+    },
+    "New List" : {
+
+    },
+    "New channel" : {
+
+    },
+    "New chat" : {
+
+    },
+    "New episodes" : {
+
+    },
+    "New episodes of shows you are watching, mentions in groups you have not muted, and invites. A mention says who tagged you and where, never what they wrote." : {
+
+    },
+    "New friend" : {
+
+    },
+    "New group" : {
+
+    },
+    "New in your library" : {
+
+    },
+    "New list" : {
+
+    },
+    "New listens" : {
+
+    },
+    "New list…" : {
+
+    },
+    "New season" : {
+
+    },
+    "New shows" : {
+
+    },
+    "Next" : {
+
+    },
+    "Next %@" : {
+
+    },
+    "Next Episode" : {
+
+    },
+    "Next card" : {
+
+    },
+    "Next day" : {
+
+    },
+    "Next episode" : {
+
+    },
+    "Next month" : {
+
+    },
+    "Next month, %@" : {
+
+    },
+    "Next season, %@" : {
+
+    },
+    "Next week" : {
+
+    },
+    "No %@ concerts within %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No %1$@ concerts within %2$@"
+          }
+        }
+      }
+    },
+    "No Aaru Plus purchase was found for this Apple Account." : {
+
+    },
+    "No Results for “%@”" : {
+
+    },
+    "No albums on your shelf yet. Add one from the rows below, or search." : {
+
+    },
+    "No books on your shelf yet. Import a list above, or add one from the rows below." : {
+
+    },
+    "No channel about it yet. An admin can start one." : {
+
+    },
+    "No channel listed in %@." : {
+
+    },
+    "No channels are listed for this event yet." : {
+
+    },
+    "No chats yet" : {
+
+    },
+    "No chats yet." : {
+
+    },
+    "No comments yet" : {
+
+    },
+    "No concerts within %@" : {
+
+    },
+    "No episodes match these filters" : {
+
+    },
+    "No episodes match these filters on %@." : {
+
+    },
+    "No episodes match these filters this day." : {
+
+    },
+    "No episodes this month match these filters." : {
+
+    },
+    "No favorite %@ yet." : {
+
+    },
+    "No films, shows or anime match." : {
+
+    },
+    "No fixtures listed." : {
+
+    },
+    "No friends yet. A group is open only to friends you invite." : {
+
+    },
+    "No friends yet. Send someone an invite, or ask for their handle." : {
+
+    },
+    "No friends yet. Send someone an invite." : {
+
+    },
+    "No groups yet" : {
+
+    },
+    "No imports yet." : {
+
+    },
+    "No listen yet. Play a song, then check the scrobbler’s settings if nothing shows up here." : {
+
+    },
+    "No listens yet" : {
+
+    },
+    "No lists yet" : {
+
+    },
+    "No manga on your shelf yet. Add one from the rows below, or search." : {
+
+    },
+    "No missed episodes match these filters" : {
+
+    },
+    "No more episodes this month match these filters." : {
+
+    },
+    "No name yet" : {
+
+    },
+    "No related titles are known for this one." : {
+
+    },
+    "No spoilers" : {
+
+    },
+    "No streak yet" : {
+
+    },
+    "No titles match these filters" : {
+
+    },
+    "No upcoming %@ concerts listed" : {
+
+    },
+    "Nobody has joined yet." : {
+
+    },
+    "Nobody here shares their progress yet." : {
+
+    },
+    "None of your artists has a date announced." : {
+
+    },
+    "None of your friends has written about this yet." : {
+
+    },
+    "Not added." : {
+
+    },
+    "Not aired yet" : {
+
+    },
+    "Not end-to-end" : {
+
+    },
+    "Not following" : {
+
+    },
+    "Not for me" : {
+
+    },
+    "Not found in Aaru's catalog:" : {
+
+    },
+    "Not in the Chrome Web Store or Firefox Add-ons yet." : {
+
+    },
+    "Not in your library" : {
+
+    },
+    "Not matched" : {
+
+    },
+    "Not now" : {
+
+    },
+    "Not rated" : {
+
+    },
+    "Not sent" : {
+
+    },
+    "Not signed in" : {
+
+    },
+    "Not started" : {
+
+    },
+    "Not subscribed" : {
+
+    },
+    "Not this" : {
+
+    },
+    "Not tonight" : {
+
+    },
+    "Not used yet" : {
+
+    },
+    "Not watched" : {
+
+    },
+    "Not yet" : {
+
+    },
+    "Not your friend" : {
+
+    },
+    "Note (optional)" : {
+
+    },
+    "Notes" : {
+
+    },
+    "Nothing" : {
+
+    },
+    "Nothing %@ right now" : {
+
+    },
+    "Nothing airing soon" : {
+
+    },
+    "Nothing changes until you approve" : {
+
+    },
+    "Nothing chosen" : {
+
+    },
+    "Nothing finished by both of you yet." : {
+
+    },
+    "Nothing finished yet." : {
+
+    },
+    "Nothing from your shows aired in the last four weeks without a tick." : {
+
+    },
+    "Nothing from your shows airs this day." : {
+
+    },
+    "Nothing from your shows airs this month." : {
+
+    },
+    "Nothing from your shows airs this week" : {
+
+    },
+    "Nothing from your shows on %@." : {
+
+    },
+    "Nothing in progress." : {
+
+    },
+    "Nothing is added until you approve what Aaru found." : {
+
+    },
+    "Nothing is added until you approve." : {
+
+    },
+    "Nothing is listed yet." : {
+
+    },
+    "Nothing listed for %@ yet" : {
+
+    },
+    "Nothing more from your shows this month." : {
+
+    },
+    "Nothing on %@" : {
+
+    },
+    "Nothing on Discover matches “%@”" : {
+
+    },
+    "Nothing on air right now" : {
+
+    },
+    "Nothing on this list" : {
+
+    },
+    "Nothing on this list yet" : {
+
+    },
+    "Nothing on yet. Watch or read something together." : {
+
+    },
+    "Nothing played then." : {
+
+    },
+    "Nothing playing" : {
+
+    },
+    "Nothing related yet" : {
+
+    },
+    "Nothing to discover right now" : {
+
+    },
+    "Nothing tracked in %@" : {
+
+    },
+    "Nothing tracked in %@ yet" : {
+
+    },
+    "Nothing tracked in the %@" : {
+
+    },
+    "Nothing was added yet." : {
+
+    },
+    "Nothing was added yet. You can import the file again later." : {
+
+    },
+    "Nothing was changed." : {
+
+    },
+    "Nothing yet" : {
+
+    },
+    "Notifications" : {
+
+    },
+    "Notifications are off for Aaru. Turn them on in the Settings app, then try again." : {
+
+    },
+    "November" : {
+
+    },
+    "Now playing" : {
+
+    },
+    "OK" : {
+
+    },
+    "ONA" : {
+
+    },
+    "OVA" : {
+
+    },
+    "October" : {
+
+    },
+    "Off by default. When on, members of this group see how far you are in the titles its channels are about. Spoilers are hidden from you either way." : {
+
+    },
+    "Offline. Showing Discover from the last load." : {
+
+    },
+    "Offline. Showing Home from the last load." : {
+
+    },
+    "Offline. Showing the calendar from the last load." : {
+
+    },
+    "Offline. Showing your library from the last sync." : {
+
+    },
+    "Older posts could not be loaded." : {
+
+    },
+    "On Goodreads: My Books → Import and export → Export Library, then upload the CSV. Goodreads closed its API, so there is no connect option. Custom shelves become lists." : {
+
+    },
+    "On MyAnimeList: Profile → Export → Anime list or Manga list. The .xml or .xml.gz file." : {
+
+    },
+    "On air" : {
+
+    },
+    "On hold" : {
+
+    },
+    "On page %@ of %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "On page %1$@ of %2$@"
+          }
+        }
+      }
+    },
+    "On repeat" : {
+
+    },
+    "On this device" : {
+
+    },
+    "On this list" : {
+
+    },
+    "On your computer" : {
+
+    },
+    "On your profile, for friends only. People in your groups never see it." : {
+
+    },
+    "One film, show or book. Spoilers stay hidden from anyone behind." : {
+
+    },
+    "One item at a time, as a tap would. Bigger changes wait for your approval." : {
+
+    },
+    "One library, four plain statuses" : {
+
+    },
+    "One step to undo: it lands in History, in Your data, as a single action." : {
+
+    },
+    "One title couldn't be found in the catalog. Continue to go on without it." : {
+
+    },
+    "One-shot" : {
+
+    },
+    "Only friends see each other's libraries." : {
+
+    },
+    "Only friends you invite can find it." : {
+
+    },
+    "Only you see this one" : {
+
+    },
+    "Only you so far. Friends appear once they join the board too." : {
+
+    },
+    "Only your friends see this note" : {
+
+    },
+    "Open" : {
+
+    },
+    "Open %@" : {
+
+    },
+    "Open Aaru and sign in first." : {
+
+    },
+    "Open Aaru to set up" : {
+
+    },
+    "Open History" : {
+
+    },
+    "Open Lately" : {
+
+    },
+    "Open Members" : {
+
+    },
+    "Open Settings" : {
+
+    },
+    "Open System Settings" : {
+
+    },
+    "Open in Sports" : {
+
+    },
+    "Open in Stremio" : {
+
+    },
+    "Open show" : {
+
+    },
+    "Opening…" : {
+
+    },
+    "Opens %@" : {
+
+    },
+    "Opens %@ in Library" : {
+
+    },
+    "Opens Achievements" : {
+
+    },
+    "Opens Friends: invites, requests and your friends" : {
+
+    },
+    "Opens Insights" : {
+
+    },
+    "Opens Ticketmaster." : {
+
+    },
+    "Opens its page. Hold to add." : {
+
+    },
+    "Opens the post" : {
+
+    },
+    "Opens the title" : {
+
+    },
+    "Opens your favorites" : {
+
+    },
+    "Opens your lists" : {
+
+    },
+    "Optional" : {
+
+    },
+    "Optional: joins the list only" : {
+
+    },
+    "Or paste your shows, one per line" : {
+
+    },
+    "Order" : {
+
+    },
+    "Order posts by" : {
+
+    },
+    "Other" : {
+
+    },
+    "Other countries" : {
+
+    },
+    "Other versions" : {
+
+    },
+    "Out now" : {
+
+    },
+    "Owned" : {
+
+    },
+    "Owner" : {
+
+    },
+    "Ownership was not transferred." : {
+
+    },
+    "Page" : {
+
+    },
+    "Page %@" : {
+
+    },
+    "Page %@ of %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Page %1$@ of %2$@"
+          }
+        }
+      }
+    },
+    "Pages won out over screens." : {
+
+    },
+    "Past listening goes to your Music log, never your library. Each listen counts on the day you played it, and an import undoes in one step." : {
+
+    },
+    "Paste a chat or list, or ask for books" : {
+
+    },
+    "Paste a list, send a link or a screenshot, and approve what Aaru found. Up to 30 a day." : {
+
+    },
+    "Paste titles, a link or a screenshot" : {
+
+    },
+    "Pasted text" : {
+
+    },
+    "Paused" : {
+
+    },
+    "Paused %lld weeks" : {
+
+    },
+    "Paused 1 week" : {
+
+    },
+    "Paused · %@ left" : {
+
+    },
+    "Paused, retrying soon" : {
+
+    },
+    "Paused: %@ Trying again shortly; nothing is lost." : {
+
+    },
+    "Period" : {
+
+    },
+    "Photos" : {
+
+    },
+    "Pick a channel" : {
+
+    },
+    "Pick albums you've heard" : {
+
+    },
+    "Pick anime you watch" : {
+
+    },
+    "Pick books you've read" : {
+
+    },
+    "Pick films you've watched" : {
+
+    },
+    "Pick from the rows below, search, or bring your history from another app." : {
+
+    },
+    "Pick manga you've read" : {
+
+    },
+    "Pick one from the lists, or make a new one." : {
+
+    },
+    "Pick shows you watch" : {
+
+    },
+    "Pick up to 10 films, shows, anime, manga, books and albums." : {
+
+    },
+    "Pick what you watch, read and listen to. You can add the rest any time." : {
+
+    },
+    "Plan to listen" : {
+
+    },
+    "Plan to read" : {
+
+    },
+    "Plan to watch" : {
+
+    },
+    "Planned" : {
+
+    },
+    "Platinum" : {
+
+    },
+    "Play" : {
+
+    },
+    "Play as a story" : {
+
+    },
+    "Played along" : {
+
+    },
+    "Player" : {
+
+    },
+    "Players" : {
+
+    },
+    "Plays on YouTube, YouTube Music, Spotify and Apple Music in a browser, or any app on Android, land in Listens. The Spotify and Apple Music apps on iPhone can’t send plays." : {
+
+    },
+    "Plays your recap as a story" : {
+
+    },
+    "Plus is active" : {
+
+    },
+    "Plus is active · renews %@" : {
+
+    },
+    "Plus is how Aaru is paid for. Your library stays private and stays yours." : {
+
+    },
+    "Plus is not on sale in this build yet." : {
+
+    },
+    "Plus renews automatically at the price shown until you cancel, at least a day before the period ends, in your Apple Account's subscriptions. Payment is charged to your Apple Account." : {
+
+    },
+    "Points" : {
+
+    },
+    "Points arrive as you tick episodes, finish titles and watch with friends." : {
+
+    },
+    "Post" : {
+
+    },
+    "Post actions" : {
+
+    },
+    "Postponed" : {
+
+    },
+    "Posts from your friends show here" : {
+
+    },
+    "Premiere" : {
+
+    },
+    "Premieres" : {
+
+    },
+    "Press play when it reaches zero." : {
+
+    },
+    "Pretending to be someone" : {
+
+    },
+    "Previous" : {
+
+    },
+    "Previous card" : {
+
+    },
+    "Previous day" : {
+
+    },
+    "Previous episode" : {
+
+    },
+    "Previous month" : {
+
+    },
+    "Previous month, %@" : {
+
+    },
+    "Previous season, %@" : {
+
+    },
+    "Previous week" : {
+
+    },
+    "Privacy" : {
+
+    },
+    "Privacy Policy" : {
+
+    },
+    "Privacy policy" : {
+
+    },
+    "Private by default. No public profile, no ads" : {
+
+    },
+    "Profile" : {
+
+    },
+    "Progress" : {
+
+    },
+    "QR code that opens the Stremio approval page on another device" : {
+
+    },
+    "Radius" : {
+
+    },
+    "Rank" : {
+
+    },
+    "Ranked lower for 14 days" : {
+
+    },
+    "Rated %lld" : {
+
+    },
+    "Rated highest" : {
+
+    },
+    "Rating" : {
+
+    },
+    "Ratings" : {
+
+    },
+    "React" : {
+
+    },
+    "React %@" : {
+
+    },
+    "Read" : {
+
+    },
+    "Read %@ with me." : {
+
+    },
+    "Read ch. %@" : {
+
+    },
+    "Read ch. %lld" : {
+
+    },
+    "Read only" : {
+
+    },
+    "Read replies aloud" : {
+
+    },
+    "Read side by side" : {
+
+    },
+    "Read this year" : {
+
+    },
+    "Read to" : {
+
+    },
+    "Read to chapter %@ of %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Read to chapter %1$@ of %2$@"
+          }
+        }
+      }
+    },
+    "Read what you sent" : {
+
+    },
+    "Read your %@ library" : {
+
+    },
+    "Read your %@ listens" : {
+
+    },
+    "Read your file" : {
+
+    },
+    "Reading" : {
+
+    },
+    "Reading listens…" : {
+
+    },
+    "Reading now" : {
+
+    },
+    "Reading session" : {
+
+    },
+    "Reading what you said…" : {
+
+    },
+    "Reading…" : {
+
+    },
+    "Ready" : {
+
+    },
+    "Ready for you to review" : {
+
+    },
+    "Ready to review" : {
+
+    },
+    "Recaps" : {
+
+    },
+    "Recent" : {
+
+    },
+    "Recently finished" : {
+
+    },
+    "Recently watched" : {
+
+    },
+    "Recommend" : {
+
+    },
+    "Recommend a title" : {
+
+    },
+    "Recommend to %@" : {
+
+    },
+    "Recommend to friends…" : {
+
+    },
+    "Reconnect" : {
+
+    },
+    "Reconnecting…" : {
+
+    },
+    "Refresh" : {
+
+    },
+    "Related" : {
+
+    },
+    "Related titles could not be loaded" : {
+
+    },
+    "Related titles could not be loaded." : {
+
+    },
+    "Relations from AniList, TMDB and Wikidata." : {
+
+    },
+    "Release order" : {
+
+    },
+    "Remove" : {
+
+    },
+    "Remove %@" : {
+
+    },
+    "Remove @%@?" : {
+
+    },
+    "Remove admin" : {
+
+    },
+    "Remove friend" : {
+
+    },
+    "Remove from group" : {
+
+    },
+    "Remove from library" : {
+
+    },
+    "Remove from library…" : {
+
+    },
+    "Remove from list" : {
+
+    },
+    "Remove photo" : {
+
+    },
+    "Remove the picture" : {
+
+    },
+    "Remove this import" : {
+
+    },
+    "Remove “%@” from your library?" : {
+
+    },
+    "Removed on MyAnimeList (%lld)" : {
+
+    },
+    "Removed “%@”." : {
+
+    },
+    "Rename" : {
+
+    },
+    "Rename group" : {
+
+    },
+    "Rename list" : {
+
+    },
+    "Replies to it stay, under “Comment deleted”." : {
+
+    },
+    "Reply" : {
+
+    },
+    "Reply (⌘↩)" : {
+
+    },
+    "Reply to %@" : {
+
+    },
+    "Replying to %@" : {
+
+    },
+    "Replying to %@: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Replying to %1$@: %2$@"
+          }
+        }
+      }
+    },
+    "Report" : {
+
+    },
+    "Report post" : {
+
+    },
+    "Report sent" : {
+
+    },
+    "Report this %@" : {
+
+    },
+    "Request" : {
+
+    },
+    "Request sent to @%@." : {
+
+    },
+    "Request unavailable" : {
+
+    },
+    "Requests from your connected agents always alert you." : {
+
+    },
+    "Restore Purchases" : {
+
+    },
+    "Result" : {
+
+    },
+    "Resume at %@" : {
+
+    },
+    "Retry" : {
+
+    },
+    "Returning" : {
+
+    },
+    "Returning series" : {
+
+    },
+    "Review and save" : {
+
+    },
+    "Review the import" : {
+
+    },
+    "Revoke" : {
+
+    },
+    "Rows" : {
+
+    },
+    "Rows from %@" : {
+
+    },
+    "S%@ E%@ · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "S%1$@ E%2$@ · %3$@"
+          }
+        }
+      }
+    },
+    "S%@ · E%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "S%1$@ · E%2$@"
+          }
+        }
+      }
+    },
+    "S%@E%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "S%1$@E%2$@"
+          }
+        }
+      }
+    },
+    "S%lld · E%lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "S%1$lld · E%2$lld"
+          }
+        }
+      }
+    },
+    "Sample alert: %@, a new episode is out" : {
+
+    },
+    "Save" : {
+
+    },
+    "Save (⌘↩)" : {
+
+    },
+    "Save note" : {
+
+    },
+    "Saved in order as the list “%@”. Find it under Lists." : {
+
+    },
+    "Say what you're watching." : {
+
+    },
+    "Schedule" : {
+
+    },
+    "Scrobbler" : {
+
+    },
+    "Search" : {
+
+    },
+    "Search %@ for “%@”" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search %1$@ for “%2$@”"
+          }
+        }
+      }
+    },
+    "Search Titles" : {
+
+    },
+    "Search an artist" : {
+
+    },
+    "Search by name: the Premier League, the Lakers, a fighter." : {
+
+    },
+    "Search finds every title." : {
+
+    },
+    "Search for a city" : {
+
+    },
+    "Search for a film, show, anime, book or album, or bring your history from another app." : {
+
+    },
+    "Search for a film, show, anime, book or album." : {
+
+    },
+    "Search is not available right now." : {
+
+    },
+    "Season" : {
+
+    },
+    "Season %@" : {
+
+    },
+    "Season %@ could not be marked. Aaru could not reach the server." : {
+
+    },
+    "Season %@ could not be marked. Try again." : {
+
+    },
+    "Season %lld" : {
+
+    },
+    "Season complete" : {
+
+    },
+    "Season finale" : {
+
+    },
+    "Seasons" : {
+
+    },
+    "See all" : {
+
+    },
+    "See calendar" : {
+
+    },
+    "See it in History" : {
+
+    },
+    "Send" : {
+
+    },
+    "Send (⌘↩)" : {
+
+    },
+    "Send code" : {
+
+    },
+    "Send invite" : {
+
+    },
+    "Send it to a friend. It works once, for the first person who opens it." : {
+
+    },
+    "Send up to %lld files at a time." : {
+
+    },
+    "Sending" : {
+
+    },
+    "Sent. It waits at the top of their Friends." : {
+
+    },
+    "September" : {
+
+    },
+    "Sequels, prequels, spin-offs and adaptations. Tap to plan them." : {
+
+    },
+    "Series" : {
+
+    },
+    "Set aside for today" : {
+
+    },
+    "Settings" : {
+
+    },
+    "Several people are typing…" : {
+
+    },
+    "Share" : {
+
+    },
+    "Share %@" : {
+
+    },
+    "Share as an image" : {
+
+    },
+    "Share invite" : {
+
+    },
+    "Share link" : {
+
+    },
+    "Share my progress in this group" : {
+
+    },
+    "Share…" : {
+
+    },
+    "Show" : {
+
+    },
+    "Show %lld" : {
+
+    },
+    "Show all %lld" : {
+
+    },
+    "Show as" : {
+
+    },
+    "Show fewer" : {
+
+    },
+    "Show more" : {
+
+    },
+    "Show more comments" : {
+
+    },
+    "Show my badges and level to friends" : {
+
+    },
+    "Show my library to friends" : {
+
+    },
+    "Show older" : {
+
+    },
+    "Showing %lld of %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Showing %1$lld of %2$@."
+          }
+        }
+      }
+    },
+    "Shows" : {
+
+    },
+    "Shows and anime" : {
+
+    },
+    "Shows everyone who upvoted" : {
+
+    },
+    "Shows the backlog" : {
+
+    },
+    "Shows the end time or the time left" : {
+
+    },
+    "Shows the episode" : {
+
+    },
+    "Shows the providers' notices in About" : {
+
+    },
+    "Shows the score and where to watch" : {
+
+    },
+    "Shows these in Library" : {
+
+    },
+    "Shows who shares their progress" : {
+
+    },
+    "Shows with a new episode this week, by where they air." : {
+
+    },
+    "Side by side" : {
+
+    },
+    "Side stories" : {
+
+    },
+    "Sign in" : {
+
+    },
+    "Sign in again" : {
+
+    },
+    "Sign in to Aaru in the main window first." : {
+
+    },
+    "Sign in to Stremio and approve this code. Your Stremio password never reaches Aaru." : {
+
+    },
+    "Sign in to read your chats." : {
+
+    },
+    "Sign in with email" : {
+
+    },
+    "Sign out" : {
+
+    },
+    "Sign out of other devices" : {
+
+    },
+    "Sign out of other devices?" : {
+
+    },
+    "Sign out other devices" : {
+
+    },
+    "Signed in with" : {
+
+    },
+    "Signed in with %@" : {
+
+    },
+    "Silver" : {
+
+    },
+    "Since" : {
+
+    },
+    "Skip" : {
+
+    },
+    "Skip %@" : {
+
+    },
+    "Skip favorites" : {
+
+    },
+    "Skip these" : {
+
+    },
+    "So far" : {
+
+    },
+    "Some related titles are still being found." : {
+
+    },
+    "Some results are missing right now." : {
+
+    },
+    "Someone" : {
+
+    },
+    "Something else" : {
+
+    },
+    "Sort" : {
+
+    },
+    "Sort and filter" : {
+
+    },
+    "Spam" : {
+
+    },
+    "Special" : {
+
+    },
+    "Specials" : {
+
+    },
+    "Spin-offs" : {
+
+    },
+    "Spoiler hidden. Show it." : {
+
+    },
+    "Spoilers" : {
+
+    },
+    "Spoils the ending" : {
+
+    },
+    "Spoils up to" : {
+
+    },
+    "Sports" : {
+
+    },
+    "Sports are off right now" : {
+
+    },
+    "Sports aren't answering right now. Try again in a few minutes." : {
+
+    },
+    "Sports data from TheSportsDB" : {
+
+    },
+    "Sports search isn't answering" : {
+
+    },
+    "Sports you follow" : {
+
+    },
+    "Star the ones you love most. They show on your profile, first starred first." : {
+
+    },
+    "Start" : {
+
+    },
+    "Start another" : {
+
+    },
+    "Start countdown" : {
+
+    },
+    "Start here" : {
+
+    },
+    "Start one" : {
+
+    },
+    "Start one from Groups, then invite %@." : {
+
+    },
+    "Start watching" : {
+
+    },
+    "Start watching together, with a shared countdown." : {
+
+    },
+    "Start with a league" : {
+
+    },
+    "Starting in %lld seconds" : {
+
+    },
+    "Starting…" : {
+
+    },
+    "Starts in a few seconds." : {
+
+    },
+    "Status" : {
+
+    },
+    "Step %@" : {
+
+    },
+    "Step %lld" : {
+
+    },
+    "Steps" : {
+
+    },
+    "Still in your Aaru library. Remove them here if you want them gone." : {
+
+    },
+    "Stop and send" : {
+
+    },
+    "Stop reading replies aloud" : {
+
+    },
+    "Stop replying" : {
+
+    },
+    "Story order" : {
+
+    },
+    "Streak" : {
+
+    },
+    "Streak milestone" : {
+
+    },
+    "Streak, %@" : {
+
+    },
+    "Streak, %@. Active on %lld of the last 7 days." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Streak, %1$@. Active on %2$lld of the last 7 days."
+          }
+        }
+      }
+    },
+    "Stremio" : {
+
+    },
+    "Stremio could not be connected." : {
+
+    },
+    "Stremio could not be reached. Aaru could not reach the server." : {
+
+    },
+    "Stremio could not be reached. Try again in a minute." : {
+
+    },
+    "Stremio did not answer" : {
+
+    },
+    "Stremio history" : {
+
+    },
+    "Stremio history, in Settings → Import, brings in what you watched before, once: approve the code on stremio.com, then review the import before anything changes. The install link is shown only once. If you lose it, disconnect it and connect again." : {
+
+    },
+    "Stremio stops showing your Aaru library." : {
+
+    },
+    "Studio" : {
+
+    },
+    "Suggested" : {
+
+    },
+    "Swipe up or down for another season." : {
+
+    },
+    "System" : {
+
+    },
+    "TBA" : {
+
+    },
+    "TBD" : {
+
+    },
+    "TV" : {
+
+    },
+    "TV short" : {
+
+    },
+    "Tag @aaru to ask. It reads this channel's recent group messages, and your own library when that helps. It can't change anything." : {
+
+    },
+    "Taken back: %@" : {
+
+    },
+    "Takes it off" : {
+
+    },
+    "Talk about anything." : {
+
+    },
+    "Talk about what you're watching, reading and listening to." : {
+
+    },
+    "Talk to Aaru" : {
+
+    },
+    "Tap Open in Stremio for the desktop app or Install on Stremio Web in a browser. Or copy the link and paste it into the search box on Stremio’s Addons page." : {
+
+    },
+    "Team" : {
+
+    },
+    "Teams" : {
+
+    },
+    "Terms" : {
+
+    },
+    "Terms of Use" : {
+
+    },
+    "Terms of use" : {
+
+    },
+    "Text" : {
+
+    },
+    "That %@ import could not be started." : {
+
+    },
+    "That AniList list could not be imported." : {
+
+    },
+    "That CAT link could not be imported." : {
+
+    },
+    "That Trakt import could not be started." : {
+
+    },
+    "That change was not saved." : {
+
+    },
+    "That change was not saved. Aaru could not reach the server." : {
+
+    },
+    "That city was not saved." : {
+
+    },
+    "That city was not saved. Aaru could not reach the server." : {
+
+    },
+    "That comment was not deleted." : {
+
+    },
+    "That comment was not saved." : {
+
+    },
+    "That could not be undone." : {
+
+    },
+    "That could not be undone. Aaru could not reach the server." : {
+
+    },
+    "That edit was not saved." : {
+
+    },
+    "That episode was not saved." : {
+
+    },
+    "That file could not be imported." : {
+
+    },
+    "That file could not be read, or is larger than 5 MB." : {
+
+    },
+    "That file could not be read." : {
+
+    },
+    "That file could not be unpacked. Upload the .xml file instead." : {
+
+    },
+    "That file could not be uploaded. Aaru could not reach the server." : {
+
+    },
+    "That file is larger than 24 MB. Spotify splits its history into smaller files; add them one at a time." : {
+
+    },
+    "That file is larger than 5 MB unpacked. Check it is the right export." : {
+
+    },
+    "That friend was not removed." : {
+
+    },
+    "That group could not be loaded." : {
+
+    },
+    "That group could not be loaded. Aaru could not reach the server." : {
+
+    },
+    "That invite could not be accepted." : {
+
+    },
+    "That invite is already gone." : {
+
+    },
+    "That invite was not sent." : {
+
+    },
+    "That member was not removed." : {
+
+    },
+    "That person was not blocked." : {
+
+    },
+    "That person was not unblocked." : {
+
+    },
+    "That photo could not be read. Try another." : {
+
+    },
+    "That picture is too long. Paste the text instead." : {
+
+    },
+    "That post could not be loaded." : {
+
+    },
+    "That post could not be loaded. Aaru could not reach the server." : {
+
+    },
+    "That post was not deleted." : {
+
+    },
+    "That post was not saved." : {
+
+    },
+    "That reaction was not saved." : {
+
+    },
+    "That recommendation is gone." : {
+
+    },
+    "That recommendation was not sent." : {
+
+    },
+    "That report was not sent." : {
+
+    },
+    "That report was not sent. Aaru could not reach the server." : {
+
+    },
+    "That request could not be accepted." : {
+
+    },
+    "That request is already gone." : {
+
+    },
+    "That request was not sent." : {
+
+    },
+    "That role was not changed." : {
+
+    },
+    "That row could not be changed." : {
+
+    },
+    "That row was not changed. Aaru could not reach the server." : {
+
+    },
+    "That setting was not saved." : {
+
+    },
+    "That title was not added." : {
+
+    },
+    "That title was not added. Aaru could not reach the server." : {
+
+    },
+    "That title was not removed." : {
+
+    },
+    "That title was not removed. Aaru could not reach the server." : {
+
+    },
+    "That upvote was not saved." : {
+
+    },
+    "That was already undone." : {
+
+    },
+    "That was not deleted." : {
+
+    },
+    "That was not deleted. Aaru could not reach the server." : {
+
+    },
+    "That was not edited." : {
+
+    },
+    "That was not edited. Aaru could not reach the server." : {
+
+    },
+    "That was not marked." : {
+
+    },
+    "That was not marked. Aaru could not reach the server." : {
+
+    },
+    "That was not saved." : {
+
+    },
+    "That was not saved. Aaru could not reach the server." : {
+
+    },
+    "That was not sent." : {
+
+    },
+    "That was not undone." : {
+
+    },
+    "That was not undone. Aaru could not reach the server." : {
+
+    },
+    "That was too long. Try a shorter question." : {
+
+    },
+    "That was your %@ in Aaru." : {
+
+    },
+    "That's %@ minutes of stories." : {
+
+    },
+    "That's about %@ days, end to end." : {
+
+    },
+    "That's about %@ hours." : {
+
+    },
+    "That's long. Paste the text instead." : {
+
+    },
+    "That's too long for Aaru. Try something shorter." : {
+
+    },
+    "That's your %@ in Aaru so far." : {
+
+    },
+    "The Anime Devotee" : {
+
+    },
+    "The App Store could not be reached." : {
+
+    },
+    "The App Store could not complete the purchase." : {
+
+    },
+    "The Binger" : {
+
+    },
+    "The Board could not be loaded." : {
+
+    },
+    "The Board could not be loaded. Aaru could not reach the server." : {
+
+    },
+    "The Board didn't load" : {
+
+    },
+    "The Bookworm" : {
+
+    },
+    "The Completionist" : {
+
+    },
+    "The Explorer" : {
+
+    },
+    "The Field" : {
+
+    },
+    "The ListenBrainz plugin sends what you play on your Jellyfin server." : {
+
+    },
+    "The Movie Database (TMDB)" : {
+
+    },
+    "The Steady One" : {
+
+    },
+    "The account was not deleted." : {
+
+    },
+    "The account was not deleted. Aaru could not reach the server." : {
+
+    },
+    "The albums you are listening to." : {
+
+    },
+    "The calendar could not be loaded." : {
+
+    },
+    "The calendar didn't load" : {
+
+    },
+    "The catalog did not answer. Try again in a moment." : {
+
+    },
+    "The catalog rows are empty for now. Search still works." : {
+
+    },
+    "The catalog rows didn't load. Search still works." : {
+
+    },
+    "The channel was not created." : {
+
+    },
+    "The channel was not deleted." : {
+
+    },
+    "The channel was not saved." : {
+
+    },
+    "The city was not removed." : {
+
+    },
+    "The city was not removed. Aaru could not reach the server." : {
+
+    },
+    "The connection could not be created." : {
+
+    },
+    "The connection could not be made." : {
+
+    },
+    "The connection could not be made. Aaru could not reach the server." : {
+
+    },
+    "The countdown did not start." : {
+
+    },
+    "The country was not saved." : {
+
+    },
+    "The country was not saved. Aaru could not reach the server." : {
+
+    },
+    "The episode was not saved. Try again in Aaru." : {
+
+    },
+    "The export could not be made." : {
+
+    },
+    "The export could not be made. Aaru could not reach the server." : {
+
+    },
+    "The export was not saved. %@" : {
+
+    },
+    "The film" : {
+
+    },
+    "The graph could not be loaded" : {
+
+    },
+    "The group was not created." : {
+
+    },
+    "The group was not deleted." : {
+
+    },
+    "The group was not renamed." : {
+
+    },
+    "The import did not start. Aaru could not reach the server." : {
+
+    },
+    "The import was not applied." : {
+
+    },
+    "The import was not applied. Aaru could not reach the server." : {
+
+    },
+    "The import was not discarded." : {
+
+    },
+    "The import was not undone." : {
+
+    },
+    "The import was not undone. Aaru could not reach the server." : {
+
+    },
+    "The invite could not be accepted." : {
+
+    },
+    "The invite was not made." : {
+
+    },
+    "The leagues you follow have no events this day." : {
+
+    },
+    "The library could not be updated." : {
+
+    },
+    "The link could not be made." : {
+
+    },
+    "The list could not be created." : {
+
+    },
+    "The list could not be deleted." : {
+
+    },
+    "The list could not be deleted. Aaru could not reach the server." : {
+
+    },
+    "The list could not be loaded." : {
+
+    },
+    "The list could not be renamed." : {
+
+    },
+    "The list goes; the titles stay in your library." : {
+
+    },
+    "The mic could not start. You can still type." : {
+
+    },
+    "The movie was not saved. Try again in Aaru." : {
+
+    },
+    "The new order was not saved." : {
+
+    },
+    "The next episode of every show you are watching. Check one off without opening Aaru." : {
+
+    },
+    "The only place Aaru stores where you are, to find concerts. “Use my location” in Discover is used once and never saved." : {
+
+    },
+    "The party did not end." : {
+
+    },
+    "The party was not started." : {
+
+    },
+    "The plan" : {
+
+    },
+    "The purchase is waiting for approval. Plus starts when it goes through." : {
+
+    },
+    "The review for this list was deleted." : {
+
+    },
+    "The schedule could not be refreshed." : {
+
+    },
+    "The scrobbler could not be connected." : {
+
+    },
+    "The show" : {
+
+    },
+    "The start of #%@." : {
+
+    },
+    "The start of the group." : {
+
+    },
+    "The title" : {
+
+    },
+    "The title could not be added to the list." : {
+
+    },
+    "The title could not be removed." : {
+
+    },
+    "The titles didn't load." : {
+
+    },
+    "The token is shown only now and works like a password: anyone with it can add listens to your log. Disconnect it if you shared it by mistake." : {
+
+    },
+    "The top list could not be loaded." : {
+
+    },
+    "The watch party could not be loaded." : {
+
+    },
+    "The week's airings aren't answering right now. Try again in a few minutes." : {
+
+    },
+    "Their handle" : {
+
+    },
+    "Their live scores, next fixtures and results show here." : {
+
+    },
+    "Then ask your agent" : {
+
+    },
+    "These listens are in your Music log. Undo removes them all in one step." : {
+
+    },
+    "They" : {
+
+    },
+    "They are removed from your friends and can't see your library. You can unblock them in Friends." : {
+
+    },
+    "This %@ ended." : {
+
+    },
+    "This Week" : {
+
+    },
+    "This browser stops marking what you watch." : {
+
+    },
+    "This build has no server configured." : {
+
+    },
+    "This cannot be undone." : {
+
+    },
+    "This channel could not be loaded." : {
+
+    },
+    "This channel could not be loaded. Aaru could not reach the server." : {
+
+    },
+    "This channel is gone" : {
+
+    },
+    "This chat didn't load" : {
+
+    },
+    "This concert's details aren't available right now" : {
+
+    },
+    "This day's events didn't load." : {
+
+    },
+    "This invite isn't valid anymore" : {
+
+    },
+    "This is a .zip file. Unzip it and add the .json files inside, one at a time." : {
+
+    },
+    "This is an Apple “Hide My Email” address. It takes mail only from Aaru, so it can’t be shared with friends." : {
+
+    },
+    "This is your invite" : {
+
+    },
+    "This link didn't load" : {
+
+    },
+    "This link doesn't work" : {
+
+    },
+    "This link is shown only once and works like a password: anyone with it can see your library. Disconnect it if you shared it by mistake." : {
+
+    },
+    "This list could not be loaded." : {
+
+    },
+    "This list could not be loaded. Aaru could not reach the server." : {
+
+    },
+    "This list didn't load" : {
+
+    },
+    "This match isn't available right now" : {
+
+    },
+    "This post didn't load" : {
+
+    },
+    "This post isn't available" : {
+
+    },
+    "This product uses the TMDB API but is not endorsed or certified by TMDB." : {
+
+    },
+    "This puts back %lld titles as they were before." : {
+
+    },
+    "This puts it back as it was before." : {
+
+    },
+    "This removes everything you and Aaru said. Changes Aaru made to your library stay, and your daily count of questions stays." : {
+
+    },
+    "This removes what you and Aaru said in it. Changes Aaru made to your library stay." : {
+
+    },
+    "This request could not be loaded." : {
+
+    },
+    "This season's list isn't answering" : {
+
+    },
+    "This server has Sports turned off." : {
+
+    },
+    "This title could not be loaded." : {
+
+    },
+    "This title could not be loaded. Aaru could not reach the server." : {
+
+    },
+    "This title didn't load" : {
+
+    },
+    "This week" : {
+
+    },
+    "This week's airings didn't load. Try again in a few minutes." : {
+
+    },
+    "Those shows could not be imported." : {
+
+    },
+    "Tick an episode or finish a title, and it will show up here." : {
+
+    },
+    "Tick an episode or finish something to start one" : {
+
+    },
+    "Tick episodes and finish titles, and they add up here." : {
+
+    },
+    "Tick something today" : {
+
+    },
+    "Tickets" : {
+
+    },
+    "Tickets for %@" : {
+
+    },
+    "Tiers" : {
+
+    },
+    "Time" : {
+
+    },
+    "Time watched" : {
+
+    },
+    "Time with stories" : {
+
+    },
+    "Title" : {
+
+    },
+    "Title, author or ISBN" : {
+
+    },
+    "Titles" : {
+
+    },
+    "Titles you are in the middle of show up here." : {
+
+    },
+    "To" : {
+
+    },
+    "To carry on with this chat, open the owl and choose it under Chats." : {
+
+    },
+    "Today" : {
+
+    },
+    "Today is in" : {
+
+    },
+    "Today is still open" : {
+
+    },
+    "Today, %@" : {
+
+    },
+    "Toggle End Time" : {
+
+    },
+    "Tomorrow" : {
+
+    },
+    "Tonight" : {
+
+    },
+    "Too many spoken questions for now. You can still type." : {
+
+    },
+    "Top" : {
+
+    },
+    "Top genre: %@" : {
+
+    },
+    "Top this week" : {
+
+    },
+    "Topic (optional)" : {
+
+    },
+    "Touch and hold for another status." : {
+
+    },
+    "Track %@" : {
+
+    },
+    "Tracklist" : {
+
+    },
+    "Tracklist not available yet" : {
+
+    },
+    "Tracks" : {
+
+    },
+    "Trakt" : {
+
+    },
+    "Trakt could not be reached. Aaru could not reach the server." : {
+
+    },
+    "Trakt could not be reached. Try again." : {
+
+    },
+    "Trakt could not finish connecting. Free Trakt accounts can connect two apps; disconnect one on trakt.tv, or try again." : {
+
+    },
+    "Trakt is not available right now. Try again later." : {
+
+    },
+    "Trakt was not disconnected. Aaru could not reach the server." : {
+
+    },
+    "Trakt was not disconnected. Try again." : {
+
+    },
+    "Try %@ again in a few minutes." : {
+
+    },
+    "Try Anywhere" : {
+
+    },
+    "Try a wider radius." : {
+
+    },
+    "Try again" : {
+
+    },
+    "Try again in a few minutes." : {
+
+    },
+    "Try again in a minute." : {
+
+    },
+    "Try again in a moment." : {
+
+    },
+    "Try another season or kind." : {
+
+    },
+    "Try the link again later." : {
+
+    },
+    "Turn on notifications" : {
+
+    },
+    "Type" : {
+
+    },
+    "Unblock" : {
+
+    },
+    "Undo" : {
+
+    },
+    "Undo %@" : {
+
+    },
+    "Undo in History" : {
+
+    },
+    "Undo the whole import there in one step." : {
+
+    },
+    "Undo this import" : {
+
+    },
+    "Undo “%@”?" : {
+
+    },
+    "Undone" : {
+
+    },
+    "Undone." : {
+
+    },
+    "Unfinished" : {
+
+    },
+    "Unfollow %@" : {
+
+    },
+    "Unfollows" : {
+
+    },
+    "Unmarking and adding titles reach Aaru only if you allowed it when connecting. Removing a title in Stremio never removes it here." : {
+
+    },
+    "Unmute mentions" : {
+
+    },
+    "Unread" : {
+
+    },
+    "Untick anything you don't want." : {
+
+    },
+    "Untitled" : {
+
+    },
+    "Unzip your TV Time export, then upload one CSV at a time: tvtime-series-episodes.csv, tvtime-series.csv and tvtime-movies.csv, or from a GDPR export tracking-prod-records-v2.csv and tracking-prod-records.csv." : {
+
+    },
+    "Up Next" : {
+
+    },
+    "Up to %@" : {
+
+    },
+    "Up to %lld. First is your favorite." : {
+
+    },
+    "Up to an episode…" : {
+
+    },
+    "Upcoming" : {
+
+    },
+    "Update page" : {
+
+    },
+    "Updated" : {
+
+    },
+    "Uploading…" : {
+
+    },
+    "Upvote, %lld" : {
+
+    },
+    "Upvoted by %@" : {
+
+    },
+    "Use %@" : {
+
+    },
+    "Use 3–20 letters, numbers or underscores." : {
+
+    },
+    "Use a different email or send a new code" : {
+
+    },
+    "Use my location" : {
+
+    },
+    "Used %@" : {
+
+    },
+    "Username" : {
+
+    },
+    "Version" : {
+
+    },
+    "View" : {
+
+    },
+    "Voice is off right now. You can still type." : {
+
+    },
+    "Vol. %@" : {
+
+    },
+    "Volume" : {
+
+    },
+    "Wait for a free slot" : {
+
+    },
+    "Waiting for approval…" : {
+
+    },
+    "Waiting for you" : {
+
+    },
+    "Waiting for your first listen…" : {
+
+    },
+    "Waiting on" : {
+
+    },
+    "Want to watch" : {
+
+    },
+    "Watch %@ with me." : {
+
+    },
+    "Watch party" : {
+
+    },
+    "Watch together" : {
+
+    },
+    "Watched" : {
+
+    },
+    "Watching" : {
+
+    },
+    "Watching now" : {
+
+    },
+    "Watching now…" : {
+
+    },
+    "We sent a six-digit code to %@. It works once, for 15 minutes." : {
+
+    },
+    "We'll email you a six-digit code. No password." : {
+
+    },
+    "Week" : {
+
+    },
+    "What airs this week from the shows you follow." : {
+
+    },
+    "What are you watching or reading?" : {
+
+    },
+    "What do you keep?" : {
+
+    },
+    "What else is set in the same world as \"%@\"? Spin-offs, prequels and sequels in any medium that are not already related here." : {
+
+    },
+    "What is Aaru?" : {
+
+    },
+    "What is out there, the same for everyone." : {
+
+    },
+    "What it does" : {
+
+    },
+    "What should Aaru know?" : {
+
+    },
+    "What to list" : {
+
+    },
+    "What you add, change or remove shows up here, with Undo." : {
+
+    },
+    "What you are watching, reading and listening to, and what airs next, lands here." : {
+
+    },
+    "What you ask Aaru from the owl shows up here." : {
+
+    },
+    "What you tick in Aaru does not show as watched in Stremio." : {
+
+    },
+    "What you watched before, approved on stremio.com." : {
+
+    },
+    "When a story grabs you, you stay for the next one." : {
+
+    },
+    "When an artist of an album in your library tours, the dates show here." : {
+
+    },
+    "When the host ends, this is marked in your library. You can undo it after." : {
+
+    },
+    "Where %@ leads: who made it, and what comes after." : {
+
+    },
+    "Where should Aaru look?" : {
+
+    },
+    "Where the time went" : {
+
+    },
+    "Where to stream from JustWatch" : {
+
+    },
+    "Where to watch" : {
+
+    },
+    "Where you watch" : {
+
+    },
+    "Which one?" : {
+
+    },
+    "Which page of %@ are you on?" : {
+
+    },
+    "Who sees this veiled until they catch up." : {
+
+    },
+    "Whose titles to show" : {
+
+    },
+    "Why" : {
+
+    },
+    "Why they'll love it (optional)" : {
+
+    },
+    "Will be added" : {
+
+    },
+    "Will be filled in" : {
+
+    },
+    "Works with Stremio Web and Stremio 5 on desktop. The phone and TV apps are not confirmed yet." : {
+
+    },
+    "Write a post" : {
+
+    },
+    "Write about this" : {
+
+    },
+    "Write in #%@" : {
+
+    },
+    "Write something…" : {
+
+    },
+    "Year" : {
+
+    },
+    "Yesterday" : {
+
+    },
+    "You" : {
+
+    },
+    "You and %@ are already friends" : {
+
+    },
+    "You and %@ are friends" : {
+
+    },
+    "You and @%@ are friends." : {
+
+    },
+    "You are all caught up" : {
+
+    },
+    "You are all caught up." : {
+
+    },
+    "You become an admin. Only they can delete the group." : {
+
+    },
+    "You both" : {
+
+    },
+    "You can leave: the plan waits %@, and nothing reaches your %@ until you approve it." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You can leave: the plan waits %1$@, and nothing reaches your %2$@ until you approve it."
+          }
+        }
+      }
+    },
+    "You can now see each other's shelves." : {
+
+    },
+    "You finish what you start." : {
+
+    },
+    "You follow 100 already. Unfollow one to add %@." : {
+
+    },
+    "You said no. Nothing changed." : {
+
+    },
+    "You stop being friends, and neither of you can find the other. They aren't told." : {
+
+    },
+    "You stop seeing its channels. A friend in it can invite you back." : {
+
+    },
+    "You were signed out. Sign in again." : {
+
+    },
+    "You: %@" : {
+
+    },
+    "Your %@" : {
+
+    },
+    "Your %@ in Aaru" : {
+
+    },
+    "Your %@ recap" : {
+
+    },
+    "Your %@, in a word" : {
+
+    },
+    "Your AniList anime list must be public." : {
+
+    },
+    "Your CAT iCal link" : {
+
+    },
+    "Your Continue watching, Next 7 days and Plan to watch show up in Stremio, and episodes you play there tick off here. Works with Stremio Web and Stremio 5 desktop." : {
+
+    },
+    "Your Stremio history could not be imported." : {
+
+    },
+    "Your account could not be loaded. Aaru could not reach the server." : {
+
+    },
+    "Your approximate location" : {
+
+    },
+    "Your artists on tour" : {
+
+    },
+    "Your artists' concerts could not be loaded." : {
+
+    },
+    "Your average rating" : {
+
+    },
+    "Your biggest day" : {
+
+    },
+    "Your capture" : {
+
+    },
+    "Your chats" : {
+
+    },
+    "Your chats could not be deleted." : {
+
+    },
+    "Your chats could not be deleted. Aaru could not reach the server." : {
+
+    },
+    "Your chats didn't load" : {
+
+    },
+    "Your connections could not be loaded." : {
+
+    },
+    "Your connections could not be loaded. Aaru could not reach the server." : {
+
+    },
+    "Your data" : {
+
+    },
+    "Your favorite films, shows and more show on your profile. The leagues, teams and players you follow stay in Sports." : {
+
+    },
+    "Your favorites" : {
+
+    },
+    "Your favorites didn't load." : {
+
+    },
+    "Your favorites weren't saved." : {
+
+    },
+    "Your favorites weren't saved. Aaru could not reach the server." : {
+
+    },
+    "Your friends could not be loaded. Aaru could not reach the server." : {
+
+    },
+    "Your genres" : {
+
+    },
+    "Your groups could not be loaded. Aaru could not reach the server." : {
+
+    },
+    "Your groups didn't load" : {
+
+    },
+    "Your handle was not saved." : {
+
+    },
+    "Your history could not be loaded." : {
+
+    },
+    "Your history could not be loaded. Aaru could not reach the server." : {
+
+    },
+    "Your history earned you %@ badges" : {
+
+    },
+    "Your history earned you a badge" : {
+
+    },
+    "Your iCal link or file, or a list of shows." : {
+
+    },
+    "Your imports could not be loaded. Aaru could not reach the server." : {
+
+    },
+    "Your invite is ready" : {
+
+    },
+    "Your leagues and teams didn't load." : {
+
+    },
+    "Your library changed since, so nothing was applied." : {
+
+    },
+    "Your library didn't load" : {
+
+    },
+    "Your library is empty" : {
+
+    },
+    "Your library stays private: only friends see it." : {
+
+    },
+    "Your listens could not be loaded." : {
+
+    },
+    "Your listens could not be loaded. Aaru could not reach the server." : {
+
+    },
+    "Your listens on ListenBrainz are public." : {
+
+    },
+    "Your listens, by username." : {
+
+    },
+    "Your lists" : {
+
+    },
+    "Your lists could not be loaded." : {
+
+    },
+    "Your lists could not be loaded. Aaru could not reach the server." : {
+
+    },
+    "Your lists didn't load" : {
+
+    },
+    "Your location could not be found. Try again, or choose a city." : {
+
+    },
+    "Your notification settings could not be loaded. Aaru could not reach the server." : {
+
+    },
+    "Your other devices were not signed out." : {
+
+    },
+    "Your other devices were not signed out. Aaru could not reach the server." : {
+
+    },
+    "Your own music server. Plays in Navidrome and the apps connected to it are sent." : {
+
+    },
+    "Your photo was not removed." : {
+
+    },
+    "Your photo was not saved." : {
+
+    },
+    "Your picks weren't saved." : {
+
+    },
+    "Your picks weren't saved. Aaru could not reach the server." : {
+
+    },
+    "Your profile" : {
+
+    },
+    "Your profile was not saved." : {
+
+    },
+    "Your public anime and manga lists, by username." : {
+
+    },
+    "Your ratings or watchlist export (CSV)." : {
+
+    },
+    "Your recap" : {
+
+    },
+    "Your recap could not be loaded." : {
+
+    },
+    "Your recap is ready" : {
+
+    },
+    "Your recent listening must not be hidden on Last.fm." : {
+
+    },
+    "Your scrobbles, by username. Recent listening must not be hidden on Last.fm." : {
+
+    },
+    "Your setting was not saved." : {
+
+    },
+    "Your setting was not saved. Aaru could not reach the server." : {
+
+    },
+    "Your sharing setting was not saved." : {
+
+    },
+    "Your shows appear here after you sign in." : {
+
+    },
+    "Your shows arrive as Plan to watch. CAT's watched episodes don't come across." : {
+
+    },
+    "Your stats fill in as you watch. Mark a show you've finished to start." : {
+
+    },
+    "Your streak and the last seven days." : {
+
+    },
+    "Your token is in the steps below. Anyone with it can read your library, so treat it like a password; Aaru shows it only now." : {
+
+    },
+    "Your top %@" : {
+
+    },
+    "a favorite" : {
+
+    },
+    "aaruapp.com" : {
+
+    },
+    "active day" : {
+
+    },
+    "active days" : {
+
+    },
+    "adapted" : {
+
+    },
+    "album" : {
+
+    },
+    "albums" : {
+
+    },
+    "anime" : {
+
+    },
+    "anime watched" : {
+
+    },
+    "assistant" : {
+
+    },
+    "best known" : {
+
+    },
+    "book" : {
+
+    },
+    "book read" : {
+
+    },
+    "books" : {
+
+    },
+    "books read" : {
+
+    },
+    "day" : {
+
+    },
+    "day streak" : {
+
+    },
+    "days in a row" : {
+
+    },
+    "diary.csv, ratings.csv, watched.csv or watchlist.csv from your export." : {
+
+    },
+    "earned" : {
+
+    },
+    "entries" : {
+
+    },
+    "entry" : {
+
+    },
+    "episode" : {
+
+    },
+    "episode %@" : {
+
+    },
+    "episodes" : {
+
+    },
+    "film" : {
+
+    },
+    "film watched" : {
+
+    },
+    "films" : {
+
+    },
+    "films watched" : {
+
+    },
+    "finished" : {
+
+    },
+    "handle" : {
+
+    },
+    "hour" : {
+
+    },
+    "hours" : {
+
+    },
+    "https://www.pogdesign.co.uk/cat/download_ics/…" : {
+
+    },
+    "item" : {
+
+    },
+    "library" : {
+
+    },
+    "listen" : {
+
+    },
+    "listens" : {
+
+    },
+    "live, %@" : {
+
+    },
+    "main story" : {
+
+    },
+    "manga" : {
+
+    },
+    "message" : {
+
+    },
+    "minute" : {
+
+    },
+    "minutes" : {
+
+    },
+    "month" : {
+
+    },
+    "movie-night" : {
+
+    },
+    "new show" : {
+
+    },
+    "new shows" : {
+
+    },
+    "not aired yet" : {
+
+    },
+    "not in your library" : {
+
+    },
+    "not watched" : {
+
+    },
+    "now" : {
+
+    },
+    "of %lld" : {
+
+    },
+    "on Home" : {
+
+    },
+    "other version" : {
+
+    },
+    "period" : {
+
+    },
+    "person" : {
+
+    },
+    "play" : {
+
+    },
+    "plays" : {
+
+    },
+    "post" : {
+
+    },
+    "recap" : {
+
+    },
+    "related" : {
+
+    },
+    "returning show" : {
+
+    },
+    "returning shows" : {
+
+    },
+    "show" : {
+
+    },
+    "show watched" : {
+
+    },
+    "shows" : {
+
+    },
+    "shows watched" : {
+
+    },
+    "side story" : {
+
+    },
+    "someone" : {
+
+    },
+    "source" : {
+
+    },
+    "spin-off" : {
+
+    },
+    "this connection" : {
+
+    },
+    "this title" : {
+
+    },
+    "title" : {
+
+    },
+    "title." : {
+
+    },
+    "titles." : {
+
+    },
+    "today" : {
+
+    },
+    "under Settings → Import" : {
+
+    },
+    "untitled" : {
+
+    },
+    "up next" : {
+
+    },
+    "watched" : {
+
+    },
+    "watched %@" : {
+
+    },
+    "watched %lld episodes, up to %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "watched %1$lld episodes, up to %2$@"
+          }
+        }
+      }
+    },
+    "week" : {
+
+    },
+    "year" : {
+
+    },
+    "you" : {
+
+    },
+    "you@example.com" : {
+
+    },
+    "your MyAnimeList account" : {
+
+    },
+    "your Trakt account" : {
+
+    },
+    "·" : {
+
+    },
+    "· %@" : {
+
+    },
+    "“%@”" : {
+
+    },
+    "“%@” in your import. Choose the title it means." : {
+
+    },
+    "• %@" : {
+
+    }
+  },
+  "version" : "1.0"
+}

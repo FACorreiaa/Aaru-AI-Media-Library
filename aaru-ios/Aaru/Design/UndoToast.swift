@@ -32,7 +32,8 @@ final class ToastCenter {
     func show(_ message: String, tone: ToastTone = .done, undo: (@MainActor () async -> String?)? = nil) {
         let toast = Toast(message: message, tone: tone, undo: undo)
         current = toast
-        AccessibilityNotification.Announcement(undo == nil ? message : "\(message). Undo is available.").post()
+        AccessibilityNotification
+            .Announcement(undo == nil ? message : String(localized: "\(message). Undo is available.")).post()
         let id = toast.id
         expiry?.cancel()
         expiry = Task { [weak self] in
@@ -58,7 +59,7 @@ final class ToastCenter {
             show(problem, tone: .problem)
         } else {
             dismiss(toast.id)
-            AccessibilityNotification.Announcement("Undone").post()
+            AccessibilityNotification.Announcement(String(localized: "Undone")).post()
         }
     }
 }

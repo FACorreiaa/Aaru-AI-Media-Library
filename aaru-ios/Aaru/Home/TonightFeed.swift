@@ -54,11 +54,14 @@ final class TonightFeed {
                 return nil
             case let .default(_, error):
                 hidden.remove(id)
-                return (try? error.body.json.message) ?? "\(pick.title.title) could not be set aside."
+                return (try? error.body.json.message) ??
+                    String(localized: "\(pick.title.title) could not be set aside.")
             }
         } catch {
             hidden.remove(id)
-            return "\(pick.title.title) could not be set aside. Aaru could not reach the server."
+            return String(
+                localized: "\(pick.title.title) could not be set aside. Aaru could not reach the server."
+            )
         }
     }
 }

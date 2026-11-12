@@ -172,13 +172,13 @@ extension TreeBranch {
     /// carries the name, so three chips always fit one line.
     var chip: String {
         switch kind {
-        case .director: "Director"
-        case .creator: "Creator"
-        case .studio: "Studio"
-        case .author: "Author"
-        case .artist: "Artist"
-        case .leadActor: "Lead"
-        case .secondActor: "2nd"
+        case .director: String(localized: "Director")
+        case .creator: String(localized: "Creator")
+        case .studio: String(localized: "Studio")
+        case .author: String(localized: "Author")
+        case .artist: String(localized: "Artist")
+        case .leadActor: String(localized: "Lead")
+        case .secondActor: String(localized: "2nd")
         case .series, .adaptation: ""
         }
     }
@@ -221,7 +221,7 @@ extension TitleTree {
     /// A chip's label.
     func label(of filter: TitleTreeFilter) -> String {
         switch filter {
-        case .all: "All"
+        case .all: String(localized: "All")
         case let .person(kind): branches.first { $0.kind == kind }?.chip ?? ""
         }
     }
@@ -234,15 +234,15 @@ extension TreeBranch {
     var title: String {
         let role: String
         switch kind {
-        case .series: return "Series"
-        case .adaptation: return "Adaptations"
-        case .director: role = "Director"
-        case .creator: role = "Creator"
-        case .studio: role = "Studio"
-        case .author: role = "Author"
-        case .artist: role = "Artist"
-        case .leadActor: role = "Lead"
-        case .secondActor: role = "Also starring"
+        case .series: return String(localized: "Series")
+        case .adaptation: return String(localized: "Adaptations")
+        case .director: role = String(localized: "Director")
+        case .creator: role = String(localized: "Creator")
+        case .studio: role = String(localized: "Studio")
+        case .author: role = String(localized: "Author")
+        case .artist: role = String(localized: "Artist")
+        case .leadActor: role = String(localized: "Lead")
+        case .secondActor: role = String(localized: "Also starring")
         }
         return label.map { "\(role) · \($0)" } ?? role
     }
@@ -269,11 +269,11 @@ extension TreeNode {
     /// What VoiceOver reads for a tile: "Dune, 2021, best known, Plan to watch".
     var spoken: String {
         [
-            ref.title ?? "Untitled",
+            ref.title ?? String(localized: "Untitled"),
             year,
-            pick == .bestKnown ? "best known" : nil,
-            status.map { $0.label(for: kind) } ?? "not in your library",
-            isRoot ? "this title" : nil,
+            pick == .bestKnown ? String(localized: "best known") : nil,
+            status.map { $0.label(for: kind) } ?? String(localized: "not in your library"),
+            isRoot ? String(localized: "this title") : nil,
         ].compactMap(\.self).joined(separator: ", ")
     }
 

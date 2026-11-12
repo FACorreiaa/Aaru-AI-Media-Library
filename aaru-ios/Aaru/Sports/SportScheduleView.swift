@@ -42,7 +42,7 @@ struct SportScheduleView: View {
                         if schedule.pending {
                             HStack(spacing: 8) {
                                 ProgressView().controlSize(.small)
-                                QuietNote("Fetching more leagues…")
+                                QuietNote(String(localized: "Fetching more leagues…"))
                             }
                         }
                         SportsCredit()
@@ -54,8 +54,8 @@ struct SportScheduleView: View {
             }
         } else if model.failedDays.contains(model.day.key) {
             LoadFailedView(
-                title: "Couldn't load the schedule",
-                message: "This day's events didn't load."
+                title: String(localized: "Couldn't load the schedule"),
+                message: String(localized: "This day's events didn't load.")
             ) { await model.loadSchedule(model.day) }
         } else {
             ProgressView()
@@ -67,11 +67,14 @@ struct SportScheduleView: View {
         if pending {
             VStack(spacing: 8) {
                 ProgressView()
-                QuietNote("Fetching your leagues…")
+                QuietNote(String(localized: "Fetching your leagues…"))
             }
         } else {
             ContentUnavailableView {
-                Label("Nothing on \(model.day.isToday ? "today" : model.day.spoken)", systemImage: "calendar")
+                Label(
+                    "Nothing on \(model.day.isToday ? String(localized: "today") : model.day.spoken)",
+                    systemImage: "calendar"
+                )
             } description: {
                 Text("The leagues you follow have no events this day.")
             } actions: {

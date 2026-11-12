@@ -23,12 +23,17 @@ struct PlusPaywall: View {
                         }
                     }
                     feature(
-                        "text.viewfinder", "Captures without a monthly limit",
-                        "Paste a list, send a link or a screenshot, and approve what Aaru found. Up to 30 a day."
+                        "text.viewfinder", String(localized: "Captures without a monthly limit"),
+                        String(
+                            localized: """
+                            Paste a list, send a link or a screenshot, \
+                            and approve what Aaru found. Up to 30 a day.
+                            """
+                        )
                     )
                     feature(
-                        "heart", "Keeps Aaru independent",
-                        "Plus is how Aaru is paid for. Your library stays private and stays yours."
+                        "heart", String(localized: "Keeps Aaru independent"),
+                        String(localized: "Plus is how Aaru is paid for. Your library stays private and stays yours.")
                     )
                     offers
                     footer
@@ -87,8 +92,10 @@ struct PlusPaywall: View {
     private var footer: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(
-                "Plus renews automatically at the price shown until you cancel, at least a day before the "
-                    + "period ends, in your Apple Account's subscriptions. Payment is charged to your Apple Account."
+                String(localized: """
+                Plus renews automatically at the price shown until you cancel, at least a day before the \
+                period ends, in your Apple Account's subscriptions. Payment is charged to your Apple Account.
+                """)
             )
             HStack(spacing: 16) {
                 if let terms = PlusModel.termsURL {
@@ -104,8 +111,8 @@ struct PlusPaywall: View {
     }
 
     private var activeLine: String {
-        guard let expires = plus.entitlement?.expiresAt else { return "Plus is active" }
-        return "Plus is active · renews \(expires.formatted(date: .abbreviated, time: .omitted))"
+        guard let expires = plus.entitlement?.expiresAt else { return String(localized: "Plus is active") }
+        return String(localized: "Plus is active · renews \(expires.formatted(date: .abbreviated, time: .omitted))")
     }
 
     private func feature(_ symbol: String, _ title: String, _ detail: String) -> some View {

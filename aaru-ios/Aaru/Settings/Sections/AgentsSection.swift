@@ -25,15 +25,17 @@ struct AgentsSection: View {
             Text("Agents")
         } footer: {
             Text(
-                "Claude, Claude Code, Codex, Hermes, Gemini CLI or any MCP client can read your library. If you allow "
-                    + "changes, it changes one item at a time, and you can undo it in History, in Your data. The "
-                    + "browser extension marks what you finish on streaming sites."
+                """
+                Claude, Claude Code, Codex, Hermes, Gemini CLI or any MCP client can read your library. If you allow \
+                changes, it changes one item at a time, and you can undo it in History, in Your data. The \
+                browser extension marks what you finish on streaming sites.
+                """
             )
         }
         .confirmsDisconnect($disconnecting, stops: { token in
             token.kind == .browser
-                ? "This browser stops marking what you watch."
-                : "\(token.name) can no longer reach your library."
+                ? String(localized: "This browser stops marking what you watch.")
+                : String(localized: "\(token.name) can no longer reach your library.")
         }, perform: { token in
             Task { await model.disconnect(token) }
         })
@@ -50,9 +52,10 @@ struct AgentsSection: View {
         if token.kind == .browser {
             return Text("Marks what you watch · \(used)")
         }
-        var access = token.scopes.contains(.library_colon_write) ? "Can change one item at a time" : "Read only"
+        var access = token.scopes.contains(.library_colon_write)
+            ? String(localized: "Can change one item at a time") : String(localized: "Read only")
         if token.scopes.contains(.imports_colon_write) {
-            access += " · can send imports"
+            access += String(localized: " · can send imports")
         }
         return Text("\(ConnectionSetupView.label(token.kind)) · \(access) · \(used)")
     }

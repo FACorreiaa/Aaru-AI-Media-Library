@@ -35,7 +35,7 @@ struct FriendsContent: View {
     var body: some View {
         Group {
             if let problem = model.loadProblem, !model.hasLoaded {
-                LoadFailedView(title: "Friends didn't load", message: problem) { await model.load() }
+                LoadFailedView(title: String(localized: "Friends didn't load"), message: problem) { await model.load() }
             } else if !model.hasLoaded {
                 ProgressView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -112,8 +112,8 @@ enum FriendsSection: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .board: "Board"
-        case .lately: "Lately"
+        case .board: String(localized: "Board")
+        case .lately: String(localized: "Lately")
         }
     }
 }
@@ -152,7 +152,7 @@ struct ActivityRow: View {
     }
 
     private var sentence: AttributedString {
-        var name = AttributedString(own ? "You" : item.user.inviteName)
+        var name = AttributedString(own ? String(localized: "You") : item.user.inviteName)
         name.font = .body.weight(.semibold)
         var title = AttributedString(item.title.title)
         title.font = .body.weight(.semibold)
@@ -170,12 +170,14 @@ enum ActivityWords {
         var watched: String?
         if let season = item.lastSeason, let episode = item.lastEpisode {
             let last = EpisodeCode.short(season: season, number: episode)
-            watched = item.episodes > 1 ? "watched \(item.episodes) episodes, up to \(last)" : "watched \(last)"
+            watched = item.episodes > 1
+                ? String(localized: "watched \(item.episodes) episodes, up to \(last)")
+                : String(localized: "watched \(last)")
         }
         if item.finished {
-            return watched.map { "\($0) and finished" } ?? "finished"
+            return watched.map { String(localized: "\($0) and finished") } ?? String(localized: "finished")
         }
-        return watched ?? "watched"
+        return watched ?? String(localized: "watched")
     }
 
     /// "Today", "Yesterday", else "Sat 17 Oct". `day` is the UTC day the server grouped by.
@@ -185,12 +187,12 @@ enum ActivityWords {
         // Noon UTC, so the weekday reads the same in every time zone.
         guard let date = try? Date(day + "T12:00:00Z", strategy: .iso8601) else { return day }
         if calendar.isDate(date, inSameDayAs: now) {
-            return "Today"
+            return String(localized: "Today")
         }
         if let yesterday = calendar.date(byAdding: .day, value: -1, to: now),
            calendar.isDate(date, inSameDayAs: yesterday)
         {
-            return "Yesterday"
+            return String(localized: "Yesterday")
         }
         return date.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated))
     }

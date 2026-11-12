@@ -69,13 +69,13 @@ final class DiscoverModel {
                 problem = nil
             case .default:
                 problem = rows.isEmpty
-                    ? "Discover is not available right now."
-                    : "Discover could not be refreshed. Showing the last lists."
+                    ? String(localized: "Discover is not available right now.")
+                    : String(localized: "Discover could not be refreshed. Showing the last lists.")
             }
         } catch {
             problem = rows.isEmpty
-                ? "Aaru could not reach the server."
-                : "Offline. Showing Discover from the last load."
+                ? String(localized: "Aaru could not reach the server.")
+                : String(localized: "Offline. Showing Discover from the last load.")
         }
     }
 

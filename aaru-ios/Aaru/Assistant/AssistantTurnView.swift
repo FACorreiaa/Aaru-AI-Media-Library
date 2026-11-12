@@ -94,7 +94,7 @@ struct AssistantTurnView: View {
         if let status = reply.status {
             return status
         }
-        return reply.state == .working && reply.text.isEmpty ? "Aaru is thinking…" : nil
+        return reply.state == .working && reply.text.isEmpty ? String(localized: "Aaru is thinking…") : nil
     }
 
     private var titles: some View {
@@ -139,7 +139,7 @@ private struct UndoRibbon: View {
             } else {
                 // The undo toast's shape: the words, then Undo at the end with a 44 pt target.
                 HStack(spacing: AaruSpace.small) {
-                    Text(turn.reply.actionSummary ?? "Aaru changed your library")
+                    Text(turn.reply.actionSummary ?? String(localized: "Aaru changed your library"))
                         .foregroundStyle(Color(.ink))
                         .frame(maxWidth: .infinity, alignment: .leading)
                     Button("Undo", action: undo)

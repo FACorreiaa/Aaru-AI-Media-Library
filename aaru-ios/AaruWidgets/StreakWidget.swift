@@ -137,7 +137,7 @@ struct StreakWidgetView: View {
     }
 
     static func days(_ count: Int) -> String {
-        count == 1 ? "1 day" : "\(count) days"
+        count == 1 ? String(localized: "1 day") : String(localized: "\(String(count)) days")
     }
 }
 

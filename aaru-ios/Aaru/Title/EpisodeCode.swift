@@ -5,7 +5,7 @@ import AaruAPI
 enum EpisodeCode {
     /// "S1 · E8".
     static func short(season: Int, number: Int) -> String {
-        "S\(season) · E\(number)"
+        String(localized: "S\(String(season)) · E\(String(number))")
     }
 
     /// "S1 · E8", spelled for group surfaces (`season`, `episode`).
@@ -15,7 +15,7 @@ enum EpisodeCode {
 
     /// "S01E05", the week cell's dense code.
     static func padded(season: Int, number: Int) -> String {
-        "S" + twoDigits(season) + "E" + twoDigits(number)
+        String(localized: "S\(twoDigits(season))E\(twoDigits(number))")
     }
 
     private static func twoDigits(_ value: Int) -> String {
@@ -27,10 +27,10 @@ enum EpisodeCode {
 enum ShowStatusLabel {
     static func label(_ raw: String) -> String {
         switch raw {
-        case "upcoming": "Upcoming"
-        case "returning": "Returning series"
-        case "ended": "Ended"
-        case "canceled": "Canceled"
+        case "upcoming": String(localized: "Upcoming")
+        case "returning": String(localized: "Returning series")
+        case "ended": String(localized: "Ended")
+        case "canceled": String(localized: "Canceled")
         default: raw.capitalized
         }
     }

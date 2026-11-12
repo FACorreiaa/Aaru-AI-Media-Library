@@ -72,10 +72,10 @@ final class ChannelModel {
                 hasLoaded = true
                 loadProblem = nil
             case let .default(_, error):
-                loadFailed((try? error.body.json.message) ?? "This channel could not be loaded.")
+                loadFailed((try? error.body.json.message) ?? String(localized: "This channel could not be loaded."))
             }
         } catch {
-            loadFailed("This channel could not be loaded. Aaru could not reach the server.")
+            loadFailed(String(localized: "This channel could not be loaded. Aaru could not reach the server."))
         }
     }
 
@@ -155,7 +155,7 @@ final class ChannelModel {
                 markedReadID = nil
                 await markRead()
             case let .default(_, error):
-                fail(outgoing, (try? error.body.json.message) ?? "That was not sent.")
+                fail(outgoing, (try? error.body.json.message) ?? String(localized: "That was not sent."))
             }
         } catch {
             fail(outgoing, nil)
@@ -184,10 +184,10 @@ final class ChannelModel {
                 try merge([response.body.json])
                 return true
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "That was not edited."
+                problem = (try? error.body.json.message) ?? String(localized: "That was not edited.")
             }
         } catch {
-            problem = "That was not edited. Aaru could not reach the server."
+            problem = String(localized: "That was not edited. Aaru could not reach the server.")
         }
         return false
     }
@@ -201,10 +201,10 @@ final class ChannelModel {
             case .noContent:
                 markDeleted(message.id)
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "That was not deleted."
+                problem = (try? error.body.json.message) ?? String(localized: "That was not deleted.")
             }
         } catch {
-            problem = "That was not deleted. Aaru could not reach the server."
+            problem = String(localized: "That was not deleted. Aaru could not reach the server.")
         }
     }
 
@@ -280,9 +280,9 @@ final class ChannelModel {
         let names = typing.values.sorted { $0.until < $1.until }.map { $0.user.displayName ?? "@\($0.user.handle)" }
         switch names.count {
         case 0: return nil
-        case 1: return "\(names[0]) is typing…"
-        case 2: return "\(names[0]) and \(names[1]) are typing…"
-        default: return "Several people are typing…"
+        case 1: return String(localized: "\(names[0]) is typing…")
+        case 2: return String(localized: "\(names[0]) and \(names[1]) are typing…")
+        default: return String(localized: "Several people are typing…")
         }
     }
 

@@ -270,17 +270,18 @@ struct OnboardingPoster: View {
         switch state {
         case .open: ""
         case let .picked(status): status.label(for: kind)
-        case let .saved(status): "\(status.label(for: kind)), saved"
-        case .inLibrary: "In your library"
+        case let .saved(status): String(localized: "\(status.label(for: kind)), saved")
+        case .inLibrary: String(localized: "In your library")
         }
     }
 
     private var accessibilityHint: String {
         if let tapHint {
-            return "\(tapHint). Touch and hold for the menu."
+            return String(localized: "\(tapHint). Touch and hold for the menu.")
         }
         let next = Onboarding.nextStatus(status.map(Onboarding.coreStatus), kind: OnboardingKind(kind))
-        let tap = next.map { "Marks it \(Onboarding.apiStatus($0).label(for: kind))" } ?? "Takes it off"
-        return "\(tap). Touch and hold for a status."
+        let tap = next.map { String(localized: "Marks it \(Onboarding.apiStatus($0).label(for: kind))") }
+            ?? String(localized: "Takes it off")
+        return String(localized: "\(tap). Touch and hold for a status.")
     }
 }

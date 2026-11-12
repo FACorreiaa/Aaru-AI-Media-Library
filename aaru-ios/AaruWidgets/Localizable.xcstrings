@@ -1,0 +1,253 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "" : {
+
+    },
+    " " : {
+
+    },
+    "  %@" : {
+
+    },
+    " left" : {
+
+    },
+    "%@ %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@"
+          }
+        }
+      }
+    },
+    "%@ days" : {
+
+    },
+    "%@ left" : {
+
+    },
+    "%@ left · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ left · %2$@"
+          }
+        }
+      }
+    },
+    "%@h" : {
+
+    },
+    "%@h %@m" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@h %2$@m"
+          }
+        }
+      }
+    },
+    "%@m" : {
+
+    },
+    "%lld" : {
+
+    },
+    "%lld albums" : {
+
+    },
+    "%lld left" : {
+
+    },
+    "+%lld" : {
+
+    },
+    "1 day" : {
+
+    },
+    "Albums you mark Listening show here." : {
+
+    },
+    "And %lld more" : {
+
+    },
+    "And one more" : {
+
+    },
+    "Counts down to the next episode of a show you follow." : {
+
+    },
+    "Did you finish?" : {
+
+    },
+    "Ends %@" : {
+
+    },
+    "Ends at %@" : {
+
+    },
+    "Episode" : {
+
+    },
+    "Finale" : {
+
+    },
+    "Finale · %@" : {
+
+    },
+    "In %@" : {
+
+    },
+    "Library item" : {
+
+    },
+    "Listening" : {
+
+    },
+    "Mark %@ S%lld · E%lld watched" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Mark %1$@ S%2$lld · E%3$lld watched"
+          }
+        }
+      }
+    },
+    "Mark Episode Watched" : {
+
+    },
+    "Mark Now Playing Watched" : {
+
+    },
+    "Mark watched" : {
+
+    },
+    "Marks the next episode of a show as watched in Aaru." : {
+
+    },
+    "Next Episode" : {
+
+    },
+    "Next episode" : {
+
+    },
+    "Nothing airing soon" : {
+
+    },
+    "Nothing playing" : {
+
+    },
+    "Open Aaru and sign in first." : {
+
+    },
+    "Open Aaru to set up" : {
+
+    },
+    "Out now" : {
+
+    },
+    "Paused" : {
+
+    },
+    "Paused · %@ left" : {
+
+    },
+    "S%@ · E%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "S%1$@ · E%2$@"
+          }
+        }
+      }
+    },
+    "S%lld · E%lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "S%1$lld · E%2$lld"
+          }
+        }
+      }
+    },
+    "Season" : {
+
+    },
+    "Streak" : {
+
+    },
+    "Streak, %@" : {
+
+    },
+    "Streak, %@. Active on %lld of the last 7 days." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Streak, %1$@. Active on %2$lld of the last 7 days."
+          }
+        }
+      }
+    },
+    "The albums you are listening to." : {
+
+    },
+    "The episode was not saved. Try again in Aaru." : {
+
+    },
+    "The movie was not saved. Try again in Aaru." : {
+
+    },
+    "The next episode of every show you are watching. Check one off without opening Aaru." : {
+
+    },
+    "This Week" : {
+
+    },
+    "This week" : {
+
+    },
+    "Tick something today" : {
+
+    },
+    "Today" : {
+
+    },
+    "Toggle End Time" : {
+
+    },
+    "Tomorrow" : {
+
+    },
+    "Up Next" : {
+
+    },
+    "Watched" : {
+
+    },
+    "What airs this week from the shows you follow." : {
+
+    },
+    "You are all caught up." : {
+
+    },
+    "Your shows appear here after you sign in." : {
+
+    },
+    "Your streak and the last seven days." : {
+
+    },
+    "day streak" : {
+
+    }
+  },
+  "version" : "1.0"
+}

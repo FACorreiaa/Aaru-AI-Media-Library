@@ -8,16 +8,20 @@ struct OnRepeatCard: View {
     let tracks: [String]
 
     var body: some View {
-        Eyebrow(text: "On repeat")
+        Eyebrow(text: String(localized: "On repeat"))
         Text(artist)
             .font(.aaruDisplay(size: 56))
             .lineLimit(2)
             .padding(.top, 16)
             .rise(0.12)
-        Text(minutes > 0 ? "\(Listening.plays(plays)) · \(hoursValue(minutes: minutes)) hours" : Listening.plays(plays))
-            .font(.title3)
-            .padding(.top, 8)
-            .rise(0.2)
+        Text(
+            minutes > 0
+                ? String(localized: "\(Listening.plays(plays)) · \(hoursValue(minutes: minutes)) hours")
+                : Listening.plays(plays)
+        )
+        .font(.title3)
+        .padding(.top, 8)
+        .rise(0.2)
         VStack(alignment: .leading, spacing: 8) {
             ForEach(Array(tracks.enumerated()), id: \.offset) { rank, track in
                 HStack(alignment: .firstTextBaseline, spacing: 16) {

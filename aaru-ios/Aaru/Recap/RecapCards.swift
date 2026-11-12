@@ -14,34 +14,38 @@ struct RecapCardView: View {
                 OwlMedallion(size: 72)
                     .padding(.bottom, 24)
                     .rise(0)
-                Eyebrow(text: partial ? "So far" : "Your recap")
+                Eyebrow(text: partial ? String(localized: "So far") : String(localized: "Your recap"))
                 Text(heading)
                     .font(.aaruDisplay(size: 56))
                     .lineSpacing(-4)
                     .padding(.top, 16)
                     .rise(0.12)
-                RecapLine(text: "Everything you watched, read and listened to, from your own library. Tap to go on.")
+                RecapLine(
+                    text: String(
+                        localized: "Everything you watched, read and listened to, from your own library. Tap to go on."
+                    )
+                )
             case let .time(minutes, caption):
-                Eyebrow(text: "Time with stories")
+                Eyebrow(text: String(localized: "Time with stories"))
                 RecapBig { RecapCountUp(value: minutes) }
                 Text("minutes").font(.title3).padding(.top, 4).rise(0.2)
                 RecapLine(text: caption)
             case let .episodes(count, bars, busiest):
-                Eyebrow(text: "Episodes")
+                Eyebrow(text: String(localized: "Episodes"))
                 RecapBig { RecapCountUp(value: count) }
                 RecapBarChart(bars: bars).padding(.top, 32)
                 if let busiest {
                     RecapLine(text: busiest, delay: 0.7)
                 }
             case let .biggestDay(day, episodes, minutes):
-                Eyebrow(text: "Your biggest day")
+                Eyebrow(text: String(localized: "Your biggest day"))
                 Text(day)
                     .font(.aaruDisplay(size: 64))
                     .padding(.top, 16)
                     .rise(0.12)
                 RecapLine(text: dayLine(episodes: episodes, minutes: minutes))
             case let .top(entry):
-                Eyebrow(text: "Most time with")
+                Eyebrow(text: String(localized: "Most time with"))
                 RecapPoster(url: entry.title.posterURL, kind: entry.title.mediaKind)
                     .frame(width: 168)
                     // The poster's own colours, blurred behind it: a glow, not a second image.
@@ -64,7 +68,7 @@ struct RecapCardView: View {
                     .rise(0.32)
                 RecapLine(text: timeLine(entry), delay: 0.46)
             case let .topList(entries):
-                Eyebrow(text: "Your top \(entries.count)")
+                Eyebrow(text: String(localized: "Your top \(String(entries.count))"))
                 VStack(alignment: .leading, spacing: 16) {
                     ForEach(Array(entries.enumerated()), id: \.offset) { rank, entry in
                         RecapTopRow(entry: entry, rank: rank + 1).rise(0.15 + Double(rank) * 0.11)
@@ -74,7 +78,7 @@ struct RecapCardView: View {
             case let .onRepeat(artist, plays, minutes, tracks):
                 OnRepeatCard(artist: artist, plays: plays, minutes: minutes, tracks: tracks)
             case let .genres(genres):
-                Eyebrow(text: "Your genres")
+                Eyebrow(text: String(localized: "Your genres"))
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(Array(genres.enumerated()), id: \.offset) { rank, genre in
                         HStack(alignment: .firstTextBaseline, spacing: 16) {
@@ -96,7 +100,7 @@ struct RecapCardView: View {
                     RecapLine(text: genreLine(first), delay: 0.64)
                 }
             case let .kinds(parts):
-                Eyebrow(text: "Where the time went")
+                Eyebrow(text: String(localized: "Where the time went"))
                 VStack(alignment: .leading, spacing: 20) {
                     ForEach(Array(parts.enumerated()), id: \.offset) { offset, part in
                         VStack(alignment: .leading, spacing: 8) {
@@ -124,7 +128,7 @@ struct RecapCardView: View {
                 }
                 .padding(.top, 24)
             case let .finished(parts):
-                Eyebrow(text: "Finished")
+                Eyebrow(text: String(localized: "Finished"))
                 VStack(alignment: .leading, spacing: 4) {
                     ForEach(Array(parts.enumerated()), id: \.offset) { offset, part in
                         Text(RecapDeck.countLabel(part.kind, part.count))
@@ -135,14 +139,19 @@ struct RecapCardView: View {
                 }
                 .padding(.top, 16)
             case let .run(days, range):
-                Eyebrow(text: "Longest run")
+                Eyebrow(text: String(localized: "Longest run"))
                 RecapBig { RecapCountUp(value: days) }
                 Text("days in a row").font(.title3).padding(.top, 4).rise(0.2)
                 RecapLine(text: range)
             case let .ratings(mean, count, highest, highestRating):
-                Eyebrow(text: "Your average rating")
+                Eyebrow(text: String(localized: "Your average rating"))
                 RecapBig { Text(RecapDeck.ratingLabel(mean)) }
-                RecapLine(text: "Across \(count) finished \(count == 1 ? "title" : "titles").", delay: 0.24)
+                RecapLine(
+                    text: count == 1
+                        ? String(localized: "Across 1 finished title.")
+                        : String(localized: "Across \(String(count)) finished titles."),
+                    delay: 0.24
+                )
                 if let highest {
                     HStack(spacing: 16) {
                         RecapPoster(url: highest.posterURL, kind: highest.mediaKind).frame(width: 56)
@@ -160,14 +169,14 @@ struct RecapCardView: View {
                     .rise(0.48)
                 }
             case let .bookends(first, last):
-                Eyebrow(text: "Bookends")
+                Eyebrow(text: String(localized: "Bookends"))
                 VStack(alignment: .leading, spacing: 32) {
-                    RecapMoment(label: "First", moment: first).rise(0.12)
-                    RecapMoment(label: "Last", moment: last).rise(0.34)
+                    RecapMoment(label: String(localized: "First"), moment: first).rise(0.12)
+                    RecapMoment(label: String(localized: "Last"), moment: last).rise(0.34)
                 }
                 .padding(.top, 24)
             case let .persona(title, line):
-                Eyebrow(text: "Your \(String(stats.year)), in a word")
+                Eyebrow(text: String(localized: "Your \(String(stats.year)), in a word"))
                 Text(title)
                     .font(.aaruDisplay(size: 56))
                     .padding(.top, 16)
@@ -175,9 +184,8 @@ struct RecapCardView: View {
                 RecapLine(text: line, delay: 0.48)
             case .summary:
                 Eyebrow(text: RecapPeriod(year: stats.year, month: stats.month).label)
-                Text(stats.isPartial
-                    ? "That's your \(stats.month == nil ? "year" : "month") in Aaru so far."
-                    : "That was your \(stats.month == nil ? "year" : "month") in Aaru.")
+                let period = stats.month == nil ? String(localized: "year") : String(localized: "month")
+                Text(stats.isPartial ? "That's your \(period) in Aaru so far." : "That was your \(period) in Aaru.")
                     .font(.aaruDisplay(size: 40))
                     .padding(.top, 16)
                     .rise(0.12)
@@ -189,20 +197,26 @@ struct RecapCardView: View {
 
     private func dayLine(episodes: Int, minutes: Int) -> String {
         let parts = [
-            episodes > 0 ? "\(episodes) \(episodes == 1 ? "episode" : "episodes")" : nil,
-            minutes > 0 ? "\(hoursValue(minutes: minutes)) hours" : nil,
+            episodes > 0 ?
+                "\(episodes) \(episodes == 1 ? String(localized: "episode") : String(localized: "episodes"))" : nil,
+            minutes > 0 ? String(localized: "\(hoursValue(minutes: minutes)) hours") : nil,
         ].compactMap(\.self)
-        return parts.joined(separator: ", ") + " in one day."
+        return parts.joined(separator: ", ") + String(localized: " in one day.")
     }
 
     private func genreLine(_ genre: StatsGenre) -> String {
-        "\(hoursValue(minutes: genre.minutes)) hours of \(genre.name.lowercased()), across \(genre.titles) "
-            + (genre.titles == 1 ? "title." : "titles.")
+        String(
+            localized: """
+            \(hoursValue(minutes: genre.minutes)) hours of \
+            \(genre.name.lowercased()), across \(String(genre.titles)) 
+            """
+        )
+            + (genre.titles == 1 ? String(localized: "title.") : String(localized: "titles."))
     }
 
     private func timeLine(_ entry: StatsTitle) -> String {
         entry.episodes > 0
-            ? "\(entry.episodes) episodes, \(entry.minutes.formatted()) minutes."
-            : "\(entry.minutes.formatted()) minutes."
+            ? String(localized: "\(String(entry.episodes)) episodes, \(entry.minutes.formatted()) minutes.")
+            : String(localized: "\(entry.minutes.formatted()) minutes.")
     }
 }

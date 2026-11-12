@@ -28,7 +28,7 @@ struct AssistantComposer: View {
     private var problem: String? {
         let showsField = model.phase != .listening && model.phase != .reading
         if showsField, isTooLong {
-            return "That's too long for Aaru. Try something shorter."
+            return String(localized: "That's too long for Aaru. Try something shorter.")
         }
         return model.voiceProblem ?? model.files.problem
     }
@@ -173,9 +173,9 @@ struct AssistantComposer: View {
 
     private var openSettingsTitle: String {
         #if os(iOS)
-            "Open Settings"
+            String(localized: "Open Settings")
         #else
-            "Open System Settings"
+            String(localized: "Open System Settings")
         #endif
     }
 

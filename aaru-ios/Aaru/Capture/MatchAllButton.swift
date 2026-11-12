@@ -41,7 +41,7 @@ struct MatchAllButton: View {
             onBatch(answer)
             progress = (total - answer.remaining, total)
             if answer.remaining >= left {
-                imports.problem = "The catalog did not answer. Try again in a moment."
+                imports.problem = String(localized: "The catalog did not answer. Try again in a moment.")
                 return
             }
             left = answer.remaining

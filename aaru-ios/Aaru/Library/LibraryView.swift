@@ -164,7 +164,7 @@ struct LibraryView: View {
     /// nothing. Only a successful sync can say the library is empty (UX-062).
     @ViewBuilder private var emptyState: some View {
         if let failure = library.firstSyncProblem {
-            LoadFailedView(title: "Your library didn't load", message: failure) {
+            LoadFailedView(title: String(localized: "Your library didn't load"), message: failure) {
                 await library.sync(api: api)
             }
         } else if library.rows.isEmpty, !library.hasSynced {
@@ -252,6 +252,8 @@ enum LibraryLayout: String {
 
 /// What the confirmation for removing a title says, in Library and the title room alike.
 enum TitleRemoval {
-    static let message = "Its status, rating, notes and progress go with it. You can undo this in "
-        + "Settings → Your data → History."
+    static let message = String(localized: """
+    Its status, rating, notes and progress go with it. You can undo this in \
+    Settings → Your data → History.
+    """)
 }

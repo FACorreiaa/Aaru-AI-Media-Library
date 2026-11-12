@@ -171,13 +171,15 @@ struct HomeScreen: View {
     private var content: some View {
         if model.loadFailed, model.isEmpty, model.discover.isEmpty, model.nowPlaying.isEmpty {
             LoadFailedView(
-                title: "Couldn't load Home",
-                message: "Aaru could not reach the server. Check your connection and try again."
+                title: String(localized: "Couldn't load Home"),
+                message: String(localized: "Aaru could not reach the server. Check your connection and try again.")
             ) { await reload() }
         } else if model.isEmpty, model.discover.isEmpty, model.nowPlaying.isEmpty, model.hasLoaded {
             OwlUnavailableView(
                 title: HomeEmptyCopy.headline,
-                message: "What you are watching, reading and listening to, and what airs next, lands here."
+                message: String(
+                    localized: "What you are watching, reading and listening to, and what airs next, lands here."
+                )
             ) {
                 Button("Search") { router.showsSearch = true }
                     .buttonStyle(.borderedProminent)

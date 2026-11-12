@@ -53,7 +53,9 @@ struct PostScreen: View {
             } else if let post = model.post {
                 content(post)
             } else if let problem = model.problem {
-                LoadFailedView(title: "This post didn't load", message: problem) { await model.load() }
+                LoadFailedView(title: String(localized: "This post didn't load"), message: problem) {
+                    await model.load()
+                }
             } else {
                 ProgressView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -113,9 +115,12 @@ struct PostScreen: View {
                 }
             }
             .sheet(isPresented: $reporting) {
-                ReportPostSheet(noun: "post", authorName: model.post?.author.inviteName ?? "They") { reason, note in
+                ReportPostSheet(
+                    noun: String(localized: "post"),
+                    authorName: model.post?.author.inviteName ?? String(localized: "They")
+                ) { reason, note in
                     await model.report(reason: reason, note: note)
-                        ? nil : (model.problem ?? "That report was not sent.")
+                        ? nil : (model.problem ?? String(localized: "That report was not sent."))
                 }
             }
             .sheet(isPresented: $showsUpvoters) { UpvotersSheet(people: model.upvoters, myHandle: myHandle) }
@@ -175,7 +180,7 @@ struct PostScreen: View {
     /// Who upvoted, "You" first when you did.
     private func upvoterNames(_ post: BoardPost) -> [String] {
         let others = model.upvoters.filter { $0.handle != myHandle }.map(\.inviteName)
-        return post.upvotedByMe ? ["You"] + others : others
+        return post.upvotedByMe ? [String(localized: "You")] + others : others
     }
 
     /// "▲ 12 · Ana, Ben and 10 others": a tap lists everyone.
@@ -330,7 +335,7 @@ private struct UpvotersSheet: View {
                 HStack(spacing: AaruSpace.medium) {
                     Monogram(text: person.monogram, avatarUrl: person.avatarUrl, size: 32)
                     VStack(alignment: .leading, spacing: 0) {
-                        Text(person.handle == myHandle ? "You" : person.inviteName)
+                        Text(person.handle == myHandle ? String(localized: "You") : person.inviteName)
                             .fontWeight(.medium)
                         if person.handle != myHandle, person.displayName != nil {
                             Text(verbatim: "@\(person.handle)")

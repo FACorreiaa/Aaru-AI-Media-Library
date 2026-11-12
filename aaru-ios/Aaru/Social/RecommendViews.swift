@@ -98,7 +98,8 @@ struct RecommendSheet: View {
                 }
             }
             .paperPage()
-            .navigationTitle(friend.map { "Recommend to \($0.inviteName)" } ?? "Recommend")
+            .navigationTitle(friend
+                .map { String(localized: "Recommend to \($0.inviteName)") } ?? String(localized: "Recommend"))
             #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)
             #endif
@@ -112,7 +113,7 @@ struct RecommendSheet: View {
                     }
                 }
                 .sheet(isPresented: $choosingTitle) {
-                    TitlePickerSheet(api: model.api, navigationTitle: "Recommend") { hit in
+                    TitlePickerSheet(api: model.api, navigationTitle: String(localized: "Recommend")) { hit in
                         picked = (MediaRef(_type: hit._type, ids: hit.ids, title: hit.title, year: hit.year), hit.title)
                         return true
                     }
@@ -176,7 +177,10 @@ struct GroupInviteSheet: View {
             .paperPage()
             .overlay {
                 if loadFailed {
-                    LoadFailedView(title: "Your groups didn't load", message: "Aaru could not reach the server.") {
+                    LoadFailedView(
+                        title: String(localized: "Your groups didn't load"),
+                        message: String(localized: "Aaru could not reach the server.")
+                    ) {
                         await load()
                     }
                 } else if groups == nil {
@@ -219,10 +223,11 @@ struct GroupInviteSheet: View {
                 body: .json(.init(userId: friend.userId))
             ) {
             case .noContent: invited.insert(group.id)
-            case let .default(_, error): problem = (try? error.body.json.message) ?? "That invite was not sent."
+            case let .default(_, error): problem = (try? error.body.json.message) ??
+                String(localized: "That invite was not sent.")
             }
         } catch {
-            problem = "Aaru could not reach the server."
+            problem = String(localized: "Aaru could not reach the server.")
         }
     }
 }

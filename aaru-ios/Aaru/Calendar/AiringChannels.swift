@@ -47,7 +47,7 @@ struct AiringChannelHeader: View {
     }
 
     private var episodes: String {
-        group.entries.count == 1 ? "1 episode" : "\(group.entries.count) episodes"
+        group.entries.count == 1 ? String(localized: "1 episode") : String(localized: "\(group.entries.count) episodes")
     }
 }
 

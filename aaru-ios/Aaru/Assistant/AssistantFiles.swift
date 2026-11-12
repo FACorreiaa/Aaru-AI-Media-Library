@@ -76,7 +76,7 @@ final class AssistantFiles {
     /// One file, sent to the chat now.
     func attach(_ data: Data, name: String) {
         guard let thread, room(for: 1) else { return }
-        let chip = AssistantChip(id: UUID(), name: name.isEmpty ? "Pasted text" : name)
+        let chip = AssistantChip(id: UUID(), name: name.isEmpty ? String(localized: "Pasted text") : name)
         chips.append(chip)
         problem = nil
         let started = token
@@ -103,9 +103,9 @@ final class AssistantFiles {
                 attach(jpeg, name: jpegs.count > 1 ? "\(name) (\(index + 1) of \(jpegs.count)).jpg" : "\(name).jpg")
             }
         case .tooLong:
-            problem = "That picture is too long. Paste the text instead."
+            problem = String(localized: "That picture is too long. Paste the text instead.")
         case .unreadable:
-            problem = "Aaru could not open that picture."
+            problem = String(localized: "Aaru could not open that picture.")
         }
     }
 
@@ -118,7 +118,7 @@ final class AssistantFiles {
     func attachPhotos(_ items: [PhotosPickerItem]) async {
         for item in items {
             guard let data = try? await item.loadTransferable(type: Data.self) else {
-                problem = "Aaru could not open that picture."
+                problem = String(localized: "Aaru could not open that picture.")
                 return
             }
             attachPicture(data, name: "Picture")
@@ -136,7 +136,7 @@ final class AssistantFiles {
             }
             let size = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
             guard size <= Self.maxBytes, let data = try? Data(contentsOf: url) else {
-                problem = "\(url.lastPathComponent) could not be read, or is larger than 24 MB."
+                problem = String(localized: "\(url.lastPathComponent) could not be read, or is larger than 24 MB.")
                 continue
             }
             if UTType(filenameExtension: url.pathExtension)?.conforms(to: .image) == true {
@@ -160,7 +160,7 @@ final class AssistantFiles {
 
     private func room(for count: Int) -> Bool {
         guard chips.count + count <= Self.maxPerTurn else {
-            problem = "Send up to \(Self.maxPerTurn) files at a time."
+            problem = String(localized: "Send up to \(Self.maxPerTurn) files at a time.")
             return false
         }
         return true
@@ -234,7 +234,7 @@ struct AssistantFileChips: View {
                             Text(chip.name)
                                 .font(.footnote.weight(.semibold))
                                 .foregroundStyle(Color(.ink))
-                            Text(chip.file?.summary ?? "Reading…")
+                            Text(chip.file?.summary ?? String(localized: "Reading…"))
                                 .font(.caption)
                                 .foregroundStyle(Color(.muted))
                         }

@@ -178,7 +178,7 @@ final class CalendarFeed {
                     collected += page.items
                     waiting = max(waiting, page.pendingShows ?? 0)
                 case let .default(_, error):
-                    problem = (try? error.body.json.message) ?? "The calendar could not be loaded."
+                    problem = (try? error.body.json.message) ?? String(localized: "The calendar could not be loaded.")
                     return
                 }
                 from = until
@@ -190,8 +190,8 @@ final class CalendarFeed {
             problem = nil
         } catch {
             problem = hasLoaded
-                ? "Offline. Showing the calendar from the last load."
-                : "Aaru could not reach the server."
+                ? String(localized: "Offline. Showing the calendar from the last load.")
+                : String(localized: "Aaru could not reach the server.")
         }
     }
 
@@ -235,7 +235,7 @@ final class CalendarFeed {
             }
         } catch {
             setWatched(id, !watch)
-            problem = Self.notSaved(entry) + " Aaru could not reach the server."
+            problem = String(localized: "\(Self.notSaved(entry)) Aaru could not reach the server.")
         }
     }
 
@@ -245,6 +245,7 @@ final class CalendarFeed {
     }
 
     private static func notSaved(_ entry: CalendarEntry) -> String {
-        "\(entry.title.title) \(EpisodeCode.short(season: entry.season, number: entry.number)) was not saved."
+        let code = EpisodeCode.short(season: entry.season, number: entry.number)
+        return String(localized: "\(entry.title.title) \(code) was not saved.")
     }
 }

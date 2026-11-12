@@ -14,7 +14,7 @@ struct ConcertPlaceSection: View {
             if model.available {
                 Section {
                     LabeledContent("Concerts near") {
-                        Button(model.savedPlace?.label ?? "Choose a city") { choosing = true }
+                        Button(model.savedPlace?.label ?? String(localized: "Choose a city")) { choosing = true }
                     }
                     if model.savedPlace != nil {
                         Button("Remove", role: .destructive) {
@@ -25,8 +25,10 @@ struct ConcertPlaceSection: View {
                     Text("Location")
                 } footer: {
                     Text(
-                        "The only place Aaru stores where you are, to find concerts. “Use my location” in "
-                            + "Discover is used once and never saved."
+                        """
+                        The only place Aaru stores where you are, to find concerts. “Use my location” in \
+                        Discover is used once and never saved.
+                        """
                     )
                 }
             }

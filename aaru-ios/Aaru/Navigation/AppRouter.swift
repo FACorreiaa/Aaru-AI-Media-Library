@@ -19,20 +19,20 @@ enum AppTab: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .home: "Home"
-        case .discover: "Discover"
-        case .library: "Library"
-        case .calendar: "Calendar"
-        case .lists: "Lists"
-        case .friends: "Friends"
-        case .groups: "Groups"
-        case .books: "Books"
-        case .manga: "Manga"
-        case .music: "Music"
-        case .sports: "Sports"
-        case .insights: "Insights"
-        case .settings: "Settings"
-        case .moreMenu: "More"
+        case .home: String(localized: "Home")
+        case .discover: String(localized: "Discover")
+        case .library: String(localized: "Library")
+        case .calendar: String(localized: "Calendar")
+        case .lists: String(localized: "Lists")
+        case .friends: String(localized: "Friends")
+        case .groups: String(localized: "Groups")
+        case .books: String(localized: "Books")
+        case .manga: String(localized: "Manga")
+        case .music: String(localized: "Music")
+        case .sports: String(localized: "Sports")
+        case .insights: String(localized: "Insights")
+        case .settings: String(localized: "Settings")
+        case .moreMenu: String(localized: "More")
         }
     }
 

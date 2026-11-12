@@ -52,10 +52,10 @@ private struct ArtistsOnTourSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            ConcertsHeader(title: "Your artists on tour")
+            ConcertsHeader(title: String(localized: "Your artists on tour"))
             if let artists = model.artists {
                 if artists.unavailable, artists.items.isEmpty {
-                    QuietNote("Concert listings aren't answering right now.")
+                    QuietNote(String(localized: "Concert listings aren't answering right now."))
                 } else if artists.items.isEmpty {
                     QuietNote(emptyText(artists))
                 } else {
@@ -70,17 +70,22 @@ private struct ArtistsOnTourSection: View {
                         .buttonStyle(.borderless)
                     }
                     if artists.pending > 0 {
-                        QuietNote("Checking \(Self.artistCount(artists.pending, more: true)) — back within the hour")
+                        QuietNote(String(
+                            localized: """
+                            Checking \(Self.artistCount(artists.pending, more: true)) \
+                            — back within the hour
+                            """
+                        ))
                     }
                 }
             } else if model.artistsFailed {
                 HStack(spacing: 12) {
-                    QuietNote("Your artists' concerts could not be loaded.")
+                    QuietNote(String(localized: "Your artists' concerts could not be loaded."))
                     Button("Try again", action: retry)
                         .buttonStyle(.borderless)
                 }
             } else {
-                PlaceholderRows(count: 2, label: "Loading your artists' concerts")
+                PlaceholderRows(count: 2, label: String(localized: "Loading your artists' concerts"))
             }
         }
     }
@@ -91,17 +96,24 @@ private struct ArtistsOnTourSection: View {
 
     private func emptyText(_ artists: ArtistConcerts) -> String {
         if artists.pending > 0 {
-            return "Checking \(Self.artistCount(artists.pending, more: false)) — back within the hour"
+            return String(
+                localized: "Checking \(Self.artistCount(artists.pending, more: false)) — back within the hour"
+            )
         }
         if artists.matched == 0 {
-            return "When an artist of an album in your library tours, the dates show here."
+            return String(localized: "When an artist of an album in your library tours, the dates show here.")
         }
-        return "None of your artists has a date announced."
+        return String(localized: "None of your artists has a date announced.")
     }
 
     /// "1 artist", "4 more artists".
     private static func artistCount(_ count: Int, more: Bool) -> String {
-        "\(count.formatted()) \(more ? "more " : "")\(count == 1 ? "artist" : "artists")"
+        let number = count.formatted()
+        if more {
+            return count == 1
+                ? String(localized: "\(number) more artist") : String(localized: "\(number) more artists")
+        }
+        return count == 1 ? String(localized: "\(number) artist") : String(localized: "\(number) artists")
     }
 }
 
@@ -127,7 +139,7 @@ private struct NearSection: View {
             } else {
                 switch model.nearState {
                 case .idle, .loading:
-                    PlaceholderRows(count: 4, label: "Loading concerts")
+                    PlaceholderRows(count: 4, label: String(localized: "Loading concerts"))
                 case .noPlace:
                     ContentUnavailableView {
                         Label("Where should Aaru look?", systemImage: "mappin.and.ellipse")
@@ -258,7 +270,7 @@ private struct PerformerChoicesList: View {
     var body: some View {
         switch choices {
         case .loading:
-            PlaceholderRows(count: 3, label: "Looking for artists")
+            PlaceholderRows(count: 3, label: String(localized: "Looking for artists"))
         case let .ready(name, performers):
             VStack(alignment: .leading, spacing: 0) {
                 Text("Which one?")

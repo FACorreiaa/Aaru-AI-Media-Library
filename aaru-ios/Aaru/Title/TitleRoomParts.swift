@@ -81,7 +81,8 @@ struct EpisodeRow: View {
                     EpisodeStill(url: episode.stillUrl.flatMap(URL.init(string:)), cornerRadius: AaruRadius.thumb)
                         .frame(width: 64)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("\(episode.number). \(episode.name ?? "Episode \(episode.number)")")
+                        let name = episode.name ?? String(localized: "Episode \(String(episode.number))")
+                        Text("\(episode.number). \(name)")
                             .foregroundStyle(Color(.ink))
                             .lineLimit(2)
                         if let airsAt = episode.airsAt {
@@ -95,7 +96,7 @@ struct EpisodeRow: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("\(episode.name ?? "Episode \(episode.number)") details")
+            .accessibilityLabel("\(episode.name ?? String(localized: "Episode \(String(episode.number))")) details")
         }
         #if os(iOS)
         .contextMenu {
@@ -114,7 +115,8 @@ struct EpisodeRow: View {
         if model.hasAired(episode) {
             return airsAt.formatted(date: .abbreviated, time: .omitted)
         }
-        return "Airs \(airsAt.formatted(date: .abbreviated, time: episode.airTimeKnown ? .shortened : .omitted))"
+        let when = airsAt.formatted(date: .abbreviated, time: episode.airTimeKnown ? .shortened : .omitted)
+        return String(localized: "Airs \(when)")
     }
 }
 
@@ -142,7 +144,7 @@ struct RatingStars: View {
             }
         }
         .accessibilityElement(children: .contain)
-        .accessibilityValue(rating.map { "\(Int($0)) of 10" } ?? "Not rated")
+        .accessibilityValue(rating.map { String(localized: "\(Int($0)) of 10") } ?? String(localized: "Not rated"))
     }
 }
 

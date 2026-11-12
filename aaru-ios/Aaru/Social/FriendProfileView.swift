@@ -38,8 +38,8 @@ struct FriendProfileView: View {
                 )
             case .failed:
                 LoadFailedView(
-                    title: "Couldn't load this profile",
-                    message: "Aaru could not reach the server. Check your connection and try again."
+                    title: String(localized: "Couldn't load this profile"),
+                    message: String(localized: "Aaru could not reach the server. Check your connection and try again.")
                 ) { await load() }
             case let .loaded(profile):
                 ScrollView {
@@ -92,7 +92,7 @@ struct FriendProfileView: View {
                 GroupInviteSheet(api: api, friend: friend)
             }
             .sheet(isPresented: $reporting) {
-                ReportPostSheet(noun: "person", authorName: friend.inviteName) { reason, note in
+                ReportPostSheet(noun: String(localized: "person"), authorName: friend.inviteName) { reason, note in
                     await SocialModel(api: api).report(friend, reason: reason, note: note)
                 }
             }
@@ -119,9 +119,10 @@ struct FriendProfileView: View {
 
     @ViewBuilder
     private func shelves(_ profile: FriendProfile) -> some View {
-        CoverShelf(title: "Watching", empty: "Nothing in progress.", covers: (profile.watching ?? []).map {
-            Cover(title: $0.title, caption: $0.progress)
-        })
+        CoverShelf(
+            title: String(localized: "Watching"), empty: String(localized: "Nothing in progress."),
+            covers: (profile.watching ?? []).map { Cover(title: $0.title, caption: $0.progress) }
+        )
         if let compare = profile.compare {
             VStack(alignment: .leading, spacing: 16) {
                 VStack(alignment: .leading, spacing: 4) {
@@ -131,11 +132,14 @@ struct FriendProfileView: View {
                         .foregroundStyle(Color(.muted))
                 }
                 if !compare.bothWant.isEmpty {
-                    CoverShelf(title: "Want to watch", small: true, covers: compare.bothWant.map { Cover(title: $0) })
+                    CoverShelf(
+                        title: String(localized: "Want to watch"), small: true,
+                        covers: compare.bothWant.map { Cover(title: $0) }
+                    )
                 }
                 if !compare.theyLoved.isEmpty {
                     CoverShelf(
-                        title: "\(profile.user.inviteName) loved, you haven't", small: true,
+                        title: String(localized: "\(profile.user.inviteName) loved, you haven't"), small: true,
                         covers: compare.theyLoved.map { Cover(title: $0) }
                     )
                 }
@@ -144,7 +148,7 @@ struct FriendProfileView: View {
             .background(Color(.surface), in: .rect(cornerRadius: AaruRadius.field, style: .continuous))
         }
         CoverShelf(
-            title: "Recently finished", empty: "Nothing finished yet.",
+            title: String(localized: "Recently finished"), empty: String(localized: "Nothing finished yet."),
             covers: (profile.recentlyFinished ?? []).map {
                 Cover(title: $0.title, caption: $0.rating.map { "★ \(ActivityWords.rating($0))" })
             }
@@ -162,9 +166,9 @@ struct FriendProfileView: View {
 
     static func bothFinished(_ count: Int) -> String {
         switch count {
-        case 0: "Nothing finished by both of you yet."
-        case 1: "1 title finished by both of you"
-        default: "\(count) titles finished by both of you"
+        case 0: String(localized: "Nothing finished by both of you yet.")
+        case 1: String(localized: "1 title finished by both of you")
+        default: String(localized: "\(String(count)) titles finished by both of you")
         }
     }
 
@@ -233,10 +237,12 @@ private struct ProfileHeader: View {
     /// "42 films · 12 shows · 8 books", leaving out kinds they have none of.
     static func countsLine(_ counts: Components.Schemas.KindCounts) -> String? {
         let parts = [
-            Self.count(counts.movie, "film", "films"), Self.count(counts.show, "show", "shows"),
-            Self.count(counts.anime, "anime", "anime"), Self.count(counts.manga ?? 0, "manga", "manga"),
-            Self.count(counts.book, "book", "books"),
-            Self.count(counts.album, "album", "albums"),
+            Self.count(counts.movie, String(localized: "film"), String(localized: "films")),
+            Self.count(counts.show, String(localized: "show"), String(localized: "shows")),
+            Self.count(counts.anime, String(localized: "anime"), String(localized: "anime")),
+            Self.count(counts.manga ?? 0, String(localized: "manga"), String(localized: "manga")),
+            Self.count(counts.book, String(localized: "book"), String(localized: "books")),
+            Self.count(counts.album, String(localized: "album"), String(localized: "albums")),
         ].compactMap(\.self)
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
@@ -298,6 +304,7 @@ private extension FriendItem {
         if let season = lastSeason, let episode = lastEpisode {
             return EpisodeCode.short(season: season, number: episode)
         }
-        return bookPage.map { "Page \($0)" } ?? mangaChapter.map { "Ch. \($0)" }
+        return bookPage.map { String(localized: "Page \(String($0))") }
+            ?? mangaChapter.map { String(localized: "Ch. \(String($0))") }
     }
 }

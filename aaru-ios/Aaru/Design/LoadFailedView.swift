@@ -5,7 +5,7 @@ import SwiftUI
 /// empty calendar (UX-062). Later failures go to `ProblemBanner` over what is already shown.
 /// The owl is there, still (an error is no place for idle life), with the no-connection mark.
 struct LoadFailedView: View {
-    var title = "Couldn't load this"
+    var title = String(localized: "Couldn't load this")
     let message: String
     let retry: () async -> Void
 

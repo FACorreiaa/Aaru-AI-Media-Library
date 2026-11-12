@@ -92,7 +92,7 @@ struct BooksYearStrip: View {
                     InsightsView(api: api, library: library)
                 } label: {
                     HStack(alignment: .top) {
-                        figure(read, "Read this year")
+                        figure(read, String(localized: "Read this year"))
                         figure(reading, LibraryStatus.inProgress.label(for: .book))
                         figure(planned, LibraryStatus.wishlist.label(for: .book))
                     }

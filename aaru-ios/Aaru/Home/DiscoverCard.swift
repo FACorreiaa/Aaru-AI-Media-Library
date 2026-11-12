@@ -141,7 +141,7 @@ struct DiscoverCard: View {
         if kind == .music {
             return badge == nil ? hit.year.map(String.init) : nil
         }
-        return hit.isAnime && hit._type == .movie ? "Film" : nil
+        return hit.isAnime && hit._type == .movie ? String(localized: "Film") : nil
     }
 
     /// "2026", "2026 · James Clear" for a book, or the artist for an album.
@@ -165,10 +165,10 @@ struct DiscoverCard: View {
         else { return nil }
         let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: now), to: day).day ?? 0
         switch days {
-        case ..<0: return row == inTheatersRow ? "Out now" : nil
-        case 0: return "Today"
-        case 1: return "Tomorrow"
-        case 2 ... 6: return "In \(days) days"
+        case ..<0: return row == inTheatersRow ? String(localized: "Out now") : nil
+        case 0: return String(localized: "Today")
+        case 1: return String(localized: "Tomorrow")
+        case 2 ... 6: return String(localized: "In \(days) days")
         default:
             let sameYear = calendar.component(.year, from: now) == parts[0]
             return day.formatted(sameYear ? .dateTime.month(.abbreviated).day() : .dateTime.month(.abbreviated).year())
@@ -237,6 +237,6 @@ struct HomeWelcome: View {
 
 /// Home's one empty headline and import action, shared by the empty state and the welcome card.
 enum HomeEmptyCopy {
-    static let headline = "Add something to see what's next"
-    static let importAction = "Bring your history"
+    static let headline = String(localized: "Add something to see what's next")
+    static let importAction = String(localized: "Bring your history")
 }

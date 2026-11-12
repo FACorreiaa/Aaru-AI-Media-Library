@@ -95,13 +95,16 @@ struct GroupPresentation: ViewModifier {
     private func sheetContent(_ sheet: GroupSheet) -> some View {
         switch sheet {
         case .create:
-            GroupNameSheet(title: "New group", initial: "") { name in
+            GroupNameSheet(title: String(localized: "New group"), initial: "") { name in
                 guard let detail = await groups.create(named: name) else { return false }
                 onCreated(detail)
                 return true
             }
         case let .rename(groupID):
-            GroupNameSheet(title: "Rename group", initial: groups.details[groupID]?.group.name ?? "") { name in
+            GroupNameSheet(
+                title: String(localized: "Rename group"),
+                initial: groups.details[groupID]?.group.name ?? ""
+            ) { name in
                 await groups.rename(groupID, to: name)
             }
         case let .invite(groupID):
@@ -129,8 +132,8 @@ struct GroupPresentation: ViewModifier {
 
     private var confirmTitle: String {
         switch confirm {
-        case let .leave(group), let .ownerLeave(group): "Leave \(group.name)?"
-        case let .delete(group): "Delete \(group.name)?"
+        case let .leave(group), let .ownerLeave(group): String(localized: "Leave \(group.name)?")
+        case let .delete(group): String(localized: "Delete \(group.name)?")
         case nil: ""
         }
     }

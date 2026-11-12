@@ -50,19 +50,23 @@ struct StremioSection: View {
         } footer: {
             if created != nil {
                 Text(
-                    "This link is shown only once and works like a password: anyone with it can see your "
-                        + "library. Disconnect it if you shared it by mistake."
+                    """
+                    This link is shown only once and works like a password: anyone with it can see your \
+                    library. Disconnect it if you shared it by mistake.
+                    """
                 )
             } else {
                 Text(
-                    "Your Continue watching, Next 7 days and Plan to watch show up in Stremio, and episodes you "
-                        + "play there tick off here. Works with Stremio Web and Stremio 5 desktop."
+                    """
+                    Your Continue watching, Next 7 days and Plan to watch show up in Stremio, and episodes you \
+                    play there tick off here. Works with Stremio Web and Stremio 5 desktop.
+                    """
                 )
             }
         }
         .confirmsDisconnect(
             $disconnecting,
-            stops: { _ in "Stremio stops showing your Aaru library." },
+            stops: { _ in String(localized: "Stremio stops showing your Aaru library.") },
             perform: { token in
                 if created?.token.id == token.id {
                     created = nil
@@ -81,7 +85,7 @@ struct StremioSection: View {
                 copied = false
                 created = result
             case let .failure(failure):
-                model.problem = failure.message ?? "Stremio could not be connected."
+                model.problem = failure.message ?? String(localized: "Stremio could not be connected.")
             }
             connecting = false
         }
@@ -120,20 +124,36 @@ private struct StremioCreatedRows: View {
 /// the web's `StremioGuide`.
 private struct StremioGuide: View {
     private static let steps = [
-        "Choose whether Stremio may also change your library, then tap Connect Stremio.",
-        "Tap Open in Stremio for the desktop app or Install on Stremio Web in a browser. Or copy the link "
-            + "and paste it into the search box on Stremio’s Addons page.",
-        "Approve the install in Stremio. Your rows appear on Stremio’s board and load as you scroll to them.",
+        String(localized: "Choose whether Stremio may also change your library, then tap Connect Stremio."),
+        String(localized: """
+        Tap Open in Stremio for the desktop app or Install on Stremio Web in a browser. Or copy the link \
+        and paste it into the search box on Stremio’s Addons page.
+        """),
+        String(
+            localized: """
+            Approve the install in Stremio. Your rows appear \
+            on Stremio’s board and load as you scroll to them.
+            """
+        ),
     ]
 
     private static let behaviour = [
-        "Marking an episode or film watched in Stremio ticks it here. It shows in your history with an undo.",
-        "Finishing an episode in Stremio’s player ticks it too.",
-        "Unmarking and adding titles reach Aaru only if you allowed it when connecting. Removing a title in "
-            + "Stremio never removes it here.",
-        "Aaru adds no streams. You play things with the add-ons you already use.",
-        "What you tick in Aaru does not show as watched in Stremio.",
-        "Works with Stremio Web and Stremio 5 on desktop. The phone and TV apps are not confirmed yet.",
+        String(
+            localized: """
+            Marking an episode or film watched in Stremio ticks \
+            it here. It shows in your history with an undo.
+            """
+        ),
+        String(localized: "Finishing an episode in Stremio’s player ticks it too."),
+        String(localized: """
+        Unmarking and adding titles reach Aaru only if you allowed it when connecting. Removing a title in \
+        Stremio never removes it here.
+        """),
+        String(localized: "Aaru adds no streams. You play things with the add-ons you already use."),
+        String(localized: "What you tick in Aaru does not show as watched in Stremio."),
+        String(
+            localized: "Works with Stremio Web and Stremio 5 on desktop. The phone and TV apps are not confirmed yet."
+        ),
     ]
 
     var body: some View {
@@ -142,15 +162,17 @@ private struct StremioGuide: View {
                 ForEach(Array(Self.steps.enumerated()), id: \.offset) { index, step in
                     row("\(index + 1).", step)
                 }
-                heading("What it does")
+                heading(String(localized: "What it does"))
                 ForEach(Self.behaviour, id: \.self) { line in
                     row("•", line)
                 }
-                heading("History and lost links")
+                heading(String(localized: "History and lost links"))
                 Text(
-                    "Stremio history, in Settings → Import, brings in what you watched before, once: approve "
-                        + "the code on stremio.com, then review the import before anything changes. The install "
-                        + "link is shown only once. If you lose it, disconnect it and connect again."
+                    """
+                    Stremio history, in Settings → Import, brings in what you watched before, once: approve \
+                    the code on stremio.com, then review the import before anything changes. The install \
+                    link is shown only once. If you lose it, disconnect it and connect again.
+                    """
                 )
             }
             .font(.subheadline)

@@ -56,7 +56,7 @@ extension HomeScreen {
                 HStack(spacing: AaruSpace.small) {
                     Text("Waiting for you").eyebrow()
                         .accessibilityAddTraits(.isHeader)
-                    AgentPresence(label: "Aaru is waiting for your answer")
+                    AgentPresence(label: String(localized: "Aaru is waiting for your answer"))
                 }
                 if let imports {
                     ForEach(waitingCaptures, id: \.id) { job in
@@ -100,9 +100,9 @@ extension HomeScreen {
         }
         if !continuing.isEmpty {
             HomeRow(
-                title: "Continue watching",
+                title: String(localized: "Continue watching"),
                 trailing: continuing.count > HomeModel.continueLimit
-                    ? ("All \(continuing.count)", { nowPage = .watching }) : nil
+                    ? (String(localized: "All \(String(continuing.count))"), { nowPage = .watching }) : nil
             ) {
                 ForEach(continuing.prefix(HomeModel.continueLimit), id: \.libraryItemId) { entry in
                     ContinueCard(
@@ -133,14 +133,17 @@ extension HomeScreen {
             )
         }
         if !model.listening.isEmpty {
-            HomeRow(title: "Listening") {
+            HomeRow(title: String(localized: "Listening")) {
                 ForEach(model.listening) { row in
                     ListeningCard(row: row, width: cardWidth(.poster))
                 }
             }
         }
         if !model.upcoming.isEmpty {
-            HomeRow(title: "Airing soon", trailing: ("See calendar", { onSelectTab(.calendar) })) {
+            HomeRow(
+                title: String(localized: "Airing soon"),
+                trailing: (String(localized: "See calendar"), { onSelectTab(.calendar) })
+            ) {
                 ForEach(model.upcoming, id: \.cellID) { entry in
                     AiringCard(
                         entry: entry,
@@ -158,7 +161,7 @@ extension HomeScreen {
             }
         }
         if !model.startable.isEmpty {
-            HomeRow(title: "Start watching") {
+            HomeRow(title: String(localized: "Start watching")) {
                 ForEach(model.startable, id: \.libraryItemId) { entry in
                     StartCard(entry: entry, width: cardWidth(.poster))
                         .markWatchedMenu(library.entry(entry.libraryItemId), api: api, library: library) {}
@@ -166,7 +169,7 @@ extension HomeScreen {
             }
         }
         if !model.unfinished.isEmpty {
-            HomeRow(title: "Unfinished") {
+            HomeRow(title: String(localized: "Unfinished")) {
                 ForEach(model.unfinished, id: \.libraryItemId) { entry in
                     UnfinishedCard(
                         entry: entry,
@@ -196,7 +199,10 @@ extension HomeScreen {
                 .padding(.horizontal, AaruSpace.xlarge)
         }
         if !lists.lists.isEmpty {
-            HomeRow(title: "Your lists", trailing: ("All lists", { router.select(.lists) })) {
+            HomeRow(
+                title: String(localized: "Your lists"),
+                trailing: (String(localized: "All lists"), { router.select(.lists) })
+            ) {
                 ForEach(lists.lists, id: \.id) { list in
                     NavigationLink {
                         ListDetailView(listID: list.id, lists: lists, library: library, api: api)
@@ -252,7 +258,7 @@ extension HomeScreen {
                         Text("Discover").eyebrow()
                             .accessibilityAddTraits(.isHeader)
                         Spacer()
-                        HomeRowLink(label: "More on Discover") { onSelectTab(.discover) }
+                        HomeRowLink(label: String(localized: "More on Discover")) { onSelectTab(.discover) }
                     }
                     Text("What is out there, the same for everyone.")
                         .font(.footnote)

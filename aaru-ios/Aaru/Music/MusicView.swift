@@ -48,8 +48,8 @@ struct ListensContent: View {
                 .padding(.vertical, 16)
             } else {
                 HStack(alignment: .top, spacing: 40) {
-                    pane("Recent") { RecentListens(api: api, library: library) }
-                    pane("Top") { TopListens(api: api, library: library) }
+                    pane(String(localized: "Recent")) { RecentListens(api: api, library: library) }
+                    pane(String(localized: "Top")) { TopListens(api: api, library: library) }
                 }
                 .padding(.horizontal, 24)
                 .padding(.vertical, 16)

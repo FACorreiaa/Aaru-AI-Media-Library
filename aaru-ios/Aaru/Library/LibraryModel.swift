@@ -145,13 +145,13 @@ final class LibraryModel {
                     onWrite?()
                 }
             case let .default(_, error):
-                syncProblem = (try? error.body.json.message) ?? "The library could not be updated."
+                syncProblem = (try? error.body.json.message) ?? String(localized: "The library could not be updated.")
             }
         } catch {
             guard generation == syncGeneration else { return }
             syncProblem = rows.isEmpty
-                ? "Aaru could not reach the server."
-                : "Offline. Showing your library from the last sync."
+                ? String(localized: "Aaru could not reach the server.")
+                : String(localized: "Offline. Showing your library from the last sync.")
         }
     }
 
@@ -168,7 +168,7 @@ final class LibraryModel {
 
     /// Adds a title by reference (a list member not yet in the library, UX-072).
     func add(_ ref: MediaRef, named name: String, status: LibraryStatus, api: Client?) async -> String? {
-        guard let api else { return "Aaru could not reach the server." }
+        guard let api else { return String(localized: "Aaru could not reach the server.") }
         let generation = syncGeneration
         do {
             switch try await api.addLibraryItem(body: .json(.init(mediaRef: ref, status: status))) {
@@ -180,18 +180,18 @@ final class LibraryModel {
                 }
                 return nil
             case let .default(_, error):
-                return (try? error.body.json.message) ?? "\(name) could not be added."
+                return (try? error.body.json.message) ?? String(localized: "\(name) could not be added.")
             }
         } catch {
-            return "Aaru could not reach the server."
+            return String(localized: "Aaru could not reach the server.")
         }
     }
 
     /// Removes an item from the library (UX-061). The server journals it, so it undoes from
     /// Settings → Your data → History. Returns what went wrong, or nil once it is gone.
     func remove(_ id: String, api: Client?) async -> String? {
-        guard let api else { return "Aaru could not reach the server." }
-        let name = entries[id]?.title.title ?? "The title"
+        guard let api else { return String(localized: "Aaru could not reach the server.") }
+        let name = entries[id]?.title.title ?? String(localized: "The title")
         let generation = syncGeneration
         do {
             switch try await api.deleteLibraryItem(path: .init(id: id)) {
@@ -206,10 +206,10 @@ final class LibraryModel {
                 lastRemoval = name
                 return nil
             case let .default(_, error):
-                return (try? error.body.json.message) ?? "\(name) was not removed."
+                return (try? error.body.json.message) ?? String(localized: "\(name) was not removed.")
             }
         } catch {
-            return "\(name) was not removed. Aaru could not reach the server."
+            return String(localized: "\(name) was not removed. Aaru could not reach the server.")
         }
     }
 

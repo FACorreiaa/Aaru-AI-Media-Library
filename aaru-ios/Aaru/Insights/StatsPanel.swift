@@ -16,16 +16,18 @@ struct StatsPanel: View {
             }
             TotalsGrid(totals: stats.totals, prior: stats.prior)
             if stats.buckets.contains(where: { $0.minutes > 0 }) {
-                PanelSection(title: "Time") { ActivityChart(stats: stats) }
+                PanelSection(title: String(localized: "Time")) { ActivityChart(stats: stats) }
             }
             if stats.byKind.contains(where: { $0.minutes > 0 || $0.episodes > 0 || $0.finished > 0 }) {
-                PanelSection(title: "By kind") { KindBreakdown(kinds: stats.byKind) }
+                PanelSection(title: String(localized: "By kind")) { KindBreakdown(kinds: stats.byKind) }
             }
             if !stats.topTitles.isEmpty {
-                PanelSection(title: "Most time with") { TopTitles(titles: Array(stats.topTitles.prefix(5))) }
+                PanelSection(title: String(localized: "Most time with")) {
+                    TopTitles(titles: Array(stats.topTitles.prefix(5)))
+                }
             }
             if let run = stats.longestRun, run.days > 1 {
-                PanelSection(title: "Longest run") {
+                PanelSection(title: String(localized: "Longest run")) {
                     Text("\(run.days) days in a row")
                         .font(.body.weight(.medium))
                     Text("\(RecapDeck.dayLabel(run.start)) – \(RecapDeck.dayLabel(run.end))")
@@ -34,7 +36,7 @@ struct StatsPanel: View {
                 }
             }
             if stats.ratings.mean != nil {
-                PanelSection(title: "Ratings") { RatingsHistogram(ratings: stats.ratings) }
+                PanelSection(title: String(localized: "Ratings")) { RatingsHistogram(ratings: stats.ratings) }
             }
         }
         // Recap motion rules: numbers and bars appear, they do not grow.
@@ -84,20 +86,20 @@ private struct TotalsGrid: View {
     var body: some View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: tileMinimum), spacing: 12)], spacing: 12) {
             StatTile(
-                value: hoursValue(minutes: totals.minutesWatched), caption: "hours",
+                value: hoursValue(minutes: totals.minutesWatched), caption: String(localized: "hours"),
                 delta: prior.flatMap { hoursDelta(totals.minutesWatched, $0.minutesWatched) }
             )
             StatTile(
-                value: totals.episodesWatched.formatted(), caption: "episodes",
+                value: totals.episodesWatched.formatted(), caption: String(localized: "episodes"),
                 delta: prior.flatMap { countDelta(totals.episodesWatched, $0.episodesWatched) }
             )
             StatTile(
-                value: totals.finished.formatted(), caption: "finished",
+                value: totals.finished.formatted(), caption: String(localized: "finished"),
                 delta: prior.flatMap { countDelta(totals.finished, $0.finished) }
             )
             StatTile(
                 value: totals.activeDays.formatted(),
-                caption: totals.activeDays == 1 ? "active day" : "active days",
+                caption: totals.activeDays == 1 ? String(localized: "active day") : String(localized: "active days"),
                 delta: prior.flatMap { countDelta(totals.activeDays, $0.activeDays) }
             )
         }

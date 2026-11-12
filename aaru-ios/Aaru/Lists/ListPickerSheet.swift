@@ -48,7 +48,7 @@ struct ListPickerSheet: View {
                     ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
                 }
                 .sheet(isPresented: $makesNew) {
-                    NameListSheet(title: "New list", initial: "", lists: lists) { name in
+                    NameListSheet(title: String(localized: "New list"), initial: "", lists: lists) { name in
                         guard let list = await lists.create(named: name) else { return false }
                         await add(to: list.id)
                         return true

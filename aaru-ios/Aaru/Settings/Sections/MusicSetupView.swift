@@ -32,8 +32,10 @@ struct MusicSetupView: View {
                         firstListen
                     } footer: {
                         Text(
-                            "The token is shown only now and works like a password: anyone with it can add listens "
-                                + "to your log. Disconnect it if you shared it by mistake."
+                            """
+                            The token is shown only now and works like a password: anyone with it can add listens \
+                            to your log. Disconnect it if you shared it by mistake.
+                            """
                         )
                     }
                 } else {
@@ -167,7 +169,8 @@ struct MusicSetupView: View {
         defer { working = false }
         switch await model.create(Components.Schemas.AgentTokenCreate(kind: .music, scrobbler: scrobbler)) {
         case let .success(result): created = result
-        case let .failure(failure): problem = failure.message ?? "The scrobbler could not be connected."
+        case let .failure(failure): problem = failure
+            .message ?? String(localized: "The scrobbler could not be connected.")
         }
     }
 
@@ -188,23 +191,30 @@ struct MusicSetupView: View {
         case .panoScrobbler: "Pano Scrobbler"
         case .navidrome: "Navidrome"
         case .jellyfin: "Jellyfin"
-        case .other: "Other"
+        case .other: String(localized: "Other")
         }
     }
 
     static func summary(_ scrobbler: Scrobbler) -> String {
         switch scrobbler {
         case .webScrobbler:
-            "A browser extension for Chrome, Firefox, Edge and Safari. Covers YouTube, YouTube Music, Spotify and "
-                + "Apple Music in the browser."
+            String(localized: """
+            A browser extension for Chrome, Firefox, Edge and Safari. Covers YouTube, YouTube Music, Spotify and \
+            Apple Music in the browser.
+            """)
         case .panoScrobbler:
-            "An app for Android, Windows and Linux that sends whatever plays, Spotify and YouTube Music included."
+            String(
+                localized: """
+                An app for Android, Windows and Linux that sends \
+                whatever plays, Spotify and YouTube Music included.
+                """
+            )
         case .navidrome:
-            "Your own music server. Plays in Navidrome and the apps connected to it are sent."
+            String(localized: "Your own music server. Plays in Navidrome and the apps connected to it are sent.")
         case .jellyfin:
-            "The ListenBrainz plugin sends what you play on your Jellyfin server."
+            String(localized: "The ListenBrainz plugin sends what you play on your Jellyfin server.")
         case .other:
-            "Anything that lets you set its ListenBrainz server."
+            String(localized: "Anything that lets you set its ListenBrainz server.")
         }
     }
 }

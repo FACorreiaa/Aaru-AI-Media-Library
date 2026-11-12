@@ -64,13 +64,13 @@ enum EpisodeWatching {
 
     struct SignedOut: LocalizedError {
         var errorDescription: String? {
-            "Open Aaru and sign in first."
+            String(localized: "Open Aaru and sign in first.")
         }
     }
 
     struct NotSaved: LocalizedError {
         var errorDescription: String? {
-            "The episode was not saved. Try again in Aaru."
+            String(localized: "The episode was not saved. Try again in Aaru.")
         }
     }
 }
@@ -132,7 +132,7 @@ enum EpisodeWatching {
 
         struct NotSaved: LocalizedError {
             var errorDescription: String? {
-                "The movie was not saved. Try again in Aaru."
+                String(localized: "The movie was not saved. Try again in Aaru.")
             }
         }
     }

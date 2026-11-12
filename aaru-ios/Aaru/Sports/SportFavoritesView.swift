@@ -32,8 +32,8 @@ struct SportFavoritesView: View {
             }
         } else if model.favoritesFailed {
             LoadFailedView(
-                title: "Couldn't load Sports",
-                message: "Your leagues and teams didn't load."
+                title: String(localized: "Couldn't load Sports"),
+                message: String(localized: "Your leagues and teams didn't load.")
             ) { await model.loadFavorites() }
         } else {
             ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -56,22 +56,22 @@ private struct FavoriteCard: View {
                         .background(Color(.accent).opacity(AaruAlpha.tint), in: rowShape)
                 }
             } else if let next = item.next {
-                part("Next") {
+                part(String(localized: "Next")) {
                     SportEventRow(event: next, showsDay: true) { onOpen(next) }
                 }
             }
             if let last = item.last {
-                part("Last result") {
+                part(String(localized: "Last result")) {
                     SportEventRow(event: last, showsDay: true) { onOpen(last) }
                 }
             }
             if item.pending, item.live.isEmpty, item.next == nil, item.last == nil {
                 HStack(spacing: 8) {
                     ProgressView().controlSize(.small)
-                    QuietNote("Fetching fixtures…")
+                    QuietNote(String(localized: "Fetching fixtures…"))
                 }
             } else if !item.pending, item.live.isEmpty, item.next == nil, item.last == nil {
-                QuietNote("No fixtures listed.")
+                QuietNote(String(localized: "No fixtures listed."))
             }
         }
         .padding(16)

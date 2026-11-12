@@ -14,8 +14,10 @@ struct SportSettingsSection: View {
             if model.available {
                 Section {
                     LabeledContent("Where to watch") {
-                        Button(model.countryCode.map(WatchCountry.name) ?? "Choose a country") { choosing = true }
-                            .disabled(model.isSaving)
+                        Button(model.countryCode.map(WatchCountry.name) ?? String(localized: "Choose a country")) {
+                            choosing = true
+                        }
+                        .disabled(model.isSaving)
                     }
                     if model.countryCode != nil {
                         Button("Clear", role: .destructive) {

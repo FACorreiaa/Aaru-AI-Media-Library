@@ -19,18 +19,20 @@ struct CaptureComposer: View {
 
     private var placeholder: String {
         switch (kind == .book, pictures.isEmpty) {
-        case (true, true): "Paste a chat or list, or ask for books"
-        case (true, false): "Aaru reads the books in the picture"
-        case (false, true): "Paste titles, a link or a screenshot"
-        case (false, false): "Aaru reads the titles in the picture"
+        case (true, true): String(localized: "Paste a chat or list, or ask for books")
+        case (true, false): String(localized: "Aaru reads the books in the picture")
+        case (false, true): String(localized: "Paste titles, a link or a screenshot")
+        case (false, false): String(localized: "Aaru reads the titles in the picture")
         }
     }
 
     private var hint: String {
         kind == .book
-            ? "A whole ChatGPT chat, screenshots, a photo of a list, or a request like "
-            + "\u{201C}X-Men books in reading order\u{201D}. Nothing is added until you approve."
-            : "Nothing is added until you approve what Aaru found."
+            ? String(localized: """
+            A whole ChatGPT chat, screenshots, a photo of a list, or a request like \
+            \u{201C}X-Men books in reading order\u{201D}. Nothing is added until you approve.
+            """)
+            : String(localized: "Nothing is added until you approve what Aaru found.")
     }
 
     var body: some View {
@@ -118,17 +120,17 @@ struct CaptureComposer: View {
         defer { photos = [] }
         for item in items {
             guard let data = try? await item.loadTransferable(type: Data.self) else {
-                problem = "Aaru could not open that picture."
+                problem = String(localized: "Aaru could not open that picture.")
                 return
             }
             switch CaptureImage.pieces(data) {
             case let .jpegs(jpegs) where pictures.count + jpegs.count <= CaptureImage.maxPictures:
                 pictures += jpegs
             case .jpegs, .tooLong:
-                problem = "That's long. Paste the text instead."
+                problem = String(localized: "That's long. Paste the text instead.")
                 return
             case .unreadable:
-                problem = "Aaru could not open that picture."
+                problem = String(localized: "Aaru could not open that picture.")
                 return
             }
         }

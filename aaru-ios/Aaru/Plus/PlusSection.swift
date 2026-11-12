@@ -14,12 +14,12 @@ struct PlusSection: View {
         if plus.isPlus || !plus.products.isEmpty {
             Section("Aaru Plus") {
                 if plus.isPlus {
-                    LabeledContent("Aaru Plus", value: "Active")
+                    LabeledContent("Aaru Plus", value: String(localized: "Active"))
                     #if os(iOS)
                         Button("Manage subscription") { managing = true }
                     #endif
                 } else {
-                    LabeledContent("Aaru Plus", value: "Not subscribed")
+                    LabeledContent("Aaru Plus", value: String(localized: "Not subscribed"))
                     Button("Get Aaru Plus") { showsPaywall = true }
                 }
             }

@@ -124,7 +124,7 @@ struct TonightCard: View {
                 onMarkWatched(entry)
             } label: {
                 // One phrasing for the tick wherever the episode is named (UX-044).
-                Label(short ? code : "Mark \(code) watched", systemImage: "checkmark")
+                Label(short ? code : String(localized: "Mark \(code) watched"), systemImage: "checkmark")
             }
             .buttonStyle(.borderedProminent)
             .fixedSize()

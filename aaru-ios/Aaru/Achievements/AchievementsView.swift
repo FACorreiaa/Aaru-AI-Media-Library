@@ -125,22 +125,22 @@ private struct PointsRow: View {
 /// What each kind of points reads as, the same words as the web's.
 enum PointsWords {
     static func kind(_ kind: String, revocation: Bool) -> String {
-        let name = names[kind] ?? "Points"
-        return revocation ? "Taken back: \(name.lowercased())" : name
+        let name = names[kind] ?? String(localized: "Points")
+        return revocation ? String(localized: "Taken back: \(name.lowercased())") : name
     }
 
     private static let names: [String: String] = [
-        "episode": "Episode",
-        "movie_finished": "Film finished",
-        "book_finished": "Book finished",
-        "album_finished": "Album finished",
-        "season_bonus": "Season complete",
-        "scrobble_bonus": "Played along",
-        "book_progress": "Reading",
-        "listen": "Listen",
-        "room_attended": "Watch party",
-        "friend_added": "New friend",
-        "import_first": "Moved in",
-        "streak_milestone": "Streak milestone",
+        "episode": String(localized: "Episode"),
+        "movie_finished": String(localized: "Film finished"),
+        "book_finished": String(localized: "Book finished"),
+        "album_finished": String(localized: "Album finished"),
+        "season_bonus": String(localized: "Season complete"),
+        "scrobble_bonus": String(localized: "Played along"),
+        "book_progress": String(localized: "Reading"),
+        "listen": String(localized: "Listen"),
+        "room_attended": String(localized: "Watch party"),
+        "friend_added": String(localized: "New friend"),
+        "import_first": String(localized: "Moved in"),
+        "streak_milestone": String(localized: "Streak milestone"),
     ]
 }

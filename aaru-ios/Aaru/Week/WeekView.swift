@@ -46,13 +46,14 @@ struct WeekView: View {
 
     @ViewBuilder private var content: some View {
         if let failure = model.loadProblem {
-            LoadFailedView(title: "The calendar didn't load", message: failure) { await model.load() }
+            LoadFailedView(title: String(localized: "The calendar didn't load"), message: failure) { await model.load()
+            }
         } else if !model.isLoaded {
             ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if model.isEmptyWeek {
             CalendarEmptyState(
-                title: "Nothing from your shows airs this week",
-                detail: "Add shows you follow and their new episodes appear here.",
+                title: String(localized: "Nothing from your shows airs this week"),
+                detail: String(localized: "Add shows you follow and their new episodes appear here."),
                 onSearch: onSearch, onClearFilters: onClearFilters
             )
         } else if isWide {

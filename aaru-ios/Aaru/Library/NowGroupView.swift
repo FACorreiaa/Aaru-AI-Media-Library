@@ -60,7 +60,7 @@ struct NowGroupView: View {
                     ScrollView {
                         VStack(alignment: .leading, spacing: AaruSpace.section) {
                             if !active.isEmpty {
-                                section(backlog.isEmpty ? nil : "Keeping up") { cards(active) }
+                                section(backlog.isEmpty ? nil : String(localized: "Keeping up")) { cards(active) }
                             }
                             if !backlog.isEmpty {
                                 backlogHeader(count: backlog.count)
@@ -161,10 +161,12 @@ struct NowGroupView: View {
                 .font(.subheadline.weight(.medium))
                 .accessibilityHint(showsBacklog ? "Hides the backlog" : "Shows the backlog")
             }
-            Text("Anime that came in as watching from an import and that you have not started here. "
-                + "They stay in progress; tick an episode to bring one up.")
-                .font(.footnote)
-                .foregroundStyle(Color(.muted))
+            Text(String(localized: """
+            Anime that came in as watching from an import and that you have not started here. \
+            They stay in progress; tick an episode to bring one up.
+            """))
+            .font(.footnote)
+            .foregroundStyle(Color(.muted))
         }
         .padding(.horizontal, 16)
         .id("backlog")
@@ -277,17 +279,17 @@ private struct NowStep {
 
     init?(_ item: NowItem) {
         if let next = item.next {
-            label = "Mark \(EpisodeCode.short(season: next.season, number: next.number)) watched"
+            label = String(localized: "Mark \(EpisodeCode.short(season: next.season, number: next.number)) watched")
             action = .tickNext
         } else if item.kind == .manga {
             let chapter = (item.entry.mangaProgress?.chapter ?? 0) + 1
-            label = "Read ch. \(chapter)"
+            label = String(localized: "Read ch. \(String(chapter))")
             action = .chapter(chapter)
         } else {
             switch item.kind {
-            case .book: label = "Mark read"
-            case .music: label = "Mark listened"
-            default: label = "Mark watched"
+            case .book: label = String(localized: "Mark read")
+            case .music: label = String(localized: "Mark listened")
+            default: label = String(localized: "Mark watched")
             }
             action = .finish
         }
@@ -334,17 +336,19 @@ enum WatchingLines {
         let channel = [item.entry.title.network, facts?.showStatus.map { ShowStatusLabel.label($0.rawValue) }]
             .compactMap(\.self).joined(separator: " · ")
         let next = item.next.map { next in
-            (["Next " + EpisodeCode.short(season: next.season, number: next.number)] + [facts?.nextName]
+            ([String(localized: "Next \(EpisodeCode.short(season: next.season, number: next.number))")] +
+                [facts?.nextName]
                 .compactMap(\.self)).joined(separator: " · ")
         }
         let left = facts?.remainingCount.flatMap { count -> String? in
             guard count > 0 else { return nil }
             let minutes = facts?.remainingMinutes ?? 0
-            return minutes > 0 ? "\(count) left · \(durationLabel(minutes: minutes))" : "\(count) left"
+            let remaining = String(localized: "\(String(count)) left")
+            return minutes > 0 ? "\(remaining) · \(durationLabel(minutes: minutes))" : remaining
         }
         let airs = facts?.nextAiring.map { airing in
             var parts = [
-                "Airs " + EpisodeCode.short(season: airing.season, number: airing.number),
+                String(localized: "Airs \(EpisodeCode.short(season: airing.season, number: airing.number))"),
                 HomeModel.airingLabel(
                     airsAt: airing.airsAt,
                     airTimeKnown: airing.airTimeKnown,
@@ -358,6 +362,7 @@ enum WatchingLines {
             return parts.joined(separator: " · ")
         }
         let caughtUp = progress.map { $0.airedCount > 0 && $0.nextEpisode == nil } ?? false
-        return [channel.isEmpty ? nil : channel, next, left, airs, caughtUp ? "Caught up" : nil].compactMap(\.self)
+        return [channel.isEmpty ? nil : channel, next, left, airs, caughtUp ? String(localized: "Caught up") : nil]
+            .compactMap(\.self)
     }
 }

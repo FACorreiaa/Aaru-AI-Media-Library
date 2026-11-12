@@ -32,7 +32,9 @@ struct BoardView: View {
     var body: some View {
         Group {
             if let problem = board.loadProblem, !board.hasLoaded {
-                LoadFailedView(title: "The Board didn't load", message: problem) { await board.load() }
+                LoadFailedView(title: String(localized: "The Board didn't load"), message: problem) {
+                    await board.load()
+                }
             } else {
                 ScrollView {
                     column

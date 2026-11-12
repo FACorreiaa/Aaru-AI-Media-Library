@@ -74,12 +74,14 @@ enum TonightPick {
         case let .continuing(entry):
             return [
                 entry.nextRuntimeMinutes.flatMap { $0 > 0 ? durationLabel(minutes: $0) : nil },
-                entry.remainingCount > 1 ? "\(entry.remainingCount) left" : "Last one aired",
-                entry.isFinale ? "Season finale" : nil,
+                entry.remainingCount > 1
+                    ? String(localized: "\(String(entry.remainingCount)) left")
+                    : String(localized: "Last one aired"),
+                entry.isFinale ? String(localized: "Season finale") : nil,
             ].compactMap(\.self).joined(separator: " · ")
         case let .airing(entry):
             return [
-                entry.timeText.map { "Airs \($0)" } ?? "Airs today",
+                entry.timeText.map { String(localized: "Airs \($0)") } ?? String(localized: "Airs today"),
                 entry.runtimeMinutes.flatMap { $0 > 0 ? durationLabel(minutes: $0) : nil },
                 entry.badge?.label,
             ].compactMap(\.self).joined(separator: " · ")
@@ -152,8 +154,8 @@ extension HomeModel {
         let airing = airingToday.count
         let parts: [String?] = [
             Daypart(hour: calendar.component(.hour, from: now())).heading(on: now()),
-            inProgress > 0 ? "\(inProgress) in progress" : nil,
-            airing > 0 ? "\(airing) airing today" : nil,
+            inProgress > 0 ? String(localized: "\(String(inProgress)) in progress") : nil,
+            airing > 0 ? String(localized: "\(String(airing)) airing today") : nil,
         ]
         return parts.compactMap(\.self).joined(separator: " · ")
     }

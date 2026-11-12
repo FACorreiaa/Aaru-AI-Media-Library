@@ -11,7 +11,7 @@ extension FriendInvite: @retroactive Identifiable {
 
 extension FriendInvite {
     var plea: String {
-        guard let title else { return "Join me on Aaru." }
+        guard let title else { return String(localized: "Join me on Aaru.") }
         return InviteWords.plea(title.title, kind: MediaKind(type: title._type, isAnime: title.isAnime))
     }
 }

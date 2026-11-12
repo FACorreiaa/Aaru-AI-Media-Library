@@ -50,8 +50,8 @@ struct ImportDetailView: View {
     }
 
     private var title: String {
-        guard let job else { return "Import" }
-        return job.isCapture ? "Your capture" : job.filename ?? job.sourceLabel
+        guard let job else { return String(localized: "Import") }
+        return job.isCapture ? String(localized: "Your capture") : job.filename ?? job.sourceLabel
     }
 
     var body: some View {
@@ -74,11 +74,7 @@ struct ImportDetailView: View {
                             Button("Cancel this import", role: .destructive) { Task { await discard() } }
                         }
                     } footer: {
-                        Text(
-                            "You can leave: the plan waits \(job.isCapture ? "on Home" : "under Settings → Import"), "
-                                + "and nothing reaches your \(job.isListens ? "Music log" : "library") until you "
-                                + "approve it."
-                        )
+                        Text(job.leaveNote)
                     }
                 }
                 if job.isListens {
@@ -191,12 +187,7 @@ struct ImportDetailView: View {
                         Text("Untick anything you don't want.")
                     }
                     if findable {
-                        Text(
-                            job?.state == .planned
-                                ? "Find it searches the catalog. The title you choose joins the plan."
-                                : "Find it searches the catalog. The title you choose goes in your library at "
-                                + "once, and can be undone from History."
-                        )
+                        Text(ImportJob.findNote(planned: job?.state == .planned))
                     }
                     if matching.count > Self.shownRows {
                         Text("Showing \(Self.shownRows) of \(matching.count.formatted()).")
@@ -235,7 +226,9 @@ struct ImportDetailView: View {
         detail = await imports.detail(id)
         if applied.isListens {
             let added = applied.stats.created
-            toasts?.show(added == 1 ? "Added 1 listen" : "Added \(added.formatted()) listens")
+            toasts?
+                .show(added == 1 ? String(localized: "Added 1 listen") :
+                    String(localized: "Added \(added.formatted()) listens"))
             return
         }
         await onApplied()
@@ -252,8 +245,9 @@ struct ImportDetailView: View {
 
     /// "Imported 12 titles", "Imported 12 titles · filled in 3".
     static func appliedMessage(_ stats: Components.Schemas.ImportStats) -> String {
-        let added = stats.created == 1 ? "Imported 1 title" : "Imported \(stats.created) titles"
-        return stats.updated > 0 ? "\(added) · filled in \(stats.updated)" : added
+        let added = stats.created == 1
+            ? String(localized: "Imported 1 title") : String(localized: "Imported \(String(stats.created)) titles")
+        return stats.updated > 0 ? String(localized: "\(added) · filled in \(String(stats.updated))") : added
     }
 }
 
@@ -277,8 +271,10 @@ extension ImportDetailView {
                 Button("Discard", role: .destructive) { confirmsDiscard = true }
             } footer: {
                 Text(
-                    "Each listen counts on the day you played it. Left out: podcasts, plays under 30 s and "
-                        + "videos that are not music."
+                    """
+                    Each listen counts on the day you played it. Left out: podcasts, plays under 30 s and \
+                    videos that are not music.
+                    """
                 )
             }
         }
@@ -327,9 +323,12 @@ private extension ImportDetailView {
                     .foregroundStyle(Color(.muted))
             }
         }
-        rows(.unmatched, title: "Not matched")
-        rows(.create, title: job.state == .planned ? "Will be added" : "Added")
-        rows(.update, title: job.state == .planned ? "Will be filled in" : "Filled in")
+        rows(.unmatched, title: String(localized: "Not matched"))
+        rows(.create, title: job.state == .planned ? String(localized: "Will be added") : String(localized: "Added"))
+        rows(
+            .update,
+            title: job.state == .planned ? String(localized: "Will be filled in") : String(localized: "Filled in")
+        )
     }
 
     /// BOOK-001: a planned capture's rows can each be left out. So can a guess in any import, which
@@ -372,8 +371,8 @@ private extension ImportDetailView {
             query: row.title,
             scope: SearchScope(rawValue: kind.rawValue) ?? .all,
             year: row.year,
-            navigationTitle: "Find a title",
-            note: "\u{201C}\(row.label)\u{201D} in your import. Choose the title it means.",
+            navigationTitle: String(localized: "Find a title"),
+            note: String(localized: "\u{201C}\(row.label)\u{201D} in your import. Choose the title it means."),
             choose: { hit in await resolve(row, with: hit) }
         )
     }
@@ -383,7 +382,7 @@ private extension ImportDetailView {
     func resolve(_ row: ImportRow, with hit: CatalogHit) async -> String? {
         guard let resolved = await imports.resolve(id, row: row.index, with: hit) else {
             defer { imports.problem = nil }
-            return imports.problem ?? "\(hit.title) could not be matched to that row."
+            return imports.problem ?? String(localized: "\(hit.title) could not be matched to that row.")
         }
         detail?.job = resolved.job
         if let position = detail?.rows.firstIndex(where: { $0.index == resolved.row.index }) {

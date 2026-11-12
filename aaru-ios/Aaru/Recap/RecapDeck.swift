@@ -32,8 +32,10 @@ enum RecapCard {
 /// are left out, and a period with no activity has no deck at all.
 enum RecapDeck {
     static let months = [
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December",
+        String(localized: "January"), String(localized: "February"), String(localized: "March"),
+        String(localized: "April"), String(localized: "May"), String(localized: "June"),
+        String(localized: "July"), String(localized: "August"), String(localized: "September"),
+        String(localized: "October"), String(localized: "November"), String(localized: "December"),
     ]
 
     static func isEmpty(_ stats: Stats) -> Bool {
@@ -46,7 +48,9 @@ enum RecapDeck {
         let period = RecapPeriod(year: stats.year, month: stats.month)
         var deck: [RecapCard] = [
             .intro(
-                heading: stats.month == nil ? "Your \(stats.year) in Aaru" : "Your \(period.label)",
+                heading: stats.month == nil
+                    ? String(localized: "Your \(String(stats.year)) in Aaru")
+                    : String(localized: "Your \(period.label)"),
                 partial: stats.isPartial
             ),
         ]
@@ -123,12 +127,21 @@ enum RecapDeck {
     /// one by rule; these are drafts the owner signs off.
     static func personaWords(_ persona: Persona) -> (title: String, line: String) {
         switch persona {
-        case .binger: ("The Binger", "When a story grabs you, you stay for the next one.")
-        case .bookworm: ("The Bookworm", "Pages won out over screens.")
-        case .anime: ("The Anime Devotee", "Most of your hours went to anime.")
-        case .completionist: ("The Completionist", "You finish what you start.")
-        case .explorer: ("The Explorer", "Films, shows, anime, books: you went everywhere.")
-        case .steady: ("The Steady One", "A little, often. Stories at your own pace.")
+        case .binger: (
+                String(localized: "The Binger"),
+                String(localized: "When a story grabs you, you stay for the next one.")
+            )
+        case .bookworm: (String(localized: "The Bookworm"), String(localized: "Pages won out over screens."))
+        case .anime: (String(localized: "The Anime Devotee"), String(localized: "Most of your hours went to anime."))
+        case .completionist: (String(localized: "The Completionist"), String(localized: "You finish what you start."))
+        case .explorer: (
+                String(localized: "The Explorer"),
+                String(localized: "Films, shows, anime, books: you went everywhere.")
+            )
+        case .steady: (
+                String(localized: "The Steady One"),
+                String(localized: "A little, often. Stories at your own pace.")
+            )
         }
     }
 
@@ -144,13 +157,15 @@ enum RecapDeck {
     static func timeCaption(_ minutes: Int) -> String {
         let hours = Double(minutes) / 60
         if hours < 2 {
-            return "That's \(minutes) minutes of stories."
+            return String(localized: "That's \(String(minutes)) minutes of stories.")
         }
         if hours < 48 {
-            return "That's about \(Int(hours.rounded())) hours."
+            return String(localized: "That's about \(String(Int(hours.rounded()))) hours.")
         }
         let days = (hours / 24 * 10).rounded() / 10
-        return "That's about \(days.formatted(.number.precision(.fractionLength(0 ... 1)))) days, end to end."
+        return String(
+            localized: "That's about \(days.formatted(.number.precision(.fractionLength(0 ... 1)))) days, end to end."
+        )
     }
 
     /// Episodes per bucket; the server's `mostEpisodes` is marked (none on a tie). Its `busiest` is
@@ -175,10 +190,10 @@ enum RecapDeck {
         // The server leaves `mostEpisodes` out on a tie: a shared top says nothing.
         guard let top = stats.mostEpisodes else { return nil }
         if stats.month != nil {
-            return "Most episodes on \(dayLabel(top.start))."
+            return String(localized: "Most episodes on \(dayLabel(top.start)).")
         }
         let month = top.start.split(separator: "-").compactMap { Int($0) }[safe: 1] ?? 1
-        return "Most episodes in \(months[month - 1])."
+        return String(localized: "Most episodes in \(months[month - 1]).")
     }
 
     /// "Mar 10" from a local `YYYY-MM-DD`.
@@ -190,12 +205,12 @@ enum RecapDeck {
 
     static func countLabel(_ kind: MediaKind, _ count: Int) -> String {
         let words = switch kind {
-        case .film: ("film", "films")
-        case .show: ("show", "shows")
-        case .anime: ("anime", "anime")
-        case .manga: ("manga", "manga")
-        case .book: ("book", "books")
-        case .music: ("album", "albums")
+        case .film: (String(localized: "film"), String(localized: "films"))
+        case .show: (String(localized: "show"), String(localized: "shows"))
+        case .anime: (String(localized: "anime"), String(localized: "anime"))
+        case .manga: (String(localized: "manga"), String(localized: "manga"))
+        case .book: (String(localized: "book"), String(localized: "books"))
+        case .music: (String(localized: "album"), String(localized: "albums"))
         }
         return "\(count) \(count == 1 ? words.0 : words.1)"
     }
@@ -219,23 +234,23 @@ enum RecapDeck {
         let totals = stats.totals
         var lines: [String] = []
         if totals.minutesWatched > 0 {
-            lines.append("\(totals.minutesWatched.formatted()) minutes")
+            lines.append(String(localized: "\(totals.minutesWatched.formatted()) minutes"))
         }
         if totals.episodesWatched > 0 {
-            lines.append("\(totals.episodesWatched.formatted()) episodes")
+            lines.append(String(localized: "\(totals.episodesWatched.formatted()) episodes"))
         }
         let finished = finishedCounts(totals).map { countLabel($0.kind, $0.count) }
         if !finished.isEmpty {
-            lines.append("Finished \(finished.joined(separator: ", "))")
+            lines.append(String(localized: "Finished \(finished.joined(separator: ", "))"))
         }
         if let top = stats.topTitles.first {
-            lines.append("Most watched: \(top.title.title)")
+            lines.append(String(localized: "Most watched: \(top.title.title)"))
         }
         if let run = stats.longestRun, run.days > 1 {
-            lines.append("\(run.days) days in a row")
+            lines.append(String(localized: "\(String(run.days)) days in a row"))
         }
         if let genre = stats.topGenres.first {
-            lines.append("Top genre: \(genre.name)")
+            lines.append(String(localized: "Top genre: \(genre.name)"))
         }
         if stats.month == nil, let persona = stats.persona {
             lines.append(personaWords(persona).title)

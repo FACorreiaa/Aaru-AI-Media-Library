@@ -17,7 +17,7 @@ extension SocialModel {
         let body = Components.Schemas.ProfileUpdate(
             handle: handle.isEmpty ? nil : handle, firstName: firstName, lastName: lastName
         )
-        return await run("Your profile was not saved.") {
+        return await run(String(localized: "Your profile was not saved.")) {
             switch try await api.updateProfile(body: .json(body)) {
             case let .ok(response): try adopt(response.body.json)
             case let .default(_, error): throw Failure(try? error.body.json.message)
@@ -28,7 +28,7 @@ extension SocialModel {
     /// Replaces the photo with the square JPEG `AvatarImage.jpeg` made. True when saved.
     func uploadAvatar(_ jpeg: Data) async -> Bool {
         guard let api else { return false }
-        return await run("Your photo was not saved.") {
+        return await run(String(localized: "Your photo was not saved.")) {
             switch try await api.uploadAvatar(body: .jpeg(HTTPBody(jpeg))) {
             case let .ok(response): try adopt(response.body.json)
             case let .default(_, error): throw Failure(try? error.body.json.message)
@@ -38,7 +38,7 @@ extension SocialModel {
 
     func removeAvatar() async {
         guard let api else { return }
-        await run("Your photo was not removed.") {
+        await run(String(localized: "Your photo was not removed.")) {
             switch try await api.deleteAvatar() {
             case let .ok(response): try adopt(response.body.json)
             case let .default(_, error): throw Failure(try? error.body.json.message)
@@ -54,7 +54,7 @@ extension SocialModel {
         let body = Components.Schemas.SocialSettings(
             shareLibraryWithFriends: shareLibrary, shareEmailWithFriends: share
         )
-        let saved = await run("That was not saved.") {
+        let saved = await run(String(localized: "That was not saved.")) {
             switch try await api.updateSocialSettings(body: .json(body)) {
             case .ok: break
             case let .default(_, error): throw Failure(try? error.body.json.message)

@@ -34,7 +34,9 @@ extension NowPlayingItem {
 
     /// "Now playing · Stremio", "Paused · Disney+", "Listening · Spotify".
     var eyebrow: String {
-        let verb = state == .paused ? "Paused" : kind == .track ? "Listening" : "Now playing"
+        let verb = state == .paused
+            ? String(localized: "Paused")
+            : kind == .track ? String(localized: "Listening") : String(localized: "Now playing")
         return "\(verb) · \(serviceName)"
     }
 

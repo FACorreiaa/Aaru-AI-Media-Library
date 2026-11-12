@@ -36,13 +36,13 @@ final class TitlePickerModel {
                 problem = nil
             case let .default(_, error):
                 hits = []
-                problem = (try? error.body.json.message) ?? "Search is not available right now."
+                problem = (try? error.body.json.message) ?? String(localized: "Search is not available right now.")
             }
         } catch is CancellationError {
             return
         } catch {
             if !Task.isCancelled {
-                problem = "Aaru could not reach the server."
+                problem = String(localized: "Aaru could not reach the server.")
             }
         }
     }

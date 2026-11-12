@@ -42,7 +42,7 @@ struct DataPage: View {
                 Text("Aaru keeps your chats until you delete them, one at a time or all at once.")
             }
         }
-        .settingsPage("Your data", problem: $model.problem)
+        .settingsPage(String(localized: "Your data"), problem: $model.problem)
         .recapStory($recap, api: api)
         .confirmationDialog(
             "Delete your chats with Aaru?",

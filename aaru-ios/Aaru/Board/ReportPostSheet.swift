@@ -121,10 +121,10 @@ private extension ReportPostSheet.Reason {
     /// The same words as the web's report dialog.
     var label: String {
         switch self {
-        case .spam: "Spam"
-        case .harassment: "Harassment"
-        case .impersonation: "Pretending to be someone"
-        case .other: "Something else"
+        case .spam: String(localized: "Spam")
+        case .harassment: String(localized: "Harassment")
+        case .impersonation: String(localized: "Pretending to be someone")
+        case .other: String(localized: "Something else")
         }
     }
 }

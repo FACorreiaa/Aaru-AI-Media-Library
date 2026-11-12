@@ -112,21 +112,23 @@ struct ProfileView: View {
         ProfileCountTiles(stats: stats, onShowKind: onShowKind)
         let kinds = ProfileTimeSplit.parts(stats.byKind)
         if !kinds.isEmpty {
-            PanelSection(title: "Where the time went") { ProfileTimeSplit(parts: kinds) }
+            PanelSection(title: String(localized: "Where the time went")) { ProfileTimeSplit(parts: kinds) }
         }
         if !stats.topGenres.isEmpty {
-            PanelSection(title: "Genres") { ProfileGenreBars(genres: stats.topGenres) }
+            PanelSection(title: String(localized: "Genres")) { ProfileGenreBars(genres: stats.topGenres) }
         }
         if !stats.mostWatched.isEmpty {
-            PanelSection(title: "Most watched") {
+            PanelSection(title: String(localized: "Most watched")) {
                 ProfileMostWatched(titles: Array(stats.mostWatched.prefix(3)), library: library)
             }
         }
         if !stats.topNetworks.isEmpty {
-            PanelSection(title: "Where you watch") { ProfileNetworkChips(networks: stats.topNetworks) }
+            PanelSection(title: String(localized: "Where you watch")) {
+                ProfileNetworkChips(networks: stats.topNetworks)
+            }
         }
         if stats.ratings.mean != nil {
-            PanelSection(title: "Ratings") { RatingsHistogram(ratings: stats.ratings) }
+            PanelSection(title: String(localized: "Ratings")) { RatingsHistogram(ratings: stats.ratings) }
         }
     }
 
@@ -258,7 +260,7 @@ private struct ProfileHeader: View {
             ProfileMedallion(account: account, size: 64)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 4) {
-                Text(account?.displayName ?? account?.handle.map { "@\($0)" } ?? "You")
+                Text(account?.displayName ?? account?.handle.map { "@\($0)" } ?? String(localized: "You"))
                     .font(.aaruDisplay(.title, weight: .semibold))
                     .foregroundStyle(Color(.ink))
                     .accessibilityAddTraits(.isHeader)

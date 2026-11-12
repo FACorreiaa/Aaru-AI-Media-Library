@@ -26,8 +26,10 @@ struct LeaderboardSection: View {
                         Text("A weekly board, just for friends")
                             .font(.aaruDisplay(.title3))
                         Text(
-                            "Join to see this week's points next to friends who joined too. It starts over every "
-                                + "Monday, and nobody outside your friends ever sees it."
+                            String(localized: """
+                            Join to see this week's points next to friends who joined too. It starts over every \
+                            Monday, and nobody outside your friends ever sees it.
+                            """)
                         )
                         .font(.subheadline)
                         .foregroundStyle(Color(.muted))
@@ -65,7 +67,7 @@ private struct BoardRow: View {
                     .background(Color(.medallion).opacity(AaruAlpha.ghost), in: .circle)
             }
             .accessibilityHidden(true)
-            Text(entry.you ? "You" : entry.user.inviteName)
+            Text(entry.you ? String(localized: "You") : entry.user.inviteName)
                 .fontWeight(entry.you ? .semibold : .regular)
                 .lineLimit(1)
             Spacer(minLength: 8)
@@ -75,6 +77,8 @@ private struct BoardRow: View {
         }
         .listRowBackground(entry.you ? Color(.accent).opacity(AaruAlpha.tint) : nil)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(entry.rank), \(entry.you ? "You" : entry.user.inviteName), \(entry.points) points")
+        .accessibilityLabel(
+            "\(entry.rank), \(entry.you ? String(localized: "You") : entry.user.inviteName), \(entry.points) points"
+        )
     }
 }

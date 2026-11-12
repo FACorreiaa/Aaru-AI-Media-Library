@@ -69,3 +69,30 @@ Distribution certificate, which the match repo does not hold. Add one, then add 
 
 **Icons** are placeholders (reed field at dusk; the beta one carries a BETA band). The real
 logo and store metadata come with the first production release.
+
+## Text and the String Catalog
+
+English only for now. Every string the app shows is in a String Catalog so a language can be
+added without touching code: `Aaru/Localizable.xcstrings` (app), `AaruWidgets/Localizable.xcstrings`
+(widgets, Live Activity) and `Aaru/InfoPlist.xcstrings` (the two permission prompts).
+
+- A literal in `Text`, `Button`, `Label` and the like is picked up as it is. Text that travels as a
+  `String` (a label helper, a `title: String` parameter, an error message) is wrapped where it is
+  written: `String(localized: "Watching")`.
+- An `Int` inside `String(localized:)` is formatted for the locale (`1,100`). For a year, a season
+  or an episode number write `\(String(number))`.
+- Names, titles, handles and provider names are data and stay as they are.
+- Xcode fills the catalogs on every build. Outside Xcode, after building both platforms into
+  `<derived>`:
+
+  ```bash
+  xcrun xcstringstool sync Aaru/Localizable.xcstrings \
+    $(find <derived>/Build/Intermediates.noindex/Aaru.build -path '*/Aaru.build/*' -name '*.stringsdata' | sed 's/^/--stringsdata /')
+  ```
+
+  and the same for `AaruWidgets/Localizable.xcstrings` with `AaruWidgetsExtension.build`.
+
+Known gaps before a second language: `HomeModel.airingLabel` and `AiringChannel.other` are still
+plain text because code compares them, and counted phrases are split by hand into one and many
+rather than using the catalog's plural variations.
+

@@ -21,7 +21,7 @@ struct StremioHistoryImport: View {
                     ContentUnavailableView {
                         Label("Stremio did not answer", systemImage: "exclamationmark.triangle")
                     } description: {
-                        Text(imports.problem ?? "Try again in a minute.")
+                        Text(imports.problem ?? String(localized: "Try again in a minute."))
                     } actions: {
                         Button("Try again") { Task { await start() } }
                     }

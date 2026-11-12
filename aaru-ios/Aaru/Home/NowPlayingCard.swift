@@ -86,9 +86,10 @@ struct NowPlayingCard: View {
     private func timeLabel(_ item: NowPlayingItem, at date: Date) -> String {
         let left = item.remaining(at: date) ?? 0
         if showsEndTime, item.state == .playing {
-            return "Ends at \(date.addingTimeInterval(left).formatted(date: .omitted, time: .shortened))"
+            let end = date.addingTimeInterval(left).formatted(date: .omitted, time: .shortened)
+            return String(localized: "Ends at \(end)")
         }
-        return "\(durationLabel(minutes: Int((left / 60).rounded(.up)))) left"
+        return String(localized: "\(durationLabel(minutes: Int((left / 60).rounded(.up)))) left")
     }
 
     /// A film or show leads with its backdrop, a video with its thumbnail, a track with its
@@ -144,9 +145,11 @@ private struct NowPlayingRow: View {
 
     private func trailing(at date: Date) -> String? {
         if item.state == .paused {
-            return "Paused"
+            return String(localized: "Paused")
         }
-        return item.remaining(at: date).map { "\(durationLabel(minutes: Int(($0 / 60).rounded(.up)))) left" }
+        return item.remaining(at: date).map {
+            String(localized: "\(durationLabel(minutes: Int(($0 / 60).rounded(.up)))) left")
+        }
     }
 }
 

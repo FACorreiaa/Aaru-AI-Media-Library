@@ -129,7 +129,8 @@ private struct AccountSummary: View {
             ProfileMedallion(account: social.account ?? account.profile, size: avatar)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
-                Text(social.displayName ?? account.profile?.displayName ?? social.handle.map { "@\($0)" } ?? "Account")
+                Text(social.displayName ?? account.profile?.displayName ?? social.handle
+                    .map { "@\($0)" } ?? String(localized: "Account"))
                     .font(.title3)
                     .foregroundStyle(Color(.ink))
                 Text(account.providers == "—" ? "Name, handle, sign-in" : "Signed in with \(account.providers)")

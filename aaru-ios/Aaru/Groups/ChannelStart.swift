@@ -24,7 +24,7 @@ struct ChannelStart: View {
             .frame(maxWidth: .infinity, minHeight: 44)
             .padding(.vertical, 4)
         } else if let problem = model.loadProblem {
-            LoadFailedView(title: "Couldn't open #\(channel.name)", message: problem) {
+            LoadFailedView(title: String(localized: "Couldn't open #\(channel.name)"), message: problem) {
                 await model.loadLatest()
             }
             .padding(.top, 40)

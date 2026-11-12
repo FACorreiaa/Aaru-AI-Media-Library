@@ -71,7 +71,10 @@ struct SharePreviewView: View {
                 description: Text("Ask whoever sent it for a new one.")
             )
         case .failed:
-            LoadFailedView(title: "This link didn't load", message: "Aaru could not reach the server.") {
+            LoadFailedView(
+                title: String(localized: "This link didn't load"),
+                message: String(localized: "Aaru could not reach the server.")
+            ) {
                 await load()
             }
         case let .ready(preview):
@@ -95,7 +98,7 @@ struct SharePreviewView: View {
             } else if let concert = preview.concert {
                 ConcertRow(concert: concert)
                 if !session.isSignedIn {
-                    signInButton("Concerts near you on Aaru", link: link)
+                    signInButton(String(localized: "Concerts near you on Aaru"), link: link)
                 }
             }
             if let problem {
@@ -130,13 +133,13 @@ struct SharePreviewView: View {
             .controlSize(.large)
             .disabled(adding)
         } else {
-            signInButton("Add to my Aaru", link: link.addingTitle())
+            signInButton(String(localized: "Add to my Aaru"), link: link.addingTitle())
         }
     }
 
     @ViewBuilder private func eventAction(_ event: SportEvent) -> some View {
         if !session.isSignedIn {
-            signInButton("Follow sports on Aaru", link: link)
+            signInButton(String(localized: "Follow sports on Aaru"), link: link)
         } else if router.sportsAvailable {
             Button {
                 openEvent = SharedEvent(id: event.id)
@@ -162,8 +165,8 @@ struct SharePreviewView: View {
 
     /// "In your library · Watching".
     private func inLibrary(_ status: LibraryStatus?, kind: MediaKind) -> String {
-        guard let status else { return "In your library" }
-        return "In your library · \(status.label(for: kind))"
+        guard let status else { return String(localized: "In your library") }
+        return String(localized: "In your library · \(status.label(for: kind))")
     }
 
     private func load() async {

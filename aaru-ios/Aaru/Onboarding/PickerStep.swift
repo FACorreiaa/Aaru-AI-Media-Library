@@ -53,7 +53,8 @@ struct PickerStep: View {
         } footer: {
             OnboardingProblem(message: model.problem) { model.problem = nil }
             OnboardingPill(
-                label: model.saveFailed ? "Try again" : kind.continueLabel(count: model.picks(of: kind).count),
+                label: model.saveFailed ? String(localized: "Try again") : kind
+                    .continueLabel(count: model.picks(of: kind).count),
                 isBusy: model.isBusy,
                 action: onContinue
             )
@@ -93,7 +94,10 @@ struct PickerStep: View {
                 .padding(.vertical, AaruSpace.block)
         case let .failed(message):
             // A failed first load is an error, not an empty catalog (UX-063).
-            LoadFailedView(title: "Couldn't load titles", message: "\(message) Search still works.") {
+            LoadFailedView(
+                title: String(localized: "Couldn't load titles"),
+                message: String(localized: "\(message) Search still works.")
+            ) {
                 await model.loadRows(kind, force: true)
             }
             .frame(minHeight: 320)

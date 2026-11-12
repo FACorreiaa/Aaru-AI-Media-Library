@@ -57,7 +57,7 @@ struct ListDetailView: View {
                 lists.problem = nil
             }
         }
-        .navigationTitle(detail?.name ?? "List")
+        .navigationTitle(detail?.name ?? String(localized: "List"))
         .searchable(text: $query, prompt: "Filter this list")
         .onChange(of: query) { shown = Paging.pageSize }
         .toolbar {
@@ -130,7 +130,7 @@ struct ListDetailView: View {
     @ViewBuilder private var state: some View {
         if let detail {
             if detail.items.isEmpty {
-                OwlUnavailableView(title: "Nothing on this list") {
+                OwlUnavailableView(title: String(localized: "Nothing on this list")) {
                     Button("Add titles") { showsSearch = true }.buttonStyle(.borderedProminent)
                 }
             } else if matching.isEmpty {
@@ -138,8 +138,8 @@ struct ListDetailView: View {
             }
         } else if loadFailed, !loading {
             LoadFailedView(
-                title: "This list didn't load",
-                message: lists.problem ?? "Aaru could not reach the server.",
+                title: String(localized: "This list didn't load"),
+                message: lists.problem ?? String(localized: "Aaru could not reach the server."),
                 retry: load
             )
         } else {

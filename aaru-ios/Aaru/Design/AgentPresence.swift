@@ -4,7 +4,7 @@ import SwiftUI
 /// Aaru is working on something for the user (a plan waiting, an import matching). Still under
 /// Reduce Motion. Never shown when nothing is in progress.
 struct AgentPresence: View {
-    var label = "Aaru is working"
+    var label = String(localized: "Aaru is working")
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var breathing = false
 

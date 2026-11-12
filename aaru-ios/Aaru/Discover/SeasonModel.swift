@@ -68,20 +68,35 @@ extension SeasonKind: @retroactive Identifiable {
 
     var label: String {
         switch self {
-        case .anime: "Anime"
-        case .showsNew: "New shows"
-        case .showsReturning: "Returning"
-        case .movies: "Movies"
+        case .anime: String(localized: "Anime")
+        case .showsNew: String(localized: "New shows")
+        case .showsReturning: String(localized: "Returning")
+        case .movies: String(localized: "Movies")
         }
     }
 
     /// "84 anime", "1 new show", "9,870 films".
     func count(_ total: Int) -> String {
         let noun = switch self {
-        case .anime: "anime"
-        case .showsNew: total == 1 ? "new show" : "new shows"
-        case .showsReturning: total == 1 ? "returning show" : "returning shows"
-        case .movies: total == 1 ? "film" : "films"
+        case .anime: String(localized: "anime")
+        case .showsNew:
+            if total == 1 {
+                String(localized: "new show")
+            } else {
+                String(localized: "new shows")
+            }
+        case .showsReturning:
+            if total == 1 {
+                String(localized: "returning show")
+            } else {
+                String(localized: "returning shows")
+            }
+        case .movies:
+            if total == 1 {
+                String(localized: "film")
+            } else {
+                String(localized: "films")
+            }
         }
         return "\(total.formatted()) \(noun)"
     }

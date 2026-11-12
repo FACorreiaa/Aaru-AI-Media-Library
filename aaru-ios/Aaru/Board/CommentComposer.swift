@@ -108,7 +108,8 @@ struct CommentComposer: View {
                 }
             }
             .focused($focused)
-            .accessibilityLabel(reply.map { "Reply to \($0.name)" } ?? "Comment on this post")
+            .accessibilityLabel(reply
+                .map { String(localized: "Reply to \($0.name)") } ?? String(localized: "Comment on this post"))
             .onKeyPress(.escape) {
                 guard reply != nil else { return .ignored }
                 reply = nil

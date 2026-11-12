@@ -20,8 +20,11 @@ struct ReadingRow: View {
 
     var body: some View {
         HomeRow(
-            title: "Reading",
-            trailing: items.count > HomeModel.readingLimit ? ("All \(items.count)", onShowAll) : nil
+            title: String(localized: "Reading"),
+            trailing: items.count > HomeModel.readingLimit ? (
+                String(localized: "All \(String(items.count))"),
+                onShowAll
+            ) : nil
         ) {
             ForEach(items.prefix(HomeModel.readingLimit)) { item in
                 NowCard(item: item, isPending: library.nowPending.contains(item.id)) { action in
@@ -44,9 +47,9 @@ struct ReadingRow: View {
     /// What one step did, for its toast; the same words as the web's.
     static func message(_ action: NowAction, title: String) -> String? {
         switch action {
-        case let .page(page): "On page \(page) of \(title)"
-        case let .chapter(chapter): "Read to chapter \(chapter) of \(title)"
-        case .finish: "Marked \(title) read"
+        case let .page(page): String(localized: "On page \(String(page)) of \(title)")
+        case let .chapter(chapter): String(localized: "Read to chapter \(String(chapter)) of \(title)")
+        case .finish: String(localized: "Marked \(title) read")
         case .tickNext: nil
         }
     }

@@ -6,11 +6,11 @@ extension HomeModel {
     /// "Dropped", or "Paused 6 weeks" for a show left alone since `since`.
     func unfinishedLabel(_ entry: UnfinishedEntry) -> String {
         switch entry.reason {
-        case .dropped: return "Dropped"
+        case .dropped: return String(localized: "Dropped")
         case .stalled:
             let days = calendar.dateComponents([.day], from: entry.since, to: now()).day ?? 0
             let weeks = max(1, days / 7)
-            return weeks == 1 ? "Paused 1 week" : "Paused \(weeks) weeks"
+            return weeks == 1 ? String(localized: "Paused 1 week") : String(localized: "Paused \(weeks) weeks")
         }
     }
 
@@ -53,8 +53,8 @@ func durationLabel(minutes: Int) -> String {
     let hours = minutes / 60
     let rest = minutes % 60
     switch (hours, rest) {
-    case (0, _): return "\(rest)m"
-    case (_, 0): return "\(hours)h"
-    default: return "\(hours)h \(rest)m"
+    case (0, _): return String(localized: "\(rest)m")
+    case (_, 0): return String(localized: "\(String(hours))h")
+    default: return String(localized: "\(String(hours))h \(rest)m")
     }
 }

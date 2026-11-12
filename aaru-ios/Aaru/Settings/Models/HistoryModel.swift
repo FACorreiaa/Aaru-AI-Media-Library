@@ -11,12 +11,12 @@ extension JournalAction {
             return agentName
         }
         if kind == "import" {
-            return "An import"
+            return String(localized: "An import")
         }
         switch actor {
-        case .user: return "You"
+        case .user: return String(localized: "You")
         case .agent: return "Aaru"
-        case .externalAgent: return "A connection"
+        case .externalAgent: return String(localized: "A connection")
         }
     }
 
@@ -80,10 +80,10 @@ final class HistoryModel {
                 hasLoaded = true
                 loadFailure = nil
             case let .default(_, error):
-                fail((try? error.body.json.message) ?? "Your history could not be loaded.")
+                fail((try? error.body.json.message) ?? String(localized: "Your history could not be loaded."))
             }
         } catch {
-            fail("Your history could not be loaded. Aaru could not reach the server.")
+            fail(String(localized: "Your history could not be loaded. Aaru could not reach the server."))
         }
     }
 
@@ -101,11 +101,11 @@ final class HistoryModel {
                 return true
             case let .default(status, error):
                 problem = status == 409
-                    ? "That was already undone."
-                    : (try? error.body.json.message) ?? "That was not undone."
+                    ? String(localized: "That was already undone.")
+                    : (try? error.body.json.message) ?? String(localized: "That was not undone.")
             }
         } catch {
-            problem = "That was not undone. Aaru could not reach the server."
+            problem = String(localized: "That was not undone. Aaru could not reach the server.")
         }
         return false
     }

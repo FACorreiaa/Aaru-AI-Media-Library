@@ -27,7 +27,7 @@ struct LastImportCard: View {
             }
             Spacer(minLength: 0)
             if job.isWorking {
-                AgentPresence(label: "Aaru is matching this import")
+                AgentPresence(label: String(localized: "Aaru is matching this import"))
             } else {
                 Image(systemName: "chevron.right")
                     .font(.footnote.weight(.semibold))

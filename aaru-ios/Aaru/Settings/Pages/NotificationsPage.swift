@@ -16,18 +16,20 @@ struct NotificationsPage: View {
             }
             .disabled(!model.hasLoaded)
         }
-        .settingsPage("Notifications", problem: $model.problem)
+        .settingsPage(String(localized: "Notifications"), problem: $model.problem)
         .task { await model.load() }
     }
 
     private var footer: String {
         var lines = [
-            "New episodes of shows you are watching, mentions in groups you have not muted, and invites. A "
-                + "mention says who tagged you and where, never what they wrote.",
-            "Requests from your connected agents always alert you.",
+            String(localized: """
+            New episodes of shows you are watching, mentions in groups you have not muted, and invites. A \
+            mention says who tagged you and where, never what they wrote.
+            """),
+            String(localized: "Requests from your connected agents always alert you."),
         ]
         #if os(macOS)
-            lines.append("Alerts go to your iPhone and your browsers.")
+            lines.append(String(localized: "Alerts go to your iPhone and your browsers."))
         #endif
         return lines.joined(separator: "\n\n")
     }

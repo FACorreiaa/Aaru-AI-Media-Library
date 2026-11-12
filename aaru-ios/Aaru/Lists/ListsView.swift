@@ -113,11 +113,16 @@ struct ListsView: View {
     @ViewBuilder private var state: some View {
         if lists.lists.isEmpty {
             if let failure = lists.loadProblem {
-                LoadFailedView(title: "Your lists didn't load", message: failure) { await lists.load() }
+                LoadFailedView(title: String(localized: "Your lists didn't load"), message: failure) {
+                    await lists.load()
+                }
             } else if !lists.hasLoaded {
                 ProgressView()
             } else {
-                OwlUnavailableView(title: "No lists yet", message: "Make one for a theme, a marathon or a book club.") {
+                OwlUnavailableView(
+                    title: String(localized: "No lists yet"),
+                    message: String(localized: "Make one for a theme, a marathon or a book club.")
+                ) {
                     Button("New list") { naming = .new }.buttonStyle(.borderedProminent)
                 }
             }
@@ -161,9 +166,9 @@ private enum ListNaming: Identifiable {
 
     var title: String {
         if case .new = self {
-            "New list"
+            String(localized: "New list")
         } else {
-            "Rename list"
+            String(localized: "Rename list")
         }
     }
 

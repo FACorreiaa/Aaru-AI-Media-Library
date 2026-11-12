@@ -16,7 +16,7 @@ enum SearchScope: String, CaseIterable, Identifiable {
     }
 
     var label: String {
-        kind?.label ?? "All"
+        kind?.label ?? String(localized: "All")
     }
 
     var searchType: Operations.SearchCatalog.Input.Query._TypePayload {
@@ -25,7 +25,7 @@ enum SearchScope: String, CaseIterable, Identifiable {
 
     /// The search field's hint: what the provider matches on.
     var prompt: String {
-        kind?.searchPrompt ?? "Title"
+        kind?.searchPrompt ?? String(localized: "Title")
     }
 }
 
@@ -33,10 +33,10 @@ extension MediaKind {
     /// The search field's hint for one kind.
     var searchPrompt: String {
         switch self {
-        case .book: "Title, author or ISBN"
-        case .manga: "Manga, manhwa or light novel"
-        case .music: "Album or artist"
-        case .film, .show, .anime: "Title"
+        case .book: String(localized: "Title, author or ISBN")
+        case .manga: String(localized: "Manga, manhwa or light novel")
+        case .music: String(localized: "Album or artist")
+        case .film, .show, .anime: String(localized: "Title")
         }
     }
 }
@@ -112,7 +112,7 @@ struct SearchView: View {
                         .listRowBackground(Color.clear)
                 }
                 if model.incomplete {
-                    Text(model.notice ?? "Some results are missing right now.")
+                    Text(model.notice ?? String(localized: "Some results are missing right now."))
                         .font(.footnote)
                         .foregroundStyle(Color(.muted))
                         .listRowBackground(Color.clear)
@@ -133,48 +133,52 @@ struct SearchView: View {
                    model.problem == nil
                 {
                     OwlUnavailableView(
-                        title: "No Results for “\(model.trimmedQuery)”",
-                        message: "Check the spelling or try a new search.",
+                        title: String(localized: "No Results for “\(model.trimmedQuery)”"),
+                        message: String(localized: "Check the spelling or try a new search."),
                         pose: .curious
                     )
                 } else if model.isSearching, model.hits.isEmpty {
                     ProgressView()
                 }
             }
-            .navigationTitle(pick?.navigationTitle ?? intoList.map { "Add to \($0.wrappedValue.name)" } ?? "Search")
+            .navigationTitle(
+                pick?.navigationTitle
+                    ?? intoList.map { String(localized: "Add to \($0.wrappedValue.name)") }
+                    ?? String(localized: "Search")
+            )
             #if os(iOS)
-                // Always showing: the sheet opens to type into, not to scroll first.
-                .searchable(
-                    text: $model.query,
-                    placement: .navigationBarDrawer(displayMode: .always),
-                    prompt: model.scope.prompt
-                )
+            // Always showing: the sheet opens to type into, not to scroll first.
+            .searchable(
+                text: $model.query,
+                placement: .navigationBarDrawer(displayMode: .always),
+                prompt: model.scope.prompt
+            )
             #else
-                .searchable(text: $model.query, prompt: model.scope.prompt)
+            .searchable(text: $model.query, prompt: model.scope.prompt)
             #endif
-                .task(id: model.key) { await model.search() }
-                .navigationDestination(for: String.self) { id in
-                    LibraryEntryDestination(id: id, api: api, library: library, lists: lists)
-                }
-                .catalogDestination(api: api, library: library, lists: lists)
-                .sheet(item: $listTarget) { hit in
-                    ListPickerSheet(
-                        ref: .init(_type: hit._type, ids: hit.ids, title: hit.title, year: hit.year),
-                        titleName: hit.title,
-                        lists: lists
-                    )
-                }
-                .toolbar {
-                    if pick == nil {
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button("Done") { dismiss() }
-                        }
-                    } else {
-                        ToolbarItem(placement: .cancellationAction) {
-                            Button("Cancel") { dismiss() }
-                        }
+            .task(id: model.key) { await model.search() }
+            .navigationDestination(for: String.self) { id in
+                LibraryEntryDestination(id: id, api: api, library: library, lists: lists)
+            }
+            .catalogDestination(api: api, library: library, lists: lists)
+            .sheet(item: $listTarget) { hit in
+                ListPickerSheet(
+                    ref: .init(_type: hit._type, ids: hit.ids, title: hit.title, year: hit.year),
+                    titleName: hit.title,
+                    lists: lists
+                )
+            }
+            .toolbar {
+                if pick == nil {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") { dismiss() }
+                    }
+                } else {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") { dismiss() }
                     }
                 }
+            }
         }
     }
 
@@ -195,7 +199,10 @@ struct SearchView: View {
     private func row(_ hit: CatalogHit) -> some View {
         let kind = MediaKind(type: hit._type, isAnime: hit.isAnime)
         if let pick {
-            TapHitRow(hit: hit, kind: kind, action: "Choose", isDone: false, isAdding: model.adding.contains(hit.id)) {
+            TapHitRow(
+                hit: hit, kind: kind, action: String(localized: "Choose"), isDone: false,
+                isAdding: model.adding.contains(hit.id)
+            ) {
                 Task {
                     if await model.choose(hit, for: pick) {
                         dismiss()
@@ -207,7 +214,7 @@ struct SearchView: View {
             TapHitRow(
                 hit: hit,
                 kind: kind,
-                action: "Add",
+                action: String(localized: "Add"),
                 isDone: intoList.wrappedValue.contains(hit),
                 isAdding: model.adding.contains(hit.id)
             ) {

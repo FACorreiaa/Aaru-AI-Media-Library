@@ -35,29 +35,29 @@ struct AboutView: View {
                 }
                 .padding(.vertical, 4)
                 CreditLink(
-                    "Air times from TVmaze",
-                    detail: "Licensed under CC BY-SA 4.0",
+                    String(localized: "Air times from TVmaze"),
+                    detail: String(localized: "Licensed under CC BY-SA 4.0"),
                     url: "https://www.tvmaze.com",
                     licence: "https://creativecommons.org/licenses/by-sa/4.0/"
                 )
-                CreditLink("Where to stream from JustWatch", url: "https://www.justwatch.com")
-                CreditLink("Anime data from AniList", url: "https://anilist.co")
+                CreditLink(String(localized: "Where to stream from JustWatch"), url: "https://www.justwatch.com")
+                CreditLink(String(localized: "Anime data from AniList"), url: "https://anilist.co")
                 CreditLink(
-                    "Anime id mappings from Fribb/anime-lists",
-                    detail: "Licensed under MIT",
+                    String(localized: "Anime id mappings from Fribb/anime-lists"),
+                    detail: String(localized: "Licensed under MIT"),
                     url: "https://github.com/Fribb/anime-lists",
                     licence: "https://opensource.org/license/mit"
                 )
-                CreditLink("Book data from Open Library", url: "https://openlibrary.org")
-                CreditLink("Music data from MusicBrainz", url: "https://musicbrainz.org")
-                CreditLink("Album rows from ListenBrainz", url: "https://listenbrainz.org")
-                CreditLink("Covers from the Cover Art Archive", url: "https://coverartarchive.org")
-                CreditLink("Concerts from Ticketmaster", url: "https://www.ticketmaster.com")
-                CreditLink("Sports data from TheSportsDB", url: "https://www.thesportsdb.com")
-                CreditLink("City search by Open-Meteo", url: "https://open-meteo.com")
+                CreditLink(String(localized: "Book data from Open Library"), url: "https://openlibrary.org")
+                CreditLink(String(localized: "Music data from MusicBrainz"), url: "https://musicbrainz.org")
+                CreditLink(String(localized: "Album rows from ListenBrainz"), url: "https://listenbrainz.org")
+                CreditLink(String(localized: "Covers from the Cover Art Archive"), url: "https://coverartarchive.org")
+                CreditLink(String(localized: "Concerts from Ticketmaster"), url: "https://www.ticketmaster.com")
+                CreditLink(String(localized: "Sports data from TheSportsDB"), url: "https://www.thesportsdb.com")
+                CreditLink(String(localized: "City search by Open-Meteo"), url: "https://open-meteo.com")
                 CreditLink(
-                    "History import from Trakt",
-                    detail: "Aaru uses Trakt but is not endorsed or certified by Trakt.",
+                    String(localized: "History import from Trakt"),
+                    detail: String(localized: "Aaru uses Trakt but is not endorsed or certified by Trakt."),
                     url: "https://trakt.tv"
                 )
             } header: {

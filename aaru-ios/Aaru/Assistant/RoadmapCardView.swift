@@ -7,10 +7,10 @@ extension Components.Schemas.ChatRoadmapItem {
     /// "Film · 2022", "Book · Jonathan Hickman": what tells one title from another of its name.
     var line: String {
         let kind = switch _type {
-        case .movie: "Film"
-        case .show: "Show"
-        case .book: "Book"
-        case .manga: "Manga"
+        case .movie: String(localized: "Film")
+        case .show: String(localized: "Show")
+        case .book: String(localized: "Book")
+        case .manga: String(localized: "Manga")
         }
         return ([kind, author] + [year.map { String($0) }]).compactMap(\.self).joined(separator: " · ")
     }
@@ -20,12 +20,13 @@ extension ChatRoadmap {
     /// "9 titles in 3 steps", or "9 titles" for a plain list.
     var summary: String {
         let titles = steps.reduce(0) { $0 + $1.items.count }
-        let counted = titles == 1 ? "1 title" : "\(titles) titles"
+        let counted = titles == 1 ? String(localized: "1 title") : String(localized: "\(titles) titles")
         let staged = steps.count(where: { $0.heading != nil })
         if staged == 0 {
             return counted
         }
-        return "\(counted) in \(staged == 1 ? "1 step" : "\(staged) steps")"
+        return staged == 1
+            ? String(localized: "\(counted) in 1 step") : String(localized: "\(counted) in \(staged) steps")
     }
 }
 
@@ -93,10 +94,10 @@ struct RoadmapCardView: View {
             HStack(spacing: AaruSpace.xsmall) {
                 Text(item.line).font(.footnote).foregroundStyle(Color(.muted))
                 if item.optional == true {
-                    tag("Optional")
+                    tag(String(localized: "Optional"))
                 }
                 if startsPair {
-                    tag("Side by side")
+                    tag(String(localized: "Side by side"))
                 }
             }
             if let note = item.note {

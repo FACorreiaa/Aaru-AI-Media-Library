@@ -35,8 +35,8 @@ struct OnAirView: View {
             ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if model.guide == nil {
             LoadFailedView(
-                title: "Couldn't load On air",
-                message: "This week's airings didn't load. Try again in a few minutes."
+                title: String(localized: "Couldn't load On air"),
+                message: String(localized: "This week's airings didn't load. Try again in a few minutes.")
             ) { await model.load() }
         } else {
             ContentUnavailableView {

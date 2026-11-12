@@ -105,6 +105,7 @@ struct WeekDayHeader: View {
             in: RoundedRectangle(cornerRadius: AaruRadius.field, style: .continuous)
         )
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(date.formatted(date: .complete, time: .omitted) + (isToday ? ", today" : ""))
+        .accessibilityLabel(date
+            .formatted(date: .complete, time: .omitted) + (isToday ? String(localized: ", today") : ""))
     }
 }

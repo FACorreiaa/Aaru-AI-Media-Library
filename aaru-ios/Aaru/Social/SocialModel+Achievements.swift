@@ -33,10 +33,10 @@ extension SocialModel {
             case .ok:
                 return true
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "Your setting was not saved."
+                problem = (try? error.body.json.message) ?? String(localized: "Your setting was not saved.")
             }
         } catch {
-            problem = "Your setting was not saved. Aaru could not reach the server."
+            problem = String(localized: "Your setting was not saved. Aaru could not reach the server.")
         }
         return false
     }

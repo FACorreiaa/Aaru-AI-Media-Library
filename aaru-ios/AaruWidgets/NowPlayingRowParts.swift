@@ -46,7 +46,9 @@
                         Button(intent: ToggleEndTimeIntent()) {
                             if showsEndTime {
                                 Text(
-                                    "\(long ? "Ends at" : "Ends") \(endsAt.formatted(date: .omitted, time: .shortened))"
+                                    long
+                                        ? "Ends at \(endsAt.formatted(date: .omitted, time: .shortened))"
+                                        : "Ends \(endsAt.formatted(date: .omitted, time: .shortened))"
                                 )
                             } else {
                                 Text(timerInterval: Date.now ... endsAt, countsDown: true, showsHours: true)
@@ -100,7 +102,11 @@
     func leftLabel(_ seconds: TimeInterval) -> String {
         let minutes = max(0, Int((seconds / 60).rounded(.up)))
         let (hours, rest) = (minutes / 60, minutes % 60)
-        return hours == 0 ? "\(rest)m" : rest == 0 ? "\(hours)h" : "\(hours)h \(rest)m"
+        return hours == 0
+            ? String(localized: "\(String(rest))m")
+            : rest == 0
+            ? String(localized: "\(String(hours))h")
+            : String(localized: "\(String(hours))h \(String(rest))m")
     }
 
     /// Mark watched on an episode or a movie row that has not ticked: a full-width button for the

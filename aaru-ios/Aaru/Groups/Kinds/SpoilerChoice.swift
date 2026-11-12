@@ -20,10 +20,13 @@ enum SpoilerChoice: Hashable {
 
     var label: String {
         switch self {
-        case .auto: "At your progress"
-        case .free: "No spoilers"
-        case .ending: "Spoils the ending"
-        case let .upTo(season, episode): "Up to \(EpisodeCode.text(season: season, episode: episode))"
+        case .auto: String(localized: "At your progress")
+        case .free: String(localized: "No spoilers")
+        case .ending: String(localized: "Spoils the ending")
+        case let .upTo(
+            season,
+            episode
+        ): String(localized: "Up to \(EpisodeCode.text(season: season, episode: episode))")
         }
     }
 
@@ -41,10 +44,10 @@ extension Components.Schemas.SpoilerStamp {
     /// "Up to S1E3" or "Spoils the ending", for the author's own messages.
     var label: String? {
         if ending == true {
-            return "Spoils the ending"
+            return String(localized: "Spoils the ending")
         }
         guard let season, let episode else { return nil }
-        return "Up to \(EpisodeCode.text(season: season, episode: episode))"
+        return String(localized: "Up to \(EpisodeCode.text(season: season, episode: episode))")
     }
 }
 

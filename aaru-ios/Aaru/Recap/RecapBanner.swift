@@ -13,7 +13,7 @@ struct RecapBanner: View {
                     Text("Your recap is ready")
                         .font(.subheadline)
                         .opacity(0.8)
-                    Text(period.month == nil ? "\(period.year) in Aaru" : period.label)
+                    Text(period.month == nil ? String(localized: "\(String(period.year)) in Aaru") : period.label)
                         .font(.aaruDisplay(.title2))
                 }
                 Spacer(minLength: 0)

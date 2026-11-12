@@ -20,12 +20,14 @@ extension ImportsModel {
     /// A Spotify or YouTube history file, checked here first: a .zip goes in one file at a time.
     func uploadListening(_ data: Data, filename: String, source: ImportFileSource) async -> ImportJob? {
         guard data.count <= Self.maxListenUploadBytes else {
-            problem = "That file is larger than 24 MB. Spotify splits its history into smaller files; "
-                + "add them one at a time."
+            problem = String(localized: """
+            That file is larger than 24 MB. Spotify splits its history into smaller files; \
+            add them one at a time.
+            """)
             return nil
         }
         guard !data.starts(with: [0x50, 0x4B]) else {
-            problem = "This is a .zip file. Unzip it and add the .json files inside, one at a time."
+            problem = String(localized: "This is a .zip file. Unzip it and add the .json files inside, one at a time.")
             return nil
         }
         return await upload(data, filename: filename, source: source)
@@ -37,7 +39,7 @@ extension ImportsModel {
         guard let api else { return nil }
         problem = nil
         let body = Components.Schemas.ListenAccount(username: username)
-        let fallback = "That \(source.title) import could not be started."
+        let fallback = String(localized: "That \(source.title) import could not be started.")
         do {
             let job: ImportJob
             if source == .lastFM {
@@ -58,7 +60,7 @@ extension ImportsModel {
             started(job)
             return job
         } catch {
-            problem = "The import did not start. Aaru could not reach the server."
+            problem = String(localized: "The import did not start. Aaru could not reach the server.")
         }
         return nil
     }
@@ -74,10 +76,10 @@ extension ImportsModel {
                 await load()
                 return true
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "The import was not undone."
+                problem = (try? error.body.json.message) ?? String(localized: "The import was not undone.")
             }
         } catch {
-            problem = "The import was not undone. Aaru could not reach the server."
+            problem = String(localized: "The import was not undone. Aaru could not reach the server.")
         }
         return false
     }

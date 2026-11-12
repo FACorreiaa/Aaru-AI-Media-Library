@@ -74,13 +74,13 @@ final class SearchModel {
             case let .default(_, error):
                 hits = []
                 incomplete = false
-                problem = (try? error.body.json.message) ?? "Search is not available right now."
+                problem = (try? error.body.json.message) ?? String(localized: "Search is not available right now.")
             }
         } catch is CancellationError {
             return
         } catch {
             if !Task.isCancelled {
-                problem = "Aaru could not reach the server."
+                problem = String(localized: "Aaru could not reach the server.")
             }
         }
     }
@@ -115,7 +115,7 @@ final class SearchModel {
         if let updated = await lists.add(ref, to: list.id) {
             return updated
         }
-        problem = lists.problem ?? "\(hit.title) could not be added to \(list.name)."
+        problem = lists.problem ?? String(localized: "\(hit.title) could not be added to \(list.name).")
         lists.problem = nil
         return nil
     }

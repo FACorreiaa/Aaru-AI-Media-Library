@@ -63,13 +63,14 @@ struct WeekCell: View {
     }
 
     private var tickLabel: String {
-        "\(entry.watched ? "Mark unwatched" : "Mark watched"): \(entry.title.title) \(entry.code)"
+        let verb = entry.watched ? String(localized: "Mark unwatched") : String(localized: "Mark watched")
+        return "\(verb): \(entry.title.title) \(entry.code)"
     }
 
     private var accessibilityText: String {
         [
             entry.title.title, entry.code, entry.episodeName, detail ?? entry.whereAndWhen,
-            entry.badge?.label, entry.watched ? "Watched" : nil,
+            entry.badge?.label, entry.watched ? String(localized: "Watched") : nil,
         ].compactMap(\.self).joined(separator: ", ")
     }
 }
@@ -153,9 +154,9 @@ extension CalendarEntry {
 
         var label: String {
             switch self {
-            case .premiere: "Premiere"
-            case .newSeason: "New season"
-            case .finale: "Finale"
+            case .premiere: String(localized: "Premiere")
+            case .newSeason: String(localized: "New season")
+            case .finale: String(localized: "Finale")
             }
         }
 

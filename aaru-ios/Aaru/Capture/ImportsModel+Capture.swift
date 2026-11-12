@@ -14,7 +14,7 @@ extension ImportsModel {
     /// AG-006: one capture. The server reads it in the background and plans it like an import.
     /// `kind` reads that kind only; the Books page sends `.book` (BOOK-001).
     func capture(_ content: CaptureContent, kind: MediaKind? = nil) async -> CaptureOutcome {
-        guard let api else { return .failed("Aaru could not take that capture.") }
+        guard let api else { return .failed(String(localized: "Aaru could not take that capture.")) }
         let body: Operations.CreateCaptureImport.Input.Body = switch content {
         case let .text(text): .json(.init(text: text))
         case let .link(url): .json(.init(url: url))
@@ -31,10 +31,10 @@ extension ImportsModel {
                 started(job)
                 return .started(job)
             case let .default(_, error):
-                return .failed((try? error.body.json.message) ?? "Aaru could not take that capture.")
+                return .failed((try? error.body.json.message) ?? String(localized: "Aaru could not take that capture."))
             }
         } catch {
-            return .failed("Aaru could not reach the server. Try again in a moment.")
+            return .failed(String(localized: "Aaru could not reach the server. Try again in a moment."))
         }
     }
 
@@ -50,10 +50,10 @@ extension ImportsModel {
                 replace(answer.job)
                 return answer
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "Match all did not finish."
+                problem = (try? error.body.json.message) ?? String(localized: "Match all did not finish.")
             }
         } catch {
-            problem = "Match all did not finish. Aaru could not reach the server."
+            problem = String(localized: "Match all did not finish. Aaru could not reach the server.")
         }
         return nil
     }
@@ -70,10 +70,10 @@ extension ImportsModel {
                 replace(answer.job)
                 return answer
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "That row could not be changed."
+                problem = (try? error.body.json.message) ?? String(localized: "That row could not be changed.")
             }
         } catch {
-            problem = "That row was not changed. Aaru could not reach the server."
+            problem = String(localized: "That row was not changed. Aaru could not reach the server.")
         }
         return nil
     }

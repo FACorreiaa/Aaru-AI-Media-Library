@@ -48,7 +48,9 @@ struct GroupsListOverlay: View {
 
     var body: some View {
         if let problem = groups.loadProblem {
-            LoadFailedView(title: "Couldn't load your groups", message: problem) { await groups.load() }
+            LoadFailedView(title: String(localized: "Couldn't load your groups"), message: problem) {
+                await groups.load()
+            }
         } else if !groups.hasLoaded {
             ProgressView()
         } else if groups.groups.isEmpty, groups.invites.isEmpty {
@@ -237,7 +239,7 @@ struct ChannelListView: View {
         .background(Color(.paper))
         .overlay {
             if detail == nil, let problem = groups.detailProblems[groupID] {
-                LoadFailedView(title: "Couldn't open this group", message: problem) {
+                LoadFailedView(title: String(localized: "Couldn't open this group"), message: problem) {
                     await groups.loadDetail(groupID)
                 }
             }

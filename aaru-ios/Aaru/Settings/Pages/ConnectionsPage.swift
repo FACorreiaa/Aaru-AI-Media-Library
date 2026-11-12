@@ -17,7 +17,7 @@ struct ConnectionsPage: View {
             MALSection(model: model)
             MusicSection(model: model, api: api)
         }
-        .settingsPage("Connections", problem: $model.problem)
+        .settingsPage(String(localized: "Connections"), problem: $model.problem)
         .refreshable { await model.load() }
         .task { await model.load() }
     }
@@ -61,7 +61,7 @@ extension View {
         perform: @escaping (AgentToken) -> Void
     ) -> some View {
         confirmationDialog(
-            "Disconnect \(token.wrappedValue?.name ?? "this connection")?",
+            "Disconnect \(token.wrappedValue?.name ?? String(localized: "this connection"))?",
             isPresented: token.isPresent,
             titleVisibility: .visible,
             presenting: token.wrappedValue
