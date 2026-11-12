@@ -48,7 +48,7 @@ go or no-go at the end; the plan is `docs/superpowers/plans/2026-11-12-owl-3d-ex
 - **First cut:** the standing owl at rest (a breath, a blink, a slow drift of the head) that looks
   toward the pointer or a touch. The other three poses, the landing hero, the first run and the
   placement audit wait for the verdict.
-- **Where the model lives:** the web loads `owl.glb` from an Aaru-owned Cloudflare bucket, never
+- **Where the model lives:** the web loads `owl.glb` from Aaru's own `cdn.aaruapp.com` (a static Worker, `docs/brand/cdn`; R2 is not enabled on the account), never
   from git; the Apple app carries `Owl.usdz` in its bundle, committed. The source GLBs stay
   outside the repo.
 - Not the owner's, chosen while planning and open to change: the motion is data

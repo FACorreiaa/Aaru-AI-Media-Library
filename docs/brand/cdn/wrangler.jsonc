@@ -1,0 +1,12 @@
+{
+  "$schema": "../../../aaru-client/node_modules/wrangler/config-schema.json",
+  // cdn.aaruapp.com: Aaru's own address for brand media that is too heavy for git (BRD-011: the
+  // 3D owl's model for the web). A Worker with static assets and no code. The files are built
+  // into docs/brand/out/cdn (git-ignored) and deployed by hand; see README.md beside this file.
+  "name": "aaru-cdn",
+  "compatibility_date": "2026-09-27",
+  "workers_dev": false,
+  "preview_urls": false,
+  "assets": { "directory": "../out/cdn" },
+  "routes": [{ "pattern": "cdn.aaruapp.com", "custom_domain": true }],
+}

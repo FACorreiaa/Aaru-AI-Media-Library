@@ -13,5 +13,5 @@ __unconfig*
 .dev.vars
 .dev.vars.*
 # The 3D owl's model for local work (BRD-011): OWL_3D_MODEL_URL=/owl3d/owl.glb in .dev.vars.
-# Shipped builds load it from Aaru's bucket, never from git.
+# Shipped builds load it from cdn.aaruapp.com, never from git.
 public/owl3d/
