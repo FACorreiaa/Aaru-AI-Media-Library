@@ -47,10 +47,11 @@ guard let captionData = try? Data(contentsOf: shots.appendingPathComponent("capt
       let captions = try? JSONDecoder().decode([String: Caption].self, from: captionData)
 else { fail("captions.json was not read.") }
 
-/// The store's size for a raw screen: iPhone 6.9", iPad 13" or a 16:10 Mac.
+/// The store's size for a raw screen: iPhone 6.3" (the size App Store Connect asks for first
+/// and scales the others from), iPad 13" or a 16:10 Mac.
 func canvas(for raw: CGSize) -> CGSize {
     if raw.width > raw.height { return CGSize(width: 2880, height: 1800) }
-    return raw.width >= 2000 ? CGSize(width: 2064, height: 2752) : CGSize(width: 1320, height: 2868)
+    return raw.width >= 2000 ? CGSize(width: 2064, height: 2752) : CGSize(width: 1206, height: 2622)
 }
 
 func text(_ string: String, size: CGFloat, weight: NSFont.Weight, hex: String) -> NSAttributedString {

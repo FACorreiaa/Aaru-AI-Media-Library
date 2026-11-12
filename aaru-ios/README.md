@@ -30,7 +30,7 @@ Each simulator must be booted with Aaru Beta signed in to the demo account: the 
 (`AaruScreenshots/StoreScreenshots.swift`, scheme "Aaru Screenshots") never signs in. It takes
 Home, Library, a title, Calendar, Discover's On air and one question to the owl, whose plan it
 discards. The framer draws each screen under its caption from
-`fastlane/screenshots/captions.json`, at the size the store takes (iPhone 6.9", iPad 13", Mac
+`fastlane/screenshots/captions.json`, at the size the store takes (iPhone 6.3", iPad 13", Mac
 16:10), into `fastlane/screenshots/en-US/`. Neither folder of pictures is tracked.
 
 `AaruScreenshots/Driver.swift` runs taps and typing from a script file (`DRIVER_SCRIPT`), for
