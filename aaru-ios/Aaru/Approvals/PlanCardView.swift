@@ -88,7 +88,7 @@ struct PlanCardView: View {
             guard let decided = await model.decide(approve: approve) else { return }
             onDecided(decided)
             guard decided.status == .applied, let actionID = decided.actionId else { return }
-            toasts?.show("Applied: \(decided.summary)") {
+            toasts?.show(String(localized: "Applied: \(decided.summary)")) {
                 let problem = await model.takeBack(actionID)
                 if problem == nil {
                     onDecided(decided)
@@ -104,20 +104,22 @@ struct PlanCardView: View {
             "\(count) \(noun)\(count == 1 ? "" : "s")"
         }
         return [
-            counts.episodes > 0 ? plural(counts.episodes, "episode") : nil,
-            counts.adds > 0 ? "\(plural(counts.adds, "title")) added" : nil,
-            counts.updates > 0 ? "\(plural(counts.updates, "item")) updated" : nil,
-            counts.removes > 0 ? "\(plural(counts.removes, "title")) removed" : nil,
+            counts.episodes > 0 ? plural(counts.episodes, String(localized: "episode")) : nil,
+            counts.adds > 0 ? String(localized: "\(plural(counts.adds, String(localized: "title"))) added") : nil,
+            counts
+                .updates > 0 ? String(localized: "\(plural(counts.updates, String(localized: "item"))) updated") : nil,
+            counts
+                .removes > 0 ? String(localized: "\(plural(counts.removes, String(localized: "title"))) removed") : nil,
         ].compactMap(\.self).joined(separator: " · ")
     }
 
     static func decided(_ plan: AgentPlan) -> String? {
         switch plan.status {
         case .pending: nil
-        case .applied: "Applied. You can undo it from History."
-        case .denied: "You said no. Nothing changed."
-        case .stale: "Your library changed since, so nothing was applied."
-        case .expired: "Expired. Nothing changed."
+        case .applied: String(localized: "Applied. You can undo it from History.")
+        case .denied: String(localized: "You said no. Nothing changed.")
+        case .stale: String(localized: "Your library changed since, so nothing was applied.")
+        case .expired: String(localized: "Expired. Nothing changed.")
         }
     }
 }

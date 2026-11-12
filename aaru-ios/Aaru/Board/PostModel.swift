@@ -41,7 +41,7 @@ final class PostModel {
                 if status == 404 {
                     unavailable = true
                 } else {
-                    problem = (try? error.body.json.message) ?? "That post could not be loaded."
+                    problem = (try? error.body.json.message) ?? String(localized: "That post could not be loaded.")
                 }
             }
             if case let .ok(response) = try await upvotersCall {
@@ -53,13 +53,13 @@ final class PostModel {
                 next = page.next
             }
         } catch {
-            problem = "That post could not be loaded. Aaru could not reach the server."
+            problem = String(localized: "That post could not be loaded. Aaru could not reach the server.")
         }
     }
 
     func loadMoreComments() async {
         guard let api, BoardRules.shouldLoadMore(next: next), let after = next else { return }
-        await run("More comments could not be loaded.") {
+        await run(String(localized: "More comments could not be loaded.")) {
             switch try await api.listBoardComments(path: .init(postId: postId), query: .init(after: after)) {
             case let .ok(response):
                 let page = try response.body.json
@@ -87,7 +87,7 @@ final class PostModel {
             body: body.trimmingCharacters(in: .whitespacesAndNewlines),
             replyTo: replyTo
         )
-        return await run("That comment was not saved.") {
+        return await run(String(localized: "That comment was not saved.")) {
             switch try await api.createBoardComment(path: .init(postId: postId), body: .json(request)) {
             case let .created(response):
                 let created = try response.body.json
@@ -100,7 +100,7 @@ final class PostModel {
 
     func deleteComment(_ id: String) async {
         guard let api else { return }
-        await run("That comment was not deleted.") {
+        await run(String(localized: "That comment was not deleted.")) {
             switch try await api.deleteBoardComment(path: .init(postId: postId, commentId: id)) {
             case .noContent:
                 comments = BoardRules.drop(comments, id: id)
@@ -116,7 +116,7 @@ final class PostModel {
     func edit(body: String) async -> Bool {
         guard let api else { return false }
         let request = Components.Schemas.BoardPostEdit(body: body.trimmingCharacters(in: .whitespacesAndNewlines))
-        return await run("That edit was not saved.") {
+        return await run(String(localized: "That edit was not saved.")) {
             switch try await api.editBoardPost(path: .init(postId: postId), body: .json(request)) {
             case let .ok(response): post = try response.body.json
             case let .default(_, error): throw Failure(try? error.body.json.message)
@@ -127,7 +127,7 @@ final class PostModel {
     /// Deletes the post. True when it is gone.
     func delete() async -> Bool {
         guard let api else { return false }
-        return await run("That post was not deleted.") {
+        return await run(String(localized: "That post was not deleted.")) {
             switch try await api.deleteBoardPost(path: .init(postId: postId)) {
             case .noContent: break
             case let .default(_, error): throw Failure(try? error.body.json.message)
@@ -141,7 +141,7 @@ final class PostModel {
         let next = BoardRules.toggleUpvote(upvotes: before.upvotes, upvotedByMe: before.upvotedByMe)
         post?.upvotes = next.upvotes
         post?.upvotedByMe = next.upvotedByMe
-        let saved = await run("That upvote was not saved.") {
+        let saved = await run(String(localized: "That upvote was not saved.")) {
             if next.upvotedByMe {
                 switch try await api.upvoteBoardPost(path: .init(postId: postId)) {
                 case .noContent: break
@@ -170,7 +170,7 @@ final class PostModel {
             .filter { !$0.isEmpty }
             .joined(separator: "\n")
         let request = Components.Schemas.ReportCreate(userId: author.userId, reason: reason, note: composed)
-        return await run("That report was not sent.") {
+        return await run(String(localized: "That report was not sent.")) {
             switch try await api.reportUser(body: .json(request)) {
             case .noContent: break
             case let .default(_, error): throw Failure(try? error.body.json.message)
@@ -203,7 +203,7 @@ final class PostModel {
         } catch let failure as Failure {
             problem = failure.message ?? fallback
         } catch {
-            problem = "\(fallback) Aaru could not reach the server."
+            problem = String(localized: "\(fallback) Aaru could not reach the server.")
         }
         return false
     }

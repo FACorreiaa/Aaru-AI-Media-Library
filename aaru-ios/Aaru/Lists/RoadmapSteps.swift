@@ -24,7 +24,7 @@ struct RoadmapSection: Identifiable {
     let missing: [String]
     let entries: [Entry]
 
-    static let addedByHand = "Added by hand"
+    static let addedByHand = String(localized: "Added by hand")
 
     static func sections(_ roadmap: ListRoadmap, items: [ListItem]) -> [RoadmapSection] {
         let key = { (id: String) in id.lowercased() }
@@ -86,10 +86,10 @@ extension RoadmapPlace {
     /// step with no heading keeps its number here.
     var line: String {
         [
-            step > 0 && heading == nil ? "Step \(step)" : nil,
+            step > 0 && heading == nil ? String(localized: "Step \(String(step))") : nil,
             note,
-            optional == true ? "Optional: joins the list only" : nil,
-            pair != nil ? "Read side by side" : nil,
+            optional == true ? String(localized: "Optional: joins the list only") : nil,
+            pair != nil ? String(localized: "Read side by side") : nil,
         ].compactMap(\.self).joined(separator: " · ")
     }
 }
@@ -148,13 +148,13 @@ struct RoadmapStepsList: View {
             }
             HStack(spacing: AaruSpace.xsmall) {
                 if startHere {
-                    tag("Start here", strong: true)
+                    tag(String(localized: "Start here"), strong: true)
                 }
                 if entry.optional {
-                    tag("Optional")
+                    tag(String(localized: "Optional"))
                 }
                 if pairStarts {
-                    tag("Read side by side")
+                    tag(String(localized: "Read side by side"))
                 }
             }
         }

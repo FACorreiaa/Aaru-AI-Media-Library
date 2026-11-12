@@ -13,9 +13,9 @@ struct CalendarFilter: Equatable {
 
         var label: String {
             switch self {
-            case .all: "All episodes"
-            case .premieres: "Premieres"
-            case .finales: "Finales"
+            case .all: String(localized: "All episodes")
+            case .premieres: String(localized: "Premieres")
+            case .finales: String(localized: "Finales")
             }
         }
     }
@@ -29,9 +29,9 @@ struct CalendarFilter: Equatable {
 
         var label: String {
             switch self {
-            case .all: "Shows and anime"
-            case .show: "Shows"
-            case .anime: "Anime"
+            case .all: String(localized: "Shows and anime")
+            case .show: String(localized: "Shows")
+            case .anime: String(localized: "Anime")
             }
         }
     }
@@ -47,8 +47,8 @@ struct CalendarFilter: Equatable {
 
         var label: String {
             switch self {
-            case .day: "Day"
-            case .channel: "Channel"
+            case .day: String(localized: "Day")
+            case .channel: String(localized: "Channel")
             }
         }
     }
@@ -92,11 +92,16 @@ struct MissedShow: Identifiable {
 
     /// "3 episodes · 2 h 15 min", the time when every runtime is known.
     var line: String {
-        var parts = ["\(episodes.count) episode\(episodes.count == 1 ? "" : "s")"]
+        var parts = [
+            episodes.count == 1 ? String(localized: "1 episode") : String(localized: "\(episodes.count) episodes"),
+        ]
         let minutes = episodes.compactMap(\.runtimeMinutes)
         if minutes.count == episodes.count {
             let total = minutes.reduce(0, +)
-            parts.append(total >= 60 ? "\(total / 60) h \(total % 60) min" : "\(total) min")
+            parts.append(
+                total >= 60
+                    ? String(localized: "\(total / 60) h \(total % 60) min") : String(localized: "\(total) min")
+            )
         }
         return parts.joined(separator: " · ")
     }

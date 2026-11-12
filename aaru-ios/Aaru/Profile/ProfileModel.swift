@@ -72,25 +72,27 @@ final class ProfileModel {
             "\(count.formatted()) \(count == 1 ? one : one + "s")"
         }
         switch (days, hours) {
-        case (0, 0): return unit(minutes, "minute")
-        case (0, _): return unit(hours, "hour")
-        case (_, 0): return unit(days, "day")
-        default: return "\(unit(days, "day")), \(unit(hours, "hour"))"
+        case (0, 0): return unit(minutes, String(localized: "minute"))
+        case (0, _): return unit(hours, String(localized: "hour"))
+        case (_, 0): return unit(days, String(localized: "day"))
+        default: return "\(unit(days, String(localized: "day"))), \(unit(hours, String(localized: "hour")))"
         }
     }
 
     /// "990 hours · 4,812 episodes", leaving out what is zero.
     nonisolated static func totalsLine(minutes: Int, episodes: Int) -> String {
         let hours = minutes / 60
+        let hourWord = hours == 1 ? String(localized: "hour") : String(localized: "hours")
+        let episodeWord = episodes == 1 ? String(localized: "episode") : String(localized: "episodes")
         return [
-            hours > 0 ? "\(hours.formatted()) \(hours == 1 ? "hour" : "hours")" : nil,
-            episodes > 0 ? "\(episodes.formatted()) \(episodes == 1 ? "episode" : "episodes")" : nil,
+            hours > 0 ? "\(hours.formatted()) \(hourWord)" : nil,
+            episodes > 0 ? "\(episodes.formatted()) \(episodeWord)" : nil,
         ].compactMap(\.self).joined(separator: " · ")
     }
 
     /// "In Aaru since Oct 2026".
     nonisolated static func sinceLine(_ date: Date) -> String {
-        "In Aaru since \(date.formatted(.dateTime.month(.abbreviated).year()))"
+        String(localized: "In Aaru since \(date.formatted(.dateTime.month(.abbreviated).year()))")
     }
 
     /// Two letters from the display name, else the handle's first, else nil.

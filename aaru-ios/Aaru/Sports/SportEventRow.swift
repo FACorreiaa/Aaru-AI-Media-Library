@@ -150,7 +150,7 @@ private struct SideLine: View {
     var body: some View {
         HStack(spacing: 8) {
             SportBadge(url: side?.badgeUrl, size: 20)
-            Text(side?.name ?? "TBD")
+            Text(side?.name ?? String(localized: "TBD"))
                 .font(.subheadline.weight(winner ? .semibold : .regular))
                 .foregroundStyle(Color(.ink))
                 .lineLimit(1)

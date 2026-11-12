@@ -114,16 +114,23 @@ struct KindBreakdown: View {
     private func detail(_ entry: Components.Schemas.StatsKind) -> String {
         // Albums have no episodes and no minutes: only how many were listened to.
         if entry.kind == .album {
-            return entry.finished == 1 ? "1 album listened" : "\(entry.finished) albums listened"
+            return entry.finished == 1
+                ? String(localized: "1 album listened")
+                : String(localized: "\(String(entry.finished)) albums listened")
         }
-        var parts = ["\(entry.finished) finished"]
+        var parts = [String(localized: "\(String(entry.finished)) finished")]
         if entry.episodes > 0 {
-            parts.append(entry.episodes == 1 ? "1 episode" : "\(entry.episodes) episodes")
+            parts.append(
+                entry.episodes == 1
+                    ? String(localized: "1 episode")
+                    : String(localized: "\(String(entry.episodes)) episodes")
+            )
         }
         if entry.minutes > 0 {
             parts.append(durationLabel(minutes: entry.minutes))
         }
-        return entry.finished == 0 && parts.count == 1 ? "Nothing yet" : parts.joined(separator: " · ")
+        return entry.finished == 0 && parts.count == 1 ? String(localized: "Nothing yet") : parts
+            .joined(separator: " · ")
     }
 }
 
@@ -155,7 +162,11 @@ struct TopTitles: View {
 
     private func detail(_ entry: StatsTitle) -> String {
         [
-            entry.episodes > 0 ? (entry.episodes == 1 ? "1 episode" : "\(entry.episodes) episodes") : nil,
+            entry.episodes > 0
+                ? (entry.episodes == 1
+                    ? String(localized: "1 episode")
+                    : String(localized: "\(String(entry.episodes)) episodes"))
+                : nil,
             entry.minutes > 0 ? durationLabel(minutes: entry.minutes) : nil,
         ].compactMap(\.self).joined(separator: " · ")
     }
@@ -170,8 +181,12 @@ struct RatingsHistogram: View {
         VStack(alignment: .leading, spacing: AaruSpace.medium) {
             if let mean = ratings.mean {
                 Text(
-                    "Average \(RecapDeck.ratingLabel(mean)) from "
-                        + (ratings.count == 1 ? "1 rating" : "\(ratings.count) ratings")
+                    ratings.count == 1
+                        ? String(localized: "Average \(RecapDeck.ratingLabel(mean)) from 1 rating")
+                        :
+                        String(
+                            localized: "Average \(RecapDeck.ratingLabel(mean)) from \(String(ratings.count)) ratings"
+                        )
                 )
                 .font(.footnote)
                 .foregroundStyle(Color(.muted))

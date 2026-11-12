@@ -34,8 +34,8 @@ struct ListsScreen: View {
                                 .id(selection)
                         } else {
                             OwlUnavailableView(
-                                title: "Choose a list",
-                                message: "Pick one from the lists, or make a new one."
+                                title: String(localized: "Choose a list"),
+                                message: String(localized: "Pick one from the lists, or make a new one.")
                             )
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .background(Color(.paper))

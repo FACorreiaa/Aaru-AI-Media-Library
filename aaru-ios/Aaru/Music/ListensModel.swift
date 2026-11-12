@@ -35,12 +35,12 @@ final class RecentListensModel {
                 next = page.next
                 problem = nil
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "Your listens could not be loaded."
+                problem = (try? error.body.json.message) ?? String(localized: "Your listens could not be loaded.")
             }
         } catch is CancellationError {
             return
         } catch {
-            problem = "Your listens could not be loaded. Aaru could not reach the server."
+            problem = String(localized: "Your listens could not be loaded. Aaru could not reach the server.")
         }
     }
 }
@@ -85,7 +85,7 @@ final class TopListensModel {
         } catch is CancellationError {
             return
         } catch {
-            problem = "The top list could not be loaded."
+            problem = String(localized: "The top list could not be loaded.")
         }
     }
 }

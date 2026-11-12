@@ -147,9 +147,12 @@ struct TitleCardRow: View {
                 .clipShape(RoundedRectangle(cornerRadius: AaruRadius.thumb, style: .continuous))
             VStack(alignment: .leading, spacing: 2) {
                 Text(title.title).font(.subheadline.weight(.semibold)).lineLimit(2)
-                Text([title.year.map(String.init), mine.map { "You: \($0.summary(for: title.mediaKind))" }]
-                    .compactMap(\.self)
-                    .joined(separator: " · "))
+                Text([
+                    title.year.map(String.init),
+                    mine.map { String(localized: "You: \($0.summary(for: title.mediaKind))") },
+                ]
+                .compactMap(\.self)
+                .joined(separator: " · "))
                     .font(.caption)
                     .foregroundStyle(Color(.muted))
                     .lineLimit(2)

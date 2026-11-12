@@ -92,16 +92,16 @@ private struct BadgeCell: View {
 
     private var label: String {
         if secret {
-            return "Hidden badge, not yet earned"
+            return String(localized: "Hidden badge, not yet earned")
         }
         var parts = [badge.name ?? ""]
         if let word = BadgeGlyph.tierWord(badge.tier, of: badge.maxTier) {
             parts.append(word)
         } else if badge.earned {
-            parts.append("earned")
+            parts.append(String(localized: "earned"))
         }
         if let progress = badge.progress {
-            parts.append("\(progress.current) of \(progress.target)")
+            parts.append(String(localized: "\(String(progress.current)) of \(String(progress.target))"))
         }
         return parts.joined(separator: ", ")
     }
@@ -156,7 +156,7 @@ private struct BadgeDetailSheet: View {
             }
             .scrollContentBackground(.hidden)
             .background(Color(.paper))
-            .navigationTitle(badge.name ?? "Badge")
+            .navigationTitle(badge.name ?? String(localized: "Badge"))
             #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)
             #endif

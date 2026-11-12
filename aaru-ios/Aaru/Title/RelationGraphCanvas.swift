@@ -136,14 +136,14 @@ extension Components.Schemas.Relation {
     var edgeLabel: String? {
         switch self {
         case .sequel, .prequel: nil
-        case .adaptation: "adapted"
-        case .source: "source"
-        case .sideStory: "side story"
-        case .parent: "main story"
-        case .spinOff: "spin-off"
-        case .alternative: "other version"
-        case .summary: "recap"
-        case .other: "related"
+        case .adaptation: String(localized: "adapted")
+        case .source: String(localized: "source")
+        case .sideStory: String(localized: "side story")
+        case .parent: String(localized: "main story")
+        case .spinOff: String(localized: "spin-off")
+        case .alternative: String(localized: "other version")
+        case .summary: String(localized: "recap")
+        case .other: String(localized: "related")
         }
     }
 }

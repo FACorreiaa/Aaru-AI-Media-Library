@@ -101,8 +101,13 @@ struct TitleYourLayer: View {
             }
             if entry.title._type == .manga {
                 Divider()
-                countField("Chapter", text: $chapter, total: entry.title.chapterCount, field: .chapter)
-                countField("Volume", text: $volume, total: entry.title.volumeCount, field: .volume)
+                countField(
+                    String(localized: "Chapter"),
+                    text: $chapter,
+                    total: entry.title.chapterCount,
+                    field: .chapter
+                )
+                countField(String(localized: "Volume"), text: $volume, total: entry.title.volumeCount, field: .volume)
             }
         }
         .panel()
@@ -256,8 +261,12 @@ struct TitleSeasons: View {
                 }
             }
         } else if model.loadFailed {
-            LoadFailedView(title: "Episodes didn't load", message: "Aaru could not reach the server.", retry: retry)
-                .panel()
+            LoadFailedView(
+                title: String(localized: "Episodes didn't load"),
+                message: String(localized: "Aaru could not reach the server."),
+                retry: retry
+            )
+            .panel()
         } else {
             ProgressView().frame(maxWidth: .infinity).panel()
         }

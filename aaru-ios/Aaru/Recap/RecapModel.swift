@@ -41,13 +41,13 @@ final class RecapModel {
                 query: .init(year: period.year, month: period.month, tz: timeZone.identifier)
             )
             guard case let .ok(response) = output else {
-                problem = "Your recap could not be loaded."
+                problem = String(localized: "Your recap could not be loaded.")
                 return
             }
             try apply(response.body.json)
             problem = nil
         } catch {
-            problem = "Aaru could not reach the server."
+            problem = String(localized: "Aaru could not reach the server.")
         }
     }
 

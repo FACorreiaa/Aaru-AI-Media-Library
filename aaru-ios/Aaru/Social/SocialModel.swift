@@ -68,10 +68,10 @@ final class SocialModel {
     static func handleProblem(_ handle: String) -> String? {
         let handle = normalized(handle)
         if handle.isEmpty {
-            return "Enter a handle."
+            return String(localized: "Enter a handle.")
         }
         guard handle.wholeMatch(of: /[a-z0-9_]{3,20}/) != nil else {
-            return "Use 3–20 letters, numbers or underscores."
+            return String(localized: "Use 3–20 letters, numbers or underscores.")
         }
         return nil
     }
@@ -122,7 +122,7 @@ final class SocialModel {
             hasLoaded = true
             loadProblem = nil
         } catch {
-            failLoad("Your friends could not be loaded. Aaru could not reach the server.")
+            failLoad(String(localized: "Your friends could not be loaded. Aaru could not reach the server."))
         }
     }
 
@@ -139,13 +139,13 @@ final class SocialModel {
         }
         guard let api else { return false }
         let body = Components.Schemas.FriendRequestCreate(handle: Self.normalized(handle))
-        return await run("That request was not sent.") {
+        return await run(String(localized: "That request was not sent.")) {
             switch try await api.sendFriendRequest(body: .json(body)) {
             case let .ok(response):
                 let view = try response.body.json
                 notice = view.relationship == .friend
-                    ? "You and @\(view.user.handle) are friends."
-                    : "Request sent to @\(view.user.handle)."
+                    ? String(localized: "You and @\(view.user.handle) are friends.")
+                    : String(localized: "Request sent to @\(view.user.handle).")
             case let .default(_, error): throw Failure(try? error.body.json.message)
             }
             await load()
@@ -154,9 +154,9 @@ final class SocialModel {
 
     func accept(_ request: FriendRequest) async {
         guard let api else { return }
-        await run("That request could not be accepted.") {
+        await run(String(localized: "That request could not be accepted.")) {
             switch try await api.acceptFriendRequest(path: .init(id: request.id)) {
-            case let .ok(response): notice = try "You and @\(response.body.json.handle) are friends."
+            case let .ok(response): notice = try String(localized: "You and @\(response.body.json.handle) are friends.")
             case let .default(_, error): throw Failure(try? error.body.json.message)
             }
             await load()
@@ -166,7 +166,7 @@ final class SocialModel {
     /// Declines a request to the user, or cancels one they sent.
     func withdraw(_ request: FriendRequest) async {
         guard let api else { return }
-        await run("That request is already gone.") {
+        await run(String(localized: "That request is already gone.")) {
             switch try await api.withdrawFriendRequest(path: .init(id: request.id)) {
             case .noContent: break
             case let .default(_, error): throw Failure(try? error.body.json.message)
@@ -177,7 +177,7 @@ final class SocialModel {
 
     func remove(_ friend: SocialUser) async {
         guard let api else { return }
-        await run("That friend was not removed.") {
+        await run(String(localized: "That friend was not removed.")) {
             switch try await api.removeFriend(path: .init(userId: friend.userId)) {
             case .noContent: break
             case let .default(_, error): throw Failure(try? error.body.json.message)
@@ -188,7 +188,7 @@ final class SocialModel {
 
     func block(_ person: SocialUser) async {
         guard let api else { return }
-        await run("That person was not blocked.") {
+        await run(String(localized: "That person was not blocked.")) {
             switch try await api.blockUser(path: .init(userId: person.userId)) {
             case .noContent: break
             case let .default(_, error): throw Failure(try? error.body.json.message)
@@ -199,7 +199,7 @@ final class SocialModel {
 
     func unblock(_ person: SocialUser) async {
         guard let api else { return }
-        await run("That person was not unblocked.") {
+        await run(String(localized: "That person was not unblocked.")) {
             switch try await api.unblockUser(path: .init(userId: person.userId)) {
             case .noContent: break
             case let .default(_, error): throw Failure(try? error.body.json.message)
@@ -255,7 +255,7 @@ final class SocialModel {
         } catch let failure as Failure {
             problem = failure.message ?? fallback
         } catch {
-            problem = "\(fallback) Aaru could not reach the server."
+            problem = String(localized: "\(fallback) Aaru could not reach the server.")
         }
         return false
     }
@@ -267,7 +267,7 @@ extension SocialModel {
 
     func loadEarlierActivity() async {
         guard let api, let before = activityNext else { return }
-        await run("Earlier activity could not be loaded.") {
+        await run(String(localized: "Earlier activity could not be loaded.")) {
             switch try await api.listFriendActivity(query: .init(before: before)) {
             case let .ok(response):
                 let page = try response.body.json
@@ -283,7 +283,7 @@ extension SocialModel {
         guard let api else { return }
         let previous = shareLibrary
         shareLibrary = share
-        let saved = await run("Your sharing setting was not saved.") {
+        let saved = await run(String(localized: "Your sharing setting was not saved.")) {
             switch try await api.updateSocialSettings(body: .json(.init(shareLibraryWithFriends: share))) {
             case .ok: break
             case let .default(_, error): throw Failure(try? error.body.json.message)
@@ -305,7 +305,7 @@ extension SocialModel {
         let chosen = item.myReaction == emoji ? nil : emoji
         let before = activity[index]
         activity[index] = Self.reacted(item, chosen)
-        let saved = await run("That reaction was not saved.") {
+        let saved = await run(String(localized: "That reaction was not saved.")) {
             if let chosen, let value = Components.Schemas.ReactionSet.EmojiPayload(rawValue: chosen) {
                 switch try await api.setActivityReaction(path: .init(id: item.id), body: .json(.init(emoji: value))) {
                 case .noContent: break
@@ -328,7 +328,7 @@ extension SocialModel {
         guard let api else { return }
         let before = recommendations
         recommendations.removeAll { $0.id == item.id }
-        let saved = await run("That recommendation is gone.") {
+        let saved = await run(String(localized: "That recommendation is gone.")) {
             if add {
                 switch try await api.addRecommendation(path: .init(id: item.id)) {
                 case .noContent: break
@@ -346,7 +346,7 @@ extension SocialModel {
         }
         if add, saved {
             let kind = MediaKind(type: item.title._type, isAnime: item.title.isAnime)
-            notice = "\(item.title.title) is on your \(LibraryStatus.wishlist.label(for: kind))."
+            notice = String(localized: "\(item.title.title) is on your \(LibraryStatus.wishlist.label(for: kind)).")
         }
     }
 
@@ -355,7 +355,7 @@ extension SocialModel {
         guard let api else { return false }
         let note = note.trimmingCharacters(in: .whitespacesAndNewlines)
         let body = Components.Schemas.RecommendationCreate(to: friends, title: ref, note: note.isEmpty ? nil : note)
-        return await run("That recommendation was not sent.") {
+        return await run(String(localized: "That recommendation was not sent.")) {
             switch try await api.recommendTitle(body: .json(body)) {
             case .noContent: break
             case let .default(_, error): throw Failure(try? error.body.json.message)
@@ -370,7 +370,7 @@ extension SocialModel {
         guard let api else { return nil }
         let ref = title.map { MediaRef(_type: $0._type, ids: $0.ids, title: $0.title, year: $0.year) }
         var made: FriendInvite?
-        await run("The invite was not made.") {
+        await run(String(localized: "The invite was not made.")) {
             switch try await api.createFriendInvite(body: .json(.init(title: ref))) {
             case let .ok(response): made = try response.body.json
             case let .default(_, error): throw Failure(try? error.body.json.message)
@@ -382,7 +382,7 @@ extension SocialModel {
 
     func revoke(_ invite: FriendInvite) async {
         guard let api else { return }
-        await run("That invite is already gone.") {
+        await run(String(localized: "That invite is already gone.")) {
             switch try await api.revokeFriendInvite(path: .init(code: invite.code)) {
             case .noContent: break
             case let .default(_, error): throw Failure(try? error.body.json.message)

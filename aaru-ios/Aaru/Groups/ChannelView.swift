@@ -176,7 +176,7 @@ struct ChannelView: View {
                 }
             })) {
                 if let message = reporting, let author = message.author {
-                    ReportPostSheet(noun: "message", authorName: author.inviteName) { reason, note in
+                    ReportPostSheet(noun: String(localized: "message"), authorName: author.inviteName) { reason, note in
                         await groups.report(message, by: author, reason: reason, note: note)
                     }
                 }

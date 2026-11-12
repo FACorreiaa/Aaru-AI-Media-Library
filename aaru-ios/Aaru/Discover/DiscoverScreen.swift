@@ -21,9 +21,9 @@ struct DiscoverScreen: View {
 
         var label: String {
             switch self {
-            case .today: "Today"
-            case .onAir: "On air"
-            case .seasons: "Seasons"
+            case .today: String(localized: "Today")
+            case .onAir: String(localized: "On air")
+            case .seasons: String(localized: "Seasons")
             }
         }
     }
@@ -134,8 +134,8 @@ struct DiscoverScreen: View {
     /// Rows with a fuller view of their own: this season's anime and what is on the air.
     private func trailing(for row: String) -> (label: String, action: () -> Void)? {
         switch row {
-        case "anime_season": ("All seasons", { showSeasons(.anime) })
-        case "tv_on_air": ("By channel", { section = .onAir })
+        case "anime_season": (String(localized: "All seasons"), { showSeasons(.anime) })
+        case "tv_on_air": (String(localized: "By channel"), { section = .onAir })
         default: nil
         }
     }
@@ -162,8 +162,8 @@ struct DiscoverScreen: View {
         } else if rows.isEmpty, model.problem != nil {
             // A failed first load is an error, not an empty catalog (UX-063).
             LoadFailedView(
-                title: "Couldn't load Discover",
-                message: "The catalog rows didn't load. Search still works."
+                title: String(localized: "Couldn't load Discover"),
+                message: String(localized: "The catalog rows didn't load. Search still works.")
             ) { await model.load() }
         } else if rows.isEmpty {
             ContentUnavailableView {

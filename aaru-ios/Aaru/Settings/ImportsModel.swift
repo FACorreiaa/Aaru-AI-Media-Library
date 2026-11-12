@@ -3,14 +3,6 @@ import Foundation
 import Observation
 import OpenAPIRuntime
 
-typealias ImportJob = Components.Schemas.ImportJob
-typealias ImportDetail = Components.Schemas.ImportDetail
-typealias ImportRow = Components.Schemas.ImportRow
-/// A row matched by hand (IMP-011): the job's new counts and the row as it now stands.
-typealias ResolvedImportRow = Operations.ResolveImportRow.Output.Ok.Body.JsonPayload
-
-typealias ImportFileSource = Operations.CreateCSVImport.Input.Query.SourcePayload
-
 /// APP-007: the user's imports. Upload a file, watch it get matched, approve the plan.
 @MainActor
 @Observable
@@ -50,7 +42,7 @@ final class ImportsModel {
                 hasLoaded = true
             }
         } catch {
-            problem = "Your imports could not be loaded. Aaru could not reach the server."
+            problem = String(localized: "Your imports could not be loaded. Aaru could not reach the server.")
         }
     }
 
@@ -68,10 +60,10 @@ final class ImportsModel {
                 jobs.insert(job, at: 0)
                 return job
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "That file could not be imported."
+                problem = (try? error.body.json.message) ?? String(localized: "That file could not be imported.")
             }
         } catch {
-            problem = "That file could not be uploaded. Aaru could not reach the server."
+            problem = String(localized: "That file could not be uploaded. Aaru could not reach the server.")
         }
         return nil
     }
@@ -93,10 +85,11 @@ final class ImportsModel {
                 jobs.insert(job, at: 0)
                 return job
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "That AniList list could not be imported."
+                problem = (try? error.body.json.message) ??
+                    String(localized: "That AniList list could not be imported.")
             }
         } catch {
-            problem = "The import did not start. Aaru could not reach the server."
+            problem = String(localized: "The import did not start. Aaru could not reach the server.")
         }
         return nil
     }
@@ -114,10 +107,10 @@ final class ImportsModel {
                 jobs.insert(job, at: 0)
                 return job
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "Those shows could not be imported."
+                problem = (try? error.body.json.message) ?? String(localized: "Those shows could not be imported.")
             }
         } catch {
-            problem = "The import did not start. Aaru could not reach the server."
+            problem = String(localized: "The import did not start. Aaru could not reach the server.")
         }
         return nil
     }
@@ -133,10 +126,10 @@ final class ImportsModel {
                 jobs.insert(job, at: 0)
                 return job
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "That CAT link could not be imported."
+                problem = (try? error.body.json.message) ?? String(localized: "That CAT link could not be imported.")
             }
         } catch {
-            problem = "The import did not start. Aaru could not reach the server."
+            problem = String(localized: "The import did not start. Aaru could not reach the server.")
         }
         return nil
     }
@@ -150,10 +143,11 @@ final class ImportsModel {
             case let .ok(response):
                 return try response.body.json
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "Stremio could not be reached. Try again in a minute."
+                problem = (try? error.body.json.message) ??
+                    String(localized: "Stremio could not be reached. Try again in a minute.")
             }
         } catch {
-            problem = "Stremio could not be reached. Aaru could not reach the server."
+            problem = String(localized: "Stremio could not be reached. Aaru could not reach the server.")
         }
         return nil
     }
@@ -176,7 +170,8 @@ final class ImportsModel {
                 jobs.insert(job, at: 0)
                 return .imported(job)
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "Your Stremio history could not be imported."
+                problem = (try? error.body.json.message) ??
+                    String(localized: "Your Stremio history could not be imported.")
             }
         } catch {
             // A dropped connection while waiting is not the end: ask again on the next tick.
@@ -201,7 +196,7 @@ final class ImportsModel {
                 return detail
             }
         } catch {
-            problem = "Aaru could not reach the server."
+            problem = String(localized: "Aaru could not reach the server.")
         }
         return nil
     }
@@ -216,10 +211,10 @@ final class ImportsModel {
                 replace(job)
                 return job
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "The import was not applied."
+                problem = (try? error.body.json.message) ?? String(localized: "The import was not applied.")
             }
         } catch {
-            problem = "The import was not applied. Aaru could not reach the server."
+            problem = String(localized: "The import was not applied. Aaru could not reach the server.")
         }
         return nil
     }
@@ -239,10 +234,11 @@ final class ImportsModel {
                 replace(resolved.job)
                 return resolved
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "\(hit.title) could not be matched to that row."
+                problem = (try? error.body.json.message) ??
+                    String(localized: "\(hit.title) could not be matched to that row.")
             }
         } catch {
-            problem = "\(hit.title) was not matched. Aaru could not reach the server."
+            problem = String(localized: "\(hit.title) was not matched. Aaru could not reach the server.")
         }
         return nil
     }
@@ -255,10 +251,10 @@ final class ImportsModel {
                 jobs.removeAll { $0.id == id }
                 return true
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "The import was not discarded."
+                problem = (try? error.body.json.message) ?? String(localized: "The import was not discarded.")
             }
         } catch {
-            problem = "Aaru could not reach the server."
+            problem = String(localized: "Aaru could not reach the server.")
         }
         return false
     }
@@ -295,7 +291,7 @@ extension ImportsModel {
             }
         }
         guard var data = try? Data(contentsOf: url) else {
-            problem = "That file could not be read."
+            problem = String(localized: "That file could not be read.")
             return nil
         }
         var filename = url.lastPathComponent
@@ -307,10 +303,10 @@ extension ImportsModel {
                 data = try Gunzip.decompress(data, limit: Self.maxUploadBytes)
                 filename = filename.hasSuffix(".gz") ? String(filename.dropLast(3)) : filename
             } catch Gunzip.Failure.tooLarge {
-                problem = "That file is larger than 5 MB unpacked. Check it is the right export."
+                problem = String(localized: "That file is larger than 5 MB unpacked. Check it is the right export.")
                 return nil
             } catch {
-                problem = "That file could not be unpacked. Upload the .xml file instead."
+                problem = String(localized: "That file could not be unpacked. Upload the .xml file instead.")
                 return nil
             }
         }
@@ -339,9 +335,9 @@ extension ImportsModel {
             {
                 return page
             }
-            problem = "Trakt is not available right now. Try again later."
+            problem = String(localized: "Trakt is not available right now. Try again later.")
         } catch {
-            problem = "Trakt could not be reached. Aaru could not reach the server."
+            problem = String(localized: "Trakt could not be reached. Aaru could not reach the server.")
         }
         return nil
     }
@@ -354,8 +350,10 @@ extension ImportsModel {
         case "connected": await loadTrakt()
         case "denied": break
         default:
-            problem = "Trakt could not finish connecting. Free Trakt accounts can connect two apps; "
-                + "disconnect one on trakt.tv, or try again."
+            problem = String(localized: """
+            Trakt could not finish connecting. Free Trakt accounts can connect two apps; \
+            disconnect one on trakt.tv, or try again.
+            """)
         }
     }
 
@@ -371,10 +369,10 @@ extension ImportsModel {
                 jobs.insert(job, at: 0)
                 return job
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "That Trakt import could not be started."
+                problem = (try? error.body.json.message) ?? String(localized: "That Trakt import could not be started.")
             }
         } catch {
-            problem = "The import did not start. Aaru could not reach the server."
+            problem = String(localized: "The import did not start. Aaru could not reach the server.")
         }
         return nil
     }
@@ -389,10 +387,10 @@ extension ImportsModel {
             case .noContent:
                 trakt = .init(connected: false)
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "Trakt was not disconnected. Try again."
+                problem = (try? error.body.json.message) ?? String(localized: "Trakt was not disconnected. Try again.")
             }
         } catch {
-            problem = "Trakt was not disconnected. Aaru could not reach the server."
+            problem = String(localized: "Trakt was not disconnected. Aaru could not reach the server.")
         }
     }
 }

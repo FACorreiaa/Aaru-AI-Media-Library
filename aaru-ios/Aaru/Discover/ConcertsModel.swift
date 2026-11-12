@@ -22,7 +22,7 @@ final class ConcertsModel {
         }
 
         var label: String {
-            self == .list ? "List" : "Map"
+            self == .list ? String(localized: "List") : String(localized: "Map")
         }
 
         var systemImage: String {
@@ -122,7 +122,7 @@ final class ConcertsModel {
     /// The centre the Near list was searched around, for the map.
     var centre: (name: String, point: ConcertPoint)? {
         if let point {
-            return ("Your approximate location", point)
+            return (String(localized: "Your approximate location"), point)
         }
         guard let place = pages.first?.place ?? savedPlace else { return nil }
         return (place.name, ConcertPoint(latitude: place.latitude, longitude: place.longitude))
@@ -202,7 +202,7 @@ final class ConcertsModel {
         case let .page(page) where query == self.query:
             pages.append(page)
         case .failed:
-            problem = "More concerts could not be loaded."
+            problem = String(localized: "More concerts could not be loaded.")
         default:
             break
         }
@@ -227,9 +227,9 @@ final class ConcertsModel {
             point = try await ApproximateLocation.current()
             problem = nil
         } catch ApproximateLocation.Failure.denied {
-            problem = "Aaru can't use your location. Allow it in Settings, or choose a city."
+            problem = String(localized: "Aaru can't use your location. Allow it in Settings, or choose a city.")
         } catch {
-            problem = "Your location could not be found. Try again, or choose a city."
+            problem = String(localized: "Your location could not be found. Try again, or choose a city.")
         }
     }
 
@@ -266,10 +266,10 @@ final class ConcertsModel {
                 problem = nil
                 return true
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "That city was not saved."
+                problem = (try? error.body.json.message) ?? String(localized: "That city was not saved.")
             }
         } catch {
-            problem = "That city was not saved. Aaru could not reach the server."
+            problem = String(localized: "That city was not saved. Aaru could not reach the server.")
         }
         return false
     }
@@ -283,10 +283,10 @@ final class ConcertsModel {
                 setting?.place = nil
                 problem = nil
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "The city was not removed."
+                problem = (try? error.body.json.message) ?? String(localized: "The city was not removed.")
             }
         } catch {
-            problem = "The city was not removed. Aaru could not reach the server."
+            problem = String(localized: "The city was not removed. Aaru could not reach the server.")
         }
     }
 
@@ -322,12 +322,15 @@ extension ConcertsModel {
     /// "Near Lisboa", "Near you"; "Radiohead near Lisboa", "Radiohead anywhere" while searching.
     var nearTitle: String {
         guard let artist = searchedArtist?.name else { return nearScopeLabel }
-        return scope == .anywhere ? "\(artist) anywhere" : "\(artist) near \(centreName ?? "you")"
+        if scope == .anywhere {
+            return String(localized: "\(artist) anywhere")
+        }
+        return centreName.map { String(localized: "\(artist) near \($0)") } ?? String(localized: "\(artist) near you")
     }
 
     /// "Near Lisboa", "Near you": the section's title, and the search's Near scope.
     var nearScopeLabel: String {
-        centreName.map { "Near \($0)" } ?? "Near you"
+        centreName.map { String(localized: "Near \($0)") } ?? String(localized: "Near you")
     }
 
     /// The city the list is around; nil for a one-off position or no city.

@@ -267,6 +267,6 @@ struct WatchPanel: View {
     private func react(_ emoji: String) {
         guard groups.realtime?.sendReaction(group: groupID, channel: model.channelID, emoji: emoji) == true
         else { return }
-        model.show(emoji, from: "You")
+        model.show(emoji, from: String(localized: "You"))
     }
 }

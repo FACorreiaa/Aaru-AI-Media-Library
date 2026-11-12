@@ -51,14 +51,16 @@ struct FavoritesEditor: View {
                 Text("Up to \(FavoritesModel.limit). First is your favorite.")
             }
         }
-        .settingsPage("Favorites", problem: $model.problem)
+        .settingsPage(String(localized: "Favorites"), problem: $model.problem)
         .toolbar {
             #if os(iOS)
                 ToolbarItem(placement: .primaryAction) { EditButton() }
             #endif
         }
         .sheet(isPresented: $adding) {
-            TitlePickerSheet(api: model.api, navigationTitle: "Add to \(kind.label)", kind: kind.mediaKind) { hit in
+            TitlePickerSheet(
+                api: model.api, navigationTitle: String(localized: "Add to \(kind.label)"), kind: kind.mediaKind
+            ) { hit in
                 // The sheet closes either way, so a refusal shows here in the server's words.
                 _ = await model.add(hit, to: kind)
                 return true

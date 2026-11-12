@@ -39,7 +39,7 @@ struct ExportDataSection: View {
             defaultFilename: file?.baseName
         ) { result in
             if case let .failure(error) = result {
-                model.problem = "The export was not saved. \(error.localizedDescription)"
+                model.problem = String(localized: "The export was not saved. \(error.localizedDescription)")
             }
             file = nil
         }

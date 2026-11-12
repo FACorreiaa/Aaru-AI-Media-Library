@@ -15,7 +15,7 @@ struct LibraryFilterBar: View {
         VStack(spacing: 0) {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    FilterChip(title: "All", isOn: filter.kind == nil) { filter.kind = nil }
+                    FilterChip(title: String(localized: "All"), isOn: filter.kind == nil) { filter.kind = nil }
                     ForEach(MediaKind.allCases) { option in
                         FilterChip(title: option.label, isOn: filter.kind == option) { filter.kind = option }
                     }
@@ -49,7 +49,11 @@ private struct StatusTabs: View {
         ScrollViewReader { proxy in
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    FilterChip(title: "All", count: counts.values.reduce(0, +), isOn: filter.status == nil) {
+                    FilterChip(
+                        title: String(localized: "All"),
+                        count: counts.values.reduce(0, +),
+                        isOn: filter.status == nil
+                    ) {
                         filter.status = nil
                     }
                     .id(LibraryStatus?.none)

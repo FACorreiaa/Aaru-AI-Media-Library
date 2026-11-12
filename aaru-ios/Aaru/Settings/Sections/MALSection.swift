@@ -20,10 +20,13 @@ struct MALSection: View {
                         systemImage: "exclamationmark.triangle"
                     )
                     .foregroundStyle(Color(.danger))
-                    Button(action: connect) { row("Reconnect", systemImage: "arrow.clockwise") }
+                    Button(action: connect) { row(String(localized: "Reconnect"), systemImage: "arrow.clockwise") }
                         .disabled(model.malBusy)
                 } else {
-                    LabeledContent("Connected as", value: connection.username ?? "your MyAnimeList account")
+                    LabeledContent(
+                        "Connected as",
+                        value: connection.username ?? String(localized: "your MyAnimeList account")
+                    )
                     if let since = connection.connectedAt {
                         LabeledContent("Since") { Text(since, format: .dateTime.day().month()) }
                     }
@@ -34,7 +37,7 @@ struct MALSection: View {
                 if !connection.removed.isEmpty {
                     DisclosureGroup("Removed on MyAnimeList (\(connection.removed.count))") {
                         ForEach(connection.removed, id: \.malId) { entry in
-                            Text(entry.title ?? "MyAnimeList entry \(entry.malId)")
+                            Text(entry.title ?? String(localized: "MyAnimeList entry \(String(entry.malId))"))
                         }
                         Text("Still in your Aaru library. Remove them here if you want them gone.")
                             .font(.footnote)
@@ -44,17 +47,19 @@ struct MALSection: View {
                 Button("Disconnect", role: .destructive) { confirmingDisconnect = true }
                     .disabled(model.malBusy)
             } else {
-                Button(action: connect) { row("Connect MyAnimeList", systemImage: "link") }
+                Button(action: connect) { row(String(localized: "Connect MyAnimeList"), systemImage: "link") }
                     .disabled(model.malBusy || model.mal == nil)
             }
         } header: {
             Text("MyAnimeList")
         } footer: {
             Text(
-                "Aaru and your MyAnimeList list keep each other up to date: status, watched episodes and score, "
-                    + "one entry per season. Only changes from now on, and neither list is overwritten: changes on "
-                    + "MyAnimeList come in when you open Aaru and only move forward. "
-                    + "Removing an anime on one side leaves it on the other."
+                """
+                Aaru and your MyAnimeList list keep each other up to date: status, watched episodes and score, \
+                one entry per season. Only changes from now on, and neither list is overwritten: changes on \
+                MyAnimeList come in when you open Aaru and only move forward. \
+                Removing an anime on one side leaves it on the other.
+                """
             )
         }
         .confirmationDialog("Disconnect MyAnimeList?", isPresented: $confirmingDisconnect, titleVisibility: .visible) {
@@ -83,7 +88,7 @@ struct MALSection: View {
             } catch let error as ASWebAuthenticationSessionError where error.code == .canceledLogin {
                 return
             } catch {
-                model.problem = "MyAnimeList could not be reached. Try again."
+                model.problem = String(localized: "MyAnimeList could not be reached. Try again.")
             }
         }
     }

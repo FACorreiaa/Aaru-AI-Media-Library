@@ -41,10 +41,10 @@ final class DataModel {
                 }
                 return ExportFile(data: data, contentType: format.contentType, filename: name)
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "The export could not be made."
+                problem = (try? error.body.json.message) ?? String(localized: "The export could not be made.")
             }
         } catch {
-            problem = "The export could not be made. Aaru could not reach the server."
+            problem = String(localized: "The export could not be made. Aaru could not reach the server.")
         }
         return nil
     }
@@ -61,10 +61,10 @@ final class DataModel {
             case .noContent:
                 NotificationCenter.default.post(name: .aaruChatsDeleted, object: nil)
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "Your chats could not be deleted."
+                problem = (try? error.body.json.message) ?? String(localized: "Your chats could not be deleted.")
             }
         } catch {
-            problem = "Your chats could not be deleted. Aaru could not reach the server."
+            problem = String(localized: "Your chats could not be deleted. Aaru could not reach the server.")
         }
     }
 
@@ -99,8 +99,8 @@ enum ExportFormat: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .json: "Everything (JSON)"
-        case .csv: "Library spreadsheet (CSV)"
+        case .json: String(localized: "Everything (JSON)")
+        case .csv: String(localized: "Library spreadsheet (CSV)")
         }
     }
 

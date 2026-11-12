@@ -50,11 +50,13 @@ struct AlbumTracklist: View {
 
     /// "12 tracks, 53 minutes"; just the count when a length is missing.
     static func summary(_ tracks: [AlbumTrack]) -> String {
-        let count = tracks.count == 1 ? "1 track" : "\(tracks.count) tracks"
+        let count = tracks
+            .count == 1 ? String(localized: "1 track") : String(localized: "\(String(tracks.count)) tracks")
         let lengths = tracks.compactMap(\.lengthMs)
         guard lengths.count == tracks.count else { return count }
         let minutes = Int((Double(lengths.reduce(0, +)) / 60000).rounded())
-        return "\(count), \(minutes == 1 ? "1 minute" : "\(minutes) minutes")"
+        let length = minutes == 1 ? String(localized: "1 minute") : String(localized: "\(String(minutes)) minutes")
+        return "\(count), \(length)"
     }
 
     private static let placeholders = (1 ... 8).map {
@@ -92,7 +94,8 @@ private struct TrackRow: View {
 
     private var accessibilityText: String {
         let duration = length?.formatted(.units(allowed: [.minutes, .seconds], width: .wide))
-        return ["Track \(track.position)", track.name, duration].compactMap(\.self).joined(separator: ", ")
+        return [String(localized: "Track \(String(track.position))"), track.name, duration].compactMap(\.self)
+            .joined(separator: ", ")
     }
 }
 

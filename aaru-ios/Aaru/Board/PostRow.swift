@@ -55,7 +55,7 @@ struct PostRow<Editor: View>: View {
 
     /// "Ana · @ana · 2 hours ago · Edited", the name in Ink and the rest muted.
     private var header: some View {
-        let name = Text(post.mine ? "You" : post.author.inviteName)
+        let name = Text(post.mine ? String(localized: "You") : post.author.inviteName)
             .fontWeight(.semibold)
             .foregroundStyle(Color(.ink))
         let handle = post.author.displayName == nil ? Text(verbatim: "") : Text(verbatim: "@\(post.author.handle) · ")

@@ -130,7 +130,7 @@ private struct CommentRow: View {
 
     private var name: String {
         if comment.mine == true {
-            return "You"
+            return String(localized: "You")
         }
         return comment.author?.inviteName ?? "Aaru"
     }
@@ -164,7 +164,7 @@ private struct CommentRow: View {
                             .contentShape(.rect)
                     }
                     .buttonStyle(.borderless)
-                    .accessibilityLabel("Reply to \(comment.mine == true ? "you" : name)")
+                    .accessibilityLabel("Reply to \(comment.mine == true ? String(localized: "you") : name)")
                 }
             }
         }

@@ -14,9 +14,9 @@ enum TopListenBy: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .artist: "Artists"
-        case .track: "Tracks"
-        case .album: "Albums"
+        case .artist: String(localized: "Artists")
+        case .track: String(localized: "Tracks")
+        case .album: String(localized: "Albums")
         }
     }
 
@@ -41,7 +41,7 @@ enum TopListenBy: String, CaseIterable, Identifiable {
 enum Listening {
     /// "1 play", "1,204 plays".
     static func plays(_ count: Int) -> String {
-        count == 1 ? "1 play" : "\(count.formatted()) plays"
+        count == 1 ? String(localized: "1 play") : String(localized: "\(count.formatted()) plays")
     }
 
     /// "Massive Attack · Mezzanine", or where it played when the album is unknown.
@@ -52,12 +52,12 @@ enum Listening {
     /// Today / Yesterday / "Mon, Oct 19" / "Oct 19, 2025", in the device's time zone.
     static func dayHeading(_ day: Date, now: Date, calendar: Calendar = .current) -> String {
         if calendar.isDate(day, inSameDayAs: now) {
-            return "Today"
+            return String(localized: "Today")
         }
         if let yesterday = calendar.date(byAdding: .day, value: -1, to: now),
            calendar.isDate(day, inSameDayAs: yesterday)
         {
-            return "Yesterday"
+            return String(localized: "Yesterday")
         }
         let sameYear = calendar.component(.year, from: day) == calendar.component(.year, from: now)
         return sameYear

@@ -179,21 +179,25 @@ private struct UpNextRow: View {
 
     /// "S2 · E8 · Sweet Vitriol"; on smaller rows the count goes here too.
     private var subtitle: String {
-        var parts = ["S\(row.season) · E\(row.number)"]
+        var parts = [String(localized: "S\(String(row.season)) · E\(String(row.number))")]
         if showsDetail {
             if let name = row.episodeName {
                 parts.append(name)
             }
         } else {
-            parts.append(row.isFinale ? "Finale" : "\(row.remainingCount) left")
+            parts.append(
+                row.isFinale ? String(localized: "Finale") : String(localized: "\(String(row.remainingCount)) left")
+            )
         }
         return parts.joined(separator: " · ")
     }
 
     /// "Finale · 1 left · 41m" or "4 left · 1h 36m".
     private var remaining: String {
-        let count = "\(row.remainingCount) left · \(widgetDuration(minutes: row.remainingMinutes))"
-        return row.isFinale ? "Finale · \(count)" : count
+        let count = String(
+            localized: "\(String(row.remainingCount)) left · \(widgetDuration(minutes: row.remainingMinutes))"
+        )
+        return row.isFinale ? String(localized: "Finale · \(count)") : count
     }
 }
 

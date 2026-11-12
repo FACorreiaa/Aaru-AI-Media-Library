@@ -55,9 +55,9 @@ final class ConnectionsModel {
             stremio = addons.filter { $0.kind == .stremio }
             scrobblers = players.filter { $0.kind == .music }
         } catch let failure as Failure {
-            problem = failure.message ?? "Your connections could not be loaded."
+            problem = failure.message ?? String(localized: "Your connections could not be loaded.")
         } catch {
-            problem = "Your connections could not be loaded. Aaru could not reach the server."
+            problem = String(localized: "Your connections could not be loaded. Aaru could not reach the server.")
         }
         // The last listen is a nicety; nothing is reported when it fails.
         latestListen = await latestListenNow()
@@ -66,7 +66,7 @@ final class ConnectionsModel {
 
     /// Mints a token. The answer holds the secret, shown once by the caller.
     func create(_ body: Components.Schemas.AgentTokenCreate) async -> Result<AgentTokenCreated, Failure> {
-        guard let api else { return .failure(Failure("This build has no server configured.")) }
+        guard let api else { return .failure(Failure(String(localized: "This build has no server configured."))) }
         do {
             switch try await api.createAgentToken(body: .json(body)) {
             case let .created(response):
@@ -74,10 +74,13 @@ final class ConnectionsModel {
                 insert(result.token)
                 return .success(result)
             case let .default(_, error):
-                return .failure(Failure((try? error.body.json.message) ?? "The connection could not be made."))
+                return .failure(Failure((try? error.body.json.message) ??
+                        String(localized: "The connection could not be made.")))
             }
         } catch {
-            return .failure(Failure("The connection could not be made. Aaru could not reach the server."))
+            return .failure(
+                Failure(String(localized: "The connection could not be made. Aaru could not reach the server."))
+            )
         }
     }
 
@@ -92,10 +95,10 @@ final class ConnectionsModel {
                 stremio.removeAll { $0.id == token.id }
                 scrobblers.removeAll { $0.id == token.id }
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "\(token.name) was not disconnected."
+                problem = (try? error.body.json.message) ?? String(localized: "\(token.name) was not disconnected.")
             }
         } catch {
-            problem = "\(token.name) was not disconnected. Aaru could not reach the server."
+            problem = String(localized: "\(token.name) was not disconnected. Aaru could not reach the server.")
         }
     }
 
@@ -147,9 +150,9 @@ final class ConnectionsModel {
             {
                 return page
             }
-            problem = "MyAnimeList is not available right now. Try again later."
+            problem = String(localized: "MyAnimeList is not available right now. Try again later.")
         } catch {
-            problem = "MyAnimeList could not be reached. Aaru could not reach the server."
+            problem = String(localized: "MyAnimeList could not be reached. Aaru could not reach the server.")
         }
         return nil
     }
@@ -161,7 +164,7 @@ final class ConnectionsModel {
         switch result {
         case "connected": await loadMAL()
         case "denied": break
-        default: problem = "MyAnimeList could not finish connecting. Try again."
+        default: problem = String(localized: "MyAnimeList could not finish connecting. Try again.")
         }
     }
 
@@ -175,10 +178,11 @@ final class ConnectionsModel {
             case .noContent:
                 mal = .init(connected: false, needsReconnect: false, removed: [])
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "MyAnimeList was not disconnected. Try again."
+                problem = (try? error.body.json.message) ??
+                    String(localized: "MyAnimeList was not disconnected. Try again.")
             }
         } catch {
-            problem = "MyAnimeList was not disconnected. Aaru could not reach the server."
+            problem = String(localized: "MyAnimeList was not disconnected. Aaru could not reach the server.")
         }
     }
 

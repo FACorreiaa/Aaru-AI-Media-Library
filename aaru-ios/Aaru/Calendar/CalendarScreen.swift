@@ -15,9 +15,9 @@ struct CalendarScreen: View {
 
         var label: String {
             switch self {
-            case .week: "Week"
-            case .month: "Month"
-            case .missed: "Missed"
+            case .week: String(localized: "Week")
+            case .month: String(localized: "Month")
+            case .missed: String(localized: "Missed")
             }
         }
     }
@@ -128,7 +128,9 @@ struct CalendarScreen: View {
     /// CAL-004: an import's shows are still loading their episodes; the feed asks again.
     private var pendingCaption: some View {
         Label(
-            "Loading episodes for \(feed.pendingShows) \(feed.pendingShows == 1 ? "show" : "shows")…",
+            feed.pendingShows == 1
+                ? "Loading episodes for \(feed.pendingShows) show…"
+                : "Loading episodes for \(feed.pendingShows) shows…",
             systemImage: "arrow.triangle.2.circlepath"
         )
         .font(.footnote)

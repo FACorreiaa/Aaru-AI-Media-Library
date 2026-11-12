@@ -46,7 +46,7 @@ struct KindShelf: View {
             ForEach(shelves, id: \.status) { shelf in
                 HomeRow(
                     title: shelf.status.label(for: kind),
-                    trailing: (label: "See all", action: { onSeeAll(shelf.status) })
+                    trailing: (label: String(localized: "See all"), action: { onSeeAll(shelf.status) })
                 ) {
                     ForEach(shelf.rows.prefix(Self.rowLimit)) { row in
                         NavigationLink(value: row.id) { LibraryPosterCard(row: row) }
@@ -61,9 +61,9 @@ struct KindShelf: View {
 
     private var emptyText: String {
         switch kind {
-        case .music: "No albums on your shelf yet. Add one from the rows below, or search."
-        case .manga: "No manga on your shelf yet. Add one from the rows below, or search."
-        default: "No books on your shelf yet. Import a list above, or add one from the rows below."
+        case .music: String(localized: "No albums on your shelf yet. Add one from the rows below, or search.")
+        case .manga: String(localized: "No manga on your shelf yet. Add one from the rows below, or search.")
+        default: String(localized: "No books on your shelf yet. Import a list above, or add one from the rows below.")
         }
     }
 }
@@ -79,9 +79,9 @@ enum MusicPane: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .albums: "Albums"
-        case .concerts: "Concerts"
-        case .listens: "Listens"
+        case .albums: String(localized: "Albums")
+        case .concerts: String(localized: "Concerts")
+        case .listens: String(localized: "Listens")
         }
     }
 }

@@ -38,7 +38,7 @@ struct EpisodeSheet: View {
                 Text(EpisodeCode.short(season: episode.season, number: episode.number))
                     .font(.footnote.weight(.medium).monospacedDigit())
                     .foregroundStyle(Color(.muted))
-                Text(episode.name ?? "Episode \(episode.number)")
+                Text(episode.name ?? String(localized: "Episode \(String(episode.number))"))
                     .font(.aaruDisplay(.title2))
                     .foregroundStyle(Color(.ink))
                     .fixedSize(horizontal: false, vertical: true)
@@ -103,9 +103,9 @@ struct EpisodeSheet: View {
             let when = episode.airTimeKnown
                 ? airsAt.formatted(date: .abbreviated, time: .shortened)
                 : airsAt.formatted(date: .abbreviated, time: .omitted)
-            return (model.hasAired(episode) ? "Aired " : "Airs ") + when
+            return model.hasAired(episode) ? String(localized: "Aired \(when)") : String(localized: "Airs \(when)")
         }
-        let runtime = episode.runtimeMinutes.map { "\($0) min" }
+        let runtime = episode.runtimeMinutes.map { String(localized: "\(String($0)) min") }
         let parts = [date, runtime].compactMap(\.self)
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }

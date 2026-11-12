@@ -30,10 +30,10 @@ final class PlanModel {
             case let .ok(response):
                 plan = try response.body.json
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "This request could not be loaded."
+                problem = (try? error.body.json.message) ?? String(localized: "This request could not be loaded.")
             }
         } catch {
-            problem = "Aaru could not reach the server."
+            problem = String(localized: "Aaru could not reach the server.")
         }
     }
 
@@ -55,7 +55,7 @@ final class PlanModel {
                 case let .ok(response):
                     decided = try response.body.json.plan
                 case let .default(_, error):
-                    problem = (try? error.body.json.message) ?? "Nothing was changed."
+                    problem = (try? error.body.json.message) ?? String(localized: "Nothing was changed.")
                     return nil
                 }
             } else {
@@ -63,7 +63,7 @@ final class PlanModel {
                 case let .ok(response):
                     decided = try response.body.json
                 case let .default(_, error):
-                    problem = (try? error.body.json.message) ?? "Nothing was changed."
+                    problem = (try? error.body.json.message) ?? String(localized: "Nothing was changed.")
                     return nil
                 }
             }
@@ -71,7 +71,7 @@ final class PlanModel {
             NotificationCenter.default.post(name: .aaruPlanDecided, object: decided)
             return decided
         } catch {
-            problem = "Aaru could not reach the server. Nothing was changed."
+            problem = String(localized: "Aaru could not reach the server. Nothing was changed.")
             return nil
         }
     }

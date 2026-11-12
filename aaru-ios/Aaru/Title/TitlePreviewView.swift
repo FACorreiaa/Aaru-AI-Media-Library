@@ -59,7 +59,10 @@ struct TitlePreviewView: View {
                     .closesOnSheetsRequest()
                 }
         } else if loadFailed {
-            LoadFailedView(title: "This title didn't load", message: "Aaru could not reach the server.") {
+            LoadFailedView(
+                title: String(localized: "This title didn't load"),
+                message: String(localized: "Aaru could not reach the server.")
+            ) {
                 await load()
             }
             .assistantButton(titleID: nil)
@@ -146,10 +149,11 @@ struct TitlePreviewView: View {
             kind.label,
             title.year.map(String.init),
             title.byline,
-            title.runtimeMinutes.map { "\($0) min" },
+            title.runtimeMinutes.map { String(localized: "\(String($0)) min") },
             title.status.map(\.label),
-            seasons
-                .isEmpty ? nil : "\(seasons.count) \(seasons.count == 1 ? "season" : "seasons") · \(episodes) episodes",
+            seasons.isEmpty ? nil : seasons.count == 1
+                ? String(localized: "1 season · \(String(episodes)) episodes")
+                : String(localized: "\(String(seasons.count)) seasons · \(String(episodes)) episodes"),
         ]
         return parts.compactMap(\.self).joined(separator: " · ")
     }

@@ -25,15 +25,15 @@ struct RelatedStep: View {
 
     var body: some View {
         OnboardingPage(
-            title: "More from what you picked",
-            subtitle: "Sequels, prequels, spin-offs and adaptations. Tap to plan them.",
+            title: String(localized: "More from what you picked"),
+            subtitle: String(localized: "Sequels, prequels, spin-offs and adaptations. Tap to plan them."),
             onBack: onBack,
             onSkip: onSkip,
             isBusy: model.isBusy
         ) {
             LazyVStack(alignment: .leading, spacing: AaruSpace.section) {
                 ForEach(model.relatedGroups) { group in
-                    HomeRow(title: "More from \(group.fromTitle)") {
+                    HomeRow(title: String(localized: "More from \(group.fromTitle)")) {
                         ForEach(group.hits) { hit in
                             poster(hit)
                         }
@@ -44,8 +44,9 @@ struct RelatedStep: View {
             OnboardingProblem(message: model.problem) { model.problem = nil }
             OnboardingPill(
                 label: model.saveFailed
-                    ? "Try again"
-                    : model.relatedChosen.isEmpty ? "Skip these" : "Continue (\(model.relatedChosen.count))",
+                    ? String(localized: "Try again")
+                    : model.relatedChosen.isEmpty
+                    ? String(localized: "Skip these") : String(localized: "Continue (\(model.relatedChosen.count))"),
                 isBusy: model.isBusy,
                 action: onContinue
             )
@@ -68,7 +69,9 @@ struct RelatedStep: View {
             state: state,
             width: HomeCardSize.poster.width(compact: compact, dynamicType: dynamicType),
             menuStatuses: [.wishlist],
-            tapHint: chosen ? "Takes it off" : "Adds it as \(LibraryStatus.wishlist.label(for: kind))",
+            tapHint: chosen
+                ? String(localized: "Takes it off")
+                : String(localized: "Adds it as \(LibraryStatus.wishlist.label(for: kind))"),
             onTap: { model.toggleRelated(hit) },
             onSet: { status in
                 // The menu here is plan or not: every related title is added as planned.

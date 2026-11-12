@@ -15,13 +15,13 @@
         /// Returns a problem to show, or nil when the activity started.
         static func start(_ attributes: NowWatchingAttributes) async -> String? {
             guard ActivityAuthorizationInfo().areActivitiesEnabled else {
-                return "Live Activities are off for Aaru. Turn them on in Settings → Aaru."
+                return String(localized: "Live Activities are off for Aaru. Turn them on in Settings → Aaru.")
             }
             do {
                 try await NowWatching.start(attributes)
                 return nil
             } catch {
-                return "Aaru could not start the Live Activity. Try again."
+                return String(localized: "Aaru could not start the Live Activity. Try again.")
             }
         }
 

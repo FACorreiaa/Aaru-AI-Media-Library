@@ -6,20 +6,20 @@ extension Components.Schemas.ChannelKind {
     /// together, UX-041) and `watch` reads "Watch party" (a Room, owner 2026-10-21).
     var label: String {
         switch self {
-        case .text: "Text"
-        case .title: "Title"
-        case .watch: "Watch party"
-        case .shelf: "List"
+        case .text: String(localized: "Text")
+        case .title: String(localized: "Title")
+        case .watch: String(localized: "Watch party")
+        case .shelf: String(localized: "List")
         }
     }
 
     /// One line for the kind picker.
     var explanation: String {
         switch self {
-        case .text: "Talk about anything."
-        case .title: "One film, show or book. Spoilers stay hidden from anyone behind."
-        case .watch: "Start watching together, with a shared countdown."
-        case .shelf: "A list the whole group adds to."
+        case .text: String(localized: "Talk about anything.")
+        case .title: String(localized: "One film, show or book. Spoilers stay hidden from anyone behind.")
+        case .watch: String(localized: "Start watching together, with a shared countdown.")
+        case .shelf: String(localized: "A list the whole group adds to.")
         }
     }
 
@@ -83,14 +83,18 @@ struct NewChannelSheet: View {
                 }
                 if kind == .title {
                     Section("Title") {
-                        Button(title?.title ?? "Choose a title…", systemImage: "magnifyingglass") { picksTitle = true }
+                        Button(title?.title ?? String(localized: "Choose a title…"), systemImage: "magnifyingglass") {
+                            picksTitle = true
+                        }
                     }
                 }
                 Section {
                     HStack(spacing: 2) {
                         Text("#").foregroundStyle(Color(.muted))
                         TextField(
-                            kind == .title ? (title?.title ?? "Named after the title") : "movie-night",
+                            kind == .title
+                                ? (title?.title ?? String(localized: "Named after the title"))
+                                : String(localized: "movie-night"),
                             text: $name
                         )
                         .autocorrectionDisabled()
@@ -116,7 +120,7 @@ struct NewChannelSheet: View {
                 }
             }
             .sheet(isPresented: $picksTitle) {
-                TitlePickerSheet(api: groups.api, navigationTitle: "Choose a title") { hit in
+                TitlePickerSheet(api: groups.api, navigationTitle: String(localized: "Choose a title")) { hit in
                     title = hit
                     return true
                 }

@@ -24,9 +24,9 @@ extension SportEntity {
     /// "Team · Soccer · Arsenal": what it is, its sport, and its team or country when known.
     var detail: String {
         let kindLabel = switch kind {
-        case .league: "League"
-        case .team: "Team"
-        case .player: "Player"
+        case .league: String(localized: "League")
+        case .team: String(localized: "Team")
+        case .player: String(localized: "Player")
         }
         return [kindLabel, sport, teamName ?? country].compactMap(\.self).filter { !$0.isEmpty }
             .joined(separator: " · ")
@@ -48,8 +48,8 @@ final class SportsModel {
 
         var label: String {
             switch self {
-            case .favorites: "Favorites"
-            case .schedule: "Schedule"
+            case .favorites: String(localized: "Favorites")
+            case .schedule: String(localized: "Schedule")
             }
         }
     }
@@ -146,7 +146,7 @@ final class SportsModel {
             case .default:
                 favoritesFailed = favorites == nil
                 if favorites != nil {
-                    problem = "Favorites could not be refreshed."
+                    problem = String(localized: "Favorites could not be refreshed.")
                 }
             }
         } catch {
@@ -173,7 +173,7 @@ final class SportsModel {
                 if schedules[day.key] == nil {
                     failedDays.insert(day.key)
                 } else {
-                    problem = "The schedule could not be refreshed."
+                    problem = String(localized: "The schedule could not be refreshed.")
                 }
             }
         } catch {
@@ -257,18 +257,18 @@ final class SportsModel {
             }
         } catch {
             followOverrides[key] = previous
-            problem = "\(entity.name) was not changed. Aaru could not reach the server."
+            problem = String(localized: "\(entity.name) was not changed. Aaru could not reach the server.")
         }
     }
 
     static func followProblem(_ statusCode: Int, error: Components.Schemas.ErrorResponse?, name: String) -> String {
         switch (statusCode, error?.code) {
         case (409, "too_many_follows"):
-            "You follow 100 already. Unfollow one to add \(name)."
+            String(localized: "You follow 100 already. Unfollow one to add \(name).")
         case (503, _):
-            "Sports aren't answering right now. Try again in a few minutes."
+            String(localized: "Sports aren't answering right now. Try again in a few minutes.")
         default:
-            error?.message ?? "\(name) was not changed."
+            error?.message ?? String(localized: "\(name) was not changed.")
         }
     }
 
@@ -330,10 +330,10 @@ final class SportSettingsModel {
                 problem = nil
                 return true
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "The country was not saved."
+                problem = (try? error.body.json.message) ?? String(localized: "The country was not saved.")
             }
         } catch {
-            problem = "The country was not saved. Aaru could not reach the server."
+            problem = String(localized: "The country was not saved. Aaru could not reach the server.")
         }
         return false
     }

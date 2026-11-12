@@ -36,7 +36,7 @@ struct HistoryView: View {
 
     @ViewBuilder private var content: some View {
         if let failure = model.loadFailure, !model.hasLoaded {
-            LoadFailedView(title: "History didn't load", message: failure) { await model.load() }
+            LoadFailedView(title: String(localized: "History didn't load"), message: failure) { await model.load() }
         } else if !model.hasLoaded {
             ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if model.actions.isEmpty {

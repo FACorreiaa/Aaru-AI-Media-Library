@@ -14,8 +14,8 @@ struct NotificationsStep: View {
 
     var body: some View {
         OnboardingPage(
-            title: "Never miss a new episode",
-            subtitle: "Aaru tells you when a new episode of a show you're watching is out.",
+            title: String(localized: "Never miss a new episode"),
+            subtitle: String(localized: "Aaru tells you when a new episode of a show you're watching is out."),
             onBack: onBack,
             onSkip: onSkip,
             isBusy: isTurningOn
@@ -32,7 +32,7 @@ struct NotificationsStep: View {
             Button("Not now", action: onDone)
                 .buttonStyle(OutlineCapsuleButtonStyle())
                 .disabled(isTurningOn)
-            OnboardingPill(label: "Turn on notifications", isBusy: isTurningOn) {
+            OnboardingPill(label: String(localized: "Turn on notifications"), isBusy: isTurningOn) {
                 Task { await turnOn() }
             }
         }

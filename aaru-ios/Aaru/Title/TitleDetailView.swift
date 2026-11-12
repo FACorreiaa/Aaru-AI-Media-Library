@@ -237,7 +237,7 @@ extension TitleDetailView {
 
     /// One item, one kind: "2022 · Show · 48 min · Returning series" (UX-046, UX-047).
     private var meta: String {
-        let runtime = model.title?.runtimeMinutes.map { "\($0) min" }
+        let runtime = model.title?.runtimeMinutes.map { String(localized: "\(String($0)) min") }
         let status = model.title?.status.map(\.label)
         return [entry.title.year.map(String.init), kind.noun, runtime, status]
             .compactMap(\.self).joined(separator: " · ")

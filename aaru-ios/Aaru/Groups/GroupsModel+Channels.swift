@@ -16,7 +16,7 @@ extension GroupsModel {
         guard let api else { return nil }
         var created: GroupChannel?
         let name = name.trimmingCharacters(in: .whitespaces)
-        await run("The channel was not created.") {
+        await run(String(localized: "The channel was not created.")) {
             switch try await api.createChannel(
                 path: .init(groupId: groupID),
                 body: .json(.init(
@@ -35,7 +35,7 @@ extension GroupsModel {
     /// An empty topic clears it.
     func updateChannel(_ channel: GroupChannel, in groupID: String, name: String, topic: String) async -> Bool {
         guard let api else { return false }
-        return await run("The channel was not saved.") {
+        return await run(String(localized: "The channel was not saved.")) {
             switch try await api.updateChannel(
                 path: .init(groupId: groupID, channelId: channel.id),
                 body: .json(.init(name: name, topic: topic))
@@ -48,7 +48,7 @@ extension GroupsModel {
 
     func deleteChannel(_ channel: GroupChannel, in groupID: String) async -> Bool {
         guard let api else { return false }
-        return await run("The channel was not deleted.") {
+        return await run(String(localized: "The channel was not deleted.")) {
             switch try await api.deleteChannel(path: .init(groupId: groupID, channelId: channel.id)) {
             case .noContent: await loadDetail(groupID)
             case let .default(_, error): throw Failure(try? error.body.json)
@@ -78,14 +78,14 @@ extension GroupsModel {
     /// A title Aaru pointed to in a group, added to this user's own library as Plan to …: the
     /// same journaled add as a tap anywhere else. Nil when it was added; else why not.
     func addToMyLibrary(_ title: TitleSummary) async -> String? {
-        guard let api else { return "This build has no server configured." }
+        guard let api else { return String(localized: "This build has no server configured.") }
         do {
             switch try await api.addLibraryItem(body: .json(.init(mediaRef: title.mediaRef, status: .wishlist))) {
             case .ok: return nil
-            case let .default(_, error): return (try? error.body.json.message) ?? "Not added."
+            case let .default(_, error): return (try? error.body.json.message) ?? String(localized: "Not added.")
             }
         } catch {
-            return "Aaru could not reach the server."
+            return String(localized: "Aaru could not reach the server.")
         }
     }
 }

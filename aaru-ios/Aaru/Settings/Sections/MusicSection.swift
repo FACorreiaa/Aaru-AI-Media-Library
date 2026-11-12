@@ -34,12 +34,14 @@ struct MusicSection: View {
             Text("Music")
         } footer: {
             Text(
-                "Plays on YouTube, YouTube Music, Spotify and Apple Music in a browser, or any app on Android, land "
-                    + "in Listens. The Spotify and Apple Music apps on iPhone can’t send plays."
+                """
+                Plays on YouTube, YouTube Music, Spotify and Apple Music in a browser, or any app on Android, land \
+                in Listens. The Spotify and Apple Music apps on iPhone can’t send plays.
+                """
             )
         }
         .confirmsDisconnect($disconnecting, stops: { _ in
-            "It stops sending listens at once. Listens already in your log stay."
+            String(localized: "It stops sending listens at once. Listens already in your log stay.")
         }, perform: { token in
             Task { await model.disconnect(token) }
         })

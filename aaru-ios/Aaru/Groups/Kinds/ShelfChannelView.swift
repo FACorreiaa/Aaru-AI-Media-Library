@@ -28,8 +28,10 @@ struct ShelfChannelView: View {
                 }
                 .padding(.top, 40)
             } else if let problem = model.loadProblem {
-                LoadFailedView(title: "Couldn't load this list", message: problem) { await model.load() }
-                    .padding(.top, 40)
+                LoadFailedView(title: String(localized: "Couldn't load this list"), message: problem) {
+                    await model.load()
+                }
+                .padding(.top, 40)
             } else if !model.hasLoaded {
                 ProgressView().frame(maxWidth: .infinity).padding(.top, AaruSpace.page)
             } else {
@@ -69,7 +71,7 @@ struct ShelfChannelView: View {
             }
         }
         .sheet(isPresented: $picksTitle) {
-            TitlePickerSheet(api: groups.api, navigationTitle: "Add to #\(channel.name)") { hit in
+            TitlePickerSheet(api: groups.api, navigationTitle: String(localized: "Add to #\(channel.name)")) { hit in
                 await model.add(hit.mediaRef)
             }
         }

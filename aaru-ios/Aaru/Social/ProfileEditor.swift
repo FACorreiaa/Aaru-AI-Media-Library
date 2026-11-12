@@ -42,7 +42,11 @@ struct ProfileEditor: View {
             } header: {
                 Text("Handle")
             } footer: {
-                Text(handleProblem ?? "Friends find you by your exact handle. 3–20 letters, numbers or underscores.")
+                Text(handleProblem
+                    ??
+                    String(
+                        localized: "Friends find you by your exact handle. 3–20 letters, numbers or underscores."
+                    ))
             }
             emailSection
             Section {
@@ -59,10 +63,10 @@ struct ProfileEditor: View {
                     }
                 }
             } footer: {
-                Text(
-                    "Your favorite films, shows and more show on your profile. "
-                        + "The leagues, teams and players you follow stay in Sports."
-                )
+                Text(String(localized: """
+                Your favorite films, shows and more show on your profile. \
+                The leagues, teams and players you follow stay in Sports.
+                """))
             }
             if let problem = model.problem {
                 Text(problem).foregroundStyle(Color(.danger))
@@ -141,9 +145,11 @@ struct ProfileEditor: View {
                 }
             } footer: {
                 Text(model.account?.emailShareable == true
-                    ? "On your profile, for friends only. People in your groups never see it."
-                    : "This is an Apple “Hide My Email” address. It takes mail only from Aaru, "
-                    + "so it can’t be shared with friends.")
+                    ? String(localized: "On your profile, for friends only. People in your groups never see it.")
+                    : String(localized: """
+                    This is an Apple “Hide My Email” address. It takes mail only from Aaru, \
+                    so it can’t be shared with friends.
+                    """))
             }
         }
     }
@@ -157,7 +163,7 @@ struct ProfileEditor: View {
         guard let data = try? await item.loadTransferable(type: Data.self),
               let jpeg = AvatarImage.jpeg(data)
         else {
-            model.problem = "That photo could not be read. Try another."
+            model.problem = String(localized: "That photo could not be read. Try another.")
             return
         }
         _ = await model.uploadAvatar(jpeg)

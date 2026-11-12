@@ -32,7 +32,10 @@ struct SportEventDetailView: View {
                         .padding(16)
                     }
                 } else if failed {
-                    LoadFailedView(title: "Couldn't load this event", message: "Try again in a moment.") {
+                    LoadFailedView(
+                        title: String(localized: "Couldn't load this event"),
+                        message: String(localized: "Try again in a moment.")
+                    ) {
                         await load()
                     }
                 } else {
@@ -40,7 +43,7 @@ struct SportEventDetailView: View {
                 }
             }
             .background(Color(.paper))
-            .navigationTitle(detail?.event.league ?? "Event")
+            .navigationTitle(detail?.event.league ?? String(localized: "Event"))
             #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)
             #endif
@@ -61,7 +64,11 @@ struct SportEventDetailView: View {
                     }
                 }
                 .sheet(isPresented: $shares) {
-                    ShareComposerSheet(api: model.api, target: .sportEvent(id: id), name: detail?.event.name ?? "Match")
+                    ShareComposerSheet(
+                        api: model.api,
+                        target: .sportEvent(id: id),
+                        name: detail?.event.name ?? String(localized: "Match")
+                    )
                 }
                 .task(id: scenePhase == .active) {
                     guard scenePhase == .active else { return }
@@ -192,7 +199,7 @@ private struct TeamColumn: View {
     var body: some View {
         VStack(spacing: 8) {
             SportBadge(url: side?.badgeUrl, size: 56)
-            Text(side?.name ?? "TBD")
+            Text(side?.name ?? String(localized: "TBD"))
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Color(.ink))
                 .multilineTextAlignment(.center)
@@ -260,13 +267,13 @@ private struct WhereToWatch: View {
                 channels(detail.inYourCountry)
             } else if let code = detail.watchCountryCode {
                 HStack(spacing: 12) {
-                    QuietNote("No channel listed in \(WatchCountry.name(code)).")
+                    QuietNote(String(localized: "No channel listed in \(WatchCountry.name(code))."))
                     Spacer(minLength: 0)
                     Button("Change", action: onChooseCountry)
                         .buttonStyle(.borderless)
                 }
             } else {
-                QuietNote("Choose your country to see its channels first.")
+                QuietNote(String(localized: "Choose your country to see its channels first."))
                 Button("Choose a country", systemImage: "globe", action: onChooseCountry)
                     .buttonStyle(.bordered)
             }
@@ -287,7 +294,7 @@ private struct WhereToWatch: View {
                         .foregroundStyle(Color(.ink))
                 }
             } else if detail.inYourCountry.isEmpty {
-                QuietNote("No channels are listed for this event yet.")
+                QuietNote(String(localized: "No channels are listed for this event yet."))
             }
         }
     }
@@ -324,7 +331,11 @@ private struct WhereToWatch: View {
     /// The other channels by country name, A to Z; channels without one last, as "Elsewhere".
     static func byCountry(_ broadcasts: [SportBroadcast]) -> [(country: String, channels: [SportBroadcast])] {
         Dictionary(grouping: broadcasts) { $0.country?.isEmpty == false ? $0.country ?? "" : "" }
-            .map { (country: $0.key.isEmpty ? "Elsewhere" : $0.key, channels: $0.value, sortKey: $0.key) }
+            .map { (
+                country: $0.key.isEmpty ? String(localized: "Elsewhere") : $0.key,
+                channels: $0.value,
+                sortKey: $0.key
+            ) }
             .sorted { lhs, rhs in
                 if lhs.sortKey.isEmpty != rhs.sortKey.isEmpty {
                     return !lhs.sortKey.isEmpty

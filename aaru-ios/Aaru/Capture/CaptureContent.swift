@@ -121,12 +121,12 @@ extension ImportJob {
         guard state == .planned else { return nil }
         let adds = stats.created + stats.updated
         let parts = [
-            adds > 0 ? "Add \(adds)" : nil,
-            stats.unmatched == 1 ? "1 needs a pick" : nil,
-            stats.unmatched > 1 ? "\(stats.unmatched) need a pick" : nil,
+            adds > 0 ? String(localized: "Add \(String(adds))") : nil,
+            stats.unmatched == 1 ? String(localized: "1 needs a pick") : nil,
+            stats.unmatched > 1 ? String(localized: "\(String(stats.unmatched)) need a pick") : nil,
         ].compactMap(\.self)
         guard parts.isEmpty else { return parts.joined(separator: " · ") }
-        return stats.skipped > 0 ? "Already in your library" : "Nothing chosen"
+        return stats.skipped > 0 ? String(localized: "Already in your library") : String(localized: "Nothing chosen")
     }
 
     /// Being read, or a plan to approve: it waits on Home.

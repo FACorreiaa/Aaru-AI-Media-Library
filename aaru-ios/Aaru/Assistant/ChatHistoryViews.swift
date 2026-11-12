@@ -9,7 +9,7 @@ struct ChatHistoryRow: View {
     var body: some View {
         HStack(spacing: AaruSpace.small) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(chat.title ?? "A chat with Aaru")
+                Text(chat.title ?? String(localized: "A chat with Aaru"))
                     .foregroundStyle(Color(.ink))
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
@@ -90,7 +90,7 @@ struct AssistantHistoryPanel: View {
                         .foregroundStyle(Color(.muted))
                         .buttonStyle(.plain)
                         .frame(minWidth: 44, minHeight: 44)
-                        .accessibilityLabel("Delete the chat: \(chat.title ?? "untitled")")
+                        .accessibilityLabel("Delete the chat: \(chat.title ?? String(localized: "untitled"))")
                 }
                 Rectangle().fill(Color(.line)).frame(height: 1)
             }
@@ -138,7 +138,7 @@ struct ChatsPage: View {
 
     @ViewBuilder private var content: some View {
         if let failure = model.loadFailure, !model.hasLoaded {
-            LoadFailedView(title: "Your chats didn't load", message: failure) { await model.load() }
+            LoadFailedView(title: String(localized: "Your chats didn't load"), message: failure) { await model.load() }
         } else if !model.hasLoaded {
             ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if model.chats.isEmpty {
@@ -185,7 +185,7 @@ struct StoredChatView: View {
     var body: some View {
         content
             .background(Color(.paper))
-            .navigationTitle(chat?.title ?? "Chat")
+            .navigationTitle(chat?.title ?? String(localized: "Chat"))
         #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
         #endif
@@ -208,7 +208,7 @@ struct StoredChatView: View {
                 .frame(maxWidth: .infinity)
             }
         } else if let failure {
-            LoadFailedView(title: "This chat didn't load", message: failure) { await load() }
+            LoadFailedView(title: String(localized: "This chat didn't load"), message: failure) { await load() }
         } else {
             ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -252,7 +252,7 @@ struct StoredChatView: View {
 
     private func load() async {
         guard let api else {
-            failure = "Sign in to read your chats."
+            failure = String(localized: "Sign in to read your chats.")
             return
         }
         switch await api.storedChat(id) {

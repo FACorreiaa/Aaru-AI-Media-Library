@@ -180,11 +180,12 @@ private struct MonthDayCell: View {
     }
 
     private var accessibilityText: String {
-        let date = day.formatted(date: .complete, time: .omitted) + (isToday ? ", today" : "")
+        let full = day.formatted(date: .complete, time: .omitted)
+        let date = isToday ? String(localized: "\(full), today") : full
         switch entries.count {
         case 0: return date
         case 1: return "\(date), \(entries[0].title.title)"
-        default: return "\(date), \(entries.count) episodes"
+        default: return String(localized: "\(date), \(entries.count) episodes")
         }
     }
 }

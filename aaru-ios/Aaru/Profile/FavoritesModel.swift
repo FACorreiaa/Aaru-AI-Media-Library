@@ -37,10 +37,10 @@ final class FavoritesModel {
                 favorites = try response.body.json
                 problem = nil
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "Your favorites didn't load."
+                problem = (try? error.body.json.message) ?? String(localized: "Your favorites didn't load.")
             }
         } catch {
-            problem = "Aaru could not reach the server."
+            problem = String(localized: "Aaru could not reach the server.")
         }
     }
 
@@ -83,10 +83,10 @@ final class FavoritesModel {
                 favorites = try response.body.json
                 return true
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "Your favorites weren't saved."
+                problem = (try? error.body.json.message) ?? String(localized: "Your favorites weren't saved.")
             }
         } catch {
-            problem = "Your favorites weren't saved. Aaru could not reach the server."
+            problem = String(localized: "Your favorites weren't saved. Aaru could not reach the server.")
         }
         return false
     }
@@ -144,6 +144,6 @@ extension FavoriteKind: @retroactive Identifiable {
 
     /// "Films", "Shows", "Anime", "Manga", "Books", "Albums".
     var label: String {
-        self == .album ? "Albums" : mediaKind.label
+        self == .album ? String(localized: "Albums") : mediaKind.label
     }
 }

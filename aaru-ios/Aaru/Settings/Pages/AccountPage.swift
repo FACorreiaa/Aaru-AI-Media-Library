@@ -21,8 +21,8 @@ struct AccountPage: View {
                     ProfileEditor(model: social)
                 } label: {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(social.displayName ?? "No name yet").foregroundStyle(Color(.ink))
-                        Text(social.handle.map { "@\($0)" } ?? "Choose a handle")
+                        Text(social.displayName ?? String(localized: "No name yet")).foregroundStyle(Color(.ink))
+                        Text(social.handle.map { "@\($0)" } ?? String(localized: "Choose a handle"))
                             .font(.subheadline)
                             .foregroundStyle(social.handle == nil ? Color(.accent) : Color(.muted))
                     }
@@ -69,7 +69,7 @@ struct AccountPage: View {
                 DeleteAccountSection(onDeleteAccount: onDeleteAccount, onSignOut: onSignOut)
             }
         }
-        .settingsPage("Account", problem: $account.problem)
+        .settingsPage(String(localized: "Account"), problem: $account.problem)
         .task {
             await account.load()
             await plus?.load()

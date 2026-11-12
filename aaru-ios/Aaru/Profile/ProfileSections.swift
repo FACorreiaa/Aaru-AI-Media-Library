@@ -42,7 +42,7 @@ struct ProfileTimeSplit: View {
         }
 
         var label: String {
-            kind == .show ? "TV" : kind.label
+            kind == .show ? String(localized: "TV") : kind.label
         }
 
         var color: Color {
@@ -98,9 +98,11 @@ struct ProfileTimeSplit: View {
 /// "120 h", or "45m" under an hour; spelled out for VoiceOver.
 func profileHours(minutes: Int, long: Bool = false) -> String {
     if minutes < 60 {
-        return long ? "\(minutes) minutes" : durationLabel(minutes: minutes)
+        return long ? String(localized: "\(String(minutes)) minutes") : durationLabel(minutes: minutes)
     }
-    return long ? "\(hoursValue(minutes: minutes)) hours" : "\(hoursValue(minutes: minutes)) h"
+    return long
+        ? String(localized: "\(hoursValue(minutes: minutes)) hours")
+        : String(localized: "\(hoursValue(minutes: minutes)) h")
 }
 
 // MARK: Counts
@@ -113,25 +115,37 @@ struct ProfileCountTiles: View {
     var body: some View {
         Grid(horizontalSpacing: 12, verticalSpacing: 12) {
             GridRow {
-                tile(.show, stats.shows.finished, "show watched", "shows watched", watching(stats.shows))
-                tile(.anime, stats.anime.finished, "anime watched", "anime watched", watching(stats.anime))
+                tile(
+                    .show, stats.shows.finished,
+                    String(localized: "show watched"), String(localized: "shows watched"), watching(stats.shows)
+                )
+                tile(
+                    .anime, stats.anime.finished,
+                    String(localized: "anime watched"), String(localized: "anime watched"), watching(stats.anime)
+                )
             }
             GridRow {
-                tile(.film, stats.movies.finished, "film watched", "films watched", nil)
-                tile(.book, stats.books.finished, "book read", "books read", booksDetail)
+                tile(
+                    .film, stats.movies.finished,
+                    String(localized: "film watched"), String(localized: "films watched"), nil
+                )
+                tile(
+                    .book, stats.books.finished,
+                    String(localized: "book read"), String(localized: "books read"), booksDetail
+                )
             }
         }
     }
 
     private func watching(_ counts: LibraryCounts) -> String? {
-        counts.inProgress > 0 ? "\(counts.inProgress.formatted()) watching" : nil
+        counts.inProgress > 0 ? String(localized: "\(counts.inProgress.formatted()) watching") : nil
     }
 
     private var booksDetail: String? {
         if stats.pagesRead > 0 {
-            return "\(stats.pagesRead.formatted()) pages"
+            return String(localized: "\(stats.pagesRead.formatted()) pages")
         }
-        return stats.books.inProgress > 0 ? "\(stats.books.inProgress.formatted()) reading" : nil
+        return stats.books.inProgress > 0 ? String(localized: "\(stats.books.inProgress.formatted()) reading") : nil
     }
 
     private func tile(_ kind: MediaKind, _ count: Int, _ one: String, _ many: String, _ detail: String?)
@@ -199,7 +213,7 @@ struct ProfileGenreBars: View {
     }
 
     private func titles(_ count: Int) -> String {
-        count == 1 ? "1 title" : "\(count.formatted()) titles"
+        count == 1 ? String(localized: "1 title") : String(localized: "\(count.formatted()) titles")
     }
 }
 

@@ -9,7 +9,7 @@ extension GroupsModel {
         _ message: GroupMessage, by author: SocialUser,
         reason: Components.Schemas.ReportCreate.ReasonPayload, note: String?
     ) async -> String? {
-        guard let api else { return "That report was not sent." }
+        guard let api else { return String(localized: "That report was not sent.") }
         let composed = ["group-message:\(message.id)", note?.trimmingCharacters(in: .whitespacesAndNewlines)]
             .compactMap(\.self)
             .filter { !$0.isEmpty }
@@ -17,10 +17,11 @@ extension GroupsModel {
         do {
             switch try await api.reportUser(body: .json(.init(userId: author.userId, reason: reason, note: composed))) {
             case .noContent: return nil
-            case let .default(_, error): return (try? error.body.json.message) ?? "That report was not sent."
+            case let .default(_, error): return (try? error.body.json.message) ??
+                String(localized: "That report was not sent.")
             }
         } catch {
-            return "That report was not sent. Aaru could not reach the server."
+            return String(localized: "That report was not sent. Aaru could not reach the server.")
         }
     }
 }

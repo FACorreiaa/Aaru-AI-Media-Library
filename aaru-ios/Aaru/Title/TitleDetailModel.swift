@@ -77,7 +77,7 @@ final class TitleDetailModel {
                 try apply(response.body.json)
             }
         } catch {
-            problem = "Aaru could not reach the server."
+            problem = String(localized: "Aaru could not reach the server.")
         }
         // Without the title there is nothing to tick: say so instead of spinning.
         do {
@@ -195,11 +195,13 @@ final class TitleDetailModel {
                 #endif
             case let .default(_, error):
                 watched = before
-                problem = (try? error.body.json.message) ?? "Season \(season) could not be marked. Try again."
+                problem = (try? error.body.json.message) ??
+                    String(localized: "Season \(String(season)) could not be marked. Try again.")
             }
         } catch {
             watched = before
-            problem = "Season \(season) could not be marked. Aaru could not reach the server."
+            problem =
+                String(localized: "Season \(String(season)) could not be marked. Aaru could not reach the server.")
         }
     }
 
@@ -251,13 +253,13 @@ final class TitleDetailModel {
         let next = orderedSeasons.filter { $0.number > 0 }.flatMap(\.episodes)
             .filter { ($0.airsAt ?? .distantPast) > now }
             .min { ($0.airsAt ?? .distantFuture) < ($1.airsAt ?? .distantFuture) }
-        guard let next, let airsAt = next.airsAt else { return "Caught up" }
+        guard let next, let airsAt = next.airsAt else { return String(localized: "Caught up") }
         // A date-only air date is midnight UTC of that date, so it is read in UTC.
         var style = Date.FormatStyle.dateTime.month(.abbreviated).day()
         if !next.airTimeKnown {
             style.timeZone = .gmt
         }
-        return "Caught up · next \(airsAt.formatted(style))"
+        return String(localized: "Caught up · next \(airsAt.formatted(style))")
     }
 
     func airedEpisodes(in season: Int) -> Set<EpisodeKey> {
@@ -290,11 +292,11 @@ final class TitleDetailModel {
                 }
             case let .default(_, error):
                 entry = before
-                problem = (try? error.body.json.message) ?? "That change was not saved."
+                problem = (try? error.body.json.message) ?? String(localized: "That change was not saved.")
             }
         } catch {
             entry = before
-            problem = "That change was not saved. Aaru could not reach the server."
+            problem = String(localized: "That change was not saved. Aaru could not reach the server.")
         }
     }
 
@@ -334,7 +336,7 @@ final class TitleDetailModel {
             watched.remove(key)
         }
         let code = EpisodeCode.short(season: key.season, number: key.number)
-        problem = message ?? "\(code) was not saved. Aaru could not reach the server."
+        problem = message ?? String(localized: "\(code) was not saved. Aaru could not reach the server.")
     }
 }
 

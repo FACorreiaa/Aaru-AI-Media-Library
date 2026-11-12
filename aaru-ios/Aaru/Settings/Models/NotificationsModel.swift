@@ -31,7 +31,8 @@ final class NotificationsModel {
                 #endif
             }
         } catch {
-            problem = "Your notification settings could not be loaded. Aaru could not reach the server."
+            problem =
+                String(localized: "Your notification settings could not be loaded. Aaru could not reach the server.")
         }
     }
 
@@ -41,7 +42,10 @@ final class NotificationsModel {
         problem = nil
         #if os(iOS)
             if enabled, await PushRegistrar.current?.requestAuthorization() == false {
-                problem = "Notifications are off for Aaru. Turn them on in the Settings app, then try again."
+                problem =
+                    String(
+                        localized: "Notifications are off for Aaru. Turn them on in the Settings app, then try again."
+                    )
                 return
             }
         #endif
@@ -56,10 +60,10 @@ final class NotificationsModel {
             case let .ok(response):
                 settings = try response.body.json
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "That was not saved."
+                problem = (try? error.body.json.message) ?? String(localized: "That was not saved.")
             }
         } catch {
-            problem = "That was not saved. Aaru could not reach the server."
+            problem = String(localized: "That was not saved. Aaru could not reach the server.")
         }
     }
 

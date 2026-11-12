@@ -26,10 +26,10 @@ enum Daypart {
     func heading(on date: Date = .now) -> String {
         let weekday = date.formatted(.dateTime.weekday(.wide))
         switch self {
-        case .dawn: return "\(weekday) morning"
+        case .dawn: return String(localized: "\(weekday) morning")
         case .day: return weekday
-        case .dusk: return "\(weekday) evening"
-        case .night: return "\(weekday) night"
+        case .dusk: return String(localized: "\(weekday) evening")
+        case .night: return String(localized: "\(weekday) night")
         }
     }
 }

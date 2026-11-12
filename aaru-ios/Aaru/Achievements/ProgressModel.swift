@@ -188,15 +188,19 @@ extension ProgressModel.Unlock {
     var message: String {
         switch self {
         case let .one(award):
-            "\(award.name) · earned"
+            String(localized: "\(award.name) · earned")
         case let .several(count, _):
-            "\(count) badges earned"
+            String(localized: "\(String(count)) badges earned")
         case let .summary(count, origin):
             switch origin {
             case .backfill:
-                "Aaru gives badges now. You've already earned \(count)."
+                String(localized: "Aaru gives badges now. You've already earned \(String(count)).")
             default:
-                count == 1 ? "Your history earned you a badge" : "Your history earned you \(count) badges"
+                if count == 1 {
+                    String(localized: "Your history earned you a badge")
+                } else {
+                    String(localized: "Your history earned you \(String(count)) badges")
+                }
             }
         }
     }

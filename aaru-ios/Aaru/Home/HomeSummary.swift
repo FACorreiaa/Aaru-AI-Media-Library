@@ -51,10 +51,16 @@ struct WeekStrip: View {
                 alignment: .leading,
                 spacing: AaruSpace.medium
             ) {
-                figure(totals.episodesWatched.formatted(), totals.episodesWatched == 1 ? "episode" : "episodes")
-                figure(hoursValue(minutes: totals.minutesWatched), "hours")
-                figure(totals.finished.formatted(), "finished")
-                figure(totals.activeDays.formatted(), totals.activeDays == 1 ? "active day" : "active days")
+                figure(
+                    totals.episodesWatched.formatted(),
+                    totals.episodesWatched == 1 ? String(localized: "episode") : String(localized: "episodes")
+                )
+                figure(hoursValue(minutes: totals.minutesWatched), String(localized: "hours"))
+                figure(totals.finished.formatted(), String(localized: "finished"))
+                figure(
+                    totals.activeDays.formatted(),
+                    totals.activeDays == 1 ? String(localized: "active day") : String(localized: "active days")
+                )
             }
         }
         .panel()
@@ -140,7 +146,7 @@ struct UnfinishedCard: View {
     let width: CGFloat
 
     private var resume: String? {
-        entry.next.map { "Resume at \(EpisodeCode.short(season: $0.season, number: $0.number))" }
+        entry.next.map { String(localized: "Resume at \(EpisodeCode.short(season: $0.season, number: $0.number))") }
     }
 
     var body: some View {

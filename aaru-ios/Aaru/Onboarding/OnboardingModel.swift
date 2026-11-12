@@ -167,7 +167,9 @@ final class OnboardingModel {
         case let (index?, status?): picks[index].status = status
         case let (nil, status?):
             guard unsent(kind).count < Self.batchLimit else {
-                problem = "\(Self.batchLimit) is the most one screen saves. Continue, then add more from Search."
+                problem = String(
+                    localized: "\(Self.batchLimit) is the most one screen saves. Continue, then add more from Search."
+                )
                 return
             }
             picks.append(OnboardingPick(hit: hit, kind: kind, status: status))
@@ -192,12 +194,12 @@ final class OnboardingModel {
             case let .ok(response):
                 rows[kind] = try .loaded(response.body.json.rows.filter { !$0.items.isEmpty })
             case let .default(_, error):
-                rows[kind] = .failed((try? error.body.json.message) ?? "The titles didn't load.")
+                rows[kind] = .failed((try? error.body.json.message) ?? String(localized: "The titles didn't load."))
             }
         } catch is CancellationError {
             rows[kind] = nil
         } catch {
-            rows[kind] = .failed("Aaru could not reach the server.")
+            rows[kind] = .failed(String(localized: "Aaru could not reach the server."))
         }
     }
 
@@ -266,17 +268,22 @@ final class OnboardingModel {
                         missed.insert(pick.id)
                     }
                     problem = answer.missed == 1
-                        ? "One title couldn't be found in the catalog. Continue to go on without it."
-                        : "\(answer.missed) titles couldn't be found in the catalog. Continue to go on without them."
+                        ? String(localized: "One title couldn't be found in the catalog. Continue to go on without it.")
+                        : String(
+                            localized: """
+                            \(answer.missed) titles couldn't be found in \
+                            the catalog. Continue to go on without them.
+                            """
+                        )
                 }
                 // The new items reach Home, Library and Up Next the way other bulk writes do.
                 Task { [library, api] in await library.sync(api: api) }
                 return answer.missed
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "Your picks weren't saved."
+                problem = (try? error.body.json.message) ?? String(localized: "Your picks weren't saved.")
             }
         } catch {
-            problem = "Your picks weren't saved. Aaru could not reach the server."
+            problem = String(localized: "Your picks weren't saved. Aaru could not reach the server.")
         }
         saveFailed = true
         return nil

@@ -14,16 +14,16 @@ struct TraktSection: View {
     var body: some View {
         Section {
             if let connection = imports.trakt, connection.connected {
-                LabeledContent("Connected as", value: connection.username ?? "your Trakt account")
+                LabeledContent("Connected as", value: connection.username ?? String(localized: "your Trakt account"))
                 Button(action: startImport) {
-                    row("Import from Trakt", systemImage: "arrow.down.circle")
+                    row(String(localized: "Import from Trakt"), systemImage: "arrow.down.circle")
                 }
                 .disabled(imports.traktBusy)
                 Button("Disconnect Trakt", role: .destructive) { Task { await imports.disconnectTrakt() } }
                     .disabled(imports.traktBusy)
             } else {
                 Button(action: connect) {
-                    row("Connect Trakt", systemImage: "link")
+                    row(String(localized: "Connect Trakt"), systemImage: "link")
                 }
                 .disabled(imports.traktBusy || imports.trakt == nil)
             }
@@ -31,9 +31,11 @@ struct TraktSection: View {
             Text("Trakt")
         } footer: {
             Text(
-                "Aaru reads your watched history, episodes, watchlist, ratings and lists, and shows you the plan "
-                    + "first. Importing again only fills gaps. Free Trakt accounts can connect two apps.\n\n"
-                    + "Aaru uses Trakt but is not endorsed or certified by Trakt."
+                """
+                Aaru reads your watched history, episodes, watchlist, ratings and lists, and shows you the plan \
+                first. Importing again only fills gaps. Free Trakt accounts can connect two apps.\n\n\
+                Aaru uses Trakt but is not endorsed or certified by Trakt.
+                """
             )
         }
         .task { await imports.loadTrakt() }
@@ -58,7 +60,7 @@ struct TraktSection: View {
             } catch let error as ASWebAuthenticationSessionError where error.code == .canceledLogin {
                 return
             } catch {
-                imports.problem = "Trakt could not be reached. Try again."
+                imports.problem = String(localized: "Trakt could not be reached. Try again.")
             }
         }
     }

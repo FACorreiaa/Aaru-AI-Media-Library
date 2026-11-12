@@ -24,7 +24,7 @@ struct CaptureCard: View {
             }
             Spacer(minLength: 0)
             if job.isWorking {
-                AgentPresence(label: "Aaru is reading your capture")
+                AgentPresence(label: String(localized: "Aaru is reading your capture"))
             } else {
                 Image(systemName: "chevron.right")
                     .font(.footnote.weight(.semibold))

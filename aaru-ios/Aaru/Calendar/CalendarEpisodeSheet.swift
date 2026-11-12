@@ -68,7 +68,7 @@ struct CalendarEpisodeSheet: View {
                     .font(.caption.weight(.semibold))
                     .textCase(.uppercase)
                     .foregroundStyle(Color(.muted))
-                Text(entry.episodeName ?? "Episode \(entry.number)")
+                Text(entry.episodeName ?? String(localized: "Episode \(String(entry.number))"))
                     .font(.aaruDisplay(.title2, weight: .semibold))
                     .foregroundStyle(Color(.ink))
                     .fixedSize(horizontal: false, vertical: true)
@@ -136,12 +136,12 @@ struct CalendarEpisodeSheet: View {
             : entry.airsAt.formatted(
                 Date.FormatStyle(timeZone: .gmt).weekday(.wide).day().month(.wide)
             )
-        var text = (aired(entry) ? "" : "Airs ") + date
+        var text = aired(entry) ? date : String(localized: "Airs \(date)")
         if let network = entry.title.network {
-            text += " on \(network)"
+            text = String(localized: "\(text) on \(network)")
         }
         if let minutes = entry.runtimeMinutes {
-            text += " · \(minutes) min"
+            text += " · " + String(localized: "\(String(minutes)) min")
         }
         return text
     }

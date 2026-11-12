@@ -42,7 +42,7 @@ struct GoogleSignIn {
             return nil
         }
         guard value("state") == state, let code = value("code") else {
-            throw AuthFlowError("Google did not finish the sign-in. Try again.")
+            throw AuthFlowError(String(localized: "Google did not finish the sign-in. Try again."))
         }
         return try await Token(idToken: exchange(code: code, verifier: verifier), nonce: nonce)
     }
@@ -52,7 +52,7 @@ struct GoogleSignIn {
 
     private func authorizationURL(challenge: String, state: String, nonce: String) throws -> URL {
         guard let base = Self.authorizeURL, var url = URLComponents(url: base, resolvingAgainstBaseURL: false)
-        else { throw AuthFlowError("Google sign-in is misconfigured.") }
+        else { throw AuthFlowError(String(localized: "Google sign-in is misconfigured.")) }
         url.queryItems = [
             .init(name: "client_id", value: clientID),
             .init(name: "redirect_uri", value: redirectURI),
@@ -64,12 +64,13 @@ struct GoogleSignIn {
             .init(name: "nonce", value: nonce),
             .init(name: "prompt", value: "select_account"),
         ]
-        guard let result = url.url else { throw AuthFlowError("Google sign-in is misconfigured.") }
+        guard let result = url.url else { throw AuthFlowError(String(localized: "Google sign-in is misconfigured.")) }
         return result
     }
 
     private func exchange(code: String, verifier: String) async throws -> String {
-        guard let tokenURL = Self.tokenURL else { throw AuthFlowError("Google sign-in is misconfigured.") }
+        guard let tokenURL = Self.tokenURL
+        else { throw AuthFlowError(String(localized: "Google sign-in is misconfigured.")) }
         var request = URLRequest(url: tokenURL)
         request.httpMethod = "POST"
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
@@ -85,7 +86,7 @@ struct GoogleSignIn {
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200,
               let idToken = try JSONDecoder().decode(GoogleTokenResponse.self, from: data).idToken
-        else { throw AuthFlowError("Google did not return a sign-in token. Try again.") }
+        else { throw AuthFlowError(String(localized: "Google did not return a sign-in token. Try again.")) }
         return idToken
     }
 

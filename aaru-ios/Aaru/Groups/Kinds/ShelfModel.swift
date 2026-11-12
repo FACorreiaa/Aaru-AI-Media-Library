@@ -36,10 +36,10 @@ final class ShelfModel {
                 hasLoaded = true
                 loadProblem = nil
             case let .default(_, error):
-                loadFailed((try? error.body.json.message) ?? "This list could not be loaded.")
+                loadFailed((try? error.body.json.message) ?? String(localized: "This list could not be loaded."))
             }
         } catch {
-            loadFailed("This list could not be loaded. Aaru could not reach the server.")
+            loadFailed(String(localized: "This list could not be loaded. Aaru could not reach the server."))
         }
     }
 
@@ -62,10 +62,10 @@ final class ShelfModel {
                 items = try response.body.json.items
                 return true
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "That title was not added."
+                problem = (try? error.body.json.message) ?? String(localized: "That title was not added.")
             }
         } catch {
-            problem = "That title was not added. Aaru could not reach the server."
+            problem = String(localized: "That title was not added. Aaru could not reach the server.")
         }
         return false
     }
@@ -79,10 +79,10 @@ final class ShelfModel {
             ) {
             case .noContent: items.removeAll { $0.title.id == item.title.id }
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "That title was not removed."
+                problem = (try? error.body.json.message) ?? String(localized: "That title was not removed.")
             }
         } catch {
-            problem = "That title was not removed. Aaru could not reach the server."
+            problem = String(localized: "That title was not removed. Aaru could not reach the server.")
         }
     }
 
@@ -96,10 +96,10 @@ final class ShelfModel {
             switch try await api.addLibraryItem(body: .json(.init(mediaRef: item.title.mediaRef, status: .wishlist))) {
             case .ok: await load()
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "\(item.title.title) was not added."
+                problem = (try? error.body.json.message) ?? String(localized: "\(item.title.title) was not added.")
             }
         } catch {
-            problem = "\(item.title.title) was not added. Aaru could not reach the server."
+            problem = String(localized: "\(item.title.title) was not added. Aaru could not reach the server.")
         }
     }
 

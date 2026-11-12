@@ -15,10 +15,10 @@ struct SportsSearchView: View {
 
         var label: String {
             switch self {
-            case .all: "All"
-            case .league: "Leagues"
-            case .team: "Teams"
-            case .player: "Players"
+            case .all: String(localized: "All")
+            case .league: String(localized: "Leagues")
+            case .team: String(localized: "Teams")
+            case .player: String(localized: "Players")
             }
         }
 

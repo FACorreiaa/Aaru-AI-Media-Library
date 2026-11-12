@@ -210,7 +210,7 @@ final class HomeModel {
             let (upNext, airing) = try await (upNextOutput, calendarOutput)
             guard case let .ok(upNextResponse) = upNext, case let .ok(airingResponse) = airing else {
                 if hasLoaded || !isEmpty {
-                    problem = "Home could not be refreshed."
+                    problem = String(localized: "Home could not be refreshed.")
                 } else {
                     loadFailed = true
                 }
@@ -229,7 +229,7 @@ final class HomeModel {
             return true
         } catch {
             if hasLoaded || !isEmpty {
-                problem = "Offline. Showing Home from the last load."
+                problem = String(localized: "Offline. Showing Home from the last load.")
             } else {
                 // Nothing to show: the error state says it, not a banner under a spinner.
                 loadFailed = true
@@ -308,7 +308,7 @@ final class HomeModel {
             }
         } catch {
             continueWatching = before
-            problem = Self.notSaved(entry) + " Aaru could not reach the server."
+            problem = String(localized: "\(Self.notSaved(entry)) Aaru could not reach the server.")
         }
     }
 
@@ -355,7 +355,8 @@ extension HomeModel {
     }
 
     private static func notSaved(_ entry: ContinueEntry) -> String {
-        "\(entry.title.title) \(EpisodeCode.short(season: entry.next.season, number: entry.next.number)) was not saved."
+        let code = EpisodeCode.short(season: entry.next.season, number: entry.next.number)
+        return String(localized: "\(entry.title.title) \(code) was not saved.")
     }
 }
 

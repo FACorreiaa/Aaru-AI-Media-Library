@@ -147,13 +147,13 @@ struct ShareComposerSheet: View {
             case let .ok(response):
                 link = try URL(string: response.body.json.url)
                 if link == nil {
-                    problem = "The link could not be made."
+                    problem = String(localized: "The link could not be made.")
                 }
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "The link could not be made."
+                problem = (try? error.body.json.message) ?? String(localized: "The link could not be made.")
             }
         } catch {
-            problem = "Aaru could not reach the server."
+            problem = String(localized: "Aaru could not reach the server.")
         }
     }
 

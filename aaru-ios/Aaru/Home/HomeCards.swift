@@ -74,7 +74,7 @@ struct ContinueCard: View {
                 HomeChip(text: durationLabel(minutes: runtime))
             }
             if entry.isFinale {
-                HomeChip(text: "Finale", tint: Color(.ink), foreground: Color(.paper))
+                HomeChip(text: String(localized: "Finale"), tint: Color(.ink), foreground: Color(.paper))
             }
             Spacer(minLength: 0)
             HomeChip(text: leftLabel)
@@ -83,7 +83,7 @@ struct ContinueCard: View {
 
     /// "10 left · 8h 40m", or just "1 left".
     private var leftLabel: String {
-        let count = "\(entry.remainingCount) left"
+        let count = String(localized: "\(String(entry.remainingCount)) left")
         return entry.remainingMinutes > 0 ? "\(count) · \(durationLabel(minutes: entry.remainingMinutes))" : count
     }
 }

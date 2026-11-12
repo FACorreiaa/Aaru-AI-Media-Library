@@ -24,7 +24,7 @@ struct SportDay: Hashable, Identifiable {
 
     /// "Today", else "Sat".
     var weekday: String {
-        isToday ? "Today" : date.formatted(style.weekday(.abbreviated))
+        isToday ? String(localized: "Today") : date.formatted(style.weekday(.abbreviated))
     }
 
     /// "24".
@@ -35,7 +35,7 @@ struct SportDay: Hashable, Identifiable {
     /// "Today, Saturday 24 October", for VoiceOver.
     var spoken: String {
         let full = date.formatted(style.weekday(.wide).day().month(.wide))
-        return isToday ? "Today, \(full)" : full
+        return isToday ? String(localized: "Today, \(full)") : full
     }
 
     /// `back` days before today to `ahead` days after it, in `calendar`'s zone.
@@ -63,7 +63,7 @@ enum SportLabels {
     /// "67′" for a minute ("45+2′" too), "HT" or "Q3" as given, "Live" when the provider sends none.
     static func clock(_ progress: String?) -> String {
         let text = (progress ?? "").trimmingCharacters(in: .whitespaces)
-        guard !text.isEmpty else { return "Live" }
+        guard !text.isEmpty else { return String(localized: "Live") }
         let isMinute = text.allSatisfy { $0.isNumber || $0 == "+" } && text.first?.isNumber == true
         return isMinute ? "\(text)′" : text
     }
@@ -74,10 +74,10 @@ enum SportLabels {
     ) -> String {
         switch status {
         case .live: clock(progress)
-        case .finished: "Final"
-        case .postponed: "Postponed"
-        case .cancelled: "Cancelled"
-        case .scheduled: startsAt.map { time($0, timeZone: timeZone) } ?? "TBA"
+        case .finished: String(localized: "Final")
+        case .postponed: String(localized: "Postponed")
+        case .cancelled: String(localized: "Cancelled")
+        case .scheduled: startsAt.map { time($0, timeZone: timeZone) } ?? String(localized: "TBA")
         }
     }
 
@@ -102,9 +102,9 @@ enum SportLabels {
         let today = calendar.startOfDay(for: now)
         let offset = calendar.dateComponents([.day], from: today, to: calendar.startOfDay(for: date)).day
         switch offset {
-        case 0: return "Today"
-        case 1: return "Tomorrow"
-        case -1: return "Yesterday"
+        case 0: return String(localized: "Today")
+        case 1: return String(localized: "Tomorrow")
+        case -1: return String(localized: "Yesterday")
         default:
             return date.formatted(
                 Date.FormatStyle(timeZone: calendar.timeZone).weekday(.abbreviated).day().month(.abbreviated)
@@ -162,12 +162,12 @@ extension SportEvent {
             parts.append(name)
         }
         switch status {
-        case .live: parts.append("live, \(SportLabels.clock(progress))")
+        case .live: parts.append(String(localized: "live, \(SportLabels.clock(progress))"))
         case .scheduled: parts.append(SportLabels.kickoff(startsAt, day: day))
         default: parts.append(statusText)
         }
         if isFavorite {
-            parts.append("a favorite")
+            parts.append(String(localized: "a favorite"))
         }
         return parts.joined(separator: ", ")
     }

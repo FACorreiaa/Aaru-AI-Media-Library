@@ -15,7 +15,7 @@ struct AuthFlow {
         guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
               let data = credential.identityToken,
               let identityToken = String(bytes: data, encoding: .utf8)
-        else { throw AuthFlowError("Apple did not return a sign-in token. Try again.") }
+        else { throw AuthFlowError(String(localized: "Apple did not return a sign-in token. Try again.")) }
         // Apple shares the name only on the first authorization; the server keeps it then.
         let name = credential.fullName.map { PersonNameComponentsFormatter().string(from: $0) }
         let output = try await client().signInWithApple(body: .json(.init(
@@ -75,11 +75,11 @@ struct AuthFlow {
     }
 
     /// What a 403 `reauth_required` says: the session is older than 10 minutes, so sign in again first.
-    static let reauthMessage = "For your safety, sign in again, then delete your account."
+    static let reauthMessage = String(localized: "For your safety, sign in again, then delete your account.")
 
     /// Deletes the account on the server, then signs out here. Returns a message on failure.
     func deleteAccount() async -> String? {
-        guard let api else { return "This build has no server configured." }
+        guard let api else { return String(localized: "This build has no server configured.") }
         do {
             switch try await api.deleteAccount() {
             case .noContent:
@@ -88,15 +88,15 @@ struct AuthFlow {
             case .forbidden:
                 return Self.reauthMessage
             case let .default(_, error):
-                return (try? error.body.json.message) ?? "The account was not deleted."
+                return (try? error.body.json.message) ?? String(localized: "The account was not deleted.")
             }
         } catch {
-            return "The account was not deleted. Aaru could not reach the server."
+            return String(localized: "The account was not deleted. Aaru could not reach the server.")
         }
     }
 
     private func client() throws -> Client {
-        guard let api else { throw AuthFlowError("This build has no server configured.") }
+        guard let api else { throw AuthFlowError(String(localized: "This build has no server configured.")) }
         return api
     }
 }

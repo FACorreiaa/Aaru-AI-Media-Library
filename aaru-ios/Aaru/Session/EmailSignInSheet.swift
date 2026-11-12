@@ -28,15 +28,20 @@ struct EmailSignInSheet: View {
                         .fixedSize(horizontal: false, vertical: true)
 
                     if codeSent {
-                        field("Code", text: $code, prompt: "123 456", focus: .code)
+                        field(String(localized: "Code"), text: $code, prompt: "123 456", focus: .code)
                             .textContentType(.oneTimeCode)
                         #if os(iOS)
                             .keyboardType(.numberPad)
                         #endif
                     } else {
-                        field("Email", text: $email, prompt: "you@example.com", focus: .email)
-                            .textContentType(.emailAddress)
-                            .autocorrectionDisabled()
+                        field(
+                            String(localized: "Email"),
+                            text: $email,
+                            prompt: String(localized: "you@example.com"),
+                            focus: .email
+                        )
+                        .textContentType(.emailAddress)
+                        .autocorrectionDisabled()
                         #if os(iOS)
                             .keyboardType(.emailAddress)
                             .textInputAutocapitalization(.never)

@@ -61,11 +61,12 @@ struct ChannelHeader: View {
     }
 
     private var explanation: String {
-        let stored = """
+        let stored = String(localized: """
         Group messages are stored on Aaru's server in a form it can read, so the group works on all \
         your devices. Only members of this group can see them.
-        """
+        """)
         guard agent else { return stored }
-        return stored + " When someone tags @aaru, it reads this channel's recent group messages to answer."
+        return stored
+            + String(localized: " When someone tags @aaru, it reads this channel's recent group messages to answer.")
     }
 }

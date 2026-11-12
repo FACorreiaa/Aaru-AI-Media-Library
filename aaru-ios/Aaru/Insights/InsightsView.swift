@@ -66,9 +66,9 @@ struct InsightsView: View {
             if stats.totals.isZero, stats.ratings.mean == nil {
                 OwlUnavailableView(
                     title: model.span.isRolling
-                        ? "Nothing tracked in the \(model.period.label.lowercased())"
-                        : "Nothing tracked in \(model.period.label)",
-                    message: "Tick episodes and finish titles, and they add up here."
+                        ? String(localized: "Nothing tracked in the \(model.period.label.lowercased())")
+                        : String(localized: "Nothing tracked in \(model.period.label)"),
+                    message: String(localized: "Tick episodes and finish titles, and they add up here.")
                 )
             } else {
                 if let period = model.period.recap {
@@ -84,7 +84,7 @@ struct InsightsView: View {
             }
         } else if let problem = model.problem {
             // Nothing loaded: an error with Try again, never a blank page (UX-063).
-            LoadFailedView(title: "Couldn't load Insights", message: problem) { await model.load() }
+            LoadFailedView(title: String(localized: "Couldn't load Insights"), message: problem) { await model.load() }
                 .frame(minHeight: 300)
         } else {
             ProgressView().frame(maxWidth: .infinity, minHeight: 200)
@@ -111,7 +111,7 @@ private struct PeriodStepper: View {
     var body: some View {
         HStack {
             if model.canStep {
-                stepButton("Previous", systemImage: "chevron.left") { model.step(-1) }
+                stepButton(String(localized: "Previous"), systemImage: "chevron.left") { model.step(-1) }
             }
             Spacer()
             Text(model.period.label)
@@ -119,7 +119,7 @@ private struct PeriodStepper: View {
                 .accessibilityAddTraits(.isHeader)
             Spacer()
             if model.canStep {
-                stepButton("Next", systemImage: "chevron.right") { model.step(1) }
+                stepButton(String(localized: "Next"), systemImage: "chevron.right") { model.step(1) }
                     .disabled(!model.canStepForward)
             }
         }

@@ -22,18 +22,24 @@ struct ImportPage: View {
         Form {
             TraktSection(imports: imports) { openJob($0.id) }
             HistorySourcesSection(
-                title: "Bring your history", sources: HistorySource.ordered, busy: imports.uploading, choose: choose,
-                footer: "Aaru matches every row first and shows you the plan. Nothing changes until you approve it, "
-                    + "and an import undoes in one step from History, in Your data."
+                title: String(localized: "Bring your history"), sources: HistorySource.ordered, busy: imports.uploading,
+                choose: choose,
+                footer: String(localized: """
+                Aaru matches every row first and shows you the plan. Nothing changes until you approve it, \
+                and an import undoes in one step from History, in Your data.
+                """)
             )
             HistorySourcesSection(
-                title: "Music history", sources: HistorySource.music, busy: imports.uploading, choose: choose,
-                footer: "Past listening goes to your Music log, never your library. Each listen counts on the day "
-                    + "you played it, and an import undoes in one step."
+                title: String(localized: "Music history"), sources: HistorySource.music, busy: imports.uploading,
+                choose: choose,
+                footer: String(localized: """
+                Past listening goes to your Music log, never your library. Each listen counts on the day \
+                you played it, and an import undoes in one step.
+                """)
             )
             ImportJobsSection(imports: imports)
         }
-        .settingsPage("Import", problem: $imports.problem)
+        .settingsPage(String(localized: "Import"), problem: $imports.problem)
         .overlay {
             if imports.uploading {
                 ProgressView("Uploading…")

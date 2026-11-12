@@ -33,13 +33,13 @@ final class TitleChannelModel {
                 loadProblem = nil
             case let .default(_, error):
                 if progress == nil {
-                    loadProblem = (try? error.body.json.message) ?? "This title could not be loaded."
+                    loadProblem = (try? error.body.json.message) ?? String(localized: "This title could not be loaded.")
                 }
             }
         } catch {
             // A refresh that fails keeps what is on screen.
             if progress == nil {
-                loadProblem = "This title could not be loaded. Aaru could not reach the server."
+                loadProblem = String(localized: "This title could not be loaded. Aaru could not reach the server.")
             }
         }
     }
@@ -52,7 +52,7 @@ extension MemberProgress {
         if status != .finished, let season, let episode {
             return EpisodeCode.text(season: season, episode: episode)
         }
-        return status?.label(for: kind) ?? "Not started"
+        return status?.label(for: kind) ?? String(localized: "Not started")
     }
 }
 
@@ -60,7 +60,7 @@ extension GroupsModel {
     /// Shows or hides the user's progress in this group's title channels.
     func setShareProgress(_ groupID: String, share: Bool) async {
         guard let api else { return }
-        await run("That setting was not saved.") {
+        await run(String(localized: "That setting was not saved.")) {
             switch try await api.updateMyMembership(
                 path: .init(groupId: groupID), body: .json(.init(shareProgress: share))
             ) {

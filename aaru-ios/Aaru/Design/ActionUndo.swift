@@ -11,10 +11,10 @@ extension Client {
                 Task { try? await WidgetSync.refresh(api: self) }
                 return nil
             case let .default(_, error):
-                return (try? error.body.json.message) ?? "That could not be undone."
+                return (try? error.body.json.message) ?? String(localized: "That could not be undone.")
             }
         } catch {
-            return "That could not be undone. Aaru could not reach the server."
+            return String(localized: "That could not be undone. Aaru could not reach the server.")
         }
     }
 }

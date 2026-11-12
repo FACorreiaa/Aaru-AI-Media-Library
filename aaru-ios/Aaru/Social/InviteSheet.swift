@@ -153,11 +153,11 @@ struct InviteSheet: View {
                 switch try await api.updateProfile(body: .json(body)) {
                 case .ok: needsHandle = false
                 case let .default(_, error):
-                    problem = (try? error.body.json.message) ?? "Your handle was not saved."
+                    problem = (try? error.body.json.message) ?? String(localized: "Your handle was not saved.")
                     return
                 }
             } catch {
-                problem = "Aaru could not reach the server."
+                problem = String(localized: "Aaru could not reach the server.")
                 return
             }
         }
@@ -168,17 +168,18 @@ struct InviteSheet: View {
             ) {
             case let .ok(response):
                 let result = try response.body.json
-                var note = "You can now see each other's shelves."
+                var note = String(localized: "You can now see each other's shelves.")
                 if result.titleAdded, let title = preview.title {
                     let kind = MediaKind(type: title._type, isAnime: title.isAnime)
-                    note = "\(title.title) is on your \(LibraryStatus.wishlist.label(for: kind)). " + note
+                    let status = LibraryStatus.wishlist.label(for: kind)
+                    note = String(localized: "\(title.title) is on your \(status).") + " " + note
                 }
                 stage = .done(name: result.friend.inviteName, note: note)
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "The invite could not be accepted."
+                problem = (try? error.body.json.message) ?? String(localized: "The invite could not be accepted.")
             }
         } catch {
-            problem = "Aaru could not reach the server."
+            problem = String(localized: "Aaru could not reach the server.")
         }
     }
 }
@@ -233,9 +234,9 @@ private struct InviteHandleField: View {
 enum InviteWords {
     static func plea(_ title: String, kind: MediaKind) -> String {
         switch kind {
-        case .book, .manga: "Read \(title) with me."
-        case .music: "Listen to \(title) with me."
-        case .film, .show, .anime: "Watch \(title) with me."
+        case .book, .manga: String(localized: "Read \(title) with me.")
+        case .music: String(localized: "Listen to \(title) with me.")
+        case .film, .show, .anime: String(localized: "Watch \(title) with me.")
         }
     }
 
@@ -243,9 +244,9 @@ enum InviteWords {
     static func expiry(_ date: Date, now: Date = .now) -> String {
         let days = Int(date.timeIntervalSince(now) / 86400)
         switch days {
-        case ..<1: return "Expires today"
-        case 1: return "Expires tomorrow"
-        default: return "Expires in \(days) days"
+        case ..<1: return String(localized: "Expires today")
+        case 1: return String(localized: "Expires tomorrow")
+        default: return String(localized: "Expires in \(days) days")
         }
     }
 }

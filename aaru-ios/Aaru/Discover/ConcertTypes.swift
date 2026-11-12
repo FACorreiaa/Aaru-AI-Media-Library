@@ -59,6 +59,6 @@ extension ConcertRadius {
     }
 
     var spoken: String {
-        "\(rawValue) kilometres"
+        String(localized: "\(String(rawValue)) kilometres")
     }
 }

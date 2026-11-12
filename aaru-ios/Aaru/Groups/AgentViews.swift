@@ -66,10 +66,15 @@ struct AgentMessageRow: View {
                         .foregroundStyle(Color(.muted))
                 }
                 if let answering, !answering.deleted {
-                    Text("Replying to \(answering.author.map { "@\($0.handle)" } ?? "someone"): \(answering.body)")
-                        .font(.caption)
-                        .foregroundStyle(Color(.muted))
-                        .lineLimit(1)
+                    Text(
+                        """
+                        Replying to \(answering.author.map { "@\($0.handle)" } ?? String(localized: "someone")): \
+                        \(answering.body)
+                        """
+                    )
+                    .font(.caption)
+                    .foregroundStyle(Color(.muted))
+                    .lineLimit(1)
                 }
                 if message.deleted {
                     Text("Deleted").italic().foregroundStyle(Color(.muted))

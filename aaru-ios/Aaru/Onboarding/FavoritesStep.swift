@@ -52,8 +52,8 @@ struct FavoritesStep: View {
 
     var body: some View {
         OnboardingPage(
-            title: "Your favorites",
-            subtitle: "Star the ones you love most. They show on your profile, first starred first.",
+            title: String(localized: "Your favorites"),
+            subtitle: String(localized: "Star the ones you love most. They show on your profile, first starred first."),
             onBack: onBack,
             onSkip: onSkip,
             isBusy: isSaving || model.isAwaitingRelated
@@ -85,7 +85,10 @@ struct FavoritesStep: View {
         } footer: {
             OnboardingProblem(message: favorites.problem) { favorites.problem = nil }
             OnboardingPill(
-                label: saveFailed ? "Try again" : (starCount > 0 ? "Continue (\(starCount))" : "Skip favorites"),
+                label: saveFailed
+                    ? String(localized: "Try again")
+                    : starCount > 0 ? String(localized: "Continue (\(starCount))") :
+                    String(localized: "Skip favorites"),
                 isBusy: isSaving || model.isAwaitingRelated
             ) { Task { await save() } }
         }
@@ -133,7 +136,7 @@ struct FavoritesStep: View {
         .disabled(order == nil && full)
         .modifier(HoverLift())
         .accessibilityLabel(pick.hit.title)
-        .accessibilityValue(order.map { "Favorite \($0 + 1)" } ?? "")
+        .accessibilityValue(order.map { String(localized: "Favorite \($0 + 1)") } ?? "")
         .accessibilityAddTraits(order != nil ? [.isButton, .isSelected] : .isButton)
     }
 

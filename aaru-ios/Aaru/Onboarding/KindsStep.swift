@@ -12,8 +12,8 @@ struct KindsStep: View {
 
     var body: some View {
         OnboardingPage(
-            title: "What do you keep?",
-            subtitle: "Pick what you watch, read and listen to. You can add the rest any time.",
+            title: String(localized: "What do you keep?"),
+            subtitle: String(localized: "Pick what you watch, read and listen to. You can add the rest any time."),
             onSkip: onSkip,
             showsOwl: true
         ) {
@@ -29,7 +29,7 @@ struct KindsStep: View {
         } footer: {
             Button("Bring your history instead", action: onImport)
                 .buttonStyle(OutlineCapsuleButtonStyle())
-            OnboardingPill(label: "Continue", action: onContinue)
+            OnboardingPill(label: String(localized: "Continue"), action: onContinue)
                 .disabled(model.kinds.isEmpty)
         }
     }

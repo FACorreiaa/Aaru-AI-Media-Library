@@ -64,7 +64,7 @@ final class PlusModel {
             await refresh()
         }
         guard let token = entitlement.flatMap({ UUID(uuidString: $0.appAccountToken) }) else {
-            problem = "Aaru could not reach the server. Try again in a moment."
+            problem = String(localized: "Aaru could not reach the server. Try again in a moment.")
             return false
         }
         do {
@@ -72,14 +72,14 @@ final class PlusModel {
             case let .success(result):
                 await settle(result)
             case .pending:
-                problem = "The purchase is waiting for approval. Plus starts when it goes through."
+                problem = String(localized: "The purchase is waiting for approval. Plus starts when it goes through.")
             case .userCancelled:
                 break
             @unknown default:
                 break
             }
         } catch {
-            problem = "The App Store could not complete the purchase."
+            problem = String(localized: "The App Store could not complete the purchase.")
         }
         return isPlus
     }
@@ -91,7 +91,7 @@ final class PlusModel {
         do {
             try await AppStore.sync()
         } catch {
-            problem = "The App Store could not be reached."
+            problem = String(localized: "The App Store could not be reached.")
             return
         }
         for await result in Transaction.currentEntitlements {
@@ -99,7 +99,7 @@ final class PlusModel {
         }
         await refresh()
         if !isPlus, problem == nil {
-            problem = "No Aaru Plus purchase was found for this Apple Account."
+            problem = String(localized: "No Aaru Plus purchase was found for this Apple Account.")
         }
     }
 
@@ -125,11 +125,12 @@ final class PlusModel {
             case let .ok(response):
                 entitlement = try response.body.json
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "Aaru could not confirm the purchase."
+                problem = (try? error.body.json.message) ?? String(localized: "Aaru could not confirm the purchase.")
             }
             await transaction.finish()
         } catch {
-            problem = "Aaru could not reach the server. The purchase is kept; Aaru tries again next time."
+            problem =
+                String(localized: "Aaru could not reach the server. The purchase is kept; Aaru tries again next time.")
         }
     }
 }
@@ -139,12 +140,14 @@ extension Product {
     var priceLine: String {
         guard let period = subscription?.subscriptionPeriod else { return displayPrice }
         let unit = switch period.unit {
-        case .day: "day"
-        case .week: "week"
-        case .month: "month"
-        case .year: "year"
-        @unknown default: "period"
+        case .day: String(localized: "day")
+        case .week: String(localized: "week")
+        case .month: String(localized: "month")
+        case .year: String(localized: "year")
+        @unknown default: String(localized: "period")
         }
-        return period.value == 1 ? "\(displayPrice) a \(unit)" : "\(displayPrice) every \(period.value) \(unit)s"
+        return period.value == 1
+            ? String(localized: "\(displayPrice) a \(unit)")
+            : String(localized: "\(displayPrice) every \(String(period.value)) \(unit)s")
     }
 }

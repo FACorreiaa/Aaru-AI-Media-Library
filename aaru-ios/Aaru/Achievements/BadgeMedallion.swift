@@ -103,7 +103,10 @@ enum BadgeGlyph {
     /// "Bronze", "Silver", "Gold", "Platinum"; nil for a badge with one tier.
     static func tierWord(_ tier: Int, of maxTier: Int) -> String? {
         guard maxTier > 1, (1 ... 4).contains(tier) else { return nil }
-        return ["Bronze", "Silver", "Gold", "Platinum"][tier - 1]
+        return [
+            String(localized: "Bronze"), String(localized: "Silver"), String(localized: "Gold"),
+            String(localized: "Platinum"),
+        ][tier - 1]
     }
 
     static func familyName(_ family: Components.Schemas.BadgeFamily) -> String {

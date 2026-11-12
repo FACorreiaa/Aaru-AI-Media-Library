@@ -20,12 +20,12 @@ struct NowItem: Identifiable {
         kind = MediaKind(type: entry.title._type, isAnime: entry.title.isAnime)
         if let progress = entry.progress, progress.airedCount > 0 {
             done = min(1, Double(progress.watchedCount) / Double(progress.airedCount))
-            label = "\(progress.watchedCount) of \(progress.airedCount) episodes"
+            label = String(localized: "\(String(progress.watchedCount)) of \(String(progress.airedCount)) episodes")
             next = progress.nextEpisode
         } else if kind == .manga {
             let chapter = entry.mangaProgress?.chapter
             done = chapter.flatMap { read in entry.title.chapterCount.map { min(1, Double(read) / Double($0)) } }
-            label = entry.mangaProgressLabel ?? "Just started"
+            label = entry.mangaProgressLabel ?? String(localized: "Just started")
             next = nil
         } else if let percent = entry.bookProgress?.percent {
             done = min(1, percent / 100)
@@ -34,14 +34,17 @@ struct NowItem: Identifiable {
         } else if let page = entry.bookProgress?.page {
             let pages = entry.title.pageCount
             done = pages.map { min(1, Double(page) / Double($0)) }
-            label = pages.map { "Page \(page) of \($0)" } ?? "Page \(page)"
+            label = pages.map { String(localized: "Page \(String(page)) of \(String($0))") }
+                ?? String(localized: "Page \(String(page))")
             next = nil
         } else {
             done = nil
             switch kind {
-            case .book: label = entry.title.pageCount.map { "\($0) pages" } ?? "Just started"
-            case .music: label = "Listening"
-            default: label = "Watching"
+            case .book:
+                label = entry.title.pageCount.map { String(localized: "\(String($0)) pages") }
+                    ?? String(localized: "Just started")
+            case .music: label = String(localized: "Listening")
+            default: label = String(localized: "Watching")
             }
             next = nil
         }
@@ -61,9 +64,9 @@ enum NowGroupID: String, CaseIterable, Hashable {
 
     var title: String {
         switch self {
-        case .watching: "Watching"
-        case .reading: "Reading"
-        case .listening: "Listening"
+        case .watching: String(localized: "Watching")
+        case .reading: String(localized: "Reading")
+        case .listening: String(localized: "Listening")
         }
     }
 
@@ -97,9 +100,14 @@ enum NowSort: String, CaseIterable, Identifiable {
 
     func label(for group: NowGroupID) -> String {
         switch self {
-        case .recent: group == .watching ? "Recently watched" : "Recent"
-        case .airsNext: "Airs next"
-        case .title: "A–Z"
+        case .recent:
+            if group == .watching {
+                String(localized: "Recently watched")
+            } else {
+                String(localized: "Recent")
+            }
+        case .airsNext: String(localized: "Airs next")
+        case .title: String(localized: "A–Z")
         }
     }
 }
@@ -160,7 +168,7 @@ extension LibraryModel {
             case let .default(
                 _,
                 error
-            ): return .failure((try? error.body.json.message) ?? "That episode was not saved.")
+            ): return .failure((try? error.body.json.message) ?? String(localized: "That episode was not saved."))
             }
         }
     }
@@ -185,7 +193,8 @@ extension LibraryModel {
         await write(item, api: api) { client in
             switch try await client.updateLibraryItem(path: .init(id: item.entry.id), body: .json(body)) {
             case let .ok(response): return try .success(response.body.json, action: response.headers.aaruAction)
-            case let .default(_, error): return .failure((try? error.body.json.message) ?? "That change was not saved.")
+            case let .default(_, error):
+                return .failure((try? error.body.json.message) ?? String(localized: "That change was not saved."))
             }
         }
     }
@@ -201,7 +210,7 @@ extension LibraryModel {
         api: Client?,
         _ send: (Client) async throws -> Outcome
     ) async -> NowWrite {
-        guard let api else { return NowWrite(problem: "Aaru could not reach the server.") }
+        guard let api else { return NowWrite(problem: String(localized: "Aaru could not reach the server.")) }
         guard !nowPending.contains(item.id) else { return NowWrite() }
         nowPending.insert(item.id)
         defer { nowPending.remove(item.id) }
@@ -215,7 +224,7 @@ extension LibraryModel {
                 return NowWrite(problem: message)
             }
         } catch {
-            return NowWrite(problem: "Aaru could not reach the server.")
+            return NowWrite(problem: String(localized: "Aaru could not reach the server."))
         }
     }
 }

@@ -87,7 +87,7 @@ struct PostComposer: View {
             router?.pendingBoardTitle = nil
         }
         .sheet(isPresented: $picking) {
-            TitlePickerSheet(api: board.api, navigationTitle: "Add a title") { hit in
+            TitlePickerSheet(api: board.api, navigationTitle: String(localized: "Add a title")) { hit in
                 board.draftTitle = BoardTitlePick(hit)
                 return true
             }

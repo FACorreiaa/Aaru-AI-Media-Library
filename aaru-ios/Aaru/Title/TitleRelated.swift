@@ -20,11 +20,13 @@ struct TitleRelated: View {
     /// Providers know sequels and adaptations, not every show set in one world: that is a question
     /// for the owl, whose answer is its own suggestion to review, never catalog data.
     private func askSameWorld() {
-        let title = model.centre?.ref.title ?? "this title"
+        let title = model.centre?.ref.title ?? String(localized: "this title")
         router?.openAssistant(
             listening: false, titleID: titleID, onTitlePage: true, hostID: hostID,
-            question: "What else is set in the same world as \"\(title)\"? Spin-offs, prequels and sequels "
-                + "in any medium that are not already related here."
+            question: String(localized: """
+            What else is set in the same world as \"\(title)\"? Spin-offs, prequels and sequels \
+            in any medium that are not already related here.
+            """)
         )
     }
 
@@ -174,7 +176,7 @@ struct RelationGraphSheet: View {
     var body: some View {
         NavigationStack {
             content
-                .navigationTitle(model.centre?.ref.title ?? "Related")
+                .navigationTitle(model.centre?.ref.title ?? String(localized: "Related"))
             #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)
             #endif

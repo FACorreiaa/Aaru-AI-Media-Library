@@ -15,8 +15,9 @@ extension LibraryModel {
     /// show becomes Watched; the server moves a running one back to Watching when its next episode
     /// airs. The shelf takes the answer at once.
     func markShowWatched(_ id: String, api: Client?) async -> Result<ShowWatched, WriteFailure> {
-        let name = entry(id)?.title.title ?? "The show"
-        guard let api else { return .failure(WriteFailure(message: "Aaru could not reach the server.")) }
+        let name = entry(id)?.title.title ?? String(localized: "The show")
+        guard let api
+        else { return .failure(WriteFailure(message: String(localized: "Aaru could not reach the server."))) }
         do {
             switch try await api.markShowWatched(path: .init(id: id)) {
             case let .ok(response):
@@ -37,20 +38,20 @@ extension LibraryModel {
                 return .success(result)
             case let .default(_, error):
                 return .failure(WriteFailure(
-                    message: (try? error.body.json.message) ?? "\(name) could not be marked watched."
+                    message: (try? error.body.json.message) ?? String(localized: "\(name) could not be marked watched.")
                 ))
             }
         } catch {
-            return .failure(
-                WriteFailure(message: "\(name) could not be marked watched. Aaru could not reach the server.")
-            )
+            return .failure(WriteFailure(
+                message: String(localized: "\(name) could not be marked watched. Aaru could not reach the server.")
+            ))
         }
     }
 
     /// A season's aired episodes, ticked as one action (Tonight's season tick, PROG-006). The
     /// shelf takes the answer at once. Returns what went wrong, or nil.
     func markSeasonWatched(_ id: String, season: Int, api: Client?) async -> String? {
-        guard let api else { return "Aaru could not reach the server." }
+        guard let api else { return String(localized: "Aaru could not reach the server.") }
         do {
             switch try await api.markSeasonWatched(path: .init(id: id, season: season)) {
             case let .ok(response):
@@ -63,35 +64,36 @@ extension LibraryModel {
                 #endif
                 return nil
             case let .default(_, error):
-                return (try? error.body.json.message) ?? "Season \(season) could not be marked. Try again."
+                return (try? error.body.json.message) ??
+                    String(localized: "Season \(String(season)) could not be marked. Try again.")
             }
         } catch {
-            return "Season \(season) could not be marked. Aaru could not reach the server."
+            return String(localized: "Season \(String(season)) could not be marked. Aaru could not reach the server.")
         }
     }
 
     /// A film's "Mark watched": status Watched, the same PATCH as the title page. Returns what
     /// went wrong, or nil.
     func markFilmWatched(_ id: String, api: Client?) async -> String? {
-        let name = entry(id)?.title.title ?? "The film"
-        guard let api else { return "Aaru could not reach the server." }
+        let name = entry(id)?.title.title ?? String(localized: "The film")
+        guard let api else { return String(localized: "Aaru could not reach the server.") }
         do {
             switch try await api.updateLibraryItem(path: .init(id: id), body: .json(.init(status: .finished))) {
             case let .ok(response):
                 try upsert(response.body.json)
                 return nil
             case let .default(_, error):
-                return (try? error.body.json.message) ?? "\(name) could not be marked watched."
+                return (try? error.body.json.message) ?? String(localized: "\(name) could not be marked watched.")
             }
         } catch {
-            return "\(name) could not be marked watched. Aaru could not reach the server."
+            return String(localized: "\(name) could not be marked watched. Aaru could not reach the server.")
         }
     }
 
     /// Takes back one journaled action (`/v1/actions/{id}/undo`), then reloads the items it
     /// touched so the shelf, and Home through the revision, show the state before it.
     func undo(_ actionID: String, api: Client?) async -> String? {
-        guard let api else { return "Aaru could not reach the server." }
+        guard let api else { return String(localized: "Aaru could not reach the server.") }
         let generation = syncGeneration
         do {
             switch try await api.undoAction(path: .init(id: actionID)) {
@@ -111,10 +113,10 @@ extension LibraryModel {
                 Task { try? await WidgetSync.refresh(api: api) }
                 return nil
             case let .default(_, error):
-                return (try? error.body.json.message) ?? "That could not be undone."
+                return (try? error.body.json.message) ?? String(localized: "That could not be undone.")
             }
         } catch {
-            return "That could not be undone. Aaru could not reach the server."
+            return String(localized: "That could not be undone. Aaru could not reach the server.")
         }
     }
 }
@@ -123,16 +125,23 @@ extension ShowWatched {
     /// The toast's words (DESIGN.md §9): "Marked 62 episodes of Severance", "Caught up on 18
     /// aired episodes" for a running show, "Already caught up" when nothing changed.
     var toastMessage: String {
-        guard action != nil else { return "Already caught up" }
+        guard action != nil else { return String(localized: "Already caught up") }
         let title = entry.title.title
+        let count = episodes.formatted()
         if entry.status == .finished {
-            return episodes == 0
-                ? "Marked \(title) watched"
-                : "Marked \(episodes == 1 ? "1 episode" : "\(episodes.formatted()) episodes") of \(title)"
+            if episodes == 0 {
+                return String(localized: "Marked \(title) watched")
+            }
+            return episodes == 1
+                ? String(localized: "Marked 1 episode of \(title)")
+                : String(localized: "Marked \(count) episodes of \(title)")
         }
-        return episodes == 0
-            ? "\(title) is caught up"
-            : "Caught up on \(episodes == 1 ? "1 aired episode" : "\(episodes.formatted()) aired episodes")"
+        if episodes == 0 {
+            return String(localized: "\(title) is caught up")
+        }
+        return episodes == 1
+            ? String(localized: "Caught up on 1 aired episode")
+            : String(localized: "Caught up on \(count) aired episodes")
     }
 }
 
@@ -192,7 +201,7 @@ struct MarkWatchedButton: View {
             if let problem = await library.markFilmWatched(id, api: api) {
                 toasts?.show(problem, tone: .problem)
             } else {
-                toasts?.show("Marked \(entry.title.title) watched")
+                toasts?.show(String(localized: "Marked \(entry.title.title) watched"))
             }
             return
         }

@@ -38,10 +38,10 @@ final class ListsModel {
                 hasLoaded = true
                 loadProblem = nil
             case let .default(_, error):
-                failLoad((try? error.body.json.message) ?? "Your lists could not be loaded.")
+                failLoad((try? error.body.json.message) ?? String(localized: "Your lists could not be loaded."))
             }
         } catch {
-            failLoad("Your lists could not be loaded. Aaru could not reach the server.")
+            failLoad(String(localized: "Your lists could not be loaded. Aaru could not reach the server."))
         }
     }
 
@@ -83,7 +83,7 @@ final class ListsModel {
     func create(named name: String) async -> ListDetail? {
         let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let api, !name.isEmpty else { return nil }
-        return await write("The list could not be created.") {
+        return await write(String(localized: "The list could not be created.")) {
             switch try await api.createList(body: .json(.init(name: name))) {
             case let .ok(response): try response.body.json
             case let .default(_, error): throw Failure(try? error.body.json.message)
@@ -95,7 +95,7 @@ final class ListsModel {
     func rename(_ id: String, to name: String) async -> ListDetail? {
         let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let api, !name.isEmpty else { return nil }
-        return await write("The list could not be renamed.") {
+        return await write(String(localized: "The list could not be renamed.")) {
             switch try await api.renameList(path: .init(id: id), body: .json(.init(name: name))) {
             case let .ok(response): try response.body.json
             case let .default(_, error): throw Failure(try? error.body.json.message)
@@ -112,11 +112,11 @@ final class ListsModel {
             case .noContent: return
             case let .default(_, error):
                 lists = before
-                problem = (try? error.body.json.message) ?? "The list could not be deleted."
+                problem = (try? error.body.json.message) ?? String(localized: "The list could not be deleted.")
             }
         } catch {
             lists = before
-            problem = "The list could not be deleted. Aaru could not reach the server."
+            problem = String(localized: "The list could not be deleted. Aaru could not reach the server.")
         }
     }
 
@@ -124,7 +124,7 @@ final class ListsModel {
     @discardableResult
     func add(_ ref: MediaRef, to id: String) async -> ListDetail? {
         guard let api else { return nil }
-        return await write("The title could not be added to the list.") {
+        return await write(String(localized: "The title could not be added to the list.")) {
             switch try await api.addListItem(path: .init(id: id), body: .json(.init(mediaRef: ref))) {
             case let .ok(response): try response.body.json
             case let .default(_, error): throw Failure(try? error.body.json.message)
@@ -134,7 +134,7 @@ final class ListsModel {
 
     func detail(_ id: String) async -> ListDetail? {
         guard let api else { return nil }
-        return await write("The list could not be loaded.") {
+        return await write(String(localized: "The list could not be loaded.")) {
             switch try await api.getList(path: .init(id: id)) {
             case let .ok(response): try response.body.json
             case let .default(_, error): throw Failure(try? error.body.json.message)
@@ -144,7 +144,7 @@ final class ListsModel {
 
     func remove(titleID: String, from id: String) async -> ListDetail? {
         guard let api else { return nil }
-        return await write("The title could not be removed.") {
+        return await write(String(localized: "The title could not be removed.")) {
             switch try await api.removeListItem(path: .init(id: id, titleId: titleID)) {
             case let .ok(response): try response.body.json
             case let .default(_, error): throw Failure(try? error.body.json.message)
@@ -154,7 +154,7 @@ final class ListsModel {
 
     func reorder(_ id: String, titleIDs: [String]) async -> ListDetail? {
         guard let api else { return nil }
-        return await write("The new order was not saved.") {
+        return await write(String(localized: "The new order was not saved.")) {
             switch try await api.reorderList(path: .init(id: id), body: .json(.init(titleIds: titleIDs))) {
             case let .ok(response): try response.body.json
             case let .default(_, error): throw Failure(try? error.body.json.message)
@@ -190,7 +190,7 @@ final class ListsModel {
         } catch let failure as Failure {
             problem = failure.message ?? fallback
         } catch {
-            problem = "\(fallback) Aaru could not reach the server."
+            problem = String(localized: "\(fallback) Aaru could not reach the server.")
         }
         return nil
     }

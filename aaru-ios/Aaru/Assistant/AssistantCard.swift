@@ -146,7 +146,8 @@ struct AssistantCard: View {
             model.isMuted.toggle()
         } label: {
             headerIcon(
-                model.isMuted ? "Read replies aloud" : "Stop reading replies aloud",
+                model.isMuted
+                    ? String(localized: "Read replies aloud") : String(localized: "Stop reading replies aloud"),
                 symbol: model.isMuted ? "speaker.slash" : "speaker.wave.2"
             )
         }
@@ -157,7 +158,7 @@ struct AssistantCard: View {
     /// ASK-011: ends this chat and starts an empty one.
     private var newChatButton: some View {
         Button { Task { await model.history.newChat() } } label: {
-            headerIcon("New chat", symbol: "square.and.pencil")
+            headerIcon(String(localized: "New chat"), symbol: "square.and.pencil")
         }
         .buttonStyle(.plain)
         .help("New chat")
@@ -170,7 +171,7 @@ struct AssistantCard: View {
             model.history.panel = showing ? .chat : .list
         } label: {
             headerIcon(
-                showing ? "Back to chat" : "Chats",
+                showing ? String(localized: "Back to chat") : String(localized: "Chats"),
                 symbol: showing ? "chevron.backward" : "bubble.left.and.bubble.right"
             )
         }
@@ -180,7 +181,7 @@ struct AssistantCard: View {
 
     private var closeButton: some View {
         Button(action: onClose) {
-            headerIcon("Close", symbol: "xmark")
+            headerIcon(String(localized: "Close"), symbol: "xmark")
         }
         .buttonStyle(.plain)
         .keyboardShortcut(.cancelAction)

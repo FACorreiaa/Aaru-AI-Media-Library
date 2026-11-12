@@ -68,23 +68,25 @@ extension OnboardingKind: @retroactive Identifiable {
 
     /// "Films", "Shows", "Anime", "Manga", "Books", "Albums".
     var label: String {
-        self == .album ? "Albums" : mediaKind.label
+        self == .album ? String(localized: "Albums") : mediaKind.label
     }
 
     /// A picker screen's headline.
     var pickHeading: String {
         switch self {
-        case .film: "Pick films you've watched"
-        case .show: "Pick shows you watch"
-        case .anime: "Pick anime you watch"
-        case .manga: "Pick manga you've read"
-        case .book: "Pick books you've read"
-        case .album: "Pick albums you've heard"
+        case .film: String(localized: "Pick films you've watched")
+        case .show: String(localized: "Pick shows you watch")
+        case .anime: String(localized: "Pick anime you watch")
+        case .manga: String(localized: "Pick manga you've read")
+        case .book: String(localized: "Pick books you've read")
+        case .album: String(localized: "Pick albums you've heard")
         }
     }
 
     /// The pill at the bottom of a picker: "Continue (3)", or "Skip shows" with nothing picked.
     func continueLabel(count: Int) -> String {
-        count > 0 ? "Continue (\(count))" : "Skip \(self == .anime || self == .manga ? rawValue : label.lowercased())"
+        count > 0
+            ? String(localized: "Continue (\(count))")
+            : String(localized: "Skip \(self == .anime || self == .manga ? rawValue : label.lowercased())")
     }
 }

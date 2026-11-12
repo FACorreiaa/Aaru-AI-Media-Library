@@ -314,7 +314,7 @@ private struct ChannelDestination: View {
         } else if groups.details[groupID] != nil {
             ContentUnavailableView("This channel is gone", systemImage: "number")
         } else if let problem = groups.detailProblems[groupID] {
-            LoadFailedView(title: "Couldn't open this channel", message: problem) {
+            LoadFailedView(title: String(localized: "Couldn't open this channel"), message: problem) {
                 await groups.loadDetail(groupID)
             }
         } else {

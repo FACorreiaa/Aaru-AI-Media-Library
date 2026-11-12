@@ -74,13 +74,13 @@ final class TitleRelationsModel {
         guard let api else { return }
         do {
             guard case let .ok(response) = try await api.resolveTitle(body: .json(node.ref)) else {
-                problem = "Aaru could not open that title."
+                problem = String(localized: "Aaru could not open that title.")
                 return
             }
             titleID = try response.body.json.title.id
             await load()
         } catch {
-            problem = "Aaru could not reach the server."
+            problem = String(localized: "Aaru could not reach the server.")
         }
     }
 
@@ -94,12 +94,12 @@ final class TitleRelationsModel {
                 query: .init(order: graph?.order == .story ? .story : nil)
             )
             guard case let .accepted(response) = output else {
-                problem = "Aaru could not plan the chain."
+                problem = String(localized: "Aaru could not plan the chain.")
                 return nil
             }
             return try response.body.json.id
         } catch {
-            problem = "Aaru could not reach the server."
+            problem = String(localized: "Aaru could not reach the server.")
             return nil
         }
     }
@@ -122,16 +122,16 @@ enum RelatedGroup: CaseIterable {
 
     var label: String {
         switch self {
-        case .before: "Before"
-        case .after: "After"
-        case .basedOn: "Based on"
-        case .adaptations: "Adaptations"
-        case .mainStory: "Main story"
-        case .sideStories: "Side stories"
-        case .spinOffs: "Spin-offs"
-        case .alternatives: "Other versions"
-        case .summaries: "Recaps"
-        case .other: "Related"
+        case .before: String(localized: "Before")
+        case .after: String(localized: "After")
+        case .basedOn: String(localized: "Based on")
+        case .adaptations: String(localized: "Adaptations")
+        case .mainStory: String(localized: "Main story")
+        case .sideStories: String(localized: "Side stories")
+        case .spinOffs: String(localized: "Spin-offs")
+        case .alternatives: String(localized: "Other versions")
+        case .summaries: String(localized: "Recaps")
+        case .other: String(localized: "Related")
         }
     }
 
@@ -185,8 +185,10 @@ extension RelationNode {
     var caption: String {
         let year = releaseDate.map { String($0.prefix(4)) } ?? ref.year.map(String.init)
         let formats = [
-            "tv": "TV", "tv_short": "TV short", "movie": "Film", "ova": "OVA", "ona": "ONA",
-            "special": "Special", "manga": "Manga", "novel": "Light novel", "one_shot": "One-shot",
+            "tv": String(localized: "TV"), "tv_short": String(localized: "TV short"),
+            "movie": String(localized: "Film"), "ova": String(localized: "OVA"), "ona": String(localized: "ONA"),
+            "special": String(localized: "Special"), "manga": String(localized: "Manga"),
+            "novel": String(localized: "Light novel"), "one_shot": String(localized: "One-shot"),
         ]
         return [year, format.flatMap { formats[$0] }].compactMap(\.self).joined(separator: " · ")
     }

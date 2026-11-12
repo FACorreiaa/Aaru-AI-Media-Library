@@ -21,15 +21,15 @@ struct MusicInsights: View {
     }
 
     var body: some View {
-        PanelSection(title: "Music") {
+        PanelSection(title: String(localized: "Music")) {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 12)], spacing: 12) {
                 StatTile(
                     value: music.listens.formatted(),
-                    caption: music.listens == 1 ? "listen" : "listens",
+                    caption: music.listens == 1 ? String(localized: "listen") : String(localized: "listens"),
                     delta: music.priorListens.flatMap { StatTile.Delta.count(music.listens, $0) }
                 )
                 StatTile(
-                    value: hoursValue(minutes: music.minutes), caption: "hours",
+                    value: hoursValue(minutes: music.minutes), caption: String(localized: "hours"),
                     delta: music.priorMinutes.flatMap { StatTile.Delta.hours(music.minutes, $0) }
                 )
             }

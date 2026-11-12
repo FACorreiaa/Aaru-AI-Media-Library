@@ -18,14 +18,14 @@ enum SettingsPage: String, CaseIterable, Identifiable, Hashable {
 
     var title: String {
         switch self {
-        case .account: "Account"
-        case .friends: "Friends & privacy"
-        case .notifications: "Notifications"
-        case .imports: "Import"
-        case .connections: "Connections"
-        case .data: "Your data"
-        case .about: "About"
-        case .delete: "Delete account"
+        case .account: String(localized: "Account")
+        case .friends: String(localized: "Friends & privacy")
+        case .notifications: String(localized: "Notifications")
+        case .imports: String(localized: "Import")
+        case .connections: String(localized: "Connections")
+        case .data: String(localized: "Your data")
+        case .about: String(localized: "About")
+        case .delete: String(localized: "Delete account")
         }
     }
 

@@ -130,8 +130,8 @@ func widgetDuration(minutes: Int) -> String {
     let hours = minutes / 60
     let rest = minutes % 60
     switch (hours, rest) {
-    case (0, _): return "\(rest)m"
-    case (_, 0): return "\(hours)h"
-    default: return "\(hours)h \(rest)m"
+    case (0, _): return String(localized: "\(String(rest))m")
+    case (_, 0): return String(localized: "\(String(hours))h")
+    default: return String(localized: "\(String(hours))h \(String(rest))m")
     }
 }

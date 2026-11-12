@@ -39,7 +39,9 @@ struct OpenPartySheet: View {
         NavigationStack {
             Form {
                 Section("What are you watching or reading?") {
-                    Button(title?.title ?? "Choose a title…", systemImage: "magnifyingglass") { picksTitle = true }
+                    Button(title?.title ?? String(localized: "Choose a title…"), systemImage: "magnifyingglass") {
+                        picksTitle = true
+                    }
                 }
                 if isShow {
                     Section("Episode") {
@@ -49,22 +51,29 @@ struct OpenPartySheet: View {
                 }
                 if title?._type == .manga {
                     Section("Read to") {
-                        numberRow("Chapter", value: $chapter)
-                        numberRow("Volume", value: $volume)
+                        numberRow(String(localized: "Chapter"), value: $chapter)
+                        numberRow(String(localized: "Volume"), value: $volume)
                     }
                 }
                 if title?._type == .book {
                     Section("Read to") {
-                        numberRow("Page", value: $page)
+                        numberRow(String(localized: "Page"), value: $page)
                     }
                 }
                 Section {
                     EmptyView()
                 } footer: {
                     Text(isReading
-                        ? "Everyone reads on their own. When the host ends, it is marked for everyone who joined."
-                        : "Everyone presses play on their own screen when the countdown reaches zero. "
-                        + "When the host ends, it is marked for everyone who joined.")
+                        ? String(
+                            localized: """
+                            Everyone reads on their own. When the host \
+                            ends, it is marked for everyone who joined.
+                            """
+                        )
+                        : String(localized: """
+                        Everyone presses play on their own screen when the countdown reaches zero. \
+                        When the host ends, it is marked for everyone who joined.
+                        """))
                 }
             }
             .paperPage()
@@ -76,7 +85,7 @@ struct OpenPartySheet: View {
                 }
             }
             .sheet(isPresented: $picksTitle) {
-                TitlePickerSheet(api: api, navigationTitle: "Choose a title") { hit in
+                TitlePickerSheet(api: api, navigationTitle: String(localized: "Choose a title")) { hit in
                     title = hit
                     return true
                 }

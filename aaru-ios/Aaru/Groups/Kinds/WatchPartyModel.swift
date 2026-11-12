@@ -22,7 +22,7 @@ extension WatchParty {
 
     /// The UI's word for a Room: "Watch party", or "Reading session" for a book or manga.
     var word: String {
-        isReading ? "Reading session" : "Watch party"
+        isReading ? String(localized: "Reading session") : String(localized: "Watch party")
     }
 
     /// What the party is aimed at: "S1 · E3", "Chapter 12 · Vol. 2", "Page 120", or nothing.
@@ -31,9 +31,9 @@ extension WatchParty {
             return EpisodeCode.text(season: season, episode: episode)
         }
         let parts = [
-            chapter.map { "Chapter \($0)" },
-            volume.map { "Vol. \($0)" },
-            page.map { "Page \($0)" },
+            chapter.map { String(localized: "Chapter \(String($0))") },
+            volume.map { String(localized: "Vol. \(String($0))") },
+            page.map { String(localized: "Page \(String($0))") },
         ].compactMap(\.self)
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
@@ -41,9 +41,10 @@ extension WatchParty {
     /// The tap for a member the end does not mark, in the kind's own verb.
     var markLabel: String {
         if isReading {
-            return "Mark read for me"
+            return String(localized: "Mark read for me")
         }
-        return title._type == .album ? "Mark listened for me" : "Mark watched for me"
+        return title
+            ._type == .album ? String(localized: "Mark listened for me") : String(localized: "Mark watched for me")
     }
 }
 
@@ -110,7 +111,7 @@ final class WatchPartyModel {
 
     func load() async {
         guard let api else { return }
-        await apply("The watch party could not be loaded.") {
+        await apply(String(localized: "The watch party could not be loaded.")) {
             switch try await api.getWatchParty(path: path) {
             case let .ok(response): try (response.body.json, nil)
             case let .default(_, error): (nil, try? error.body.json.message)
@@ -120,7 +121,7 @@ final class WatchPartyModel {
 
     func open(_ title: Components.Schemas.MediaRef, target: PartyTarget) async -> Bool {
         guard let api else { return false }
-        return await apply("The party was not started.") {
+        return await apply(String(localized: "The party was not started.")) {
             switch try await api.openWatchParty(
                 path: .init(groupId: groupID, channelId: channelID),
                 body: .json(.init(
@@ -137,7 +138,7 @@ final class WatchPartyModel {
     /// Joins or leaves. A nil `autoMark` keeps what this user chose; a first join starts with it on.
     func setReady(_ ready: Bool, autoMark: Bool? = nil) async {
         guard let api else { return }
-        await apply("That was not saved.") {
+        await apply(String(localized: "That was not saved.")) {
             switch try await api.setWatchPartyReady(
                 path: .init(groupId: groupID, channelId: channelID),
                 body: .json(.init(ready: ready, autoMark: autoMark))
@@ -150,7 +151,7 @@ final class WatchPartyModel {
 
     func startCountdown(seconds: Int) async {
         guard let api else { return }
-        await apply("The countdown did not start.") {
+        await apply(String(localized: "The countdown did not start.")) {
             switch try await api.startWatchParty(
                 path: .init(groupId: groupID, channelId: channelID),
                 body: .json(.init(countdownSeconds: seconds))
@@ -163,7 +164,7 @@ final class WatchPartyModel {
 
     func end() async {
         guard let api else { return }
-        await apply("The party did not end.") {
+        await apply(String(localized: "The party did not end.")) {
             switch try await api.endWatchParty(path: .init(groupId: groupID, channelId: channelID)) {
             case let .ok(response): try (response.body.json, nil)
             case let .default(_, error): (nil, try? error.body.json.message)
@@ -182,10 +183,10 @@ final class WatchPartyModel {
                 markedForMe = true
                 await load()
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "That was not marked."
+                problem = (try? error.body.json.message) ?? String(localized: "That was not marked.")
             }
         } catch {
-            problem = "That was not marked. Aaru could not reach the server."
+            problem = String(localized: "That was not marked. Aaru could not reach the server.")
         }
     }
 
@@ -203,11 +204,11 @@ final class WatchPartyModel {
                     // Already taken back, here or in History.
                     undoneActionID = actionID
                 } else {
-                    problem = (try? error.body.json.message) ?? "That could not be undone."
+                    problem = (try? error.body.json.message) ?? String(localized: "That could not be undone.")
                 }
             }
         } catch {
-            problem = "That could not be undone. Aaru could not reach the server."
+            problem = String(localized: "That could not be undone. Aaru could not reach the server.")
         }
     }
 
@@ -224,7 +225,7 @@ final class WatchPartyModel {
             await load()
         case .watch_reaction:
             if let emoji = event.emoji, Self.reactionSet.contains(emoji) {
-                show(emoji, from: event.user?.label ?? "Someone")
+                show(emoji, from: event.user?.label ?? String(localized: "Someone"))
             }
         default:
             break
@@ -270,7 +271,7 @@ final class WatchPartyModel {
             hasLoaded = true
             return true
         } catch {
-            problem = "\(fallback) Aaru could not reach the server."
+            problem = String(localized: "\(fallback) Aaru could not reach the server.")
         }
         return false
     }

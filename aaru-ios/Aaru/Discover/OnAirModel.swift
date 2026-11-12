@@ -92,17 +92,17 @@ final class OnAirModel {
         let when = episode.airTimeKnown
             ? episode.airsAt.formatted(style.weekday(.abbreviated).hour().minute())
             : episode.airsAt.formatted(style.weekday(.abbreviated).day().month(.abbreviated))
-        return "S\(episode.season) E\(episode.number) · \(when)"
+        return String(localized: "S\(String(episode.season)) E\(String(episode.number)) · \(when)")
     }
 
     /// "Also on Hulu and Max", or nil with nothing to list.
     static func streamsLine(_ show: OnAirShow) -> String? {
         let names = (show.streamsOn ?? []).map(\.name)
-        return names.isEmpty ? nil : "Also on \(names.formatted(.list(type: .and)))"
+        return names.isEmpty ? nil : String(localized: "Also on \(names.formatted(.list(type: .and)))")
     }
 
     /// "1 show", "4 shows".
     static func count(_ channel: OnAirChannel) -> String {
-        channel.shows.count == 1 ? "1 show" : "\(channel.shows.count) shows"
+        channel.shows.count == 1 ? String(localized: "1 show") : String(localized: "\(channel.shows.count) shows")
     }
 }

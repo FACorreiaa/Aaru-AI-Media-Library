@@ -57,8 +57,9 @@ struct WeekDayPager: View {
         let count = model.entries(on: day).count
         let parts: [String?] = [
             day.formatted(date: .complete, time: .omitted),
-            model.isToday(day) ? "today" : nil,
-            count == 0 ? nil : count == 1 ? "1 episode" : "\(count) episodes",
+            model.isToday(day) ? String(localized: "today") : nil,
+            count == 0 ? nil : count == 1 ? String(localized: "1 episode") :
+                String(localized: "\(String(count)) episodes"),
         ]
         return parts.compactMap(\.self).joined(separator: ", ")
     }

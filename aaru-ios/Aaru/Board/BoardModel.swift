@@ -13,8 +13,8 @@ final class BoardModel {
 
         var label: String {
             switch self {
-            case .recent: "Recent"
-            case .top: "Top this week"
+            case .recent: String(localized: "Recent")
+            case .top: String(localized: "Top this week")
             }
         }
     }
@@ -60,10 +60,10 @@ final class BoardModel {
                 loadProblem = nil
                 loadedAt = .now
             case let .default(_, error):
-                failLoad((try? error.body.json.message) ?? "The Board could not be loaded.")
+                failLoad((try? error.body.json.message) ?? String(localized: "The Board could not be loaded."))
             }
         } catch {
-            failLoad("The Board could not be loaded. Aaru could not reach the server.")
+            failLoad(String(localized: "The Board could not be loaded. Aaru could not reach the server."))
         }
     }
 
@@ -76,7 +76,7 @@ final class BoardModel {
     /// The next, older page of Recent.
     func showOlder() async {
         guard let api, sort == .recent, let before = posts.last?.id else { return }
-        await run("Older posts could not be loaded.") {
+        await run(String(localized: "Older posts could not be loaded.")) {
             switch try await api.listBoard(query: .init(sort: .recent, before: before)) {
             case let .ok(response):
                 // The sort changed while the page was coming: these are Recent posts, not Top's.
@@ -112,7 +112,7 @@ final class BoardModel {
             spoiler: title == nil ? nil : draftSpoiler.stamp,
             spoilerFree: title != nil && draftSpoiler == .free ? true : nil
         )
-        let posted = await run("That post was not saved.") {
+        let posted = await run(String(localized: "That post was not saved.")) {
             switch try await api.createBoardPost(body: .json(request)) {
             case let .created(response):
                 let created = try response.body.json
@@ -147,7 +147,7 @@ final class BoardModel {
         let next = BoardRules.toggleUpvote(upvotes: before.upvotes, upvotedByMe: before.upvotedByMe)
         posts[index].upvotes = next.upvotes
         posts[index].upvotedByMe = next.upvotedByMe
-        let saved = await run("That upvote was not saved.") {
+        let saved = await run(String(localized: "That upvote was not saved.")) {
             if next.upvotedByMe {
                 switch try await api.upvoteBoardPost(path: .init(postId: id)) {
                 case .noContent: break
@@ -169,7 +169,7 @@ final class BoardModel {
     /// a tap anywhere else. True when it was added.
     func addToMyLibrary(_ title: TitleSummary) async -> Bool {
         guard let api else { return false }
-        return await run("\(title.title) was not added.") {
+        return await run(String(localized: "\(title.title) was not added.")) {
             switch try await api.addLibraryItem(body: .json(.init(mediaRef: title.mediaRef, status: .wishlist))) {
             case .ok: break
             case let .default(_, error): throw Failure(try? error.body.json.message)
@@ -233,7 +233,7 @@ final class BoardModel {
         } catch let failure as Failure {
             problem = failure.message ?? fallback
         } catch {
-            problem = "\(fallback) Aaru could not reach the server."
+            problem = String(localized: "\(fallback) Aaru could not reach the server.")
         }
         return false
     }

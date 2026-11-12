@@ -70,10 +70,10 @@ private struct SeasonMapCell: View {
 
         var label: String {
             switch self {
-            case .watched: "watched"
-            case .next: "up next"
-            case .aired: "not watched"
-            case .unaired: "not aired yet"
+            case .watched: String(localized: "watched")
+            case .next: String(localized: "up next")
+            case .aired: String(localized: "not watched")
+            case .unaired: String(localized: "not aired yet")
             }
         }
     }
@@ -144,8 +144,9 @@ private struct SeasonMapCell: View {
     }
 
     private var accessibilityText: String {
-        let season = episode.season == 0 ? "Specials" : "Season \(episode.season)"
-        return [season, "episode \(episode.number)", episode.name, state.label]
+        let season = episode.season == 0
+            ? String(localized: "Specials") : String(localized: "Season \(String(episode.season))")
+        return [season, String(localized: "episode \(String(episode.number))"), episode.name, state.label]
             .compactMap(\.self).joined(separator: ", ")
     }
 }

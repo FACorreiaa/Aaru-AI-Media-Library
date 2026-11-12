@@ -17,24 +17,24 @@ enum MediaKind: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .film: "Films"
-        case .show: "Shows"
-        case .anime: "Anime"
-        case .manga: "Manga"
-        case .book: "Books"
-        case .music: "Music"
+        case .film: String(localized: "Films")
+        case .show: String(localized: "Shows")
+        case .anime: String(localized: "Anime")
+        case .manga: String(localized: "Manga")
+        case .book: String(localized: "Books")
+        case .music: String(localized: "Music")
         }
     }
 
     /// One of them: "Film", "Show", "Anime", "Book", "Album".
     var noun: String {
         switch self {
-        case .film: "Film"
-        case .show: "Show"
-        case .anime: "Anime"
-        case .manga: "Manga"
-        case .book: "Book"
-        case .music: "Album"
+        case .film: String(localized: "Film")
+        case .show: String(localized: "Show")
+        case .anime: String(localized: "Anime")
+        case .manga: String(localized: "Manga")
+        case .book: String(localized: "Book")
+        case .music: String(localized: "Album")
         }
     }
 
@@ -94,17 +94,29 @@ extension LibraryStatus: @retroactive Identifiable {
     /// "Listening" to an album. With no kind (a mixed shelf, the Any filter) the neutral words.
     func label(for kind: MediaKind?) -> String {
         let words = switch kind {
-        case .book, .manga: Words(planned: "Plan to read", active: "Reading", done: "Read")
-        case .music: Words(planned: "Plan to listen", active: "Listening", done: "Listened")
-        case .film, .show, .anime: Words(planned: "Plan to watch", active: "Watching", done: "Watched")
-        case nil: Words(planned: "Planned", active: "In progress", done: "Finished")
+        case .book, .manga: Words(
+                planned: String(localized: "Plan to read"), active: String(localized: "Reading"),
+                done: String(localized: "Read")
+            )
+        case .music: Words(
+                planned: String(localized: "Plan to listen"), active: String(localized: "Listening"),
+                done: String(localized: "Listened")
+            )
+        case .film, .show, .anime: Words(
+                planned: String(localized: "Plan to watch"), active: String(localized: "Watching"),
+                done: String(localized: "Watched")
+            )
+        case nil: Words(
+                planned: String(localized: "Planned"), active: String(localized: "In progress"),
+                done: String(localized: "Finished")
+            )
         }
         return switch self {
         case .wishlist: words.planned
         case .inProgress: words.active
-        case .onHold: "On hold"
+        case .onHold: String(localized: "On hold")
         case .finished: words.done
-        case .dropped: "Dropped"
+        case .dropped: String(localized: "Dropped")
         }
     }
 
@@ -142,11 +154,11 @@ struct LibraryRow: Identifiable, Hashable {
         status = entry.status
         updatedAt = entry.updatedAt
         if let progress = entry.progress, progress.airedCount > 0 {
-            detail = "\(progress.watchedCount) of \(progress.airedCount) episodes"
+            detail = String(localized: "\(String(progress.watchedCount)) of \(String(progress.airedCount)) episodes")
         } else if let manga = entry.mangaProgressLabel {
             detail = manga
         } else if let page = entry.bookProgress?.page {
-            detail = "Page \(page)"
+            detail = String(localized: "Page \(String(page))")
         } else if let percent = entry.bookProgress?.percent {
             detail = "\(Int(percent))%"
         } else {
@@ -161,10 +173,13 @@ extension LibraryEntry {
     var mangaProgressLabel: String? {
         var parts: [String] = []
         if let chapter = mangaProgress?.chapter {
-            parts.append(title.chapterCount.map { "Ch. \(chapter) of \($0)" } ?? "Ch. \(chapter)")
+            parts.append(
+                title.chapterCount.map { String(localized: "Ch. \(String(chapter)) of \(String($0))") }
+                    ?? String(localized: "Ch. \(String(chapter))")
+            )
         }
         if let volume = mangaProgress?.volume {
-            parts.append("Vol. \(volume)")
+            parts.append(String(localized: "Vol. \(String(volume))"))
         }
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }

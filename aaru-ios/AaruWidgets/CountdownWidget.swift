@@ -87,8 +87,8 @@ struct CountdownState {
         let tomorrowDate = calendar.date(byAdding: .day, value: 1, to: now) ?? now
         let tomorrow = WidgetSnapshot.DayKey(calendar.dateComponents([.year, .month, .day], from: tomorrowDate))
         switch airing.day(in: calendar) {
-        case today: return "Today"
-        case tomorrow: return "Tomorrow"
+        case today: return String(localized: "Today")
+        case tomorrow: return String(localized: "Tomorrow")
         default:
             let reader = airing.airTimeKnown ? calendar : WidgetSnapshot.utc
             let style = Date.FormatStyle(date: .omitted, time: .omitted, timeZone: reader.timeZone).weekday(.wide)

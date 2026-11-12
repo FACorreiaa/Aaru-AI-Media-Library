@@ -25,40 +25,50 @@ extension ImportJob {
         }
         let running = state == .running
         let known = rowsTotal > 0
-        let entries = "\(rowsTotal.formatted()) \(rowsTotal == 1 ? "entry" : "entries")"
+        let entryWord = rowsTotal == 1 ? String(localized: "entry") : String(localized: "entries")
+        let entries = "\(rowsTotal.formatted()) \(entryWord)"
         let fromAccount = source == .trakt || source == .anilist
         let matching = running && known && rowsMatched < rowsTotal
         let checking = running && known && rowsMatched >= rowsTotal
         let waiting: String? = if running {
             nil
         } else if let errorSummary {
-            "Paused: \(errorSummary) Trying again shortly; nothing is lost."
+            String(localized: "Paused: \(errorSummary) Trying again shortly; nothing is lost.")
         } else {
-            "Starts in a few seconds."
+            String(localized: "Starts in a few seconds.")
         }
         let matched: String? = if matching {
-            "\(rowsMatched.formatted()) of \(rowsTotal.formatted())"
+            String(localized: "\(rowsMatched.formatted()) of \(rowsTotal.formatted())")
         } else if checking {
-            "All \(entries)"
+            String(localized: "All \(entries)")
         } else {
             nil
         }
         return [
             ImportStep(
-                label: isCapture ? "Read what you sent"
-                    : fromAccount ? "Read your \(sourceLabel) library" : "Read your file",
+                label: isCapture ? String(localized: "Read what you sent")
+                    : fromAccount ? String(localized: "Read your \(sourceLabel) library") :
+                    String(localized: "Read your file"),
                 detail: known ? entries : nil,
                 state: known ? .done : running ? .current : .todo
             ),
-            ImportStep(label: "Wait for a free slot", detail: waiting, state: running ? .done : .current),
             ImportStep(
-                label: "Match each title to the catalog",
+                label: String(localized: "Wait for a free slot"),
+                detail: waiting,
+                state: running ? .done : .current
+            ),
+            ImportStep(
+                label: String(localized: "Match each title to the catalog"),
                 detail: matched,
                 state: checking ? .done : matching ? .current : .todo,
                 progress: matching ? Double(rowsMatched) / Double(rowsTotal) : nil
             ),
-            ImportStep(label: "Check against your library", state: checking ? .current : .todo),
-            ImportStep(label: "Ready for you to review", detail: "Nothing is added until you approve.", state: .todo),
+            ImportStep(label: String(localized: "Check against your library"), state: checking ? .current : .todo),
+            ImportStep(
+                label: String(localized: "Ready for you to review"),
+                detail: String(localized: "Nothing is added until you approve."),
+                state: .todo
+            ),
         ]
     }
 }
@@ -100,9 +110,9 @@ struct ImportLedger: View {
 
     private func state(_ state: ImportStep.State) -> String {
         switch state {
-        case .done: "Done"
-        case .current: "In progress"
-        case .todo: "Not started"
+        case .done: String(localized: "Done")
+        case .current: String(localized: "In progress")
+        case .todo: String(localized: "Not started")
         }
     }
 }
@@ -115,23 +125,36 @@ private extension ImportJob {
         let fromAccount = source == .lastfm || source == .listenbrainz
         // An account is read page by page while running; the count grows as it goes.
         let reading = fromAccount && running
-        let plays = "\(rowsTotal.formatted()) \(rowsTotal == 1 ? "play" : "plays")"
+        let playWord = rowsTotal == 1 ? String(localized: "play") : String(localized: "plays")
+        let plays = "\(rowsTotal.formatted()) \(playWord)"
         let waiting: String? = if running {
             nil
         } else if let errorSummary {
-            "Paused: \(errorSummary) Trying again shortly; nothing is lost."
+            String(localized: "Paused: \(errorSummary) Trying again shortly; nothing is lost.")
         } else {
-            "Starts in a few seconds."
+            String(localized: "Starts in a few seconds.")
         }
         return [
             ImportStep(
-                label: fromAccount ? "Read your \(sourceLabel) listens" : "Read your file",
-                detail: rowsTotal > 0 ? (reading ? "\(plays) so far" : plays) : nil,
+                label: fromAccount ? String(localized: "Read your \(sourceLabel) listens") :
+                    String(localized: "Read your file"),
+                detail: rowsTotal > 0 ? (reading ? String(localized: "\(plays) so far") : plays) : nil,
                 state: reading ? .current : fromAccount && !running ? .todo : .done
             ),
-            ImportStep(label: "Wait for a free slot", detail: waiting, state: running ? .done : .current),
-            ImportStep(label: "Check against your listening log", state: running && !reading ? .current : .todo),
-            ImportStep(label: "Ready for you to review", detail: "Nothing is added until you approve.", state: .todo),
+            ImportStep(
+                label: String(localized: "Wait for a free slot"),
+                detail: waiting,
+                state: running ? .done : .current
+            ),
+            ImportStep(
+                label: String(localized: "Check against your listening log"),
+                state: running && !reading ? .current : .todo
+            ),
+            ImportStep(
+                label: String(localized: "Ready for you to review"),
+                detail: String(localized: "Nothing is added until you approve."),
+                state: .todo
+            ),
         ]
     }
 }

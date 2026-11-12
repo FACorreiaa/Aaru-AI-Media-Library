@@ -17,7 +17,7 @@ struct CatchUpView: View {
         let shows = feed.missed()
         ScrollView {
             if let failure = feed.loadProblem(for: window) {
-                LoadFailedView(title: "Missed didn't load", message: failure, retry: retry)
+                LoadFailedView(title: String(localized: "Missed didn't load"), message: failure, retry: retry)
                     .padding(.top, 40)
             } else if !feed.covers(window) {
                 ProgressView().padding(40)
@@ -74,13 +74,11 @@ struct CatchUpView: View {
             .padding(.horizontal, AaruSpace.large)
             .padding(.top, AaruSpace.large)
             ForEach(show.episodes, id: \.cellID) { entry in
-                CalendarEpisodeRow(
-                    entry: entry, feed: feed,
-                    detail: "Aired " + entry.airsAt.formatted(
-                        Date.FormatStyle(timeZone: entry.airTimeKnown ? .current : .gmt)
-                            .weekday(.abbreviated).day().month(.abbreviated)
-                    )
+                let day = entry.airsAt.formatted(
+                    Date.FormatStyle(timeZone: entry.airTimeKnown ? .current : .gmt)
+                        .weekday(.abbreviated).day().month(.abbreviated)
                 )
+                CalendarEpisodeRow(entry: entry, feed: feed, detail: String(localized: "Aired \(day)"))
             }
         }
         .padding(.bottom, 8)

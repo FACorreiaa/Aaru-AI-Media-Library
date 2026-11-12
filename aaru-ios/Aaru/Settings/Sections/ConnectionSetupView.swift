@@ -25,8 +25,10 @@ struct ConnectionSetupView: View {
                 if let created {
                     Section {
                         Text(
-                            "Your token is in the steps below. Anyone with it can read your library, so treat it "
-                                + "like a password; Aaru shows it only now."
+                            """
+                            Your token is in the steps below. Anyone with it can read your library, so treat it \
+                            like a password; Aaru shows it only now.
+                            """
                         )
                         .font(.callout)
                     }
@@ -147,7 +149,8 @@ struct ConnectionSetupView: View {
         )
         switch await model.create(body) {
         case let .success(result): created = result
-        case let .failure(failure): problem = failure.message ?? "The connection could not be created."
+        case let .failure(failure): problem = failure
+            .message ?? String(localized: "The connection could not be created.")
         }
     }
 
@@ -159,9 +162,9 @@ struct ConnectionSetupView: View {
         case "hermes": "Hermes"
         case "gemini": "Gemini CLI"
         case "stremio": "Stremio"
-        case "browser": "Browser extension"
-        case "music": "Music scrobbler"
-        default: "MCP client"
+        case "browser": String(localized: "Browser extension")
+        case "music": String(localized: "Music scrobbler")
+        default: String(localized: "MCP client")
         }
     }
 

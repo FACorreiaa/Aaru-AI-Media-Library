@@ -70,7 +70,7 @@ struct MessageRow: View {
     }
 
     private var authorName: String {
-        guard let author = message.author else { return "Deleted account" }
+        guard let author = message.author else { return String(localized: "Deleted account") }
         return author.displayName ?? "@\(author.handle)"
     }
 
@@ -124,7 +124,7 @@ struct OutgoingRow: View {
         MessageScaffold(
             monogram: startsRun ? (sender?.monogram ?? "?") : nil,
             avatarUrl: sender?.avatarUrl,
-            name: startsRun ? (sender.map { $0.displayName ?? "@\($0.handle)" } ?? "You") : nil,
+            name: startsRun ? (sender.map { $0.displayName ?? "@\($0.handle)" } ?? String(localized: "You")) : nil,
             time: outgoing.createdAt,
             highlighted: false
         ) {

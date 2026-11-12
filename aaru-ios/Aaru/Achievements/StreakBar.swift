@@ -108,21 +108,23 @@ struct LevelLine: View {
 enum StreakWords {
     static func headline(_ current: Int) -> String {
         switch current {
-        case 0: "No streak yet"
-        case 1: "1-day streak"
-        default: "\(current.formatted())-day streak"
+        case 0: String(localized: "No streak yet")
+        case 1: String(localized: "1-day streak")
+        default: String(localized: "\(current.formatted())-day streak")
         }
     }
 
     /// Today done, today still open, or the longest so far.
     static func note(_ streak: Components.Schemas.StreakState) -> String {
         if streak.current > 0, !streak.today {
-            return "Today is still open"
+            return String(localized: "Today is still open")
         }
         if streak.longest > streak.current {
-            return "Longest: \(streak.longest.formatted()) days"
+            return String(localized: "Longest: \(streak.longest.formatted()) days")
         }
-        return streak.current > 0 ? "Today is in" : "Tick an episode or finish something to start one"
+        return streak
+            .current > 0 ? String(localized: "Today is in") :
+            String(localized: "Tick an episode or finish something to start one")
     }
 
     /// The weekday's initial for a `yyyy-MM-dd` date, read at noon UTC so it is the same anywhere.
@@ -135,6 +137,6 @@ enum StreakWords {
 
     static func weekLabel(_ days: [Components.Schemas.StreakDayState]) -> String {
         let active = days.count(where: \.active)
-        return "Active on \(active) of the last \(days.count) days"
+        return String(localized: "Active on \(String(active)) of the last \(String(days.count)) days")
     }
 }

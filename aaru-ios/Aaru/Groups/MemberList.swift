@@ -28,9 +28,9 @@ struct MemberList: View {
             if detail?.agent == true {
                 Section("Assistant") { AaruMemberRow() }
             }
-            section("Owner", members(.owner))
-            section("Admins", members(.admin))
-            section("Members", members(.member))
+            section(String(localized: "Owner"), members(.owner))
+            section(String(localized: "Admins"), members(.admin))
+            section(String(localized: "Members"), members(.member))
             if let invited = detail?.invited, !invited.isEmpty {
                 Section("Invited") {
                     ForEach(invited, id: \.userId) { user in

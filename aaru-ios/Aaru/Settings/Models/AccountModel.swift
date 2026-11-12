@@ -29,7 +29,7 @@ final class AccountModel {
             switch provider {
             case .apple: "Apple"
             case .google: "Google"
-            case .email: "Email"
+            case .email: String(localized: "Email")
             }
         }
         return names.isEmpty ? "—" : names.joined(separator: ", ")
@@ -42,7 +42,7 @@ final class AccountModel {
                 profile = try response.body.json
             }
         } catch {
-            problem = "Your account could not be loaded. Aaru could not reach the server."
+            problem = String(localized: "Your account could not be loaded. Aaru could not reach the server.")
         }
     }
 
@@ -57,12 +57,12 @@ final class AccountModel {
             switch try await api.signOutOtherDevices() {
             case .noContent: otherDevicesSignedOut = true
             case let .unauthorized(error):
-                problem = (try? error.body.json.message) ?? "Your other devices were not signed out."
+                problem = (try? error.body.json.message) ?? String(localized: "Your other devices were not signed out.")
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "Your other devices were not signed out."
+                problem = (try? error.body.json.message) ?? String(localized: "Your other devices were not signed out.")
             }
         } catch {
-            problem = "Your other devices were not signed out. Aaru could not reach the server."
+            problem = String(localized: "Your other devices were not signed out. Aaru could not reach the server.")
         }
     }
 
@@ -77,10 +77,10 @@ final class AccountModel {
             case let .ok(success):
                 profile = try success.body.json
             case let .default(_, error):
-                problem = (try? error.body.json.message) ?? "Google was not linked."
+                problem = (try? error.body.json.message) ?? String(localized: "Google was not linked.")
             }
         } catch {
-            problem = "Google was not linked. Aaru could not reach the server."
+            problem = String(localized: "Google was not linked. Aaru could not reach the server.")
         }
     }
 

@@ -24,7 +24,9 @@ struct MonthView: View {
     var body: some View {
         Group {
             if let failure = model.loadProblem {
-                LoadFailedView(title: "The calendar didn't load", message: failure) { await model.load() }
+                LoadFailedView(title: String(localized: "The calendar didn't load"), message: failure) {
+                    await model.load()
+                }
             } else if isWide {
                 HStack(spacing: 0) {
                     VStack(spacing: 8) {

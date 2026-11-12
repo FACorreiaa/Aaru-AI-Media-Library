@@ -59,10 +59,10 @@ struct AgendaList: View {
 extension AgendaList {
     private var emptyText: String {
         switch (onClearFilters != nil, model.isEmptyMonth) {
-        case (true, true): "No episodes this month match these filters."
-        case (true, false): "No more episodes this month match these filters."
-        case (false, true): "Nothing from your shows airs this month."
-        case (false, false): "Nothing more from your shows this month."
+        case (true, true): String(localized: "No episodes this month match these filters.")
+        case (true, false): String(localized: "No more episodes this month match these filters.")
+        case (false, true): String(localized: "Nothing from your shows airs this month.")
+        case (false, false): String(localized: "Nothing more from your shows this month.")
         }
     }
 }

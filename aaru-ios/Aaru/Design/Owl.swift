@@ -106,6 +106,7 @@ struct OwlUnavailableView<Actions: View>: View {
         self.actions = actions()
     }
 
+    @_disfavoredOverload
     init(
         title: some StringProtocol,
         message: (some StringProtocol)? = String?.none,
@@ -141,6 +142,7 @@ extension OwlUnavailableView where Actions == EmptyView {
         self.init(title: title, message: message, pose: pose) { EmptyView() }
     }
 
+    @_disfavoredOverload
     init(title: some StringProtocol, message: (some StringProtocol)? = String?.none, pose: OwlPose = .standing) {
         self.init(title: title, message: message, pose: pose) { EmptyView() }
     }
