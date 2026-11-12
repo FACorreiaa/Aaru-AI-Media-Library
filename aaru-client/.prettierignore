@@ -5,3 +5,5 @@ worker-configuration.d.ts
 src/routeTree.gen.ts
 .output
 dist
+# Copies of design/owl-*.json, byte for byte (scripts/brand-guard.sh).
+src/lib/owl3d/*.json

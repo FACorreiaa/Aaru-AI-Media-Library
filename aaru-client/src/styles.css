@@ -399,6 +399,27 @@ body {
     pointer-events: none;
     animation: owl-glow 4s ease-in-out -1.3s infinite;
   }
+  /* The 3D owl (Owl3D.tsx, BRD-011) stands off the disc and moves by itself, so it takes the
+     glow without the float. */
+  .owl-glow {
+    position: relative;
+    isolation: isolate;
+  }
+  .owl-glow::before {
+    content: '';
+    position: absolute;
+    inset: -12%;
+    z-index: -1;
+    border-radius: 9999px;
+    background: radial-gradient(
+      circle,
+      color-mix(in srgb, var(--gold) 35%, transparent),
+      transparent 70%
+    );
+    opacity: 0.25;
+    pointer-events: none;
+    animation: owl-glow 4s ease-in-out -1.3s infinite;
+  }
   @keyframes owl-float {
     0%,
     100% {

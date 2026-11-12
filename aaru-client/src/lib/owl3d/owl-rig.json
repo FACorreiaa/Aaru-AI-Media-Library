@@ -1,0 +1,449 @@
+{
+  "space": "Y up, the owl faces +Z, one unit tall, standing on the origin. L is the viewer's left (-X).",
+  "eyelids": "LidL and LidR close by scaling Y and Z from 0.001 (open, the rest state) to 1 (shut).",
+  "look": "Move PupilL and PupilR a few hundredths on X and Y to look around; turn Head for more.",
+  "posterPose": {
+    "Owl": {
+      "rotateYDegrees": -32
+    },
+    "Head": {
+      "rotateYDegrees": 24,
+      "rotateZDegrees": -6
+    }
+  },
+  "scenes": {
+    "Owl": {
+      "Root": {
+        "parent": null,
+        "translation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "Owl": {
+        "parent": "Root",
+        "translation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "Feet": {
+        "parent": "Owl",
+        "translation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "Body": {
+        "parent": "Owl",
+        "translation": [
+          0.0,
+          0.23031,
+          -0.01837
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "Tail": {
+        "parent": "Body",
+        "translation": [
+          0.0,
+          0.11895,
+          -0.08692
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "WingL": {
+        "parent": "Body",
+        "translation": [
+          -0.21371,
+          0.42575,
+          0.05343
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "WingR": {
+        "parent": "Body",
+        "translation": [
+          0.21371,
+          0.42575,
+          0.05343
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "Head": {
+        "parent": "Body",
+        "translation": [
+          0.0,
+          0.40805,
+          0.02337
+        ],
+        "scale": [
+          1.08,
+          1.08,
+          1.08
+        ]
+      },
+      "EarL": {
+        "parent": "Head",
+        "translation": [
+          -0.14801,
+          0.23456,
+          0.05058
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "EarR": {
+        "parent": "Head",
+        "translation": [
+          0.14835,
+          0.2362,
+          0.05058
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "EyeL": {
+        "parent": "Head",
+        "translation": [
+          -0.11454,
+          0.1713,
+          0.22039
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "PupilL": {
+        "parent": "EyeL",
+        "translation": [
+          -0.00835,
+          -0.00668,
+          0.05076
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "LidL": {
+        "parent": "EyeL",
+        "translation": [
+          0.0,
+          0.10862,
+          -0.0
+        ],
+        "scale": [
+          1,
+          0.001,
+          0.001
+        ]
+      },
+      "EyeR": {
+        "parent": "Head",
+        "translation": [
+          0.11454,
+          0.1713,
+          0.22039
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "PupilR": {
+        "parent": "EyeR",
+        "translation": [
+          0.00835,
+          -0.00668,
+          0.05076
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "LidR": {
+        "parent": "EyeR",
+        "translation": [
+          0.0,
+          0.10862,
+          -0.0
+        ],
+        "scale": [
+          1,
+          0.001,
+          0.001
+        ]
+      }
+    },
+    "OwlOnBooks": {
+      "Root": {
+        "parent": null,
+        "translation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "Books": {
+        "parent": "Root",
+        "translation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "Owl": {
+        "parent": "Root",
+        "translation": [
+          0.0,
+          0.25629,
+          0.0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "Feet": {
+        "parent": "Owl",
+        "translation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "Body": {
+        "parent": "Owl",
+        "translation": [
+          0.0,
+          0.23031,
+          -0.01837
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "Tail": {
+        "parent": "Body",
+        "translation": [
+          0.0,
+          0.11895,
+          -0.08692
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "WingL": {
+        "parent": "Body",
+        "translation": [
+          -0.21371,
+          0.42575,
+          0.05343
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "WingR": {
+        "parent": "Body",
+        "translation": [
+          0.21371,
+          0.42575,
+          0.05343
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "Head": {
+        "parent": "Body",
+        "translation": [
+          0.0,
+          0.40805,
+          0.02337
+        ],
+        "scale": [
+          1.08,
+          1.08,
+          1.08
+        ]
+      },
+      "EarL": {
+        "parent": "Head",
+        "translation": [
+          -0.14801,
+          0.23456,
+          0.05058
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "EarR": {
+        "parent": "Head",
+        "translation": [
+          0.14835,
+          0.2362,
+          0.05058
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "EyeL": {
+        "parent": "Head",
+        "translation": [
+          -0.11454,
+          0.1713,
+          0.22039
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "PupilL": {
+        "parent": "EyeL",
+        "translation": [
+          -0.00835,
+          -0.00668,
+          0.05076
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "LidL": {
+        "parent": "EyeL",
+        "translation": [
+          0.0,
+          0.10862,
+          -0.0
+        ],
+        "scale": [
+          1,
+          0.001,
+          0.001
+        ]
+      },
+      "EyeR": {
+        "parent": "Head",
+        "translation": [
+          0.11454,
+          0.1713,
+          0.22039
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "PupilR": {
+        "parent": "EyeR",
+        "translation": [
+          0.00835,
+          -0.00668,
+          0.05076
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      },
+      "LidR": {
+        "parent": "EyeR",
+        "translation": [
+          0.0,
+          0.10862,
+          -0.0
+        ],
+        "scale": [
+          1,
+          0.001,
+          0.001
+        ]
+      }
+    }
+  }
+}
