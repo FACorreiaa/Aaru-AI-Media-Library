@@ -9,12 +9,26 @@ One multiplatform SwiftUI app (iPhone, iPad, Mac) plus one widget extension, on 
 Aaru.xcodeproj         plain project (no generator); folders are synchronized groups
 Aaru/                  app target sources and assets
 AaruWidgets/           widget extension (iOS + macOS widgets; Live Activity later)
+AaruTests/             unit tests for the app target (Swift Testing), hosted by the app
 Shared/                compiled into both targets: App Group access, App Intents later
 Config/                xcconfigs, Info.plist fragments, entitlements
 ```
 
-New Swift files dropped into `Aaru/`, `AaruWidgets/`, or `Shared/` join their targets
-automatically — no project-file edit needed.
+New Swift files dropped into `Aaru/`, `AaruWidgets/`, `AaruTests/`, or `Shared/` join their
+targets automatically — no project-file edit needed.
+
+## Tests
+
+`AaruTests` holds unit tests for logic that lives in the app target: no network, no UI tests.
+Rules shared with the server are tested in `aaru-core`; the API client in `aaru-api`.
+
+```bash
+xcodebuild test -project Aaru.xcodeproj -scheme Aaru \
+  -destination 'platform=iOS Simulator,name=iPhone 17' CODE_SIGNING_ALLOWED=NO
+bundle exec fastlane test   # the same, on the first iPhone simulator installed
+```
+
+"Apple CI" runs them on every pull request that touches the app.
 
 ## Configurations
 

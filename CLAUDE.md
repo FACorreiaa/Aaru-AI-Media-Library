@@ -123,6 +123,7 @@ cd aaru-extension && npm run build   # .output/chrome-mv3, .output/firefox-mv3; 
 
 # Apple
 xcodebuild build -project aaru-ios/Aaru.xcodeproj -scheme Aaru -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO
+xcodebuild test -project aaru-ios/Aaru.xcodeproj -scheme Aaru -destination 'platform=iOS Simulator,name=iPhone 17' CODE_SIGNING_ALLOWED=NO   # AaruTests: unit tests, no UI tests
 cd aaru-ios && bundle exec fastlane beta   # TestFlight, iOS + macOS
 
 # Format / lint
