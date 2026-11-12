@@ -231,6 +231,14 @@ type Email struct {
 	LinkBaseURL  *url.URL
 }
 
+// Review is App Review's way in: one address whose sign-in code is always Code and
+// is never emailed, because a reviewer cannot read an inbox. Set by REVIEW_EMAIL and
+// REVIEW_CODE together; unset, no address is special.
+type Review struct {
+	Email string
+	Code  string
+}
+
 // OAuthProvider is Trakt's or MyAnimeList's settings (connect answers 503 without them).
 type OAuthProvider struct {
 	ClientID       string
@@ -298,6 +306,7 @@ type App struct {
 	AcceptSandbox      bool
 	GoogleAudiences    []string
 	Email              *Email
+	Review             *Review
 	ProviderUserAgent  string
 	Trakt              *OAuthProvider
 	MAL                *OAuthProvider
@@ -385,6 +394,9 @@ func Load(r *Reader) (*App, error) {
 	if cfg.Email, err = loadEmail(r); err != nil {
 		return nil, err
 	}
+	if cfg.Review, err = loadReview(r); err != nil {
+		return nil, err
+	}
 	if cfg.Trakt, err = loadOAuthProvider(r, "trakt", "TRAKT", "https://api.aaruapp.com/v1/imports/trakt/callback"); err != nil {
 		return nil, err
 	}
@@ -441,6 +453,23 @@ func loadEmail(r *Reader) (*Email, error) {
 		return nil, MissingError{Env: "MAGIC_LINK_BASE_URL", Key: "magic.link.base.url"}
 	}
 	return &Email{ResendAPIKey: key, From: r.String("email.from", "Aaru <signin@aaruapp.com>"), LinkBaseURL: link}, nil
+}
+
+// loadReview reads the review account. Half of the pair, or a code that is not six digits, is
+// refused at boot: a review account that silently does not work costs a rejected submission.
+func loadReview(r *Reader) (*Review, error) {
+	email := strings.ToLower(strings.TrimSpace(r.String("review.email", "")))
+	code := strings.TrimSpace(r.String("review.code", ""))
+	if email == "" && code == "" {
+		return nil, nil // unset turns the feature off
+	}
+	if !strings.Contains(email, "@") {
+		return nil, MissingError{Env: "REVIEW_EMAIL", Key: "review.email"}
+	}
+	if len(code) != 6 || strings.Trim(code, "0123456789") != "" {
+		return nil, MissingError{Env: "REVIEW_CODE", Key: "review.code"}
+	}
+	return &Review{Email: email, Code: code}, nil
 }
 
 func loadOAuthProvider(r *Reader, prefix, env, defaultRedirect string) (*OAuthProvider, error) {

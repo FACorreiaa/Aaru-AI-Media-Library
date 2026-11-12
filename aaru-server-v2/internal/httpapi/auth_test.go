@@ -282,6 +282,41 @@ func TestEmailedCodeSignsInOnceAndKillsTheLinkToo(t *testing.T) {
 	assert.Equal(t, http.StatusUnauthorized, h.verifyCode(map[string]string{"token": link}))
 }
 
+func TestTheReviewAccountSignsInWithItsFixedCodeAndNoMail(t *testing.T) {
+	mail := &outbox{}
+	email := uuid.NewString() + "@review.test"
+	h := authHarness(t, mail, nil, func(d *Deps) {
+		d.Auth.Review = &auth.ReviewAccount{Email: email, Code: "135790"}
+	})
+	ask := func(address string) int {
+		return h.do(http.MethodPost, "/v1/auth/email/link", "", map[string]string{"email": address}).Code
+	}
+	// Without asking first there is nothing to match: the code alone is not a password.
+	assert.Equal(t, http.StatusUnauthorized, h.verifyCode(map[string]string{"email": email, "code": "135790"}))
+
+	require.Equal(t, http.StatusAccepted, ask(strings.ToUpper(email)))
+	assert.Empty(t, mail.sent, "the review address is never emailed")
+	assert.Equal(t, http.StatusOK, h.verifyCode(map[string]string{"email": email, "code": "135 790"}))
+	assert.Equal(t, http.StatusUnauthorized, h.verifyCode(map[string]string{"email": email, "code": "135790"}),
+		"one request, one sign-in")
+
+	// The next request takes the same code, and wrong tries still lock it.
+	require.Equal(t, http.StatusAccepted, ask(email))
+	for range auth.MaxCodeAttempts {
+		assert.Equal(t, http.StatusUnauthorized, h.verifyCode(map[string]string{"email": email, "code": "000000"}))
+	}
+	assert.Equal(t, http.StatusUnauthorized, h.verifyCode(map[string]string{"email": email, "code": "135790"}))
+
+	// Any other address is emailed a random code, and the fixed one opens nothing for it.
+	other := uuid.NewString() + "@example.com"
+	require.Equal(t, http.StatusAccepted, ask(other))
+	require.Len(t, mail.sent, 1)
+	_, code := mail.last(t)
+	if code != "135790" {
+		assert.Equal(t, http.StatusUnauthorized, h.verifyCode(map[string]string{"email": other, "code": "135790"}))
+	}
+}
+
 func TestFiveWrongCodesLockTheLinkEvenForTheRightCode(t *testing.T) {
 	mail := &outbox{}
 	h := authHarness(t, mail, nil)

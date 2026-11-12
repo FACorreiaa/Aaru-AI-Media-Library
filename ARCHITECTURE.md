@@ -1173,6 +1173,10 @@ protocol ModelProviding: Sendable {
   link via Resend; `POST /v1/auth/email/verify` exchanges it. No passwords are stored. Links
   live 15 minutes, are single-use (consumed in one `UPDATE … RETURNING`), and are rate-limited
   per address (5/h) and per client (20/h). Without `RESEND_API_KEY` the route answers 503.
+  App Review cannot read an inbox, so one address can be the **review account** (`REVIEW_EMAIL`
+  and `REVIEW_CODE`, both sealed, both or neither): its code is always that value and no email is
+  sent. Nothing else differs. The code still needs a request first, works once, expires, locks
+  after five wrong tries, and the rate limits hold, so the address is as secret as the code.
 - Sessions are **opaque bearer tokens** (decided 2026-10-09): 32 random bytes, shown once;
   Postgres stores only the SHA-256 in `sessions`. 90-day lifetime. Revocation is a row delete.
   `AuthMiddleware` resolves the token and refuses every `/v1` route except health and auth.
