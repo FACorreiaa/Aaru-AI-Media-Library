@@ -1,0 +1,26 @@
+{
+  "01-home": {
+    "title": "Everything you watch, read and listen to",
+    "subtitle": "Films, shows, anime, manga, books and albums in one library"
+  },
+  "02-library": {
+    "title": "Your library, in plain statuses",
+    "subtitle": "Plan to watch, Watching, On hold, Watched, Dropped"
+  },
+  "03-title": {
+    "title": "Tick episodes as you go",
+    "subtitle": "Season by season, with what airs next"
+  },
+  "04-calendar": {
+    "title": "Know what airs this week",
+    "subtitle": "Every show you track, on one calendar"
+  },
+  "05-discover": {
+    "title": "See what's on this week",
+    "subtitle": "New episodes by channel, and where else to watch"
+  },
+  "06-assistant": {
+    "title": "Ask Aaru",
+    "subtitle": "Talk or type. It reads only your own library"
+  }
+}

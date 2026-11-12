@@ -25,6 +25,13 @@
 			remoteGlobalIDString = 75EA1A2470880E4D59C74534;
 			remoteInfo = Aaru;
 		};
+		ECF477B35FA49A4A8D764483 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 9940DCC1A74DB0A12131B2A6 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 75EA1A2470880E4D59C74534;
+			remoteInfo = Aaru;
+		};
 		F62E7A972DD091B50B974130 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 9940DCC1A74DB0A12131B2A6 /* Project object */;
@@ -51,6 +58,7 @@
 /* Begin PBXFileReference section */
 		4EB335DCB03A8687A51B95E7 /* Base.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Base.xcconfig; sourceTree = "<group>"; };
 		6DE9AB3E9A01F18298886319 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
+		7E8A8EE7741A2BC6AF10C68A /* AaruScreenshots.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = AaruScreenshots.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		7F05D9A14A0C50A9591C74EB /* Aaru-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Aaru-Info.plist"; sourceTree = "<group>"; };
 		A62D0747D40E8C93BB4088DE /* Aaru.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Aaru.entitlements; sourceTree = "<group>"; };
 		A76F12C37C7E42395BDD76AC /* AaruWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AaruWidgets.entitlements; sourceTree = "<group>"; };
@@ -91,6 +99,13 @@
 			path = Aaru;
 			sourceTree = "<group>";
 		};
+		E1CE6C8597D3A532B3E8F83C /* AaruScreenshots */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
+			path = AaruScreenshots;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -122,6 +137,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E45EA4531D8C00B15E826034 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -134,6 +156,7 @@
 				EA6D2F360269CF1AD5D65B65 /* Config */,
 				FEBEDFD35D7162AB5AB1F949 /* Products */,
 				6CC9D73C1C0BE120300C71AB /* AaruTests */,
+				E1CE6C8597D3A532B3E8F83C /* AaruScreenshots */,
 			);
 			sourceTree = "<group>";
 		};
@@ -158,6 +181,7 @@
 				B438239B7918397D234D0DB3 /* Aaru.app */,
 				F2FB93092DCBE26A9A52E5F1 /* AaruWidgetsExtension.appex */,
 				F79E786836B4DAB4FE4D7816 /* AaruTests.xctest */,
+				7E8A8EE7741A2BC6AF10C68A /* AaruScreenshots.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -241,6 +265,27 @@
 			productReference = F2FB93092DCBE26A9A52E5F1 /* AaruWidgetsExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		D9A0CBC45C604D002CC288AA /* AaruScreenshots */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8D11CEC3AE2BBB52F0B0D30C /* Build configuration list for PBXNativeTarget "AaruScreenshots" */;
+			buildPhases = (
+				037360EA02C0D1511FA1743D /* Sources */,
+				E45EA4531D8C00B15E826034 /* Frameworks */,
+				E890237D03C6BC466C4293EB /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				89A6D8EF88F8E134B17653D0 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				E1CE6C8597D3A532B3E8F83C /* AaruScreenshots */,
+			);
+			name = AaruScreenshots;
+			productName = AaruScreenshots;
+			productReference = 7E8A8EE7741A2BC6AF10C68A /* AaruScreenshots.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -259,6 +304,9 @@
 					};
 					CC9ACE0AF17F301329434B68 = {
 						CreatedOnToolsVersion = 26.2;
+					};
+					D9A0CBC45C604D002CC288AA = {
+						TestTargetID = 75EA1A2470880E4D59C74534;
 					};
 				};
 			};
@@ -285,6 +333,7 @@
 				75EA1A2470880E4D59C74534 /* Aaru */,
 				CC9ACE0AF17F301329434B68 /* AaruWidgetsExtension */,
 				1D0621DDB402A3FFE02E005F /* AaruTests */,
+				D9A0CBC45C604D002CC288AA /* AaruScreenshots */,
 			);
 		};
 /* End PBXProject section */
@@ -311,9 +360,23 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E890237D03C6BC466C4293EB /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		037360EA02C0D1511FA1743D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		390CA772C63DA3347852FBD7 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -343,6 +406,12 @@
 			name = Aaru;
 			target = 75EA1A2470880E4D59C74534 /* Aaru */;
 			targetProxy = 127DDAC434210AD1DFF81B92 /* PBXContainerItemProxy */;
+		};
+		89A6D8EF88F8E134B17653D0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = Aaru;
+			target = 75EA1A2470880E4D59C74534 /* Aaru */;
+			targetProxy = ECF477B35FA49A4A8D764483 /* PBXContainerItemProxy */;
 		};
 		F58DE3150AACB5A1354617FC /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -454,6 +523,22 @@
 			};
 			name = Release;
 		};
+		6FA6028C3379C76323834736 /* Beta */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = AB9B03D6E1D29DCB34D963F4 /* Beta.xcconfig */;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(APP_BUNDLE_ID).screenshots";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Aaru;
+			};
+			name = Beta;
+		};
 		70DEC05031CB9ECF61E966B0 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = C73F00FDB22E8DA98B491F8A /* Debug.xcconfig */;
@@ -490,6 +575,22 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";
+			};
+			name = Debug;
+		};
+		7AAFC7971DE45B2D1DCBB1B5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = C73F00FDB22E8DA98B491F8A /* Debug.xcconfig */;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(APP_BUNDLE_ID).screenshots";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Aaru;
 			};
 			name = Debug;
 		};
@@ -531,6 +632,22 @@
 				VERSIONING_SYSTEM = "apple-generic";
 			};
 			name = Beta;
+		};
+		850CC1919EC285AB96173091 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 6DE9AB3E9A01F18298886319 /* Release.xcconfig */;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(APP_BUNDLE_ID).screenshots";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Aaru;
+			};
+			name = Release;
 		};
 		91391E235E898BE0B4D2DA24 /* Beta */ = {
 			isa = XCBuildConfiguration;
@@ -773,6 +890,16 @@
 				FE326D5FE6CD225A40E8E4F4 /* Debug */,
 				91391E235E898BE0B4D2DA24 /* Beta */,
 				D1F175045669CA2EC1230821 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		8D11CEC3AE2BBB52F0B0D30C /* Build configuration list for PBXNativeTarget "AaruScreenshots" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7AAFC7971DE45B2D1DCBB1B5 /* Debug */,
+				6FA6028C3379C76323834736 /* Beta */,
+				850CC1919EC285AB96173091 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

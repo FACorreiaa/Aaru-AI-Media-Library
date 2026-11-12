@@ -46,3 +46,8 @@ tmp/
 /sqlc
 /tailwindcss
 /templ
+
+# Store screenshots are made, not kept: scripts/store-screenshots.sh takes the raw ones and
+# scripts/frame-screenshots.swift frames them (about 20 MB a set). Only captions.json is tracked.
+aaru-ios/fastlane/screenshots/raw/
+aaru-ios/fastlane/screenshots/en-US/

@@ -17,6 +17,25 @@ Config/                xcconfigs, Info.plist fragments, entitlements
 New Swift files dropped into `Aaru/`, `AaruWidgets/`, `AaruTests/`, or `Shared/` join their
 targets automatically — no project-file edit needed.
 
+## Store screenshots
+
+The App Store's pictures come from the simulator, not by hand:
+
+```bash
+scripts/store-screenshots.sh "iPhone 17 Pro" "Aaru iPad 13"     # raw screens, 9:41 status bar
+xcrun swiftc -O scripts/frame-screenshots.swift -o /tmp/frame-screenshots && /tmp/frame-screenshots
+```
+
+Each simulator must be booted with Aaru Beta signed in to the demo account: the walk-through
+(`AaruScreenshots/StoreScreenshots.swift`, scheme "Aaru Screenshots") never signs in. It takes
+Home, Library, a title, Calendar, Discover's On air and one question to the owl, whose plan it
+discards. The framer draws each screen under its caption from
+`fastlane/screenshots/captions.json`, at the size the store takes (iPhone 6.9", iPad 13", Mac
+16:10), into `fastlane/screenshots/en-US/`. Neither folder of pictures is tracked.
+
+`AaruScreenshots/Driver.swift` runs taps and typing from a script file (`DRIVER_SCRIPT`), for
+filling the demo account through the app. CI runs neither: they are not in the `Aaru` scheme.
+
 ## Tests
 
 `AaruTests` holds unit tests for logic that lives in the app target: no network, no UI tests.
