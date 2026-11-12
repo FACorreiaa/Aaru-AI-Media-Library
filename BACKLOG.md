@@ -1410,6 +1410,8 @@ The app icon had one appearance; iOS 18 asks for dark and tinted. `docs/brand/ow
 ### BRD-011 · Owl in 3D, beta-only experiment · M · owner, 2026-11-12
 The owl is four stills. The owner supplied a 3D model; `docs/brand/owl_3d.py` turns it into a jointed, lit `owl.glb` and `Owl.usdz` (16 joints, eyelids, no baked clips). This item puts that owl on one signed-out screen per client, on the beta channel only: `Owl3D` (three.js, its own lazy chunk, the model from Aaru's bucket) on the web's sign-in page, and `Owl3DView` (RealityKit, the model in the bundle) on Welcome. It stands off the `night` disc, breathes, blinks and looks toward the pointer or a touch; the motion is `design/owl-motion.json`, played by `owl-motion.ts` and `OwlMotion.swift` and tested against the same numbers. The still shows first and stays under Reduce Motion, Save-Data, Low Power Mode, without WebGL, or when the model fails to load. Decisions 2026-11-12.
 
+Landing hero (owner, 2026-11-12, after the recoloured owl): on the beta web the landing page's hero shows the owl on its stack of books (`owl-on-books.glb`, `OWL_3D_BOOKS_MODEL_URL`), above the headline, with the same motion and the same fallbacks. Production keeps a hero without the owl until the owner has seen it on beta; the first run's opening screen is next.
+
 **Done when:** the 3D owl is on beta.aaruapp.com's sign-in page and in a TestFlight build's Welcome screen, on iPhone and Mac; the production web build and the Release app show the still and carry no model; the sign-in route's own size budget is unchanged; and the owner has said go or no-go, written here with the measurements.
 
 ## P0 · M1 — Server foundation

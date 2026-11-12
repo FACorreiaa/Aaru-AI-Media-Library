@@ -1,7 +1,8 @@
 # cdn.aaruapp.com
 
-Aaru's own address for brand media that is too heavy for git. Today it holds one file: the 3D
-owl's model for the web (BRD-011), which the staging Worker's `OWL_3D_MODEL_URL` points at.
+Aaru's own address for brand media that is too heavy for git. Today it holds the 3D owl's models
+for the web (BRD-011): `owl.glb`, which the web Worker's `OWL_3D_MODEL_URL` points at, and
+`owl-on-books.glb` for the landing page's hero (`OWL_3D_BOOKS_MODEL_URL`).
 
 It is a Cloudflare Worker with static assets and no code (`wrangler.jsonc` here). A single small file does not
 need a bucket. `R2.md` says when that changes and how to move without changing an address.
