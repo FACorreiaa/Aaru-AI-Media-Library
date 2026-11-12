@@ -808,6 +808,11 @@ Friends and groups (design: `docs/superpowers/specs/2026-10-27-friends-groups-de
 
 ## Status (verified 2026-10-20)
 
+**This summary is a snapshot from 2026-10-20 and its counts are old** (noted 2026-11-12). The
+"Every item" table below is kept current and is the one to read: at the 1.0.0 audit on
+2026-11-11 it held 80 Done and 89 Built, unverified. The phase table and totals here are kept
+for the record of what was true then.
+
 Checked item by item against `origin/main` at `62dfe1d` (PR #46), every Claude session on this
 repo, and the merged PRs here and in the infra repo. Production runs `5be7fef` (infra #376);
 #39 (Settings tab), #41 (import merge), #42 (push tap), #45 (web push) and #46 (Stremio history)
@@ -1067,7 +1072,7 @@ account or a stranger that has not happened yet.
 | ROOM-002 | Closed (GRP-009) | folded into watch channels, 2026-10-20 | |
 | ROOM-003 | Open | none | |
 | ROOM-004 | Open | none | |
-| ROOM-005 | Open | docs only (2026-11-10) | Server, web and Apple to follow |
+| ROOM-005 | Built, unverified | #253 (server), #254 (web), #255 (Apple); migration 00011 `session_marks`, `watch_ready.auto_mark`; `group_party_marks_test.go` | Stub tests only. Not run with two accounts: one with "Mark it for me" off, the host ending an episode session, Undo on the ended screen; the same for a manga chapter opened from the web. The row said "Open, docs only" until 2026-11-12, after the code had merged |
 | AG-001 | Built | Agent/AgentTools.swift | All five tools, over MCP; no in-app composer (AG-004) |
 | AG-002 | Open | none | |
 | AG-003 | Partial | Plans/PlanService.swift, `/v1/plans` | Remote agent plans only; no autonomy dial |
