@@ -169,6 +169,8 @@ platform :ios do
       scheme: SCHEMES.fetch(config),
       configuration: config,
       destination: macos ? "generic/platform=macOS" : "generic/platform=iOS",
+      # One multiplatform target: gym only looks for a .pkg, not an .ipa, when the SDK says Mac.
+      sdk: macos ? "macosx" : nil,
       export_method: "app-store",
       installer_cert_name: macos ? "3rd Party Mac Developer Installer" : nil,
       output_directory: "fastlane/build/#{platform}"
