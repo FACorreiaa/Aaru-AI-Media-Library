@@ -1,5 +1,5 @@
 {
-  "originHash" : "a950397662018a6f0d1a269623d8c7068518604f8d62c9c5f06ca0885d00553d",
+  "originHash" : "a5ef503e0a4e5f02d7fc089aac9d7acdfcef399c93531bc3f7520211c6f30d5d",
   "pins" : [
     {
       "identity" : "sentry-cocoa",
@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-collections",
       "state" : {
-        "revision" : "f96b909e1a9e469620bc5037c1e24e00153f376f",
-        "version" : "1.7.5"
+        "revision" : "88754449ab766a739610b660e117762115fabc9c",
+        "version" : "1.7.6"
       }
     },
     {

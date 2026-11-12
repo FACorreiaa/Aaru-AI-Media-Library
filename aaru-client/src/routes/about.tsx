@@ -29,7 +29,7 @@ function About() {
       </h1>
       <p class="mt-4 leading-relaxed text-muted">
         Aaru keeps everything you watch, read and listen to in one calm library:
-        films, shows, anime, books and albums, with four plain statuses. It is
+        films, shows, anime, books and albums, with five plain statuses. It is
         private by default, with no public profile and no ads. The name comes
         from the Egyptian Field of Reeds, a calm place where stories live.
       </p>
