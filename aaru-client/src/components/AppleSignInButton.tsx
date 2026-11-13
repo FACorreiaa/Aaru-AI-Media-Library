@@ -6,7 +6,7 @@ const SDK =
   'https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js'
 
 interface AppleSignInResult {
-  authorization: { id_token: string }
+  authorization: { id_token: string; code?: string }
   user?: { name?: { firstName?: string; lastName?: string } }
 }
 
@@ -24,6 +24,11 @@ export interface AppleCredential {
   identityToken: string
   nonce: string
   displayName?: string
+  /** Apple's one-use code. Aaru keeps what it buys to revoke the sign-in when the account is
+   * deleted (AUTH-006). */
+  authorizationCode?: string
+  /** What Apple was given as `redirectURI`: it asks for it again when the code is exchanged. */
+  redirectUri?: string
 }
 
 async function sha256Hex(value: string): Promise<string> {
@@ -54,6 +59,8 @@ export function AppleSignInButton(props: {
 }) {
   const [loaded, setLoaded] = createSignal(false)
   const nonce = randomNonce()
+  // Read in the browser only: this component also renders on the server.
+  const redirectUri = () => `${window.location.origin}/sign-in`
   const dark = resolvedScheme() === 'dark'
 
   const onSuccess = (event: Event) => {
@@ -65,6 +72,8 @@ export function AppleSignInButton(props: {
       identityToken: result.authorization.id_token,
       nonce,
       displayName: name || undefined,
+      authorizationCode: result.authorization.code || undefined,
+      redirectUri: redirectUri(),
     })
   }
   const onFailure = (event: Event) => {
@@ -85,7 +94,7 @@ export function AppleSignInButton(props: {
       window.AppleID?.auth.init({
         clientId: props.servicesId,
         scope: 'name email',
-        redirectURI: `${window.location.origin}/sign-in`,
+        redirectURI: redirectUri(),
         usePopup: true,
         nonce: await sha256Hex(nonce),
       })

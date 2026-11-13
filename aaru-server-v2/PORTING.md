@@ -102,6 +102,9 @@ answers 503 `timeout`. The port adds these, each env-driven so it can be relaxed
 | `postgres.statement.timeout` | `POSTGRES_STATEMENT_TIMEOUT` | `30` seconds, Postgres' `statement_timeout` on the API's connections; `0` leaves the server's. `--db-migrate` and `--anime-mappings` never set it |
 | `postgres.idle.transaction.timeout` | `POSTGRES_IDLE_TRANSACTION_TIMEOUT` | `60` seconds, `idle_in_transaction_session_timeout`; `0` leaves the server's. Not set by the one-shot modes |
 | `http.request.timeout` | `HTTP_REQUEST_TIMEOUT` | `30` seconds a request may run (503 `timeout` after); `0` turns it off. Not applied to `/v1/ws`, the uploads (`/v1/imports/csv`, `cat`, `capture`, `PUT /v1/me/avatar`, ListenBrainz `submit-listens`), `GET /v1/me/export`, `/v1/mcp`, an import's apply and undo, and `DELETE /v1/me` |
+| `apple.signin.private.key`, `apple.signin.key.id`, `apple.signin.token.key` | `APPLE_SIGNIN_PRIVATE_KEY`, `APPLE_SIGNIN_KEY_ID`, `APPLE_SIGNIN_TOKEN_KEY` | unset: Sign in with Apple tokens are neither kept nor revoked (AUTH-006). All three or none, else boot is refused: the .p8 of a key with Sign in with Apple enabled, its key id, and 32 bytes of base64 that seal the refresh tokens |
+| `apple.signin.team.id` | `APPLE_SIGNIN_TEAM_ID` | `APNS_TEAM_ID`, else `84X9WYBF36` |
+| `apple.signin.client.ids` | `APPLE_SIGNIN_CLIENT_IDS` | `APPLE_AUDIENCES`: the bundle ids and Services IDs the key signs for. A sign-in for any other is not exchanged |
 | `trusted.proxy.hops` | `TRUSTED_PROXY_HOPS` | `1`: proxies in front of the API that append to `X-Forwarded-For` (Traefik). The caller is that many entries from the right; `0` uses the socket peer |
 
 Request bodies are at most 1 MiB, except the routes in `ownBodyLimits`

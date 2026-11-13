@@ -65,6 +65,9 @@ type Service struct {
 	MagicLinks *MagicLinks
 	// Google is nil when Google sign-in is not configured (no GOOGLE_CLIENT_IDS).
 	Google GoogleVerifying
+	// AppleTokens is nil unless the Sign in with Apple key is configured (APPLE_SIGNIN_*):
+	// without it no authorization code is exchanged and deleting an account revokes nothing.
+	AppleTokens *AppleTokens
 	// Review is nil unless a review account is configured (REVIEW_EMAIL and REVIEW_CODE).
 	Review *ReviewAccount
 	// OnAccountCreated, when set, hears of every new account (the `account_created`
@@ -92,9 +95,24 @@ func (s *Service) now() time.Time {
 	return time.Now()
 }
 
+// AppleSignIn is what a client sends to sign in with Apple.
+type AppleSignIn struct {
+	IdentityToken string
+	// Nonce is the raw nonce whose SHA-256 the client sent to Apple.
+	Nonce string
+	// DisplayName arrives only on the first authorization.
+	DisplayName *string
+	// AuthorizationCode is the one-use code that came with the identity token; empty from an
+	// older app. With it, and the key configured, Aaru keeps the refresh token it revokes when
+	// the account is deleted (AUTH-006).
+	AuthorizationCode string
+	// RedirectURI is the web's: what Sign in with Apple JS was initialised with.
+	RedirectURI string
+}
+
 // SignInWithApple is AUTH-002.
-func (s *Service) SignInWithApple(ctx context.Context, identityToken, rawNonce string, displayName *string) (NewSession, error) {
-	identity, err := s.Apple.Verify(ctx, identityToken, rawNonce)
+func (s *Service) SignInWithApple(ctx context.Context, in AppleSignIn) (NewSession, error) {
+	identity, err := s.Apple.Verify(ctx, in.IdentityToken, in.Nonce)
 	if err != nil {
 		if errors.Is(err, ErrInvalidToken) {
 			return NewSession{}, apperr.Unauthorized("The Apple sign-in could not be verified.")
@@ -103,10 +121,11 @@ func (s *Service) SignInWithApple(ctx context.Context, identityToken, rawNonce s
 	}
 	// Keyed on `sub`, never on email: relay addresses and changed emails must not
 	// fork an account. The name arrives only on the first authorization.
-	userID, err := s.findOrCreateUser(ctx, Identity{Provider: ProviderApple, Subject: identity.Subject, Email: identity.Email}, displayName)
+	userID, err := s.findOrCreateUser(ctx, Identity{Provider: ProviderApple, Subject: identity.Subject, Email: identity.Email}, in.DisplayName)
 	if err != nil {
 		return NewSession{}, err
 	}
+	s.keepAppleToken(ctx, userID, identity, in)
 	return s.issueSession(ctx, userID)
 }
 
@@ -251,6 +270,11 @@ const ReauthWindow = 10 * time.Minute
 
 // DeleteAccount deletes the user and everything that is theirs (AUTH-004). The presenting
 // session must be at most ReauthWindow old; otherwise 403 `reauth_required` and nothing is deleted.
+//
+// Sign in with Apple is revoked first (AUTH-006), while the sealed token still exists, and the
+// account is deleted whatever Apple answered: the right to delete wins over a revoke that
+// failed. Should the deletion itself then fail, the user tries again and the second revoke of
+// the same token is a no-op at Apple.
 func (s *Service) DeleteAccount(ctx context.Context, userID uuid.UUID, tokenHash string) error {
 	now := s.now()
 	created, ok, err := s.Store.sessionCreatedAt(ctx, tokenHash, now)
@@ -264,6 +288,7 @@ func (s *Service) DeleteAccount(ctx context.Context, userID uuid.UUID, tokenHash
 		return apperr.New(http.StatusForbidden, "reauth_required",
 			"For your safety, sign in again, then delete your account.")
 	}
+	s.revokeAppleTokens(ctx, userID)
 	return s.Store.deleteUser(ctx, userID)
 }
 

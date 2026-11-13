@@ -23,12 +23,15 @@ import (
 
 type fixedApple struct{ subject string }
 
+// fixedAppleAudience is the client every fixedApple sign-in is for: the app.
+const fixedAppleAudience = "com.fernandocorreia.aaru"
+
 func (f fixedApple) Verify(_ context.Context, identityToken, _ string) (auth.AppleIdentity, error) {
 	if identityToken != "good" {
 		return auth.AppleIdentity{}, auth.ErrInvalidToken
 	}
 	email := "x@privaterelay.appleid.com"
-	return auth.AppleIdentity{Subject: f.subject, Email: &email, IsPrivateRelay: true}, nil
+	return auth.AppleIdentity{Subject: f.subject, Email: &email, IsPrivateRelay: true, Audience: fixedAppleAudience}, nil
 }
 
 type fixedGoogle struct{ subject string }

@@ -30,6 +30,35 @@ func (q *Queries) AISharing(ctx context.Context, id uuid.UUID) (AISharingRow, er
 	return i, err
 }
 
+const appleRefreshTokens = `-- name: AppleRefreshTokens :many
+SELECT client_id, refresh_token FROM apple_refresh_tokens WHERE user_id = $1 ORDER BY client_id
+`
+
+type AppleRefreshTokensRow struct {
+	ClientID     string
+	RefreshToken string
+}
+
+func (q *Queries) AppleRefreshTokens(ctx context.Context, userID uuid.UUID) ([]AppleRefreshTokensRow, error) {
+	rows, err := q.db.Query(ctx, appleRefreshTokens, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AppleRefreshTokensRow{}
+	for rows.Next() {
+		var i AppleRefreshTokensRow
+		if err := rows.Scan(&i.ClientID, &i.RefreshToken); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const clearUserShareNotes = `-- name: ClearUserShareNotes :exec
 UPDATE shares SET note = NULL WHERE sender_id = $1::uuid
 `
@@ -329,6 +358,27 @@ type FinishOnboardingParams struct {
 // ONB-001: the first call ends the flow; a later one changes nothing.
 func (q *Queries) FinishOnboarding(ctx context.Context, arg FinishOnboardingParams) error {
 	_, err := q.db.Exec(ctx, finishOnboarding, arg.Skipped, arg.ID)
+	return err
+}
+
+const keepAppleRefreshToken = `-- name: KeepAppleRefreshToken :exec
+
+INSERT INTO apple_refresh_tokens (user_id, client_id, refresh_token)
+VALUES ($1, $2, $3)
+ON CONFLICT (user_id, client_id)
+DO UPDATE SET refresh_token = EXCLUDED.refresh_token, updated_at = now()
+`
+
+type KeepAppleRefreshTokenParams struct {
+	UserID       uuid.UUID
+	ClientID     string
+	RefreshToken string
+}
+
+// Sign in with Apple's refresh tokens (AUTH-006), sealed. The newest sign-in's token replaces
+// the one kept for the same client id.
+func (q *Queries) KeepAppleRefreshToken(ctx context.Context, arg KeepAppleRefreshTokenParams) error {
+	_, err := q.db.Exec(ctx, keepAppleRefreshToken, arg.UserID, arg.ClientID, arg.RefreshToken)
 	return err
 }
 

@@ -24,7 +24,14 @@ func (s *Server) SignInWithApple(ctx context.Context, req api.SignInWithAppleReq
 	if req.Body == nil {
 		return nil, apperr.BadRequest()
 	}
-	session, err := s.Auth.SignInWithApple(ctx, req.Body.IdentityToken, req.Body.Nonce, req.Body.DisplayName)
+	in := auth.AppleSignIn{IdentityToken: req.Body.IdentityToken, Nonce: req.Body.Nonce, DisplayName: req.Body.DisplayName}
+	if code := req.Body.AuthorizationCode; code != nil {
+		in.AuthorizationCode = *code
+	}
+	if redirect := req.Body.RedirectUri; redirect != nil {
+		in.RedirectURI = *redirect
+	}
+	session, err := s.Auth.SignInWithApple(ctx, in)
 	if err != nil {
 		return nil, err
 	}

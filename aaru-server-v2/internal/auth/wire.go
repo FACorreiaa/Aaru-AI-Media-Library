@@ -9,8 +9,10 @@ import (
 
 // FromConfig builds sign-in and agent tokens as the Swift server wired them:
 // email sign-in only with RESEND_API_KEY, Google only with GOOGLE_CLIENT_IDS.
-// client is the outbound HTTP client (Apple's and Google's keys, Resend); nil uses a default.
-func FromConfig(cfg *config.App, pool *pgxpool.Pool, client *http.Client) (*Service, *AgentTokenService) {
+// client is the outbound HTTP client (Apple's and Google's keys, Apple's token endpoints,
+// Resend); nil uses a default. Sign in with Apple tokens are kept and revoked (AUTH-006) only
+// with APPLE_SIGNIN_*.
+func FromConfig(cfg *config.App, pool *pgxpool.Pool, client *http.Client) (*Service, *AgentTokenService, error) {
 	apple := AppleVerifier{Audiences: cfg.AppleAudiences, JWKS: NewJWKSCache(client, AppleKeysURL)}
 	var magicLinks *MagicLinks
 	if cfg.Email != nil {
@@ -27,5 +29,10 @@ func FromConfig(cfg *config.App, pool *pgxpool.Pool, client *http.Client) (*Serv
 	if cfg.Review != nil {
 		service.Review = &ReviewAccount{Email: cfg.Review.Email, Code: cfg.Review.Code}
 	}
-	return service, NewAgentTokenService(pool, cfg.PublicBaseURL)
+	appleTokens, err := NewAppleTokens(cfg.AppleSignIn, client)
+	if err != nil {
+		return nil, nil, err
+	}
+	service.AppleTokens = appleTokens
+	return service, NewAgentTokenService(pool, cfg.PublicBaseURL), nil
 }

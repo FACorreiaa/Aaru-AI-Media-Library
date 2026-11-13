@@ -8,7 +8,11 @@ package config
 import (
 	"bufio"
 	"crypto/aes"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/x509"
 	"encoding/base64"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"net/url"
@@ -256,6 +260,23 @@ type Push struct {
 	PrivateKeyPEM string
 }
 
+// AppleSignIn is the Sign in with Apple key (AUTH-006); nil leaves token revocation off:
+// sign-in stores nothing more and deleting an account calls nobody. With it, a sign-in that
+// carries an authorization code keeps Apple's refresh token, sealed, and account deletion
+// revokes it with Apple (App Store rule 5.1.1(v)). It is not the APNs key unless that key
+// also has Sign in with Apple switched on.
+type AppleSignIn struct {
+	KeyID  string
+	TeamID string
+	// PrivateKey signs the client secret Apple's token and revoke endpoints ask for (ES256).
+	PrivateKey *ecdsa.PrivateKey
+	// ClientIDs are the bundle ids and Services IDs the key may sign for: the primary App ID
+	// the key was made for and the ids grouped with it. A sign-in for any other is not exchanged.
+	ClientIDs []string
+	// TokenKey is the 32-byte AES-GCM key the refresh tokens are sealed with.
+	TokenKey []byte
+}
+
 // Anthropic is the agent's model; nil leaves `@aaru` off.
 type Anthropic struct {
 	APIKey             string
@@ -311,6 +332,7 @@ type App struct {
 	Trakt              *OAuthProvider
 	MAL                *OAuthProvider
 	Push               *Push
+	AppleSignIn        *AppleSignIn
 	VAPIDConfigJSON    *string
 	PublicBaseURL      *url.URL
 	WebBaseURL         *url.URL
@@ -404,6 +426,9 @@ func Load(r *Reader) (*App, error) {
 		return nil, err
 	}
 	if cfg.Push, err = loadPush(r); err != nil {
+		return nil, err
+	}
+	if cfg.AppleSignIn, err = loadAppleSignIn(r, cfg.AppleAudiences); err != nil {
 		return nil, err
 	}
 	if cfg.Anthropic, err = loadAnthropic(r); err != nil {
@@ -525,7 +550,67 @@ func loadPush(r *Reader) (*Push, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Push{KeyID: keyID, TeamID: r.String("apns.team.id", "84X9WYBF36"), PrivateKeyPEM: key}, nil
+	return &Push{KeyID: keyID, TeamID: r.String("apns.team.id", defaultAppleTeamID), PrivateKeyPEM: key}, nil
+}
+
+// defaultAppleTeamID is the team the APNs key defaults to as well.
+const defaultAppleTeamID = "84X9WYBF36"
+
+// loadAppleSignIn reads the Sign in with Apple key. The private key, its id and the sealing key
+// come together or not at all: a part without the rest, or a key that does not parse, is refused
+// at boot, because revocation that silently does nothing costs a rejected submission.
+func loadAppleSignIn(r *Reader, audiences []string) (*AppleSignIn, error) {
+	pemText := strings.TrimSpace(r.String("apple.signin.private.key", ""))
+	keyID := strings.TrimSpace(r.String("apple.signin.key.id", ""))
+	rawTokenKey := strings.TrimSpace(r.String("apple.signin.token.key", ""))
+	if pemText == "" && keyID == "" && rawTokenKey == "" {
+		return nil, nil // unset turns the feature off
+	}
+	if keyID == "" {
+		return nil, MissingError{Env: "APPLE_SIGNIN_KEY_ID", Key: "apple.signin.key.id"}
+	}
+	key, err := p256PrivateKey(pemText)
+	if err != nil {
+		return nil, MissingError{Env: "APPLE_SIGNIN_PRIVATE_KEY (a P-256 .p8)", Key: "apple.signin.private.key"}
+	}
+	tokenKey, err := TokenKey(rawTokenKey)
+	if err != nil {
+		return nil, MissingError{Env: "APPLE_SIGNIN_TOKEN_KEY (32 bytes, base64)", Key: "apple.signin.token.key"}
+	}
+	clientIDs := list(r.String("apple.signin.client.ids", ""))
+	if len(clientIDs) == 0 {
+		clientIDs = audiences
+	}
+	return &AppleSignIn{
+		KeyID:      keyID,
+		TeamID:     r.String("apple.signin.team.id", r.String("apns.team.id", defaultAppleTeamID)),
+		PrivateKey: key,
+		ClientIDs:  clientIDs,
+		TokenKey:   tokenKey,
+	}, nil
+}
+
+// p256PrivateKey parses an Apple .p8 (PKCS#8, or SEC 1 "EC PRIVATE KEY").
+func p256PrivateKey(pemText string) (*ecdsa.PrivateKey, error) {
+	block, _ := pem.Decode([]byte(pemText))
+	if block == nil {
+		return nil, errors.New("the private key is not PEM")
+	}
+	var key any
+	var err error
+	if block.Type == "EC PRIVATE KEY" {
+		key, err = x509.ParseECPrivateKey(block.Bytes)
+	} else {
+		key, err = x509.ParsePKCS8PrivateKey(block.Bytes)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("private key: %w", err)
+	}
+	ec, ok := key.(*ecdsa.PrivateKey)
+	if !ok || ec.Curve != elliptic.P256() {
+		return nil, errors.New("the private key is not a P-256 key")
+	}
+	return ec, nil
 }
 
 func loadTranscription(r *Reader) (*Transcription, error) {

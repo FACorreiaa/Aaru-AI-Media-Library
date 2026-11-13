@@ -4525,25 +4525,41 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/AppleSignInRequest/displayName`.
             public var displayName: Swift.String?
+            /// The one-use code that came with the identity token (ASAuthorizationAppleIDCredential's authorizationCode, Sign in with Apple JS's authorization.code). Aaru exchanges it for the token it revokes with Apple when the account is deleted (AUTH-006). Optional: a sign-in without it works, and deleting that account revokes nothing.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AppleSignInRequest/authorizationCode`.
+            public var authorizationCode: Swift.String?
+            /// Web only: the redirectURI Sign in with Apple JS was initialised with. Apple asks for it again when the code is exchanged. The Apple apps send none.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AppleSignInRequest/redirectUri`.
+            public var redirectUri: Swift.String?
             /// Creates a new `AppleSignInRequest`.
             ///
             /// - Parameters:
             ///   - identityToken: The JWT from ASAuthorizationAppleIDCredential / Sign in with Apple JS.
             ///   - nonce: The raw nonce whose SHA-256 the client sent to Apple.
             ///   - displayName: Apple sends the name only on the first authorization; pass it then.
+            ///   - authorizationCode: The one-use code that came with the identity token (ASAuthorizationAppleIDCredential's authorizationCode, Sign in with Apple JS's authorization.code). Aaru exchanges it for the token it revokes with Apple when the account is deleted (AUTH-006). Optional: a sign-in without it works, and deleting that account revokes nothing.
+            ///   - redirectUri: Web only: the redirectURI Sign in with Apple JS was initialised with. Apple asks for it again when the code is exchanged. The Apple apps send none.
             public init(
                 identityToken: Swift.String,
                 nonce: Swift.String,
-                displayName: Swift.String? = nil
+                displayName: Swift.String? = nil,
+                authorizationCode: Swift.String? = nil,
+                redirectUri: Swift.String? = nil
             ) {
                 self.identityToken = identityToken
                 self.nonce = nonce
                 self.displayName = displayName
+                self.authorizationCode = authorizationCode
+                self.redirectUri = redirectUri
             }
             public enum CodingKeys: String, CodingKey {
                 case identityToken
                 case nonce
                 case displayName
+                case authorizationCode
+                case redirectUri
             }
         }
         /// - Remark: Generated from `#/components/schemas/MagicLinkRequest`.

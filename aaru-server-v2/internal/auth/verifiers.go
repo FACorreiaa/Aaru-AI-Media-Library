@@ -22,6 +22,9 @@ type AppleIdentity struct {
 	Subject        string
 	Email          *string
 	IsPrivateRelay bool
+	// Audience is the token's `aud` that Aaru accepts: the bundle id or Services ID the user
+	// signed in to. An authorization code is exchanged, and its token revoked, as this client.
+	Audience string
 }
 
 // AppleVerifying verifies a Sign in with Apple identity token. A token that
@@ -80,7 +83,8 @@ func (v AppleVerifier) Verify(ctx context.Context, identityToken, rawNonce strin
 	if err := v.JWKS.verifyJWT(ctx, identityToken, &claims, func() float64 { return claims.expiry() }); err != nil {
 		return AppleIdentity{}, err
 	}
-	if !claims.complete() || *claims.Iss != AppleIssuer || !claims.Aud.any(set(v.Audiences)) {
+	aud, ok := claims.Aud.first(set(v.Audiences))
+	if !claims.complete() || *claims.Iss != AppleIssuer || !ok {
 		return AppleIdentity{}, ErrInvalidToken
 	}
 	// The client sends Apple sha256(rawNonce) and sends us rawNonce, so a token
@@ -88,7 +92,7 @@ func (v AppleVerifier) Verify(ctx context.Context, identityToken, rawNonce strin
 	if rawNonce == "" || claims.Nonce == nil || *claims.Nonce != token.SHA256Hex(rawNonce) {
 		return AppleIdentity{}, ErrInvalidToken
 	}
-	identity := AppleIdentity{Subject: *claims.Sub}
+	identity := AppleIdentity{Subject: *claims.Sub, Audience: aud}
 	if claims.Email != nil {
 		lower := strings.ToLower(*claims.Email)
 		identity.Email = &lower

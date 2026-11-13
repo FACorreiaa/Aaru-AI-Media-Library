@@ -351,12 +351,18 @@ func (a *audience) UnmarshalJSON(data []byte) error {
 }
 
 func (a audience) any(allowed map[string]bool) bool {
+	_, ok := a.first(allowed)
+	return ok
+}
+
+// first is the first audience that is allowed.
+func (a audience) first(allowed map[string]bool) (string, bool) {
 	for _, v := range a {
 		if allowed[v] {
-			return true
+			return v, true
 		}
 	}
-	return false
+	return "", false
 }
 
 // registeredClaims are the claims both providers must send.
