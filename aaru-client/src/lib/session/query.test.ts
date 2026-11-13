@@ -8,8 +8,13 @@ vi.mock('@tanstack/solid-router', () => ({
   redirect: (options: unknown) => ({ options }),
 }))
 
-const { SESSION_KEY, forgetAccount, requireOnboarded, requireSession } =
-  await import('./query')
+const {
+  SESSION_KEY,
+  forgetAccount,
+  requireAiSharingAnswered,
+  requireOnboarded,
+  requireSession,
+} = await import('./query')
 const { onboardingFinished } = await import('../onboarding/session')
 
 describe('requireSession', () => {
@@ -98,5 +103,45 @@ describe('requireOnboarded', () => {
     // Pages read before the flow added titles are asked again.
     expect(queryClient.getQueryData(['library'])).toBeUndefined()
     expect(queryClient.getQueryData(SESSION_KEY)).toBeDefined()
+  })
+})
+
+describe('requireAiSharingAnswered', () => {
+  const signedIn = {
+    signedIn: true as const,
+    displayName: 'Ana',
+    handle: 'ana',
+  }
+
+  it('sends an account that never answered to the question, carrying where it was headed', () => {
+    expect(() =>
+      requireAiSharingAnswered(
+        { ...signedIn, aiSharing: 'unanswered' },
+        '/app/library',
+      ),
+    ).toThrow(
+      expect.objectContaining({
+        options: { to: '/app/ai-sharing', search: { next: '/app/library' } },
+      }),
+    )
+  })
+
+  it('lets an answered account through, and one whose answer could not be read', () => {
+    for (const aiSharing of ['allowed', 'declined', undefined] as const)
+      expect(() =>
+        requireAiSharingAnswered({ ...signedIn, aiSharing }, '/app'),
+      ).not.toThrow()
+  })
+
+  it('does not ask in the tab where the first run just ended', async () => {
+    const queryClient = new QueryClient()
+    queryClient.setQueryData(SESSION_KEY, {
+      ...signedIn,
+      onboardingPending: true,
+      aiSharing: 'unanswered',
+    })
+    onboardingFinished(queryClient)
+    const session = await requireSession(queryClient)
+    expect(() => requireAiSharingAnswered(session, '/app')).not.toThrow()
   })
 })

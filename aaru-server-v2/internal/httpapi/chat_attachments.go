@@ -5,6 +5,7 @@ package httpapi
 
 import (
 	"aaru-go-api/internal/agent"
+	"aaru-go-api/internal/aisharing"
 	"aaru-go-api/internal/api"
 	"aaru-go-api/internal/apiid"
 	"aaru-go-api/internal/apperr"
@@ -62,6 +63,10 @@ func (s *Server) createChatAttachment(c *echo.Context) error {
 	}
 	if s.Model == nil {
 		return errAgentUnavailable
+	}
+	// A chat file is kept to go to the model with the next question: no yes, no file (PRV-002).
+	if err := aisharing.Require(ctx, s.q, user); err != nil {
+		return err
 	}
 	chat, err := uuid.Parse(c.Param("id"))
 	if err != nil {

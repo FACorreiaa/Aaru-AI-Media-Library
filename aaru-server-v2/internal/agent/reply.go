@@ -3,6 +3,7 @@
 package agent
 
 import (
+	"aaru-go-api/internal/aisharing"
 	"aaru-go-api/internal/catalog"
 	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/db"
@@ -13,6 +14,7 @@ import (
 	"aaru-go-api/internal/safe"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strconv"
@@ -207,6 +209,13 @@ func (s *ReplyService) Answer(ctx context.Context, job Job) error {
 	if err != nil || role == nil {
 		return err
 	}
+	// The tagger turned AI sharing off after tagging: nothing is sent and nothing is posted (PRV-002).
+	if err := aisharing.Require(ctx, s.q(), job.Tagger); err != nil {
+		if errors.Is(err, aisharing.ErrRequired) {
+			return nil
+		}
+		return err
+	}
 	channel, err := store.Channel(ctx, job.ChannelID, job.GroupID)
 	if err != nil || channel == nil {
 		return err
@@ -224,6 +233,10 @@ func (s *ReplyService) Answer(ctx context.Context, job Job) error {
 		return err
 	}
 	earlier, err := store.Messages(ctx, job.ChannelID, groups.Cursor{Kind: groups.CursorBefore, ID: mention.ID}, ContextMessages-1)
+	if err != nil {
+		return err
+	}
+	earlier, err = s.sharedMessages(ctx, earlier)
 	if err != nil {
 		return err
 	}
@@ -269,6 +282,28 @@ func (s *ReplyService) Answer(ctx context.Context, job Job) error {
 	}
 	_, err = s.Groups.PostAgentReply(ctx, job.GroupID, job.ChannelID, mention.ID, body, cards, about.Spoiler)
 	return err
+}
+
+// sharedMessages are the messages that may go to the model (PRV-002): Aaru's own, and those whose
+// author allowed AI sharing. A member who has not allowed is left out, as if they had not written.
+func (s *ReplyService) sharedMessages(ctx context.Context, messages []groups.Message) ([]groups.Message, error) {
+	var authors []uuid.UUID
+	for _, m := range messages {
+		if !m.FromAgent && m.Author != nil {
+			authors = append(authors, m.Author.ID)
+		}
+	}
+	allowed, err := aisharing.AllowedAmong(ctx, s.q(), authors)
+	if err != nil {
+		return nil, err
+	}
+	shared := make([]groups.Message, 0, len(messages))
+	for _, m := range messages {
+		if m.FromAgent || (m.Author != nil && allowed[m.Author.ID]) {
+			shared = append(shared, m)
+		}
+	}
+	return shared, nil
 }
 
 // ChannelContext is what the channel is about.

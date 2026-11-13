@@ -37,7 +37,8 @@ use type tiles. `WelcomeView` has not been brought in line yet.
 
 A new account's first screens, once, before Home: say what you keep, pick what you have
 already watched, read or heard, and land on a Home that is not empty. Every screen has Skip at
-the top right, which ends the whole flow and keeps what was already saved; nothing asks twice.
+the top right, which ends the whole flow and keeps what was already saved; nothing asks twice
+(the AI sharing question, step 5, is the one a skipped flow leaves for the next visit).
 Accounts made before it shipped never see it (`Me.onboardingPending`).
 
 1. **What do you keep?** The six kinds as cards, pick any. The owl (curious) sits above the
@@ -55,7 +56,11 @@ Accounts made before it shipped never see it (`Me.onboardingPending`).
    sources of the picks, from the relation graph (GRAPH-001), grouped "More from Dune". A tap
    adds Plan to… Never "for you" or "because you watched": it is the catalog's relation data,
    and the step is left out when there is none.
-5. **Never miss a new episode.** A sample alert for one of their Watching shows, "Turn on
+5. **Let Aaru use AI with your data?** (PRV-002, owner 2026-11-12.) The AI sharing disclosure
+   (below, "AI data sharing"): what Aaru would send Anthropic, with **Allow** and **Don't allow**
+   side by side, the same size. Either answer is saved and goes on. Always shown; Skip leaves the
+   answer unset, which sends nothing.
+6. **Never miss a new episode.** A sample alert for one of their Watching shows, "Turn on
    notifications" and "Not now". Only when a show or anime was picked as Watching (airing alerts
    follow those alone) and the device can take push.
 
@@ -1175,7 +1180,7 @@ new import source or connected app joins its page; it never gets a page of its o
 | 3 | Notifications | `notifications` | New episodes · Mentions in groups · Group invites · this browser's alerts (web). Footer: "Requests from your connected agents always alert you." The switches are per account, so the Mac shows them too: "Alerts go to your iPhone and your browsers." |
 | 4 | Import | `import` | Trakt · Bring your history, in `CLAUDE.md`'s import order: Stremio history, IMDb, Letterboxd, Goodreads, Pogdesign CAT, Netflix, MyAnimeList, AniList, Any other CSV · Music history (MUS-004): Last.fm, ListenBrainz (usernames), Spotify, YouTube (files), into the Music log · Imports (the jobs; "No imports yet." when none). A listening import's page shows new, already in the log and left out, then Add N listens, then Undo this import |
 | 5 | Connections | `connections` | Agents: the picker (Claude, Claude Code, Codex, Hermes, Gemini CLI, other MCP client, Browser extension) and live connections · Stremio: the addon, with "Import your Stremio history" linking to Import · MyAnimeList: connect, what goes over (status, episodes and score per season; only changes from now on, both ways, forward only; removals stay on the other side), "Connected as … · since …" and "Last read …", the entries removed on MyAnimeList that Aaru keeps, Reconnect when MAL stopped accepting Aaru (SCR-005, SCR-010, owner 2026-10-23) · Music: scrobblers, the last listen → Listens. One verb: Disconnect |
-| 6 | Your data | `data` | Recaps: this year, last month, last year · History: every journaled action, newest first, by whom (you, an import, a connection), with Undo · Export: Everything (JSON), Library spreadsheet (CSV) |
+| 6 | Your data | `data` | AI data sharing: the disclosure and its switch (PRV-002) · Recaps: this year, last month, last year · History: every journaled action, newest first, by whom (you, an import, a connection), with Undo · Export: Everything (JSON), Library spreadsheet (CSV) |
 | 7 | About | `about` | Wordmark, version, channel (Apple) · Credits · Privacy policy, About Aaru, Contact · Ask me to rate Aaru (Apple, on by default) |
 | 8 | Delete account | `delete` | One sentence on what goes, a link to Your data → Export, **Delete account** in danger styling; confirm "Delete account?" with **Delete account and library** / Keep it |
 
@@ -1273,6 +1278,46 @@ Where each existing piece goes:
   "Connect a scrobbler" button when empty.
 
 ---
+
+## AI data sharing (PRV-002, owner 2026-11-12)
+
+Before anything of a user's goes to Aaru's AI provider, Aaru says what and to whom and gets a yes.
+The rule is the server's (`ai_sharing_required`); the clients show one disclosure, the same words
+everywhere, taken from `docs/privacy.md`:
+
+> **Let Aaru use AI with your data?**
+> The owl, capture and @aaru in groups are answered by an AI model from Anthropic. If you allow
+> it, Aaru sends Anthropic:
+> - What you ask Aaru, typed or spoken, with the screen you are on and your time zone, and the
+>   files, pictures and long pastes you attach.
+> - Text and pictures you send to capture.
+> - What Aaru reads from your account to answer: titles in your library with their status,
+>   progress and rating, your lists, stats, favorites, listens and followed sports.
+> - In a group, your messages among a channel's last 30 when someone tags @aaru.
+>
+> Anthropic uses it to write Aaru's answer and does not train on it. Aaru does not sell it or use
+> it for ads. If you don't allow it, these features stay off and the rest of Aaru works the same.
+> You can change this in Settings. *Privacy policy*
+
+It never says more than the policy does. The two answers have equal weight: same size, side by
+side, neither a faint link. It shows in four places and nowhere else:
+
+1. **The first run** (§0a, step 5): **Allow** / **Don't allow**, with the flow's Skip.
+2. **Full screen, once**, for an account past the first run that never answered: the next time
+   the app opens (not straight after a first run that was skipped). **Allow** / **Don't allow**
+   only; it goes away when answered. Web `/app/ai-sharing`, outside the shell like the first run.
+3. **In place**, when an AI surface is used without a yes (unanswered or declined): the owl's
+   card on a question, a file or the microphone; capture on text or pictures (a link alone needs
+   no ask: it is never sent); a group composer when the message tags @aaru. **Allow** / **Not
+   now**. Allow carries on with what the user was doing; Not now leaves it unsent, the question
+   or draft still in the box. The owl's History stays open either way, to read and delete chats.
+   In a group only the tagger is asked, and nothing tells the others who has or has not allowed.
+4. **Settings → Your data → AI data sharing**: the disclosure and a switch. Under it: "Turning
+   this off stops Aaru sending anything new to Anthropic. Chats you already had stay until you
+   delete them", pointing at "Delete my chats with Aaru" on the same page and the owl's History.
+
+Declining leaves the rest of Aaru exactly as it was. The disclosure is app chrome; the agent
+never emits it.
 
 ## Assistant (the owl card, ASK-009)
 

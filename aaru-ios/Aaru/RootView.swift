@@ -15,6 +15,7 @@ struct RootView: View {
     let onSignedOut: @MainActor () -> Void
     @Environment(SessionStore.self) private var session
     @Environment(AppRouter.self) private var router
+    @Environment(AISharingModel.self) private var aiSharing
     @Environment(\.webAuthenticationSession) private var webAuthenticationSession
     @State private var showsEmailSignIn = false
     @State private var errorMessage: String?
@@ -31,6 +32,10 @@ struct RootView: View {
     @State private var onboarding = OnboardingGate.checking
     /// An invite or share link came in: it wins, and the first run waits for the next launch.
     @State private var onboardingDeferred = false
+    /// The first run ended while the app was open: AI sharing is asked the next time it opens.
+    @State private var firstRunEndedThisLaunch = false
+    /// PRV-002: `Me`, read as the app opened, says this account is asked about AI sharing now.
+    @State private var asksAISharing = false
 
     private var flow: AuthFlow {
         AuthFlow(api: api, session: session)
@@ -45,14 +50,21 @@ struct RootView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(Color(.paper).ignoresSafeArea())
                 case .pending:
-                    OnboardingFlow(api: api, library: library, notifications: settings.notifications) { openImport in
+                    OnboardingFlow(
+                        api: api, library: library, notifications: settings.notifications, aiSharing: aiSharing
+                    ) { openImport in
                         finishOnboarding(openImport: openImport)
                     }
                 case .done:
-                    MainTabs(
-                        api: api, library: library, lists: lists, imports: imports, groups: groups,
-                        realtime: realtime, settings: settingsContext
-                    )
+                    // A branch, as the first run is: it covers the Mac's toolbar too.
+                    if asksAISharing, aiSharing.state == .unanswered {
+                        AISharingAskScreen(model: aiSharing)
+                    } else {
+                        MainTabs(
+                            api: api, library: library, lists: lists, imports: imports, groups: groups,
+                            realtime: realtime, settings: settingsContext
+                        )
+                    }
                 }
             } else {
                 WelcomeView(
@@ -118,7 +130,10 @@ struct RootView: View {
                 pendingShare = nil
                 onboarding = .checking
                 onboardingDeferred = false
+                firstRunEndedThisLaunch = false
+                asksAISharing = false
                 OnboardingGate.forget()
+                AISharingAsk.forget()
                 onSignedOut()
                 toasts.dismiss()
             }
@@ -131,24 +146,46 @@ struct RootView: View {
         // Outermost, so the sheets above (a widget's title, a push's request) carry it too.
         .toastCenter(toasts)
         .task(id: session.token) { await checkOnboarding() }
+        .onChange(of: aiSharing.state) { _, state in
+            if state == .allowed || state == .declined {
+                AISharingAsk.rememberAnswered()
+            }
+        }
     }
 
     // MARK: First run (ONB-001)
 
-    /// Reads `Me.onboardingPending` once per session. Never holds the app: a failed or slow call,
-    /// or a server that does not send the field, opens the app. Once the server says done, this
-    /// device stops asking.
+    /// Reads `Me` once per session, for `onboardingPending` and `aiSharing` (PRV-002). Never holds
+    /// the app: a failed or slow call, or a server that does not send the fields, opens the app.
+    /// Once the server says the first run is done and AI sharing has an answer, this device stops
+    /// waiting for it and reads `Me` behind the app.
     private func checkOnboarding() async {
         guard session.isSignedIn, onboarding == .checking else { return }
-        guard let api, !OnboardingGate.isKnownDone, !onboardingDeferred else {
+        guard let api else {
             onboarding = .done
             return
         }
-        let pending = await OnboardingGate.fetchPending(api)
-        guard !Task.isCancelled, onboarding == .checking else { return }
+        if onboardingDeferred || (OnboardingGate.isKnownDone && AISharingAsk.isKnownAnswered) {
+            onboarding = .done
+            if let account = await OnboardingGate.fetchAccount(api), !Task.isCancelled {
+                aiSharing.apply(account)
+            }
+            return
+        }
+        let account = await OnboardingGate.fetchAccount(api)
+        guard !Task.isCancelled else { return }
+        let pending = account.map { $0.onboardingPending ?? false }
+        if let account {
+            aiSharing.apply(account)
+        }
+        guard onboarding == .checking else { return }
         if pending == false {
             OnboardingGate.rememberDone()
         }
+        // Never on a guess: with no `Me` there is no state, and nothing is asked.
+        asksAISharing = !onboardingDeferred && AISharingAsk.asksOnOpen(
+            onboardingPending: pending, state: aiSharing.state, firstRunEndedThisLaunch: firstRunEndedThisLaunch
+        )
         onboarding = pending == true && !onboardingDeferred ? .pending : .done
     }
 
@@ -164,6 +201,7 @@ struct RootView: View {
     /// app is up, as the share sheet does after other sheets go.
     private func finishOnboarding(openImport: Bool) {
         onboarding = .done
+        firstRunEndedThisLaunch = true
         guard openImport else { return }
         Task {
             try? await Task.sleep(for: .milliseconds(450))
@@ -219,4 +257,5 @@ struct RootView: View {
     )
     .environment(SessionStore(keychain: SessionKeychain(service: "preview")))
     .environment(AppRouter())
+    .environment(AISharingModel(api: nil))
 }

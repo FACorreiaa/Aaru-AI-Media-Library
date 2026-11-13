@@ -81,6 +81,8 @@ struct SettingsRouteView: View {
             ChatsPage(model: context.models.chats, push: push)
         case let .chat(id):
             StoredChatView(id: id, api: context.api)
+        case .aiSharing:
+            AISharingPage()
         }
     }
 }

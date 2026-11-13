@@ -18,6 +18,7 @@ import { Route as SupportRouteImport } from './routes/support'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as DotwellKnownAppleAppSiteAssociationRouteImport } from './routes/[.]well-known/apple-app-site-association'
 import { Route as ShellAppRouteImport } from './routes/_shell.app'
+import { Route as AppAiSharingRouteImport } from './routes/app_.ai-sharing'
 import { Route as AppExportRouteImport } from './routes/app_.export'
 import { Route as AppWelcomeRouteImport } from './routes/app_.welcome'
 import { Route as AuthVerifyRouteImport } from './routes/auth.verify'
@@ -116,6 +117,11 @@ const ShellAppRoute = ShellAppRouteImport.update({
   id: '/app',
   path: '/app',
   getParentRoute: () => ShellRoute,
+} as any)
+const AppAiSharingRoute = AppAiSharingRouteImport.update({
+  id: '/app_/ai-sharing',
+  path: '/app/ai-sharing',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AppExportRoute = AppExportRouteImport.update({
   id: '/app_/export',
@@ -399,6 +405,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/app': typeof ShellAppRoute
+  '/app/ai-sharing': typeof AppAiSharingRoute
   '/app/export': typeof AppExportRoute
   '/app/welcome': typeof AppWelcomeRoute
   '/auth/verify': typeof AuthVerifyRoute
@@ -462,6 +469,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/app': typeof ShellAppRoute
+  '/app/ai-sharing': typeof AppAiSharingRoute
   '/app/export': typeof AppExportRoute
   '/app/welcome': typeof AppWelcomeRoute
   '/auth/verify': typeof AuthVerifyRoute
@@ -524,6 +532,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/_shell/app': typeof ShellAppRoute
+  '/app_/ai-sharing': typeof AppAiSharingRoute
   '/app_/export': typeof AppExportRoute
   '/app_/welcome': typeof AppWelcomeRoute
   '/auth/verify': typeof AuthVerifyRoute
@@ -589,6 +598,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/.well-known/apple-app-site-association'
     | '/app'
+    | '/app/ai-sharing'
     | '/app/export'
     | '/app/welcome'
     | '/auth/verify'
@@ -652,6 +662,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/.well-known/apple-app-site-association'
     | '/app'
+    | '/app/ai-sharing'
     | '/app/export'
     | '/app/welcome'
     | '/auth/verify'
@@ -713,6 +724,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/.well-known/apple-app-site-association'
     | '/_shell/app'
+    | '/app_/ai-sharing'
     | '/app_/export'
     | '/app_/welcome'
     | '/auth/verify'
@@ -777,6 +789,7 @@ export interface RootRouteChildren {
   SupportRoute: typeof SupportRoute
   TermsRoute: typeof TermsRoute
   DotwellKnownAppleAppSiteAssociationRoute: typeof DotwellKnownAppleAppSiteAssociationRoute
+  AppAiSharingRoute: typeof AppAiSharingRoute
   AppExportRoute: typeof AppExportRoute
   AppWelcomeRoute: typeof AppWelcomeRoute
   AuthVerifyRoute: typeof AuthVerifyRoute
@@ -854,6 +867,13 @@ declare module '@tanstack/solid-router' {
       fullPath: '/app'
       preLoaderRoute: typeof ShellAppRouteImport
       parentRoute: typeof ShellRoute
+    }
+    '/app_/ai-sharing': {
+      id: '/app_/ai-sharing'
+      path: '/app/ai-sharing'
+      fullPath: '/app/ai-sharing'
+      preLoaderRoute: typeof AppAiSharingRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/app_/export': {
       id: '/app_/export'
@@ -1363,6 +1383,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   DotwellKnownAppleAppSiteAssociationRoute:
     DotwellKnownAppleAppSiteAssociationRoute,
+  AppAiSharingRoute: AppAiSharingRoute,
   AppExportRoute: AppExportRoute,
   AppWelcomeRoute: AppWelcomeRoute,
   AuthVerifyRoute: AuthVerifyRoute,

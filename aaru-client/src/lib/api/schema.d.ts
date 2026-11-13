@@ -312,6 +312,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/me/ai-sharing': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /** Answer AI sharing (PRV-002): may Aaru send this user's data to its AI provider. The answer can change at any time; the latest one holds. Until it is `allowed`, every route that would send the user's data to the AI provider answers 403 `ai_sharing_required` and sends nothing. */
+    put: operations['setAISharing']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/social/users/{handle}': {
     parameters: {
       query?: never
@@ -3635,6 +3652,23 @@ export interface components {
       avatarUrl?: string
       /** @description True until the first-run flow is finished or skipped (ONB-001); accounts made before it shipped never see it. Always sent; optional so apps built before the server ships still read `Me`. */
       onboardingPending?: boolean
+      aiSharing?: components['schemas']['AISharing']
+    }
+    /** @description The user's answer to AI sharing (PRV-002). Always sent on `Me`; optional there so apps built before the server ships still read it. Absent means the same as `unanswered`. */
+    AISharing: {
+      /**
+       * @description `unanswered` and `declined` both mean Aaru sends nothing of this user's to its AI provider; only `unanswered` is asked again.
+       * @enum {string}
+       */
+      state: 'unanswered' | 'allowed' | 'declined'
+      /**
+       * Format: date-time
+       * @description When the user last answered. Absent while unanswered.
+       */
+      decidedAt?: string
+    }
+    AISharingUpdate: {
+      allowed: boolean
     }
     OnboardingFinish: {
       /** @description True when the user left with Skip rather than reaching the end. */
@@ -6265,6 +6299,31 @@ export interface operations {
           [name: string]: unknown
         }
         content?: never
+      }
+      default: components['responses']['Error']
+    }
+  }
+  setAISharing: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AISharingUpdate']
+      }
+    }
+    responses: {
+      /** @description The answer as stored. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['AISharing']
+        }
       }
       default: components['responses']['Error']
     }

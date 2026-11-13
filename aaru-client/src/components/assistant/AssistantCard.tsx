@@ -47,6 +47,7 @@ import { spokenText } from '../../lib/assistant/silence'
 import { parseInline } from '../../lib/markdown'
 import { undoAction } from '../../lib/history/server'
 import { OwlMark } from '../Brand'
+import { useAppShell } from '../shell/context'
 import { PlanCard } from '../PlanCard'
 import { AgentCards } from '../groups/AgentParts'
 import { ChatHistory } from './ChatHistory'
@@ -101,6 +102,7 @@ export function AssistantCard(props: {
   /** The library may have changed: the page behind loads again. */
   onWrote: () => void
 }) {
+  const shell = useAppShell()
   const [turns, setTurns] = createSignal<Turn[]>([])
   const [text, setText] = createSignal('')
   const [mic, setMic] = createSignal<Mic>('idle')
@@ -137,6 +139,7 @@ export function AssistantCard(props: {
   async function choose(files: Iterable<File> | null | undefined) {
     const picked = [...(files ?? [])]
     if (picked.length === 0) return
+    if (!(await shell.ensureAiSharing())) return
     setProblem(null)
     try {
       const pieces = (await Promise.all(picked.map(piecesOf))).flat()
@@ -223,6 +226,9 @@ export function AssistantCard(props: {
 
   async function ask(question: string, language: string | null) {
     const body = question.trim().slice(0, MAX_QUESTION)
+    if ((!body && ready().length === 0) || working() || reading()) return
+    // PRV-002: nothing goes to the AI provider without a yes; the question stays in the box.
+    if (!(await shell.ensureAiSharing()) || !isOpen()) return
     const sent = ready()
     if ((!body && sent.length === 0) || working() || reading()) return
     setProblem(null)
@@ -257,6 +263,8 @@ export function AssistantCard(props: {
   }
 
   async function listen() {
+    if (mic() !== 'idle' || working()) return
+    if (!(await shell.ensureAiSharing()) || !isOpen()) return
     if (mic() !== 'idle' || working()) return
     setProblem(null)
     stopReading()

@@ -9,6 +9,8 @@ final class AppServices {
     /// Where the app is: the destination, Settings' page, and menu-bar requests.
     let router = AppRouter()
     let library = LibraryModel()
+    /// AI sharing (PRV-002): the user's yes or no to Aaru sending their data to its AI provider.
+    let aiSharing: AISharingModel
     /// The Assistant card's Chat (ASK-009), one for the whole app.
     let assistant: AssistantModel
     let lists: ListsModel
@@ -44,7 +46,9 @@ final class AppServices {
                 )
             )
         }
-        assistant = AssistantModel(api: api, library: library)
+        let aiSharing = AISharingModel(api: api)
+        self.aiSharing = aiSharing
+        assistant = AssistantModel(api: api, library: library, aiSharing: aiSharing)
         avatars = AvatarLoader(api: api)
         lists = ListsModel(api: api)
         imports = ImportsModel(api: api)
@@ -90,6 +94,7 @@ final class AppServices {
     /// twice: the Mac's Settings scene and `RootView` may both call this for one sign-out.
     func signedOut() {
         library.reset()
+        aiSharing.reset()
         Task { await assistant.reset() }
         lists.reset()
         imports.reset()

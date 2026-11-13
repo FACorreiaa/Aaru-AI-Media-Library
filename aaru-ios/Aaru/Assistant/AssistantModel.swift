@@ -50,6 +50,10 @@ final class AssistantModel {
 
     @ObservationIgnored private let api: Client?
     @ObservationIgnored private let library: LibraryModel
+    /// AI sharing (PRV-002): until the user has allowed it, nothing is sent and the card asks.
+    @ObservationIgnored let aiSharing: AISharingModel?
+    /// A question a screen asked for the person, held while the card asks about AI sharing.
+    @ObservationIgnored var heldQuestion: String?
     @ObservationIgnored private let thread: ChatThread?
     @ObservationIgnored private let recorder = VoiceRecorder()
     @ObservationIgnored private let speaker = ReplySpeaker()
@@ -61,12 +65,13 @@ final class AssistantModel {
     /// Bumped by `reset()`, so a read still in flight says nothing to the next account.
     @ObservationIgnored private var accountToken = 0
 
-    init(api: Client?, library: LibraryModel) {
+    init(api: Client?, library: LibraryModel, aiSharing: AISharingModel? = nil) {
         self.api = api
         self.library = library
+        self.aiSharing = aiSharing
         let thread = api.map { ChatThread(client: $0) }
         self.thread = thread
-        files = AssistantFiles(thread: thread)
+        files = AssistantFiles(thread: thread, aiSharing: aiSharing)
         history = AssistantHistory(api: api)
         isMuted = UserDefaults.standard.bool(forKey: Self.mutedKey)
         history.assistant = self
@@ -122,6 +127,7 @@ final class AssistantModel {
         level = 0
         voiceProblem = nil
         micDenied = false
+        heldQuestion = nil
     }
 
     /// Trims. Blank with no files, or over 4000 scalars, does nothing, as does a flow already running.
@@ -231,7 +237,7 @@ final class AssistantModel {
     private func ask(_ text: String, language: String?) -> Bool {
         let question = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard phase == .idle, let thread, !files.isReading, !question.isEmpty || !files.ready.isEmpty,
-              question.unicodeScalars.count <= Self.maxQuestionScalars
+              question.unicodeScalars.count <= Self.maxQuestionScalars, aiSharing?.needsAsk != true
         else { return false }
         speaker.stop()
         voiceProblem = nil
@@ -289,20 +295,13 @@ final class AssistantModel {
             libraryChanges += 1
         }
     }
-
-    /// Unstructured: the next flow waits for this one, and should not wait for a status read.
-    private func refreshStatusSoon() {
-        Task { [weak self] in
-            await self?.refreshStatus()
-        }
-    }
 }
 
 // MARK: - Listening
 
 private extension AssistantModel {
     func startListening() {
-        guard voiceAvailable, let api else { return }
+        guard voiceAvailable, let api, aiSharing?.needsAsk != true else { return }
         // First, so the mic cannot hear Aaru.
         speaker.stop()
         voiceProblem = nil
@@ -389,6 +388,7 @@ private extension AssistantModel {
             refreshStatusSoon()
         case let .failed(problem):
             voiceProblem = problem
+            refreshStatusSoon()
         }
     }
 

@@ -8,6 +8,8 @@ extension ImportsModel {
     /// What a capture came to.
     enum CaptureOutcome {
         case started(ImportJob)
+        /// 403 `ai_sharing_required` (PRV-002): the user has not allowed AI sharing.
+        case aiSharingRequired
         case failed(String)
     }
 
@@ -31,7 +33,11 @@ extension ImportsModel {
                 started(job)
                 return .started(job)
             case let .default(_, error):
-                return .failed((try? error.body.json.message) ?? String(localized: "Aaru could not take that capture."))
+                let refusal = try? error.body.json
+                if refusal?.code == AISharingModel.requiredCode {
+                    return .aiSharingRequired
+                }
+                return .failed(refusal?.message ?? String(localized: "Aaru could not take that capture."))
             }
         } catch {
             return .failed(String(localized: "Aaru could not reach the server. Try again in a moment."))

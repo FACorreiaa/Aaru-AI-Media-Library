@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"aaru-go-api/internal/aisharing"
 	"aaru-go-api/internal/capture"
 	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/db/sqlc"
@@ -142,7 +143,13 @@ func (s *ChatService) log() *slog.Logger {
 // A send over the daily cap (shared with `@aaru`) stores nothing and calls no model. The gate fails
 // closed. When ctx ends, the turn stays `stopped` with what was written so far. When Stop ends, it
 // stays `stopped` too, and the client, still there, gets an error event to try again.
+//
+// A user who has not allowed AI sharing (PRV-002) is refused first, with aisharing.ErrRequired:
+// nothing is stored and no model is called.
 func (s *ChatService) Turn(ctx context.Context, user, chat uuid.UUID, ask Ask, emit func(ChatEvent)) error {
+	if err := aisharing.Require(ctx, s.Store.Q, user); err != nil {
+		return err
+	}
 	now := s.now()
 	owned, err := s.Store.Chat(ctx, chat, user)
 	if err != nil {

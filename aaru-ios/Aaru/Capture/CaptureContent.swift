@@ -21,6 +21,14 @@ enum CaptureContent: Equatable {
             self = .text(text)
         }
     }
+
+    /// Text and pictures are read by the model; a link never is (PRV-002).
+    var goesToModel: Bool {
+        switch self {
+        case .text, .images: true
+        case .link: false
+        }
+    }
 }
 
 /// A picture is read at most 1568 px on its long edge (what the model looks at anyway), so the

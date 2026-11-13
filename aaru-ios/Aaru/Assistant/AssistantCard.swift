@@ -31,6 +31,9 @@ struct AssistantCard: View {
     /// Back to zero when the swipe ends, however it ends: a cancelled gesture never calls `onEnded`.
     @GestureState private var dragOffset: CGFloat = 0
     @State private var contentHeight: CGFloat = 0
+    /// The disclosure is open over an old chat's turns (PRV-002).
+    @State private var reviewingAISharing = false
+    @Environment(AISharingModel.self) private var aiSharing: AISharingModel?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var sizeClass
@@ -87,12 +90,33 @@ struct AssistantCard: View {
                 ) { chat in
                     Task { await model.history.open(chat.id) }
                 }
+            } else if let aiSharing, aiSharing.needsAsk, model.turns.isEmpty || reviewingAISharing {
+                // PRV-002: the ask in place of the opening and the composer. History stays in
+                // the header, so old chats can still be read and deleted.
+                AISharingInPlaceAsk(
+                    model: aiSharing,
+                    onAllowed: {
+                        reviewingAISharing = false
+                        model.aiSharingAllowed()
+                    },
+                    onNotNow: {
+                        if reviewingAISharing {
+                            reviewingAISharing = false
+                        } else {
+                            onClose()
+                        }
+                    }
+                )
             } else {
                 turns
                 Rectangle()
                     .fill(Color(.line))
                     .frame(height: 1)
-                AssistantComposer(model: model, opensListening: opensListening)
+                if aiSharing?.needsAsk == true {
+                    AISharingOffBar { reviewingAISharing = true }
+                } else {
+                    AssistantComposer(model: model, opensListening: opensListening)
+                }
             }
         }
         .background(Color(.surface))

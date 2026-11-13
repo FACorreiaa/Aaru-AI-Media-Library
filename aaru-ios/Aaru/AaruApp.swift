@@ -25,6 +25,7 @@ struct AaruApp: App {
                     .environment(services.avatars)
                     .environment(services.router)
                     .environment(services.plus)
+                    .environment(services.aiSharing)
                     .tint(Color(.accent))
                     .appliesAppearance()
             }
@@ -45,6 +46,7 @@ struct AaruApp: App {
             .environment(services.avatars)
             .environment(services.plus)
             .environment(services.assistant)
+            .environment(services.aiSharing)
             // The asset catalog's global accent (NSAccentColorName) does not reach SwiftUI on
             // iOS 26, so the brand accent is set here. Views use `Color(.accent)`, never
             // `Color.accentColor`.

@@ -36,6 +36,33 @@ library layer stay separate, external IDs stored whenever known, no second backe
 
 ## Decisions recorded 2026-11-12
 
+Owner, 2026-11-12: App Store guidelines 5.1.1(i) and 5.1.2(i) ask that an app say what it sends to
+a third-party AI service and to whom, and get an explicit yes first; a sibling app was rejected for
+lacking it. Aaru sent data to Anthropic from the assistant, capture and `@aaru` without asking.
+This is **PRV-002** (AI sharing), and it blocks the 1.0 submission.
+
+- **Asked in the first run.** New accounts get one more first-run screen, skippable like the
+  others; Skip leaves the answer unset, which counts as not allowed. An account that already
+  finished the first run and has no answer is asked once, full screen, the next time the app
+  opens (iPhone, Mac, web).
+- **Groups.** The member who tags `@aaru` must have allowed. Messages written by members who have
+  not allowed are left out of what is sent to the model. Nothing reveals who has or has not.
+- Not the owner's, chosen by the coordinating session and open to change: the rule lives on the
+  server as a tri-state per user (unanswered, allowed, declined, with when), read on `Me` and set
+  by one endpoint; the server refuses every path that sends a user's data to the model with 403
+  `ai_sharing_required`, a user's own provider key would not exempt them, and a spoken question
+  is not transcribed without a yes; MCP and agent tokens are left alone (they call no model); a
+  surface used without a yes shows the disclosure in place with Allow / Not now; Settings has one
+  row, "AI data sharing", that says what turning it off does not do; one disclosure component per
+  client.
+- Chosen while building: a message that tags `@aaru` from a member who has not allowed is refused
+  whole (not posted and left unanswered), because an unanswered tag would show the group who has
+  not allowed; the full-screen ask has no Skip (Allow or Don't allow ends it), and it is not shown
+  straight after a first run that was skipped, only from the next visit; the row sits under
+  Settings → Your data, beside "Delete my chats with Aaru", since neither client has a Privacy
+  page; what a channel is about (a shared shelf's titles, a watch party's title) is still sent
+  whoever added it.
+
 Owner, 2026-11-12: try the owl as a real-time 3D character on the web and in the Apple app, see it
 live on the beta site and on TestFlight before the App Store release, and decide there whether it
 is worth having, here and for the other apps' mascots. This is **BRD-011**, an experiment with a
@@ -1012,6 +1039,7 @@ account or a stranger that has not happened yet.
 | GRAPH-006 | Built, unverified | `GET /v1/titles/{id}/tree?cast=true`, `catalog/credits_sources.go` (`tmdbCast`, `billedPart`), `catalog/tree.go` (`people`), `core/tree.go` | Server built 2026-11-11; stub TMDB only (no key on the dev machine), so `aggregate_credits` inside `append_to_response` and the cameo and talk-show filters are unproven on real data: run `credits_live_test.go` with `AARU_LIVE=1` and a key. Web built 2026-11-11 (`TitleTree.tsx` `TitleTreeView`, `lib/title/tree.ts` `treeFilters`/`filterTree`): unit tests only, not looked at in a browser. Apple built 2026-11-11 (`TitleTreeFiltered`, `TitleTree.filters`/`showing`): iOS simulator and Mac builds pass; not looked at on a screen. Needs the API promoted |
 | IMP-021 | Built, unverified | `POST /v1/imports/{id}/match-all`, `catalog/guess.go`, `imports/matchall.go`, `aaru-ios/Aaru/Capture/MatchAllButton.swift` | Web run locally: real Open Library, stub model, 8 of 10 rows filled in about 12 seconds. iOS builds and has not been tapped. Needs the API promoted |
 | PRV-001 | Done | #27 8d5ddc3; docs/providers.md, AboutView.swift | privacy@ routing not set up |
+| PRV-002 | Built, unverified | `feat/ai-sharing-consent` #296; `internal/httpapi/ai_sharing_test.go`, `lib/ai-sharing/model.test.ts`, AaruTests | Server tests run in CI only (no local Postgres); never driven in a browser, a simulator or on a device; API not promoted |
 | CAT-011 | Done | #24 7edc80c; TVmazeAirTimes.swift | |
 | CAT-012 | Open | no Google Books code | |
 | CAT-013 | Open | no Wikidata code | |
@@ -1179,6 +1207,7 @@ what the file's own rules, `MARKETING.md`'s launch gate or App Store review alre
 | 9 | REL-004 says "iOS + macOS lanes", but `Fastfile` has `PLATFORMS = %w[ios]`: the Mac lane waits for a Mac Installer Distribution certificate, or iPhone ships first | Open | owner decides |
 | 10 | This file: 22 ids have no status row (ASK-001…010, BOARD-004, DISC-004/005, NAV-001/002/003/005, SPT-001…005), and the summary rows above are stale (P4 "0/8", P6 "Nothing on main", P2 31/54 against 29/54) | Open | docs |
 | 11 | App Store 1.2: a Board comment could not be reported, and a comment's or group message's author (who need not be your friend) could not be blocked from where you read them | Done on `feat/report-everywhere` (2026-11-13): Report comment (`comment:<id>` in the note) and Block on posts, comments and group messages, iPhone, Mac and web. No server change. Not tried on a device. R4's alert is still the owner's: until it exists nobody is told a report arrived | code + owner |
+| 12 | AI data sharing consent before anything goes to Anthropic (App Store 5.1.1(i), 5.1.2(i); PRV-002) | Built in #296 (2026-11-13); needs the API promoted and a look on TestFlight | code + owner |
 
 ## Phase map
 
@@ -2889,6 +2918,23 @@ attribution list feeds LAND-003 and the app's About screen.
 **Done when:** every provider the server calls has a row, every row with a key names its
 sealed secret, and the About screen and privacy page show every required attribution (TMDB
 logo + notice, TVmaze CC BY-SA, ODbL).
+
+### PRV-002 · AI sharing: ask before data goes to the AI provider · L · owner, 2026-11-12
+**Needs:** ONB-001, ASK-009, AG-006, GRP-011.
+App Store 5.1.1(i) and 5.1.2(i). `docs/privacy.md` "AI data sharing" first. Migration 00014:
+`users.ai_sharing_allowed` (NULL unanswered) and `ai_sharing_decided_at`. `Me.aiSharing`
+(`state`, `decidedAt`); `PUT /v1/me/ai-sharing {allowed}`. `internal/aisharing.Require` before
+every `model.Provider` call that carries a user's data: chat turn, chat file, transcription,
+capture of text, pictures or a PDF (create and worker), a group message tagging `@aaru` (refused
+before it is saved) and the reply worker, which also leaves out messages of members who have not
+allowed. 403 `ai_sharing_required`. Clients: one disclosure (DESIGN.md "AI data sharing") on a
+first-run screen, a full-screen ask for accounts past the first run, an in-place ask on the owl's
+card, capture and the group composer, and Settings → Your data → AI data sharing.
+
+**Done when:** an account that has not allowed gets 403 on every gated path with no model call
+(tests); allowing passes; the stub model never sees a non-allowing member's message; the
+disclosure shows in all four places on iPhone, Mac and web; a build on TestFlight asks a fresh
+account in the first run and an old one on open.
 
 ### CAT-011 · TVmaze air times and networks · M
 **Needs:** CAL-001, PRV-001.

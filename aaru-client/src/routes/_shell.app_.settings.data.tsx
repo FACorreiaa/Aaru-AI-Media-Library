@@ -6,8 +6,16 @@ import {
   Alert,
   AlertDescription,
   Button,
+  Switch,
+  SwitchControl,
+  SwitchDescription,
+  SwitchInput,
+  SwitchLabel,
+  SwitchThumb,
   buttonVariants,
 } from '~/components/ui'
+import { AiSharingDisclosure } from '../components/ai-sharing/AiSharingDisclosure'
+import { AI_SHARING } from '../lib/ai-sharing/model'
 import { actionBy, canUndo, whenLabel } from '../lib/history/model'
 import type { Action } from '../lib/history/model'
 import { listActions, undoAction } from '../lib/history/server'
@@ -172,8 +180,66 @@ function YourData() {
         </div>
       </SettingsSection>
 
+      <AiSharingSection />
       <ChatsSection />
     </>
+  )
+}
+
+/** PRV-002: AI data sharing, the same disclosure the first run shows, with the switch. Off stops
+ * new sends; it deletes nothing, and the note says where chats are deleted. */
+function AiSharingSection() {
+  const shell = useAppShell()
+  const [busy, setBusy] = createSignal(false)
+  const [problem, setProblem] = createSignal<string | null>(null)
+
+  async function change(allowed: boolean) {
+    if (busy()) return
+    setBusy(true)
+    setProblem(null)
+    try {
+      await shell.setAiSharing(allowed)
+    } catch (error) {
+      setProblem(error instanceof Error ? error.message : 'That was not saved.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <SettingsSection
+      id="ai-sharing"
+      title="AI data sharing"
+      footer={AI_SHARING.off}
+    >
+      <AiSharingDisclosure class="max-w-prose" />
+      <Switch
+        class="mt-5 flex items-start gap-3 text-sm"
+        checked={shell.aiSharing() === 'allowed'}
+        disabled={busy()}
+        onChange={(next) => void change(next)}
+      >
+        <SwitchInput />
+        <SwitchControl>
+          <SwitchThumb />
+        </SwitchControl>
+        <span>
+          <SwitchLabel class="cursor-pointer">AI data sharing</SwitchLabel>
+          <SwitchDescription class="block text-xs">
+            {shell.aiSharing() === 'allowed'
+              ? 'On. Aaru may send Anthropic what is listed above.'
+              : 'Off. Aaru sends Anthropic nothing of yours.'}
+          </SwitchDescription>
+        </span>
+      </Switch>
+      <Show when={problem()}>
+        {(line) => (
+          <p role="alert" class="mt-3 text-sm text-danger">
+            {line()}
+          </p>
+        )}
+      </Show>
+    </SettingsSection>
   )
 }
 

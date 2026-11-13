@@ -1,3 +1,4 @@
+import type { AiSharingState } from '../ai-sharing/model'
 import { createServerFn } from '@tanstack/solid-start'
 import {
   deleteCookie,
@@ -23,6 +24,10 @@ export type Session =
       avatarUrl?: string | null
       /** True until the first run is finished or skipped (ONB-001). Absent reads as false. */
       onboardingPending?: boolean
+      /** The answer to AI sharing (PRV-002). Absent when the server could not be asked. */
+      aiSharing?: AiSharingState
+      /** True in the tab where the first run just ended: that visit is not asked full screen. */
+      firstRunEndedHere?: boolean
     }
 
 export const getSession = createServerFn({ method: 'GET' }).handler(
@@ -42,6 +47,7 @@ export const getSession = createServerFn({ method: 'GET' }).handler(
         handle: data?.handle ?? null,
         avatarUrl: data?.avatarUrl ?? null,
         onboardingPending: data?.onboardingPending ?? false,
+        aiSharing: data ? (data.aiSharing?.state ?? 'unanswered') : undefined,
       }
     } catch {
       // An unreachable API keeps the session; only a 401 ends it (as in the Apple apps). The

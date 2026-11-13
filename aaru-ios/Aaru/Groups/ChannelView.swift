@@ -20,7 +20,10 @@ struct ChannelView: View {
     @State private var nearBottom = true
     /// Title channels: how the next message is marked for spoilers. Back to automatic after each.
     @State private var spoiler = SpoilerChoice.auto
+    /// PRV-002: the AI sharing ask is up over a draft that tags `@aaru`. The draft stays.
+    @State private var askingAISharing = false
     @FocusState private var composerFocused: Bool
+    @Environment(AISharingModel.self) private var aiSharing: AISharingModel?
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -157,6 +160,12 @@ struct ChannelView: View {
                     groups.realtime?.sendTyping(group: groupID, channel: channel.id)
                 }
             }
+            .onChange(of: model.heldForAISharing) { _, held in
+                if let held {
+                    takeBack(held)
+                }
+            }
+            .aiSharingAsk(isPresented: $askingAISharing, model: aiSharing, onAllowed: submit)
             .confirmationDialog(
                 "Delete this group message?",
                 isPresented: Binding(get: { deleting != nil }, set: {
@@ -222,10 +231,32 @@ struct ChannelView: View {
                 }
             }
         } else {
+            // PRV-002: tagging @aaru sends the channel's recent messages to the model, so this
+            // member is asked first. The draft waits: sent after Allow, left as it is otherwise.
+            if detail?.agent ?? false, AISharingAsk.tagsAaru(text), aiSharing?.needsAsk == true {
+                askingAISharing = true
+                return
+            }
             draft = ""
             let marked = spoiler
             spoiler = .auto
             Task { await model.send(text, spoiler: marked) }
+        }
+    }
+
+    /// The server refused a message that tags `@aaru` (the answer changed on another device): it
+    /// goes back to the composer, and the ask shows here.
+    private func takeBack(_ held: ChannelModel.Outgoing) {
+        model.heldForAISharing = nil
+        if draft.isEmpty {
+            draft = held.body
+            spoiler = held.spoiler
+        }
+        if let aiSharing {
+            aiSharing.serverRefused()
+            askingAISharing = true
+        } else {
+            model.problem = String(localized: "That was not sent.")
         }
     }
 

@@ -12,6 +12,8 @@ import {
 import { Button } from '~/components/ui'
 import type { components } from '../../lib/api/schema'
 import { loadFavorites, saveFavorites } from '../../lib/favorites/server'
+import { setAiSharing } from '../../lib/ai-sharing/server'
+import { aiSharingAnswered } from '../../lib/ai-sharing/session'
 import { hitKey } from '../../lib/library/model'
 import type { CatalogHit, MediaKind } from '../../lib/library/model'
 import { slideIn } from '../../lib/motion'
@@ -45,6 +47,7 @@ import { browserPushSupport } from '../../lib/push/enable'
 import { getPushSetup } from '../../lib/push/server'
 import type { PushSetup } from '../../lib/push/server'
 import { onboardingFinished } from '../../lib/onboarding/session'
+import { AiSharingStep } from './AiSharingStep'
 import { FavoritesStep } from './FavoritesStep'
 import { KindsStep } from './KindsStep'
 import { NotificationsStep } from './NotificationsStep'
@@ -174,6 +177,25 @@ export function OnboardingFlow(props: {
     } finally {
       setBusy(false)
     }
+  }
+
+  /** PRV-002: stores the answer to AI sharing, then goes on. Skip never comes here. */
+  async function answerAiSharing(allowed: boolean) {
+    setBusy(true)
+    setProblem(null)
+    try {
+      const state = await setAiSharing({ data: { allowed } })
+      aiSharingAnswered(router.options.context.queryClient, state)
+    } catch (error) {
+      setProblem({
+        message: message(error, 'Your answer was not saved.'),
+        retry: () => void answerAiSharing(allowed),
+      })
+      return
+    } finally {
+      setBusy(false)
+    }
+    await forward()
   }
 
   /** Sends picks in batches of 60 (one action each); any that failed stay picked to retry.
@@ -343,6 +365,13 @@ export function OnboardingFlow(props: {
               picks={picks()}
               onToggle={toggleRelated}
               onContinue={() => void continueRelated()}
+              busy={busy()}
+              problem={problem()}
+            />
+          </Match>
+          <Match when={step() === 'ai'}>
+            <AiSharingStep
+              onAnswer={(allowed) => void answerAiSharing(allowed)}
               busy={busy()}
               problem={problem()}
             />

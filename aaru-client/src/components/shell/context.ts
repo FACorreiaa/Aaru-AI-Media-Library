@@ -6,6 +6,7 @@ import {
   useContext,
 } from 'solid-js'
 import type { Accessor } from 'solid-js'
+import type { AiSharingState } from '../../lib/ai-sharing/model'
 import type { LibraryEntry } from '../../lib/library/model'
 import type { Scope } from '../SearchPanel'
 
@@ -32,6 +33,15 @@ export type AppShellContext = {
   assistantAvailable: Accessor<boolean>
   /** The title a title page is showing, so a question there is about it. Null off one. */
   setAssistantTitle: (titleId: string | null) => void
+  /** The user's answer to AI sharing (PRV-002). Absent when the server could not be asked. */
+  aiSharing: Accessor<AiSharingState | undefined>
+  /**
+   * Before anything goes to the AI provider: true when the user has allowed it. If they have
+   * not, the disclosure opens in place with Allow / Not now and this answers what they chose.
+   */
+  ensureAiSharing: () => Promise<boolean>
+  /** Stores a new answer (Settings' switch). Throws when it was not saved. */
+  setAiSharing: (allowed: boolean) => Promise<void>
 }
 
 export const ShellContext = createContext<AppShellContext>()

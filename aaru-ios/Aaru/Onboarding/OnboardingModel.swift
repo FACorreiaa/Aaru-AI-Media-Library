@@ -66,14 +66,18 @@ final class OnboardingModel {
     static let relatedLimit = 30
 
     @ObservationIgnored let api: Client?
+    /// Whether the flow has the AI sharing screen (PRV-002): fixed when the flow starts, so the
+    /// screen stays where it is once answered.
+    @ObservationIgnored let asksAISharing: Bool
     @ObservationIgnored private let library: LibraryModel
     @ObservationIgnored private var relatedTask: Task<Void, Never>?
     /// Picks the catalog could not resolve: a second Continue goes on without them.
     @ObservationIgnored private var missed: Set<String> = []
 
-    init(api: Client?, library: LibraryModel) {
+    init(api: Client?, library: LibraryModel, asksAISharing: Bool = false) {
         self.api = api
         self.library = library
+        self.asksAISharing = asksAISharing
     }
 
     /// A new screen starts clean: no message, no "Try again" from the last one.
@@ -106,18 +110,6 @@ final class OnboardingModel {
             hasRelated: related?.isEmpty == false,
             pushSupported: Self.pushSupported
         )
-    }
-
-    func step(after current: OnboardingStep) -> OnboardingStep? {
-        let list = steps
-        guard let index = list.firstIndex(of: current) else { return nil }
-        return list.indices.contains(index + 1) ? list[index + 1] : nil
-    }
-
-    func step(before current: OnboardingStep) -> OnboardingStep? {
-        let list = steps
-        guard let index = list.firstIndex(of: current), index > 0 else { return nil }
-        return list[index - 1]
     }
 
     // MARK: Picks

@@ -144,8 +144,15 @@ and `OwlUnavailableView` (Apple, `Design/Owl.swift`) wrap a screen's existing em
 actions with the idling owl. The agent never emits them.
 
 **The first run is chrome too (ONB-001, 2026-11-09).** The kind cards, the poster pickers, the
-favorites, "More from what you picked" and the alerts screen (DESIGN.md §0a) belong to the flow
-a new account sees once. The agent never emits them.
+favorites, "More from what you picked", the AI sharing question and the alerts screen
+(DESIGN.md §0a) belong to the flow a new account sees once. The agent never emits them.
+
+**The AI sharing disclosure is chrome too (PRV-002, 2026-11-12).** One component per client
+(`AiSharingDisclosure` on the web, `AISharingDisclosure` on Apple) holds what Aaru sends its AI
+provider and to whom. It is reused by the first-run screen, the full-screen ask (web
+`/app/ai-sharing`), the in-place ask on the owl's card, capture and a group composer, and the
+"AI data sharing" row under Settings → Your data (DESIGN.md "AI data sharing"). The agent never
+emits it, and no agent or outside caller can answer it: the answer is the user's own tap.
 
 **The catalog grows from nine to twenty, said out loud here (2026-10-09).** Phase 1.5 did not
 grow it, and Capture, remote approval, Shortcuts, and MCP still render on the original nine.

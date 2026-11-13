@@ -1,6 +1,7 @@
 import { queryOptions } from '@tanstack/solid-query'
 import type { QueryClient } from '@tanstack/solid-query'
 import { redirect } from '@tanstack/solid-router'
+import { asksOnOpen } from '../ai-sharing/model'
 import { getSession } from './session'
 import type { Session } from './session'
 
@@ -39,6 +40,16 @@ export function requireOnboarded(
 ): void {
   if (session.onboardingPending)
     throw redirect({ to: '/app/welcome', search: { next } })
+}
+
+/** AI sharing (PRV-002): an account past the first run that never answered is asked once, full
+ * screen, at `/app/ai-sharing`, carrying where it was headed. */
+export function requireAiSharingAnswered(
+  session: Extract<Session, { signedIn: true }>,
+  next: string,
+): void {
+  if (asksOnOpen(session))
+    throw redirect({ to: '/app/ai-sharing', search: { next } })
 }
 
 /** The session changed under this tab (a new name or handle): ask again on the next read. */

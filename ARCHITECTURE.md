@@ -1144,6 +1144,21 @@ protocol ModelProviding: Sendable {
 ```
 
 - Anthropic adapter is the default. Keys live in environment config.
+- **AI sharing (PRV-002, 2026-11-12).** Nothing of a user's reaches a `model.Provider` until that
+  user allowed it: `users.ai_sharing_allowed` (NULL is unanswered, which counts as no) and
+  `ai_sharing_decided_at`, read as `Me.aiSharing` and set by `PUT /v1/me/ai-sharing`. The rule is
+  `internal/aisharing`: every path that hands a user's data to the model calls
+  `aisharing.Require` first and answers 403 `ai_sharing_required` with no model call. The gated
+  paths are a chat turn (`agent.ChatService.Turn`), a chat file (`POST /v1/chats/{id}/attachments`),
+  a spoken question (`POST /v1/chats/transcribe`: Whisper is Aaru's own, but its words are a
+  question for the model, so a user who has not allowed is not transcribed), a capture of text,
+  pictures or a PDF (`imports.Service.CreateCapture`, and again in the worker in case the answer
+  changed; a link, or titles a chat already named, send nothing and are not gated), and a group
+  message that tags `@aaru` (`groups.Service.Post` refuses it before it is saved, so the group
+  never sees an unanswered tag; `agent.ReplyService.Answer` asks again and drops the job quietly).
+  A reply's context leaves out every message whose author has not allowed
+  (`ReplyService.sharedMessages`). MCP and agent tokens call no model and are not gated: there the
+  user's own agent reads Aaru. A new caller of `model.Provider` must call `aisharing.Require`.
 - A user may supply their own encrypted key, which lifts the fair-use cap.
 - `agent_usage` meters spend per user per day from the first call, not later.
 - First consumer (GRP-010, 2026-10-20): `@aaru` replies in groups, on `claude-haiku-5-5`. The

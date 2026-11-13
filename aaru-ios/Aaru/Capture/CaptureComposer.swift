@@ -16,6 +16,9 @@ struct CaptureComposer: View {
     @State private var pictures: [Data] = []
     @State private var sending = false
     @State private var problem: String?
+    /// PRV-002: the ask is up; what was typed or picked stays until it is answered.
+    @State private var askingAISharing = false
+    @Environment(AISharingModel.self) private var aiSharing: AISharingModel?
 
     private var placeholder: String {
         switch (kind == .book, pictures.isEmpty) {
@@ -88,6 +91,9 @@ struct CaptureComposer: View {
                 .foregroundStyle(problem == nil ? Color(.muted) : Color(.danger))
         }
         .onChange(of: photos) { _, items in Task { await load(items) } }
+        .aiSharingAsk(isPresented: $askingAISharing, model: aiSharing) {
+            Task { await send() }
+        }
     }
 
     private var canSend: Bool {
@@ -139,6 +145,12 @@ struct CaptureComposer: View {
     private func send() async {
         let content = pictures.isEmpty ? CaptureContent(typed: text) : .images(pictures)
         guard let content else { return }
+        // PRV-002: text and pictures go to the model, so they wait for a yes. A link is read by
+        // its id and goes as it is.
+        if content.goesToModel, aiSharing?.needsAsk == true {
+            askingAISharing = true
+            return
+        }
         sending = true
         problem = nil
         defer { sending = false }
@@ -147,6 +159,14 @@ struct CaptureComposer: View {
             text = ""
             pictures = []
             onStarted(job)
+        case .aiSharingRequired:
+            // The answer changed on another device: ask here, and keep what was typed.
+            if let aiSharing {
+                aiSharing.serverRefused()
+                askingAISharing = true
+            } else {
+                problem = String(localized: "Aaru could not take that capture.")
+            }
         case let .failed(message):
             problem = message
         }

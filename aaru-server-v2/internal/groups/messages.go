@@ -1,6 +1,7 @@
 package groups
 
 import (
+	"aaru-go-api/internal/aisharing"
 	"aaru-go-api/internal/core"
 	"context"
 	"fmt"
@@ -204,6 +205,14 @@ func (s *Service) Post(ctx context.Context, group, channel uuid.UUID, body strin
 		return Message{}, err
 	}
 	mentions, agent := Mentions(body, memberUsers(members))
+	// Tagging @aaru sends the channel's recent messages to the model, so the tagger must have
+	// allowed AI sharing (PRV-002). The message is refused whole, before it is saved: a posted
+	// mention Aaru never answers would show the group who has not allowed.
+	if agent && s.AgentAvailable {
+		if err := aisharing.Require(ctx, s.q(), viewer); err != nil {
+			return Message{}, err
+		}
+	}
 	var progress map[uuid.UUID]TitleProgress
 	if found.TitleID != nil {
 		if progress, err = Progress(ctx, s.q(), *found.TitleID, memberIDs(members)); err != nil {

@@ -54,7 +54,7 @@ This file is the working contract for anyone — human or agent — changing the
 | Deploy | API: GHCR image → promote PR in `~/Work/production/platform/infra` → ArgoCD on `maat` (`horus` namespace). Web: Wrangler to Workers |
 | Observability | Grafana Cloud through the cluster's Alloy: Prometheus `/metrics` on an internal port, logs, probes, an "Apps / Aaru" board. Sentry for errors only (server, web, Apple apps, extension; no tracing, no replay, no PII). PostHog for a few server-side product events only; no client analytics SDK. Every claim lives in `docs/privacy.md`, which changes first (owner, 2026-10-21) |
 | User import — capture | Pasted text, an image, or a catalog link (TMDB, AniList, Open Library) as an import job (`source=capture`, AG-006, pulled forward 2026-10-22). Text (up to 100,000 characters, so a whole chat) and up to 5 images are read by one `ModelProviding` call and deleted once read; links are parsed by id and never fetched. `?kind=book` reads books only (BOOK-001). Text that asks for titles ("X-Men books in reading order") is answered with titles to review, and an order becomes a list on approve; the owl's `plan_title_list` makes the same job without a second model call (BOOK-003). 30 a day for every account, no monthly limit while Plus is off sale (BIL-005) |
-| Agent model | Pluggable `model.Provider` in `aaru-server-v2` (`internal/model`, `internal/agent`). Anthropic default, user key supported, spend metered daily |
+| Agent model | Pluggable `model.Provider` in `aaru-server-v2` (`internal/model`, `internal/agent`). Anthropic default, user key supported, spend metered daily. Nothing of a user's goes to it until they allowed AI sharing (`internal/aisharing`, PRV-002): every caller asks `aisharing.Require` first |
 | Transcription | The cluster's own Whisper (`http://whisper.horus.svc.cluster.local:8000/v1`, `Systran/faster-whisper-small`, auto-detected language) behind an OpenAI-compatible provider, as Norviq does; audio held in memory, never stored, no paid speech API (ASK-009) |
 | Assistant | A card opened from the owl in the top bar, talk or type, on iPhone, Mac and web. A streaming chat turn in `aaru-server-v2` (`internal/agent/chat.go`) over `model.Provider`, reading only the signed-in user's own data and the catalog; one item changes like a tap, a larger plan is a `PlanCard`. Free for every account; chats stored until deleted, one at a time or all, and read again from the card's History or Settings (`GET /v1/chats`, `GET`/`DELETE /v1/chats/{id}`); a chat continues for 15 minutes and New chat starts another (ASK-009, owner 2026-11-04; ASK-011, owner 2026-11-10). A roadmap, an order or a list of editions comes from what the model knows through `plan_title_list` and shows in the reply as a `RoadmapCard` (the components frame's `roadmap`), reviewed as an import before anything is added; a turn the scope gate marks as asking for a list gets more room (ASK-011). Files and long pastes in the card (ASK-010, owner 2026-11-06): `POST /v1/chats/{id}/attachments`, kept an hour; pictures, PDFs and text go to the model, an export only as its format and first rows; `import_attachment` makes an import the user reviews; while a file is in the chat every write is a `PlanCard` |
 | File check | `internal/upload`: every upload door (chat files, capture pictures, exports, listening histories) reads a file's bytes before anything else does. Magic numbers decide the kind; a name or Content-Type that disagrees is refused, as are programs, archives, Office containers, pictures past 40 MP, XML with a DOCTYPE, and PDFs with encryption or active content. No virus scanner (owner, 2026-11-06); `upload.Check` is where one would go (ASK-010) |
@@ -200,8 +200,15 @@ Use these words in code, APIs, and UI:
   follow (there is none), never a Favorite, never shown to friends
 - **Sport event** — one match, game or card from the sports provider. Catalog data for the Sports
   tab, kept no longer than the cache: never a Title, never a library item, never journaled
+- **AI sharing** — a user's yes or no to Aaru sending their data to its AI provider (PRV-002,
+  owner 2026-11-12): `unanswered` | `allowed` | `declined`, with when it was decided. Unanswered
+  counts as no. The server refuses every path that would send a user's data to the model without
+  it (403 `ai_sharing_required`: the assistant, chat files, a spoken question, a capture of text
+  or pictures, tagging `@aaru`); in a group only the messages of members who allowed are sent,
+  and nobody is shown who has or has not. The UI says "AI data sharing". Account data: not
+  journaled, in the export
 - **First run** — the once-only flow a new account sees before Home (ONB-001): kinds, picks with
-  a status, favorites, the picks' related titles, alerts. Skippable on every screen. Its picks
+  a status, favorites, the picks' related titles, AI sharing, alerts. Skippable on every screen. Its picks
   are history (journal kind `onboarding`: undated, no points), and its suggestions are relation
   data, never recommendations
 - **Owned** — separate `isOwned` flag; do not overload status

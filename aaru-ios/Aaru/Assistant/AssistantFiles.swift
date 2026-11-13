@@ -34,11 +34,14 @@ final class AssistantFiles {
     private(set) var problem: String?
 
     @ObservationIgnored private let thread: ChatThread?
+    /// AI sharing (PRV-002): no file goes to the chat until the user has allowed it.
+    @ObservationIgnored private let aiSharing: AISharingModel?
     /// Bumped by `clear()`, so an upload still in flight adds nothing afterwards.
     @ObservationIgnored private var token = 0
 
-    init(thread: ChatThread?) {
+    init(thread: ChatThread?, aiSharing: AISharingModel? = nil) {
         self.thread = thread
+        self.aiSharing = aiSharing
     }
 
     /// Whether a file is still being read: the turn waits for it.
@@ -75,7 +78,7 @@ final class AssistantFiles {
 
     /// One file, sent to the chat now.
     func attach(_ data: Data, name: String) {
-        guard let thread, room(for: 1) else { return }
+        guard let thread, aiSharing?.needsAsk != true, room(for: 1) else { return }
         let chip = AssistantChip(id: UUID(), name: name.isEmpty ? String(localized: "Pasted text") : name)
         chips.append(chip)
         problem = nil
@@ -90,6 +93,8 @@ final class AssistantFiles {
             case let .refused(reason):
                 chips.remove(at: index)
                 problem = "\(chip.name): \(reason)"
+                // The refusal's code does not come through: it may be `ai_sharing_required`.
+                await aiSharing?.refresh()
             }
         }
     }

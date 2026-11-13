@@ -365,6 +365,26 @@ paths:
           description: Onboarding is over for this account.
         default:
           $ref: '#/components/responses/Error'
+  /v1/me/ai-sharing:
+    put:
+      operationId: setAISharing
+      summary: >-
+        Answer AI sharing (PRV-002): may Aaru send this user's data to its AI provider. The answer
+        can change at any time; the latest one holds. Until it is `allowed`, every route that would
+        send the user's data to the AI provider answers 403 `ai_sharing_required` and sends nothing.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/AISharingUpdate'}
+      responses:
+        '200':
+          description: The answer as stored.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AISharing'}
+        default:
+          $ref: '#/components/responses/Error'
   /v1/social/users/{handle}:
     get:
       operationId: getSocialUser
@@ -4415,6 +4435,31 @@ components:
             True until the first-run flow is finished or skipped (ONB-001); accounts made before it
             shipped never see it. Always sent; optional so apps built before the server ships still
             read `Me`.
+        aiSharing:
+          $ref: '#/components/schemas/AISharing'
+    AISharing:
+      type: object
+      description: >-
+        The user's answer to AI sharing (PRV-002). Always sent on `Me`; optional there so apps built
+        before the server ships still read it. Absent means the same as `unanswered`.
+      required: [state]
+      properties:
+        state:
+          type: string
+          enum: [unanswered, allowed, declined]
+          description: >-
+            `unanswered` and `declined` both mean Aaru sends nothing of this user's to its AI
+            provider; only `unanswered` is asked again.
+        decidedAt:
+          type: string
+          format: date-time
+          description: When the user last answered. Absent while unanswered.
+    AISharingUpdate:
+      type: object
+      required: [allowed]
+      properties:
+        allowed:
+          type: boolean
     OnboardingFinish:
       type: object
       required: [skipped]
