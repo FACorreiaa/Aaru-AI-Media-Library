@@ -225,6 +225,10 @@ func (w *Wikidata) Relations(ctx context.Context, n RelatedNode) (Relations, err
 		nodes = w.Enrich(ctx, nodes)
 	}
 	for i, node := range nodes {
+		// Wikidata has no adult mark of its own; TMDB's, read by Enrich, decides for films and shows.
+		if node.Adult {
+			continue
+		}
 		out.Edges = append(out.Edges, RelatedEdge{To: node, Relation: relations[i]})
 	}
 	return out, nil

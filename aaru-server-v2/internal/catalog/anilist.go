@@ -21,7 +21,7 @@ const AniListEndpoint = "https://graphql.anilist.co"
 // AniListBatchSize is AniList's largest page.
 const AniListBatchSize = 50
 
-const aniListMediaFields = `id idMal type format status episodes duration chapters volumes genres
+const aniListMediaFields = `id idMal type format status isAdult episodes duration chapters volumes genres
 title { romaji english native }
 startDate { year month day }
 coverImage { large }
@@ -60,28 +60,24 @@ func aniListFields(mediaType core.MediaType) string {
 	return aniListMediaFields
 }
 
-// Search finds anime (any type but manga) or manga.
+// Search finds anime (any type but manga) or manga. No adult works (adult.go).
 func (a *AniList) Search(ctx context.Context, query string, mediaType core.MediaType) ([]Hit, error) {
-	// Manga search hides adult works, as Discover does for anime.
-	adult := ""
-	if mediaType == core.MediaManga {
-		adult = ", isAdult: false"
-	}
 	var body aniListSearchData
 	err := a.post(ctx, fmt.Sprintf(`query ($search: String) {
   Page(perPage: 20) {
-    media(search: $search, type: %s%s, sort: SEARCH_MATCH) {
+    media(search: $search, type: %s, %s, sort: SEARCH_MATCH) {
       %s
     }
   }
-}`, aniListType(mediaType), adult, aniListFields(mediaType)), map[string]any{"search": query}, &body)
+}`, aniListType(mediaType), aniListNoAdult, aniListFields(mediaType)), map[string]any{"search": query}, &body)
 	if err != nil {
 		return nil, err
 	}
 	return body.hits(), nil
 }
 
-// Hydrate is the record for an AniList or MAL id.
+// Hydrate is the record for an AniList or MAL id. An adult work answers too, with Hit.Adult set
+// (adult.go): a title already held keeps refreshing, and the resolver refuses a new one.
 func (a *AniList) Hydrate(ctx context.Context, ids core.ExternalIDs, mediaType core.MediaType) (*Record, error) {
 	media, err := a.media(ctx, ids, mediaType, false)
 	if err != nil || media == nil {
@@ -93,7 +89,8 @@ func (a *AniList) Hydrate(ctx context.Context, ids core.ExternalIDs, mediaType c
 }
 
 // HydrateMAL is IMP-017: many MyAnimeList entries at once, 50 per request, keyed by
-// MAL id. An id AniList does not know is simply missing from the result.
+// MAL id. An id AniList does not know is simply missing from the result. An adult work is in it,
+// with Hit.Adult set, so the resolver can tell it from an unknown id (adult.go).
 func (a *AniList) HydrateMAL(ctx context.Context, malIDs []string, mediaType core.MediaType) (map[string]Record, error) {
 	seen := map[int]bool{}
 	var ids []int
@@ -289,9 +286,10 @@ type aniListSearchData struct {
 	} `json:"Page"`
 }
 
+// hits are the page's entries Aaru may show (adult.go).
 func (d aniListSearchData) hits() []Hit {
 	hits := make([]Hit, 0, len(d.Page.Media))
-	for _, m := range d.Page.Media {
+	for _, m := range aniListOffered(d.Page.Media) {
 		hits = append(hits, m.hit())
 	}
 	return hits
@@ -311,13 +309,15 @@ type aniListMedia struct {
 	ID    int  `json:"id"`
 	IDMal *int `json:"idMal"`
 	// Type is ANIME or MANGA.
-	Type     *string `json:"type"`
-	Format   *string `json:"format"`
-	Status   *string `json:"status"`
-	Episodes *int    `json:"episodes"`
-	Duration *int    `json:"duration"`
-	Chapters *int    `json:"chapters"`
-	Volumes  *int    `json:"volumes"`
+	Type   *string `json:"type"`
+	Format *string `json:"format"`
+	Status *string `json:"status"`
+	// IsAdult is AniList's own mark (adult.go).
+	IsAdult  bool `json:"isAdult"`
+	Episodes *int `json:"episodes"`
+	Duration *int `json:"duration"`
+	Chapters *int `json:"chapters"`
+	Volumes  *int `json:"volumes"`
 	Staff    *struct {
 		Edges []struct {
 			Role *string `json:"role"`
@@ -414,6 +414,7 @@ func (m aniListMedia) hit() Hit {
 	hit := Hit{
 		Type: mediaType, Title: display, OriginalTitle: original, Year: year, PosterURL: poster,
 		Overview: overview, IDs: ids, IsAnime: !m.isManga(), BackdropURL: m.backdropURL(), ReleaseDate: release,
+		Adult: m.IsAdult,
 	}
 	if m.isManga() {
 		hit.Byline = m.authors()

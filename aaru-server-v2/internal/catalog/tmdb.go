@@ -37,19 +37,21 @@ type TMDB struct {
 	BaseURL string
 }
 
-// Search finds movies or shows.
+// Search finds movies or shows. No adult titles (adult.go).
 func (t *TMDB) Search(ctx context.Context, query string, mediaType core.MediaType) ([]Hit, error) {
 	kind, err := tmdbKind(mediaType)
 	if err != nil {
 		return nil, err
 	}
 	var page tmdbSearchPage
-	if err := t.get(ctx, "search/"+kind, map[string]string{"query": query, "include_adult": "false"}, &page); err != nil {
+	params := tmdbNoAdult()
+	params["query"] = query
+	if err := t.get(ctx, "search/"+kind, params, &page); err != nil {
 		return nil, err
 	}
 	var hits []Hit
 	for _, d := range page.Results {
-		if h, ok := d.hit(mediaType); ok {
+		if h, ok := d.offered(mediaType); ok {
 			hits = append(hits, h)
 		}
 	}
@@ -59,7 +61,9 @@ func (t *TMDB) Search(ctx context.Context, query string, mediaType core.MediaTyp
 // SearchMulti is CAT-019: films and shows in one query. People and adult titles are dropped.
 func (t *TMDB) SearchMulti(ctx context.Context, query string) ([]Hit, error) {
 	var page tmdbSearchPage
-	if err := t.get(ctx, "search/multi", map[string]string{"query": query, "include_adult": "false"}, &page); err != nil {
+	params := tmdbNoAdult()
+	params["query"] = query
+	if err := t.get(ctx, "search/multi", params, &page); err != nil {
 		return nil, err
 	}
 	var hits []Hit
@@ -97,7 +101,8 @@ func (t *TMDB) withIMDbIDs(ctx context.Context, hits []Hit) []Hit {
 	return enriched
 }
 
-// Hydrate is the full record for a movie or show these ids identify.
+// Hydrate is the full record for a movie or show these ids identify. An adult title answers too,
+// with Hit.Adult set (adult.go): one already held keeps refreshing, and the resolver refuses a new one.
 func (t *TMDB) Hydrate(ctx context.Context, ids core.ExternalIDs, mediaType core.MediaType) (*Record, error) {
 	kind, err := tmdbKind(mediaType)
 	if err != nil {
@@ -250,7 +255,7 @@ func (t *TMDB) DiscoverLists() []DiscoverList {
 func (t *TMDB) List(ctx context.Context, list DiscoverList, now time.Time) ([]Hit, error) {
 	var mediaType core.MediaType
 	var path string
-	query := map[string]string{"include_adult": "false"}
+	query := tmdbNoAdult()
 	switch list {
 	case ListTVTrending:
 		mediaType, path = core.MediaShow, "trending/tv/week"
@@ -292,7 +297,9 @@ func (t *TMDB) List(ctx context.Context, list DiscoverList, now time.Time) ([]Hi
 // another follows (DISC-003).
 func (t *TMDB) onAirPage(ctx context.Context, page int) ([]Hit, bool, error) {
 	var body tmdbSearchPage
-	if err := t.get(ctx, "tv/on_the_air", map[string]string{"include_adult": "false", "page": strconv.Itoa(page)}, &body); err != nil {
+	params := tmdbNoAdult()
+	params["page"] = strconv.Itoa(page)
+	if err := t.get(ctx, "tv/on_the_air", params, &body); err != nil {
 		return nil, false, err
 	}
 	var hits []Hit
@@ -313,7 +320,7 @@ func (t *TMDB) onAirPage(ctx context.Context, page int) ([]Hit, bool, error) {
 func tmdbRowHits(page tmdbSearchPage, mediaType core.MediaType, anime bool) []Hit {
 	hits := []Hit{}
 	for _, entry := range page.Results {
-		hit, ok := entry.hit(mediaType)
+		hit, ok := entry.offered(mediaType)
 		if !ok {
 			continue
 		}
@@ -375,7 +382,8 @@ func (t *TMDB) SeasonKinds() []SeasonKind {
 func (t *TMDB) Season(ctx context.Context, key SeasonKey, kind SeasonKind, page int, now time.Time) (SeasonPage, error) {
 	first, last := key.Days()
 	start, end := key.Range()
-	query := map[string]string{"include_adult": "false", "sort_by": "popularity.desc", "page": strconv.Itoa(page)}
+	query := tmdbNoAdult()
+	query["sort_by"], query["page"] = "popularity.desc", strconv.Itoa(page)
 	var mediaType core.MediaType
 	var path string
 	switch kind {
@@ -480,7 +488,8 @@ type tmdbDetail struct {
 	IMDbID      *string          `json:"imdb_id"`
 	// MediaType is on `search/multi` only: movie, tv or person.
 	MediaType *string `json:"media_type"`
-	Adult     *bool   `json:"adult"`
+	// Adult is TMDB's own mark (adult.go).
+	Adult *bool `json:"adult"`
 }
 
 func (d tmdbDetail) backdropURL() *string {
@@ -500,14 +509,11 @@ func (d tmdbDetail) network() *string {
 
 // mixedHit is a mixed-list entry as a film or show; people and adult titles are not.
 func (d tmdbDetail) mixedHit() (Hit, bool) {
-	if d.Adult != nil && *d.Adult {
-		return Hit{}, false
-	}
 	switch sval(d.MediaType) {
 	case "movie":
-		return d.hit(core.MediaMovie)
+		return d.offered(core.MediaMovie)
 	case "tv":
-		return d.hit(core.MediaShow)
+		return d.offered(core.MediaShow)
 	}
 	return Hit{}, false
 }
@@ -563,6 +569,7 @@ func (d tmdbDetail) hit(mediaType core.MediaType) (Hit, bool) {
 		// Japanese animation. AniList is the anime catalog; this flags TMDB hits.
 		IsAnime:     slices.Contains(genreIDs, 16) && sval(d.OriginalLanguage) == "ja",
 		BackdropURL: d.backdropURL(), Network: d.network(), ReleaseDate: ParseDate(release),
+		Adult: d.isAdult(),
 	}, true
 }
 

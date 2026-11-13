@@ -42,6 +42,9 @@ type Hit struct {
 	// ChapterCount and VolumeCount are a manga's, once AniList knows them (MNG-001).
 	ChapterCount *int
 	VolumeCount  *int
+	// Adult is the provider's own mark for an adult work (adult.go). No list ever carries such a
+	// hit; only a read by id does, and the resolver refuses to make a title of it.
+	Adult bool
 }
 
 // MediaRef is the hit as a ref to resolve.

@@ -181,7 +181,10 @@ func match(ctx context.Context, planned PlannedRow, resolver catalog.Resolver, w
 	}
 	if re, ok := catalog.IsResolutionError(err); ok {
 		row.Outcome = OutcomeUnmatched
-		if re == catalog.ErrAmbiguous {
+		switch re {
+		case catalog.ErrAdult:
+			row.Reason = ptr(catalog.AdultReason)
+		case catalog.ErrAmbiguous:
 			if nameOnly {
 				kind := "shows"
 				if row.Row.Type == core.MediaMovie {
@@ -191,7 +194,7 @@ func match(ctx context.Context, planned PlannedRow, resolver catalog.Resolver, w
 			} else {
 				row.Reason = ptr("More than one catalog entry matches. Pick the right one by hand.")
 			}
-		} else {
+		default:
 			year := ""
 			if row.Row.Year != nil {
 				year = fmt.Sprintf(" (%d)", *row.Row.Year)

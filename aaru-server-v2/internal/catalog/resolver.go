@@ -21,14 +21,20 @@ const (
 	ErrUnresolvable ResolutionError = iota + 1
 	// ErrAmbiguous: title + year matched more than one catalog entry. Never guess (IMP-007).
 	ErrAmbiguous
+	// ErrAdult: the provider marks the work adult, and Aaru's catalog offers none (adult.go).
+	ErrAdult
 )
 
 func (e ResolutionError) Error() string { return e.AppError().Message }
 
 // AppError is the 422 the API answers with.
 func (e ResolutionError) AppError() *apperr.Error {
-	if e == ErrAmbiguous {
+	switch e {
+	case ErrAmbiguous:
 		return apperr.New(http.StatusUnprocessableEntity, "ambiguous_match", "More than one catalog entry matches that title and year.")
+	case ErrAdult:
+		// The same code as any title the catalog does not hold: clients need no new case.
+		return apperr.New(http.StatusUnprocessableEntity, "unresolvable", AdultReason)
 	}
 	return apperr.New(http.StatusUnprocessableEntity, "unresolvable", "No catalog entry matches that title.")
 }
@@ -221,6 +227,11 @@ func (r Resolver) resolveIDs(ctx context.Context, ids core.ExternalIDs, mediaTyp
 			return core.Title{}, err
 		}
 		return *existing, nil
+	}
+	// The one door a new title comes through: an adult work never becomes one (adult.go). A title
+	// already held was found above and stays.
+	if record.Hit.Adult {
+		return core.Title{}, ErrAdult
 	}
 	hit := record.Hit
 	title := core.Title{

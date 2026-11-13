@@ -65,6 +65,14 @@ func TestAniListRows(t *testing.T) {
 	assert.Nil(t, rows[2].Watched)
 	assert.Equal(t, ptr("anilist:154587"), rows[0].SourceKey)
 
+	// CAT-023: an entry AniList marks adult is a row the import reports as not matched.
+	adult := AniListEntryRow(catalog.AniListListEntry{Type: core.MediaShow, Status: "COMPLETED", MediaID: 9, Title: "Adult", Adult: true})
+	require.NotNil(t, adult.Unsupported)
+	assert.Equal(t, catalog.AdultReason, *adult.Unsupported)
+	for _, r := range rows {
+		assert.Nil(t, r.Unsupported)
+	}
+
 	_, err = reader.ListRows(context.Background(), "hidden")
 	_, isProvider := provider.AsError(err)
 	assert.True(t, isProvider, "%v", err)
