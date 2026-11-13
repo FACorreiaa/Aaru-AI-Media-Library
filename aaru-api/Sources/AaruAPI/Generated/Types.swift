@@ -111,6 +111,11 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `PUT /v1/me/onboarding`.
     /// - Remark: Generated from `#/paths//v1/me/onboarding/put(finishOnboarding)`.
     func finishOnboarding(_ input: Operations.FinishOnboarding.Input) async throws -> Operations.FinishOnboarding.Output
+    /// Answer AI sharing (PRV-002): may Aaru send this user's data to its AI provider. The answer can change at any time; the latest one holds. Until it is `allowed`, every route that would send the user's data to the AI provider answers 403 `ai_sharing_required` and sends nothing.
+    ///
+    /// - Remark: HTTP `PUT /v1/me/ai-sharing`.
+    /// - Remark: Generated from `#/paths//v1/me/ai-sharing/put(setAISharing)`.
+    func setAISharing(_ input: Operations.SetAISharing.Input) async throws -> Operations.SetAISharing.Output
     /// The user with exactly this handle and where they stand with you. 404 when nobody holds it or either of you blocked the other. A friend or yourself is free; anyone else, misses included, at most 60 a user per hour (429).
     ///
     /// - Remark: HTTP `GET /v1/social/users/{handle}`.
@@ -1291,6 +1296,19 @@ extension APIProtocol {
         body: Operations.FinishOnboarding.Input.Body
     ) async throws -> Operations.FinishOnboarding.Output {
         try await finishOnboarding(Operations.FinishOnboarding.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Answer AI sharing (PRV-002): may Aaru send this user's data to its AI provider. The answer can change at any time; the latest one holds. Until it is `allowed`, every route that would send the user's data to the AI provider answers 403 `ai_sharing_required` and sends nothing.
+    ///
+    /// - Remark: HTTP `PUT /v1/me/ai-sharing`.
+    /// - Remark: Generated from `#/paths//v1/me/ai-sharing/put(setAISharing)`.
+    public func setAISharing(
+        headers: Operations.SetAISharing.Input.Headers = .init(),
+        body: Operations.SetAISharing.Input.Body
+    ) async throws -> Operations.SetAISharing.Output {
+        try await setAISharing(Operations.SetAISharing.Input(
             headers: headers,
             body: body
         ))
@@ -5812,6 +5830,8 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/Me/onboardingPending`.
             public var onboardingPending: Swift.Bool?
+            /// - Remark: Generated from `#/components/schemas/Me/aiSharing`.
+            public var aiSharing: Components.Schemas.AISharing?
             /// Creates a new `Me`.
             ///
             /// - Parameters:
@@ -5825,6 +5845,7 @@ public enum Components {
             ///   - emailShareable: False without an email, or for an Apple private relay address, which friends cannot write to. Always sent since SOC-001b; optional so apps built before the server ships still read `Me`.
             ///   - avatarUrl: Path to `GET /v1/users/{userId}/avatar` with its version. Absent without an avatar.
             ///   - onboardingPending: True until the first-run flow is finished or skipped (ONB-001); accounts made before it shipped never see it. Always sent; optional so apps built before the server ships still read `Me`.
+            ///   - aiSharing:
             public init(
                 userId: Swift.String,
                 displayName: Swift.String? = nil,
@@ -5835,7 +5856,8 @@ public enum Components {
                 email: Swift.String? = nil,
                 emailShareable: Swift.Bool? = nil,
                 avatarUrl: Swift.String? = nil,
-                onboardingPending: Swift.Bool? = nil
+                onboardingPending: Swift.Bool? = nil,
+                aiSharing: Components.Schemas.AISharing? = nil
             ) {
                 self.userId = userId
                 self.displayName = displayName
@@ -5847,6 +5869,7 @@ public enum Components {
                 self.emailShareable = emailShareable
                 self.avatarUrl = avatarUrl
                 self.onboardingPending = onboardingPending
+                self.aiSharing = aiSharing
             }
             public enum CodingKeys: String, CodingKey {
                 case userId
@@ -5859,6 +5882,59 @@ public enum Components {
                 case emailShareable
                 case avatarUrl
                 case onboardingPending
+                case aiSharing
+            }
+        }
+        /// The user's answer to AI sharing (PRV-002). Always sent on `Me`; optional there so apps built before the server ships still read it. Absent means the same as `unanswered`.
+        ///
+        /// - Remark: Generated from `#/components/schemas/AISharing`.
+        public struct AISharing: Codable, Hashable, Sendable {
+            /// `unanswered` and `declined` both mean Aaru sends nothing of this user's to its AI provider; only `unanswered` is asked again.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AISharing/state`.
+            @frozen public enum StatePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case unanswered = "unanswered"
+                case allowed = "allowed"
+                case declined = "declined"
+            }
+            /// `unanswered` and `declined` both mean Aaru sends nothing of this user's to its AI provider; only `unanswered` is asked again.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AISharing/state`.
+            public var state: Components.Schemas.AISharing.StatePayload
+            /// When the user last answered. Absent while unanswered.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AISharing/decidedAt`.
+            public var decidedAt: Foundation.Date?
+            /// Creates a new `AISharing`.
+            ///
+            /// - Parameters:
+            ///   - state: `unanswered` and `declined` both mean Aaru sends nothing of this user's to its AI provider; only `unanswered` is asked again.
+            ///   - decidedAt: When the user last answered. Absent while unanswered.
+            public init(
+                state: Components.Schemas.AISharing.StatePayload,
+                decidedAt: Foundation.Date? = nil
+            ) {
+                self.state = state
+                self.decidedAt = decidedAt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case state
+                case decidedAt
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/AISharingUpdate`.
+        public struct AISharingUpdate: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/AISharingUpdate/allowed`.
+            public var allowed: Swift.Bool
+            /// Creates a new `AISharingUpdate`.
+            ///
+            /// - Parameters:
+            ///   - allowed:
+            public init(allowed: Swift.Bool) {
+                self.allowed = allowed
+            }
+            public enum CodingKeys: String, CodingKey {
+                case allowed
             }
         }
         /// - Remark: Generated from `#/components/schemas/OnboardingFinish`.
@@ -18118,6 +18194,146 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/me/onboarding/put(finishOnboarding)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Answer AI sharing (PRV-002): may Aaru send this user's data to its AI provider. The answer can change at any time; the latest one holds. Until it is `allowed`, every route that would send the user's data to the AI provider answers 403 `ai_sharing_required` and sends nothing.
+    ///
+    /// - Remark: HTTP `PUT /v1/me/ai-sharing`.
+    /// - Remark: Generated from `#/paths//v1/me/ai-sharing/put(setAISharing)`.
+    public enum SetAISharing {
+        public static let id: Swift.String = "setAISharing"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/ai-sharing/PUT/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SetAISharing.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SetAISharing.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.SetAISharing.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/me/ai-sharing/PUT/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/ai-sharing/PUT/requestBody/content/application\/json`.
+                case json(Components.Schemas.AISharingUpdate)
+            }
+            public var body: Operations.SetAISharing.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.SetAISharing.Input.Headers = .init(),
+                body: Operations.SetAISharing.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/ai-sharing/PUT/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/me/ai-sharing/PUT/responses/200/content/application\/json`.
+                    case json(Components.Schemas.AISharing)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.AISharing {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.SetAISharing.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.SetAISharing.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The answer as stored.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/ai-sharing/put(setAISharing)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.SetAISharing.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.SetAISharing.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/ai-sharing/put(setAISharing)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)
