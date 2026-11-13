@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"aaru-go-api/internal/agent"
+	"aaru-go-api/internal/aisharing"
 	"aaru-go-api/internal/api"
 	"aaru-go-api/internal/apiid"
 	"aaru-go-api/internal/apitime"
@@ -442,6 +443,11 @@ func (s *Server) chatTranscribe(c *echo.Context) error {
 	}
 	if s.Transcription == nil {
 		return errVoiceUnavailable
+	}
+	// Whisper is Aaru's own, but the words it returns are a question for the model: a user who has
+	// not allowed AI sharing is not transcribed at all (PRV-002).
+	if err := aisharing.Require(ctx, s.q, user); err != nil {
+		return err
 	}
 	mediaType := contentType(c)
 	if mediaType != "application/octet-stream" && !strings.HasPrefix(mediaType, "audio/") {

@@ -51,12 +51,13 @@ func newHarness(t *testing.T, tweak ...func(*Deps)) *harness {
 	return &harness{t: t, pool: pool, server: s, echo: s.Router(nil)}
 }
 
-// signIn makes a user with a live session and returns its id and bearer token.
+// signIn makes a user with a live session and returns its id and bearer token. The user has allowed
+// AI sharing (PRV-002), so the assistant, capture and @aaru work; setAISharing changes that.
 func (h *harness) signIn() (uuid.UUID, string) {
 	h.t.Helper()
 	ctx := context.Background()
 	id := uuid.New()
-	_, err := h.pool.Exec(ctx, `INSERT INTO users (id) VALUES ($1)`, id)
+	_, err := h.pool.Exec(ctx, `INSERT INTO users (id, ai_sharing_allowed, ai_sharing_decided_at) VALUES ($1, true, now())`, id)
 	require.NoError(h.t, err)
 	bearer := token.Generate()
 	_, err = h.pool.Exec(ctx, `INSERT INTO sessions (id, user_id, token_hash, expires_at) VALUES ($1, $2, $3, $4)`,

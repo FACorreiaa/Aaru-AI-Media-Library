@@ -13,6 +13,23 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const aISharing = `-- name: AISharing :one
+SELECT ai_sharing_allowed, ai_sharing_decided_at FROM users WHERE id = $1
+`
+
+type AISharingRow struct {
+	AiSharingAllowed   *bool
+	AiSharingDecidedAt pgtype.Timestamptz
+}
+
+// PRV-002: the user's answer to AI sharing. NULL allowed is unanswered.
+func (q *Queries) AISharing(ctx context.Context, id uuid.UUID) (AISharingRow, error) {
+	row := q.db.QueryRow(ctx, aISharing, id)
+	var i AISharingRow
+	err := row.Scan(&i.AiSharingAllowed, &i.AiSharingDecidedAt)
+	return i, err
+}
+
 const clearUserShareNotes = `-- name: ClearUserShareNotes :exec
 UPDATE shares SET note = NULL WHERE sender_id = $1::uuid
 `
@@ -367,6 +384,30 @@ func (q *Queries) SessionUserID(ctx context.Context, arg SessionUserIDParams) (u
 	return user_id, err
 }
 
+const setAISharing = `-- name: SetAISharing :one
+UPDATE users SET ai_sharing_allowed = $1::boolean, ai_sharing_decided_at = $2::timestamptz
+WHERE id = $3
+RETURNING ai_sharing_allowed, ai_sharing_decided_at
+`
+
+type SetAISharingParams struct {
+	Allowed   bool
+	DecidedAt pgtype.Timestamptz
+	ID        uuid.UUID
+}
+
+type SetAISharingRow struct {
+	AiSharingAllowed   *bool
+	AiSharingDecidedAt pgtype.Timestamptz
+}
+
+func (q *Queries) SetAISharing(ctx context.Context, arg SetAISharingParams) (SetAISharingRow, error) {
+	row := q.db.QueryRow(ctx, setAISharing, arg.Allowed, arg.DecidedAt, arg.ID)
+	var i SetAISharingRow
+	err := row.Scan(&i.AiSharingAllowed, &i.AiSharingDecidedAt)
+	return i, err
+}
+
 const userForIdentity = `-- name: UserForIdentity :one
 SELECT user_id FROM auth_identities WHERE provider = $1 AND provider_subject = $2 LIMIT 1
 `
@@ -413,17 +454,20 @@ func (q *Queries) UserIdentities(ctx context.Context, userID uuid.UUID) ([]UserI
 }
 
 const userProfile = `-- name: UserProfile :one
-SELECT u.first_name, u.last_name, p.handle, u.avatar_version, u.onboarded_at
+SELECT u.first_name, u.last_name, p.handle, u.avatar_version, u.onboarded_at,
+    u.ai_sharing_allowed, u.ai_sharing_decided_at
 FROM users u LEFT JOIN profiles p ON p.user_id = u.id
 WHERE u.id = $1
 `
 
 type UserProfileRow struct {
-	FirstName     *string
-	LastName      *string
-	Handle        *string
-	AvatarVersion *int64
-	OnboardedAt   pgtype.Timestamptz
+	FirstName          *string
+	LastName           *string
+	Handle             *string
+	AvatarVersion      *int64
+	OnboardedAt        pgtype.Timestamptz
+	AiSharingAllowed   *bool
+	AiSharingDecidedAt pgtype.Timestamptz
 }
 
 func (q *Queries) UserProfile(ctx context.Context, id uuid.UUID) (UserProfileRow, error) {
@@ -435,6 +479,33 @@ func (q *Queries) UserProfile(ctx context.Context, id uuid.UUID) (UserProfileRow
 		&i.Handle,
 		&i.AvatarVersion,
 		&i.OnboardedAt,
+		&i.AiSharingAllowed,
+		&i.AiSharingDecidedAt,
 	)
 	return i, err
+}
+
+const usersAllowingAI = `-- name: UsersAllowingAI :many
+SELECT id FROM users WHERE id = ANY($1::uuid[]) AND ai_sharing_allowed IS TRUE
+`
+
+// PRV-002: which of these users allowed AI sharing (the group rule).
+func (q *Queries) UsersAllowingAI(ctx context.Context, ids []uuid.UUID) ([]uuid.UUID, error) {
+	rows, err := q.db.Query(ctx, usersAllowingAI, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []uuid.UUID{}
+	for rows.Next() {
+		var id uuid.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

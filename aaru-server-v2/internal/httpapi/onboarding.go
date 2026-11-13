@@ -1,8 +1,10 @@
 package httpapi
 
 import (
+	"aaru-go-api/internal/aisharing"
 	"aaru-go-api/internal/api"
 	"aaru-go-api/internal/apiid"
+	"aaru-go-api/internal/apitime"
 	"aaru-go-api/internal/apperr"
 	"aaru-go-api/internal/catalog"
 	"aaru-go-api/internal/core"
@@ -114,4 +116,26 @@ func (s *Server) GetOnboardingRelated(ctx context.Context, req api.GetOnboarding
 		})
 	}
 	return api.GetOnboardingRelated200JSONResponse(out), nil
+}
+
+// SetAISharing is PUT /v1/me/ai-sharing: the user's yes or no to Aaru sending their data to its AI
+// provider (PRV-002). The latest answer holds.
+func (s *Server) SetAISharing(ctx context.Context, req api.SetAISharingRequestObject) (api.SetAISharingResponseObject, error) {
+	if req.Body == nil {
+		return nil, apperr.BadRequest()
+	}
+	user, err := currentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	answer, err := aisharing.Set(ctx, s.q, user, req.Body.Allowed, time.Now())
+	if err != nil {
+		return nil, err
+	}
+	return api.SetAISharing200JSONResponse(aiSharingDTO(answer)), nil
+}
+
+// aiSharingDTO maps an answer to `AISharing`.
+func aiSharingDTO(a aisharing.Answer) api.AISharing {
+	return api.AISharing{State: api.AISharingState(a.State), DecidedAt: apitime.PtrOrNil(a.DecidedAt)}
 }

@@ -43,7 +43,7 @@ func (f *chatFixture) exec(sql string, args ...any) {
 
 func (f *chatFixture) newUser() uuid.UUID {
 	id := uuid.New()
-	f.exec(`INSERT INTO users (id) VALUES ($1)`, id)
+	f.exec(`INSERT INTO users (id, ai_sharing_allowed, ai_sharing_decided_at) VALUES ($1, true, now())`, id)
 	return id
 }
 

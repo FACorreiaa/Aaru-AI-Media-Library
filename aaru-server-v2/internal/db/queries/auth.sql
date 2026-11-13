@@ -22,9 +22,23 @@ INSERT INTO user_progress (user_id, evaluated_at) VALUES (@user_id, now());
 SELECT user_id FROM auth_identities WHERE provider = @provider AND provider_subject = @provider_subject LIMIT 1;
 
 -- name: UserProfile :one
-SELECT u.first_name, u.last_name, p.handle, u.avatar_version, u.onboarded_at
+SELECT u.first_name, u.last_name, p.handle, u.avatar_version, u.onboarded_at,
+    u.ai_sharing_allowed, u.ai_sharing_decided_at
 FROM users u LEFT JOIN profiles p ON p.user_id = u.id
 WHERE u.id = @id;
+
+-- PRV-002: the user's answer to AI sharing. NULL allowed is unanswered.
+-- name: AISharing :one
+SELECT ai_sharing_allowed, ai_sharing_decided_at FROM users WHERE id = @id;
+
+-- name: SetAISharing :one
+UPDATE users SET ai_sharing_allowed = @allowed::boolean, ai_sharing_decided_at = @decided_at::timestamptz
+WHERE id = @id
+RETURNING ai_sharing_allowed, ai_sharing_decided_at;
+
+-- PRV-002: which of these users allowed AI sharing (the group rule).
+-- name: UsersAllowingAI :many
+SELECT id FROM users WHERE id = ANY(@ids::uuid[]) AND ai_sharing_allowed IS TRUE;
 
 -- ONB-001: the first call ends the flow; a later one changes nothing.
 -- name: FinishOnboarding :exec

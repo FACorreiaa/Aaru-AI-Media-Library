@@ -5,6 +5,7 @@ package imports
 // planned like any other import.
 
 import (
+	"aaru-go-api/internal/aisharing"
 	"aaru-go-api/internal/apperr"
 	"aaru-go-api/internal/capture"
 	"aaru-go-api/internal/core"
@@ -13,6 +14,7 @@ import (
 	"aaru-go-api/internal/push"
 	"aaru-go-api/internal/telemetry"
 	"context"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -94,6 +96,12 @@ func (s *Service) CreateCapture(ctx context.Context, user uuid.UUID, req Capture
 	if input != nil && s.Capture.Model == nil {
 		return core.ImportJob{}, apperr.New(http.StatusServiceUnavailable, "capture_unavailable",
 			"Aaru cannot read captures right now. A link to the title still works.")
+	}
+	// Text, pictures and PDFs go to the model; a link or a list a chat already named does not.
+	if input != nil {
+		if err := aisharing.Require(ctx, s.Store.Q, user); err != nil {
+			return core.ImportJob{}, err
+		}
 	}
 	now := s.now()
 	job := newJob(user, core.SourceCapture, nil, now)
@@ -251,6 +259,16 @@ func (s *Service) fetchCapture(ctx context.Context, job *core.ImportJob) ([]Row,
 			return nil, err
 		}
 		return nil, s.fail(ctx, job, "Aaru cannot read captures right now. Send it again later.")
+	}
+	// Asked again here: the user may have turned AI sharing off since they sent it (PRV-002).
+	if err := aisharing.Require(ctx, s.Store.Q, job.UserID); err != nil {
+		if !errors.Is(err, aisharing.ErrRequired) {
+			return nil, err
+		}
+		if err := store.Delete(ctx, job.ID); err != nil {
+			return nil, err
+		}
+		return nil, s.fail(ctx, job, "AI data sharing is off, so Aaru did not read this capture. Turn it on in Settings and send it again.")
 	}
 	extractor := capture.Extractor{Model: s.Capture.Model, Usage: s.Capture.Usage, Now: s.now}
 	outcome, err := extractor.Titles(ctx, input.Content, job.UserID)

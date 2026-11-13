@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"aaru-go-api/internal/aisharing"
 	"aaru-go-api/internal/db"
 	"aaru-go-api/internal/db/sqlc"
 	"context"
@@ -44,6 +45,8 @@ type Profile struct {
 	AvatarVersion *int64
 	// OnboardingPending is true until the first-run flow is finished or skipped (ONB-001).
 	OnboardingPending bool
+	// AISharing is the user's answer to AI sharing (PRV-002).
+	AISharing aisharing.Answer
 }
 
 // DisplayName is the two names joined: what friends and groups see.
@@ -193,6 +196,7 @@ func (s *Store) Profile(ctx context.Context, id uuid.UUID) (Profile, bool, error
 	p := Profile{
 		ID: id, FirstName: row.FirstName, LastName: row.LastName, Handle: row.Handle, AvatarVersion: row.AvatarVersion,
 		Providers: []Provider{}, OnboardingPending: !row.OnboardedAt.Valid,
+		AISharing: aisharing.From(row.AiSharingAllowed, row.AiSharingDecidedAt),
 	}
 	known := []sqlc.UserIdentitiesRow{}
 	for _, i := range identities {
