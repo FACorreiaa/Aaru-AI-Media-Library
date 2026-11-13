@@ -1,4 +1,4 @@
-import { Show, createSignal } from 'solid-js'
+import { Show, createEffect, createSignal, on } from 'solid-js'
 import type { JSX } from 'solid-js'
 import {
   Button,
@@ -26,6 +26,8 @@ export function Composer(props: {
   agent: boolean
   meId: string
   onSend: (body: string) => void
+  /** Text to put back in the box: a message that was not sent and is being changed. */
+  draft?: { body: string } | null
   /** Called as the user types; the socket throttles what it sends. */
   onTyping?: () => void
   /** A control above the box, such as a title channel's spoiler marker. */
@@ -46,6 +48,22 @@ export function Composer(props: {
       resize()
     },
   })
+
+  // A message that was not sent comes back to be changed. Anything typed since stays, after it.
+  createEffect(
+    on(
+      () => props.draft,
+      (draft) => {
+        if (!draft) return
+        const typed = text().trim()
+        setText(typed ? `${draft.body}\n${typed}` : draft.body)
+        if (box) box.value = text()
+        resize()
+        box?.focus()
+      },
+      { defer: true },
+    ),
+  )
 
   const remaining = () => remainingLabel(text())
   const tooLong = () => text().length > MAX_MESSAGE_LENGTH

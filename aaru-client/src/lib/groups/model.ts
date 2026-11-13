@@ -15,6 +15,8 @@ export type PendingMessage = {
   body: string
   createdAt: string
   state: 'sending' | 'failed'
+  /** Why a failed send failed, in the server's words, when it said. */
+  problem?: string
   /** Title channels: how it is marked, kept so a retry sends the same. */
   spoiler?: { season?: number; episode?: number; ending?: boolean }
   spoilerFree?: boolean
@@ -162,13 +164,14 @@ export function settlePending(
   return pending.filter((p) => p.nonce !== nonce)
 }
 
-/** Marks a send as failed so it can be retried. */
+/** Marks a send as failed so it can be retried or edited, with the server's reason if it gave one. */
 export function failPending(
   pending: PendingMessage[],
   nonce: string,
+  problem?: string,
 ): PendingMessage[] {
   return pending.map((p) =>
-    p.nonce === nonce ? { ...p, state: 'failed' as const } : p,
+    p.nonce === nonce ? { ...p, state: 'failed' as const, problem } : p,
   )
 }
 
@@ -177,7 +180,9 @@ export function retryPending(
   nonce: string,
 ): PendingMessage[] {
   return pending.map((p) =>
-    p.nonce === nonce ? { ...p, state: 'sending' as const } : p,
+    p.nonce === nonce
+      ? { ...p, state: 'sending' as const, problem: undefined }
+      : p,
   )
 }
 

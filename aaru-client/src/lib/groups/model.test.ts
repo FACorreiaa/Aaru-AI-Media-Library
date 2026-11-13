@@ -190,7 +190,12 @@ describe('groups polling and optimistic sends', () => {
     ]
     const failed = failPending(pending, 'b')
     expect(failed[1].state).toBe('failed')
+    expect(failed[1].problem).toBeUndefined()
     expect(retryPending(failed, 'b')[1].state).toBe('sending')
+    // The server's reason rides on the failed send and is gone once it is sent again.
+    const refused = failPending(pending, 'b', 'Change it and try again.')
+    expect(refused[1].problem).toBe('Change it and try again.')
+    expect(retryPending(refused, 'b')[1].problem).toBeUndefined()
     expect(settlePending(pending, 'a').map((p) => p.nonce)).toEqual(['b'])
   })
 })
