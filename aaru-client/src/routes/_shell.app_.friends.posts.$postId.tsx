@@ -1,4 +1,9 @@
-import { Link, createFileRoute, useNavigate } from '@tanstack/solid-router'
+import {
+  Link,
+  createFileRoute,
+  useNavigate,
+  useRouter,
+} from '@tanstack/solid-router'
 import { For, Show, Suspense, createMemo, createSignal, lazy } from 'solid-js'
 import {
   Button,
@@ -12,6 +17,7 @@ import {
   buttonVariants,
   toast,
 } from '~/components/ui'
+import { BlockDialog } from '../components/BlockDialog'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { CommentThread } from '../components/board/CommentThread'
 import { PostCard } from '../components/board/PostCard'
@@ -35,7 +41,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 // BOARD-002 on the web: one post on its own page (owner, 2026-10-23). The post, who upvoted
 // it, its thread (one level of replies) and a reply box. Your own post can be edited (its words
-// only) or deleted; a friend's can be reported. A post that is not there for you (deleted, its
+// only) or deleted; a friend's can be reported and its author blocked, as can anyone's comment.
+// A post that is not there for you (deleted, its
 // author no longer your friend, or blocked) says so in place, like a friend's profile does.
 export const Route = createFileRoute('/_shell/app_/friends/posts/$postId')({
   loader: ({ params }) =>
@@ -91,6 +98,7 @@ type Page = NonNullable<Awaited<ReturnType<typeof loadPost>>>
 
 function PostView(props: { page: Page }) {
   const navigate = useNavigate()
+  const router = useRouter()
   let article: HTMLDivElement | undefined
   const [post, setPost] = createSignal<BoardPost>(props.page.post)
   const [upvoters, setUpvoters] = createSignal<SocialUser[]>(
@@ -99,6 +107,9 @@ function PostView(props: { page: Page }) {
   const [editing, setEditing] = createSignal(false)
   const [asking, setAsking] = createSignal<'delete' | 'report' | null>(null)
   const [deleting, setDeleting] = createSignal(false)
+  // Who Block was picked on: the post's author or a comment's. Kept so the dialog plays its exit.
+  const [blocking, setBlocking] = createSignal<SocialUser | null>(null)
+  const [blockOpen, setBlockOpen] = createSignal(false)
   const reported = createMemo<boolean>(
     (seen) => seen || asking() === 'report',
     false,
@@ -128,6 +139,21 @@ function PostView(props: { page: Page }) {
   function upvoted(state: UpvoteState) {
     const others = upvoters().filter((u) => u.userId !== me().userId)
     setUpvoters(state.upvotedByMe ? [me(), ...others] : others)
+  }
+
+  function askBlock(person: SocialUser) {
+    setBlocking(person)
+    setBlockOpen(true)
+  }
+
+  /** The author's post is gone for you; a commenter's comments are, so the page loads again. */
+  function blocked(person: SocialUser) {
+    setBlockOpen(false)
+    if (person.userId === post().author.userId) {
+      void navigate({ to: '/app/friends', replace: true })
+    } else {
+      void router.invalidate()
+    }
   }
 
   function stopEditing() {
@@ -165,7 +191,14 @@ function PostView(props: { page: Page }) {
       <Show
         when={post().mine}
         fallback={
-          <MenuItem onSelect={() => setAsking('report')}>Report post</MenuItem>
+          <>
+            <MenuItem onSelect={() => setAsking('report')}>
+              Report post
+            </MenuItem>
+            <MenuItem danger onSelect={() => askBlock(post().author)}>
+              Block {inviterName(post().author)}
+            </MenuItem>
+          </>
         }
       >
         <MenuItem
@@ -229,6 +262,7 @@ function PostView(props: { page: Page }) {
             commentCount: Math.max(0, post().commentCount + delta),
           })
         }
+        onBlock={askBlock}
       />
 
       <ConfirmDialog
@@ -251,6 +285,16 @@ function PostView(props: { page: Page }) {
             onClose={() => setAsking(null)}
           />
         </Suspense>
+      </Show>
+      <Show when={blocking()}>
+        {(person) => (
+          <BlockDialog
+            open={blockOpen()}
+            person={person()}
+            onBlocked={blocked}
+            onClose={() => setBlockOpen(false)}
+          />
+        )}
       </Show>
     </div>
   )

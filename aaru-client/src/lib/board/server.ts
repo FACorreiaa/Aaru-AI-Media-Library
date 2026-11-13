@@ -187,17 +187,20 @@ export const loadFromFriends = createServerFn({ method: 'GET' })
 export const REPORT_NOTE_LENGTH = 900
 
 /**
- * Reports a Board post, a group message or a person's profile through the user-report route. The note says which one
- * (`post:<id>`, `group-message:<id>` or `profile:@<handle>`), then the reporter's words; the author is not told.
+ * Reports a Board post or comment, a group message or a person's profile through the user-report route. The note
+ * says which one (`post:<id>`, `comment:<id>`, `group-message:<id>` or `profile:@<handle>`), then the reporter's
+ * words; the author is not told.
  */
 export const reportPost = createServerFn({ method: 'POST' })
   .validator(
     z.object({
       authorId: uuid,
-      /** A post or message id; for kind `person`, the person's handle. */
+      /** A post, comment or message id; for kind `person`, the person's handle. */
       refId: z.string().min(1).max(100),
       /** What `refId` names. A Board post unless said. */
-      kind: z.enum(['post', 'group-message', 'person']).default('post'),
+      kind: z
+        .enum(['post', 'comment', 'group-message', 'person'])
+        .default('post'),
       reason: z.enum(['spam', 'harassment', 'impersonation', 'other']),
       /** What the reporter adds; the server keeps notes under 1,000 characters in all. */
       note: z.string().max(REPORT_NOTE_LENGTH).optional(),
