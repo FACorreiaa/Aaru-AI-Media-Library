@@ -73,16 +73,12 @@ struct OnboardingPage<Content: View, Footer: View>: View {
         .background(Color(.paper))
     }
 
-    /// The curious owl, decorative. On the beta channel it is the 3D owl, off the disc (BRD-011,
-    /// an experiment); the App Store build shows the still.
-    @ViewBuilder private var owl: some View {
-        #if DEBUG || BETA
-            Owl3DView(label: Text(verbatim: ""), pose: .curious)
-                .frame(height: 150)
-                .accessibilityHidden(true)
-        #else
-            OwlMedallion(size: 96, pose: .curious)
-        #endif
+    /// The curious owl, decorative. The 3D owl, off the disc (BRD-011); the still stands in
+    /// under Reduce Motion, Low Power Mode or a failed load.
+    private var owl: some View {
+        Owl3DView(label: Text(verbatim: ""), pose: .curious)
+            .frame(height: 150)
+            .accessibilityHidden(true)
     }
 }
 

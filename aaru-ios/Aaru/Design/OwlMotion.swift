@@ -4,8 +4,6 @@ import Foundation
 /// bundle; this type only turns a time into values. It knows no renderer: `Owl3DView` applies
 /// what it returns, and `aaru-client/src/lib/owl-motion.ts` is the same arithmetic for the web.
 /// A change here is a change there, and both tests hold the same expected values.
-///
-/// Left out of the Release build with `Owl3DView` (`Release.xcconfig`).
 struct OwlMotion: Decodable, Sendable {
     enum Easing: String, Decodable, Sendable {
         case sine, linear

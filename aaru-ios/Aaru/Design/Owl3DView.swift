@@ -7,7 +7,7 @@ import SwiftUI
 /// head, flicks an ear and widens its eyes. The still shows until the model's first frame, and stays under Reduce
 /// Motion, in Low Power Mode, and when the model cannot be read.
 ///
-/// Left out of the Release build (`Release.xcconfig`); `WelcomeView` picks the still there.
+/// In every build, the App Store's included (owner, 2026-11-13).
 struct Owl3DView: View {
     /// What the owl is, for VoiceOver.
     let label: Text

@@ -1477,7 +1477,7 @@ sets, brand assets), main wins.
   the owl at rest, on Home and empty states only. Errors and recap cards stay still. Under
   Reduce Motion the owl never moves.
 - **The owl in 3D (BRD-011, owner 2026-11-12: an experiment).** On the web (beta, and production
-  since the owner saw the recoloured owl, 2026-11-12) and in Debug and Beta builds of the Apple app, the owl on the sign-in page and the Welcome screen is the 3D model,
+  since the owner saw the recoloured owl, 2026-11-12) and in the Apple app (every build, the App Store's included, owner 2026-11-13), the owl on the sign-in page and the Welcome screen is the 3D model,
   full-body and **off the `night` disc**: the one exception to the rule above, kept to those two
   screens until the owner's verdict. It is the standing owl at rest: a breath, a blink, a slow
   drift of the head, an amber pulse, and a look toward the pointer or a touch. Its lights are the
