@@ -909,6 +909,7 @@ account or a stranger that has not happened yet.
 | AUTH-003 | Done | #2, #8; AuthFlowTests rate limit | Email depends on Resend sender config |
 | AUTH-004 | Done | AuthFlowTests "AUTH-004: … no row anywhere" | |
 | AUTH-005 | Done | #18, #19; GoogleSignInTests linking/409; LinkGoogleButton.swift | |
+| AUTH-006 | Built, unverified | `internal/auth/appletokens_test.go` (stub Apple: exchange, sealed at rest, revoke on delete, failures) | Off until `APPLE_SIGNIN_*` is sealed and promoted; never run against Apple; the web's exchange (Services ID + redirect URI) untried |
 | CAT-001 | Done | #2; ProviderClientTests (429 retry) | |
 | CAT-002 | Done | #2; TMDBCatalog.swift | |
 | CAT-003 | Done | #2; ISBNTests, OpenLibraryCatalog.swift | |
@@ -1583,6 +1584,19 @@ then Google becomes two accounts unless identities can be linked from a signed-i
 **Done when:** a user who signed in with Apple can link Google from settings and then sign in
 with either into one account, and signing in with an unlinked Google account never merges
 into an existing account on email alone.
+
+### AUTH-006 · Revoke Sign in with Apple on account delete · S
+**Needs:** AUTH-002, AUTH-004. Blocks the 1.0 App Store submission: rule 5.1.1(v) asks an app
+that offers Sign in with Apple to revoke the user's tokens when the account is deleted.
+
+The clients send the credential's authorization code with the identity token. The server
+exchanges it for a refresh token and keeps it sealed, per user and client id; account delete
+revokes each with Apple, then deletes. A failed exchange never fails a sign-in and a failed
+revoke never blocks a deletion. Off without the Sign in with Apple key (`APPLE_SIGNIN_*`).
+
+**Done when:** an account made with Sign in with Apple on a TestFlight build, then deleted,
+is gone from Settings → Apple Account → Sign in with Apple on that device, and signing in again
+asks for name and email sharing as a first authorization does.
 
 **Progress (2026-10-15):** server done. `POST /v1/auth/google {idToken, nonce?}` verifies the
 ID token against Google's JWKS (shared cache with Apple; `iss`, `aud` ∈ `GOOGLE_CLIENT_IDS`,

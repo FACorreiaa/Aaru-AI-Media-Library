@@ -18,10 +18,14 @@ struct AuthFlow {
         else { throw AuthFlowError(String(localized: "Apple did not return a sign-in token. Try again.")) }
         // Apple shares the name only on the first authorization; the server keeps it then.
         let name = credential.fullName.map { PersonNameComponentsFormatter().string(from: $0) }
+        // The one-use code buys the token Aaru revokes with Apple when the account is deleted
+        // (AUTH-006). Sign-in works without it.
+        let code = credential.authorizationCode.flatMap { String(bytes: $0, encoding: .utf8) }
         let output = try await client().signInWithApple(body: .json(.init(
             identityToken: identityToken,
             nonce: rawNonce,
-            displayName: name?.isEmpty == false ? name : nil
+            displayName: name?.isEmpty == false ? name : nil,
+            authorizationCode: code?.isEmpty == false ? code : nil
         )))
         switch output {
         case let .ok(success): try session.signIn(token: success.body.json.token)

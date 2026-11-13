@@ -1161,6 +1161,25 @@ protocol ModelProviding: Sendable {
   the client sends Apple `sha256(rawNonce)` and sends us `rawNonce`). Accounts are keyed on
   Apple's `sub`, never on email. An unknown `kid` refreshes the key set once, then fails
   closed — checked by Aaru, because jwt-kit silently falls back to its default key.
+- Deleting an account revokes its Sign in with Apple tokens (AUTH-006, App Store rule
+  5.1.1(v)). The clients send the credential's one-use `authorizationCode` with the identity
+  token (the web also sends the `redirectUri` Apple's JS was given). The server exchanges it at
+  `appleid.apple.com/auth/token` as the client the identity token's `aud` names, with a client
+  secret it signs itself (ES256 JWT: `iss` the team, `sub` the client id, `aud` Apple, five
+  minutes), checks the answer's `id_token` is for the same `sub`, and stores the refresh token
+  sealed (AES-256-GCM, `APPLE_SIGNIN_TOKEN_KEY`) in `apple_refresh_tokens`, one row per user
+  and client id; the newest sign-in replaces it. A failed exchange never fails the sign-in.
+  `DELETE /v1/me`, after the 10-minute re-auth check, calls `auth/revoke` for every row and
+  **then** deletes the user, whatever Apple answered: the right to delete wins, and a failure is
+  a warning with Apple's status and reason (no token, no code, no email). Revoking first keeps a
+  failed deletion retryable, since Apple answers 200 for a token already revoked. Each call to
+  Apple is bounded at 8 seconds. Settings: `APPLE_SIGNIN_PRIVATE_KEY` (the .p8 of a key with
+  Sign in with Apple enabled; the APNs key only if it has that capability), `APPLE_SIGNIN_KEY_ID`
+  and `APPLE_SIGNIN_TOKEN_KEY` (32 bytes, base64) come together or boot is refused;
+  `APPLE_SIGNIN_TEAM_ID` defaults to the APNs team; `APPLE_SIGNIN_CLIENT_IDS` narrows the client
+  ids the key signs for (default: `APPLE_AUDIENCES`). Unset, nothing is exchanged, stored or
+  revoked. An account whose last Apple sign-in came from an app build older than this has no
+  token to revoke until it signs in again.
 - Sign in with Google (AUTH-005) verifies Google ID tokens the same way, against Google's JWKS
   through the same cache: `iss` is `accounts.google.com`, `aud` ∈ `GOOGLE_CLIENT_IDS` (the iOS
   and web OAuth client ids, public), `exp`, and the nonce when the client sent one. Accounts are

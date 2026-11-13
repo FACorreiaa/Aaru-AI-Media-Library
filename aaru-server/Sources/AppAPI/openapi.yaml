@@ -3989,6 +3989,18 @@ components:
         displayName:
           type: string
           description: Apple sends the name only on the first authorization; pass it then.
+        authorizationCode:
+          type: string
+          description: >-
+            The one-use code that came with the identity token (ASAuthorizationAppleIDCredential's
+            authorizationCode, Sign in with Apple JS's authorization.code). Aaru exchanges it
+            for the token it revokes with Apple when the account is deleted (AUTH-006). Optional:
+            a sign-in without it works, and deleting that account revokes nothing.
+        redirectUri:
+          type: string
+          description: >-
+            Web only: the redirectURI Sign in with Apple JS was initialised with. Apple asks
+            for it again when the code is exchanged. The Apple apps send none.
     MagicLinkRequest:
       type: object
       required: [email]
