@@ -1,6 +1,6 @@
 # Privacy policy
 
-_Last updated 12 November 2026._
+_Last updated 13 November 2026._
 
 Aaru is a private media library: what you watch and read, kept for you. This page says what
 Aaru stores, who else sees any of it, and how to delete it. If anything here stops matching
@@ -18,6 +18,9 @@ what Aaru does, this page changes first.
   not follow you across other apps or sites. When something breaks, an error report without your
   name, email or library goes to Sentry; Aaru's server counts a few product events (below) under
   a random account id.
+- **AI only with your yes.** Aaru's assistant, capture and @aaru are answered by an AI model from
+  Anthropic. Aaru asks before it sends Anthropic anything of yours, says what it would send, and
+  sends nothing until you allow it. You can change your answer in Settings.
 - You can **delete your account** in Settings. That removes your library and account at once.
 
 ## What Aaru stores
@@ -160,10 +163,30 @@ marked for a member who did not join, and nothing is marked if the session ends 
 countdown starts. Aaru shares no screen, video or sound in a session: everyone plays or reads on
 their own.
 
+**AI data sharing.** The owl's assistant, capture and @aaru in groups are answered by an AI model
+from Anthropic (below). Before any of them sends Anthropic something of yours, Aaru asks you once,
+"Let Aaru use AI with your data?", and lists what would be sent: what you ask Aaru, typed or
+spoken, with the screen you are on and your time zone; the files, pictures and long pastes you
+attach; the text and pictures you send to capture; what Aaru reads from your account to answer
+(titles in your library with their status, progress and rating, your lists, stats, favorites,
+listens and followed sports); and, in a group, your messages among a channel's last 30 when someone
+tags @aaru. A new account is asked during the first run, and an account made before this was added
+is asked the next time it opens Aaru. Until you answer "Allow", and after "Don't allow", Aaru sends
+Anthropic nothing of yours: its server refuses the assistant, a spoken question, a chat file, a
+capture of text or pictures, and a message that tags @aaru, and asks you again in place if you try
+one. Skipping the question counts as not allowing. The rest of Aaru works the same either way, and a
+capture of a link still works, because a link is never sent to Anthropic. Aaru stores your answer
+(allowed or not) and when you gave it, with your account; it is in your export and is deleted with
+your account. You can change it in Settings → Your data → AI data sharing. Turning it off stops new
+sends from that moment. It does not delete the chats you already had, which stay until you delete
+them (below), and it cannot take back what was already sent.
+
 **Aaru in groups.** If you tag @aaru in a group, Aaru sends Anthropic (below) the last 30
-messages of that channel, what the channel is about, and, only when it helps answer you, titles
-from your own library with their status and progress. It never sends another member's library
-or progress. Aaru's answer is posted in the channel like any message. Aaru keeps a count of how
+messages of that channel, leaving out every message written by a member who has not allowed AI
+data sharing, what the channel is about, and, only when it helps answer you, titles
+from your own library with their status and progress. Only a member who allowed AI data sharing
+can tag @aaru. Nobody in the group is shown who has or has not allowed it. It never sends another
+member's library or progress. Aaru's answer is posted in the channel like any message. Aaru keeps a count of how
 many questions you asked each day and how much text they used, to keep the service fair.
 
 **Capture.** If you paste text or send pictures to Aaru to find titles in them, Aaru sends that
@@ -275,7 +298,8 @@ Aaru only uses these services, and only for the purpose listed:
 - **Resend** sends sign-in emails, so it receives your email address and that email.
 - **Trakt**, only if you connect it, for importing your history.
 - **MyAnimeList**, only if you connect it, to keep your anime list there in step with Aaru.
-- **Anthropic**, only when someone tags @aaru in a group, to write Aaru's answer, when you
+- **Anthropic**, only if you allowed AI data sharing (above), and then only when someone tags
+  @aaru in a group, to write Aaru's answer, when you
   send a capture, to read the titles in it, or when you ask Aaru from the owl, to write the
   answer. It receives what is described under "Aaru in groups" and "Capture" above. When you ask
   Aaru, it receives your question, the recent turns of that chat, the name of the screen you are
@@ -328,6 +352,8 @@ within a year. Error reports are deleted within 90 days and product counts withi
   lists, shelves, favorites, friends, blocks, groups, listens, followed sports and chats. It leaves
   out daily usage counts, the history behind Undo, plans Aaru proposed and import records. CSV opens
   in a spreadsheet and imports back into Aaru.
+- **AI data sharing:** Settings → Your data → AI data sharing, in the app or on the web. Off
+  until you allow it; turn it off again at any time.
 - **Delete your chats:** one chat from the owl's History or Settings → Your data, or all of them
   with Settings → Delete my chats with Aaru. The daily count of questions you
   sent, which holds no text, stays to enforce the daily limit and is removed with your account.
