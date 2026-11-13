@@ -1458,6 +1458,8 @@ Landing hero (owner, 2026-11-12, after the recoloured owl): on the beta web the 
 
 Curious, and the first run (owner, 2026-11-12: "curious motion first"): `design/owl-motion.json` gains a second state, `curious` (the head tilted 12 to 15 degrees, one ear flicking, the pupils a little wider), and a `scale` property; both drivers play a state by name and hold the same test values. The first run's opening screen shows it in place of the curious still: on the beta web (`OWL_3D_FIRST_RUN_MODEL_URL`) and in Debug and Beta builds on iPhone and Mac. There the Apple owl does not follow a finger: the screen is all buttons.
 
+Production web (owner, 2026-11-13: "looks good on beta"): the landing hero's owl on its books and the first run's curious owl are on aaruapp.com too, with the sign-in owl. The Apple apps keep the 3D owl to Debug and Beta builds; the App Store build is a separate decision.
+
 **Done when:** the 3D owl is on beta.aaruapp.com's sign-in page and in a TestFlight build's Welcome screen, on iPhone and Mac; the production web build and the Release app show the still and carry no model; the sign-in route's own size budget is unchanged; and the owner has said go or no-go, written here with the measurements.
 
 ## P0 · M1 — Server foundation

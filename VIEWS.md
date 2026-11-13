@@ -253,8 +253,8 @@ the chrome is the host's, and an answer fills the card only with components from
 
 `Owl3D` on the web and `Owl3DView` on Apple (BRD-011) draw the 3D owl on the web's sign-in page and,
 in Debug and Beta builds, on the Welcome screen. On the web's landing page `Owl3D` also draws the
-owl on its books in the hero (`onBooks`, beta first). On the first run's opening screen both draw
-the curious owl (`state="curious"`, `pose: .curious`), beta first. They are app chrome, like the assistant card: not
+owl on its books in the hero (`onBooks`). On the first run's opening screen both draw
+the curious owl (`state="curious"`, `pose: .curious`); on Apple in Debug and Beta builds only. They are app chrome, like the assistant card: not
 in the catalog, never emitted by the agent, and absent from the App Store build.
 
 ## Agent emission rules
