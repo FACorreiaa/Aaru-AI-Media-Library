@@ -25,6 +25,10 @@ final class ChannelModel {
     /// PRV-002: a message that tags `@aaru`, refused whole (`ai_sharing_required`) and taken out
     /// of the outbox. The view puts it back in the composer and asks; nobody else sees any of it.
     var heldForAISharing: Outgoing?
+    /// SOC-012: a message the word filter refused whole (`content_not_allowed`), taken out of
+    /// the outbox. The view puts it back in the composer to be changed; `problem` says why.
+    var heldForChange: Outgoing?
+    static let refusedTextCode = "content_not_allowed"
     /// Why the first page failed; nil once anything has loaded (UX-063).
     private(set) var loadProblem: String?
 
@@ -156,6 +160,14 @@ final class ChannelModel {
                     heldForAISharing = outgoing
                     return
                 }
+                // SOC-012: sending the same words again gets the same answer, so the text goes
+                // back to the composer with the server's reason instead of waiting on Retry.
+                if refusal?.code == Self.refusedTextCode {
+                    outbox.removeAll { $0.id == outgoing.id }
+                    heldForChange = outgoing
+                    problem = refusal?.message ?? String(localized: "That was not sent.")
+                    return
+                }
                 fail(outgoing, refusal?.message ?? String(localized: "That was not sent."))
             }
         } catch {
@@ -276,17 +288,6 @@ final class ChannelModel {
         }
     }
 
-    /// "Kai is typing…", for the line above the composer; nil when nobody is.
-    var typingLine: String? {
-        let names = typing.values.sorted { $0.until < $1.until }.map { $0.user.displayName ?? "@\($0.user.handle)" }
-        switch names.count {
-        case 0: return nil
-        case 1: return String(localized: "\(names[0]) is typing…")
-        case 2: return String(localized: "\(names[0]) and \(names[1]) are typing…")
-        default: return String(localized: "Several people are typing…")
-        }
-    }
-
     private func expireTyping() {
         let now = Date()
         typing = typing.filter { $0.value.until > now }
@@ -340,6 +341,17 @@ private extension ChannelModel {
 }
 
 extension ChannelModel {
+    /// "Kai is typing…", for the line above the composer; nil when nobody is.
+    var typingLine: String? {
+        let names = typing.values.sorted { $0.until < $1.until }.map { $0.user.displayName ?? "@\($0.user.handle)" }
+        switch names.count {
+        case 0: return nil
+        case 1: return String(localized: "\(names[0]) is typing…")
+        case 2: return String(localized: "\(names[0]) and \(names[1]) are typing…")
+        default: return String(localized: "Several people are typing…")
+        }
+    }
+
     /// A message on its way: the nonce makes a retry safe.
     struct Outgoing: Identifiable, Equatable {
         let id: String
