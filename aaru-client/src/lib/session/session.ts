@@ -107,6 +107,8 @@ export const signInWithApple = createServerFn({ method: 'POST' })
       identityToken: z.string().min(1),
       nonce: z.string().min(1),
       displayName: z.string().optional(),
+      authorizationCode: z.string().optional(),
+      redirectUri: z.string().optional(),
     }),
   )
   .handler(async ({ data }) => {
