@@ -13,7 +13,8 @@ public extension Client {
         Client(
             serverURL: baseURL,
             transport: transport,
-            middlewares: [session, timeZone, ChatAudioContentTypeMiddleware()]
+            // The retry is last, next to the transport, so a resent read carries the same headers.
+            middlewares: [session, timeZone, ChatAudioContentTypeMiddleware(), ConnectionRetryMiddleware()]
         )
     }
 }
