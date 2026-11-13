@@ -6,13 +6,15 @@ Where to look:
 - Home: Up Next, the week, and three public rows from the catalog.
 - A title's page: status, rating, notes, episodes, Related, and "From here".
 - The owl in the top bar opens the assistant. It reads only this account's own library and the public catalog; replies are written by Anthropic's Claude through its API, as the privacy policy says.
+- AI data sharing (guidelines 5.1.1(i), 5.1.2(i)): before anything of the user's goes to Anthropic, Aaru asks, on the first run or in a full-screen ask on the next open, naming what is sent and to whom. "Don't allow" keeps the owl, capture and @aaru off and the rest of Aaru working. Settings > Your data > AI data sharing changes the answer. The server refuses every AI request from an account that has not allowed it.
 - Settings > Import: bring a history in from a file or a connected service.
-- Settings > Export your data, and Settings > Delete account (asks to sign in again if the session is older than ten minutes).
+- Settings > Export your data, and Settings > Delete account (asks to sign in again if the session is older than ten minutes). Deleting an account that signed in with Apple also revokes Aaru's Sign in with Apple tokens with Apple.
 
 Content from other people (guideline 1.2). It exists only between friends: there is no public profile, no public feed and no way to reach a stranger.
 - Friends tab: add a friend by handle or invite link. A profile has Report and Block.
-- Groups: the demo account is in one group with a second member and some messages. Long-press a message for Report. A blocked person's messages are hidden.
-- Board: a friends-only list of posts; Mira's post and its comments are there. A post has Report.
+- Groups: the demo account is in "Film club" with Mira and some messages. Long-press (or right-click on Mac) a message for Report and Block. A blocked person's messages are hidden.
+- Board: a friends-only list of posts; Mira's post and its comments are there. A post's menu has Report and Block; long-press (or right-click) a comment for the same.
+- Posts, comments, group messages, names and notes another person can read are checked for slurs, explicit sexual terms and threats before they are saved; a refused one is not posted and the writer is told why.
 - Reports reach the developer, who can remove content and close accounts. The terms (https://aaruapp.com/terms) set the rules.
 
 Location is asked for only when you ask for concerts near you, in Music; it is read once, approximately, and not stored. The microphone is asked for only when you choose to speak to the assistant instead of typing.
