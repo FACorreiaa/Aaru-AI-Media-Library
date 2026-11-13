@@ -14,7 +14,7 @@ import (
 // MARK: - AniList (GRAPH-001): an anime's or manga's own relations
 
 // aniListRelationFields are what a related entry needs to be drawn and opened.
-const aniListRelationFields = `id idMal type format title { romaji english native }
+const aniListRelationFields = `id idMal type format isAdult title { romaji english native }
 startDate { year month day } coverImage { large }`
 
 // aniListRelations maps AniList's relation types onto Aaru's. CHARACTER (shares a character) is
@@ -41,7 +41,7 @@ func (a *AniList) RelationKey(n RelatedNode) string {
 	return "anilist:" + n.IDs.AniList
 }
 
-// Relations are the entry's related anime and manga. Music videos are left out.
+// Relations are the entry's related anime and manga. Music videos and adult works are left out.
 func (a *AniList) Relations(ctx context.Context, n RelatedNode) (Relations, error) {
 	id, err := strconv.Atoi(n.IDs.AniList)
 	if err != nil {
@@ -78,7 +78,8 @@ func (a *AniList) Relations(ctx context.Context, n RelatedNode) (Relations, erro
 	}
 	for _, e := range body.Media.Relations.Edges {
 		relation, ok := aniListRelations[e.RelationType]
-		if !ok || sval(e.Node.Format) == "MUSIC" {
+		// An adult side story or adaptation is no part of the graph (adult.go).
+		if !ok || sval(e.Node.Format) == "MUSIC" || e.Node.IsAdult {
 			continue
 		}
 		out.Edges = append(out.Edges, RelatedEdge{To: e.Node.relatedNode(), Relation: relation})
@@ -135,7 +136,7 @@ func (t *TMDB) Relations(ctx context.Context, n RelatedNode) (Relations, error) 
 	}
 	var parts []RelatedNode
 	for _, p := range collection.Parts {
-		hit, ok := p.hit(core.MediaMovie)
+		hit, ok := p.offered(core.MediaMovie)
 		if !ok {
 			continue
 		}

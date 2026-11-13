@@ -47,6 +47,9 @@ type RelatedNode struct {
 	Format string `json:"format,omitempty"`
 	// Series are its numbered places in a series (Wikidata), the story order.
 	Series []SeriesPlace `json:"series,omitempty"`
+	// Adult is set while a source builds its answer, for a node its provider marks adult; the
+	// source leaves such a node out, so it is never cached and never drawn (adult.go).
+	Adult bool `json:"-"`
 }
 
 // SeriesPlace is one numbered place in a series.

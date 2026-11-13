@@ -269,7 +269,14 @@ func RowOf(e ListEntry) imports.Row {
 	}
 	sourceKey := "mal:" + strconv.Itoa(node.ID)
 	knowsOnHold := true
+	// An adult work is no row to merge: the import counts it as not matched (Node.Adult).
+	var unsupported *string
+	if node.Adult() {
+		reason := catalog.AdultReason
+		unsupported = &reason
+	}
 	return imports.Row{
+		Unsupported: unsupported,
 		SourceKey:   &sourceKey,
 		Type:        mediaType,
 		Title:       node.Title,

@@ -245,6 +245,10 @@ func AniListEntryRow(e catalog.AniListListEntry) Row {
 		Status: status, Rating: animeRating(e.Score), FinishedAt: e.CompletedAt, Lists: []string{},
 		KnowsOnHold: ptr(true),
 	}
+	// AniList marks the entry adult: reported as not matched, never merged (catalog/adult.go).
+	if e.Adult {
+		row.Unsupported = ptr(catalog.AdultReason)
+	}
 	if e.Type == core.MediaManga {
 		row.Type = core.MediaManga
 		row.MangaChapter = animeRead(deref(e.Progress), e.Chapters, status)

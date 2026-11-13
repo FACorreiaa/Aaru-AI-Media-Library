@@ -248,7 +248,8 @@ func (t *TMDB) OnboardingKinds() []RowKind { return []RowKind{RowShow, RowFilm} 
 // animation (anime has its own kind) and news, soap and talk. Anime is the stand-in while AniList
 // is down: Japanese animation, every genre.
 func (t *TMDB) Popular(ctx context.Context, kind RowKind, genre OnboardingGenre) ([]Hit, error) {
-	query := map[string]string{"include_adult": "false", "sort_by": "popularity.desc"}
+	query := tmdbNoAdult()
+	query["sort_by"] = "popularity.desc"
 	var mediaType core.MediaType
 	var path string
 	switch kind {
@@ -288,9 +289,9 @@ func (a *AniList) Popular(ctx context.Context, kind RowKind, genre OnboardingGen
 	var filter, fields string
 	switch kind {
 	case RowAnime:
-		filter, fields = "type: ANIME, isAdult: false, format_in: [TV, TV_SHORT, ONA, MOVIE]", aniListMediaFields
+		filter, fields = "type: ANIME, "+aniListNoAdult+", format_in: [TV, TV_SHORT, ONA, MOVIE]", aniListMediaFields
 	case RowManga:
-		filter, fields = "type: MANGA, isAdult: false", aniListFields(core.MediaManga)
+		filter, fields = "type: MANGA, "+aniListNoAdult, aniListFields(core.MediaManga)
 	default:
 		return nil, provider.NewError("anilist", provider.KindNotFound)
 	}

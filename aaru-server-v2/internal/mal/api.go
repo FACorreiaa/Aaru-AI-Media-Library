@@ -141,10 +141,13 @@ func (a *API) UpdateListStatus(ctx context.Context, malID string, state EntrySta
 	return err
 }
 
-// AnimeList is one page of the user's anime list, newest change first (SCR-010).
+// AnimeList is one page of the user's anime list, newest change first (SCR-010). `nsfw=true` asks
+// for every entry, so a full read still lists the adult ones (an entry missing from it would read
+// as removed on MAL); each comes with MAL's `nsfw` mark and Node.Adult decides what the merge
+// leaves out.
 func (a *API) AnimeList(ctx context.Context, token string, offset, limit int) (ListPage, error) {
 	url := APIURL + "/users/@me/animelist?" + trakt.QueryString([][2]string{
-		{"fields", "list_status,num_episodes,media_type"},
+		{"fields", "list_status,num_episodes,media_type,nsfw"},
 		{"sort", "list_updated_at"},
 		{"limit", strconv.Itoa(limit)},
 		{"offset", strconv.Itoa(offset)},
@@ -206,7 +209,19 @@ type Node struct {
 	Title       string
 	MediaType   *string
 	NumEpisodes *int
+	// NSFW is MAL's mark: white (safe for work), gray (may not be), black (is not).
+	NSFW *string
 }
+
+// nsfwAdult is MAL's mark for "This work is not safe for work" (its API reference).
+const nsfwAdult = "black"
+
+// Adult is MyAnimeList's half of the adult rule (CAT-023, owner 2026-11-13; catalog/adult.go):
+// Aaru's catalog offers no adult works, so the App Store age rating's "Graphic sexual content:
+// none" is true. MAL marks them `nsfw: black`. `gray` ("may be not safe for work": ecchi, mature
+// drama) is not that mark, as it is not AniList's `isAdult` either. An adult entry is read, never
+// merged: RowOf makes it a row the import reports as not matched.
+func (n Node) Adult() bool { return n.NSFW != nil && *n.NSFW == nsfwAdult }
 
 // ListStatusEntry is the user's status for one anime.
 type ListStatusEntry struct {
@@ -228,6 +243,7 @@ func DecodeListPage(body []byte) (ListPage, error) {
 				Title       *string `json:"title"`
 				MediaType   *string `json:"media_type"`
 				NumEpisodes *int    `json:"num_episodes"`
+				NSFW        *string `json:"nsfw"`
 			} `json:"node"`
 			ListStatus *struct {
 				Status             *string `json:"status"`
@@ -260,7 +276,7 @@ func DecodeListPage(body []byte) (ListPage, error) {
 			return ListPage{}, fmt.Errorf("mal list page: %w", err)
 		}
 		page.Data = append(page.Data, ListEntry{
-			Node: Node{ID: *e.Node.ID, Title: *e.Node.Title, MediaType: e.Node.MediaType, NumEpisodes: e.Node.NumEpisodes},
+			Node: Node{ID: *e.Node.ID, Title: *e.Node.Title, MediaType: e.Node.MediaType, NumEpisodes: e.Node.NumEpisodes, NSFW: e.Node.NSFW},
 			ListStatus: ListStatusEntry{
 				Status: e.ListStatus.Status, Score: e.ListStatus.Score, NumEpisodesWatched: e.ListStatus.NumEpisodesWatched,
 				UpdatedAt: updated, FinishDate: e.ListStatus.FinishDate,

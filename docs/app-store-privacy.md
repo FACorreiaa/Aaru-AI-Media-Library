@@ -163,7 +163,7 @@ That page lists no question about AI or chatbots; if the site shows one, see the
 | **Sexuality or nudity** | | |
 | Mature or Suggestive Themes | **Infrequent** | Synopses mention crime, war and abuse; some posters and covers are suggestive. See Part C, item 2 |
 | Sexual Content or Nudity | **Infrequent** | Poster and cover art of films rated for adults by age (not TMDB's "adult" class), album covers, book covers |
-| Graphic Sexual Content and Nudity | **None**, once Part C item 1 is settled | TMDB calls send `include_adult=false`; AniList's Discover rows, manga search, first-run picks and credits send or filter `isAdult`. Anime search does not |
+| Graphic Sexual Content and Nudity | **None** | The catalog offers no work its provider marks adult (CAT-023): AniList's `isAdult`, TMDB's `adult`, MyAnimeList's `nsfw: black`. Search, Discover, relations, the title tree and imports all filter. See Part C, item 1, for what the marks do not cover |
 | **Violence** | | |
 | Cartoon or Fantasy Violence | **Infrequent** | Poster art and synopses |
 | Realistic Violence | **Infrequent** | Poster art and synopses |
@@ -189,13 +189,23 @@ None to Graphic Sexual Content makes the app Unrated, which the App Store does n
 
 ## Part C: what makes an honest answer awkward
 
-1. **Anime search does not hide adult works.** `AniList.Search`
-   (`aaru-server-v2/internal/catalog/anilist.go`) adds `isAdult: false` for manga only. AniList
-   returns adult anime when the filter is absent (checked: a search by one such title returned
-   it), with its cover. MyAnimeList's read-back also asks for `nsfw=true`
-   (`internal/mal/api.go`), so an adult entry on a user's own list comes across. Until anime
-   search filters as manga search does, "Graphic Sexual Content: None" is not safely true.
-   This is a code change and was left alone here.
+1. **Adult works: settled in code (CAT-023, owner 2026-11-13), with known edges.** The catalog
+   offers no work its provider marks adult; the rule is `aaru-server-v2/internal/catalog/adult.go`
+   (AniList `isAdult`, TMDB `adult`) and `Node.Adult` in `internal/mal/api.go` (MyAnimeList
+   `nsfw: black`). Anime search now filters as manga search does; every list path drops a marked
+   entry even when the provider sends one; an import or the MyAnimeList read-back reports an adult
+   row as not matched and goes on. What the answer "None" still rests on:
+   - It is the providers' marks. A work a provider has not marked is shown. MyAnimeList's `gray`
+     ("may be not safe for work") is not treated as adult, as AniList's `isAdult` does not cover
+     it either.
+   - A title that was in the catalog before the rule is not removed, so an account that already
+     has one keeps it, and another account can still reach that same title by its id (an import
+     row, a link). No search, row, graph or tree offers it.
+   - Relation and credit answers cached before the rule keep an adult node until they expire (30
+     days at most).
+   - Wikidata has no adult mark. Its films and shows are checked against TMDB's; its anime, manga
+     and books are not.
+   - The API must be promoted for any of this to be live.
 2. **Books and albums have no filter at all.** Open Library and MusicBrainz / Cover Art Archive
    are shown as they come. Explicit covers exist in both. "Infrequent" is a fair answer; "None"
    would not be.

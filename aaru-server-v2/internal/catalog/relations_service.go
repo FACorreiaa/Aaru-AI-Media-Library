@@ -317,7 +317,8 @@ func relationRowMatches(n GraphNode, r sqlc.LibraryEntriesMatchingCatalogRow, sh
 }
 
 // TMDBRelatedEnricher fills Wikidata's films and shows from TMDB: the English title, the poster and
-// the release date. A film TMDB does not answer for keeps what Wikidata said.
+// the release date. A film TMDB does not answer for keeps what Wikidata said. A film or show TMDB
+// marks adult comes back with Adult set, and Wikidata leaves it out of the graph (adult.go).
 func TMDBRelatedEnricher(tmdb Searcher) func(context.Context, []RelatedNode) []RelatedNode {
 	return func(ctx context.Context, nodes []RelatedNode) []RelatedNode {
 		out := slices.Clone(nodes)
@@ -333,6 +334,7 @@ func TMDBRelatedEnricher(tmdb Searcher) func(context.Context, []RelatedNode) []R
 					return nil //nolint:nilerr // a film TMDB cannot answer for keeps Wikidata's label
 				}
 				hit := record.Hit
+				out[i].Adult = hit.Adult
 				out[i].Title = cmp.Or(hit.Title, n.Title)
 				out[i].PosterURL = hit.PosterURL
 				out[i].ReleaseDate = cmp.Or(hit.ReleaseDate, n.ReleaseDate)

@@ -1,9 +1,14 @@
 package mal
 
 import (
+	"aaru-go-api/internal/catalog"
 	"aaru-go-api/internal/core"
+	"aaru-go-api/internal/provider"
+	"context"
 	"encoding/json"
+	"net/url"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -82,4 +87,47 @@ func TestRowsAndStates(t *testing.T) {
 
 func TestFormEncodesOutsideTheUnreservedSet(t *testing.T) {
 	assert.Equal(t, "a=x%20y%2Bz&b=https%3A%2F%2Fa.b%2Fc", string(Form([][2]string{{"a", "x y+z"}, {"b", "https://a.b/c"}})))
+}
+
+// CAT-023: MAL marks an adult work `nsfw: black`. It is read, so a full read still lists it, and
+// becomes a row the merge reports as not matched. `gray` and `white` merge as before.
+func TestAdultEntriesAreRowsTheMergeLeavesOut(t *testing.T) {
+	entry := func(nsfw any) ListEntry {
+		page, err := json.Marshal(map[string]any{"data": []any{map[string]any{
+			"node":        map[string]any{"id": 7, "title": "A title", "media_type": "ova", "num_episodes": 2, "nsfw": nsfw},
+			"list_status": map[string]any{"status": "completed", "updated_at": "2026-11-13T10:00:00+00:00"},
+		}}})
+		require.NoError(t, err)
+		decoded, err := DecodeListPage(page)
+		require.NoError(t, err)
+		return decoded.Data[0]
+	}
+	adult := entry("black")
+	assert.True(t, adult.Node.Adult())
+	row := RowOf(adult)
+	require.NotNil(t, row.Unsupported)
+	assert.Equal(t, catalog.AdultReason, *row.Unsupported)
+	assert.Equal(t, "7", row.IDs.MAL, "the row still names the entry, so the read can report it")
+	assert.NotNil(t, StateOf(adult), "its state is remembered, so it is not read as new every time")
+
+	for _, nsfw := range []any{"white", "gray", nil} {
+		e := entry(nsfw)
+		assert.False(t, e.Node.Adult(), "%v", nsfw)
+		assert.Nil(t, RowOf(e).Unsupported, "%v", nsfw)
+	}
+}
+
+func TestAnimeListAsksForMALsAdultMark(t *testing.T) {
+	var asked string
+	transport := provider.TransportFunc(func(_ context.Context, req provider.Request) (*provider.Response, error) {
+		asked = req.URL
+		return &provider.Response{Status: 200, Body: []byte(`{"data":[],"paging":{}}`)}, nil
+	})
+	client := provider.NewClient("mal", transport, provider.NewPacer(1000, 100))
+	_, err := (&API{Client: client}).AnimeList(context.Background(), "token", 0, 100)
+	require.NoError(t, err)
+	u, err := url.Parse(asked)
+	require.NoError(t, err)
+	assert.Contains(t, strings.Split(u.Query().Get("fields"), ","), "nsfw")
+	assert.Equal(t, "true", u.Query().Get("nsfw"), "every entry is read; the mark decides, not MAL's own filter")
 }

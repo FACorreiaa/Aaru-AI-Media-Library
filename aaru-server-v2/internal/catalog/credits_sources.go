@@ -168,10 +168,10 @@ func (t *TMDB) Works(ctx context.Context, credit Credit) ([]CreditedWork, error)
 	works := []CreditedWork{}
 	seen := map[int]bool{}
 	for _, c := range entries {
-		if !keep(c) || c.Video || seen[c.ID] || (c.Adult != nil && *c.Adult) {
+		if !keep(c) || c.Video || seen[c.ID] {
 			continue
 		}
-		hit, ok := c.hit(mediaType)
+		hit, ok := c.offered(mediaType)
 		if !ok {
 			continue
 		}
@@ -217,8 +217,7 @@ var storyRole = regexp.MustCompile(`(?i)(story)`)
 // aniListCreditedMedia is an entry with AniList's popularity: how many members list it.
 type aniListCreditedMedia struct {
 	aniListMedia
-	Popularity int  `json:"popularity"`
-	IsAdult    bool `json:"isAdult"`
+	Popularity int `json:"popularity"`
 }
 
 func (m aniListCreditedMedia) work() CreditedWork {
@@ -306,7 +305,7 @@ func (a *AniList) Works(ctx context.Context, credit Credit) ([]CreditedWork, err
 	if err != nil {
 		return []CreditedWork{}, nil //nolint:nilerr // not an AniList id: nothing to ask
 	}
-	fields := aniListRelationFields + " popularity isAdult"
+	fields := aniListRelationFields + " popularity"
 	works := []CreditedWork{}
 	seen := map[int]bool{}
 	if credit.Kind == core.BranchStudio {

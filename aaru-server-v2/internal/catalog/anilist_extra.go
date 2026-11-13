@@ -28,11 +28,11 @@ func (a *AniList) List(ctx context.Context, list DiscoverList, now time.Time) ([
 		var body aniListSearchData
 		err := a.post(ctx, fmt.Sprintf(`query {
   Page(perPage: 20) {
-    media(type: MANGA, isAdult: false, status: RELEASING, sort: %s) {
+    media(type: MANGA, %s, status: RELEASING, sort: %s) {
       %s
     }
   }
-}`, sort, aniListFields(core.MediaManga)), nil, &body)
+}`, aniListNoAdult, sort, aniListFields(core.MediaManga)), nil, &body)
 		if err != nil {
 			return nil, err
 		}
@@ -51,11 +51,11 @@ func (a *AniList) List(ctx context.Context, list DiscoverList, now time.Time) ([
 	var body aniListSearchData
 	err := a.post(ctx, fmt.Sprintf(`query {
   Page(perPage: 20) {
-    media(type: ANIME, isAdult: false, format_in: [TV, TV_SHORT, ONA, MOVIE], %s) {
+    media(type: ANIME, %s, format_in: [TV, TV_SHORT, ONA, MOVIE], %s) {
       %s
     }
   }
-}`, filter, aniListMediaFields), nil, &body)
+}`, aniListNoAdult, filter, aniListMediaFields), nil, &body)
 	if err != nil {
 		return nil, err
 	}
@@ -87,19 +87,19 @@ func (a *AniList) Season(ctx context.Context, key SeasonKey, kind SeasonKind, pa
 	err := a.post(ctx, fmt.Sprintf(`query ($season: MediaSeason, $year: Int, $page: Int, $perPage: Int) {
   Page(page: $page, perPage: $perPage) {
     pageInfo { hasNextPage total }
-    media(season: $season, seasonYear: $year, type: ANIME, isAdult: false,
+    media(season: $season, seasonYear: $year, type: ANIME, %s,
           format_in: [TV, TV_SHORT, ONA, MOVIE], sort: POPULARITY_DESC) {
       %s
     }
   }
-}`, aniListMediaFields), map[string]any{
+}`, aniListNoAdult, aniListMediaFields), map[string]any{
 		"season": key.Season.AniList(), "year": key.Year, "page": page, "perPage": AniListSeasonPageSize,
 	}, &body)
 	if err != nil {
 		return SeasonPage{}, err
 	}
 	hits := make([]Hit, 0, len(body.Page.Media))
-	for _, m := range body.Page.Media {
+	for _, m := range aniListOffered(body.Page.Media) {
 		hits = append(hits, m.hit())
 	}
 	result := SeasonPage{Hits: hits}
@@ -136,6 +136,8 @@ type AniListListEntry struct {
 	// Title is the English title, else romaji, else "Untitled".
 	Title string
 	Year  *int
+	// Adult is AniList's own mark: the import reports the entry as not matched (adult.go).
+	Adult bool
 }
 
 // ListEntries reads the user's anime list, then the manga list (MNG-002). A user
@@ -170,6 +172,7 @@ func (a *AniList) listEntries(ctx context.Context, userName string, mediaType co
 						ID       int     `json:"id"`
 						IDMal    *int    `json:"idMal"`
 						Format   *string `json:"format"`
+						IsAdult  bool    `json:"isAdult"`
 						Episodes *int    `json:"episodes"`
 						Chapters *int    `json:"chapters"`
 						Volumes  *int    `json:"volumes"`
@@ -190,7 +193,7 @@ func (a *AniList) listEntries(ctx context.Context, userName string, mediaType co
     lists { entries {
       status progress progressVolumes score(format: POINT_10_DECIMAL)
       completedAt { year month day }
-      media { id idMal format episodes chapters volumes title { romaji english } startDate { year } }
+      media { id idMal format isAdult episodes chapters volumes title { romaji english } startDate { year } }
     } }
   }
 }`, aniListType(mediaType)), map[string]any{"name": userName}, &body)
@@ -210,6 +213,7 @@ func (a *AniList) listEntries(ctx context.Context, userName string, mediaType co
 				Type: mediaType, Status: e.Status, Progress: e.Progress, ProgressVolumes: e.ProgressVolumes,
 				Score: e.Score, MediaID: e.Media.ID, MediaIDMal: e.Media.IDMal, Format: e.Media.Format,
 				Episodes: e.Media.Episodes, Chapters: e.Media.Chapters, Volumes: e.Media.Volumes, Title: title,
+				Adult: e.Media.IsAdult,
 			}
 			if e.Media.StartDate != nil {
 				entry.Year = e.Media.StartDate.Year
