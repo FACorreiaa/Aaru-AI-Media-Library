@@ -29,7 +29,12 @@ export const RELATED_LIMIT = 30
 export const PICKS_LIMIT = 60
 
 export type Step =
-  'kinds' | `pick:${MediaKind}` | 'favorites' | 'related' | 'notifications'
+  | 'kinds'
+  | `pick:${MediaKind}`
+  | 'favorites'
+  | 'related'
+  | 'ai'
+  | 'notifications'
 
 /** Kinds you can be in the middle of: a show, an anime, a book, a manga. A film or an album is
  * seen or heard in one go, so its cycle has no Watching / Listening. */
@@ -82,6 +87,8 @@ export function steps(input: {
   if (input.picks.some((pick) => pick.status === 'finished'))
     list.push('favorites')
   if (input.hasRelated) list.push('related')
+  // PRV-002: every first run asks about AI sharing, after the picks and before alerts.
+  list.push('ai')
   if (
     input.pushSupported &&
     input.picks.some(

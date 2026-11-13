@@ -9,6 +9,7 @@ import {
 import { MAX_CAPTURE_PICTURES, captureSend } from '../lib/capture/model'
 import { startCapture } from '../lib/capture/server'
 import type { CaptureResult } from '../lib/capture/server'
+import { useAppShell } from './shell/context'
 
 type Picture = { file: File; url: string }
 
@@ -17,6 +18,7 @@ type Picture = { file: File; url: string }
 // The Books page passes its kind: only books are read, and the words say so (BOOK-001).
 export function CaptureComposer(props: { kind?: 'book'; class?: string }) {
   const navigate = useNavigate()
+  const shell = useAppShell()
   const books = () => props.kind === 'book'
   const [text, setText] = createSignal('')
   const [pictures, setPictures] = createSignal<Picture[]>([])
@@ -78,6 +80,10 @@ export function CaptureComposer(props: { kind?: 'book'; class?: string }) {
   async function send(event: SubmitEvent) {
     event.preventDefault()
     if (!ready()) return
+    // PRV-002: text and pictures go to the AI provider; a link alone is read by Aaru and does not.
+    const typed = captureSend(text())
+    const link = pictures().length === 0 && typed !== null && 'url' in typed
+    if (!link && !(await shell.ensureAiSharing())) return
     setBusy(true)
     setProblem(null)
     try {
@@ -91,7 +97,6 @@ export function CaptureComposer(props: { kind?: 'book'; class?: string }) {
           throw new Error("That's long. Paste the text instead.")
         result = await startCapture({ data: { images, kind: props.kind } })
       } else {
-        const typed = captureSend(text())
         if (!typed) return
         result = await startCapture({ data: { ...typed, kind: props.kind } })
       }

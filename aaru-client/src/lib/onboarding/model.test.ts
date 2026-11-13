@@ -89,11 +89,12 @@ describe('steps', () => {
       'pick:film',
       'pick:anime',
       'pick:album',
+      'ai',
     ])
   })
 
-  it('is the kinds screen alone with nothing chosen', () => {
-    expect(steps({ ...none, kinds: [] })).toEqual(['kinds'])
+  it('is the kinds screen and the AI sharing question with nothing chosen', () => {
+    expect(steps({ ...none, kinds: [] })).toEqual(['kinds', 'ai'])
   })
 
   it('shows favorites only after a finished pick', () => {
@@ -110,7 +111,7 @@ describe('steps', () => {
         kinds: ['book'],
         picks: [{ kind: 'book', status: 'finished' }],
       }),
-    ).toEqual(['kinds', 'pick:book', 'favorites'])
+    ).toEqual(['kinds', 'pick:book', 'favorites', 'ai'])
   })
 
   it('shows related only when there is some', () => {
@@ -118,6 +119,7 @@ describe('steps', () => {
       'kinds',
       'pick:film',
       'related',
+      'ai',
     ])
   })
 
@@ -128,6 +130,7 @@ describe('steps', () => {
     expect(steps({ ...none, kinds: ['anime'], picks: watching })).toEqual([
       'kinds',
       'pick:anime',
+      'ai',
       'notifications',
     ])
     expect(
@@ -171,6 +174,7 @@ describe('steps', () => {
       'pick:show',
       'favorites',
       'related',
+      'ai',
       'notifications',
     ])
   })
@@ -178,7 +182,8 @@ describe('steps', () => {
   it('walks forward and back', () => {
     const list = steps({ ...none, kinds: ['film', 'book'] })
     expect(stepAfter(list, 'kinds')).toBe('pick:film')
-    expect(stepAfter(list, 'pick:book')).toBeNull()
+    expect(stepAfter(list, 'pick:book')).toBe('ai')
+    expect(stepAfter(list, 'ai')).toBeNull()
     expect(stepAfter(list, 'related')).toBeNull()
     expect(stepBefore(list, 'pick:film')).toBe('kinds')
     expect(stepBefore(list, 'kinds')).toBeNull()

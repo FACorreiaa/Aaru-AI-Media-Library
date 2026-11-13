@@ -12,6 +12,9 @@ import {
   onMount,
 } from 'solid-js'
 import type { JSX } from 'solid-js'
+import type { AiSharingState } from '../../lib/ai-sharing/model'
+import { setAiSharing } from '../../lib/ai-sharing/server'
+import { aiSharingAnswered } from '../../lib/ai-sharing/session'
 import { requestMALPull } from '../../lib/mal/server'
 import { Wordmark } from '../Brand'
 import { Medallion } from '../Medallion'
@@ -93,6 +96,12 @@ const AssistantCard = lazy(() =>
     default: m.AssistantCard,
   })),
 )
+// PRV-002's in-place ask: loaded the first time something needs it.
+const AiSharingDialog = lazy(() =>
+  import('../ai-sharing/AiSharingDialog').then((m) => ({
+    default: m.AiSharingDialog,
+  })),
+)
 const UnlockWatcher = lazy(() =>
   import('../achievements/UnlockWatcher').then((m) => ({
     default: m.UnlockWatcher,
@@ -127,6 +136,7 @@ export type ShellSession = {
   displayName: string | null
   handle: string | null
   avatarUrl?: string | null
+  aiSharing?: AiSharingState
 }
 
 /**
@@ -160,6 +170,14 @@ export function AppShell(props: {
   const [askListening, setAskListening] = createSignal(false)
   const [askQuestion, setAskQuestion] = createSignal<string | null>(null)
   const [askTitle, setAskTitle] = createSignal<string | null>(null)
+  // PRV-002: the answer this tab knows, and the in-place ask waiting on one.
+  const [aiSharing, setAiSharingState] = createSignal(props.session.aiSharing)
+  const [aiAsk, setAiAsk] = createSignal<{
+    settle: (allowed: boolean) => void
+  } | null>(null)
+  const [aiAskMounted, setAiAskMounted] = createSignal(false)
+  const [aiBusy, setAiBusy] = createSignal(false)
+  const [aiProblem, setAiProblem] = createSignal<string | null>(null)
   const location = useLocation()
   // Esc or Done returns focus to the control that opened Search.
   const focusReturn = createFocusReturn()
@@ -206,6 +224,44 @@ export function AppShell(props: {
     void getAssistantStatus()
       .then(setAssistant)
       .catch(() => undefined)
+
+  async function saveAiSharing(allowed: boolean) {
+    const state = await setAiSharing({ data: { allowed } })
+    setAiSharingState(state)
+    aiSharingAnswered(browserQueryClient(), state)
+  }
+  function ensureAiSharing(): Promise<boolean> {
+    if (aiSharing() === 'allowed') return Promise.resolve(true)
+    // One ask at a time: a second caller is told no and can try again.
+    if (aiAsk()) return Promise.resolve(false)
+    setAiProblem(null)
+    setAiAskMounted(true)
+    return new Promise((settle) => setAiAsk({ settle }))
+  }
+  function answerAiAsk(allowed: boolean) {
+    const ask = aiAsk()
+    if (!ask) return
+    if (!allowed) {
+      setAiAsk(null)
+      ask.settle(false)
+      return
+    }
+    setAiBusy(true)
+    setAiProblem(null)
+    saveAiSharing(true)
+      .then(() => {
+        setAiAsk(null)
+        ask.settle(true)
+      })
+      .catch((error: unknown) =>
+        setAiProblem(
+          error instanceof Error && error.message
+            ? error.message
+            : 'Your answer was not saved.',
+        ),
+      )
+      .finally(() => setAiBusy(false))
+  }
 
   const entries = () => host()?.entries() ?? ownEntries()
   function added(entry: LibraryEntry) {
@@ -285,6 +341,9 @@ export function AppShell(props: {
     askAssistant,
     assistantAvailable: () => assistant().assistant,
     setAssistantTitle: setAskTitle,
+    aiSharing,
+    ensureAiSharing,
+    setAiSharing: saveAiSharing,
   }
 
   return (
@@ -363,6 +422,17 @@ export function AppShell(props: {
             hint={() => hintFor(location().pathname, askTitle())}
             onOpenChange={setAskOpen}
             onWrote={() => void router.invalidate()}
+          />
+        </Suspense>
+      </Show>
+      <Show when={aiAskMounted()}>
+        <Suspense>
+          <AiSharingDialog
+            open={aiAsk() !== null}
+            busy={aiBusy()}
+            problem={aiProblem()}
+            onAllow={() => answerAiAsk(true)}
+            onNotNow={() => answerAiAsk(false)}
           />
         </Suspense>
       </Show>

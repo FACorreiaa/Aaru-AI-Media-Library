@@ -8,7 +8,9 @@ import {
 } from '~/components/ui'
 import { MAX_MESSAGE_LENGTH, remainingLabel } from '../../lib/groups/model'
 import type { GroupMember } from '../../lib/groups/server'
+import { tagsAaru } from '../../lib/ai-sharing/model'
 import { MentionList, createMentions } from '../Mentions'
+import { useAppShell } from '../shell/context'
 import { AaruAvatar, AssistantTag } from './AgentParts'
 
 /**
@@ -29,6 +31,7 @@ export function Composer(props: {
   /** A control above the box, such as a title channel's spoiler marker. */
   accessory?: JSX.Element
 }) {
+  const shell = useAppShell()
   let box: HTMLTextAreaElement | undefined
   const [text, setText] = createSignal('')
   const mentions = createMentions({
@@ -60,9 +63,14 @@ export function Composer(props: {
     resize()
   }
 
-  function send() {
+  async function send() {
     if (!canSend()) return
-    props.onSend(text().trim())
+    const body = text().trim()
+    // PRV-002: tagging @aaru sends the channel's recent messages to the AI provider. Only the
+    // tagger is asked, here; on Not now the draft stays in the box, unsent.
+    if (props.agent && tagsAaru(body) && !(await shell.ensureAiSharing()))
+      return
+    props.onSend(body)
     setText('')
     mentions.close()
     if (box) box.value = ''
@@ -73,7 +81,7 @@ export function Composer(props: {
     if (mentions.onKeyDown(event)) return
     if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
       event.preventDefault()
-      send()
+      void send()
     }
   }
 
@@ -137,7 +145,7 @@ export function Composer(props: {
         </Show>
         <Button
           size="icon-sm"
-          onClick={send}
+          onClick={() => void send()}
           disabled={!canSend()}
           aria-label="Send"
           class="shrink-0 disabled:opacity-30"
