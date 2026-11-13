@@ -1484,10 +1484,9 @@ sets, brand assets), main wins.
   `gold` and `accent` tokens, and the soft amber glow sits behind it in place of the disc. The
   still (without the disc) shows first and stays under Reduce Motion, Save-Data and Low Power
   Mode, and whenever the model cannot be drawn. The App Store build shows the still on the disc,
-  as above, and so does every other screen. One more place on the web (owner, 2026-11-12, beta
-  first): the landing page's hero, above the headline, where the same owl stands on its stack of
+  as above, and so does every other screen. One more place on the web (owner, 2026-11-12): the landing page's hero, above the headline, where the same owl stands on its stack of
   books. It moves the same way and follows the same rules; where the model is not set, the hero
-  has no owl. And one more on every client (owner, 2026-11-12, beta first): the first run's
+  has no owl. And one more on every client (owner, 2026-11-12): the first run's
   opening screen, where the 3D owl is **curious**: its head tilted, one ear flicking now and
   then, its eyes a little wider. It is the curious pose in motion, not a new pose; the curious
   still shows first and stays wherever the model cannot be drawn. Sleeping and celebrating have

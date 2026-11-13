@@ -32,11 +32,11 @@
     // 2026-11-12; staging may point at a newer cut first.
     "OWL_3D_MODEL_URL": "https://cdn.aaruapp.com/aaru/owl3d/v2/owl.glb",
     // The 3D owl on its books, in the landing page's hero (BRD-011): the address of
-    // `owl-on-books.glb`. Empty means no owl in the hero. Beta only until the owner has seen it.
-    "OWL_3D_BOOKS_MODEL_URL": "",
+    // `owl-on-books.glb`. Empty means no owl in the hero. In production since 2026-11-13.
+    "OWL_3D_BOOKS_MODEL_URL": "https://cdn.aaruapp.com/aaru/owl3d/v2/owl-on-books.glb",
     // The curious 3D owl on the first run's opening screen (BRD-011): the address of `owl.glb`.
-    // Empty means the still on the disc. Beta only until the owner has seen it.
-    "OWL_3D_FIRST_RUN_MODEL_URL": "",
+    // Empty means the still on the disc. In production since 2026-11-13.
+    "OWL_3D_FIRST_RUN_MODEL_URL": "https://cdn.aaruapp.com/aaru/owl3d/v2/owl.glb",
   },
   // www answers with a permanent redirect to the apex (src/start.ts).
   "routes": [
