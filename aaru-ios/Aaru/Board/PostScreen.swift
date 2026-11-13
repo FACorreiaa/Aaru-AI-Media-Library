@@ -4,7 +4,8 @@ import SwiftUI
 
 /// The post screen (BOARD-003): one post on its own, who upvoted it, its thread (one level of
 /// replies) and the comment box pinned to the bottom. Your own post can be edited (its words
-/// only) or deleted; a friend's can be reported. Edits and deletes reach the Board's row at once.
+/// only) or deleted; a friend's can be reported and its author blocked, as can anyone's comment.
+/// Edits and deletes reach the Board's row at once.
 /// A post that is not there for you (deleted, or its author no longer your friend) says so in
 /// place. One readable column, as the Board: full width on iPhone, centred on iPad and Mac.
 struct PostScreen: View {
@@ -26,6 +27,8 @@ struct PostScreen: View {
     @State private var pendingCommentDelete: BoardComment?
     @State private var confirmingCommentDelete = false
     @State private var reporting = false
+    @State private var reportingComment: BoardComment?
+    @State private var blocking: SocialUser?
     @State private var showsUpvoters = false
     @State private var columnInset = AaruSpace.large
 
@@ -123,6 +126,7 @@ struct PostScreen: View {
                         ? nil : (model.problem ?? String(localized: "That report was not sent."))
                 }
             }
+            .modifier(CommentSafety(model: model, reporting: $reportingComment, blocking: $blocking))
             .sheet(isPresented: $showsUpvoters) { UpvotersSheet(people: model.upvoters, myHandle: myHandle) }
     }
 
@@ -153,7 +157,9 @@ struct PostScreen: View {
                     onDelete: { comment in
                         pendingCommentDelete = comment
                         confirmingCommentDelete = true
-                    }
+                    },
+                    onReport: { reportingComment = $0 },
+                    onBlock: { blocking = $0 }
                 )
             }
             .listStyle(.plain)
@@ -207,6 +213,7 @@ struct PostScreen: View {
                 Button("Delete post", systemImage: "trash", role: .destructive) { confirmingDelete = true }
             } else {
                 Button("Report post", systemImage: "flag") { reporting = true }
+                Button("Block", systemImage: "hand.raised", role: .destructive) { blocking = post.author }
             }
         }
     }

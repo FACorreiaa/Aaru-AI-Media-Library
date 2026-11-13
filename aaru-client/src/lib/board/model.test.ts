@@ -232,4 +232,8 @@ describe('reportNote', () => {
     expect(reportNote('post', 'p1', 'spam')).toBe('post:p1\nspam')
     expect(reportNote('group-message', 'm1')).toBe('group-message:m1')
   })
+  it('names a comment by id', () => {
+    expect(reportNote('comment', 'c1')).toBe('comment:c1')
+    expect(reportNote('comment', 'c1', ' rude ')).toBe('comment:c1\nrude')
+  })
 })

@@ -1177,6 +1177,7 @@ what the file's own rules, `MARKETING.md`'s launch gate or App Store review alre
 | 8 | The P2 gate: 0 strangers | Open | owner |
 | 9 | REL-004 says "iOS + macOS lanes", but `Fastfile` has `PLATFORMS = %w[ios]`: the Mac lane waits for a Mac Installer Distribution certificate, or iPhone ships first | Open | owner decides |
 | 10 | This file: 22 ids have no status row (ASK-001…010, BOARD-004, DISC-004/005, NAV-001/002/003/005, SPT-001…005), and the summary rows above are stale (P4 "0/8", P6 "Nothing on main", P2 31/54 against 29/54) | Open | docs |
+| 11 | App Store 1.2: a Board comment could not be reported, and a comment's or group message's author (who need not be your friend) could not be blocked from where you read them | Done on `feat/report-everywhere` (2026-11-13): Report comment (`comment:<id>` in the note) and Block on posts, comments and group messages, iPhone, Mac and web. No server change. Not tried on a device. R4's alert is still the owner's: until it exists nobody is told a report arrived | code + owner |
 
 ## Phase map
 

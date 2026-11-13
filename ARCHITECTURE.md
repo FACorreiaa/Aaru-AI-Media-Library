@@ -1528,7 +1528,8 @@ is a query, not a table.
   `in_progress` when its next episode airs. The post keeps its own copy of the rating, so undoing the library action never deletes the post.
 - **Spoiler veil** reuses the title-channel stamp: only the author sees the stamp, a reader who
   is behind gets `veiled`.
-- Reports reuse `reportUser` on the author, with the note prefixed `post:<id>`.
+- Reports reuse `reportUser` on the author, with the note prefixed `post:<id>`, or
+  `comment:<id>` for a comment.
 - `GET /v1/titles/{id}/posts` is the title page's "From friends" slice of the same query.
 
 ## Gamification (Phase 5, pulled forward 2026-10-22)

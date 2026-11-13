@@ -33,8 +33,9 @@ doing. Do not send a password or a sign-in code: nobody at Aaru will ask for one
 
 ## People
 
-- **Report** a message, a post or a profile from its menu. Reports are read by the developer.
-- **Block** someone from their profile or from Friends. They are not told, and what they write
+- **Report** a message, a post, a comment or a profile from its menu. Reports are read by the developer.
+- **Block** someone from their profile, from Friends, or from the menu on their post, comment or
+  message. They are not told, and what they write
   is hidden from you.
 
 ## Rules and privacy

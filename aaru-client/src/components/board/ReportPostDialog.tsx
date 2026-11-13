@@ -28,18 +28,18 @@ const REASONS: { value: Reason; label: string }[] = [
   { value: 'other', label: 'Something else' },
 ]
 
-/** What is being reported: a Board post, a group message or a person, by its id and author. */
+/** What is being reported: a Board post or comment, a group message or a person, by its id and author. */
 export type Reported = {
-  kind: 'post' | 'group-message' | 'person'
-  /** The post or message id; a person's handle for kind `person`. */
+  kind: 'post' | 'comment' | 'group-message' | 'person'
+  /** The post, comment or message id; a person's handle for kind `person`. */
   id: string
   author: SocialUser
 }
 
 /**
- * Report a friend's post (BOARD-002) or a group message: why, from four reasons, and an optional
- * note. It goes to Aaru through the user-report route with the post or message named; the author
- * is not told.
+ * Report a friend's post (BOARD-002), a comment on it or a group message: why, from four reasons,
+ * and an optional note. It goes to Aaru through the user-report route with the post, comment or
+ * message named; the author is not told.
  */
 export default function ReportPostDialog(props: {
   open: boolean
@@ -47,9 +47,12 @@ export default function ReportPostDialog(props: {
   onClose: () => void
 }) {
   const noun = () =>
-    ({ post: 'post', 'group-message': 'message', person: 'person' })[
-      props.reported.kind
-    ]
+    ({
+      post: 'post',
+      comment: 'comment',
+      'group-message': 'message',
+      person: 'person',
+    })[props.reported.kind]
   const [reason, setReason] = createSignal<Reason | null>(null)
   const [note, setNote] = createSignal('')
   const [sending, setSending] = createSignal(false)
