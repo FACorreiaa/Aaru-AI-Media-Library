@@ -151,7 +151,7 @@ func TestAppleValidTokenYieldsSubjectLowercasedEmailAndRelayFlag(t *testing.T) {
 	identity, err := v.Verify(context.Background(), signJWT(t, "test-kid", key, appleClaimsFor(appleAudience, hashedNonce(), time.Now().Add(10*time.Minute))), rawNonce)
 	require.NoError(t, err)
 	email := "relay@privaterelay.appleid.com"
-	assert.Equal(t, AppleIdentity{Subject: "001234.apple-user", Email: &email, IsPrivateRelay: true}, identity)
+	assert.Equal(t, AppleIdentity{Subject: "001234.apple-user", Email: &email, IsPrivateRelay: true, Audience: appleAudience}, identity)
 }
 
 func TestAppleAcceptsAnAudienceArrayAndES256(t *testing.T) {

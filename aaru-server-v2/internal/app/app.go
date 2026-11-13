@@ -139,7 +139,9 @@ func serve(ctx context.Context, reader *config.Reader, log *slog.Logger) error {
 		telemetry.Install(deps.ProductEvents)
 	}
 	outbound := &http.Client{Timeout: 15 * time.Second}
-	deps.Auth, deps.AgentTokens = auth.FromConfig(cfg, pool, outbound)
+	if deps.Auth, deps.AgentTokens, err = auth.FromConfig(cfg, pool, outbound); err != nil {
+		return err
+	}
 	deps.OAuth = oauth.FromConfig(cfg, pool)
 	deps.Catalog = catalog.NewKit(pool,
 		catalog.NewProviders(cfg.TMDBAPIKey, cfg.ProviderUserAgent, provider.NewHTTPTransport()), log)

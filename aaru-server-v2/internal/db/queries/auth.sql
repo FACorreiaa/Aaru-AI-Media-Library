@@ -71,6 +71,18 @@ UPDATE shares SET note = NULL WHERE sender_id = @user_id::uuid;
 -- name: DeleteUser :exec
 DELETE FROM users WHERE id = @id;
 
+-- Sign in with Apple's refresh tokens (AUTH-006), sealed. The newest sign-in's token replaces
+-- the one kept for the same client id.
+
+-- name: KeepAppleRefreshToken :exec
+INSERT INTO apple_refresh_tokens (user_id, client_id, refresh_token)
+VALUES (@user_id, @client_id, @refresh_token)
+ON CONFLICT (user_id, client_id)
+DO UPDATE SET refresh_token = EXCLUDED.refresh_token, updated_at = now();
+
+-- name: AppleRefreshTokens :many
+SELECT client_id, refresh_token FROM apple_refresh_tokens WHERE user_id = @user_id ORDER BY client_id;
+
 -- Sessions.
 
 -- name: CreateSession :exec
