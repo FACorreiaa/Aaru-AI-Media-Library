@@ -213,7 +213,7 @@ type Node struct {
 	NSFW *string
 }
 
-// nsfwAdult is MAL's mark for a work that is not safe for work: its Rx titles.
+// nsfwAdult is MAL's mark for "This work is not safe for work" (its API reference).
 const nsfwAdult = "black"
 
 // Adult is MyAnimeList's half of the adult rule (CAT-023, owner 2026-11-13; catalog/adult.go):
