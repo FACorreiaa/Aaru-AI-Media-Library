@@ -149,7 +149,7 @@ func ParseGenericCSV(table CSVTable) ([]Row, error) {
 			Lists:     []string{},
 		}
 		if v := value(gfYear); v != nil {
-			row.Year = genericYear(*v)
+			row.Year = genericYear(*v, row.Type)
 		}
 		if v := value(gfStatus); v != nil {
 			row.Status = GenericStatus(*v)
@@ -188,12 +188,12 @@ func genericNumber(text string) (float64, bool) {
 }
 
 // genericYear is the first four-digit year in "2019", "2019-05-01" or "May 1, 2019".
-func genericYear(text string) *int {
+func genericYear(text string, kind core.MediaType) *int {
 	for _, piece := range splitFunc(text, func(r rune) bool { return !unicode.IsNumber(r) }) {
 		if charCount(piece) != 4 {
 			continue
 		}
-		if n, ok := swiftInt(piece); ok && core.ValidYear(n) {
+		if n, ok := swiftInt(piece); ok && core.ValidYear(kind, n) {
 			return &n
 		}
 		return nil

@@ -3,7 +3,8 @@
 /// Shared so the server and the clients reject the same inputs with the same words.
 public enum ValidationError: Error, Hashable, Sendable, CustomStringConvertible {
     case emptyTitle
-    case invalidYear(Int)
+    /// The year, and the earliest year its kind accepts.
+    case invalidYear(Int, earliest: Int)
     case ratingOutOfRange(Double)
     case ratingNotInHalfSteps(Double)
     case emptyListName
@@ -16,8 +17,8 @@ public enum ValidationError: Error, Hashable, Sendable, CustomStringConvertible 
         switch self {
         case .emptyTitle:
             "Title text must not be empty."
-        case let .invalidYear(year):
-            "Year \(year) is outside \(Title.validYears.lowerBound)–\(Title.validYears.upperBound)."
+        case let .invalidYear(year, earliest):
+            "Year \(year) is outside \(earliest)–\(Title.validYears.upperBound)."
         case let .ratingOutOfRange(value):
             "Rating \(value) is outside \(Rating.scale.lowerBound)–\(Rating.scale.upperBound)."
         case let .ratingNotInHalfSteps(value):

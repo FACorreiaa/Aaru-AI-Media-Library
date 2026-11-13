@@ -127,7 +127,7 @@ func (o *OpenLibrary) subject(ctx context.Context, subject string) ([]Hit, error
 		}
 		title := strings.Join(strings.Fields(*w.Title), " ")
 		doc := openLibraryDoc{Key: w.Key, Title: &title, CoverI: w.CoverID}
-		if w.FirstPublishYear != nil && *w.FirstPublishYear > 0 {
+		if w.FirstPublishYear != nil && core.ValidYear(core.MediaBook, *w.FirstPublishYear) {
 			doc.FirstPublishYear = w.FirstPublishYear
 		}
 		for _, a := range w.Authors {
@@ -189,9 +189,18 @@ func (d openLibraryDoc) hit() (Hit, bool) {
 		}
 	}
 	return Hit{
-		Type: core.MediaBook, Title: *title, Subtitle: nilIfBlank(d.Subtitle), Year: d.FirstPublishYear,
+		Type: core.MediaBook, Title: *title, Subtitle: nilIfBlank(d.Subtitle), Year: bookYear(d.FirstPublishYear),
 		PosterURL: poster, Byline: byline,
 		IDs:       core.ExternalIDs{ISBN: isbn, OpenLibrary: strings.TrimPrefix(d.Key, "/works/")},
 		PageCount: positive(d.NumberOfPagesMedian),
 	}, true
+}
+
+// bookYear is Open Library's first publish year when Aaru accepts it for a book. An older
+// or nonsense year is dropped, so the book is still found and added, just without a year.
+func bookYear(year *int) *int {
+	if year == nil || !core.ValidYear(core.MediaBook, *year) {
+		return nil
+	}
+	return year
 }

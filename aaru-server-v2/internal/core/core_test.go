@@ -90,8 +90,16 @@ func TestExternalIDs(t *testing.T) {
 
 func TestValidation(t *testing.T) {
 	assert.ErrorIs(t, Title{Type: MediaMovie, Title: "   "}.Validate(), &ValidationError{Kind: EmptyTitle})
-	assert.ErrorIs(t, Title{Type: MediaMovie, Title: "Nosferatu", Year: ptr(1600)}.Validate(), &ValidationError{Kind: InvalidYear, Year: 1600})
+	assert.ErrorIs(t, Title{Type: MediaMovie, Title: "Nosferatu", Year: ptr(1600)}.Validate(), &ValidationError{Kind: InvalidYear, Year: 1600, MinYear: MinYear})
 	assert.NoError(t, Title{Type: MediaMovie, Title: "Nosferatu", Year: ptr(1922)}.Validate())
+
+	// A book may be far older than film.
+	assert.NoError(t, Title{Type: MediaBook, Title: "Pride and Prejudice", Year: ptr(1813)}.Validate())
+	assert.NoError(t, MediaRef{Type: MediaBook, Title: ptr("Don Quixote"), Year: ptr(1605)}.Validate())
+	bookErr := Title{Type: MediaBook, Title: "Odd", Year: ptr(12)}.Validate()
+	assert.ErrorIs(t, bookErr, &ValidationError{Kind: InvalidYear, Year: 12, MinYear: MinBookYear})
+	assert.EqualError(t, bookErr, "Year 12 is outside 1000–2200.")
+	assert.ErrorIs(t, MediaRef{Type: MediaAlbum, Title: ptr("Old"), Year: ptr(1813)}.Validate(), &ValidationError{Kind: InvalidYear, Year: 1813, MinYear: MinYear})
 
 	assert.ErrorIs(t, AaruList{Name: " "}.Validate(), &ValidationError{Kind: EmptyListName})
 

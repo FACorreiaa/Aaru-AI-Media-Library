@@ -47,8 +47,9 @@ public struct MediaRef: Codable, Hashable, Sendable {
 
     public func validate() throws {
         guard isResolvable else { throw ValidationError.unresolvableMediaRef }
-        if let year, !Title.validYears.contains(year) {
-            throw ValidationError.invalidYear(year)
+        let years = Title.validYears(for: type)
+        if let year, !years.contains(year) {
+            throw ValidationError.invalidYear(year, earliest: years.lowerBound)
         }
     }
 }
