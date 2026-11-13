@@ -206,8 +206,14 @@ None to Graphic Sexual Content makes the app Unrated, which the App Store does n
    in review.
 4. **User-generated content needs a filter (guideline 1.2).** Apple asks for four things:
    filtering objectionable material, reporting, blocking, and published contact details.
-   Reporting (posts, group messages, people), blocking and a contact address exist. No filter
-   was found in the server: nothing screens a post, message, name or photo. Review may ask.
+   Reporting (posts, group messages, people), blocking and a contact address exist. **A word
+   filter exists since SOC-012 (2026-11-13):** the server refuses a short list of slurs, explicit
+   sexual terms and threats in Board posts and comments, group messages, group and channel names
+   and topics, recommendation and share-link notes, names and handles
+   (`aaru-server-v2/internal/moderation`), on Aaru's own server, before anything is saved. Still
+   open: it is English only and a word list, not a classifier; it does not look at photos
+   (avatars); and it does not scan what was saved before it shipped. Review may still ask about
+   photos.
 5. **Sharing with a third-party AI needs explicit permission (guideline 5.1.2(i)).** The
    guideline now reads: "You must clearly disclose where personal data will be shared with third
    parties, including with third-party AI, and obtain explicit permission before doing so." The

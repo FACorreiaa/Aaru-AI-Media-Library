@@ -1489,6 +1489,22 @@ Rules:
 - Friend activity and "Today" stories read `watch_events` and journaled progress, filtered by
   friendship and settings at query time. There is no fan-out table.
 
+### Word filter (SOC-012, owner 2026-11-13)
+
+Text one person writes for another to read passes `internal/moderation` before it is saved: Board
+posts and comments (`boards`), group messages, group names, channel names and topics (`groups`),
+recommendation notes and names and handles (`social`), share-link notes (`shares`). The services
+call `moderation.Check` after their own length rules; a hit is the one error 422
+`content_not_allowed`, which never names the word, and nothing is stored or logged but
+`aaru_content_refusals_total{surface}`. The name a sign-in brings is left out instead, so a sign-in
+is never refused. The list is one committed file (`words.txt`: slurs and hate phrases, explicit
+sexual terms, threats; English, short, precision first) matched on whole words after folding case,
+accents, leetspeak, stretched letters and letters spelled out with separators; a handle also
+refuses a few marked words anywhere inside it. No outside service and no model sees the text.
+Private text (library notes, a list's name, chats with Aaru), what `@aaru` writes, catalog names
+(a title channel named after its title) and anything saved before the filter are not checked.
+There is no table, no admin surface and no client rule: a client shows the server's message.
+
 ## Groups (pulled forward 2026-10-20)
 
 A group is a friends-only space with channels, like a small Discord server. Backlog:
