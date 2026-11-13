@@ -156,6 +156,34 @@ func (s *Store) createUser(ctx context.Context, identity Identity, displayName *
 	return id, nil
 }
 
+// CreateUserWithoutSignIn makes an account with no sign-in identity at all: no Apple, Google or
+// email identity reaches it, so nobody can ever sign in as it. Only the review seeder makes one
+// (REL-008's friend), and every other account row it needs (user_progress) is made as for a
+// sign-in's.
+func (s *Store) CreateUserWithoutSignIn(ctx context.Context, first, last *string) (uuid.UUID, error) {
+	id := uuid.New()
+	err := pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
+		q := s.q.WithTx(tx)
+		if err := q.CreateUser(ctx, sqlc.CreateUserParams{ID: id, FirstName: first, LastName: last, DisplayName: JoinName(first, last)}); err != nil {
+			return err
+		}
+		return q.CreateUserProgress(ctx, id)
+	})
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("create user without sign-in: %w", err)
+	}
+	return id, nil
+}
+
+// HasSignIn is true when any identity (Apple, Google, email) signs in to the user.
+func (s *Store) HasSignIn(ctx context.Context, id uuid.UUID) (bool, error) {
+	rows, err := s.q.UserIdentities(ctx, id)
+	if err != nil {
+		return false, fmt.Errorf("identities: %w", err)
+	}
+	return len(rows) > 0, nil
+}
+
 func (s *Store) addIdentity(ctx context.Context, identity Identity, userID uuid.UUID) error {
 	err := s.q.CreateAuthIdentity(ctx, sqlc.CreateAuthIdentityParams{
 		ID: uuid.New(), UserID: userID, Provider: string(identity.Provider), ProviderSubject: identity.Subject, Email: identity.Email,

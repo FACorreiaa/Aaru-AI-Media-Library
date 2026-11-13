@@ -1,4 +1,4 @@
-Sign in with the demo account above: on the first screen choose "Continue with email" and enter the address and the code given as the password. The account has a library, lists, a week of episodes, a friend and a group, so every tab has content.
+Sign in with the demo account above: on the first screen choose "Continue with email" and enter the address and the code given as the password. The account has a library across every kind with shows in progress, a friend (Mira) with a Board post, and a group, so every tab has content.
 
 What Aaru is: a private library for films, shows, anime, manga, books and albums. It plays nothing and sells nothing. Aaru Plus is not on sale in this version, so there is no purchase to test and no paywall is shown.
 
@@ -12,7 +12,7 @@ Where to look:
 Content from other people (guideline 1.2). It exists only between friends: there is no public profile, no public feed and no way to reach a stranger.
 - Friends tab: add a friend by handle or invite link. A profile has Report and Block.
 - Groups: the demo account is in one group with a second member and some messages. Long-press a message for Report. A blocked person's messages are hidden.
-- Board: a friends-only list of posts. A post has Report.
+- Board: a friends-only list of posts; Mira's post and its comments are there. A post has Report.
 - Reports reach the developer, who can remove content and close accounts. The terms (https://aaruapp.com/terms) set the rules.
 
 Location is asked for only when you ask for concerts near you, in Music; it is read once, approximately, and not stored. The microphone is asked for only when you choose to speak to the assistant instead of typing.

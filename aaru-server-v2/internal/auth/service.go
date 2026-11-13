@@ -254,11 +254,31 @@ func (s *Service) VerifyEmailCode(ctx context.Context, rawEmail, rawCode string)
 }
 
 func (s *Service) signInEmail(ctx context.Context, email string) (NewSession, error) {
-	userID, err := s.findOrCreateUser(ctx, Identity{Provider: ProviderEmail, Subject: email, Email: &email}, nil)
+	userID, err := s.emailUser(ctx, email)
 	if err != nil {
 		return NewSession{}, err
 	}
 	return s.issueSession(ctx, userID)
+}
+
+// emailUser is the account an email sign-in reaches, made on the first one.
+func (s *Service) emailUser(ctx context.Context, email string) (uuid.UUID, error) {
+	return s.findOrCreateUser(ctx, Identity{Provider: ProviderEmail, Subject: email, Email: &email}, nil)
+}
+
+// EnsureEmailUser is the account a magic-link sign-in with rawEmail reaches, made exactly as the
+// first sign-in would make it, and whether this call made it. No session is issued and no mail
+// is sent. The review seeder (REL-008) uses it, so the reviewer's own sign-in finds the account.
+func (s *Service) EnsureEmailUser(ctx context.Context, rawEmail string) (uuid.UUID, bool, error) {
+	email, err := NormalizedEmail(rawEmail)
+	if err != nil {
+		return uuid.Nil, false, err
+	}
+	if id, found, err := s.Store.userFor(ctx, ProviderEmail, email); err != nil || found {
+		return id, false, err
+	}
+	id, err := s.emailUser(ctx, email)
+	return id, err == nil, err
 }
 
 // SignOut deletes exactly the presented session (AUTH-004).

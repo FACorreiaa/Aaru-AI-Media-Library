@@ -1,5 +1,5 @@
 // Package app wires the server: config, database, handlers, background
-// workers, and the one-shot modes (`--db-migrate`, `--anime-mappings`).
+// workers, and the one-shot modes (`--db-migrate`, `--anime-mappings`, `--seed-review`).
 package app
 
 import (
@@ -19,6 +19,7 @@ import (
 	"aaru-go-api/internal/oauth"
 	"aaru-go-api/internal/provider"
 	"aaru-go-api/internal/push"
+	"aaru-go-api/internal/reviewseed"
 	"aaru-go-api/internal/safe"
 	"aaru-go-api/internal/schedule"
 	"aaru-go-api/internal/sports"
@@ -51,7 +52,44 @@ func Run(ctx context.Context, args []string) error {
 	if source, ok := reader.Lookup("anime.mappings"); ok {
 		return loadAnimeMappings(ctx, reader, source, log)
 	}
+	if reader.Bool("seed.review") {
+		return seedReview(ctx, reader, log)
+	}
 	return serve(ctx, reader, log)
+}
+
+// seedReview is REL-008's `aaru --seed-review`: fills App Review's account and exits. It reads
+// the API's whole configuration (the catalog keys resolve the titles) and needs the review
+// account set. Running it again changes nothing.
+func seedReview(ctx context.Context, reader *config.Reader, log *slog.Logger) error {
+	cfg, err := config.Load(reader)
+	if err != nil {
+		return err
+	}
+	if cfg.Review == nil {
+		return errors.New("--seed-review needs the review account: set REVIEW_EMAIL and REVIEW_CODE")
+	}
+	pool, err := db.Open(ctx, cfg.Postgres)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
+	if err := db.WaitFor(ctx, pool, 10, 3*time.Second, log); err != nil {
+		return err
+	}
+	kit := catalog.NewKit(pool,
+		catalog.NewProviders(cfg.TMDBAPIKey, cfg.ProviderUserAgent, provider.NewHTTPTransport()), log)
+	report, err := reviewseed.New(pool, kit, log).Run(ctx, cfg.Review.Email)
+	if err != nil {
+		return fmt.Errorf("review seed: %w", err)
+	}
+	log.Info("Review seed done",
+		"reviewerCreated", report.ReviewerCreated, "friendCreated", report.FriendCreated,
+		"reviewerItemsAdded", report.ReviewerLibrary.Added, "friendItemsAdded", report.FriendLibrary.Added,
+		"titlesFailed", report.ReviewerLibrary.Failed+report.FriendLibrary.Failed,
+		"blocked", report.Blocked, "friendshipMade", report.FriendshipMade, "postCreated", report.PostCreated,
+		"groupCreated", report.GroupCreated, "messagesAdded", report.Messages.Added)
+	return nil
 }
 
 func migrate(ctx context.Context, reader *config.Reader, log *slog.Logger) error {
