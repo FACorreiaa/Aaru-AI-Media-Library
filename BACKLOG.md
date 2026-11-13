@@ -1102,6 +1102,7 @@ account or a stranger that has not happened yet.
 | SOC-009 | Open | none | |
 | SOC-010 | Open | none | |
 | SOC-011 | Open | none | |
+| SOC-012 | Built, unverified | Word filter on text one person writes for another (owner 2026-11-13, App Store guideline 1.2): `internal/moderation` (a short reviewed list in `words.txt`: slurs and hate phrases, explicit sexual terms, threats; whole words after case, accents, leetspeak, stretched letters and spelled-out letters). Refuses Board posts and comments, group messages, group and channel names and topics, recommendation and share-link notes, names and handles with 422 `content_not_allowed`; a refused sign-in name is left out. `aaru_content_refusals_total{surface}`. Matcher tests, `content_filter_test.go` | English only; no photos; nothing already saved is scanned; no outside service, no model. Terms sentence waits for the owner's yes |
 | NAV-004 | Open | none | |
 | SHR-001 | Open | none | |
 | SHR-002 | Built, unverified | server #215 (promoted, infra #482); web #216; web visitor limits #217; iOS plan `docs/superpowers/plans/2026-10-28-share-links-03-ios.md` with the `/s/*` universal link | open a link from Messages on a TestFlight device; deploy the prod Worker (AASA) after that build is out |

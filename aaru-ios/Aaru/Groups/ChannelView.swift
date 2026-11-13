@@ -165,6 +165,11 @@ struct ChannelView: View {
                     takeBack(held)
                 }
             }
+            .onChange(of: model.heldForChange) { _, held in
+                if let held {
+                    takeBackToChange(held)
+                }
+            }
             .aiSharingAsk(isPresented: $askingAISharing, model: aiSharing, onAllowed: submit)
             .confirmationDialog(
                 "Delete this group message?",
@@ -244,22 +249,6 @@ struct ChannelView: View {
         }
     }
 
-    /// The server refused a message that tags `@aaru` (the answer changed on another device): it
-    /// goes back to the composer, and the ask shows here.
-    private func takeBack(_ held: ChannelModel.Outgoing) {
-        model.heldForAISharing = nil
-        if draft.isEmpty {
-            draft = held.body
-            spoiler = held.spoiler
-        }
-        if let aiSharing {
-            aiSharing.serverRefused()
-            askingAISharing = true
-        } else {
-            model.problem = String(localized: "That was not sent.")
-        }
-    }
-
     private func markRead() {
         Task {
             if await model.markRead() {
@@ -278,6 +267,30 @@ struct ChannelView: View {
 }
 
 extension ChannelView {
+    /// SOC-012: the server refused a message for its words. It goes back to the composer to be
+    /// changed, ahead of anything typed since; the banner says why.
+    private func takeBackToChange(_ held: ChannelModel.Outgoing) {
+        model.heldForChange = nil
+        draft = draft.isEmpty ? held.body : held.body + "\n" + draft
+        spoiler = held.spoiler
+    }
+
+    /// The server refused a message that tags `@aaru` (the answer changed on another device): it
+    /// goes back to the composer, and the ask shows here.
+    private func takeBack(_ held: ChannelModel.Outgoing) {
+        model.heldForAISharing = nil
+        if draft.isEmpty {
+            draft = held.body
+            spoiler = held.spoiler
+        }
+        if let aiSharing {
+            aiSharing.serverRefused()
+            askingAISharing = true
+        } else {
+            model.problem = String(localized: "That was not sent.")
+        }
+    }
+
     private var messageRows: some View {
         ForEach(MessageLine.lines(model.messages, firstUnreadID: model.firstUnreadID)) { line in
             if let day = line.day {

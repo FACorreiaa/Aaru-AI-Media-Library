@@ -30,6 +30,8 @@ var (
 	LLMCalls = counter("aaru_llm_calls_total", "Model calls by provider and result.", "provider", "result")
 	// SocialReports are saved user reports by reason; the owner alerts on it (R4).
 	SocialReports = socialReports()
+	// ContentRefusals are writes the word filter refused, by surface (SOC-012). Never the text.
+	ContentRefusals = contentRefusals()
 
 	inFlight = prometheus.NewGauge(prometheus.GaugeOpts{Name: "aaru_http_in_flight", Help: "HTTP requests being handled now."})
 	duration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
@@ -52,6 +54,22 @@ func socialReports() *prometheus.CounterVec {
 	c := counter("aaru_social_reports_total", "Saved user reports, by reason.", "reason")
 	for _, r := range reportReasons {
 		c.WithLabelValues(r)
+	}
+	return c
+}
+
+// ContentRefusalSurfaces are moderation.Surfaces' values (moderation imports this package, so
+// they are repeated here; a test there keeps the two the same).
+var ContentRefusalSurfaces = []string{
+	"board_post", "board_comment", "group_message", "group_name", "channel_name",
+	"channel_topic", "recommendation_note", "share_note", "profile_name", "handle",
+}
+
+// contentRefusals starts every surface at 0, as socialReports does.
+func contentRefusals() *prometheus.CounterVec {
+	c := counter("aaru_content_refusals_total", "Writes the word filter refused, by surface.", "surface")
+	for _, s := range ContentRefusalSurfaces {
+		c.WithLabelValues(s)
 	}
 	return c
 }
@@ -105,6 +123,7 @@ func Reset() {
 	Push = counter("aaru_push_total", "Push sends by channel (apns, web, live_activity) and result.", "channel", "result")
 	LLMCalls = counter("aaru_llm_calls_total", "Model calls by provider and result.", "provider", "result")
 	SocialReports = socialReports()
+	ContentRefusals = contentRefusals()
 	inFlight = prometheus.NewGauge(prometheus.GaugeOpts{Name: "aaru_http_in_flight", Help: "HTTP requests being handled now."})
 	duration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Name:    "aaru_http_request_duration_seconds",

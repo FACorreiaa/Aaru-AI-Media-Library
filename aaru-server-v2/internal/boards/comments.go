@@ -3,6 +3,7 @@ package boards
 import (
 	"aaru-go-api/internal/apperr"
 	"aaru-go-api/internal/groups"
+	"aaru-go-api/internal/moderation"
 	"context"
 
 	"github.com/google/uuid"
@@ -101,6 +102,9 @@ func (s *Service) AddComment(ctx context.Context, post uuid.UUID, body string, r
 	}
 	body, err = ValidBody(body)
 	if err != nil {
+		return Comment{}, err
+	}
+	if err := moderation.Check(moderation.SurfaceBoardComment, body); err != nil {
 		return Comment{}, err
 	}
 	var parent *uuid.UUID

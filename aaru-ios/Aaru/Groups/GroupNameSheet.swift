@@ -4,6 +4,8 @@ import SwiftUI
 struct GroupNameSheet: View {
     let title: String
     let initial: String
+    /// Why the last save was refused, in the server's words. The sheet covers the screen's banner.
+    let problem: String?
     /// True when saved; the sheet then closes.
     let onSave: (String) async -> Bool
 
@@ -25,6 +27,9 @@ struct GroupNameSheet: View {
                         .onSubmit(save)
                 } footer: {
                     Text("Only friends you invite can find it.")
+                }
+                if let problem {
+                    Text(problem).foregroundStyle(Color(.danger))
                 }
             }
             .paperPage()

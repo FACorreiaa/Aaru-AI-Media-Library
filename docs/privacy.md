@@ -110,6 +110,14 @@ with the report's id and reason, never your note or anyone's account id. The dev
 reports in the database. Deleting your account removes all of it; a report someone sent about you keeps its reason
 but no longer points to you.
 
+**Words Aaru refuses.** When you write something another person can read (a Board post or comment,
+a group message, a group or channel name or topic, a note on a recommendation or a share link, your
+name or your handle), Aaru's own server checks it against a short list of words before saving it.
+The text is not sent to anyone else for this, and no AI reads it for this. If it is refused,
+nothing is saved and the text is not logged: Aaru adds one to a count for the kind of place
+(a post, a message, a name), never the text or your account id. Your notes, your lists and your chats
+with Aaru are not checked.
+
 **What your friends see.** Your friends, and only your friends, see what you are watching, what
 you finished and when, your ratings, the last episode you ticked, and which titles you both have.
 They never see your notes. Episodes you imported or restored don't show up as activity. Turn off

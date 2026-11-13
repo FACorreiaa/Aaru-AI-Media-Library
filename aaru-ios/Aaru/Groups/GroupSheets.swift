@@ -95,18 +95,21 @@ struct GroupPresentation: ViewModifier {
     private func sheetContent(_ sheet: GroupSheet) -> some View {
         switch sheet {
         case .create:
-            GroupNameSheet(title: String(localized: "New group"), initial: "") { name in
+            GroupNameSheet(title: String(localized: "New group"), initial: "", problem: groups.problem) { name in
                 guard let detail = await groups.create(named: name) else { return false }
                 onCreated(detail)
                 return true
             }
+            .onAppear { groups.problem = nil }
         case let .rename(groupID):
             GroupNameSheet(
                 title: String(localized: "Rename group"),
-                initial: groups.details[groupID]?.group.name ?? ""
+                initial: groups.details[groupID]?.group.name ?? "",
+                problem: groups.problem
             ) { name in
                 await groups.rename(groupID, to: name)
             }
+            .onAppear { groups.problem = nil }
         case let .invite(groupID):
             InviteFriendsSheet(groups: groups, groupID: groupID) {
                 settingsAfterSheet = .friends

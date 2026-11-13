@@ -15,6 +15,7 @@ package auth
 import (
 	"aaru-go-api/internal/apperr"
 	"aaru-go-api/internal/core"
+	"aaru-go-api/internal/moderation"
 	"aaru-go-api/internal/ratelimit"
 	"aaru-go-api/internal/token"
 	"context"
@@ -303,7 +304,8 @@ func (s *Service) findOrCreateUser(ctx context.Context, identity Identity, displ
 	}
 	var name *string
 	if displayName != nil {
-		if trimmed := strings.TrimSpace(*displayName); trimmed != "" {
+		// A name the word filter refuses is left out rather than refusing the sign-in (SOC-012).
+		if trimmed := strings.TrimSpace(*displayName); trimmed != "" && moderation.Allowed(moderation.SurfaceProfileName, trimmed) {
 			name = &trimmed
 		}
 	}

@@ -97,6 +97,9 @@ export function MessageList(props: {
 
   const [messages, setMessages] = createSignal<GroupMessage[]>(props.initial)
   const [pending, setPending] = createSignal<PendingMessage[]>([])
+  // A failed message's text on its way back to the box; a new object each time, so the same
+  // text can come back twice.
+  const [draft, setDraft] = createSignal<{ body: string } | null>(null)
   const [hasOlder, setHasOlder] = createSignal(
     props.initial.length >= PAGE_SIZE,
   )
@@ -344,9 +347,22 @@ export function MessageList(props: {
       })
       setMessages(mergeMessages(messages(), [saved]))
       setPending(settlePending(pending(), item.nonce))
-    } catch {
-      setPending(failPending(pending(), item.nonce))
+    } catch (error) {
+      // The server's reason (a refused word, a missing handle) shows on the failed message.
+      setPending(
+        failPending(
+          pending(),
+          item.nonce,
+          error instanceof Error && error.message ? error.message : undefined,
+        ),
+      )
     }
+  }
+
+  /** Puts a failed message's text back in the box to change it, and drops the failed copy. */
+  function editFailed(item: PendingMessage) {
+    setDraft({ body: item.body })
+    setPending(settlePending(pending(), item.nonce))
   }
 
   function send(body: string) {
@@ -805,7 +821,9 @@ export function MessageList(props: {
                           </div>
                           <Show when={p().state === 'failed'}>
                             <p class="mt-0.5 flex items-center gap-3 text-xs">
-                              <span class="text-danger">Not sent.</span>
+                              <span class="text-danger" role="alert">
+                                {p().problem ?? 'Not sent.'}
+                              </span>
                               <Button
                                 variant="ghost"
                                 size="bare"
@@ -816,6 +834,14 @@ export function MessageList(props: {
                                 }}
                               >
                                 Retry
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="bare"
+                                class="font-normal"
+                                onClick={() => editFailed(p())}
+                              >
+                                Edit
                               </Button>
                               <Button
                                 variant="ghost"
@@ -875,6 +901,7 @@ export function MessageList(props: {
         agent={scope.detail().agent}
         meId={meId()}
         onSend={send}
+        draft={draft()}
         onTyping={() => sendTyping(groupId(), props.channel.id)}
         accessory={spoilerControl()}
       />

@@ -61,7 +61,7 @@ Don't use Aaru to:
 
 Aaru is friends-only by design: there is no public feed and no public profile. These rules apply
 to every place where another person can read what you wrote: Boards, groups, recommendations, share
-links, profiles, handles and photos.
+links, profiles, handles and photos. In those places Aaru refuses some words when you post.
 
 ## Reporting and blocking
 
