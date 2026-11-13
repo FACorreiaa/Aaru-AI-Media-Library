@@ -95,7 +95,8 @@ deletes it.
 **Your email.** Friends see your email only while "Friends can see my email" is on in your
 profile, and it is off until you turn it on. Group members never see it. An Apple "Hide My Email"
 address cannot be shared, because it takes mail only from Aaru. Aaru stores pending requests, who your friends are, who you blocked, and any report you
-send about another user, a Board post or a group message (the reason and your note). You can
+send about another user, a Board post or comment, or a group message (the reason and your note,
+which starts with the id of the post, comment or message). You can
 report a person from their profile too. The person you block or report is not
 told. When a report is saved, Aaru adds one to a count for its reason and writes one log line
 with the report's id and reason, never your note or anyone's account id. The developer reads
