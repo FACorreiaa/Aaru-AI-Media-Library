@@ -693,6 +693,10 @@ Anime is first-class from Phase 1 (CAT-007…009).
   `releaseDate`.
 - Every anime title stores `anilist`, `mal`, and `anidb` ids when known, plus `tmdb` when a
   cross-id exists.
+- **No adult works (CAT-023).** The catalog never offers a work its provider marks adult (AniList
+  `isAdult`, TMDB `adult`, MyAnimeList `nsfw: black`): lists filter in `internal/catalog/adult.go`,
+  a read by id still answers so a title already held refreshes, and the resolver makes no new
+  title of one, which an import reports as a row not matched.
 - Matching: exact AniList↔TMDB cross-ids first. Never merge an AniList entry and a TMDB entry
   on name alone. An AniList season that TMDB folds into one show stays a separate `Title`
   unless a cross-id says otherwise.
@@ -700,7 +704,7 @@ Anime is first-class from Phase 1 (CAT-007…009).
   `MediaType`. Progress, calendar, Up Next, and widgets share one code path, and an anime film
   is still a movie. TMDB hits are flagged when they are Japanese animation.
 - **Manga (MNG-001).** Search, hydrate and MAL batches pass `type: MANGA` (search adds
-  `isAdult: false`), and manga asks for `chapters volumes` and the first staff credits whose role
+  `isAdult: false`, as every AniList list does), and manga asks for `chapters volumes` and the first staff credits whose role
   is Story or Art. A MAL id on a manga row is looked up among manga only and never goes through
   `anime_mappings`. There is no TMDB stand-in: while AniList is down, manga search is empty and
   says so.

@@ -34,6 +34,19 @@ library layer stay separate, external IDs stored whenever known, no second backe
 - **Anime is first-class from P1** (AniList catalog, `anilist`/`mal`/`anidb` external IDs).
 - DMs are **Signal-grade (libsignal)**. Licence and web support are OPEN — see DM-003, DM-004.
 
+## Decisions recorded 2026-11-13
+
+Owner, 2026-11-13: the App Store age rating answers "Graphic sexual content: none", and an audit
+found the catalog could return adult works (anime search had no filter). This is **CAT-023**, and
+it blocks the 1.0 submission.
+
+- **The catalog never offers adult works.** Search, Discover, relations, the title tree and every
+  other catalog read leave out a work its provider marks adult: AniList `isAdult`, TMDB `adult`,
+  MyAnimeList `nsfw: black`. Open Library and MusicBrainz have no such mark and are not filtered.
+- **Imports and the MyAnimeList read-back** skip an adult entry and report it as not matched, with
+  a count, never as a failed job.
+- **Nothing is deleted.** A title already in someone's library stays and keeps reading.
+
 ## Decisions recorded 2026-11-12
 
 Owner, 2026-11-12: App Store guidelines 5.1.1(i) and 5.1.2(i) ask that an app say what it sends to
@@ -1051,6 +1064,7 @@ account or a stranger that has not happened yet.
 | CAT-020 | Dropped | superseded by DISC-001 | |
 | CAT-021 | Built | AniListCatalog.classify, TMDB anime stand-in | Stub tests; live AniList outage 2026-10-21 |
 | CAT-022 | Open | none | AniDB's terms and a registered client name to check first |
+| CAT-023 | Built | `internal/catalog/adult.go`; adult_test.go (catalog, httpapi), mal rules_test | Stub tests; not promoted. Titles and cached relations from before the rule stay |
 | UPN-002 | Done | #43; ScheduleTests UPN-002 | |
 | GAM-006c | Done | #43; StatsTests "all time equals the years summed" | |
 | GAM-006d | Done | #65; StatsTests GAM-006d, insights/home model tests | iOS not run on a device |
@@ -3031,6 +3045,21 @@ mylist, no HTTP API, no scraping.
 
 **Done when:** an anime found only by an AniDB synonym (a romaji or short name AniList lacks) is
 a search hit, a second load the same day downloads nothing, and About shows AniDB's credit.
+
+### CAT-023 · No adult works in the catalog · S · owner, 2026-11-13
+**Needs:** CAT-002, CAT-007.
+The App Store age rating answers "Graphic sexual content: none"; the catalog has to make it true.
+A work its provider marks adult (AniList `isAdult`, TMDB `adult`, MyAnimeList `nsfw: black`) is
+left out of search, Discover, Seasons, first-run picks, relation graphs and the title tree. One
+place per provider holds the rule (`internal/catalog/adult.go`, `mal.Node.Adult`). A read by id
+still answers, so a title already in a library refreshes; the resolver makes no new title of an
+adult work. An import row or a MyAnimeList read-back entry for one is reported as not matched
+("Adult titles are not in Aaru's catalog.") and the job goes on. No row is deleted and no table
+added. Open Library and MusicBrainz have no adult mark; nothing is filtered there.
+
+**Done when:** an anime search sends `isAdult: false` and drops an adult entry the provider sends
+anyway, an import with an adult row finishes with that row counted as not matched, and a library
+row for an adult title that was already held still reads.
 
 ### UPN-002 · Library counts and Unfinished business · S
 **Needs:** UPN-001.
