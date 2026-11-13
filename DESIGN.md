@@ -959,8 +959,9 @@ friends, activity, leaderboard, Invite, requests, friends). No nav rename, Group
 - **Post page** (`/app/friends/posts/$postId`). The post, the upvoters' names beside the Upvote
   button, then the thread: comments with one level of replies. Reply is a visible button; when
   answering a reply it prefills `@name`. A deleted comment with replies reads "Comment deleted"
-  in muted text with its replies still under it. Menus: Edit, Delete and Report on a post;
-  Delete sits in a comment's ⋯ menu.
+  in muted text with its replies still under it. Menus: Edit and Delete on your post, Report
+  and Block on a friend's; a comment's ⋯ menu holds Report comment and Block for someone else's,
+  and Delete where you may. A group message offers Report and Block the same way.
 - **From friends on a title.** After the notes on a title page: up to five post rows about this
   title and "Write about this" (to Friends with the title in the composer). Hidden when there
   are no posts and no friends.

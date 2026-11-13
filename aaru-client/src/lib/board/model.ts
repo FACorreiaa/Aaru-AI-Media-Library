@@ -196,12 +196,12 @@ export function prefillReply(text: string, from: string, to: string): string {
   return rest.startsWith(to) ? rest : to + rest
 }
 
-/** What a report names: a Board post, a group message, or a person's profile (by handle). */
-export type ReportKind = 'post' | 'group-message' | 'person'
+/** What a report names: a Board post or comment, a group message, or a person's profile (by handle). */
+export type ReportKind = 'post' | 'comment' | 'group-message' | 'person'
 
 /**
  * The note a report carries: which thing it is about, then the reporter's words. A person is
- * `profile:@<handle>`; a post or message is `<kind>:<id>`. The author is not told.
+ * `profile:@<handle>`; a post, comment or message is `<kind>:<id>`. The author is not told.
  */
 export function reportNote(
   kind: ReportKind,

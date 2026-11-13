@@ -70,6 +70,8 @@ import {
 } from './AgentParts'
 import { Monogram, useGroup, useShell, useVisiblePoll } from './shell'
 import type { Reported } from '../board/ReportPostDialog'
+import { BlockDialog } from '../BlockDialog'
+import type { SocialUser } from '../../lib/social/server'
 
 // Reporting is rare: its dialog loads when someone first asks for it.
 const ReportPostDialog = lazy(() => import('../board/ReportPostDialog'))
@@ -108,6 +110,19 @@ export function MessageList(props: {
   // The message someone is reporting. Kept after the dialog closes so it can play its exit.
   const [reporting, setReporting] = createSignal<Reported | null>(null)
   const [reportOpen, setReportOpen] = createSignal(false)
+  // The member someone is blocking. Kept after the dialog closes so it can play its exit.
+  const [blocking, setBlocking] = createSignal<SocialUser | null>(null)
+  const [blockOpen, setBlockOpen] = createSignal(false)
+
+  /** Their messages collapse at once, as the server sends them from now on. */
+  function blocked(person: SocialUser) {
+    setBlockOpen(false)
+    setMessages(
+      messages().map((m) =>
+        m.author?.userId === person.userId ? { ...m, fromBlocked: true } : m,
+      ),
+    )
+  }
   const [typists, setTypists] = createSignal<Typist[]>([])
   // Title channels (GRP-007): how my next message is marked, and veils I lifted.
   const isTitle = createMemo(() => props.channel.kind === 'title')
@@ -726,6 +741,25 @@ export function MessageList(props: {
                                 </Button>
                               )}
                             </Show>
+                            <Show
+                              when={
+                                reportable() && !m().fromBlocked && m().author
+                              }
+                            >
+                              {(author) => (
+                                <Button
+                                  variant="soft"
+                                  size="bare"
+                                  class="rounded-none px-2.5 py-1 font-normal text-danger"
+                                  onClick={() => {
+                                    setBlocking(author())
+                                    setBlockOpen(true)
+                                  }}
+                                >
+                                  Block
+                                </Button>
+                              )}
+                            </Show>
                           </div>
                         </Show>
                       </article>
@@ -854,6 +888,16 @@ export function MessageList(props: {
               onClose={() => setReportOpen(false)}
             />
           </Suspense>
+        )}
+      </Show>
+      <Show when={blocking()}>
+        {(person) => (
+          <BlockDialog
+            open={blockOpen()}
+            person={person()}
+            onBlocked={blocked}
+            onClose={() => setBlockOpen(false)}
+          />
         )}
       </Show>
     </section>

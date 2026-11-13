@@ -98,7 +98,8 @@ deletes it.
 **Your email.** Friends see your email only while "Friends can see my email" is on in your
 profile, and it is off until you turn it on. Group members never see it. An Apple "Hide My Email"
 address cannot be shared, because it takes mail only from Aaru. Aaru stores pending requests, who your friends are, who you blocked, and any report you
-send about another user, a Board post or a group message (the reason and your note). You can
+send about another user, a Board post or comment, or a group message (the reason and your note,
+which starts with the id of the post, comment or message). You can
 report a person from their profile too. The person you block or report is not
 told. When a report is saved, Aaru adds one to a count for its reason and writes one log line
 with the report's id and reason, never your note or anyone's account id. The developer reads
@@ -259,7 +260,8 @@ appear only in your Sports tab: never on your profile, to friends, in your libra
 stats. The export includes them.
 
 **Error reports.** When the app, the website, the browser extension or Aaru's server hits an
-error or crashes, it sends a report to Sentry: what failed, where in Aaru's code, the device or
+error or crashes, or the app on iPhone or Mac stops responding for a few seconds, it sends a
+report to Sentry: what failed, where in Aaru's code, the device or
 browser type and app version, and the page address without anything after the `?`. It never
 includes your name, email, what is in your library or what you wrote. On Netflix, Disney+ and
 Prime Video the extension reports only the site, never the page you were on.

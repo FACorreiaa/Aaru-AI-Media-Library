@@ -908,6 +908,7 @@ account or a stranger that has not happened yet.
 | REL-004 | Done | #3, #4; `release-apple.yml` succeeds on every main merge | iOS + macOS lanes; `release` dispatch-only |
 | REL-005 | Done | infra #292, #321, #376; `api.aaruapp.com/v1/health` = 200 | INFRA_TOKEN unset: Server Deploy run is red, promote PRs opened by hand |
 | REL-006 | Done | #20, #21; `web-deploy.yml` (beta on merge, prod on dispatch) | |
+| REL-007 | Built, unverified | `aaru-ios/{Aaru,AaruWidgets}/PrivacyInfo.xcprivacy`; `docs/app-store-privacy.md`; `plutil -lint`, iOS Simulator + macOS builds bundle both | Never uploaded: no ITMS mail and no Xcode privacy report seen (needs a signed archive). Owner fills in App Store Connect from the sheet; Part C lists what to settle first |
 | DSN-001 | Dropped | DESIGN.md:421 "ScreensDesign was not used" | Optional item, skipped (Pro plan) |
 | BRD-001 | Built | #145; `ci-brand.yml` required by the main ruleset | Owner checks TestFlight + beta web in light and dark |
 | BRD-002 | Built | #147 | App icon approved by the owner 2026-10-22 (large + small variant) |
@@ -1204,7 +1205,8 @@ what the file's own rules, `MARKETING.md`'s launch gate or App Store review alre
 | 8 | The P2 gate: 0 strangers | Open | owner |
 | 9 | REL-004 says "iOS + macOS lanes", but `Fastfile` has `PLATFORMS = %w[ios]`: the Mac lane waits for a Mac Installer Distribution certificate, or iPhone ships first | Open | owner decides |
 | 10 | This file: 22 ids have no status row (ASK-001…010, BOARD-004, DISC-004/005, NAV-001/002/003/005, SPT-001…005), and the summary rows above are stale (P4 "0/8", P6 "Nothing on main", P2 31/54 against 29/54) | Open | docs |
-| 11 | AI data sharing consent before anything goes to Anthropic (App Store 5.1.1(i), 5.1.2(i); PRV-002) | Built in #296 (2026-11-13); needs the API promoted and a look on TestFlight | code + owner |
+| 11 | App Store 1.2: a Board comment could not be reported, and a comment's or group message's author (who need not be your friend) could not be blocked from where you read them | Done on `feat/report-everywhere` (2026-11-13): Report comment (`comment:<id>` in the note) and Block on posts, comments and group messages, iPhone, Mac and web. No server change. Not tried on a device. R4's alert is still the owner's: until it exists nobody is told a report arrived | code + owner |
+| 12 | AI data sharing consent before anything goes to Anthropic (App Store 5.1.1(i), 5.1.2(i); PRV-002) | Built in #296 (2026-11-13); needs the API promoted and a look on TestFlight | code + owner |
 
 ## Phase map
 
@@ -1309,6 +1311,18 @@ infra.
 deploys with `wrangler deploy`: staging on every merge to `main`, prod on manual dispatch.
 
 **Done when:** a merge to `main` updates the beta Worker URL, and prod moves only on dispatch.
+
+### REL-007 · Privacy manifests and App Store privacy answers · S
+**Needs:** REL-002.
+Both `PrivacyInfo.xcprivacy` files say what the binaries do: every required-reason API the app's
+own code uses, with Apple's reason code, and every data type `docs/privacy.md` and the code show
+Aaru collects. `docs/app-store-privacy.md` is the sheet the owner fills App Store Connect from:
+App Privacy, the age rating questionnaire, and what makes an honest answer awkward. A new
+collected data type, SDK or required-reason API changes the manifest and the sheet in the same PR.
+
+**Done when:** an upload to App Store Connect brings no ITMS-91053/91056 mail, Xcode's privacy
+report for the archive matches the sheet, and the App Privacy label and age rating are saved
+from it.
 
 ### DSN-001 · ScreensDesign pass on tracker apps · S · optional
 The ScreensDesign MCP research tools need a Pro plan (blocked on 2026-10-09). If it is bought,

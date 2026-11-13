@@ -4282,6 +4282,9 @@
     "Report" : {
 
     },
+    "Report comment" : {
+
+    },
     "Report post" : {
 
     },
@@ -4992,6 +4995,9 @@
 
     },
     "That person was not blocked." : {
+
+    },
+    "That person was not blocked. Aaru could not reach the server." : {
 
     },
     "That person was not unblocked." : {
@@ -6295,6 +6301,9 @@
 
     },
     "books read" : {
+
+    },
+    "comment" : {
 
     },
     "day" : {

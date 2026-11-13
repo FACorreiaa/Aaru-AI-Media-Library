@@ -13,7 +13,7 @@ disagree about data, the privacy policy wins.
   service on your own.
 - Your library is yours. What you post to friends and groups is your responsibility.
 - Don't harass people, spam, post anything illegal, or pretend to be someone else.
-- You can **report** a post, a group message or a person, and **block** anyone. Reports are read
+- You can **report** a post, a comment, a group message or a person, and **block** anyone. Reports are read
   by the developer, who can remove content or close accounts.
 - Aaru comes **as it is**, with no warranty.
 - You can **delete your account** in Settings whenever you like.
@@ -66,7 +66,7 @@ links, profiles, handles and photos.
 ## Reporting and blocking
 
 You can **block** any person, which hides you from each other. You can **report** a Board post, a
-group message or a person from their profile. A report carries a reason and an optional note. The
+comment on one, a group message or a person from their profile. A report carries a reason and an optional note. The
 person you report or block is not told.
 
 Reports are read by the developer, who runs Aaru. The developer may remove content, warn a person,

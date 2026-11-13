@@ -6,8 +6,8 @@ import SwiftUI
 /// one level of replies hung under the comment they answer on a hairline. A deleted comment that
 /// still has replies stays as a muted "Comment deleted" with no author. Reply answers the
 /// top-level comment; Delete is yours, or anyone's on your post. Both sit in the context menu and
-/// the swipe, and Reply is a visible button too. More comes by "Show more comments", never by
-/// scrolling.
+/// the swipe, and Reply is a visible button too. Someone else's comment can be reported and its
+/// author blocked, from the context menu. More comes by "Show more comments", never by scrolling.
 struct CommentThread: View {
     let model: PostModel
     /// The post is yours: you may delete any comment on it.
@@ -19,6 +19,10 @@ struct CommentThread: View {
     /// Delete was picked: the post screen asks first, from the list, so the question does not
     /// depend on a row that may have scrolled away.
     let onDelete: (BoardComment) -> Void
+    /// Report was picked on someone else's comment: the post screen shows the report sheet.
+    let onReport: (BoardComment) -> Void
+    /// Block was picked on someone else's comment: the post screen asks first.
+    let onBlock: (SocialUser) -> Void
 
     @State private var loadingMore = false
 
@@ -91,7 +95,10 @@ struct CommentThread: View {
     }
 
     private func actions(_ comment: BoardComment) -> CommentActions {
-        CommentActions(comment: comment, canDelete: canDelete(comment), onReply: onReply, onDelete: onDelete)
+        CommentActions(
+            comment: comment, canDelete: canDelete(comment),
+            onReply: onReply, onDelete: onDelete, onReport: onReport, onBlock: onBlock
+        )
     }
 
     private func canDelete(_ comment: BoardComment) -> Bool {
@@ -185,13 +192,16 @@ private struct CommentRow: View {
     }
 }
 
-/// Reply, and Delete where you may, in the context menu and the trailing swipe. A deleted comment
-/// offers nothing.
+/// Reply, and Delete where you may, in the context menu and the trailing swipe; Report and Block
+/// in the context menu on someone else's comment (Aaru's has no author to report). A deleted
+/// comment offers nothing.
 private struct CommentActions: ViewModifier {
     let comment: BoardComment
     let canDelete: Bool
     let onReply: (BoardComment) -> Void
     let onDelete: (BoardComment) -> Void
+    let onReport: (BoardComment) -> Void
+    let onBlock: (SocialUser) -> Void
 
     func body(content: Content) -> some View {
         if comment.deleted {
@@ -202,6 +212,11 @@ private struct CommentActions: ViewModifier {
                     Button("Reply", systemImage: "arrowshape.turn.up.left") { onReply(comment) }
                     if canDelete {
                         Button("Delete comment", systemImage: "trash", role: .destructive) { onDelete(comment) }
+                    }
+                    if let author = comment.author, comment.mine != true {
+                        Divider()
+                        Button("Report comment", systemImage: "flag") { onReport(comment) }
+                        Button("Block", systemImage: "hand.raised", role: .destructive) { onBlock(author) }
                     }
                 }
                 // Delete asks first, so the swipe takes no destructive role (that would animate the

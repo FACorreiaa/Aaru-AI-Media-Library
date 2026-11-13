@@ -164,8 +164,41 @@ final class PostModel {
     /// Reports the post through the user report route; the note starts with `post:<id>` so the
     /// reviewer knows which post, as the web does. True when sent.
     func report(reason: Components.Schemas.ReportCreate.ReasonPayload, note: String?) async -> Bool {
-        guard let api, let author = post?.author else { return false }
-        let composed = ["post:\(postId)", note?.trimmingCharacters(in: .whitespacesAndNewlines)]
+        guard let author = post?.author else { return false }
+        return await report("post:\(postId)", by: author, reason: reason, note: note)
+    }
+
+    /// Reports one comment the same way; its note starts with `comment:<id>`. Aaru's comments and
+    /// deleted ones have no author to report. True when sent.
+    func report(
+        _ comment: BoardComment, reason: Components.Schemas.ReportCreate.ReasonPayload, note: String?
+    ) async -> Bool {
+        guard let author = comment.author else { return false }
+        return await report("comment:\(comment.id)", by: author, reason: reason, note: note)
+    }
+
+    /// Blocks the author of the post or of a comment, then loads again: the server leaves out a
+    /// blocked person's comments, and their post is no longer there. They are not told.
+    func block(_ person: SocialUser) async -> Bool {
+        guard let api else { return false }
+        let blocked = await run(String(localized: "That person was not blocked.")) {
+            switch try await api.blockUser(path: .init(userId: person.userId)) {
+            case .noContent: break
+            case let .default(_, error): throw Failure(try? error.body.json.message)
+            }
+        }
+        if blocked {
+            await load()
+        }
+        return blocked
+    }
+
+    private func report(
+        _ subject: String, by author: SocialUser,
+        reason: Components.Schemas.ReportCreate.ReasonPayload, note: String?
+    ) async -> Bool {
+        guard let api else { return false }
+        let composed = [subject, note?.trimmingCharacters(in: .whitespacesAndNewlines)]
             .compactMap { $0 }
             .filter { !$0.isEmpty }
             .joined(separator: "\n")

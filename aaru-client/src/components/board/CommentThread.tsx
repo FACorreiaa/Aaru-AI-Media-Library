@@ -1,5 +1,13 @@
 import { Link } from '@tanstack/solid-router'
-import { For, Show, createMemo, createSignal, onMount } from 'solid-js'
+import {
+  For,
+  Show,
+  Suspense,
+  createMemo,
+  createSignal,
+  lazy,
+  onMount,
+} from 'solid-js'
 import { Button, buttonVariants, toast } from '~/components/ui'
 import {
   dropComment,
@@ -20,6 +28,10 @@ import { Monogram } from '../groups/Monogram'
 import { Menu, MenuItem } from '../groups/shell'
 import { CommentComposer } from './CommentComposer'
 import { postedLabel } from './PostCard'
+import type { Reported } from './ReportPostDialog'
+
+// Reporting is rare: its dialog loads when someone first asks for it.
+const ReportPostDialog = lazy(() => import('./ReportPostDialog'))
 
 /** Empty pages followed in a row before the thread stops and offers the button again. */
 const MAX_SKIPS = 5
@@ -28,7 +40,8 @@ const MAX_SKIPS = 5
  * CommentThread (BOARD-002): a post's comments, oldest first, one level of replies hung under
  * the comment they answer on a thin spine. A deleted comment that still has replies stays as a
  * muted "Comment deleted" with no author. Reply answers the top-level comment; Delete is yours,
- * or anyone's on your post. More comes by "Show more comments", never by scrolling, and an
+ * or anyone's on your post; someone else's comment can be reported and its author blocked, from
+ * its ⋯ menu. More comes by "Show more comments", never by scrolling, and an
  * empty page with more behind it is followed at once, so "No comments yet" only shows at the end.
  */
 export function CommentThread(props: {
@@ -44,6 +57,8 @@ export function CommentThread(props: {
   commentCount: number
   /** A comment was added (+1) or deleted (-1). */
   onCount: (delta: 1 | -1) => void
+  /** Block was picked on someone else's comment: the page asks first, then loads again. */
+  onBlock: (person: SocialUser) => void
 }) {
   let heading: HTMLHeadingElement | undefined
   let box: HTMLTextAreaElement | undefined
@@ -56,6 +71,9 @@ export function CommentThread(props: {
   const [replyTo, setReplyTo] = createSignal<ReplyTarget | null>(null)
   const [pending, setPending] = createSignal<BoardComment | null>(null)
   const [deleting, setDeleting] = createSignal(false)
+  // The comment someone is reporting. Kept after the dialog closes so it can play its exit.
+  const [reporting, setReporting] = createSignal<Reported | null>(null)
+  const [reportOpen, setReportOpen] = createSignal(false)
   // Set when a delete went through, so the closing dialog leaves focus to `confirmDelete`.
   let landing = false
 
@@ -111,6 +129,12 @@ export function CommentThread(props: {
     setReplyTo(replyTarget(comment))
     box?.focus()
     box?.scrollIntoView({ block: 'nearest' })
+  }
+
+  function report(comment: BoardComment) {
+    if (!comment.author) return
+    setReporting({ kind: 'comment', id: comment.id, author: comment.author })
+    setReportOpen(true)
   }
 
   function posted(comment: BoardComment) {
@@ -196,6 +220,8 @@ export function CommentThread(props: {
                   myHandle={props.me.handle.toLowerCase()}
                   onReply={reply}
                   onDelete={setPending}
+                  onReport={report}
+                  onBlock={props.onBlock}
                 />
               )}
             </Show>
@@ -248,6 +274,18 @@ export function CommentThread(props: {
           event.preventDefault()
         }}
       />
+      {/* Loaded on the first Report and kept, so it closes with its exit like any dialog. */}
+      <Show when={reporting()}>
+        {(reported) => (
+          <Suspense>
+            <ReportPostDialog
+              open={reportOpen()}
+              reported={reported()}
+              onClose={() => setReportOpen(false)}
+            />
+          </Suspense>
+        )}
+      </Show>
     </section>
   )
 }
@@ -260,6 +298,8 @@ function ThreadRow(props: {
   myHandle: string
   onReply: (comment: BoardComment) => void
   onDelete: (comment: BoardComment) => void
+  onReport: (comment: BoardComment) => void
+  onBlock: (person: SocialUser) => void
 }) {
   return (
     <li class="border-b border-line/60 py-4 last:border-b-0">
@@ -297,8 +337,12 @@ function CommentRow(props: {
   myHandle: string
   onReply: (comment: BoardComment) => void
   onDelete: (comment: BoardComment) => void
+  onReport: (comment: BoardComment) => void
+  onBlock: (person: SocialUser) => void
 }) {
   const canDelete = () => props.comment.mine === true || props.postMine
+  // Someone else's comment can be reported and its author blocked; Aaru's has no author.
+  const reportable = () => !props.comment.mine && !!props.comment.author
   const name = () =>
     props.comment.mine
       ? 'You'
@@ -406,16 +450,33 @@ function CommentRow(props: {
               Reply
               <span class="sr-only"> to {commentAuthor(props.comment)}</span>
             </Button>
-            <Show when={canDelete()}>
+            <Show when={canDelete() || reportable()}>
               <Menu
                 label={`More for the comment by ${commentAuthor(props.comment)}`}
                 trigger={<span aria-hidden="true">⋯</span>}
                 triggerClass={`${buttonVariants({ variant: 'ghost', size: 'icon-sm' })} size-8 rounded-full text-muted hover:text-ink`}
                 placement="bottom-start"
               >
-                <MenuItem danger onSelect={() => props.onDelete(props.comment)}>
-                  Delete comment
-                </MenuItem>
+                <Show when={reportable() && props.comment.author}>
+                  {(author) => (
+                    <>
+                      <MenuItem onSelect={() => props.onReport(props.comment)}>
+                        Report comment
+                      </MenuItem>
+                      <MenuItem danger onSelect={() => props.onBlock(author())}>
+                        Block {inviterName(author())}
+                      </MenuItem>
+                    </>
+                  )}
+                </Show>
+                <Show when={canDelete()}>
+                  <MenuItem
+                    danger
+                    onSelect={() => props.onDelete(props.comment)}
+                  >
+                    Delete comment
+                  </MenuItem>
+                </Show>
               </Menu>
             </Show>
           </div>
