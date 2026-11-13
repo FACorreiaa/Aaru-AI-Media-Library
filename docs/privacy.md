@@ -236,7 +236,8 @@ appear only in your Sports tab: never on your profile, to friends, in your libra
 stats. The export includes them.
 
 **Error reports.** When the app, the website, the browser extension or Aaru's server hits an
-error or crashes, it sends a report to Sentry: what failed, where in Aaru's code, the device or
+error or crashes, or the app on iPhone or Mac stops responding for a few seconds, it sends a
+report to Sentry: what failed, where in Aaru's code, the device or
 browser type and app version, and the page address without anything after the `?`. It never
 includes your name, email, what is in your library or what you wrote. On Netflix, Disney+ and
 Prime Video the extension reports only the site, never the page you were on.

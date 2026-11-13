@@ -881,6 +881,7 @@ account or a stranger that has not happened yet.
 | REL-004 | Done | #3, #4; `release-apple.yml` succeeds on every main merge | iOS + macOS lanes; `release` dispatch-only |
 | REL-005 | Done | infra #292, #321, #376; `api.aaruapp.com/v1/health` = 200 | INFRA_TOKEN unset: Server Deploy run is red, promote PRs opened by hand |
 | REL-006 | Done | #20, #21; `web-deploy.yml` (beta on merge, prod on dispatch) | |
+| REL-007 | Built, unverified | `aaru-ios/{Aaru,AaruWidgets}/PrivacyInfo.xcprivacy`; `docs/app-store-privacy.md`; `plutil -lint`, iOS Simulator + macOS builds bundle both | Never uploaded: no ITMS mail and no Xcode privacy report seen (needs a signed archive). Owner fills in App Store Connect from the sheet; Part C lists what to settle first |
 | DSN-001 | Dropped | DESIGN.md:421 "ScreensDesign was not used" | Optional item, skipped (Pro plan) |
 | BRD-001 | Built | #145; `ci-brand.yml` required by the main ruleset | Owner checks TestFlight + beta web in light and dark |
 | BRD-002 | Built | #147 | App icon approved by the owner 2026-10-22 (large + small variant) |
@@ -1280,6 +1281,18 @@ infra.
 deploys with `wrangler deploy`: staging on every merge to `main`, prod on manual dispatch.
 
 **Done when:** a merge to `main` updates the beta Worker URL, and prod moves only on dispatch.
+
+### REL-007 · Privacy manifests and App Store privacy answers · S
+**Needs:** REL-002.
+Both `PrivacyInfo.xcprivacy` files say what the binaries do: every required-reason API the app's
+own code uses, with Apple's reason code, and every data type `docs/privacy.md` and the code show
+Aaru collects. `docs/app-store-privacy.md` is the sheet the owner fills App Store Connect from:
+App Privacy, the age rating questionnaire, and what makes an honest answer awkward. A new
+collected data type, SDK or required-reason API changes the manifest and the sheet in the same PR.
+
+**Done when:** an upload to App Store Connect brings no ITMS-91053/91056 mail, Xcode's privacy
+report for the archive matches the sheet, and the App Privacy label and age rating are saved
+from it.
 
 ### DSN-001 · ScreensDesign pass on tracker apps · S · optional
 The ScreensDesign MCP research tools need a Pro plan (blocked on 2026-10-09). If it is bought,
