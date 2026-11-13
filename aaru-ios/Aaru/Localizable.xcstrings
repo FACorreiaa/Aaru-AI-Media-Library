@@ -935,6 +935,12 @@
     "A whole ChatGPT chat, screenshots, a photo of a list, or a request like “X-Men books in reading order”. Nothing is added until you approve." : {
 
     },
+    "AI data sharing" : {
+
+    },
+    "AI data sharing is off, so Aaru can't answer." : {
+
+    },
     "Aaru" : {
 
     },
@@ -1275,6 +1281,9 @@
     "All time" : {
 
     },
+    "Allow" : {
+
+    },
     "Allow Stremio to change my library" : {
 
     },
@@ -1330,6 +1339,9 @@
 
     },
     "Anime that came in as watching from an import and that you have not started here. They stay in progress; tick an episode to bring one up." : {
+
+    },
+    "Anthropic uses it to write Aaru's answer and does not train on it. Aaru does not sell it or use it for ads. If you don't allow it, these features stay off and the rest of Aaru works the same. You can change this in Settings." : {
 
     },
     "Any other CSV" : {
@@ -2012,6 +2024,9 @@
     "Dismisses this message" : {
 
     },
+    "Don't allow" : {
+
+    },
     "Done" : {
 
     },
@@ -2543,6 +2558,9 @@
     "In CAT, signed in: copy the “Download iCal File” link. Aaru reads it once and doesn't keep it." : {
 
     },
+    "In a group, your messages among a channel's last 30 when someone tags @aaru." : {
+
+    },
     "In group" : {
 
     },
@@ -2752,6 +2770,9 @@
 
     },
     "Left out" : {
+
+    },
+    "Let Aaru use AI with your data?" : {
 
     },
     "Level %lld" : {
@@ -3609,6 +3630,9 @@
     "October" : {
 
     },
+    "Off" : {
+
+    },
     "Off by default. When on, members of this group see how far you are in the titles its channels are about. Spoilers are hidden from you either way." : {
 
     },
@@ -3625,6 +3649,9 @@
 
     },
     "Older posts could not be loaded." : {
+
+    },
+    "On" : {
 
     },
     "On Goodreads: My Books → Import and export → Export Library, then upload the CSV. Goodreads closed its API, so there is no connect option. Custom shelves become lists." : {
@@ -4294,6 +4321,9 @@
     "Returning series" : {
 
     },
+    "Review" : {
+
+    },
     "Review and save" : {
 
     },
@@ -4874,6 +4904,9 @@
     "Text" : {
 
     },
+    "Text and pictures you send to capture." : {
+
+    },
     "That %@ import could not be started." : {
 
     },
@@ -5285,6 +5318,9 @@
     "The only place Aaru stores where you are, to find concerts. “Use my location” in Discover is used once and never saved." : {
 
     },
+    "The owl, capture and @aaru in groups are answered by an AI model from Anthropic. If you allow it, Aaru sends Anthropic:" : {
+
+    },
     "The party did not end." : {
 
     },
@@ -5621,6 +5657,9 @@
     "Turn on notifications" : {
 
     },
+    "Turning this off stops Aaru sending anything new to Anthropic. Chats you already had stay until you delete them, in Your data or from the owl's History." : {
+
+    },
     "Type" : {
 
     },
@@ -5789,6 +5828,9 @@
     "Week" : {
 
     },
+    "What Aaru reads from your account to answer: titles in your library with their status, progress and rating, your lists, stats, favorites, listens and followed sports." : {
+
+    },
     "What airs this week from the shows you follow." : {
 
     },
@@ -5825,6 +5867,9 @@
     "What you ask Aaru from the owl shows up here." : {
 
     },
+    "What you ask Aaru, typed or spoken, with the screen you are on and your time zone, and the files, pictures and long pastes you attach." : {
+
+    },
     "What you tick in Aaru does not show as watched in Stremio." : {
 
     },
@@ -5856,6 +5901,9 @@
 
     },
     "Where you watch" : {
+
+    },
+    "Whether Aaru may send your data to Anthropic to answer the owl, capture and @aaru in groups." : {
 
     },
     "Which one?" : {
@@ -5986,6 +6034,12 @@
 
     },
     "Your account could not be loaded. Aaru could not reach the server." : {
+
+    },
+    "Your answer was not saved." : {
+
+    },
+    "Your answer was not saved. Aaru could not reach the server." : {
 
     },
     "Your approximate location" : {

@@ -6,22 +6,27 @@ import SwiftUI
 /// ends the whole flow and keeps what was already saved.
 struct OnboardingFlow: View {
     let notifications: NotificationsModel
+    /// AI sharing (PRV-002): asked on its own screen unless this account has already answered.
+    let aiSharing: AISharingModel
     /// The flow has ended; true when the user asked for Import instead.
     let onFinished: (_ openImport: Bool) -> Void
 
     @State private var model: OnboardingModel
-    @State private var step: OnboardingStep = .kinds
+    @State private var step: OnboardingScreen = .step(.kinds)
     /// Which way the last move went, so the next screen comes in from that side.
     @State private var forward = true
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     init(
-        api: Client?, library: LibraryModel, notifications: NotificationsModel,
+        api: Client?, library: LibraryModel, notifications: NotificationsModel, aiSharing: AISharingModel,
         onFinished: @escaping (_ openImport: Bool) -> Void
     ) {
         self.notifications = notifications
+        self.aiSharing = aiSharing
         self.onFinished = onFinished
-        _model = State(initialValue: OnboardingModel(api: api, library: library))
+        _model = State(initialValue: OnboardingModel(
+            api: api, library: library, asksAISharing: aiSharing.state == .unanswered
+        ))
     }
 
     var body: some View {
@@ -44,56 +49,57 @@ struct OnboardingFlow: View {
 
     @ViewBuilder private var screen: some View {
         switch step {
-        case .kinds:
+        case .step(.kinds):
             KindsStep(
                 model: model,
                 onSkip: skip,
-                onContinue: { advance(from: .kinds) },
+                onContinue: { advance() },
                 onImport: {
                     model.finish(skipped: false)
                     onFinished(true)
                 }
             )
-        case let .pick(kind):
+        case let .step(.pick(kind)):
             PickerStep(model: model, kind: kind, onBack: back, onSkip: skip) {
                 Task {
                     if await model.save(kind) {
-                        await move(from: .pick(kind))
+                        await move()
                     }
                 }
             }
-        case .favorites:
-            FavoritesStep(model: model, onBack: back, onSkip: skip) {
-                Task { await move(from: .favorites) }
-            }
-        case .related:
+        case .step(.favorites):
+            FavoritesStep(model: model, onBack: back, onSkip: skip) { advance() }
+        case .step(.related):
             RelatedStep(model: model, onBack: back, onSkip: skip) {
                 Task {
                     if await model.saveRelated() {
-                        await move(from: .related)
+                        await move()
                     }
                 }
             }
-        case .notifications:
+        case .aiSharing:
+            AISharingStep(model: aiSharing, onBack: back, onSkip: skip) { advance() }
+        case .step(.notifications):
             NotificationsStep(
                 sample: model.sampleAiring, notifications: notifications,
-                onBack: back, onSkip: skip, onDone: { advance(from: .notifications) }
+                onBack: back, onSkip: skip, onDone: { advance() }
             )
         }
     }
 
-    private func advance(from current: OnboardingStep) {
-        Task { await move(from: current) }
+    private func advance() {
+        Task { await move() }
     }
 
-    /// To the next screen, or out at the end. The related screen and the alerts after it depend
+    /// To the next screen, or out at the end. The related screen and what comes after it depend
     /// on the related answer, so the move waits for it when the next screen is not a picker or
     /// favorites.
-    private func move(from current: OnboardingStep) async {
-        var next = model.step(after: current)
-        if next == nil || next == .related || next == .notifications {
+    private func move() async {
+        let current = step
+        var next = model.screen(after: current)
+        if next?.waitsForRelated ?? true {
             await model.awaitRelated()
-            next = model.step(after: current)
+            next = model.screen(after: current)
         }
         guard let next else {
             model.finish(skipped: false)
@@ -104,12 +110,13 @@ struct OnboardingFlow: View {
     }
 
     private func back() {
-        guard let previous = model.step(before: step) else { return }
+        guard let previous = model.screen(before: step) else { return }
         go(to: previous, forward: false)
     }
 
-    private func go(to next: OnboardingStep, forward: Bool) {
+    private func go(to next: OnboardingScreen, forward: Bool) {
         model.clearProblem()
+        aiSharing.problem = nil
         self.forward = forward
         withAnimation(reduceMotion ? nil : AaruMotion.ease()) {
             step = next
@@ -119,5 +126,15 @@ struct OnboardingFlow: View {
     private func skip() {
         model.finish(skipped: true)
         onFinished(false)
+    }
+}
+
+private extension OnboardingScreen {
+    /// Related titles, and the screens that only follow once the related answer is in.
+    var waitsForRelated: Bool {
+        switch self {
+        case .aiSharing, .step(.related), .step(.notifications): true
+        case .step: false
+        }
     }
 }

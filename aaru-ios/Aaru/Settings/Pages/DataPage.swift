@@ -9,6 +9,7 @@ struct DataPage: View {
 
     @State private var recap: RecapPeriod?
     @State private var confirmingDeleteChats = false
+    @Environment(AISharingModel.self) private var aiSharing: AISharingModel?
 
     var body: some View {
         @Bindable var model = model
@@ -30,6 +31,19 @@ struct DataPage: View {
                 Text("Every change to your library, newest first: yours, an import's or a connection's, with Undo.")
             }
             ExportDataSection(model: model)
+            Section {
+                NavigationLink(value: SettingsRoute.aiSharing) {
+                    LabeledContent {
+                        if let state = aiSharing?.state {
+                            Text(state == .allowed ? String(localized: "On") : String(localized: "Off"))
+                        }
+                    } label: {
+                        Label("AI data sharing", systemImage: "lock.shield")
+                    }
+                }
+            } footer: {
+                Text("Whether Aaru may send your data to Anthropic to answer the owl, capture and @aaru in groups.")
+            }
             Section {
                 NavigationLink(value: SettingsRoute.chats) {
                     Label("Chats with Aaru", systemImage: "bubble.left.and.bubble.right")

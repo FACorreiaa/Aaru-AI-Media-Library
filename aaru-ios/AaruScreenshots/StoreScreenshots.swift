@@ -18,6 +18,8 @@ final class StoreScreenshots: XCTestCase {
     func testStoreScreens() throws {
         let home = tab("Home")
         guard home.waitForExistence(timeout: 20) else {
+            // PRV-002: an account that has not answered gets the full-screen ask, not Home.
+            XCTAssertFalse(aiSharingAsk("ai-sharing-ask"), "Allow AI data sharing for this account, then run again.")
             throw XCTSkip("The app is not signed in on this simulator. Sign in, then run again.")
         }
 
@@ -90,7 +92,12 @@ final class StoreScreenshots: XCTestCase {
             newChat.tap()
         }
         let field = app.textFields["Ask Aaru"].firstMatch
-        guard field.waitForExistence(timeout: 5) else { return }
+        guard field.waitForExistence(timeout: 5) else {
+            // PRV-002: without a yes the card shows the ask, and the shot would be of that.
+            let asked = aiSharingAsk("ai-sharing-in-place-ask")
+            XCTFail(asked ? "Allow AI data sharing for this account, then run again." : "The owl has no field.")
+            return
+        }
         field.tap()
         field.typeText(question)
         app.buttons.matching(identifier: "arrow.up.circle.fill").firstMatch.tap()
@@ -101,6 +108,10 @@ final class StoreScreenshots: XCTestCase {
     }
 
     /// An iPad's keyboard has a key for it; on an iPhone the card's transcript drags it away.
+    private func aiSharingAsk(_ identifier: String) -> Bool {
+        app.descendants(matching: .any)[identifier].exists
+    }
+
     private func hideKeyboard() {
         let hide = app.buttons["Hide keyboard"].firstMatch
         if hide.exists {

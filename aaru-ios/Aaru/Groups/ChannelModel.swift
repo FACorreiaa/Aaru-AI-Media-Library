@@ -22,6 +22,9 @@ final class ChannelModel {
     /// Mentions `@aaru` is answering, until when (GRP-011).
     var thinking: [String: Date] = [:]
     var problem: String?
+    /// PRV-002: a message that tags `@aaru`, refused whole (`ai_sharing_required`) and taken out
+    /// of the outbox. The view puts it back in the composer and asks; nobody else sees any of it.
+    var heldForAISharing: Outgoing?
     /// Why the first page failed; nil once anything has loaded (UX-063).
     private(set) var loadProblem: String?
 
@@ -33,16 +36,6 @@ final class ChannelModel {
     static let pageSize = 50
     static let maxLength = 4000
     static let typingLifetime: TimeInterval = 5
-
-    /// A message on its way: the nonce makes a retry safe.
-    struct Outgoing: Identifiable, Equatable {
-        let id: String
-        let body: String
-        let createdAt: Date
-        /// Title channels only; elsewhere the server ignores it.
-        var spoiler: SpoilerChoice = .auto
-        var failed = false
-    }
 
     init(api: Client?, groupID: String, channelID: String, unread: Int, myUserID: String?) {
         self.api = api
@@ -155,7 +148,15 @@ final class ChannelModel {
                 markedReadID = nil
                 await markRead()
             case let .default(_, error):
-                fail(outgoing, (try? error.body.json.message) ?? String(localized: "That was not sent."))
+                let refusal = try? error.body.json
+                // PRV-002: tagging @aaru needs this member's yes. The message was refused whole,
+                // so it goes back to the composer and the ask shows, to this member only.
+                if refusal?.code == AISharingModel.requiredCode {
+                    outbox.removeAll { $0.id == outgoing.id }
+                    heldForAISharing = outgoing
+                    return
+                }
+                fail(outgoing, refusal?.message ?? String(localized: "That was not sent."))
             }
         } catch {
             fail(outgoing, nil)
@@ -335,5 +336,17 @@ private extension ChannelModel {
         messages = merged.enumerated()
             .sorted { ($0.element.createdAt, $0.offset) < ($1.element.createdAt, $1.offset) }
             .map(\.element)
+    }
+}
+
+extension ChannelModel {
+    /// A message on its way: the nonce makes a retry safe.
+    struct Outgoing: Identifiable, Equatable {
+        let id: String
+        let body: String
+        let createdAt: Date
+        /// Title channels only; elsewhere the server ignores it.
+        var spoiler: SpoilerChoice = .auto
+        var failed = false
     }
 }
