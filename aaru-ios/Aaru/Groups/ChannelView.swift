@@ -16,6 +16,7 @@ struct ChannelView: View {
     @State private var editing: GroupMessage?
     @State private var deleting: GroupMessage?
     @State private var reporting: GroupMessage?
+    @State private var blocking: SocialUser?
     @State private var nearBottom = true
     /// Title channels: how the next message is marked for spoilers. Back to automatic after each.
     @State private var spoiler = SpoilerChoice.auto
@@ -181,9 +182,33 @@ struct ChannelView: View {
                     }
                 }
             }
+            .confirmationDialog(
+                "Block \(blocking?.inviteName ?? "")?",
+                isPresented: Binding(get: { blocking != nil }, set: {
+                    if !$0 {
+                        blocking = nil
+                    }
+                }),
+                titleVisibility: .visible,
+                presenting: blocking
+            ) { person in
+                Button("Block", role: .destructive) { Task { await block(person) } }
+                Button("Cancel", role: .cancel) {}
+            } message: { _ in
+                Text("They are removed from your friends and can't see your library. You can unblock them in Friends.")
+            }
     }
 
     private static let bottomID = "bottom"
+
+    /// Blocks a member, then loads the channel again so their messages come back collapsed.
+    private func block(_ person: SocialUser) async {
+        if let problem = await groups.block(person) {
+            model.problem = problem
+        } else {
+            await model.loadLatest()
+        }
+    }
 
     private func submit() {
         let text = draft
@@ -284,6 +309,7 @@ extension ChannelView {
             // author to report.
             if let author = message.author, author.userId != groups.myUserID {
                 Button("Report", systemImage: "flag") { reporting = message }
+                Button("Block", systemImage: "hand.raised", role: .destructive) { blocking = author }
             }
         }
     }
