@@ -8,6 +8,7 @@ import (
 	"aaru-go-api/internal/gamification"
 	"aaru-go-api/internal/library"
 	"aaru-go-api/internal/metrics"
+	"aaru-go-api/internal/moderation"
 	"aaru-go-api/internal/ratelimit"
 	"aaru-go-api/internal/telemetry"
 	"context"
@@ -145,6 +146,9 @@ func (s *Service) SaveProfile(ctx context.Context, user uuid.UUID, change Profil
 	// A change counts before the store says "taken", which would otherwise answer who holds a
 	// handle as fast as anyone asks. Resaving the current handle is free.
 	if handle != nil && (saved.Handle == nil || *handle != *saved.Handle) {
+		if err := moderation.CheckHandle(*handle); err != nil {
+			return auth.Profile{}, err
+		}
 		if !s.handleChangeLimiter.Allow(user.String(), s.now()) {
 			return auth.Profile{}, errRateLimited
 		}
@@ -156,6 +160,12 @@ func (s *Service) SaveProfile(ctx context.Context, user uuid.UUID, change Profil
 	}
 	var write *Name
 	if !sameName(name, current) {
+		// Only a name that changes is checked: a saved one is never scanned (SOC-012).
+		if shown := auth.JoinName(name.First, name.Last); shown != nil {
+			if err := moderation.Check(moderation.SurfaceProfileName, *shown); err != nil {
+				return auth.Profile{}, err
+			}
+		}
 		write = &name
 	}
 	if err := s.Store.SaveProfile(ctx, user, handle, write); err != nil {

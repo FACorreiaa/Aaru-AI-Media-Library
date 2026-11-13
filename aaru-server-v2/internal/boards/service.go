@@ -6,6 +6,7 @@ import (
 	"aaru-go-api/internal/db/sqlc"
 	"aaru-go-api/internal/groups"
 	"aaru-go-api/internal/library"
+	"aaru-go-api/internal/moderation"
 	"context"
 	"fmt"
 	"strings"
@@ -157,6 +158,9 @@ func (s *Service) Create(
 	if err != nil {
 		return Post{}, err
 	}
+	if err := moderation.Check(moderation.SurfaceBoardPost, body); err != nil {
+		return Post{}, err
+	}
 	// Validate before any catalog call.
 	var stored *float64
 	if rating != nil {
@@ -252,6 +256,9 @@ func (s *Service) Edit(ctx context.Context, id uuid.UUID, body string, viewer uu
 	}
 	body, err = ValidBody(body)
 	if err != nil {
+		return Post{}, err
+	}
+	if err := moderation.Check(moderation.SurfaceBoardPost, body); err != nil {
 		return Post{}, err
 	}
 	if err := s.Store.EditPost(ctx, id, body, s.now()); err != nil {

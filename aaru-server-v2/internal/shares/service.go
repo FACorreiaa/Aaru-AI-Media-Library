@@ -13,6 +13,7 @@ import (
 	"aaru-go-api/internal/db"
 	"aaru-go-api/internal/db/sqlc"
 	"aaru-go-api/internal/library"
+	"aaru-go-api/internal/moderation"
 	"aaru-go-api/internal/ratelimit"
 	"aaru-go-api/internal/social"
 	"aaru-go-api/internal/sports"
@@ -149,7 +150,7 @@ func (s *Service) Create(ctx context.Context, viewer uuid.UUID, req Request, not
 	if !s.createLimiter.Allow(viewer.String(), s.now()) {
 		return Share{}, errRateLimited
 	}
-	kept, err := ValidNote(note)
+	kept, err := allowedNote(note)
 	if err != nil {
 		return Share{}, err
 	}
@@ -425,4 +426,16 @@ func (s *Service) existing(ctx context.Context, sender uuid.UUID, target Target,
 		return nil, fmt.Errorf("existing share: %w", err)
 	}
 	return shareOf(row), nil
+}
+
+// allowedNote is ValidNote, then the word filter on what is left (SOC-012).
+func allowedNote(note *string) (*string, error) {
+	kept, err := ValidNote(note)
+	if err != nil || kept == nil {
+		return kept, err
+	}
+	if err := moderation.Check(moderation.SurfaceShareNote, *kept); err != nil {
+		return nil, err
+	}
+	return kept, nil
 }

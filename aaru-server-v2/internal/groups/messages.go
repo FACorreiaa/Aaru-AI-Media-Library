@@ -3,6 +3,7 @@ package groups
 import (
 	"aaru-go-api/internal/aisharing"
 	"aaru-go-api/internal/core"
+	"aaru-go-api/internal/moderation"
 	"context"
 	"fmt"
 
@@ -52,6 +53,10 @@ func (s *Service) CreateChannel(ctx context.Context, group uuid.UUID, kind Chann
 	if err != nil {
 		return Channel{}, err
 	}
+	// A title channel named after its title keeps the catalog's name: that is not the member's text.
+	if err := allowedChannelText(name, validTopic); err != nil {
+		return Channel{}, err
+	}
 	position := 0
 	for _, c := range existing {
 		position = max(position, c.Position)
@@ -90,6 +95,9 @@ func (s *Service) UpdateChannel(ctx context.Context, group, channel uuid.UUID, n
 	}
 	newTopic, err := ValidTopic(topic)
 	if err != nil {
+		return Channel{}, err
+	}
+	if err := allowedChannelText(name, newTopic); err != nil {
 		return Channel{}, err
 	}
 	if err := s.Store.UpdateChannel(ctx, channel, newName, topic != nil, newTopic); err != nil {
@@ -190,6 +198,9 @@ func (s *Service) Post(ctx context.Context, group, channel uuid.UUID, body strin
 	if err != nil {
 		return Message{}, err
 	}
+	if err := moderation.Check(moderation.SurfaceGroupMessage, body); err != nil {
+		return Message{}, err
+	}
 	var key *string
 	if nonce != nil {
 		trimmed := trim(*nonce)
@@ -269,6 +280,9 @@ func (s *Service) Edit(ctx context.Context, group, channel, message uuid.UUID, b
 	}
 	body, err = ValidBody(body)
 	if err != nil {
+		return Message{}, err
+	}
+	if err := moderation.Check(moderation.SurfaceGroupMessage, body); err != nil {
 		return Message{}, err
 	}
 	members, err := s.Store.Members(ctx, group)
@@ -386,4 +400,18 @@ func (s *Service) HydrateComponents(ctx context.Context, messages []Message) ([]
 		out[i] = m
 	}
 	return out, nil
+}
+
+// allowedChannelText runs the word filter over a channel name as the member typed it and over
+// its topic (SOC-012). Nil is text that was not sent.
+func allowedChannelText(name, topic *string) error {
+	if name != nil {
+		if err := moderation.Check(moderation.SurfaceChannelName, *name); err != nil {
+			return err
+		}
+	}
+	if topic != nil {
+		return moderation.Check(moderation.SurfaceChannelTopic, *topic)
+	}
+	return nil
 }

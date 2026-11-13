@@ -1,0 +1,114 @@
+# The words Aaru refuses in text one person writes for another (SOC-012).
+#
+# This file is the whole list, and the only place the words are written: code and tests refer
+# to entries by position. It is offensive by nature. Reviewed by hand, English first.
+#
+# Rules for an entry:
+#   - short and high-precision beats long and noisy. A word that is also a name, a place, a
+#     genre, a title people discuss or an ordinary word in another language stays out, even
+#     when it is a slur in English. General swearing stays out: this is not a profanity list.
+#   - one entry per line, lowercase a-z and spaces only. A line with spaces is a phrase.
+#   - a single word also covers its plain endings (s, es, ed, er, ers, ing, y) and stretched
+#     letters; a phrase is matched word for word, as written.
+#   - a trailing " +" also refuses the word anywhere inside a handle. Only for a word that no
+#     ordinary word or name contains (checked against a dictionary; the known cost is a handle
+#     built on "snigger" or "niggardly", which ordinary text may still say).
+#   - [alias] rewrites one word to another before phrases are matched.
+#
+# Categories: [hate] slurs and hate phrases, [sexual] explicit sexual terms, [threat] threats
+# of violence and urging self-harm.
+
+[hate]
+nigger +
+nigga +
+niggaz
+sandnigger
+faggot +
+gook
+wetback +
+beaner
+towelhead +
+raghead +
+tranny
+trannies
+shemale +
+paki
+pikey
+golliwog
+jigaboo +
+porchmonkey
+fudgepacker
+poofter
+porch monkey
+jungle bunny
+camel jockey
+fudge packer
+ching chong
+heil hitler
+sieg heil
+gas the jews
+kill all jews
+kill all muslims
+kill all gays
+kill all blacks
+
+[sexual]
+cunt
+blowjob +
+handjob
+rimjob
+cumshot +
+cumslut
+cumdump
+gangbang +
+bukkake +
+deepthroat
+cocksucker +
+cockslut
+jizz
+titfuck
+facefuck
+skullfuck
+buttfuck
+blow job
+rim job
+gang bang
+cum shot
+suck my dick
+suck my cock
+send nudes
+dick pic
+dick pics
+show me your tits
+wanna fuck
+want to fuck
+lets fuck
+
+[threat]
+i will kill you
+ill kill you
+gonna kill you
+going to kill you
+kill yourself
+hang yourself
+neck yourself
+unalive yourself
+hope you die
+you should die
+you deserve to die
+rape you
+hope you get raped
+hope you get cancer
+slit your throat
+slit your wrists
+i know where you live
+shoot up your school
+burn your house down
+beat you to death
+
+[alias]
+u = you
+ya = you
+ur = your
+urself = yourself
+yourselves = yourself

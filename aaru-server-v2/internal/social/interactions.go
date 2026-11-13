@@ -3,6 +3,7 @@ package social
 import (
 	"aaru-go-api/internal/apperr"
 	"aaru-go-api/internal/core"
+	"aaru-go-api/internal/moderation"
 	"context"
 	"fmt"
 	"net/http"
@@ -77,6 +78,11 @@ func (s *Service) Recommend(ctx context.Context, ref core.MediaRef, note *string
 		}
 		if trimmed != "" {
 			kept = &trimmed
+		}
+	}
+	if kept != nil {
+		if err := moderation.Check(moderation.SurfaceRecommendation, *kept); err != nil {
+			return err
 		}
 	}
 	if slices.Contains(recipients, viewer) {

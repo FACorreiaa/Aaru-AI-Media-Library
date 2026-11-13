@@ -6,6 +6,7 @@ import (
 	"aaru-go-api/internal/db/sqlc"
 	"aaru-go-api/internal/gamification"
 	"aaru-go-api/internal/library"
+	"aaru-go-api/internal/moderation"
 	"aaru-go-api/internal/push"
 	"aaru-go-api/internal/telemetry"
 	"context"
@@ -99,6 +100,9 @@ func (s *Service) Create(ctx context.Context, name string, viewer uuid.UUID) (De
 	}
 	name, err := ValidName(name)
 	if err != nil {
+		return Detail{}, err
+	}
+	if err := moderation.Check(moderation.SurfaceGroupName, name); err != nil {
 		return Detail{}, err
 	}
 	owned, err := s.Store.OwnedCount(ctx, viewer)
@@ -198,6 +202,9 @@ func (s *Service) Rename(ctx context.Context, group uuid.UUID, name string, view
 	}
 	name, err := ValidName(name)
 	if err != nil {
+		return Detail{}, err
+	}
+	if err := moderation.Check(moderation.SurfaceGroupName, name); err != nil {
 		return Detail{}, err
 	}
 	if err := s.Store.RenameGroup(ctx, group, name, s.now()); err != nil {
