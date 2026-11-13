@@ -16,10 +16,8 @@ struct WelcomeView: View {
 
     @Environment(\.colorScheme) private var scheme
     @State private var nonce = ""
-    #if DEBUG || BETA
-        /// Where the pointer or a finger is, for the 3D owl to look at (BRD-011).
-        @State private var owlPointer: CGPoint?
-    #endif
+    /// Where the pointer or a finger is, for the 3D owl to look at (BRD-011).
+    @State private var owlPointer: CGPoint?
 
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var sizeClass
@@ -70,9 +68,7 @@ struct WelcomeView: View {
         }
         .background(Color(.paper).ignoresSafeArea())
         .foregroundStyle(Color(.ink))
-        #if DEBUG || BETA
-            .owlFollows($owlPointer)
-        #endif
+        .owlFollows($owlPointer)
     }
 
     private var copy: some View {
@@ -144,15 +140,11 @@ struct WelcomeView: View {
 }
 
 private extension WelcomeView {
-    /// The owl introduced, with what it is for VoiceOver. On the beta channel it is the 3D owl,
-    /// off the disc (BRD-011, an experiment); the App Store build shows the still.
+    /// The owl introduced, with what it is for VoiceOver. It is the 3D owl, off the
+    /// disc (BRD-011); the still stands in under Reduce Motion, Low Power Mode or a failed load.
     @ViewBuilder var owl: some View {
         let label = Text("Aaru's mascot, a small white robot owl with glowing amber eyes")
-        #if DEBUG || BETA
-            Owl3DView(label: label, pointer: owlPointer)
-        #else
-            OwlMedallion(label: label)
-        #endif
+        Owl3DView(label: label, pointer: owlPointer)
     }
 }
 

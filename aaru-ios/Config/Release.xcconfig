@@ -15,7 +15,3 @@ GOOGLE_CLIENT_ID = 1021071971791-me5t60upgnaqdcfa04l2bgca1dhkteuf.apps.googleuse
 
 // Sentry environment for this build's crash reports.
 SENTRY_ENVIRONMENT = production
-
-// The owl in 3D (BRD-011) is a beta-only experiment: the App Store build compiles none of it and
-// carries neither the model nor its motion. WelcomeView's own `#if DEBUG || BETA` picks the still.
-EXCLUDED_SOURCE_FILE_NAMES = Owl3DView.swift OwlMotion.swift OwlMotionTests.swift Owl.usdz owl-motion.json owl-rig.json

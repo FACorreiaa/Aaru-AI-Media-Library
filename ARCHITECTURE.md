@@ -1237,8 +1237,8 @@ Local cache: display last successful library fetch offline. No offline write que
 
 Prefer a single multiplatform target for iPhone and Mac.
 
-The owl in 3D (BRD-011) is `Owl3DView`, a non-AR `RealityView` on Welcome and (curious) on the first run's opening screen, iPhone and Mac, compiled only into
-Debug and Beta builds. `Owl.usdz` is in the app bundle; `Release.xcconfig` leaves it out. Motion is
+The owl in 3D (BRD-011) is `Owl3DView`, a non-AR `RealityView` on Welcome and (curious) on the first run's opening screen, iPhone and Mac, in every
+build, the App Store's included (owner, 2026-11-13). `Owl.usdz` is in the app bundle. Motion is
 `design/owl-motion.json`, the same data the web plays.
 
 Screens are composed from the `VIEWS.md` component catalog. Every component must be usable

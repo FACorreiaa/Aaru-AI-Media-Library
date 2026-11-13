@@ -72,6 +72,8 @@ go or no-go at the end; the plan is `docs/superpowers/plans/2026-11-12-owl-3d-ex
   web and the App Store build show the stills, and the App Store build does not carry the model.
   *Changed the same day for the web:* after the recolour (#288) the owner put the 3D owl on the
   production sign-in page too. The App Store build is unchanged: still the medallion, no model.
+  *Changed 2026-11-13 for the App Store build:* the owner wants the 3D owl in 1.0.0 too, so the
+  Release build now compiles it and carries the model (about 1.1 MB).
 - **Off the disc.** On the sign-in page and the Welcome screen the 3D owl stands full-body, without
   the `night` disc. DESIGN.md "Brand" records this as the experiment's one exception.
 - **First cut:** the standing owl at rest (a breath, a blink, a slow drift of the head) that looks
@@ -1460,7 +1462,9 @@ Curious, and the first run (owner, 2026-11-12: "curious motion first"): `design/
 
 Production web (owner, 2026-11-13: "looks good on beta"): the landing hero's owl on its books and the first run's curious owl are on aaruapp.com too, with the sign-in owl. The Apple apps keep the 3D owl to Debug and Beta builds; the App Store build is a separate decision.
 
-**Done when:** the 3D owl is on beta.aaruapp.com's sign-in page and in a TestFlight build's Welcome screen, on iPhone and Mac; the production web build and the Release app show the still and carry no model; the sign-in route's own size budget is unchanged; and the owner has said go or no-go, written here with the measurements.
+App Store build (owner, 2026-11-13, relayed from the owl session): the 3D owl ships in 1.0.0 too. `Release.xcconfig` no longer excludes `Owl3DView.swift`, `OwlMotion.swift`, `Owl.usdz` or the motion files, and Welcome and the first run lose their `#if DEBUG || BETA`. The still remains the fallback under Reduce Motion, Low Power Mode and a failed load. About 1.1 MB more in the bundle; no new framework beyond RealityKit and no network call.
+
+**Done when:** the 3D owl is on beta.aaruapp.com's sign-in page and in a TestFlight build's Welcome screen, on iPhone and Mac; the production web build and the Release app show the still and carry no model (superseded: production web 2026-11-12/13, the Release app 2026-11-13); the sign-in route's own size budget is unchanged; and the owner has said go or no-go, written here with the measurements.
 
 ## P0 · M1 — Server foundation
 

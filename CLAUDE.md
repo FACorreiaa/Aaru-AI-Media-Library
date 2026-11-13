@@ -162,9 +162,8 @@ apps share one API. See `BACKLOG.md` REL-001…REL-006.
   every heading is the system sans (`--font-display`, `Font.aaruDisplay`); no serif or bundled
   faces. On a conflict with main in a brand file, take main's side. `ci-brand.yml` enforces it.
 - **Owl in 3D** (BRD-011, owner 2026-11-12): an experiment on the sign-in page (beta and
-  production web, owner 2026-11-12) and Welcome (Debug and Beta builds only). The landing page's hero has the owl on its books (`OWL_3D_BOOKS_MODEL_URL`), and the first run's opening screen the curious owl on every client (`OWL_3D_FIRST_RUN_MODEL_URL` on the web; production web has both since 2026-11-13). The web loads the model from `cdn.aaruapp.com` (`OWL_3D_MODEL_URL`; `docs/brand/cdn`) and
-  imports `three` only inside `src/lib/owl3d/scene.ts`, lazily; the Apple code sits in
-  `#if DEBUG || BETA` and the Release build excludes `Owl.usdz`. The motion is
+  production web, owner 2026-11-12) and Welcome (every Apple build, the App Store's included, owner 2026-11-13). The landing page's hero has the owl on its books (`OWL_3D_BOOKS_MODEL_URL`), and the first run's opening screen the curious owl on every client (`OWL_3D_FIRST_RUN_MODEL_URL` on the web; production web has both since 2026-11-13). The web loads the model from `cdn.aaruapp.com` (`OWL_3D_MODEL_URL`; `docs/brand/cdn`) and
+  imports `three` only inside `src/lib/owl3d/scene.ts`, lazily; the Apple app carries `Owl.usdz` in its bundle. The motion is
   `design/owl-motion.json`; the clients' copies must match it (`brand-guard.sh` checks).
 - **Web UI rule** (owner, 2026-10-21): all web UI comes from shadcn-solid in
   `aaru-client/src/components/ui`, always imported through the barrel `~/components/ui`. A
