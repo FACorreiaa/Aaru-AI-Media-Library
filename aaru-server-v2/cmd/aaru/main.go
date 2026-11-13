@@ -3,6 +3,7 @@
 //	aaru --http-host 0.0.0.0 --http-port 8080   serve
 //	aaru --db-migrate                            apply migrations and exit
 //	aaru --anime-mappings default                load anime_mappings and exit
+//	aaru --seed-review                           fill App Review's account and exit
 package main
 
 import (

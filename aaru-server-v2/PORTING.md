@@ -25,7 +25,7 @@ here**.
 
 | Path | What |
 | --- | --- |
-| `cmd/aaru` | the binary; `--db-migrate`, `--anime-mappings`, else serve |
+| `cmd/aaru` | the binary; `--db-migrate`, `--anime-mappings`, `--seed-review` (REL-008), else serve |
 | `internal/app` | wiring: config → pool → services → router → workers |
 | `internal/config` | every env var the Swift `AppConfig` read, same names |
 | `internal/api` | **generated** types + echo strict server from `openapi.yaml` (`make api`) |

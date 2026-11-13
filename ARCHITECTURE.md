@@ -1215,6 +1215,14 @@ protocol ModelProviding: Sendable {
   and `REVIEW_CODE`, both sealed, both or neither): its code is always that value and no email is
   sent. Nothing else differs. The code still needs a request first, works once, expires, locks
   after five wrong tries, and the rate limits hold, so the address is as secret as the code.
+  The review account is filled by `aaru --seed-review` (REL-008, `internal/reviewseed`), run once
+  in the cluster as a Job from the API image with the API's env: the account as the first magic-link
+  sign-in makes it (handle `appreview`, first run finished, AI sharing left unanswered), 15 library
+  items over every kind, and a friend, `mira_reads`, who has no sign-in identity at all, so nobody
+  can sign in as her. She has five items, a Board post with comments, and a group, "Film club",
+  with the reviewer in it and a few `#general` messages: someone else's content to Report and
+  Block. Every write goes through the services the handlers call. A second run changes nothing,
+  and a block between the two stops the social steps.
 - Sessions are **opaque bearer tokens** (decided 2026-10-09): 32 random bytes, shown once;
   Postgres stores only the SHA-256 in `sessions`. 90-day lifetime. Revocation is a row delete.
   `AuthMiddleware` resolves the token and refuses every `/v1` route except health and auth.

@@ -924,6 +924,7 @@ account or a stranger that has not happened yet.
 | REL-005 | Done | infra #292, #321, #376; `api.aaruapp.com/v1/health` = 200 | INFRA_TOKEN unset: Server Deploy run is red, promote PRs opened by hand |
 | REL-006 | Done | #20, #21; `web-deploy.yml` (beta on merge, prod on dispatch) | |
 | REL-007 | Built, unverified | `aaru-ios/{Aaru,AaruWidgets}/PrivacyInfo.xcprivacy`; `docs/app-store-privacy.md`; `plutil -lint`, iOS Simulator + macOS builds bundle both | Never uploaded: no ITMS mail and no Xcode privacy report seen (needs a signed archive). Owner fills in App Store Connect from the sheet; Part C lists what to settle first |
+| REL-008 | Built, unverified | `aaru-server-v2/internal/reviewseed`, `aaru --seed-review`; DB test runs it twice; infra Job manifest in a draft PR | Not run in production yet: the Job needs the merged image's SHA; nobody has signed in to the review account |
 | DSN-001 | Dropped | DESIGN.md:421 "ScreensDesign was not used" | Optional item, skipped (Pro plan) |
 | BRD-001 | Built | #145; `ci-brand.yml` required by the main ruleset | Owner checks TestFlight + beta web in light and dark |
 | BRD-002 | Built | #147 | App icon approved by the owner 2026-10-22 (large + small variant) |
@@ -1341,6 +1342,18 @@ collected data type, SDK or required-reason API changes the manifest and the she
 **Done when:** an upload to App Store Connect brings no ITMS-91053/91056 mail, Xcode's privacy
 report for the archive matches the sheet, and the App Privacy label and age rating are saved
 from it.
+
+### REL-008 · App Review account with content · S
+**Needs:** REL-005.
+App Review signs in with `REVIEW_EMAIL` and its fixed code and must find content: a library, and
+someone else's content to Report and Block. `aaru --seed-review`, run once as a Job from the API
+image, makes the account as the first sign-in would, 15 items over every kind and status, and a
+friend, `mira_reads`, who has no sign-in identity, with her own library, a Board post with
+comments, and the group "Film club" with `#general` messages. All through the services the
+handlers call; a second run changes nothing; a block between the two stops the social steps.
+
+**Done when:** the Job ran in production, and signing in with the review address and code shows
+the library, Mira's profile, her post and the group.
 
 ### DSN-001 · ScreensDesign pass on tracker apps · S · optional
 The ScreensDesign MCP research tools need a Pro plan (blocked on 2026-10-09). If it is bought,
