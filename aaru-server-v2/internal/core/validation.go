@@ -27,8 +27,8 @@ const (
 // as 422 `validation_failed`, naming the offending request field.
 type ValidationError struct {
 	Kind ValidationKind
-	// Year for InvalidYear.
-	Year int
+	// Year for InvalidYear, and the earliest year its kind accepts (MinYear when zero).
+	Year, MinYear int
 	// Value for the rating kinds.
 	Value float64
 	// Season and Episode for InvalidEpisodeNumber.
@@ -40,7 +40,11 @@ func (e *ValidationError) Error() string {
 	case EmptyTitle:
 		return "Title text must not be empty."
 	case InvalidYear:
-		return fmt.Sprintf("Year %d is outside %d–%d.", e.Year, MinYear, MaxYear)
+		lowest := e.MinYear
+		if lowest == 0 {
+			lowest = MinYear
+		}
+		return fmt.Sprintf("Year %d is outside %d–%d.", e.Year, lowest, MaxYear)
 	case RatingOutOfRange:
 		return fmt.Sprintf("Rating %s is outside %s–%s.", swiftDouble(e.Value), swiftDouble(RatingMin), swiftDouble(RatingMax))
 	case RatingNotInHalfSteps:

@@ -7,6 +7,13 @@ import Foundation
 public struct Title: Codable, Hashable, Sendable, Identifiable {
     /// Years Aaru accepts. Wide enough for early cinema and for announced titles.
     public static let validYears: ClosedRange<Int> = 1870 ... 2200
+    /// A book may be far older than film (Pride and Prejudice is 1813).
+    public static let validBookYears: ClosedRange<Int> = 1000 ... 2200
+
+    /// The years a title of this kind may carry.
+    public static func validYears(for type: MediaType) -> ClosedRange<Int> {
+        type == .book ? validBookYears : validYears
+    }
 
     public var id: TitleID
     public var type: MediaType
@@ -79,8 +86,9 @@ public struct Title: Codable, Hashable, Sendable, Identifiable {
         guard !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw ValidationError.emptyTitle
         }
-        if let year, !Title.validYears.contains(year) {
-            throw ValidationError.invalidYear(year)
+        let years = Title.validYears(for: type)
+        if let year, !years.contains(year) {
+            throw ValidationError.invalidYear(year, earliest: years.lowerBound)
         }
     }
 }

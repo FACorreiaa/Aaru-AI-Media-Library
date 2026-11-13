@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -212,7 +213,7 @@ func Rows(input json.RawMessage) []Title {
 			mediaType = core.MediaMovie
 		}
 		var year *int
-		if value, ok := item["year"].(float64); ok && value >= 1870 && value <= 2100 {
+		if value, ok := item["year"].(float64); ok && value == math.Trunc(value) && core.ValidYear(mediaType, int(value)) {
 			y := int(value)
 			year = &y
 		}

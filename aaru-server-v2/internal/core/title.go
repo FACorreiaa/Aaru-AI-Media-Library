@@ -6,14 +6,27 @@ import (
 	"github.com/google/uuid"
 )
 
-// Years Aaru accepts. Wide enough for early cinema and for announced titles.
+// Years Aaru accepts. Wide enough for early cinema and for announced titles; a book
+// may be far older than film (Pride and Prejudice is 1813), so books start at MinBookYear.
+// An older work (the Odyssey) is kept without a year rather than refused.
 const (
-	MinYear = 1870
-	MaxYear = 2200
+	MinYear     = 1870
+	MinBookYear = 1000
+	MaxYear     = 2200
 )
 
-// ValidYear reports whether year is inside MinYear…MaxYear.
-func ValidYear(year int) bool { return year >= MinYear && year <= MaxYear }
+// MinYearFor is the earliest year a title of this kind may carry.
+func MinYearFor(kind MediaType) int {
+	if kind == MediaBook {
+		return MinBookYear
+	}
+	return MinYear
+}
+
+// ValidYear reports whether year is inside MinYearFor(kind)…MaxYear.
+func ValidYear(kind MediaType, year int) bool {
+	return year >= MinYearFor(kind) && year <= MaxYear
+}
 
 // Title is a canonical work Aaru knows about: one movie, show, book, album, or manga.
 //
@@ -57,8 +70,8 @@ func (t Title) Validate() error {
 	if strings.TrimSpace(t.Title) == "" {
 		return &ValidationError{Kind: EmptyTitle}
 	}
-	if t.Year != nil && !ValidYear(*t.Year) {
-		return &ValidationError{Kind: InvalidYear, Year: *t.Year}
+	if t.Year != nil && !ValidYear(t.Type, *t.Year) {
+		return &ValidationError{Kind: InvalidYear, Year: *t.Year, MinYear: MinYearFor(t.Type)}
 	}
 	return nil
 }
@@ -102,8 +115,8 @@ func (r MediaRef) Validate() error {
 	if !r.IsResolvable() {
 		return &ValidationError{Kind: UnresolvableMediaRef}
 	}
-	if r.Year != nil && !ValidYear(*r.Year) {
-		return &ValidationError{Kind: InvalidYear, Year: *r.Year}
+	if r.Year != nil && !ValidYear(r.Type, *r.Year) {
+		return &ValidationError{Kind: InvalidYear, Year: *r.Year, MinYear: MinYearFor(r.Type)}
 	}
 	return nil
 }

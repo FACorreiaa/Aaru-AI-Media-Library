@@ -7,11 +7,28 @@ struct ValidationTests {
         #expect(throws: ValidationError.emptyTitle) {
             try Title(type: .movie, title: "   ").validate()
         }
-        #expect(throws: ValidationError.invalidYear(1600)) {
+        #expect(throws: ValidationError.invalidYear(1600, earliest: 1870)) {
             try Title(type: .movie, title: "Nosferatu", year: 1600).validate()
         }
         #expect(throws: Never.self) {
             try Title(type: .movie, title: "Nosferatu", year: 1922).validate()
+        }
+    }
+
+    @Test
+    func aBookMayBeOlderThanFilm() {
+        #expect(throws: Never.self) {
+            try Title(type: .book, title: "Pride and Prejudice", year: 1813).validate()
+        }
+        #expect(throws: Never.self) {
+            try MediaRef(type: .book, title: "Don Quixote", year: 1605).validate()
+        }
+        #expect(throws: ValidationError.invalidYear(12, earliest: 1000)) {
+            try Title(type: .book, title: "Odd", year: 12).validate()
+        }
+        #expect(ValidationError.invalidYear(12, earliest: 1000).description == "Year 12 is outside 1000–2200.")
+        #expect(throws: ValidationError.invalidYear(1813, earliest: 1870)) {
+            try MediaRef(type: .album, title: "Old", year: 1813).validate()
         }
     }
 
