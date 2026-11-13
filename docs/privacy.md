@@ -1,6 +1,6 @@
 # Privacy policy
 
-_Last updated 12 November 2026._
+_Last updated 13 November 2026._
 
 Aaru is a private media library: what you watch and read, kept for you. This page says what
 Aaru stores, who else sees any of it, and how to delete it. If anything here stops matching
@@ -27,6 +27,10 @@ Aaru, your email address when the service shares it, and your first and last nam
 them. Your email is shown to you in your profile; nobody else sees it unless you share it (below).
 Sign-in sessions are stored only as one-way hashes; on the web the session lives in a secure,
 HttpOnly cookie. Email sign-in codes are stored hashed and expire after 15 minutes.
+If you sign in with Apple, Aaru also keeps one token Apple issues for that sign-in, stored
+encrypted. It has one use: when you delete your account, Aaru hands it back to Apple to end the
+sign-in on Apple's side, so Aaru no longer appears under "Sign in with Apple" in your Apple
+Account. Aaru never uses it to read anything from Apple, and it is deleted with your account.
 You can sign out of your other devices from Settings: "Sign out of other devices" ends every
 other sign-in of yours and keeps the one you are using. It does not remove connections (agents,
 scrobblers, MyAnimeList); remove those under Settings, Connections. Deleting your account asks for a sign-in
@@ -270,6 +274,7 @@ Aaru only uses these services, and only for the purpose listed:
 - **Hetzner** (Germany) runs Aaru's server and database and holds encrypted backups.
 - **Cloudflare** serves the website at aaruapp.com and its DNS.
 - **Apple** for Sign in with Apple, push notifications and selling Aaru Plus; **Google** for Sign in with Google.
+  When you delete an account that signed in with Apple, Aaru tells Apple to revoke that sign-in.
 - **Your browser's push service** (Google, Mozilla, Apple or Microsoft) carries browser alerts. It
   sees an encrypted message and when it was sent, never its text.
 - **Resend** sends sign-in emails, so it receives your email address and that email.
