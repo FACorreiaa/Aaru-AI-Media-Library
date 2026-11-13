@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- The extension sends nothing itself: it draws the snapshot the app wrote, and its one
+	     intent calls the API the app does. Evidence: docs/app-store-privacy.md (REL-007). -->
 	<key>NSPrivacyTracking</key>
 	<false/>
 	<key>NSPrivacyTrackingDomains</key>
@@ -12,11 +14,13 @@
 	<array>
 		<dict>
 			<key>NSPrivacyAccessedAPIType</key>
-			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
 			<key>NSPrivacyAccessedAPITypeReasons</key>
 			<array>
-				<!-- App Group defaults shared by the app and its widget extension. -->
-				<string>1C8F.1</string>
+				<!-- Shared/NowPlayingArtwork.swift compiles into the extension too (iOS): file
+				     dates of the Live Activity art in the App Group container. The extension
+				     has no user defaults; the snapshot is a file. -->
+				<string>C617.1</string>
 			</array>
 		</dict>
 	</array>
