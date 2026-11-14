@@ -267,37 +267,6 @@ final class ChannelModel {
         }
     }
 
-    private func received(_ message: GroupMessage, isNew: Bool) {
-        answered(message)
-        if let author = message.author?.userId {
-            typing[author] = nil
-            // My own message, echoed before the send's response: the server returns my nonce on
-            // my messages, so the pending copy it answers is exact.
-            if author == myUserID, isNew, let nonce = message.clientNonce {
-                outbox.removeAll { $0.id == nonce }
-            }
-        }
-        merge([message])
-    }
-
-    /// An answer that landed in another channel (#ai-reply): the wait ends, and the mention here,
-    /// when loaded, says where Aaru answered.
-    private func answeredElsewhere(_ answer: GroupMessage, in channel: String) {
-        answered(answer)
-        guard let mention = answer.replyTo,
-              let index = messages.firstIndex(where: { $0.id == mention }),
-              messages[index].answeredIn == nil
-        else { return }
-        messages[index].answeredIn = channel
-    }
-
-    private func markDeleted(_ id: String) {
-        guard let index = messages.firstIndex(where: { $0.id == id }) else { return }
-        messages[index].body = ""
-        messages[index].deleted = true
-        messages[index].mentions = []
-    }
-
     private func startedTyping(_ user: SocialUser) {
         typing[user.userId] = (user, Date().addingTimeInterval(Self.typingLifetime))
         Task { [weak self] in
@@ -328,6 +297,37 @@ final class ChannelModel {
 }
 
 private extension ChannelModel {
+    func received(_ message: GroupMessage, isNew: Bool) {
+        answered(message)
+        if let author = message.author?.userId {
+            typing[author] = nil
+            // My own message, echoed before the send's response: the server returns my nonce on
+            // my messages, so the pending copy it answers is exact.
+            if author == myUserID, isNew, let nonce = message.clientNonce {
+                outbox.removeAll { $0.id == nonce }
+            }
+        }
+        merge([message])
+    }
+
+    func markDeleted(_ id: String) {
+        guard let index = messages.firstIndex(where: { $0.id == id }) else { return }
+        messages[index].body = ""
+        messages[index].deleted = true
+        messages[index].mentions = []
+    }
+
+    /// An answer that landed in another channel (#ai-reply): the wait ends, and the mention here,
+    /// when loaded, says where Aaru answered.
+    func answeredElsewhere(_ answer: GroupMessage, in channel: String) {
+        answered(answer)
+        guard let mention = answer.replyTo,
+              let index = messages.firstIndex(where: { $0.id == mention }),
+              messages[index].answeredIn == nil
+        else { return }
+        messages[index].answeredIn = channel
+    }
+
     /// Who is typing, and whether Aaru is working on an answer.
     func presence(_ event: RealtimeEvent) {
         if event._type == .agent_thinking, let mention = event.messageId {
