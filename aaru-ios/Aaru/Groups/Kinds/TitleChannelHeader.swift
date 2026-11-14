@@ -60,6 +60,8 @@ struct TitleChannelHeader: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
         .background(Color(.surface).opacity(AaruAlpha.half))
+        // Opaque underneath: nothing behind the panel shows through the tint.
+        .background(Color(.paper))
         .overlay(alignment: .bottom) { Rectangle().fill(Color(.line)).frame(height: 0.5) }
         .task { await model.load() }
         .task {

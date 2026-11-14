@@ -142,7 +142,8 @@ private struct GroupsSplit: View {
     let groups: GroupsModel
     @State private var selection: ChannelRef?
     @State private var collapsed: Set<String> = []
-    @State private var showsMembers = false
+    /// Members show beside the channel by default, Discord-style; closing it is remembered.
+    @AppStorage("groups.showsMembers") private var showsMembers = true
     @State private var sheet: GroupSheet?
     @State private var confirm: GroupConfirm?
 

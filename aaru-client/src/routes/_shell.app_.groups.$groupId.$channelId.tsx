@@ -117,7 +117,7 @@ function ChannelPage() {
       <Show when={scope.membersOpen()}>
         <aside
           aria-label="Members"
-          class="hidden w-60 shrink-0 overflow-y-auto border-l border-line bg-surface/40 2xl:block"
+          class="hidden w-60 shrink-0 overflow-y-auto border-l border-line bg-surface/40 xl:block"
         >
           <MemberList />
         </aside>

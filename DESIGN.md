@@ -1024,10 +1024,13 @@ thing being talked about.
   header.
 
 **The channel.**
-- The header carries the name, the topic and a quiet "Not end-to-end" chip. Never hide it.
+- The header carries the name, the topic, a quiet "Not end-to-end" chip and the member strip
+  (`MemberStrip`: up to four faces and the count; a tap opens Members). Never hide the chip.
+  The header and the kind's panel sit above the messages; nothing scrolls under them.
 - Messages are flat rows, not bubbles. A run by one author within five minutes shares one
   name and monogram. Days get dividers, and a thin accent line marks where you stopped reading.
-  Scroll stays pinned to the bottom, and "Jump to present" appears when you scroll up.
+  Scroll stays pinned to the bottom, and "Jump to present" appears only while the newest
+  message is off screen.
 - Each kind has its own header. `title` shows the `TitleCard` and, for members who opted in,
   where they are. `shelf` shows the shared list. `watch` shows the `WatchPanel`. `text` shows
   only the topic.
@@ -1271,7 +1274,8 @@ Where each existing piece goes:
   "Not end-to-end", and the header's popover adds the `@aaru` line when the group has it.
   Discuss in a group lists every group: Open, Start (managers) or "An admin can start one."
   The owner's menu has "Leave group…", which explains handing the group on first. In the split
-  view Members is always the inspector.
+  view Members is always the inspector, open by default (owner 2026-11-14) and remembered once
+  closed. Web shows the member column from 1280px wide.
 - **Words.** One episode code, "S1 · E8"; "S01E05" only in the week grid's cells. Discover's
   credit is "Rows from" the providers on screen, and no error names a vendor. Listens is
   "Listens", linked as "All listens ›", with 7 days / 30 days / Year / All time and a
