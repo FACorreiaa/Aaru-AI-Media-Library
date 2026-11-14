@@ -15,7 +15,7 @@ Use this document to pick features, write scripts and plan recordings. Positioni
 | Surface | State |
 |---|---|
 | Web | Production at `aaruapp.com` (Cloudflare Worker). Beta web on the `env.staging` Worker, deployed on every merge to `main` |
-| iPhone, iPad, Mac | TestFlight beta ("Aaru Beta"). iOS and macOS 1.0 (build 3) **submitted to App Review 2026-11-13** as "Aaru - Media Manager", Free, phased release. Check App Store Connect before saying "on the App Store" |
+| iPhone, iPad, Mac | **App Store 1.0, released 2026-11-14** as "Aaru - Media Manager" (`https://apps.apple.com/app/aaru-media-manager/id6821299076`); TestFlight beta ("Aaru Beta") for later builds. iOS and macOS 1.0 (build 3) were submitted together; confirm the Mac listing before claiming it, Free, phased release. Check App Store Connect before saying "on the App Store" |
 | Browser extension | Built for Chrome and Firefox (`aaru-extension/`), **in no store** (SCR-007) |
 | Android | **None.** No Android client exists. The landing page's "Android to follow" and "Google Play" lines are a promise, not a feature |
 
@@ -72,7 +72,7 @@ Chosen for user value, how well they film, and status. Order matters.
   landing FAQ says pricing is not final; the export and statistics promise is the only
   permanent one.
 - **Android or Google Play.** No client exists.
-- **"On the App Store"** until App Review has approved 1.0 and the release is out.
+- **"On the Mac App Store"** until the Mac listing is confirmed (iPhone and iPad are live).
 - **The browser extension as something to install.** It is in no store.
 - **End-to-end encrypted DMs.** P6, not built. Never imply Aaru has private messaging. Group
   messages are server-visible and every channel says so.
@@ -332,7 +332,7 @@ one usually exists on the other. Where a row above says otherwise, name the plat
 
 ## 22. iPhone, iPad and Mac app
 
-- **Status:** verified on TestFlight; 1.0 in App Review.
+- **Status:** verified on TestFlight; 1.0 released 2026-11-14 (Mac listing to confirm).
 - **Benefit:** a native Mac client is rarer than an iPhone one (MARKETING.md §7).
 
 ## 23. Web app
@@ -377,7 +377,7 @@ rendered, no app was run.
 Swift one on 2026-10-30, and BACKLOG notes saying "Not deployed" predate it.
 
 **Needs confirmation.**
-- App Review outcome for 1.0 (submitted 2026-11-13).
+- Mac App Store listing for 1.0 (iOS live 2026-11-14).
 - Whether TMDB's free-tier non-commercial terms still fit once Aaru is marketed (Plus off sale
   helps; `docs/providers.md`).
 - Whether MAL's written authorisation has been asked for.
