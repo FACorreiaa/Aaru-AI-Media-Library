@@ -290,15 +290,17 @@ final class ChannelModel {
         else { return }
         messages[index].answeredIn = channel
     }
+}
 
-    private func markDeleted(_ id: String) {
+private extension ChannelModel {
+    func markDeleted(_ id: String) {
         guard let index = messages.firstIndex(where: { $0.id == id }) else { return }
         messages[index].body = ""
         messages[index].deleted = true
         messages[index].mentions = []
     }
 
-    private func startedTyping(_ user: SocialUser) {
+    func startedTyping(_ user: SocialUser) {
         typing[user.userId] = (user, Date().addingTimeInterval(Self.typingLifetime))
         Task { [weak self] in
             try? await Task.sleep(for: .seconds(Self.typingLifetime + 0.1))
@@ -306,28 +308,11 @@ final class ChannelModel {
         }
     }
 
-    private func expireTyping() {
+    func expireTyping() {
         let now = Date()
         typing = typing.filter { $0.value.until > now }
     }
 
-    // MARK: Helpers
-
-    /// The first of the last `unread` messages from others: the server counts only those.
-    static func firstUnread(in messages: [GroupMessage], unread: Int, viewer: String?) -> String? {
-        guard unread > 0 else { return nil }
-        var remaining = unread
-        for message in messages.reversed() where !message.deleted && message.author?.userId != viewer {
-            remaining -= 1
-            if remaining == 0 {
-                return message.id
-            }
-        }
-        return messages.first?.id
-    }
-}
-
-private extension ChannelModel {
     /// Who is typing, and whether Aaru is working on an answer.
     func presence(_ event: RealtimeEvent) {
         if event._type == .agent_thinking, let mention = event.messageId {
@@ -359,6 +344,21 @@ private extension ChannelModel {
 }
 
 extension ChannelModel {
+    // MARK: Helpers
+
+    /// The first of the last `unread` messages from others: the server counts only those.
+    static func firstUnread(in messages: [GroupMessage], unread: Int, viewer: String?) -> String? {
+        guard unread > 0 else { return nil }
+        var remaining = unread
+        for message in messages.reversed() where !message.deleted && message.author?.userId != viewer {
+            remaining -= 1
+            if remaining == 0 {
+                return message.id
+            }
+        }
+        return messages.first?.id
+    }
+
     /// "Kai is typing…", for the line above the composer; nil when nobody is.
     var typingLine: String? {
         let names = typing.values.sorted { $0.until < $1.until }.map { $0.user.displayName ?? "@\($0.user.handle)" }
