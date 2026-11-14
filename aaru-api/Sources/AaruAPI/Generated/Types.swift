@@ -8123,6 +8123,10 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/Channel/isDefault`.
             public var isDefault: Swift.Bool
+            /// True on the group's #ai-reply, where every @aaru answer lands. A text channel Aaru makes on the first mention; absent means false.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Channel/agentReplies`.
+            public var agentReplies: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/Channel/unread`.
             public var unread: Swift.Int
             /// - Remark: Generated from `#/components/schemas/Channel/mentions`.
@@ -8137,6 +8141,7 @@ public enum Components {
             ///   - topic:
             ///   - position:
             ///   - isDefault: The #general every group starts with. Cannot be deleted.
+            ///   - agentReplies: True on the group's #ai-reply, where every @aaru answer lands. A text channel Aaru makes on the first mention; absent means false.
             ///   - unread:
             ///   - mentions:
             public init(
@@ -8147,6 +8152,7 @@ public enum Components {
                 topic: Swift.String? = nil,
                 position: Swift.Int,
                 isDefault: Swift.Bool,
+                agentReplies: Swift.Bool? = nil,
                 unread: Swift.Int,
                 mentions: Swift.Int
             ) {
@@ -8157,6 +8163,7 @@ public enum Components {
                 self.topic = topic
                 self.position = position
                 self.isDefault = isDefault
+                self.agentReplies = agentReplies
                 self.unread = unread
                 self.mentions = mentions
             }
@@ -8168,6 +8175,7 @@ public enum Components {
                 case topic
                 case position
                 case isDefault
+                case agentReplies
                 case unread
                 case mentions
             }
@@ -8450,6 +8458,14 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/GroupMessage/replyTo`.
             public var replyTo: Swift.String?
+            /// The channel replyTo is in. An @aaru answer lands in #ai-reply, so it is usually another channel: show "in #channel" and open it on a tap.
+            ///
+            /// - Remark: Generated from `#/components/schemas/GroupMessage/replyToChannelId`.
+            public var replyToChannelId: Swift.String?
+            /// On an @aaru mention: the channel Aaru answered in (#ai-reply), once it has. Show "Aaru answered in #channel".
+            ///
+            /// - Remark: Generated from `#/components/schemas/GroupMessage/answeredIn`.
+            public var answeredIn: Swift.String?
             /// Cards on an @aaru reply. Catalog titles only; their buttons are the viewer's own taps.
             ///
             /// - Remark: Generated from `#/components/schemas/GroupMessage/components`.
@@ -8472,6 +8488,8 @@ public enum Components {
             ///   - veiled: It may spoil what you have not watched yet: show it veiled until you tap.
             ///   - fromAgent: Written by @aaru. It has no author.
             ///   - replyTo: The mention an @aaru reply answers.
+            ///   - replyToChannelId: The channel replyTo is in. An @aaru answer lands in #ai-reply, so it is usually another channel: show "in #channel" and open it on a tap.
+            ///   - answeredIn: On an @aaru mention: the channel Aaru answered in (#ai-reply), once it has. Show "Aaru answered in #channel".
             ///   - components: Cards on an @aaru reply. Catalog titles only; their buttons are the viewer's own taps.
             public init(
                 id: Swift.String,
@@ -8489,6 +8507,8 @@ public enum Components {
                 veiled: Swift.Bool,
                 fromAgent: Swift.Bool,
                 replyTo: Swift.String? = nil,
+                replyToChannelId: Swift.String? = nil,
+                answeredIn: Swift.String? = nil,
                 components: [Components.Schemas.MessageComponent]? = nil
             ) {
                 self.id = id
@@ -8506,6 +8526,8 @@ public enum Components {
                 self.veiled = veiled
                 self.fromAgent = fromAgent
                 self.replyTo = replyTo
+                self.replyToChannelId = replyToChannelId
+                self.answeredIn = answeredIn
                 self.components = components
             }
             public enum CodingKeys: String, CodingKey {
@@ -8524,6 +8546,8 @@ public enum Components {
                 case veiled
                 case fromAgent
                 case replyTo
+                case replyToChannelId
+                case answeredIn
                 case components
             }
         }

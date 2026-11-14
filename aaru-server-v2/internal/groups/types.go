@@ -101,9 +101,12 @@ type Channel struct {
 	Topic     *string
 	Position  int
 	IsDefault bool
-	CreatedAt time.Time
-	Unread    int
-	Mentions  int
+	// AgentReplies marks the group's #ai-reply, where every `@aaru` answer lands. A plain text
+	// channel the first mention makes; found by this flag, never by its name.
+	AgentReplies bool
+	CreatedAt    time.Time
+	Unread       int
+	Mentions     int
 }
 
 // Member is a user's place in a group.
@@ -182,8 +185,16 @@ type Message struct {
 	Spoiler *SpoilerStamp
 	// FromAgent: written by `@aaru`; such a message has no author.
 	FromAgent bool
+	// SpoilerTitleID is the title the stamp is about when the message's own channel is about none:
+	// an `@aaru` answer in #ai-reply to a mention in a title channel. Nil means the channel's title.
+	SpoilerTitleID *uuid.UUID
 	// ReplyTo is the mention an agent reply answers.
 	ReplyTo *uuid.UUID
+	// ReplyToChannel is the channel ReplyTo is in, read with the message. Usually not this one:
+	// answers land in #ai-reply.
+	ReplyToChannel *uuid.UUID
+	// AnsweredIn is the channel of Aaru's answer to this mention, once there is one.
+	AnsweredIn *uuid.UUID
 	// Components are the catalog cards an agent reply carries. Nothing else is allowed.
 	Components []Component
 }

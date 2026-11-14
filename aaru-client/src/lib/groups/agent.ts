@@ -104,3 +104,63 @@ export function replySnippet(
 export function agentCards(message: GroupMessage): MessageComponent[] {
   return message.components ?? []
 }
+
+/** The name `#ai-reply` is made with; a group may have renamed it. */
+export const AGENT_REPLIES_NAME = 'ai-reply'
+
+/**
+ * Where a message links to another channel of the group: an Aaru answer to a mention posted
+ * elsewhere ("in #general"), or a mention Aaru answered elsewhere ("Aaru answered in #ai-reply").
+ * Null when the other channel is this one. A channel the group detail does not list yet (made
+ * a moment ago) still links, under the name it was made with.
+ */
+export function elsewhere(
+  message: GroupMessage,
+  here: string,
+  channels: { id: string; name: string }[],
+): { kind: 'reply' | 'answered'; channelId: string; name: string } | null {
+  const name = (id: string) =>
+    channels.find((c) => c.id === id)?.name ?? AGENT_REPLIES_NAME
+  if (message.deleted) return null
+  if (
+    message.fromAgent &&
+    message.replyToChannelId &&
+    message.replyToChannelId !== here
+  ) {
+    const id = message.replyToChannelId
+    return {
+      kind: 'reply',
+      channelId: id,
+      name: channels.find((c) => c.id === id)?.name ?? 'another channel',
+    }
+  }
+  if (
+    message.mentionsAgent &&
+    message.answeredIn &&
+    message.answeredIn !== here
+  ) {
+    return {
+      kind: 'answered',
+      channelId: message.answeredIn,
+      name: name(message.answeredIn),
+    }
+  }
+  return null
+}
+
+/**
+ * Marks the mention an Aaru answer in another channel answers, so "Aaru answered in" shows
+ * without a reload. The same list back when the mention is not loaded here.
+ */
+export function noteAnswered(
+  messages: GroupMessage[],
+  answer: GroupMessage,
+  answerChannel: string,
+): GroupMessage[] {
+  if (!answer.fromAgent || !answer.replyTo) return messages
+  const at = messages.findIndex((m) => m.id === answer.replyTo)
+  if (at < 0 || messages[at].answeredIn) return messages
+  const next = [...messages]
+  next[at] = { ...messages[at], answeredIn: answerChannel }
+  return next
+}

@@ -3,6 +3,8 @@ import {
   AGENT_HANDLE,
   THINKING_TTL_MS,
   agentCards,
+  elsewhere,
+  noteAnswered,
   noteThinking,
   replySnippet,
   settleThinking,
@@ -155,5 +157,50 @@ describe('Aaru replies', () => {
       i.kind === 'message' ? [i.startsRun] : [],
     )
     expect(starts).toEqual([true, true, true])
+  })
+})
+
+describe('#ai-reply links', () => {
+  const channels = [
+    { id: 'general', name: 'general' },
+    { id: 'ai', name: 'ai-reply' },
+  ]
+
+  it('says which channel an answer answers, unless it is this one', () => {
+    const answer = message('r', {
+      author: undefined,
+      fromAgent: true,
+      replyTo: 'm',
+      replyToChannelId: 'general',
+    })
+    expect(elsewhere(answer, 'ai', channels)).toEqual({
+      kind: 'reply',
+      channelId: 'general',
+      name: 'general',
+    })
+    expect(elsewhere(answer, 'general', channels)).toBeNull()
+  })
+
+  it('says where Aaru answered a mention, under the name it was made with when not listed yet', () => {
+    const mention = message('m', { mentionsAgent: true, answeredIn: 'ai' })
+    expect(elsewhere(mention, 'general', channels)?.name).toBe('ai-reply')
+    expect(elsewhere(mention, 'general', [])).toEqual({
+      kind: 'answered',
+      channelId: 'ai',
+      name: 'ai-reply',
+    })
+    expect(
+      elsewhere({ ...mention, deleted: true }, 'general', channels),
+    ).toBeNull()
+    expect(elsewhere(message('x'), 'general', channels)).toBeNull()
+  })
+
+  it('marks a loaded mention answered when the answer arrives elsewhere', () => {
+    const list = [message('m', { mentionsAgent: true }), message('n')]
+    const next = noteAnswered(list, reply('r', 'm'), 'ai')
+    expect(next[0].answeredIn).toBe('ai')
+    expect(next[1]).toBe(list[1])
+    expect(noteAnswered(next, reply('r2', 'm'), 'other')).toBe(next)
+    expect(noteAnswered(list, reply('r', 'gone'), 'ai')).toBe(list)
   })
 })

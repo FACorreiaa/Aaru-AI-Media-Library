@@ -1571,6 +1571,15 @@ Rules:
   message with author kind `agent` and catalog components only. Card buttons are the viewer's
   own taps, so the agent has no write path. Per-user and per-group caps apply before any model
   call.
+  Every answer, the resting note and the failure note land in the group's `#ai-reply`
+  (decision 2026-11-14): a `text` channel `groups.Service.agentReplyChannel` makes on the first
+  mention, found by `group_channels.is_agent_replies` (one per group, a partial unique index),
+  never by name; `ai-reply` is reserved for member-made channels. The job's `channel_id` stays the
+  mention's channel, which is what the model reads; `agent.thinking` goes to both channels. A
+  message carries `replyToChannelId` (the mention's channel) and, on a mention, `answeredIn`.
+  An answer from a title channel keeps its stamp and records the title in
+  `group_messages.spoiler_title_id`, so it veils in `#ai-reply` by that title; a stamp about no
+  known title is veiled for every reader but its author.
 - **Push** for mentions and invites carries no message text, only who, where and a deep link.
 
 ## Board (pulled forward 2026-10-22)

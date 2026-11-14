@@ -108,6 +108,10 @@ struct MessageRow: View {
                     .foregroundStyle(Color(.muted))
                     .accessibilityLabel("Marked as a spoiler: \(stamp)")
             }
+            // Aaru answers in #ai-reply, not here.
+            if message.mentionsAgent, let answer = message.answeredIn, answer != message.channelId {
+                ElsewhereLine(kind: .answered, channelID: answer, from: message.channelId)
+            }
         }
     }
 }

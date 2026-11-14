@@ -25,6 +25,8 @@ const (
 	MaxPageSize          = 100
 	// AgentHandle is the handle a message uses to tag the agent. Reserved in social.
 	AgentHandle = "aaru"
+	// AgentRepliesName is the name #ai-reply is made with. Members cannot take it.
+	AgentRepliesName = "ai-reply"
 )
 
 // Errors every group route shares. A non-member gets the same 404 as a missing group.
@@ -127,6 +129,9 @@ func ChannelName(raw string) (string, error) {
 	if name == "" || length(name) > MaxChannelNameLength {
 		return "", Invalid("name", fmt.Sprintf("Use 1–%d letters or numbers.", MaxChannelNameLength))
 	}
+	if name == AgentRepliesName {
+		return "", Invalid("name", "#"+AgentRepliesName+" is where Aaru answers. Pick another name.")
+	}
 	return name, nil
 }
 
@@ -199,10 +204,12 @@ func Veils(stamp *SpoilerStamp, reader *TitleProgress) bool {
 	return reader.Furthest.Before(*stamp.Episode)
 }
 
-// VeiledFor are the members a message is veiled for. The author never is.
+// VeiledFor are the members a message is veiled for. The author never is. progress is every
+// member's progress in the title the stamp is about; nil means no known title, and a stamped
+// message about no known title is veiled for everyone but its author.
 func VeiledFor(m Message, members []Member, progress map[uuid.UUID]TitleProgress) map[uuid.UUID]bool {
 	veiled := map[uuid.UUID]bool{}
-	if progress == nil || m.Spoiler == nil {
+	if m.Spoiler == nil {
 		return veiled
 	}
 	for _, member := range members {

@@ -5087,6 +5087,7 @@ components:
         topic: {type: string}
         position: {type: integer}
         isDefault: {type: boolean, description: 'The #general every group starts with. Cannot be deleted.'}
+        agentReplies: {type: boolean, description: "True on the group's #ai-reply, where every @aaru answer lands. A text channel Aaru makes on the first mention; absent means false."}
         unread: {type: integer}
         mentions: {type: integer}
     GroupDetail:
@@ -5176,6 +5177,8 @@ components:
         veiled: {type: boolean, description: "It may spoil what you have not watched yet: show it veiled until you tap."}
         fromAgent: {type: boolean, description: Written by @aaru. It has no author.}
         replyTo: {type: string, format: uuid, description: The mention an @aaru reply answers.}
+        replyToChannelId: {type: string, format: uuid, description: 'The channel replyTo is in. An @aaru answer lands in #ai-reply, so it is usually another channel: show "in #channel" and open it on a tap.'}
+        answeredIn: {type: string, format: uuid, description: 'On an @aaru mention: the channel Aaru answered in (#ai-reply), once it has. Show "Aaru answered in #channel".'}
         components:
           type: array
           description: 'Cards on an @aaru reply. Catalog titles only; their buttons are the viewer''s own taps.'

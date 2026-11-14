@@ -86,6 +86,18 @@ func (e *groupEnv) replies(m model.Provider, now func() time.Time) *agent.ReplyS
 	}
 }
 
+// aiReplyPath is the group's #ai-reply, where every `@aaru` answer lands.
+func (e *groupEnv) aiReplyPath(group string) string {
+	e.t.Helper()
+	for _, c := range maps(e.get("/v1/groups/" + group)["channels"]) {
+		if c["agentReplies"] == true {
+			return channelPath(group, c["id"].(string))
+		}
+	}
+	require.FailNow(e.t, "no #ai-reply in the group")
+	return ""
+}
+
 func agentMessages(items []map[string]any) []map[string]any {
 	out := []map[string]any{}
 	for _, m := range items {
@@ -136,9 +148,11 @@ func TestAgentReplyUsesOnlyTheTaggersLibrary(t *testing.T) {
 	require.NoError(t, err)
 	assert.False(t, worked)
 
-	list := items(t, env.send(http.MethodGet, channel+"/messages", nil))
+	assert.Empty(t, agentMessages(items(t, env.send(http.MethodGet, channel+"/messages", nil))), "nothing in #general")
+	list := items(t, env.send(http.MethodGet, env.aiReplyPath(group)+"/messages", nil))
 	reply := list[len(list)-1]
 	assert.Equal(t, true, reply["fromAgent"])
+	assert.Equal(t, general, reply["replyToChannelId"])
 	assert.Nil(t, reply["author"])
 	assert.Equal(t, mention["id"], reply["replyTo"])
 	assert.Equal(t, "Heat is waiting on your list.", reply["body"])
@@ -173,7 +187,7 @@ func TestAgentOverTheHourlyCapRestsOnceWithoutAModelCall(t *testing.T) {
 	for number := 1; number <= groups.AgentHourlyCapPerGroup+2; number++ {
 		env.post(channel, fmt.Sprintf("@aaru question %d", number))
 	}
-	agentReplies := agentMessages(items(t, env.send(http.MethodGet, channel+"/messages", nil)))
+	agentReplies := agentMessages(items(t, env.send(http.MethodGet, env.aiReplyPath(group)+"/messages", nil)))
 	require.Len(t, agentReplies, 1)
 	assert.Equal(t, groups.RestingNote, agentReplies[0]["body"])
 	assert.Empty(t, m.calls())
@@ -189,7 +203,7 @@ func TestAgentRefusalGetsAShortReply(t *testing.T) {
 	worked, err := env.replies(m, nil).RunNext(context.Background())
 	require.NoError(t, err)
 	assert.True(t, worked)
-	list := items(t, env.send(http.MethodGet, channel+"/messages", nil))
+	list := items(t, env.send(http.MethodGet, env.aiReplyPath(group)+"/messages", nil))
 	assert.Equal(t, agent.RefusalReply, list[len(list)-1]["body"])
 }
 
@@ -214,7 +228,7 @@ func TestAgentRepeatedFailuresEndInOneApology(t *testing.T) {
 	require.NoError(t, err)
 	assert.False(t, worked)
 	bodiesFromAgent := []any{}
-	for _, reply := range agentMessages(items(t, env.send(http.MethodGet, channel+"/messages", nil))) {
+	for _, reply := range agentMessages(items(t, env.send(http.MethodGet, env.aiReplyPath(group)+"/messages", nil))) {
 		bodiesFromAgent = append(bodiesFromAgent, reply["body"])
 	}
 	assert.Equal(t, []any{agent.FailureReply}, bodiesFromAgent)

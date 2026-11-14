@@ -367,6 +367,9 @@ func channelDTOWith(c groups.Channel, title *core.Title) api.Channel {
 		Id: apiid.From(c.ID), Kind: api.ChannelKind(c.Kind), Name: c.Name, Topic: c.Topic, Position: c.Position,
 		IsDefault: c.IsDefault, Unread: c.Unread, Mentions: c.Mentions,
 	}
+	if c.AgentReplies {
+		dto.AgentReplies = &c.AgentReplies
+	}
 	if title != nil {
 		t := TitleSummaryDTO(*title)
 		dto.Title = &t
@@ -420,6 +423,7 @@ func GroupMessageDTO(m groups.Message, fromBlocked bool, viewer uuid.UUID, veile
 		Id: apiid.From(m.ID), ChannelId: apiid.From(m.ChannelID), Body: m.Body, Mentions: apiid.Slice(m.Mentions),
 		MentionsAgent: m.MentionsAgent, FromBlocked: fromBlocked, Deleted: m.DeletedAt != nil,
 		CreatedAt: apitime.From(m.CreatedAt), Veiled: veiled, FromAgent: m.FromAgent, ReplyTo: apiid.PtrOrNil(m.ReplyTo),
+		ReplyToChannelId: apiid.PtrOrNil(m.ReplyToChannel), AnsweredIn: apiid.PtrOrNil(m.AnsweredIn),
 	}
 	if m.Author != nil {
 		author := SocialUserDTO(*m.Author)
