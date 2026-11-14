@@ -166,18 +166,44 @@ func (s *Service) Messages(ctx context.Context, group, channel uuid.UUID, cursor
 	for _, u := range blockedUsers {
 		page.Blocked[u.ID] = true
 	}
-	if found.TitleID != nil {
-		mine, err := ProgressOf(ctx, s.q(), *found.TitleID, viewer)
-		if err != nil {
-			return Page{}, err
-		}
-		for _, m := range messages {
-			if m.AuthorID() != viewer && Veils(m.Spoiler, mine) {
-				page.Veiled[m.ID] = true
-			}
-		}
+	if page.Veiled, err = s.veiled(ctx, found, messages, viewer); err != nil {
+		return Page{}, err
 	}
 	return page, nil
+}
+
+// veiled are the stamped messages that would spoil what the viewer has not watched yet. A stamp
+// is about the message's own title (an `@aaru` answer from a title channel, in #ai-reply) or else
+// its channel's. A stamp about no title the server knows is veiled for every reader: hidden is
+// the safe side.
+func (s *Service) veiled(ctx context.Context, channel Channel, messages []Message, viewer uuid.UUID) (map[uuid.UUID]bool, error) {
+	veiled := map[uuid.UUID]bool{}
+	progress := map[uuid.UUID]*TitleProgress{}
+	for _, m := range messages {
+		if m.Spoiler == nil || m.AuthorID() == viewer {
+			continue
+		}
+		title := m.SpoilerTitleID
+		if title == nil {
+			title = channel.TitleID
+		}
+		if title == nil {
+			veiled[m.ID] = true
+			continue
+		}
+		mine, ok := progress[*title]
+		if !ok {
+			var err error
+			if mine, err = ProgressOf(ctx, s.q(), *title, viewer); err != nil {
+				return nil, err
+			}
+			progress[*title] = mine
+		}
+		if Veils(m.Spoiler, mine) {
+			veiled[m.ID] = true
+		}
+	}
+	return veiled, nil
 }
 
 // Post posts a message. A retry with the same nonce returns the first message. In a title

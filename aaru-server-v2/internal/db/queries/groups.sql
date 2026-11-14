@@ -103,6 +103,7 @@ RETURNING group_id, invitee_id;
 
 -- name: GroupChannels :many
 SELECT c.id, c.group_id, c.kind, c.title_id, c.name, c.topic, c.position, c.is_default, c.created_at,
+    c.is_agent_replies,
     (SELECT count(*) FROM group_messages m WHERE m.channel_id = c.id
         AND m.deleted_at IS NULL AND m.author_id IS DISTINCT FROM sqlc.arg(viewer)::uuid
         AND m.created_at > coalesce(r.last_read_at, '-infinity'))::bigint AS unread,
@@ -116,12 +117,26 @@ WHERE c.group_id = sqlc.arg(group_id)::uuid
 ORDER BY c.position, c.created_at;
 
 -- name: GroupChannel :one
-SELECT id, group_id, kind, title_id, name, topic, position, is_default, created_at
+SELECT id, group_id, kind, title_id, name, topic, position, is_default, created_at, is_agent_replies
 FROM group_channels WHERE id = $1 AND group_id = $2;
 
 -- name: InsertGroupChannel :exec
 INSERT INTO group_channels (id, group_id, kind, title_id, name, topic, position, is_default, created_at)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
+
+-- name: AgentRepliesChannel :one
+-- The group's #ai-reply, found by its flag: a rename keeps it.
+SELECT id, group_id, kind, title_id, name, topic, position, is_default, created_at, is_agent_replies
+FROM group_channels WHERE group_id = $1 AND is_agent_replies;
+
+-- name: InsertAgentRepliesChannel :execrows
+-- Last in the group. Two first mentions at once make one channel: the loser inserts nothing and
+-- reads the winner's. A name already taken is a unique violation the caller retries with another.
+INSERT INTO group_channels (id, group_id, kind, name, position, is_default, created_at, is_agent_replies)
+SELECT sqlc.arg(id)::uuid, sqlc.arg(group_id)::uuid, 'text', sqlc.arg(name)::text,
+    coalesce((SELECT max(c.position) FROM group_channels c WHERE c.group_id = sqlc.arg(group_id)::uuid), 0) + 1,
+    false, sqlc.arg(created_at)::pg_catalog.timestamptz, true
+ON CONFLICT (group_id) WHERE is_agent_replies DO NOTHING;
 
 -- name: UpdateGroupChannel :exec
 -- A null name leaves it; set_topic replaces the topic with sqlc.narg(topic) (null clears it).
@@ -136,18 +151,30 @@ DELETE FROM group_channels WHERE id = $1 AND NOT is_default RETURNING id;
 SELECT m.id, m.channel_id, m.author_id, p.handle AS author_handle, u.display_name AS author_display_name,
     u.avatar_version AS author_avatar_version,
     m.body, m.mentions, m.mentions_agent, m.created_at, m.edited_at, m.deleted_at, m.client_nonce,
-    m.spoiler_season, m.spoiler_episode, m.spoiler_ending, m.author_kind, m.reply_to, m.components
+    m.spoiler_season, m.spoiler_episode, m.spoiler_ending, m.author_kind, m.reply_to, m.components,
+    m.spoiler_title_id,
+    rt.channel_id AS reply_to_channel_id, ans.channel_id AS answered_in
 FROM group_messages m
 LEFT JOIN profiles p ON p.user_id = m.author_id LEFT JOIN users u ON u.id = m.author_id
+-- The channel a reply's mention is in, and the channel of Aaru's answer to a mention (#ai-reply).
+LEFT JOIN group_messages rt ON rt.id = m.reply_to
+LEFT JOIN group_messages ans ON ans.id = (SELECT a.id FROM group_messages a
+    WHERE a.reply_to = m.id AND a.author_kind = 'agent' ORDER BY a.created_at LIMIT 1)
 WHERE m.id = sqlc.arg(id) AND (sqlc.narg(channel_id)::uuid IS NULL OR m.channel_id = sqlc.narg(channel_id)::uuid);
 
 -- name: GroupMessagesLatest :many
 SELECT m.id, m.channel_id, m.author_id, p.handle AS author_handle, u.display_name AS author_display_name,
     u.avatar_version AS author_avatar_version,
     m.body, m.mentions, m.mentions_agent, m.created_at, m.edited_at, m.deleted_at, m.client_nonce,
-    m.spoiler_season, m.spoiler_episode, m.spoiler_ending, m.author_kind, m.reply_to, m.components
+    m.spoiler_season, m.spoiler_episode, m.spoiler_ending, m.author_kind, m.reply_to, m.components,
+    m.spoiler_title_id,
+    rt.channel_id AS reply_to_channel_id, ans.channel_id AS answered_in
 FROM group_messages m
 LEFT JOIN profiles p ON p.user_id = m.author_id LEFT JOIN users u ON u.id = m.author_id
+-- The channel a reply's mention is in, and the channel of Aaru's answer to a mention (#ai-reply).
+LEFT JOIN group_messages rt ON rt.id = m.reply_to
+LEFT JOIN group_messages ans ON ans.id = (SELECT a.id FROM group_messages a
+    WHERE a.reply_to = m.id AND a.author_kind = 'agent' ORDER BY a.created_at LIMIT 1)
 WHERE m.channel_id = $1
 ORDER BY m.created_at DESC, m.id DESC
 LIMIT $2;
@@ -156,9 +183,15 @@ LIMIT $2;
 SELECT m.id, m.channel_id, m.author_id, p.handle AS author_handle, u.display_name AS author_display_name,
     u.avatar_version AS author_avatar_version,
     m.body, m.mentions, m.mentions_agent, m.created_at, m.edited_at, m.deleted_at, m.client_nonce,
-    m.spoiler_season, m.spoiler_episode, m.spoiler_ending, m.author_kind, m.reply_to, m.components
+    m.spoiler_season, m.spoiler_episode, m.spoiler_ending, m.author_kind, m.reply_to, m.components,
+    m.spoiler_title_id,
+    rt.channel_id AS reply_to_channel_id, ans.channel_id AS answered_in
 FROM group_messages m
 LEFT JOIN profiles p ON p.user_id = m.author_id LEFT JOIN users u ON u.id = m.author_id
+-- The channel a reply's mention is in, and the channel of Aaru's answer to a mention (#ai-reply).
+LEFT JOIN group_messages rt ON rt.id = m.reply_to
+LEFT JOIN group_messages ans ON ans.id = (SELECT a.id FROM group_messages a
+    WHERE a.reply_to = m.id AND a.author_kind = 'agent' ORDER BY a.created_at LIMIT 1)
 WHERE m.channel_id = sqlc.arg(channel_id)
   AND (m.created_at, m.id) < (SELECT a.created_at, a.id FROM group_messages a
       WHERE a.channel_id = sqlc.arg(channel_id) AND a.id = sqlc.arg(anchor))
@@ -169,9 +202,15 @@ LIMIT sqlc.arg(row_limit);
 SELECT m.id, m.channel_id, m.author_id, p.handle AS author_handle, u.display_name AS author_display_name,
     u.avatar_version AS author_avatar_version,
     m.body, m.mentions, m.mentions_agent, m.created_at, m.edited_at, m.deleted_at, m.client_nonce,
-    m.spoiler_season, m.spoiler_episode, m.spoiler_ending, m.author_kind, m.reply_to, m.components
+    m.spoiler_season, m.spoiler_episode, m.spoiler_ending, m.author_kind, m.reply_to, m.components,
+    m.spoiler_title_id,
+    rt.channel_id AS reply_to_channel_id, ans.channel_id AS answered_in
 FROM group_messages m
 LEFT JOIN profiles p ON p.user_id = m.author_id LEFT JOIN users u ON u.id = m.author_id
+-- The channel a reply's mention is in, and the channel of Aaru's answer to a mention (#ai-reply).
+LEFT JOIN group_messages rt ON rt.id = m.reply_to
+LEFT JOIN group_messages ans ON ans.id = (SELECT a.id FROM group_messages a
+    WHERE a.reply_to = m.id AND a.author_kind = 'agent' ORDER BY a.created_at LIMIT 1)
 WHERE m.channel_id = sqlc.arg(channel_id)
   AND (m.created_at, m.id) > (SELECT a.created_at, a.id FROM group_messages a
       WHERE a.channel_id = sqlc.arg(channel_id) AND a.id = sqlc.arg(anchor))
@@ -180,8 +219,9 @@ LIMIT sqlc.arg(row_limit);
 
 -- name: InsertGroupMessage :one
 INSERT INTO group_messages (id, channel_id, author_id, body, mentions, mentions_agent, client_nonce, created_at,
-                            spoiler_season, spoiler_episode, spoiler_ending, author_kind, reply_to, components)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+                            spoiler_season, spoiler_episode, spoiler_ending, author_kind, reply_to, components,
+                            spoiler_title_id)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
 ON CONFLICT (author_id, client_nonce) DO NOTHING
 RETURNING id;
 

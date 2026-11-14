@@ -243,6 +243,13 @@ final class ChannelModel {
             await pollNewer()
             return
         }
+        // Aaru answers in #ai-reply: an answer there marks the mention here answered.
+        if event._type == .message_created, let answer = event.message, answer.fromAgent,
+           let elsewhere = event.channelId, elsewhere != channelID
+        {
+            answeredElsewhere(answer, in: elsewhere)
+            return
+        }
         guard event.channelId == channelID else { return }
         switch event._type {
         case .message_created, .message_updated:
@@ -271,6 +278,17 @@ final class ChannelModel {
             }
         }
         merge([message])
+    }
+
+    /// An answer that landed in another channel (#ai-reply): the wait ends, and the mention here,
+    /// when loaded, says where Aaru answered.
+    private func answeredElsewhere(_ answer: GroupMessage, in channel: String) {
+        answered(answer)
+        guard let mention = answer.replyTo,
+              let index = messages.firstIndex(where: { $0.id == mention }),
+              messages[index].answeredIn == nil
+        else { return }
+        messages[index].answeredIn = channel
     }
 
     private func markDeleted(_ id: String) {

@@ -65,7 +65,7 @@ func TestAgentReplyAlreadyPostedFinishesWithoutAModelCall(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, worked)
 	assert.Empty(t, m.calls(), "no second model call")
-	replies := agentMessages(items(t, env.send(http.MethodGet, channel+"/messages", nil)))
+	replies := agentMessages(items(t, env.send(http.MethodGet, env.aiReplyPath(group)+"/messages", nil)))
 	require.Len(t, replies, 1)
 	assert.Equal(t, "The first answer.", replies[0]["body"])
 	assert.Equal(t, "done", env.replyRow(t).state)
@@ -88,7 +88,7 @@ func TestAgentReplyCancelledMidCallGoesBackUncounted(t *testing.T) {
 	row := env.replyRow(t)
 	assert.Equal(t, "queued", row.state)
 	assert.Equal(t, 0, row.attempts, "a shutdown is not the mention's attempt")
-	assert.Empty(t, agentMessages(items(t, env.send(http.MethodGet, channelPath(group, general)+"/messages", nil))))
+	assert.Empty(t, agentMessages(items(t, env.send(http.MethodGet, env.aiReplyPath(group)+"/messages", nil))))
 }
 
 func TestAgentReplyThatHangsFailsInsideItsLease(t *testing.T) {
@@ -133,7 +133,7 @@ func TestAgentReplyExpiredOnItsLastAttemptFailsOnce(t *testing.T) {
 	row := env.replyRow(t)
 	assert.Equal(t, "failed", row.state)
 	bodies := []any{}
-	for _, reply := range agentMessages(items(t, env.send(http.MethodGet, channel+"/messages", nil))) {
+	for _, reply := range agentMessages(items(t, env.send(http.MethodGet, env.aiReplyPath(group)+"/messages", nil))) {
 		bodies = append(bodies, reply["body"])
 	}
 	assert.Equal(t, []any{agent.FailureReply}, bodies)

@@ -4170,6 +4170,8 @@ export interface components {
       position: number
       /** @description The #general every group starts with. Cannot be deleted. */
       isDefault: boolean
+      /** @description True on the group's #ai-reply, where every @aaru answer lands. A text channel Aaru makes on the first mention; absent means false. */
+      agentReplies?: boolean
       unread: number
       mentions: number
     }
@@ -4258,6 +4260,16 @@ export interface components {
        * @description The mention an @aaru reply answers.
        */
       replyTo?: string
+      /**
+       * Format: uuid
+       * @description The channel replyTo is in. An @aaru answer lands in #ai-reply, so it is usually another channel: show "in #channel" and open it on a tap.
+       */
+      replyToChannelId?: string
+      /**
+       * Format: uuid
+       * @description On an @aaru mention: the channel Aaru answered in (#ai-reply), once it has. Show "Aaru answered in #channel".
+       */
+      answeredIn?: string
       /** @description Cards on an @aaru reply. Catalog titles only; their buttons are the viewer's own taps. */
       components?: components['schemas']['MessageComponent'][]
     }

@@ -56,6 +56,8 @@ import type { SpoilerChoice } from '../../lib/groups/kinds'
 import { Composer } from './Composer'
 import {
   agentCards,
+  elsewhere,
+  noteAnswered,
   noteThinking,
   replySnippet,
   settleThinking,
@@ -65,6 +67,7 @@ import {
   AaruAvatar,
   AgentCards,
   AssistantTag,
+  ElsewhereLine,
   ReplyLine,
   ThinkingRow,
 } from './AgentParts'
@@ -266,6 +269,18 @@ export function MessageList(props: {
   useRealtime((event) => {
     if (event.type === 'ready') {
       void catchUp().catch(() => {})
+      return
+    }
+    // Aaru answers in #ai-reply: an answer there marks the mention here answered.
+    if (
+      event.type === 'message.created' &&
+      event.message?.fromAgent &&
+      event.channelId &&
+      event.channelId !== props.channel.id
+    ) {
+      const answered = noteAnswered(messages(), event.message, event.channelId)
+      if (answered !== messages()) setMessages(answered)
+      settleAaru([event.message])
       return
     }
     if (event.channelId !== props.channel.id) return
@@ -571,6 +586,9 @@ export function MessageList(props: {
                     const m = () => row().message
                     const mine = () => m().author?.userId === meId()
                     const mentionsMe = () => m().mentions.includes(meId())
+                    // "in #general" on an Aaru answer, "Aaru answered in #ai-reply" on a mention.
+                    const link = () =>
+                      elsewhere(m(), props.channel.id, scope.detail().channels)
                     // Someone else's message can be reported; @aaru's and a deleted
                     // account's have no author to report.
                     const reportable = () => !mine() && !!m().author
@@ -612,6 +630,11 @@ export function MessageList(props: {
                             at={m().createdAt}
                             agent={m().fromAgent}
                           />
+                          <Show when={link()?.kind === 'reply' && link()}>
+                            {(other) => (
+                              <ElsewhereLine {...other()} groupId={groupId()} />
+                            )}
+                          </Show>
                           <Show
                             when={
                               m().fromAgent &&
@@ -632,6 +655,16 @@ export function MessageList(props: {
                                 <Body text={m().body} />
                                 <Show when={agentCards(m()).length > 0}>
                                   <AgentCards cards={agentCards(m())} />
+                                </Show>
+                                <Show
+                                  when={link()?.kind === 'answered' && link()}
+                                >
+                                  {(other) => (
+                                    <ElsewhereLine
+                                      {...other()}
+                                      groupId={groupId()}
+                                    />
+                                  )}
                                 </Show>
                                 <Show when={m().editedAt}>
                                   <span class="text-2xs text-muted">

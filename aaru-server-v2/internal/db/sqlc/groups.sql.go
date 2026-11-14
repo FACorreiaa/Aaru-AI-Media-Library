@@ -41,6 +41,43 @@ func (q *Queries) AddGroupShelfItem(ctx context.Context, arg AddGroupShelfItemPa
 	return title_id, err
 }
 
+const agentRepliesChannel = `-- name: AgentRepliesChannel :one
+SELECT id, group_id, kind, title_id, name, topic, position, is_default, created_at, is_agent_replies
+FROM group_channels WHERE group_id = $1 AND is_agent_replies
+`
+
+type AgentRepliesChannelRow struct {
+	ID             uuid.UUID
+	GroupID        uuid.UUID
+	Kind           string
+	TitleID        *uuid.UUID
+	Name           string
+	Topic          *string
+	Position       int32
+	IsDefault      bool
+	CreatedAt      time.Time
+	IsAgentReplies bool
+}
+
+// The group's #ai-reply, found by its flag: a rename keeps it.
+func (q *Queries) AgentRepliesChannel(ctx context.Context, groupID uuid.UUID) (AgentRepliesChannelRow, error) {
+	row := q.db.QueryRow(ctx, agentRepliesChannel, groupID)
+	var i AgentRepliesChannelRow
+	err := row.Scan(
+		&i.ID,
+		&i.GroupID,
+		&i.Kind,
+		&i.TitleID,
+		&i.Name,
+		&i.Topic,
+		&i.Position,
+		&i.IsDefault,
+		&i.CreatedAt,
+		&i.IsAgentReplies,
+	)
+	return i, err
+}
+
 const agentReplyPosted = `-- name: AgentReplyPosted :one
 SELECT EXISTS (
     SELECT 1 FROM group_messages m
@@ -420,7 +457,7 @@ func (q *Queries) GroupAgentLoad(ctx context.Context, arg GroupAgentLoadParams) 
 }
 
 const groupChannel = `-- name: GroupChannel :one
-SELECT id, group_id, kind, title_id, name, topic, position, is_default, created_at
+SELECT id, group_id, kind, title_id, name, topic, position, is_default, created_at, is_agent_replies
 FROM group_channels WHERE id = $1 AND group_id = $2
 `
 
@@ -430,15 +467,16 @@ type GroupChannelParams struct {
 }
 
 type GroupChannelRow struct {
-	ID        uuid.UUID
-	GroupID   uuid.UUID
-	Kind      string
-	TitleID   *uuid.UUID
-	Name      string
-	Topic     *string
-	Position  int32
-	IsDefault bool
-	CreatedAt time.Time
+	ID             uuid.UUID
+	GroupID        uuid.UUID
+	Kind           string
+	TitleID        *uuid.UUID
+	Name           string
+	Topic          *string
+	Position       int32
+	IsDefault      bool
+	CreatedAt      time.Time
+	IsAgentReplies bool
 }
 
 func (q *Queries) GroupChannel(ctx context.Context, arg GroupChannelParams) (GroupChannelRow, error) {
@@ -454,12 +492,14 @@ func (q *Queries) GroupChannel(ctx context.Context, arg GroupChannelParams) (Gro
 		&i.Position,
 		&i.IsDefault,
 		&i.CreatedAt,
+		&i.IsAgentReplies,
 	)
 	return i, err
 }
 
 const groupChannels = `-- name: GroupChannels :many
 SELECT c.id, c.group_id, c.kind, c.title_id, c.name, c.topic, c.position, c.is_default, c.created_at,
+    c.is_agent_replies,
     (SELECT count(*) FROM group_messages m WHERE m.channel_id = c.id
         AND m.deleted_at IS NULL AND m.author_id IS DISTINCT FROM $1::uuid
         AND m.created_at > coalesce(r.last_read_at, '-infinity'))::bigint AS unread,
@@ -479,17 +519,18 @@ type GroupChannelsParams struct {
 }
 
 type GroupChannelsRow struct {
-	ID        uuid.UUID
-	GroupID   uuid.UUID
-	Kind      string
-	TitleID   *uuid.UUID
-	Name      string
-	Topic     *string
-	Position  int32
-	IsDefault bool
-	CreatedAt time.Time
-	Unread    int64
-	Mentions  int64
+	ID             uuid.UUID
+	GroupID        uuid.UUID
+	Kind           string
+	TitleID        *uuid.UUID
+	Name           string
+	Topic          *string
+	Position       int32
+	IsDefault      bool
+	CreatedAt      time.Time
+	IsAgentReplies bool
+	Unread         int64
+	Mentions       int64
 }
 
 func (q *Queries) GroupChannels(ctx context.Context, arg GroupChannelsParams) ([]GroupChannelsRow, error) {
@@ -511,6 +552,7 @@ func (q *Queries) GroupChannels(ctx context.Context, arg GroupChannelsParams) ([
 			&i.Position,
 			&i.IsDefault,
 			&i.CreatedAt,
+			&i.IsAgentReplies,
 			&i.Unread,
 			&i.Mentions,
 		); err != nil {
@@ -641,9 +683,14 @@ const groupMessage = `-- name: GroupMessage :one
 SELECT m.id, m.channel_id, m.author_id, p.handle AS author_handle, u.display_name AS author_display_name,
     u.avatar_version AS author_avatar_version,
     m.body, m.mentions, m.mentions_agent, m.created_at, m.edited_at, m.deleted_at, m.client_nonce,
-    m.spoiler_season, m.spoiler_episode, m.spoiler_ending, m.author_kind, m.reply_to, m.components
+    m.spoiler_season, m.spoiler_episode, m.spoiler_ending, m.author_kind, m.reply_to, m.components,
+    m.spoiler_title_id,
+    rt.channel_id AS reply_to_channel_id, ans.channel_id AS answered_in
 FROM group_messages m
 LEFT JOIN profiles p ON p.user_id = m.author_id LEFT JOIN users u ON u.id = m.author_id
+LEFT JOIN group_messages rt ON rt.id = m.reply_to
+LEFT JOIN group_messages ans ON ans.id = (SELECT a.id FROM group_messages a
+    WHERE a.reply_to = m.id AND a.author_kind = 'agent' ORDER BY a.created_at LIMIT 1)
 WHERE m.id = $1 AND ($2::uuid IS NULL OR m.channel_id = $2::uuid)
 `
 
@@ -672,8 +719,12 @@ type GroupMessageRow struct {
 	AuthorKind          string
 	ReplyTo             *uuid.UUID
 	Components          json.RawMessage
+	SpoilerTitleID      *uuid.UUID
+	ReplyToChannelID    *uuid.UUID
+	AnsweredIn          *uuid.UUID
 }
 
+// The channel a reply's mention is in, and the channel of Aaru's answer to a mention (#ai-reply).
 func (q *Queries) GroupMessage(ctx context.Context, arg GroupMessageParams) (GroupMessageRow, error) {
 	row := q.db.QueryRow(ctx, groupMessage, arg.ID, arg.ChannelID)
 	var i GroupMessageRow
@@ -697,6 +748,9 @@ func (q *Queries) GroupMessage(ctx context.Context, arg GroupMessageParams) (Gro
 		&i.AuthorKind,
 		&i.ReplyTo,
 		&i.Components,
+		&i.SpoilerTitleID,
+		&i.ReplyToChannelID,
+		&i.AnsweredIn,
 	)
 	return i, err
 }
@@ -724,9 +778,14 @@ const groupMessagesAfter = `-- name: GroupMessagesAfter :many
 SELECT m.id, m.channel_id, m.author_id, p.handle AS author_handle, u.display_name AS author_display_name,
     u.avatar_version AS author_avatar_version,
     m.body, m.mentions, m.mentions_agent, m.created_at, m.edited_at, m.deleted_at, m.client_nonce,
-    m.spoiler_season, m.spoiler_episode, m.spoiler_ending, m.author_kind, m.reply_to, m.components
+    m.spoiler_season, m.spoiler_episode, m.spoiler_ending, m.author_kind, m.reply_to, m.components,
+    m.spoiler_title_id,
+    rt.channel_id AS reply_to_channel_id, ans.channel_id AS answered_in
 FROM group_messages m
 LEFT JOIN profiles p ON p.user_id = m.author_id LEFT JOIN users u ON u.id = m.author_id
+LEFT JOIN group_messages rt ON rt.id = m.reply_to
+LEFT JOIN group_messages ans ON ans.id = (SELECT a.id FROM group_messages a
+    WHERE a.reply_to = m.id AND a.author_kind = 'agent' ORDER BY a.created_at LIMIT 1)
 WHERE m.channel_id = $1
   AND (m.created_at, m.id) > (SELECT a.created_at, a.id FROM group_messages a
       WHERE a.channel_id = $1 AND a.id = $2)
@@ -760,8 +819,12 @@ type GroupMessagesAfterRow struct {
 	AuthorKind          string
 	ReplyTo             *uuid.UUID
 	Components          json.RawMessage
+	SpoilerTitleID      *uuid.UUID
+	ReplyToChannelID    *uuid.UUID
+	AnsweredIn          *uuid.UUID
 }
 
+// The channel a reply's mention is in, and the channel of Aaru's answer to a mention (#ai-reply).
 func (q *Queries) GroupMessagesAfter(ctx context.Context, arg GroupMessagesAfterParams) ([]GroupMessagesAfterRow, error) {
 	rows, err := q.db.Query(ctx, groupMessagesAfter, arg.ChannelID, arg.Anchor, arg.RowLimit)
 	if err != nil {
@@ -791,6 +854,9 @@ func (q *Queries) GroupMessagesAfter(ctx context.Context, arg GroupMessagesAfter
 			&i.AuthorKind,
 			&i.ReplyTo,
 			&i.Components,
+			&i.SpoilerTitleID,
+			&i.ReplyToChannelID,
+			&i.AnsweredIn,
 		); err != nil {
 			return nil, err
 		}
@@ -806,9 +872,14 @@ const groupMessagesBefore = `-- name: GroupMessagesBefore :many
 SELECT m.id, m.channel_id, m.author_id, p.handle AS author_handle, u.display_name AS author_display_name,
     u.avatar_version AS author_avatar_version,
     m.body, m.mentions, m.mentions_agent, m.created_at, m.edited_at, m.deleted_at, m.client_nonce,
-    m.spoiler_season, m.spoiler_episode, m.spoiler_ending, m.author_kind, m.reply_to, m.components
+    m.spoiler_season, m.spoiler_episode, m.spoiler_ending, m.author_kind, m.reply_to, m.components,
+    m.spoiler_title_id,
+    rt.channel_id AS reply_to_channel_id, ans.channel_id AS answered_in
 FROM group_messages m
 LEFT JOIN profiles p ON p.user_id = m.author_id LEFT JOIN users u ON u.id = m.author_id
+LEFT JOIN group_messages rt ON rt.id = m.reply_to
+LEFT JOIN group_messages ans ON ans.id = (SELECT a.id FROM group_messages a
+    WHERE a.reply_to = m.id AND a.author_kind = 'agent' ORDER BY a.created_at LIMIT 1)
 WHERE m.channel_id = $1
   AND (m.created_at, m.id) < (SELECT a.created_at, a.id FROM group_messages a
       WHERE a.channel_id = $1 AND a.id = $2)
@@ -842,8 +913,12 @@ type GroupMessagesBeforeRow struct {
 	AuthorKind          string
 	ReplyTo             *uuid.UUID
 	Components          json.RawMessage
+	SpoilerTitleID      *uuid.UUID
+	ReplyToChannelID    *uuid.UUID
+	AnsweredIn          *uuid.UUID
 }
 
+// The channel a reply's mention is in, and the channel of Aaru's answer to a mention (#ai-reply).
 func (q *Queries) GroupMessagesBefore(ctx context.Context, arg GroupMessagesBeforeParams) ([]GroupMessagesBeforeRow, error) {
 	rows, err := q.db.Query(ctx, groupMessagesBefore, arg.ChannelID, arg.Anchor, arg.RowLimit)
 	if err != nil {
@@ -873,6 +948,9 @@ func (q *Queries) GroupMessagesBefore(ctx context.Context, arg GroupMessagesBefo
 			&i.AuthorKind,
 			&i.ReplyTo,
 			&i.Components,
+			&i.SpoilerTitleID,
+			&i.ReplyToChannelID,
+			&i.AnsweredIn,
 		); err != nil {
 			return nil, err
 		}
@@ -888,9 +966,14 @@ const groupMessagesLatest = `-- name: GroupMessagesLatest :many
 SELECT m.id, m.channel_id, m.author_id, p.handle AS author_handle, u.display_name AS author_display_name,
     u.avatar_version AS author_avatar_version,
     m.body, m.mentions, m.mentions_agent, m.created_at, m.edited_at, m.deleted_at, m.client_nonce,
-    m.spoiler_season, m.spoiler_episode, m.spoiler_ending, m.author_kind, m.reply_to, m.components
+    m.spoiler_season, m.spoiler_episode, m.spoiler_ending, m.author_kind, m.reply_to, m.components,
+    m.spoiler_title_id,
+    rt.channel_id AS reply_to_channel_id, ans.channel_id AS answered_in
 FROM group_messages m
 LEFT JOIN profiles p ON p.user_id = m.author_id LEFT JOIN users u ON u.id = m.author_id
+LEFT JOIN group_messages rt ON rt.id = m.reply_to
+LEFT JOIN group_messages ans ON ans.id = (SELECT a.id FROM group_messages a
+    WHERE a.reply_to = m.id AND a.author_kind = 'agent' ORDER BY a.created_at LIMIT 1)
 WHERE m.channel_id = $1
 ORDER BY m.created_at DESC, m.id DESC
 LIMIT $2
@@ -921,8 +1004,12 @@ type GroupMessagesLatestRow struct {
 	AuthorKind          string
 	ReplyTo             *uuid.UUID
 	Components          json.RawMessage
+	SpoilerTitleID      *uuid.UUID
+	ReplyToChannelID    *uuid.UUID
+	AnsweredIn          *uuid.UUID
 }
 
+// The channel a reply's mention is in, and the channel of Aaru's answer to a mention (#ai-reply).
 func (q *Queries) GroupMessagesLatest(ctx context.Context, arg GroupMessagesLatestParams) ([]GroupMessagesLatestRow, error) {
 	rows, err := q.db.Query(ctx, groupMessagesLatest, arg.ChannelID, arg.Limit)
 	if err != nil {
@@ -952,6 +1039,9 @@ func (q *Queries) GroupMessagesLatest(ctx context.Context, arg GroupMessagesLate
 			&i.AuthorKind,
 			&i.ReplyTo,
 			&i.Components,
+			&i.SpoilerTitleID,
+			&i.ReplyToChannelID,
+			&i.AnsweredIn,
 		); err != nil {
 			return nil, err
 		}
@@ -1163,6 +1253,36 @@ func (q *Queries) GroupTitleProgress(ctx context.Context, arg GroupTitleProgress
 	return items, nil
 }
 
+const insertAgentRepliesChannel = `-- name: InsertAgentRepliesChannel :execrows
+INSERT INTO group_channels (id, group_id, kind, name, position, is_default, created_at, is_agent_replies)
+SELECT $1::uuid, $2::uuid, 'text', $3::text,
+    coalesce((SELECT max(c.position) FROM group_channels c WHERE c.group_id = $2::uuid), 0) + 1,
+    false, $4::pg_catalog.timestamptz, true
+ON CONFLICT (group_id) WHERE is_agent_replies DO NOTHING
+`
+
+type InsertAgentRepliesChannelParams struct {
+	ID        uuid.UUID
+	GroupID   uuid.UUID
+	Name      string
+	CreatedAt time.Time
+}
+
+// Last in the group. Two first mentions at once make one channel: the loser inserts nothing and
+// reads the winner's. A name already taken is a unique violation the caller retries with another.
+func (q *Queries) InsertAgentRepliesChannel(ctx context.Context, arg InsertAgentRepliesChannelParams) (int64, error) {
+	result, err := q.db.Exec(ctx, insertAgentRepliesChannel,
+		arg.ID,
+		arg.GroupID,
+		arg.Name,
+		arg.CreatedAt,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const insertGroup = `-- name: InsertGroup :exec
 INSERT INTO groups (id, name, created_at, updated_at) VALUES ($1, $2, $3, $3)
 `
@@ -1261,8 +1381,9 @@ func (q *Queries) InsertGroupMember(ctx context.Context, arg InsertGroupMemberPa
 
 const insertGroupMessage = `-- name: InsertGroupMessage :one
 INSERT INTO group_messages (id, channel_id, author_id, body, mentions, mentions_agent, client_nonce, created_at,
-                            spoiler_season, spoiler_episode, spoiler_ending, author_kind, reply_to, components)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+                            spoiler_season, spoiler_episode, spoiler_ending, author_kind, reply_to, components,
+                            spoiler_title_id)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
 ON CONFLICT (author_id, client_nonce) DO NOTHING
 RETURNING id
 `
@@ -1282,6 +1403,7 @@ type InsertGroupMessageParams struct {
 	AuthorKind     string
 	ReplyTo        *uuid.UUID
 	Components     json.RawMessage
+	SpoilerTitleID *uuid.UUID
 }
 
 func (q *Queries) InsertGroupMessage(ctx context.Context, arg InsertGroupMessageParams) (uuid.UUID, error) {
@@ -1300,6 +1422,7 @@ func (q *Queries) InsertGroupMessage(ctx context.Context, arg InsertGroupMessage
 		arg.AuthorKind,
 		arg.ReplyTo,
 		arg.Components,
+		arg.SpoilerTitleID,
 	)
 	var id uuid.UUID
 	err := row.Scan(&id)

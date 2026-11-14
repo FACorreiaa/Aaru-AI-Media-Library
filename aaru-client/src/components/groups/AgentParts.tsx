@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/solid-router'
 import { For, Show } from 'solid-js'
 import type { MessageComponent } from '../../lib/groups/agent'
 import { kindName, kindOf } from '../../lib/library/model'
@@ -35,6 +36,33 @@ export function ReplyLine(props: { who: string; text: string }) {
       <span aria-hidden="true">↳ </span>
       Replying to <span class="font-medium text-ink/80">{props.who}</span>
       <Show when={props.text}>: {props.text}</Show>
+    </p>
+  )
+}
+
+/**
+ * A line that leads to another channel of the group: "↳ Replying to a message in #general" above
+ * an Aaru answer in #ai-reply, or "Aaru answered in #ai-reply" under a mention. A tap opens it.
+ */
+export function ElsewhereLine(props: {
+  kind: 'reply' | 'answered'
+  groupId: string
+  channelId: string
+  name: string
+}) {
+  return (
+    <p class="mb-0.5 truncate text-xs text-muted">
+      <Show when={props.kind === 'reply'} fallback={<>Aaru answered in </>}>
+        <span aria-hidden="true">↳ </span>
+        Replying to a message in{' '}
+      </Show>
+      <Link
+        to="/app/groups/$groupId/$channelId"
+        params={{ groupId: props.groupId, channelId: props.channelId }}
+        class="font-medium text-accent hover:underline"
+      >
+        #{props.name}
+      </Link>
     </p>
   )
 }

@@ -227,10 +227,12 @@ func TestAaruIsSentOnlyTheMessagesOfMembersWhoAllowed(t *testing.T) {
 	assert.NotContains(t, seen, ben.Handle)
 	assert.NotContains(t, seen, cleo.Handle)
 
-	// The reply is posted like any other, and the channel still shows everyone's messages.
+	// The reply is posted like any other, in #ai-reply, and the channel still shows everyone's messages.
 	list := items(t, env.send(http.MethodGet, channel+"/messages", nil))
-	require.Len(t, list, 6)
-	assert.Equal(t, mention["id"], list[len(list)-1]["replyTo"])
+	require.Len(t, list, 5)
+	answers := agentMessages(items(t, env.send(http.MethodGet, env.aiReplyPath(group)+"/messages", nil)))
+	require.Len(t, answers, 1)
+	assert.Equal(t, mention["id"], answers[0]["replyTo"])
 }
 
 func TestTaggerWhoTurnsAISharingOffBeforeTheAnswerGetsNone(t *testing.T) {

@@ -65,7 +65,10 @@ struct AgentMessageRow: View {
                         .font(.caption)
                         .foregroundStyle(Color(.muted))
                 }
-                if let answering, !answering.deleted {
+                if let source = message.replyToChannelId, source != message.channelId {
+                    // Aaru answers in #ai-reply; the mention is in another channel.
+                    ElsewhereLine(kind: .reply, channelID: source, from: message.channelId)
+                } else if let answering, !answering.deleted {
                     Text(
                         """
                         Replying to \(answering.author.map { "@\($0.handle)" } ?? String(localized: "someone")): \
@@ -91,6 +94,50 @@ struct AgentMessageRow: View {
         .padding(.bottom, 1)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Aaru, assistant")
+    }
+}
+
+/// A line that leads to another channel of the group: "Replying to a message in #general" above
+/// an Aaru answer in #ai-reply, or "Aaru answered in #ai-reply" under a mention. A tap opens it.
+struct ElsewhereLine: View {
+    enum Kind { case reply, answered }
+
+    let kind: Kind
+    /// The other channel.
+    let channelID: String
+    /// The channel this line shows in, to find the group.
+    let from: String
+    @Environment(GroupsModel.self) private var groups: GroupsModel?
+
+    /// The group, and the other channel's name. A channel the group detail does not list yet (made
+    /// a moment ago) is #ai-reply under the name it was made with.
+    private var place: (group: String?, name: String) {
+        let details = groups?.details ?? [:]
+        let group = details.first { $0.value.channels.contains { $0.id == from } }
+        let name = group?.value.channels.first { $0.id == channelID }?.name
+        return (group?.key, name ?? (kind == .answered ? "ai-reply" : String(localized: "another channel")))
+    }
+
+    var body: some View {
+        let place = place
+        Button {
+            if let group = place.group {
+                groups?.openRequest = ChannelOpenRequest(group: group, channel: channelID)
+            }
+        } label: {
+            Group {
+                switch kind {
+                case .reply: Text("Replying to a message in \(Text("#\(place.name)").foregroundStyle(Color(.accent)))")
+                case .answered: Text("Aaru answered in \(Text("#\(place.name)").foregroundStyle(Color(.accent)))")
+                }
+            }
+            .font(.caption)
+            .foregroundStyle(Color(.muted))
+            .lineLimit(1)
+        }
+        .buttonStyle(.plain)
+        .disabled(place.group == nil)
+        .accessibilityHint("Opens #\(place.name)")
     }
 }
 

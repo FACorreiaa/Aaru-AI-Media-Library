@@ -34,6 +34,18 @@ library layer stay separate, external IDs stored whenever known, no second backe
 - **Anime is first-class from P1** (AniList catalog, `anilist`/`mal`/`anidb` external IDs).
 - DMs are **Signal-grade (libsignal)**. Licence and web support are OPEN — see DM-003, DM-004.
 
+## Decisions recorded 2026-11-14
+
+- **`@aaru` answers in `#ai-reply`, never in the channel it was tagged in** (owner, 2026-11-14: in
+  a 15-person group, answers in every channel were noise). One text channel per group, made on the
+  first mention (last position, not default) and found by its flag (`group_channels.is_agent_replies`),
+  so a rename keeps it and a delete brings it back on the next mention. Members cannot name a
+  channel `ai-reply`. The answer's `reply_to` is still the mention; the model still reads the
+  mention's channel; a title channel's spoiler stamp stays on the answer, about that title
+  (`group_messages.spoiler_title_id`). The mention shows "Aaru answered in #ai-reply", the answer
+  "in #channel", each opening the other. The caps (30 a user a day, 10 a group an hour, one
+  resting note) are unchanged; the resting note also goes to `#ai-reply`.
+
 ## Decisions recorded 2026-11-13
 
 Owner, 2026-11-13: the App Store age rating answers "Graphic sexual content: none", and an audit
@@ -4120,7 +4132,8 @@ channel's last 30 messages, the channel's title, party or shelf, and **the tagge
 library, read-only. Tools: `search_titles`, `title_details`, `list_airs`, `read_my_library`,
 and `show_titles`, which attaches title cards using refs the other tools handed out (so the
 model cannot invent ids). Up to 4 rounds. The reply is a group message with author kind
-`agent`, no author, `reply_to` the mention, and title cards only. In a title channel it is
+`agent`, no author, `reply_to` the mention, and title cards only, posted in the group's
+`#ai-reply` (decision 2026-11-14), never in the mention's channel. In a title channel it is
 told the tagger's progress, avoids spoiling past it, and is stamped there. Its card buttons
 are the viewer's own taps. Caps: 30 mentions per user per UTC day, 10 per group per hour;
 over the cap Aaru says once that it is resting (per user per day, per group per hour), without

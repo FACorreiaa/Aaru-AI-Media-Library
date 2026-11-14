@@ -336,7 +336,7 @@ func (s *Store) Channels(ctx context.Context, group, viewer uuid.UUID) ([]Channe
 	for i, r := range rows {
 		out[i] = Channel{
 			ID: r.ID, GroupID: r.GroupID, Kind: parseKind(r.Kind), TitleID: r.TitleID, Name: r.Name, Topic: r.Topic,
-			Position: int(r.Position), IsDefault: r.IsDefault, CreatedAt: r.CreatedAt,
+			Position: int(r.Position), IsDefault: r.IsDefault, AgentReplies: r.IsAgentReplies, CreatedAt: r.CreatedAt,
 			Unread: int(r.Unread), Mentions: int(r.Mentions),
 		}
 	}
@@ -352,10 +352,44 @@ func (s *Store) Channel(ctx context.Context, id, group uuid.UUID) (*Channel, err
 	if err != nil {
 		return nil, fmt.Errorf("group channel: %w", err)
 	}
-	return &Channel{
+	c := channelFromRow(sqlc.AgentRepliesChannelRow(r))
+	return &c, nil
+}
+
+func channelFromRow(r sqlc.AgentRepliesChannelRow) Channel {
+	return Channel{
 		ID: r.ID, GroupID: r.GroupID, Kind: parseKind(r.Kind), TitleID: r.TitleID, Name: r.Name, Topic: r.Topic,
-		Position: int(r.Position), IsDefault: r.IsDefault, CreatedAt: r.CreatedAt,
-	}, nil
+		Position: int(r.Position), IsDefault: r.IsDefault, AgentReplies: r.IsAgentReplies, CreatedAt: r.CreatedAt,
+	}
+}
+
+// AgentRepliesChannel is the group's #ai-reply, or nil before the first mention made it.
+func (s *Store) AgentRepliesChannel(ctx context.Context, group uuid.UUID) (*Channel, error) {
+	r, err := s.Q.AgentRepliesChannel(ctx, group)
+	if db.IsNoRows(err) {
+		return nil, nil // none yet
+	}
+	if err != nil {
+		return nil, fmt.Errorf("agent replies channel: %w", err)
+	}
+	c := channelFromRow(r)
+	return &c, nil
+}
+
+// CreateAgentRepliesChannel makes the group's #ai-reply under name, last in the group. False when
+// the group already has one (a mention at the same moment made it); errChannelNameTaken when a
+// channel already has the name.
+func (s *Store) CreateAgentRepliesChannel(ctx context.Context, id, group uuid.UUID, name string, now time.Time) (bool, error) {
+	n, err := s.Q.InsertAgentRepliesChannel(ctx, sqlc.InsertAgentRepliesChannelParams{
+		ID: id, GroupID: group, Name: name, CreatedAt: now,
+	})
+	if isUniqueViolation(err) {
+		return false, errChannelNameTaken
+	}
+	if err != nil {
+		return false, fmt.Errorf("insert agent replies channel: %w", err)
+	}
+	return n > 0, nil
 }
 
 var errChannelNameTaken = apperr.Conflict("A channel already has that name.")
@@ -446,6 +480,7 @@ func messageFromRow(r sqlc.GroupMessageRow) Message {
 		Body: r.Body, Mentions: r.Mentions, MentionsAgent: r.MentionsAgent, CreatedAt: r.CreatedAt,
 		EditedAt: r.EditedAt, DeletedAt: r.DeletedAt, ClientNonce: r.ClientNonce,
 		FromAgent: r.AuthorKind == "agent", ReplyTo: r.ReplyTo, Components: parseComponents(r.Components),
+		SpoilerTitleID: r.SpoilerTitleID, ReplyToChannel: r.ReplyToChannelID, AnsweredIn: r.AnsweredIn,
 	}
 	if m.Mentions == nil {
 		m.Mentions = []uuid.UUID{}
@@ -519,7 +554,7 @@ func (s *Store) PostMessage(ctx context.Context, m Message, nonce *string) (Mess
 	params := sqlc.InsertGroupMessageParams{
 		ID: m.ID, ChannelID: m.ChannelID, Body: m.Body, Mentions: m.Mentions, MentionsAgent: m.MentionsAgent,
 		ClientNonce: nonce, CreatedAt: m.CreatedAt, AuthorKind: "user", ReplyTo: m.ReplyTo,
-		Components: componentsJSON(m.Components),
+		Components: componentsJSON(m.Components), SpoilerTitleID: m.SpoilerTitleID,
 	}
 	if params.Mentions == nil {
 		params.Mentions = []uuid.UUID{}
