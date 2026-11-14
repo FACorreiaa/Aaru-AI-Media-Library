@@ -79,6 +79,8 @@ aaru/
   VIEWS.md               # surfaces + component catalog the agent may emit
   BACKLOG.md
   BUSINESS.md            # moat + monetisation thinking. Notes, not a plan of record
+  MARKETING.md           # earlier go-to-market plan; the current kit is marketing/
+  marketing/             # marketing kit: strategy, features, brand, video playbook, prompts
   CLAUDE.md
 ```
 
