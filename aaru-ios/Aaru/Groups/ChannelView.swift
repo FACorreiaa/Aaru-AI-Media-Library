@@ -26,6 +26,11 @@ struct ChannelView: View {
     @Environment(AISharingModel.self) private var aiSharing: AISharingModel?
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    #if os(iOS)
+        @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    #else
+        private let horizontalSizeClass: UserInterfaceSizeClass? = nil
+    #endif
 
     init(groups: GroupsModel, groupID: String, channel: GroupChannel, onShowMembers: @escaping () -> Void) {
         self.groups = groups
@@ -56,52 +61,53 @@ struct ChannelView: View {
     static let fallbackPollInterval: Duration = .seconds(30)
 
     var body: some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 0) {
-                    ChannelStart(channel: channel, model: model)
-                    messageRows
-                    outboxRows
-                    if !model.thinking.isEmpty {
-                        AgentThinkingRow()
+        // The header and the kind panel sit above the scroller, not in its inset, so no message
+        // ever scrolls underneath them.
+        VStack(spacing: 0) {
+            ChannelHeader(
+                topic: channel.topic,
+                disconnectedSince: socketOpen ? nil : groups.realtime?.disconnectedSince,
+                agent: detail?.agent ?? false,
+                members: detail?.members ?? [],
+                onShowMembers: onShowMembers
+            )
+            ChannelKindPanel(groups: groups, groupID: groupID, channel: channel)
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 0) {
+                        ChannelStart(channel: channel, model: model)
+                        messageRows
+                        outboxRows
+                        if !model.thinking.isEmpty {
+                            AgentThinkingRow()
+                        }
+                        // At the present while this end of the list is on screen. Visibility, not
+                        // offset arithmetic: the insets and a lazy stack's estimated height made the
+                        // old sum think the latest message was always far away.
+                        Color.clear.frame(height: Self.nearBottomSlack).id(Self.bottomID)
+                            .onScrollVisibilityChange(threshold: 0.01) { nearBottom = $0 }
                     }
-                    Color.clear.frame(height: 8).id(Self.bottomID)
                 }
-            }
-            .defaultScrollAnchor(.bottom)
-            .scrollDismissesKeyboard(.interactively)
-            .onScrollGeometryChange(for: Bool.self) { geometry in
-                geometry.contentSize.height - geometry.contentOffset.y - geometry.containerSize.height < 160
-            } action: { _, isNear in
-                nearBottom = isNear
-            }
-            .overlay(alignment: .bottomTrailing) {
-                if !nearBottom {
-                    Button("Jump to present", systemImage: "arrow.down") { scrollToBottom(proxy) }
-                        .buttonStyle(.borderedProminent)
-                        .controlSize(.small)
-                        .padding(12)
-                        .transition(reduceMotion ? .identity : .opacity)
+                .defaultScrollAnchor(.bottom)
+                .scrollDismissesKeyboard(.interactively)
+                .overlay(alignment: .bottomTrailing) {
+                    if !nearBottom {
+                        Button("Jump to present", systemImage: "arrow.down") { scrollToBottom(proxy) }
+                            .buttonStyle(.borderedProminent)
+                            .controlSize(.small)
+                            .padding(12)
+                            .transition(reduceMotion ? .identity : .opacity)
+                    }
                 }
-            }
-            .onChange(of: model.messages.last?.id) {
-                if nearBottom {
-                    scrollToBottom(proxy)
+                .onChange(of: model.messages.last?.id) {
+                    if nearBottom {
+                        scrollToBottom(proxy)
+                    }
                 }
+                .onChange(of: model.outbox.count) { scrollToBottom(proxy) }
             }
-            .onChange(of: model.outbox.count) { scrollToBottom(proxy) }
         }
         .background(Color(.paper))
-        .safeAreaInset(edge: .top, spacing: 0) {
-            VStack(spacing: 0) {
-                ChannelHeader(
-                    topic: channel.topic,
-                    disconnectedSince: socketOpen ? nil : groups.realtime?.disconnectedSince,
-                    agent: detail?.agent ?? false
-                )
-                ChannelKindPanel(groups: groups, groupID: groupID, channel: channel)
-            }
-        }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             VStack(spacing: 0) {
                 ProblemBanner(message: model.problem) { model.problem = nil }
@@ -135,8 +141,12 @@ struct ChannelView: View {
             .navigationBarTitleDisplayMode(.inline)
         #endif
             .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Button("Members", systemImage: "person.2", action: onShowMembers)
+                // On iPhone the header's member strip opens the list; iPad and Mac keep the
+                // toolbar button as the inspector's toggle.
+                if horizontalSizeClass != .compact {
+                    ToolbarItem(placement: .primaryAction) {
+                        Button("Members", systemImage: "person.2", action: onShowMembers)
+                    }
                 }
             }
             .task { await model.loadLatest() }
@@ -214,6 +224,8 @@ struct ChannelView: View {
     }
 
     private static let bottomID = "bottom"
+    /// How far above the newest message still counts as at the present.
+    private static let nearBottomSlack: CGFloat = 8
 
     /// Blocks a member, then loads the channel again so their messages come back collapsed.
     private func block(_ person: SocialUser) async {

@@ -59,6 +59,8 @@ struct WatchPanel: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
         .background(Color(.surface).opacity(AaruAlpha.half))
+        // Opaque underneath: nothing behind the panel shows through the tint.
+        .background(Color(.paper))
         .overlay(alignment: .bottom) { Rectangle().fill(Color(.line)).frame(height: 0.5) }
         .overlay(alignment: .topTrailing) { floatingReactions }
         .task { await model.load() }

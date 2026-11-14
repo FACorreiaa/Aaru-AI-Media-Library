@@ -1,3 +1,4 @@
+import AaruAPI
 import SwiftUI
 
 /// The topic, "Reconnecting…" once the socket has been down five seconds, and the
@@ -9,6 +10,9 @@ struct ChannelHeader: View {
     let disconnectedSince: Date?
     /// `@aaru` answers in this group, so the popover says what it reads.
     var agent = false
+    /// Shown as faces and a count; a tap shows the member list. Empty hides the strip.
+    var members: [GroupMember] = []
+    var onShowMembers: () -> Void = {}
     @State private var explains = false
 
     static let reconnectingAfter: TimeInterval = 5
@@ -53,6 +57,9 @@ struct ChannelHeader: View {
                     .frame(idealWidth: 300)
                     .fixedSize(horizontal: false, vertical: true)
                     .presentationCompactAdaptation(.popover)
+            }
+            if !members.isEmpty {
+                MemberStrip(members: members, onShow: onShowMembers)
             }
         }
         .padding(.horizontal, 16)

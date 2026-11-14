@@ -47,7 +47,7 @@ export const Route = createFileRoute('/_shell/app_/groups/$groupId')({
 })
 
 /** The member column fits beside the app sidebar, the rail, the channels and the chat. */
-const membersFit = () => window.matchMedia('(min-width: 1536px)').matches
+const membersFit = () => window.matchMedia('(min-width: 1280px)').matches
 
 function GroupLayout() {
   const loaded = Route.useLoaderData()
