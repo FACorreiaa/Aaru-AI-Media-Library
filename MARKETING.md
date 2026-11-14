@@ -1,5 +1,9 @@
 # Aaru — go-to-market, moat, and monetisation
 
+> **Current marketing kit: [`marketing/`](marketing/)** (2026-11-14): strategy, feature inventory,
+> brand rules, video playbook, calendar and agent prompts, checked against the live product. This
+> file is the earlier long-form plan; its §0 snapshot is out of date.
+
 Written 2026-08-29, revised 2026-09-02 to add the moat thesis and the money model. This
 document is demand-side only. It does not change product scope; `CLAUDE.md` and
 `ARCHITECTURE.md` remain the build contract. Where a moat item needs a scope change, it says

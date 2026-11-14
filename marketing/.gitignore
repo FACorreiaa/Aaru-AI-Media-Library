@@ -1,0 +1,4 @@
+# Raw captures and rendered videos stay out of Git (rules/video-playbook.md).
+assets/raw/
+*.mov
+*.mp4
