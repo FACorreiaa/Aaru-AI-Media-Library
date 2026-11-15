@@ -57,7 +57,7 @@ const faqs: Array<[string, string]> = [
   ],
   [
     'When can I use it?',
-    'Aaru is in private beta on iPhone, Mac and the web. The App Store and Google Play releases follow once testers have used it end to end.',
+    'Now. Aaru is on the App Store for iPhone and Mac, and on the web. Android follows.',
   ],
   [
     'What will it cost?',
