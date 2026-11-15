@@ -1,0 +1,12 @@
+tap Home
+wait 1.5
+tap Settings
+wait 1.5
+tap Your data
+wait 2
+tap History
+wait 2.5
+tap Undo
+wait 2
+snap h-27
+dump h-27

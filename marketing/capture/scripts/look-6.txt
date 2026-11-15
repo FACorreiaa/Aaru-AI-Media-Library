@@ -1,0 +1,3 @@
+at 0.3 0.371
+wait 2
+snap look-6

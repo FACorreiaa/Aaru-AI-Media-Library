@@ -1,0 +1,10 @@
+wait 2
+tap Mark S1 · E1 watched
+wait 2.2
+snap a5t-1
+tap Mark S1 · E2 watched
+wait 2.2
+tap Mark S1 · E3 watched
+wait 3
+snap a5t-2
+dump a5t-2

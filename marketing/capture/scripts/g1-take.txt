@@ -1,0 +1,8 @@
+tap Settings
+wait 2.5
+tap Your data
+wait 3.5
+snap g1t-1
+swipe up
+wait 3
+snap g1t-2

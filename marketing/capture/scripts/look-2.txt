@@ -1,0 +1,7 @@
+tap Bring your history
+wait 3
+snap look-2
+dump look-2
+swipe up
+wait 1
+snap look-2b

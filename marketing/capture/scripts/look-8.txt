@@ -1,0 +1,8 @@
+wait 15
+snap look-8a
+swipe up
+swipe up
+swipe up
+wait 1
+snap look-8b
+dump look-8

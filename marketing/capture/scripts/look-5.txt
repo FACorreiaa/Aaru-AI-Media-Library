@@ -1,0 +1,5 @@
+at 0.093 0.114
+wait 1
+at 0.713 0.933
+wait 2
+snap look-5

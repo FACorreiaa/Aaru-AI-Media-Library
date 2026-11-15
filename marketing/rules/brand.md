@@ -140,9 +140,10 @@ The store description's closing paragraph is the model end-card credit.
 
 ## Standard disclaimer
 
-For anything shown before the App Store release:
+1.0 is on the App Store since 2026-11-14, so App Store footage needs no beta line. Use it only
+when a piece films a TestFlight-only or experimental feature:
 
-> Aaru is in beta. Features may change.
+> Some features shown are in beta and may change.
 
 For any piece with an AI presenter (`rules/video-playbook.md`):
 

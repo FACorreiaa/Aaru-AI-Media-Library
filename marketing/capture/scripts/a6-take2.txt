@@ -1,0 +1,12 @@
+at 0.075 0.226
+wait 2
+at 0.365 0.226
+wait 3
+at 0.635 0.226
+wait 3
+at 0.765 0.226
+wait 3
+snap a6t2-1
+tap Month
+wait 4
+snap a6t2-2

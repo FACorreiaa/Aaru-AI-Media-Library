@@ -1,0 +1,6 @@
+tap Home
+wait 1.5
+tap Search
+wait 2
+snap a3-0
+dump a3-0

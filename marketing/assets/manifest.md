@@ -5,6 +5,26 @@ external storage; this file is the index. Rules: `../rules/video-playbook.md`.
 
 | Path / URL | Type | Platform | Resolution | Orientation | Shot ID | Feature | Date | Commit / build | Capture method | Review status |
 |---|---|---|---|---|---|---|---|---|---|---|
+| raw/higgsfield/H1-169-draft.mp4 | video, generated | — | 480p draft | 16:9 | H1 | b-roll | 2026-11-14 | Higgsfield job 80be2b71 | Seedance 2.5 t2v, no audio | draft, owner to pick |
+| raw/higgsfield/H1-916-draft.mp4 | video, generated | — | 480p draft | 9:16 | H1 | b-roll | 2026-11-14 | job 3aaccd99 | Seedance 2.5 t2v | draft, owner to pick |
+| raw/higgsfield/H2-169-draft.mp4 | video, generated | — | 480p draft | 16:9 | H2 | transition | 2026-11-14 | job 8041ab1c | Seedance 2.5 t2v | draft; garbled text on a reel tin in the first second: start after 1 s |
+| raw/higgsfield/H3-169-draft.mp4 | video, generated | — | 480p draft | 16:9 | H3 | device stage | 2026-11-14 | job b927c3ae | Seedance 2.5 t2v | draft, owner to pick |
+| raw/higgsfield/H3-916-draft.mp4 | video, generated | — | 480p draft | 9:16 | H3 | device stage | 2026-11-14 | job 79dea546 | Seedance 2.5 t2v | draft, owner to pick |
+| raw/higgsfield/M1-music-a.mp3 | audio, generated | — | 60 s | — | M1 | music bed | 2026-11-14 | job fa1208f1 | ElevenLabs Music v2.5, instrumental | owner to listen |
+| raw/capture/v3-take1.mov | screen recording | iPhone 17 Simulator ("Aaru Film") | 1206×2622, 60 fps, 139 s | 9:16 | B1, B2, library | Import → Letterboxd → plan → Little Women (2019) → approve → Library 30 | 2026-11-15 | main ccbb4df (#312 fix), Beta config, production API | `capture/drive.sh scripts/v3-take.txt --record` | use B1/B2/Library; its Undo missed |
+| raw/capture/v3-take2.mov | screen recording | same | 1206×2622, 60 fps, 150 s | 9:16 | B1, B2, B3 | same, plus History → Undo → library empty | 2026-11-15 | same | `scripts/v3-take2.txt` | use B3; History lists earlier rehearsal undos |
+| raw/capture/a3-take1.mov | screen recording | same | 1206×2622, 48 s | 9:16 | A3 | search "Little Women": film, anime, show; Books; Manga | 2026-11-15 | same | `scripts/a3-take.txt` | book rows have no covers |
+| raw/capture/a5-take1.mov | screen recording | same | 1206×2622, 89 s | 9:16 | A5 (+A4 label) | Ted Lasso: Mark S1·E1–E3, Plan to watch → Watching | 2026-11-15 | same | `scripts/a5-take.txt` | trim before App Store rating prompt at the end |
+| raw/capture/a6-take1.mov | screen recording | same | 1206×2622, 19 s | 9:16 | A6 | Calendar next week, Month | 2026-11-15 | same | `scripts/a6-take.txt` | week lands on an empty Sunday; prefer take 2 |
+| raw/capture/a6-take2.mov | screen recording | same | 1206×2622, 21 s | 9:16 | A6 | Week: Mon, Wed (Rings of Power), Fri, Sat (Black Clover) → Month | 2026-11-15 | same | `scripts/a6-take2.txt` | check posters per brand rules |
+| raw/capture/a2-take1.mov | screen recording | same | 1206×2622, 26 s | 9:16 | A2 | Home: Tonight Ted Lasso S1·E4, Airing soon, Start watching | 2026-11-15 | same | `scripts/a2-take.txt` | Start watching posters still loading mid-take |
+| raw/capture/g1-take1.mov | screen recording | same | 1206×2622, 23 s | 9:16 | G1 (export half) | Settings → Your data: History, Export JSON/CSV, AI data sharing | 2026-11-15 | same | `scripts/g1-take.txt` | Delete account half not filmed |
+| raw/higgsfield/H1-169.mp4 | generated b-roll | Higgsfield Seedance (job 7aba410d) | 1920×1080, 5 s, 24 fps | 16:9 | — | Night room: shelves, ice-blue window light, amber edge | 2026-11-15 | — | text-to-video, 1080p final | used blurred as V2 stage |
+| raw/higgsfield/H1-916.mp4 | generated b-roll | Higgsfield Seedance (job c7e9f140) | 1080×1920, 5 s, 24 fps | 9:16 | — | same | 2026-11-15 | — | text-to-video, 1080p final | used in V1, V3, V2 vertical |
+| raw/exports/v1-teaser-916.mp4 | export | iPhone takes + H1 + owl PNG | 1080×1920, 13.5 s, AAC | 9:16 | A3, A5, B2 | Teaser | 2026-11-15 | ccbb4df app | `capture/assemble.py v1` | QA frames pass; awaiting owner |
+| raw/exports/v2-showcase-169.mp4 | export | same | 1920×1080, 55.3 s, AAC | 16:9 | B1, B2, A2, A5, A6, A3, B3, G1 | Showcase (D2, A1 not filmed) | 2026-11-15 | same | `capture/assemble.py v2` | QA frames pass; awaiting owner |
+| raw/exports/v2-showcase-916.mp4 | export | same | 1080×1920, 55.3 s, AAC | 9:16 | same | Showcase, vertical re-edit | 2026-11-15 | same | `capture/assemble.py v2v` | QA frames pass; awaiting owner |
+| raw/exports/v3-bring-your-history-916.mp4 | export | same | 1080×1920, 32.4 s, AAC | 9:16 | B1, B2, B3 | Bring your history | 2026-11-15 | same | `capture/assemble.py v3` | QA frames pass; awaiting owner |
 
 Existing stills that can be reused, not yet reviewed for marketing:
 

@@ -1,0 +1,6 @@
+tap History
+wait 3
+tap Undo
+wait 3
+snap h-17
+dump h-17

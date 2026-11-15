@@ -1,0 +1,9 @@
+tap Done
+wait 1.5
+tap Home
+wait 3
+snap a2-0
+tap Calendar
+wait 3
+snap a6-0
+dump a6-0

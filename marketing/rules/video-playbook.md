@@ -16,13 +16,13 @@ from `../strategy.md`, visual rules from `brand.md`. Last checked 2026-11-14.
 4. **No "AI" in the first frame or headline.** The owl opens; "Ask Aaru" names the assistant.
 5. **Credits on every piece that shows catalog data** (`brand.md`, "Required credits").
 6. **Only market what `features.md` lets you.** No Plus, no price, no Android, no extension
-   install, no "on the App Store" before release.
+   install, no "on the Mac App Store" until the Mac listing is confirmed.
 7. **Two gates for paid generation:** plan first; spend credits only after explicit approval.
 8. **Nothing is published** without the owner's explicit go.
 
 ## What's missing before a first shoot
 
-- App Review outcome for 1.0 (decides the CTA and the end card).
+- ~~App Review outcome~~: 1.0 live 2026-11-14; end card uses the official App Store badge.
 - A demo account with a rich, realistic library: the review seed is small. Decide whether to
   extend the seed (a code change: owner's call) or build a local account by hand with imports.
 - A demo Letterboxd CSV and a Trakt test account that are not the owner's (for import shots).

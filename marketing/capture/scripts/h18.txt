@@ -1,0 +1,12 @@
+at 0.5 0.283
+wait 4
+snap h-18
+at 0.093 0.114
+wait 1
+at 0.093 0.114
+wait 1
+tap Done
+wait 2
+tap Library
+wait 3
+snap h-19

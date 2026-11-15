@@ -1,0 +1,13 @@
+tap Add The Lord of the Rings: The Rings of Power to your library
+wait 2
+tap Add The Apothecary Diaries Season 3 to your library
+wait 2
+tap Add Black Clover Season 2 to your library
+wait 2
+tap Add The Simpsons to your library
+wait 2
+snap d-1
+tap Calendar
+wait 4
+snap a6-1
+dump a6-1

@@ -1,0 +1,6 @@
+tap Title
+wait 1
+type Little Women
+wait 5
+snap a3-1
+dump a3-1

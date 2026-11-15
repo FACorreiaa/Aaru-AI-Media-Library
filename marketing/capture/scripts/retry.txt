@@ -1,0 +1,17 @@
+swipe down
+swipe down
+swipe down
+wait 1
+tap Letterboxd
+wait 3
+snap r-0
+at 0.177 0.295
+wait 1
+snap r-1
+wait 1
+snap r-2
+wait 2
+snap r-3
+wait 5
+snap r-4
+dump r-4

@@ -1,0 +1,10 @@
+at 0.093 0.114
+wait 1
+at 0.093 0.114
+wait 1
+at 0.093 0.114
+wait 2
+tap Library
+wait 3
+snap h-14
+dump h-14

@@ -1,0 +1,8 @@
+tap Home
+wait 2
+tap Settings
+wait 2
+tap Your data
+wait 2
+snap h-16
+dump h-16

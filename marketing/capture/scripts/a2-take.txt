@@ -1,0 +1,8 @@
+tap Home
+wait 4
+snap a2t-1
+swipe up
+wait 3
+snap a2t-2
+swipe down
+wait 2.5

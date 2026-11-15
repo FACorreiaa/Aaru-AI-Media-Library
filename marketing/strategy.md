@@ -22,10 +22,11 @@ ask the owner. `../BUSINESS.md` holds moat and money notes.
    because plain "Aaru" was taken; use that only where the store listing itself is named.
    The name is the Egyptian Field of Reeds: "a calm place where stories live".
 2. Every claim must trace to `features.md`. Follow the limits written on each feature.
-3. **Availability, today:** the web app is live at `aaruapp.com`; the iPhone, iPad and Mac app
-   is on TestFlight and **1.0 is in App Review** (submitted 2026-11-13). Do not write "on the
-   App Store", "download now" or show an App Store badge as live until the release is out.
-   "Try it on the web" is true now. Android does not exist: never mention it.
+3. **Availability, today:** the web app is live at `aaruapp.com`; **1.0 is on the App Store**
+   (released 2026-11-14, Free, `https://apps.apple.com/app/aaru-media-manager/id6821299076`). "Download on the App Store" and the
+   official badge are true for iPhone and iPad. The Mac build shipped in the same release but did
+   not show in the Mac store search on 2026-11-14: open the listing on a Mac before writing "on the
+   Mac App Store". Android does not exist: never mention it.
 4. **No price talk.** Aaru is free today. Plus is built and off sale. Never write a price, a
    trial or "premium". The one permanent promise: export, your library and your statistics are
    never paywalled.
@@ -65,8 +66,8 @@ public unless you choose it, and you can export everything and leave whenever yo
 | Platform | State |
 |---|---|
 | Web | Live, `aaruapp.com` |
-| iPhone, iPad | TestFlight; 1.0 in App Review |
-| Mac | TestFlight; 1.0 in App Review. A native Mac client is a pitch on its own (MARKETING.md §7) |
+| iPhone, iPad | App Store 1.0 (2026-11-14); TestFlight for beta builds |
+| Mac | 1.0 submitted with iOS; confirm the Mac listing before claiming it. A native Mac client is a pitch on its own (MARKETING.md §7) |
 | Browser extension | Built, in no store |
 | Android | None |
 
@@ -129,7 +130,7 @@ all of it.
 | Undo for every write, including whole imports | features §3, §17 | rehearse before filming |
 | Private by default, no public surface at all | features §24, CLAUDE.md product rules | — |
 | Free export and statistics, promised permanently | landing FAQ | — |
-| Native Mac app | features §22 | in App Review |
+| Native Mac app | features §22 | confirm the Mac listing |
 | Ask Aaru with plans you approve | features §16–17 | experimental; never the headline |
 | From here: where a title leads across kinds | features §13 | experimental |
 
@@ -176,8 +177,8 @@ I", never "done". Full guidance in `rules/brand.md`.
 
 ## 6. Conversion
 
-**Primary CTA today:** "Get started on the web" → `aaruapp.com` (the landing button's label).
-**Secondary:** "Join us on Discord". After the App Store release: the store badge.
+**Primary CTA today:** "Download on the App Store" (official badge) for iPhone and iPad, with
+"or use it on the web at aaruapp.com" beside it. **Secondary:** "Join us on Discord".
 
 Beta testers for Apple come by hand (MARKETING.md §8, Phase B): a TestFlight invite to one
 person at a time, from conversations, never a public TestFlight link in a post unless the owner
@@ -190,7 +191,7 @@ your history with you.", "Made for iPhone, iPad, Mac and the web.", FAQ). Change
 the owner, not to make:
 
 - Drop "Android to follow" and "Google Play" until an Android client exists.
-- Change "Aaru is in private beta" in the FAQ once 1.0 is on the App Store.
+- Change "Aaru is in private beta" in the FAQ: 1.0 is on the App Store since 2026-11-14.
 - MARKETING.md §9 wanted the export promise above the fold and a 30-second import recording.
 
 ### Objections
@@ -226,7 +227,7 @@ says so first.
 
 ## 8. What must be fixed before spending on promotion
 
-1. **App Review outcome.** Until 1.0 is out, the Apple story is TestFlight by hand.
+1. ~~App Review outcome.~~ Done: 1.0 on the App Store 2026-11-14.
 2. **The landing's Android line** (see §6).
 3. **First real imports.** Most importers have never met a stranger's export (features §1). One
    bungled 2,000-film Letterboxd import outweighs a good launch post (MARKETING.md §11.2). Run
@@ -251,7 +252,7 @@ Read `MARKETING.md`, `BUSINESS.md`, `PRODUCT.md`, `CLAUDE.md`, `DESIGN.md` "Bran
 ### Verified
 
 - Live web at `aaruapp.com`; production API `3252c467`.
-- 1.0 submitted to App Review 2026-11-13, Free.
+- 1.0 submitted 2026-11-13, released on the App Store 2026-11-14, Free (iTunes lookup).
 - Plus off sale; no price anywhere in the shipped landing.
 - Landing copy and FAQ quoted above.
 
@@ -262,7 +263,7 @@ Read `MARKETING.md`, `BUSINESS.md`, `PRODUCT.md`, `CLAUDE.md`, `DESIGN.md` "Bran
 
 ### Needs confirmation (decisions for the owner)
 
-1. Market before the App Store release (web + TestFlight), or wait for it?
+1. ~~Market before the App Store release?~~ Moot: released 2026-11-14; first videos started.
 2. Lead audience for the first ten: Trakt leavers (MARKETING.md's #1) or anime/manga trackers?
 3. Keep or remove "Android to follow" / "Google Play" on the landing.
 4. Approve the App Store copy in `aaru-ios/fastlane/metadata/`.

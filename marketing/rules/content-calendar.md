@@ -14,10 +14,12 @@ Status moves through: `idea` > `scripted` > `recorded` > `approved` > `scheduled
 
 ## Idea queue
 
-Suggestions for the owner to accept or reject. No dates are set: whether to market before the
-App Store release and which audience leads are open (`../strategy.md`, section 9). Until 1.0 is
-out, every CTA is "Get started on the web" or "Join us on Discord", and the beta disclaimer
-applies (`brand.md`). Shot IDs are in `video-playbook.md`.
+Suggestions for the owner to accept or reject. No dates are set; which audience leads is open
+(`../strategy.md`, section 9). 1.0 is on the App Store since 2026-11-14: the CTA is the App Store
+badge with "or aaruapp.com" (`../strategy.md` §6). Shot IDs are in `video-playbook.md`.
+
+In production (owner, 2026-11-14), plan in `../videos/production-plan.md`: ideas 1 (teaser),
+2 (Bring your history) and a full showcase.
 
 | # | Audience problem | Video | Hook | Channels | Needs |
 |---|---|---|---|---|---|
