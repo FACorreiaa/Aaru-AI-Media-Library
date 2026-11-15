@@ -1,0 +1,7 @@
+tap Skip
+wait 4
+snap g-1
+tap Bring your history
+wait 3
+snap g-2
+dump g-2

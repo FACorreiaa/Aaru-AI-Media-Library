@@ -1,0 +1,3 @@
+tap Week
+wait 2
+dump a6-4

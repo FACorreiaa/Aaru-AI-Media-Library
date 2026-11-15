@@ -1,0 +1,7 @@
+at 0.768 0.127
+wait 2
+at 0.093 0.114
+wait 2
+tap Bring your history
+wait 4
+snap h-22

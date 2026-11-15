@@ -1,0 +1,3 @@
+wait 2
+snap g-0
+dump g-0

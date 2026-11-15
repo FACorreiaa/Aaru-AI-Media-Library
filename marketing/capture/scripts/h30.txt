@@ -1,0 +1,7 @@
+at 0.093 0.114
+wait 1
+at 0.093 0.114
+wait 1
+tap Import
+wait 3
+snap h-30

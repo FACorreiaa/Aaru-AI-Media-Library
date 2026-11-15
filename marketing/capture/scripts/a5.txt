@@ -1,0 +1,11 @@
+at 0.093 0.114
+wait 1.5
+tap Title
+wait 0.5
+clear
+type Ted Lasso\n
+wait 4
+tap Ted Lasso
+wait 4
+snap a5-0
+dump a5-0

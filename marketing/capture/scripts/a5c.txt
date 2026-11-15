@@ -1,0 +1,4 @@
+tap Plan to watch
+wait 3
+snap a5-3
+dump a5-3

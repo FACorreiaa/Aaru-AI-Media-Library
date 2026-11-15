@@ -1,0 +1,6 @@
+swipe down
+wait 4
+snap a6-2
+tap Month
+wait 3
+snap a6-3

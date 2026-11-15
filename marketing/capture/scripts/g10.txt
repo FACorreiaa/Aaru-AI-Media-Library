@@ -1,0 +1,4 @@
+tap Discard
+wait 2
+snap g-10
+dump g-10

@@ -1,0 +1,6 @@
+swipe down
+wait 1
+tap Letterboxd
+wait 3
+snap look-3
+dump look-3

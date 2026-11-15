@@ -1,0 +1,6 @@
+tap Letterboxd
+wait 3
+snap g-3
+at 0.713 0.933
+wait 2
+snap g-4

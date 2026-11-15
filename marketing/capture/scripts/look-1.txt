@@ -1,0 +1,4 @@
+tap Skip
+wait 4
+snap look-1-after-skip
+dump look-1

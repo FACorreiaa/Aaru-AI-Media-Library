@@ -1,0 +1,9 @@
+wait 2
+tap Next week
+wait 3.5
+snap a6t-1
+swipe up
+wait 2.5
+tap Month
+wait 3.5
+snap a6t-2

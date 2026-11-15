@@ -1,0 +1,4 @@
+tap Continue
+wait 2
+snap a3-2
+dump a3-2

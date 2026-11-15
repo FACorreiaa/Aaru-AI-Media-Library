@@ -1,0 +1,6 @@
+tap Week
+wait 2.5
+snap a6r-1
+at 0.365 0.226
+wait 3
+snap a6r-2

@@ -1,0 +1,6 @@
+tap Bring your history
+wait 3
+snap h-3
+tap Letterboxd
+wait 3
+snap h-4

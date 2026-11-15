@@ -1,0 +1,4 @@
+tap Find Little Women
+wait 4
+snap h-9
+dump h-9

@@ -1,0 +1,7 @@
+swipe up
+wait 1.5
+snap a5-1
+dump a5-1
+swipe up
+wait 1.5
+snap a5-2

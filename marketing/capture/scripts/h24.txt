@@ -1,0 +1,6 @@
+wait 4
+tap Settings
+wait 2
+tap Import
+wait 4
+snap h-24

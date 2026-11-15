@@ -1,0 +1,8 @@
+at 0.855 0.487
+wait 4
+snap h-10
+swipe down
+swipe down
+wait 1
+snap h-11
+dump h-11

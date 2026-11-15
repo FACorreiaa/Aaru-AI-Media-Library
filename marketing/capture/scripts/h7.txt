@@ -1,0 +1,7 @@
+at 0.177 0.295
+wait 45
+snap h-7
+swipe up
+wait 1
+snap h-8
+dump h-8
