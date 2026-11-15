@@ -19,6 +19,12 @@ external storage; this file is the index. Rules: `../rules/video-playbook.md`.
 | raw/capture/a6-take2.mov | screen recording | same | 1206×2622, 21 s | 9:16 | A6 | Week: Mon, Wed (Rings of Power), Fri, Sat (Black Clover) → Month | 2026-11-15 | same | `scripts/a6-take2.txt` | check posters per brand rules |
 | raw/capture/a2-take1.mov | screen recording | same | 1206×2622, 26 s | 9:16 | A2 | Home: Tonight Ted Lasso S1·E4, Airing soon, Start watching | 2026-11-15 | same | `scripts/a2-take.txt` | Start watching posters still loading mid-take |
 | raw/capture/g1-take1.mov | screen recording | same | 1206×2622, 23 s | 9:16 | G1 (export half) | Settings → Your data: History, Export JSON/CSV, AI data sharing | 2026-11-15 | same | `scripts/g1-take.txt` | Delete account half not filmed |
+| raw/higgsfield/H1-169.mp4 | generated b-roll | Higgsfield Seedance (job 7aba410d) | 1920×1080, 5 s, 24 fps | 16:9 | — | Night room: shelves, ice-blue window light, amber edge | 2026-11-15 | — | text-to-video, 1080p final | used blurred as V2 stage |
+| raw/higgsfield/H1-916.mp4 | generated b-roll | Higgsfield Seedance (job c7e9f140) | 1080×1920, 5 s, 24 fps | 9:16 | — | same | 2026-11-15 | — | text-to-video, 1080p final | used in V1, V3, V2 vertical |
+| raw/exports/v1-teaser-916.mp4 | export | iPhone takes + H1 + owl PNG | 1080×1920, 13.5 s, AAC | 9:16 | A3, A5, B2 | Teaser | 2026-11-15 | ccbb4df app | `capture/assemble.py v1` | QA frames pass; awaiting owner |
+| raw/exports/v2-showcase-169.mp4 | export | same | 1920×1080, 55.3 s, AAC | 16:9 | B1, B2, A2, A5, A6, A3, B3, G1 | Showcase (D2, A1 not filmed) | 2026-11-15 | same | `capture/assemble.py v2` | QA frames pass; awaiting owner |
+| raw/exports/v2-showcase-916.mp4 | export | same | 1080×1920, 55.3 s, AAC | 9:16 | same | Showcase, vertical re-edit | 2026-11-15 | same | `capture/assemble.py v2v` | QA frames pass; awaiting owner |
+| raw/exports/v3-bring-your-history-916.mp4 | export | same | 1080×1920, 32.4 s, AAC | 9:16 | B1, B2, B3 | Bring your history | 2026-11-15 | same | `capture/assemble.py v3` | QA frames pass; awaiting owner |
 
 Existing stills that can be reused, not yet reviewed for marketing:
 
