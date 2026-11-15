@@ -8,7 +8,11 @@ struct ImportPage: View {
     /// Opens an import job's plan.
     var openJob: (String) -> Void
 
+    /// The source a file is being picked for. Kept apart from `picksFile`: SwiftUI clears the
+    /// picker's binding before it calls the completion, so a source cleared with it was gone by
+    /// then and every pick did nothing.
     @State private var pickingFor: ImportFileSource?
+    @State private var picksFile = false
     @State private var asksAniListName = false
     @State private var aniListName = ""
     @State private var showsCAT = false
@@ -48,7 +52,7 @@ struct ImportPage: View {
             }
         }
         .fileImporter(
-            isPresented: $pickingFor.isPresent,
+            isPresented: $picksFile,
             allowedContentTypes: pickingFor?.isListening == true
                 ? [.json] : [.commaSeparatedText, .plainText, .text, .xml, .gzip]
         ) { result in
@@ -105,7 +109,9 @@ struct ImportPage: View {
     private func choose(_ source: HistorySource) {
         switch source {
         case .stremio: showsStremio = true
-        case let .file(file): pickingFor = file
+        case let .file(file):
+            pickingFor = file
+            picksFile = true
         case .cat: showsCAT = true
         case .aniList:
             aniListName = ""
