@@ -25,8 +25,9 @@ and Mac. No carousel, no feature tour, no "AI". `WelcomeView` in `aaru-ios`. Tha
 signed-out screen; a new account's first run is §0a.
 
 The web landing (`src/routes/index.tsx`, owner 2026-10-20) is centred: a privacy pill, the
-display headline, Get started, then App Store and Google Play buttons at equal weight ("Coming
-soon" until a listing exists; URLs in `src/lib/site.ts`). Below sits a still fan of real
+display headline, Get started, then App Store, Mac App Store and Google Play buttons at equal
+weight ("Coming soon" until a listing exists; URLs in `src/lib/site.ts`; one universal purchase,
+so iPhone and Mac open the same listing). Below sits a still fan of real
 posters (`PosterFan`) that fades into the page; it enters once and never sways. Then one card
 per thing tracked (TV shows, movies, anime, books, music, sports), each with a small fan of
 three covers (`KindCard`), imports, native apps, FAQ. The header and footer link to X. Art is
