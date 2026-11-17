@@ -47,6 +47,11 @@ library layer stay separate, external IDs stored whenever known, no second backe
 - **Never a recommendation.** Catalog data plus the user's own marks, joined by id. "Add the
   rest" is an import the user reviews, as the relation chain's is. The share card is an image the
   device renders; no public link carries anyone's progress.
+- **Aaru never plays or sources a stream.** No Stremio-style addons, no player, no stream
+  resource: App Store guideline 5.2.3, and the existing "no Stremio `stream`" rule. It may send
+  the user to the legal service. CAT-014 is built on that: the title page lists who streams,
+  rents and sells a film or show in the device's country and links to TMDB's page of them. TMDB
+  gives one link per title and country, not one per service; no per-service link is guessed.
 
 ## Decisions recorded 2026-11-14
 
@@ -406,7 +411,7 @@ Friends and groups (design: `docs/superpowers/specs/2026-10-27-friends-groups-de
   the week's airings (TMDB's on-the-air set) grouped by the channel or streamer they premiere on,
   each with the next episode's day and, when TVmaze knows it, the exact time. "Streams on" pulls
   CAT-014's watch providers forward for this view only, for the country the device's language
-  names (sent per request, never stored). The Title room's "Where to watch" is still CAT-014.
+  names (sent per request, never stored). The Title room's "Where to watch" is CAT-014, built 2026-11-17.
 - **The Calendar groups by channel (owner, 2026-10-24, CAL-005).** Week and Month get a
   "Group by: Day | Channel" control: by channel, the shows airing now sit under the TV channel or
   streamer they air on, with the day and, when known, the time on each row. It is a layout, not a
@@ -1086,7 +1091,7 @@ account or a stranger that has not happened yet.
 | CAT-011 | Done | #24 7edc80c; TVmazeAirTimes.swift | |
 | CAT-012 | Open | no Google Books code | |
 | CAT-013 | Open | no Wikidata code | |
-| CAT-014 | Partly built | DISC-003's `watch/providers` decode in `TMDBCatalog+OnAir.swift` | On air lists services per region; the Title room panel is still open |
+| CAT-014 | Built, unverified | `GET /v1/titles/{id}/watch`, `internal/catalog/watch.go`, `aaru-ios/Aaru/Title/TitleWatch.swift`, `aaru-client/src/components/TitleWatch.tsx` | Server, iOS unit and web tests pass with stub providers; never run against real TMDB, in a browser, a simulator's title page or on a device. Held six hours in memory, not with the title's staleness window |
 | CAT-015 | Open | none | Scheduled after P2 gate |
 | CAT-016 | Open | none | Scheduled after P2 gate |
 | CAT-017 | Deferred | heading "Deferred" | |
@@ -3035,6 +3040,11 @@ requires be credited). Shown on the Title room. Cached with the title's stalenes
 
 **Done when:** a title shows streaming/rent/buy providers for the caller's region with the
 JustWatch credit, and a region with no data shows nothing rather than an empty box.
+
+**Built 2026-11-17.** `GET /v1/titles/{id}/watch?region=` (films and shows, anime included),
+read by TMDB id and held six hours in memory for every region at once; each group lists up to
+eight services in TMDB's order, without JustWatch's reseller entries. The section sits above
+Related, with "All options" opening TMDB's page. Nothing is played (decision 2026-11-17).
 
 ### CAT-015 · OMDb ratings · S · after the P2 gate
 **Needs:** PRV-001.

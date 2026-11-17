@@ -224,6 +224,12 @@ show of one universe; the owl's answer is its own suggestion, reviewed before an
 and never joins the graph. Credit: "Relations from AniList,
 TMDB and Wikidata."
 
+**Where to watch (CAT-014, 2026-11-17, web, iPhone, iPad, Mac).** Above Related, for a film, show
+or anime: the services that stream, rent or sell it in the device's country, as quiet outlined
+chips with the service's logo, grouped Stream, Rent, Buy. "All options" opens TMDB's page; Aaru
+plays nothing and has no link per service. The JustWatch credit sits under the chips. Nothing to
+show is no section at all.
+
 **Worlds (GRAPH-007, 2026-11-17; web, iPhone, iPad, Mac).** A title that is part of a
 larger story says so in one panel above Related, the one lit edge in that part of the page: the
 World's name, "5 of 11", its kinds, a thin bar. It opens the map. The map is a row per kind, the

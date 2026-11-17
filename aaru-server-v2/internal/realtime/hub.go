@@ -165,7 +165,6 @@ func (h *Hub) write(s *socket) {
 // Never called with mu held.
 func (h *Hub) drop(s *socket, reason DropReason) {
 	s.once.Do(func() {
-		close(s.done)
 		h.mu.Lock()
 		if h.sockets[s.user][s.id] == s {
 			delete(h.sockets[s.user], s.id)
@@ -174,6 +173,9 @@ func (h *Hub) drop(s *socket, reason DropReason) {
 			}
 		}
 		h.mu.Unlock()
+		// Closed only once the socket is out of the map: Flush and the writer wait on `done`,
+		// and whoever they wake must not still find the socket counted.
+		close(s.done)
 		if reason == DropClosed || s.onDrop == nil {
 			return
 		}

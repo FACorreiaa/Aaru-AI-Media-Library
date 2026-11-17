@@ -96,6 +96,11 @@ import { hasBranches } from '../lib/title/tree'
 // APP-005 on the web: the Title room, at parity with the Apple apps' `TitleDetailView`. An album
 // (MUS-001) is a big square cover, its artist and genres, then the usual controls and its
 // tracklist: no progress, no episodes.
+// Where to watch (CAT-014) loads after the room shows: only films, shows and anime have it.
+const TitleWatch = lazy(() =>
+  import('../components/TitleWatch').then((m) => ({ default: m.TitleWatch })),
+)
+
 // The World this title is part of (GRAPH-007) loads after the room shows.
 const WorldStrip = lazy(() =>
   import('../components/WorldStrip').then((m) => ({ default: m.WorldStrip })),
@@ -224,7 +229,7 @@ function TitleRoom() {
 
   // GRAPH-005: "From here", under Related, and opened once when a tap here finishes the title.
   const fromHere = createTitleTree(() => entry().title.id)
-  // The World strip is read in the browser: nothing of it is rendered on the server.
+  // Where to watch and the World strip are read in the browser: neither is rendered on the server.
   const [inBrowser, setInBrowser] = createSignal(false)
   onMount(() => setInBrowser(true))
   const [treeOpen, setTreeOpen] = createSignal(false)
@@ -618,6 +623,17 @@ function TitleRoom() {
 
             <Show when={isAlbum()}>
               <Tracklist tracks={title()?.tracks} />
+            </Show>
+
+            <Show
+              when={
+                inBrowser() &&
+                kind() !== 'book' &&
+                kind() !== 'manga' &&
+                kind() !== 'album'
+              }
+            >
+              <TitleWatch titleId={entry().title.id} kind={kind()} />
             </Show>
 
             <Show when={inBrowser()}>

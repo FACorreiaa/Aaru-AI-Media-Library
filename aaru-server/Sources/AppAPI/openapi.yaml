@@ -2610,6 +2610,39 @@ paths:
               schema: {$ref: '#/components/schemas/TitleTree'}
         default:
           $ref: '#/components/responses/Error'
+  /v1/titles/{id}/watch:
+    get:
+      operationId: getTitleWatch
+      summary: Where to watch a film or show in one country (CAT-014).
+      description: >-
+        The services that stream, rent or sell the title in `region`, in the provider's order
+        (JustWatch data through TMDB; credit JustWatch where shown), and TMDB's page listing every
+        way to watch it there. Aaru links out and plays nothing: there is one link per title, not
+        one per service. Catalog data, the same for every user, cached by the server and never
+        stored. The three lists are empty for a kind that is not a film or show, a region with no
+        data, or a provider that did not answer: show nothing then.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: region
+          in: query
+          required: true
+          description: >-
+            ISO 3166-1 alpha-2, e.g. `US`, `PT`, from the device's language settings. Used for this
+            request only and never stored. Anything but two letters is 422 `validation_failed`.
+          schema: {type: string}
+      responses:
+        '200':
+          description: Where to watch.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TitleWatch'}
+        default:
+          $ref: '#/components/responses/Error'
   /v1/titles/{id}/posts:
     get:
       operationId: listTitlePosts
@@ -5640,6 +5673,26 @@ components:
         airTimeKnown:
           type: boolean
           description: False while only the day is known; `airsAt` is then midnight UTC of that day.
+    TitleWatch:
+      type: object
+      required: [region, streaming, rent, buy]
+      properties:
+        region:
+          type: string
+          description: The region asked for, in upper case.
+        streaming:
+          type: array
+          description: Services that include it in a subscription.
+          items: {$ref: '#/components/schemas/WatchProvider'}
+        rent:
+          type: array
+          items: {$ref: '#/components/schemas/WatchProvider'}
+        buy:
+          type: array
+          items: {$ref: '#/components/schemas/WatchProvider'}
+        link:
+          type: string
+          description: TMDB's page of every way to watch the title in `region`.
     WatchProvider:
       type: object
       required: [name]
