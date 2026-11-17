@@ -1078,7 +1078,7 @@ account or a stranger that has not happened yet.
 | GRAPH-003 | Built, unverified | `list_roadmaps`, `capture.Place`, `RoadmapSteps.tsx`, `RoadmapSteps.swift`, `POST /v1/titles/{id}/relations/chain` | Stub model only; not looked at on a screen |
 | GRAPH-004 | Built, unverified | `GET /v1/lists/{id}/graph`, `title_relations`, `RelationGraphCanvas` (web, Apple) | Stub model only; not looked at on a screen |
 | GRAPH-005 | Built, unverified | `GET /v1/titles/{id}/tree`, `catalog/tree.go`, `catalog/credits*.go`, `core/tree.go`, migration 00012 `catalog_credits` | Server built 2026-11-11; stub providers only. The new AniList, Open Library and MusicBrainz queries were run by hand against the live APIs; TMDB's were not (no key on the dev machine), so a show's creator branch (`tv_credits`, job Creator) is unproven. Web built 2026-11-11 (`TitleTree.tsx`, `lib/title/tree.ts`): looked at in headless Chrome against a local API for a book, a manga and an album, desktop and phone width, with the finish dialog; films and shows not seen (no TMDB key). Apple built 2026-11-11 (`TitleTree.swift`, `TitleTreeModel.swift`): iOS simulator and Mac builds pass; not looked at on a screen. Needs the API promoted |
-| GRAPH-007 | In progress | Server: `internal/db/migrations/00017_worlds.sql`, `catalog/world.go`, `catalog/world_service.go`, `catalog/world_read.go`, `catalog.WorldWorker`, `httpapi/world.go` (`GET /v1/titles/{id}/world`, `GET /v1/me/worlds`, `POST /v1/titles/{id}/world/plan`); tests `catalog/world*_test.go`, `httpapi/world_test.go` | Stub sources only: never built from real providers. No client yet |
+| GRAPH-007 | In progress | Server: `internal/db/migrations/00017_worlds.sql`, `catalog/world.go`, `catalog/world_service.go`, `catalog/world_read.go`, `catalog.WorldWorker`, `httpapi/world.go` (`GET /v1/titles/{id}/world`, `GET /v1/me/worlds`, `POST /v1/titles/{id}/world/plan`); tests `catalog/world*_test.go`, `httpapi/world_test.go` | Stub sources only: never built from real providers. Apple clients built (`aaru-ios/Aaru/Worlds`, `AaruTests/WorldMapTests.swift`): the map, row and share card seen only as offscreen renders with placeholder posters, never in a running app. No web client yet |
 | GRAPH-006 | Built, unverified | `GET /v1/titles/{id}/tree?cast=true`, `catalog/credits_sources.go` (`tmdbCast`, `billedPart`), `catalog/tree.go` (`people`), `core/tree.go` | Server built 2026-11-11; stub TMDB only (no key on the dev machine), so `aggregate_credits` inside `append_to_response` and the cameo and talk-show filters are unproven on real data: run `credits_live_test.go` with `AARU_LIVE=1` and a key. Web built 2026-11-11 (`TitleTree.tsx` `TitleTreeView`, `lib/title/tree.ts` `treeFilters`/`filterTree`): unit tests only, not looked at in a browser. Apple built 2026-11-11 (`TitleTreeFiltered`, `TitleTree.filters`/`showing`): iOS simulator and Mac builds pass; not looked at on a screen. Needs the API promoted |
 | IMP-021 | Built, unverified | `POST /v1/imports/{id}/match-all`, `catalog/guess.go`, `imports/matchall.go`, `aaru-ios/Aaru/Capture/MatchAllButton.swift` | Web run locally: real Open Library, stub model, 8 of 10 rows filled in about 12 seconds. iOS builds and has not been tapped. Needs the API promoted |
 | PRV-001 | Done | #27 8d5ddc3; docs/providers.md, AboutView.swift | privacy@ routing not set up |
@@ -3466,8 +3466,11 @@ the next step marked, a count, a share card and "Add the rest".
   with something left first, furthest along leading, at most 100) and
   `POST /v1/titles/{id}/world/plan` (the titles the caller lacks, as a capture to review, up to
   50). Reads are from the database only; a read that finds nothing queues the build.
-- **Clients (after).** `WorldStrip` on the title page, `WorldMap`, a Worlds page,
-  `WorldShareCard`; iPhone, iPad and Mac, then the web.
+- **Apple clients (built 2026-11-17).** `WorldStrip` on the title page, opening the map in a
+  sheet; `WorldMap` (a row per lane, a rail lit between finished titles, rungs between lanes);
+  the Worlds page from Library's More menu; `WorldShareCard`; "Add the rest" opening the import
+  review. A World still building is asked for again every 4 seconds, six times.
+- **Web (next).** The same surfaces on their own routes.
 - Known limits: a World is only what provider ids join; AniList is asked about main-chain titles
   only, so a side story's own sequels are not reached; lanes read in release order, since story
   order exists only inside one chain; an import's backlog builds at the providers' pace.
