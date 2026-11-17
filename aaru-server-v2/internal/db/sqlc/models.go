@@ -115,3 +115,13 @@ type World struct {
 	BuiltAt    time.Time
 	CreatedAt  time.Time
 }
+
+type WorldTitle struct {
+	WorldID      uuid.UUID
+	Position     int32
+	NodeKey      string
+	Lane         string
+	LanePosition int32
+	Side         bool
+	Node         json.RawMessage
+}

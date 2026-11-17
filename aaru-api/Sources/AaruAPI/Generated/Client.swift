@@ -8992,6 +8992,83 @@ public struct Client: APIProtocol {
             }
         )
     }
+    /// The Worlds the caller has at least one library item in (GRAPH-007), each with how far they are: those with something left first, the furthest along leading, then the finished ones. At most 100. Only Worlds already built are listed; an import's titles appear as their Worlds are built.
+    ///
+    /// - Remark: HTTP `GET /v1/me/worlds`.
+    /// - Remark: Generated from `#/paths//v1/me/worlds/get(listMyWorlds)`.
+    public func listMyWorlds(_ input: Operations.ListMyWorlds.Input) async throws -> Operations.ListMyWorlds.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.ListMyWorlds.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/me/worlds",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .get
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.ListMyWorlds.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.MyWorlds.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                default:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(body: body)
+                    )
+                }
+            }
+        )
+    }
     /// What the user watched and read in one calendar year or month of their time zone (GAM-006a), in all time (GAM-006c), or in the last 7 or 30 days (GAM-006d). Derived only from their own library. Imported history counts only where it carries a real date.
     ///
     /// - Remark: HTTP `GET /v1/me/stats`.
@@ -11753,6 +11830,164 @@ public struct Client: APIProtocol {
                 case 202:
                     let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
                     let body: Operations.PlanRelationChain.Output.Accepted.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ImportJob.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .accepted(.init(body: body))
+                default:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(body: body)
+                    )
+                }
+            }
+        )
+    }
+    /// The World a title belongs to (GRAPH-007): one story universe across every kind, the titles the relation graph joins through sequels, side stories, spin-offs and adaptations, with a lane per kind, marked with the caller's library. Catalog data, the same for every user: nothing in it is a recommendation, and reading it writes nothing to the library. Read from the server's store only. `state` is `building` while the World is queued (ask again in a few seconds) and `none` when the title relates to nothing or sits outside a cut universe; both come without lanes.
+    ///
+    /// - Remark: HTTP `GET /v1/titles/{id}/world`.
+    /// - Remark: Generated from `#/paths//v1/titles/{id}/world/get(getTitleWorld)`.
+    public func getTitleWorld(_ input: Operations.GetTitleWorld.Input) async throws -> Operations.GetTitleWorld.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.GetTitleWorld.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/titles/{}/world",
+                    parameters: [
+                        input.path.id
+                    ]
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .get
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.GetTitleWorld.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.World.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                default:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(body: body)
+                    )
+                }
+            }
+        )
+    }
+    /// "Add the rest" (GRAPH-007): the titles of the title's World that are not in the caller's library, in the World's order, as a capture to review, with exact ids. Approving adds them to Plan to watch or read. Spends one capture, as any capture does; writes nothing to the library by itself. 422 when there is no World yet or nothing is left to add.
+    ///
+    /// - Remark: HTTP `POST /v1/titles/{id}/world/plan`.
+    /// - Remark: Generated from `#/paths//v1/titles/{id}/world/plan/post(planWorldRest)`.
+    public func planWorldRest(_ input: Operations.PlanWorldRest.Input) async throws -> Operations.PlanWorldRest.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.PlanWorldRest.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/titles/{}/world/plan",
+                    parameters: [
+                        input.path.id
+                    ]
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .post
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 202:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.PlanWorldRest.Output.Accepted.Body
                     let chosenContentType = try converter.bestContentType(
                         received: contentType,
                         options: [

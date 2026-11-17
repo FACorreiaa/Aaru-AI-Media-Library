@@ -1656,6 +1656,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/me/worlds': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** The Worlds the caller has at least one library item in (GRAPH-007), each with how far they are: those with something left first, the furthest along leading, then the finished ones. At most 100. Only Worlds already built are listed; an import's titles appear as their Worlds are built. */
+    get: operations['listMyWorlds']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/me/stats': {
     parameters: {
       query?: never
@@ -2189,6 +2206,40 @@ export interface paths {
     put?: never
     /** "Add the chain" (GRAPH-003): the main chain of the title's relation graph, in the graph's order, as a capture to review, with exact ids. Approving adds what is not in the library to Plan to watch or read and makes a list in that order. Spends one capture, as any capture does; writes nothing to the library by itself. */
     post: operations['planRelationChain']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/titles/{id}/world': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** The World a title belongs to (GRAPH-007): one story universe across every kind, the titles the relation graph joins through sequels, side stories, spin-offs and adaptations, with a lane per kind, marked with the caller's library. Catalog data, the same for every user: nothing in it is a recommendation, and reading it writes nothing to the library. Read from the server's store only. `state` is `building` while the World is queued (ask again in a few seconds) and `none` when the title relates to nothing or sits outside a cut universe; both come without lanes. */
+    get: operations['getTitleWorld']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/titles/{id}/world/plan': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** "Add the rest" (GRAPH-007): the titles of the title's World that are not in the caller's library, in the World's order, as a capture to review, with exact ids. Approving adds them to Plan to watch or read. Spends one capture, as any capture does; writes nothing to the library by itself. 422 when there is no World yet or nothing is left to add. */
+    post: operations['planWorldRest']
     delete?: never
     options?: never
     head?: never
@@ -4978,6 +5029,88 @@ export interface components {
       from: string
       to: string
       relation: components['schemas']['Relation']
+    }
+    /**
+     * @description `ready`: the World is here. `building`: it is queued or being built; ask again in a few seconds. `none`: the title relates to nothing, or sits outside a universe that was cut.
+     * @enum {string}
+     */
+    WorldState: 'ready' | 'building' | 'none'
+    /**
+     * @description The kind a World's lane holds. Anime is its own lane, series and films alike.
+     * @enum {string}
+     */
+    WorldLaneKind: 'book' | 'manga' | 'film' | 'show' | 'anime' | 'album'
+    World: {
+      state: components['schemas']['WorldState']
+      /**
+       * Format: uuid
+       * @description Stable while the World's ids hold. Absent unless `ready`.
+       */
+      id?: string
+      /** @description The name of its first-released title. Absent unless `ready`. */
+      name?: string
+      /** @description Every title on the map, side titles included. */
+      total: number
+      /** @description How many of them the caller has finished. */
+      finished: number
+      /** @description The lanes' kinds, in the order the lanes are drawn. */
+      kinds: components['schemas']['WorldLaneKind'][]
+      /** @description One per kind, ordered by the release of its first title. */
+      lanes: components['schemas']['WorldLane'][]
+      /** @description How the titles stand to each other, by key, written forward: `sequel`, `side_story`, `spin_off` and `adaptation` only. */
+      links: components['schemas']['RelationEdge'][]
+      /** @description Key of the one title to go to: one in progress, else the next of the lane the caller is furthest into. Absent when nothing is left. */
+      startHere?: string
+      /** @description Key of the title the World was asked for. */
+      anchor?: string
+      /** @description True when the universe is larger than a World holds and was cut nearest its first title. */
+      truncated: boolean
+      /** @description True when a source failed or ran out of time; the World may miss titles. */
+      partial: boolean
+    }
+    WorldLane: {
+      kind: components['schemas']['WorldLaneKind']
+      /** @description In order: each chain of prequels and sequels by release, a side title after the title it hangs from. */
+      titles: components['schemas']['WorldTitle'][]
+    }
+    WorldTitle: {
+      /** @description Stable within one World; what `links` name a title by. */
+      key: string
+      /** @description Opens the title (POST /v1/titles/resolve) or adds it, as a search hit does. */
+      ref: components['schemas']['MediaRef']
+      posterUrl?: string
+      /** @description `YYYY-MM-DD` when the source knows the day. */
+      releaseDate?: string
+      /** @description The source's own word for it (`tv`, `movie`, `ova`, `novel`…), for a label. */
+      format?: string
+      /** @description A side story or spin-off that leads nowhere further. Drawn quieter; still counted. */
+      side: boolean
+      /** @description The first title of its lane the caller has not finished or dropped, side titles aside. */
+      next: boolean
+      /** Format: uuid */
+      libraryItemId?: string
+      status?: components['schemas']['LibraryStatus']
+    }
+    MyWorlds: {
+      worlds: components['schemas']['WorldSummary'][]
+    }
+    WorldSummary: {
+      /** Format: uuid */
+      id: string
+      name: string
+      total: number
+      finished: number
+      kinds: components['schemas']['WorldLaneKind'][]
+      /**
+       * Format: uuid
+       * @description One of the caller's own titles in it. Open the World with GET /v1/titles/{id}/world.
+       */
+      titleId: string
+      /** @description The one title to go to next. Absent when nothing is left. */
+      startHere?: components['schemas']['MediaRef']
+      /** @description The poster of `startHere`, else of the World's first title. */
+      posterUrl?: string
+      truncated?: boolean
     }
     TitleTree: {
       root: components['schemas']['TreeNode']
@@ -8623,6 +8756,27 @@ export interface operations {
       default: components['responses']['Error']
     }
   }
+  listMyWorlds: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The caller's Worlds. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['MyWorlds']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
   getStats: {
     parameters: {
       query?: {
@@ -9399,6 +9553,52 @@ export interface operations {
       query?: {
         order?: components['schemas']['RelationOrder']
       }
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Queued for review. */
+      202: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ImportJob']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getTitleWorld: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The World, or why there is none yet. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['World']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  planWorldRest: {
+    parameters: {
+      query?: never
       header?: never
       path: {
         id: string

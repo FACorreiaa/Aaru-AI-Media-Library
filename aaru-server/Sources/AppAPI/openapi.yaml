@@ -1814,6 +1814,22 @@ paths:
               schema: {$ref: '#/components/schemas/ProfileStats'}
         default:
           $ref: '#/components/responses/Error'
+  /v1/me/worlds:
+    get:
+      operationId: listMyWorlds
+      summary: >-
+        The Worlds the caller has at least one library item in (GRAPH-007), each with how far they
+        are: those with something left first, the furthest along leading, then the finished ones.
+        At most 100. Only Worlds already built are listed; an import's titles appear as their
+        Worlds are built.
+      responses:
+        '200':
+          description: The caller's Worlds.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/MyWorlds'}
+        default:
+          $ref: '#/components/responses/Error'
   /v1/me/stats:
     get:
       operationId: getStats
@@ -2503,6 +2519,55 @@ paths:
         - name: order
           in: query
           schema: {$ref: '#/components/schemas/RelationOrder'}
+      responses:
+        '202':
+          description: Queued for review.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ImportJob'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/titles/{id}/world:
+    get:
+      operationId: getTitleWorld
+      summary: >-
+        The World a title belongs to (GRAPH-007): one story universe across every kind, the titles
+        the relation graph joins through sequels, side stories, spin-offs and adaptations, with a
+        lane per kind, marked with the caller's library. Catalog data, the same for every user:
+        nothing in it is a recommendation, and reading it writes nothing to the library. Read from
+        the server's store only. `state` is `building` while the World is queued (ask again in a
+        few seconds) and `none` when the title relates to nothing or sits outside a cut
+        universe; both come without lanes.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: The World, or why there is none yet.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/World'}
+        default:
+          $ref: '#/components/responses/Error'
+  /v1/titles/{id}/world/plan:
+    post:
+      operationId: planWorldRest
+      summary: >-
+        "Add the rest" (GRAPH-007): the titles of the title's World that are not in the caller's
+        library, in the World's order, as a capture to review, with exact ids. Approving adds them
+        to Plan to watch or read. Spends one capture, as any capture does; writes nothing to the
+        library by itself. 422 when there is no World yet or nothing is left to add.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
       responses:
         '202':
           description: Queued for review.
@@ -6070,6 +6135,124 @@ components:
         from: {type: string}
         to: {type: string}
         relation: {$ref: '#/components/schemas/Relation'}
+    WorldState:
+      type: string
+      description: >-
+        `ready`: the World is here. `building`: it is queued or being built; ask again in a few
+        seconds. `none`: the title relates to nothing, or sits outside a universe that was cut.
+      enum: [ready, building, none]
+    WorldLaneKind:
+      type: string
+      description: The kind a World's lane holds. Anime is its own lane, series and films alike.
+      enum: [book, manga, film, show, anime, album]
+    World:
+      type: object
+      required: [state, total, finished, kinds, lanes, links, truncated, partial]
+      properties:
+        state: {$ref: '#/components/schemas/WorldState'}
+        id:
+          type: string
+          format: uuid
+          description: Stable while the World's ids hold. Absent unless `ready`.
+        name:
+          type: string
+          description: The name of its first-released title. Absent unless `ready`.
+        total:
+          type: integer
+          description: Every title on the map, side titles included.
+        finished:
+          type: integer
+          description: How many of them the caller has finished.
+        kinds:
+          type: array
+          description: The lanes' kinds, in the order the lanes are drawn.
+          items: {$ref: '#/components/schemas/WorldLaneKind'}
+        lanes:
+          type: array
+          description: One per kind, ordered by the release of its first title.
+          items: {$ref: '#/components/schemas/WorldLane'}
+        links:
+          type: array
+          description: >-
+            How the titles stand to each other, by key, written forward: `sequel`, `side_story`,
+            `spin_off` and `adaptation` only.
+          items: {$ref: '#/components/schemas/RelationEdge'}
+        startHere:
+          type: string
+          description: >-
+            Key of the one title to go to: one in progress, else the next of the lane the caller is
+            furthest into. Absent when nothing is left.
+        anchor:
+          type: string
+          description: Key of the title the World was asked for.
+        truncated:
+          type: boolean
+          description: True when the universe is larger than a World holds and was cut nearest its first title.
+        partial:
+          type: boolean
+          description: True when a source failed or ran out of time; the World may miss titles.
+    WorldLane:
+      type: object
+      required: [kind, titles]
+      properties:
+        kind: {$ref: '#/components/schemas/WorldLaneKind'}
+        titles:
+          type: array
+          description: >-
+            In order: each chain of prequels and sequels by release, a side title after the title
+            it hangs from.
+          items: {$ref: '#/components/schemas/WorldTitle'}
+    WorldTitle:
+      type: object
+      required: [key, ref, side, next]
+      properties:
+        key: {type: string, description: Stable within one World; what `links` name a title by.}
+        ref:
+          $ref: '#/components/schemas/MediaRef'
+          description: Opens the title (POST /v1/titles/resolve) or adds it, as a search hit does.
+        posterUrl: {type: string}
+        releaseDate: {type: string, description: '`YYYY-MM-DD` when the source knows the day.'}
+        format:
+          type: string
+          description: The source's own word for it (`tv`, `movie`, `ova`, `novel`…), for a label.
+        side:
+          type: boolean
+          description: A side story or spin-off that leads nowhere further. Drawn quieter; still counted.
+        next:
+          type: boolean
+          description: The first title of its lane the caller has not finished or dropped, side titles aside.
+        libraryItemId: {type: string, format: uuid}
+        status: {$ref: '#/components/schemas/LibraryStatus'}
+    MyWorlds:
+      type: object
+      required: [worlds]
+      properties:
+        worlds:
+          type: array
+          items: {$ref: '#/components/schemas/WorldSummary'}
+    WorldSummary:
+      type: object
+      required: [id, name, total, finished, kinds, titleId]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string}
+        total: {type: integer}
+        finished: {type: integer}
+        kinds:
+          type: array
+          items: {$ref: '#/components/schemas/WorldLaneKind'}
+        titleId:
+          type: string
+          format: uuid
+          description: >-
+            One of the caller's own titles in it. Open the World with GET /v1/titles/{id}/world.
+        startHere:
+          $ref: '#/components/schemas/MediaRef'
+          description: The one title to go to next. Absent when nothing is left.
+        posterUrl:
+          type: string
+          description: The poster of `startHere`, else of the World's first title.
+        truncated: {type: boolean}
     TitleTree:
       type: object
       required: [root, branches, partial]
