@@ -1,6 +1,20 @@
 //  @ts-check
 
+// ESLint runs only what oxlint cannot express: the JSX selectors of the web UI
+// rule and two house-style rules oxlint has no version of. Everything else,
+// including the type-aware rules and the barrel import rule, is oxlint: see
+// .oxlintrc.json. Files are parsed without type information (no `project`), which
+// was the slow part of the old lint. eslint-plugin-oxlint goes last and turns off
+// any rule here that oxlint already reports.
 import { tanstackConfig } from '@tanstack/eslint-config'
+import oxlint from 'eslint-plugin-oxlint'
+
+// The TypeScript parser and the plugins come from @tanstack/eslint-config; none
+// of its rules are switched on from there.
+const tanstack = tanstackConfig.find(
+  (config) => config.name === 'tanstack/javascript',
+)
+if (!tanstack) throw new Error('@tanstack/eslint-config: no javascript config')
 
 const SLOT_TWICE = {
   // A JSX slot read in a Show/Match `when` and again in its body is created twice; on a hard
@@ -12,63 +26,48 @@ const SLOT_TWICE = {
     'Resolve a JSX slot once with children(() => props.x) and test that: reading props.x in `when` and again in the body creates it twice and breaks hydration.',
 }
 
+// shadcn-solid's source as its registry ships it, so a later copy diffs cleanly against
+// upstream.
+const VENDORED = [
+  'src/components/ui/**',
+  'src/lib/cva.ts',
+  'src/lib/call-handler.ts',
+  'src/lib/combine-style.ts',
+  'src/hooks/use-mobile.ts',
+]
+
 export default [
-  ...tanstackConfig,
   {
+    files: ['**/*.{js,mjs,ts,tsx}'],
+    languageOptions: {
+      sourceType: 'module',
+      ecmaVersion: 'latest',
+      parser: tanstack.languageOptions.parser,
+      parserOptions: { ecmaFeatures: { jsx: true } },
+    },
+    plugins: {
+      '@stylistic': tanstack.plugins['@stylistic'],
+      '@typescript-eslint': tanstack.plugins['@typescript-eslint'],
+    },
     rules: {
-      'import/no-cycle': 'off',
-      'import/order': 'off',
-      'sort-imports': 'off',
-      '@typescript-eslint/array-type': 'off',
-      '@typescript-eslint/require-await': 'off',
-      'pnpm/json-enforce-catalog': 'off',
+      '@stylistic/spaced-comment': tanstack.rules['@stylistic/spaced-comment'],
+      '@typescript-eslint/naming-convention':
+        tanstack.rules['@typescript-eslint/naming-convention'],
     },
   },
-  // shadcn-solid's source as its registry ships it, so a later copy diffs cleanly against
-  // upstream. Only the house-style rules its code breaks are off here; the type assertions
-  // TypeScript reports as unnecessary are what Kobalte's polymorphic props need.
   {
-    files: [
-      'src/components/ui/**',
-      'src/lib/cva.ts',
-      'src/lib/call-handler.ts',
-      'src/lib/combine-style.ts',
-      'src/hooks/use-mobile.ts',
-    ],
-    rules: {
-      '@typescript-eslint/naming-convention': 'off',
-      '@typescript-eslint/no-unnecessary-type-assertion': 'off',
-      '@typescript-eslint/no-unsafe-function-type': 'off',
-      'import/consistent-type-specifier-style': 'off',
-      'import/no-duplicates': 'off',
-      'no-shadow': 'off',
-    },
+    files: VENDORED,
+    rules: { '@typescript-eslint/naming-convention': 'off' },
   },
-  // The web UI rule (CLAUDE.md): every control comes from shadcn-solid in components/ui,
-  // imported through its barrel. Inside components/ui the components import each other freely.
+  // The web UI rule (CLAUDE.md): every control comes from shadcn-solid in components/ui.
+  // Raw form controls and modals go through the components (Button, TextField, Select,
+  // Dialog…). Every caller is migrated (WEB-005), so a new raw one fails the lint. The other
+  // half of the rule, importing through the barrel, is no-restricted-imports in
+  // .oxlintrc.json.
   {
     files: ['src/**/*.{ts,tsx}'],
     ignores: ['src/components/ui/**'],
     rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            {
-              regex: '^~/components/ui/.+',
-              message:
-                "Import UI from the barrel, '~/components/ui', not from its files.",
-            },
-            {
-              regex: '^\\.{1,2}/(.*/)?(components/)?ui(/.*)?$',
-              message:
-                "Import UI as '~/components/ui', not by a relative path.",
-            },
-          ],
-        },
-      ],
-      // Raw form controls and modals go through the components (Button, TextField, Select,
-      // Dialog…). Every caller is migrated (WEB-005), so a new raw one fails the lint.
       'no-restricted-syntax': [
         'error',
         {
@@ -99,4 +98,5 @@ export default [
       'dist/**',
     ],
   },
+  ...oxlint.buildFromOxlintConfigFile('./.oxlintrc.json'),
 ]
