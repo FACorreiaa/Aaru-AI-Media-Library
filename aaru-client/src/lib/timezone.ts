@@ -11,7 +11,8 @@ export function validTimeZone(value: string | null | undefined): string | null {
   if (!value || value.length > 64 || !/^[A-Za-z0-9_+\-/]+$/.test(value))
     return null
   try {
-    new Intl.DateTimeFormat('en', { timeZone: value })
+    // Made only to see whether it throws: it does for a zone the runtime does not know.
+    void new Intl.DateTimeFormat('en', { timeZone: value })
     return value
   } catch {
     return null
