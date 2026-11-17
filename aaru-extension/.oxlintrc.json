@@ -19,6 +19,15 @@
     {
       "files": ["**/*.d.ts"],
       "rules": { "unicorn/require-module-specifiers": "off" }
+    },
+    // A test says what a value is on purpose (a stand-in for the browser's
+    // answer), and keeps a helper inside the describe block that uses it.
+    {
+      "files": ["src/**/*.test.ts"],
+      "rules": {
+        "typescript/no-unsafe-type-assertion": "off",
+        "unicorn/consistent-function-scoping": "off"
+      }
     }
   ],
   "rules": {
@@ -70,14 +79,13 @@
     "import/no-duplicates": "error",
     "unicorn/prefer-node-protocol": "error",
 
-    // BACKLOG. Rules of this profile that the existing code still breaks
-    // (count as of 2026-11-17, with --type-aware). They report as warnings so
-    // CI stays green while every clean rule above is already enforced. To
-    // retire one: fix its hits, then delete the line. Never add a rule here.
-    "typescript/no-unsafe-type-assertion": "warn", // 9
+    // More rules of this profile. They were the backlog of 2026-11-17, cleared
+    // the same day. A rule the code breaks is fixed in the code, not turned
+    // down to a warning here.
+    "typescript/no-unsafe-type-assertion": "error",
     "vitest/require-mock-type-parameters": "error",
-    "unicorn/consistent-function-scoping": "warn", // 3
-    "promise/always-return": "warn", // 1
+    "unicorn/consistent-function-scoping": "error",
+    "promise/always-return": "error",
     "promise/no-promise-in-callback": "error",
     "no-await-in-loop": "error",
     "typescript/consistent-return": "error"
