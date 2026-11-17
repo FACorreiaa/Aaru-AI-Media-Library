@@ -15,6 +15,9 @@ export function actionBy(action: Action): string {
     case 'external_agent':
       return action.agentName ?? 'A connection'
   }
+  // Not reachable by the types. An actor from a newer server has no name here.
+  action.actor satisfies never
+  return ''
 }
 
 /** Whether History offers Undo: not for an undo itself, nor for one already undone. */

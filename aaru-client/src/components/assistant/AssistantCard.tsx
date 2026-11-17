@@ -279,7 +279,10 @@ export function AssistantCard(props: {
     setMic('listening')
     const recording = await recorder.done
     recorder = null
-    if (!isOpen()) return setMic('idle')
+    if (!isOpen()) {
+      setMic('idle')
+      return
+    }
     if (recording.kind === 'noSpeech') {
       setMic('idle')
       setProblem("I didn't catch that.")

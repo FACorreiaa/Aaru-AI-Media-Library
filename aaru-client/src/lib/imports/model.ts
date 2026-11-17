@@ -102,6 +102,9 @@ export function stateLabel(job: ImportJob): string {
     case 'failed':
       return 'Failed'
   }
+  // Not reachable by the types. A state from a newer server has no label.
+  job.state satisfies never
+  return ''
 }
 
 /** 0…1 of the rows matched while running; null before the rows are known. */

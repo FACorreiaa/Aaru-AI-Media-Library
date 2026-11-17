@@ -100,7 +100,10 @@ export function AppleSignInButton(props: {
       })
       setLoaded(true)
     }
-    if (window.AppleID) return void init()
+    if (window.AppleID) {
+      void init()
+      return
+    }
     const script = document.createElement('script')
     script.src = SDK
     script.async = true

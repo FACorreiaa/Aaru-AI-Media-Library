@@ -52,7 +52,10 @@ export function ShelfView(props: {
 
   onMount(() => void load())
   useRealtime((event) => {
-    if (event.type === 'ready') return void load()
+    if (event.type === 'ready') {
+      void load()
+      return
+    }
     if (event.type === 'shelf.updated' && event.channelId === props.channel.id)
       void load()
   })

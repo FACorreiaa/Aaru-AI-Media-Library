@@ -26,6 +26,9 @@ export function decidedLabel(plan: AgentPlan): string | null {
     case 'expired':
       return 'Expired. Nothing changed.'
   }
+  // Not reachable by the types. A status from a newer server has no label.
+  plan.status satisfies never
+  return null
 }
 
 /** "3 episodes · 2 titles added", from the plan's counts. */

@@ -155,7 +155,7 @@
     "unicorn/no-array-sort": "warn", // 29
     "vitest/require-mock-type-parameters": "warn", // 21
     "no-await-in-loop": "warn", // 15
-    "typescript/consistent-return": "warn", // 13
+    "typescript/consistent-return": "error",
     "unicorn/prefer-add-event-listener": "error",
     "no-shadow": "error",
     "promise/always-return": "error",
