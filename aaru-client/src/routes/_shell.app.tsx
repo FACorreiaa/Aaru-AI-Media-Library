@@ -676,12 +676,12 @@ function Home() {
       return
     }
     offerTickUndo(ticked.actionId, entry.title.title, season)
-    const now = Date.now()
+    const tickedAt = Date.now()
     setAirings((rows) =>
       rows.map((a) =>
         a.libraryItemId === id &&
         a.season === season &&
-        Date.parse(a.airsAt) <= now
+        Date.parse(a.airsAt) <= tickedAt
           ? { ...a, watched: true }
           : a,
       ),

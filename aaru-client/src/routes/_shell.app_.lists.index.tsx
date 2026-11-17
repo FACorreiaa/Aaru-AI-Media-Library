@@ -233,8 +233,8 @@ function Lists() {
                       class="flex flex-1 gap-2"
                       onSubmit={(e) => {
                         e.preventDefault()
-                        const name = new FormData(e.currentTarget).get('name')
-                        const value = typeof name === 'string' ? name : ''
+                        const entry = new FormData(e.currentTarget).get('name')
+                        const value = typeof entry === 'string' ? entry : ''
                         void run(async () => {
                           const renamed = await renameList({
                             data: { id: list.id, name: value },

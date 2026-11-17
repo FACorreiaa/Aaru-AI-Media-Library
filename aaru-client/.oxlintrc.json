@@ -157,7 +157,7 @@
     "no-await-in-loop": "warn", // 15
     "typescript/consistent-return": "warn", // 13
     "unicorn/prefer-add-event-listener": "warn", // 9
-    "no-shadow": "warn", // 2
+    "no-shadow": "error",
     "promise/always-return": "warn", // 7
     "oxc/no-map-spread": "warn", // 6
     "typescript/no-misused-spread": "error",
@@ -168,7 +168,8 @@
     // The one hit copies a Set that listeners may change while it is walked.
     "unicorn/no-useless-spread": "error",
     "promise/no-callback-in-promise": "error",
-    "no-underscore-dangle": "warn", // 1
+    // `__root__` is TanStack Router's own key for the root route.
+    "no-underscore-dangle": ["error", { "allow": ["__root__"] }],
     "typescript/no-implied-eval": "error"
   }
 }
