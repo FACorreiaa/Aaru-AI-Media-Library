@@ -1,7 +1,7 @@
 import { QueryClient } from '@tanstack/solid-query'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const getSession = vi.fn()
+const getSession = vi.fn<() => Promise<unknown>>()
 vi.mock('./session', () => ({ getSession }))
 // The router's own module needs a DOM; the redirect is all this module uses of it.
 vi.mock('@tanstack/solid-router', () => ({
