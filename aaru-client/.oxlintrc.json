@@ -169,6 +169,6 @@
     "unicorn/no-useless-spread": "error",
     "promise/no-callback-in-promise": "warn", // 1
     "no-underscore-dangle": "warn", // 1
-    "typescript/no-implied-eval": "warn" // 1
+    "typescript/no-implied-eval": "error"
   }
 }
