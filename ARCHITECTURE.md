@@ -498,6 +498,15 @@ entries; 6 h, or 7 days for a season that has ended), coalesces fetches and serv
 failure; nothing cached and the provider down returns `unavailable: true`. Marking against the
 library is the same `DiscoverService.mark` the rows use.
 
+**Where to watch (CAT-014).** `GET /v1/titles/{id}/watch?region=` lists who streams, rents and
+sells a film or show in one country. `catalog.WatchService` (`internal/catalog/watch.go`) reads
+`{movie|tv}/{id}/watch/providers` from TMDB by id, once for every region, and holds the answer
+six hours in memory (`sharedCache`, 500 titles); nothing is stored. Each group keeps TMDB's
+display order, drops JustWatch's reseller entries and a name listed twice, and stops at eight.
+The region is the request's and is never kept. Any other kind, an unknown id, a region with no
+data and a provider that failed all answer with empty lists, so a client shows nothing. The
+clients link to TMDB's page: Aaru plays nothing and has no stream source.
+
 **On air (DISC-003).** `GET /v1/discover/on-air` is the week's airings by channel. `TMDBCatalog`
 (`Catalog/TMDBCatalog+OnAir.swift`, as `OnAirListing`) reads `tv/on_the_air` pages 1–2 through the
 TV row filter, then one `tv/{id}?append_to_response=external_ids,watch/providers` per show (40 at

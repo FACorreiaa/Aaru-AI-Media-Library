@@ -336,9 +336,11 @@ Aaru only uses these services, and only for the purpose listed:
 - **Last.fm and ListenBrainz**, only if you import your listening from them. Aaru's server sends
   the username you type and reads that account's public listening history.
 - **JustWatch**, through TMDB, says where a show streams in your country on Discover's On air
-  view. Your app reads the country from your device's language settings and sends it with that
-  request only. Aaru never stores it, and TMDB and JustWatch never receive it: the server
-  fetches every country's list once and picks yours.
+  view, and where a film or show streams, rents or sells on its title page. Your app reads the
+  country from your device's language settings and sends it with those requests only. Aaru never
+  stores it, and TMDB and JustWatch never receive it: the server fetches every country's list
+  once and picks yours. "All options" opens TMDB's website in your browser, which then sees your
+  visit as any website does.
 - **Ticketmaster** lists concerts. Aaru's server sends it an area of about 5 km around your
   city or approximate position, a distance, artist names from albums people have added, and an
   artist name you search for, never who you are. Tickets are bought on Ticketmaster's site, under its own terms.
