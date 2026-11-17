@@ -116,7 +116,12 @@ export default function ReportPostDialog(props: {
               aria-label="Why"
               class="mt-4 flex flex-col gap-1"
               value={reason() ?? ''}
-              onChange={(next) => setReason(next as Reason)}
+              onChange={(next) =>
+                setReason(
+                  REASONS.find((option) => option.value === next)?.value ??
+                    null,
+                )
+              }
             >
               <For each={REASONS}>
                 {(option) => (

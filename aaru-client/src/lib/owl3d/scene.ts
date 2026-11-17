@@ -69,11 +69,11 @@ interface Joint {
 }
 
 function isMesh(node: Object3D): node is Mesh {
-  return (node as Mesh).isMesh
+  return 'isMesh' in node
 }
 
 function isStandard(material: Material): material is MeshStandardMaterial {
-  return (material as MeshStandardMaterial).isMeshStandardMaterial
+  return 'isMeshStandardMaterial' in material
 }
 
 /** Loads the model into `canvas` and starts the owl at rest. Rejects when WebGL is missing or

@@ -25,7 +25,7 @@ describe('export proxy', () => {
   })
 
   it('streams the body with the type and attachment name, never cached', async () => {
-    const fetchImpl = vi.fn(
+    const fetchImpl = vi.fn<typeof fetch>(
       async () =>
         new Response('Title,Year\r\nArrival,2016\r\n', {
           status: 200,
@@ -56,7 +56,11 @@ describe('export proxy', () => {
   })
 
   it('sends a missing or refused session to sign-in', async () => {
-    const noCookie = await proxyExport(request('/app/export'), API, vi.fn())
+    const noCookie = await proxyExport(
+      request('/app/export'),
+      API,
+      vi.fn<typeof fetch>(),
+    )
     expect(noCookie.status).toBe(302)
     expect(noCookie.headers.get('Location')).toBe(
       'https://aaruapp.test/sign-in',

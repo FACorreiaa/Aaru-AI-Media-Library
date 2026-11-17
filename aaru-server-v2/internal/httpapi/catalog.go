@@ -147,6 +147,42 @@ func (s *Server) GetTitle(ctx context.Context, req api.GetTitleRequestObject) (a
 	return api.GetTitle200JSONResponse(TitleDetailDTO(*detail)), nil
 }
 
+// GetTitleWatch is GET /v1/titles/{id}/watch (CAT-014): the services that stream, rent or sell a
+// film or show in the caller's country. Aaru links out and plays nothing. Empty lists, never an
+// error, when there is nothing to show.
+func (s *Server) GetTitleWatch(ctx context.Context, req api.GetTitleWatchRequestObject) (api.GetTitleWatchResponseObject, error) {
+	if req.Id.ID() == uuid.Nil {
+		return nil, apperr.NotFound()
+	}
+	region := strings.ToUpper(req.Params.Region)
+	if !isRegion(region) {
+		return nil, apperr.Validation("region", "Two letters, as ISO 3166-1.")
+	}
+	title, err := s.Catalog.Store.Title(ctx, req.Id.ID())
+	if err != nil {
+		return nil, err
+	}
+	if title == nil {
+		return nil, apperr.NotFound()
+	}
+	out := api.TitleWatch{
+		Region: region, Streaming: []api.WatchProvider{}, Rent: []api.WatchProvider{}, Buy: []api.WatchProvider{},
+	}
+	if watch := s.Catalog.Watch.For(ctx, *title, region); watch != nil {
+		out.Streaming, out.Rent, out.Buy = watchProviders(watch.Streaming), watchProviders(watch.Rent), watchProviders(watch.Buy)
+		out.Link = watch.Link
+	}
+	return api.GetTitleWatch200JSONResponse(out), nil
+}
+
+func watchProviders(providers []catalog.WatchProvider) []api.WatchProvider {
+	out := make([]api.WatchProvider, 0, len(providers))
+	for _, p := range providers {
+		out = append(out, api.WatchProvider{Name: p.Name, LogoUrl: p.LogoURL})
+	}
+	return out
+}
+
 // ResolveTitle is POST /v1/titles/resolve (LIB-006): the page for a title the user
 // may not have. Resolving fills the catalog (a provider row becomes a `titles` row,
 // as an add would) and writes nothing to the library.

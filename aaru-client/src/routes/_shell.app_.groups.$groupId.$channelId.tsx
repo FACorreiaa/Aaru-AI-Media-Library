@@ -28,6 +28,7 @@ export const Route = createFileRoute('/_shell/app_/groups/$groupId/$channelId')(
     }),
     // UX-013: "#general · Book club · Aaru".
     head: ({ matches, params }) => {
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the router types `matches` as this route's alone; the group route's loader data is a GroupDetail
       const group = (
         matches as ReadonlyArray<{ routeId: string; loaderData?: unknown }>
       ).find((m) => m.routeId === '/_shell/app_/groups/$groupId')

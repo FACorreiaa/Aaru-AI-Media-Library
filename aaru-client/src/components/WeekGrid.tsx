@@ -33,7 +33,7 @@ export interface WeekGridProps {
   channels?: AiringChannel[]
   /** These days are still loading: placeholders, not "nothing airs". */
   waiting: boolean
-  pending: Set<string>
+  pending: ReadonlySet<string>
   keyOf: (entry: CalendarEntry) => string
   onSelect: (day: string) => void
   onOpen: (entry: CalendarEntry) => void
@@ -193,7 +193,7 @@ function DayColumn(props: {
   today: boolean
   entries: CalendarEntry[]
   waiting: boolean
-  pending: Set<string>
+  pending: ReadonlySet<string>
   keyOf: (entry: CalendarEntry) => string
   onOpen: (entry: CalendarEntry) => void
   onToggle: (entry: CalendarEntry) => void

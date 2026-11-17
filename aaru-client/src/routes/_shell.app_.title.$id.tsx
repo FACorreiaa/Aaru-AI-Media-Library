@@ -11,6 +11,7 @@ import {
   createEffect,
   createMemo,
   createSignal,
+  lazy,
   on,
   onCleanup,
   onMount,
@@ -95,6 +96,11 @@ import { hasBranches } from '../lib/title/tree'
 // APP-005 on the web: the Title room, at parity with the Apple apps' `TitleDetailView`. An album
 // (MUS-001) is a big square cover, its artist and genres, then the usual controls and its
 // tracklist: no progress, no episodes.
+// Where to watch (CAT-014) loads after the room shows: only films, shows and anime have it.
+const TitleWatch = lazy(() =>
+  import('../components/TitleWatch').then((m) => ({ default: m.TitleWatch })),
+)
+
 export const Route = createFileRoute('/_shell/app_/title/$id')({
   loader: ({ params, context: { queryClient } }) =>
     queryClient.query(titlePageQuery(params.id)),
@@ -218,6 +224,9 @@ function TitleRoom() {
 
   // GRAPH-005: "From here", under Related, and opened once when a tap here finishes the title.
   const fromHere = createTitleTree(() => entry().title.id)
+  // Where to watch is read in the browser, for its region: nothing of it is rendered on the server.
+  const [inBrowser, setInBrowser] = createSignal(false)
+  onMount(() => setInBrowser(true))
   const [treeOpen, setTreeOpen] = createSignal(false)
   // Mounted on first open, then kept, so closing plays the exit (WEB-011).
   const [treeOpenedOnce, setTreeOpenedOnce] = createSignal(false)
@@ -609,6 +618,17 @@ function TitleRoom() {
 
             <Show when={isAlbum()}>
               <Tracklist tracks={title()?.tracks} />
+            </Show>
+
+            <Show
+              when={
+                inBrowser() &&
+                kind() !== 'book' &&
+                kind() !== 'manga' &&
+                kind() !== 'album'
+              }
+            >
+              <TitleWatch titleId={entry().title.id} kind={kind()} />
             </Show>
 
             <RelatedTitles titleId={entry().title.id} />

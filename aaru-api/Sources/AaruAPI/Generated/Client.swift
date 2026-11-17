@@ -12122,6 +12122,94 @@ public struct Client: APIProtocol {
             }
         )
     }
+    /// Where to watch a film or show in one country (CAT-014).
+    ///
+    /// The services that stream, rent or sell the title in `region`, in the provider's order (JustWatch data through TMDB; credit JustWatch where shown), and TMDB's page listing every way to watch it there. Aaru links out and plays nothing: there is one link per title, not one per service. Catalog data, the same for every user, cached by the server and never stored. The three lists are empty for a kind that is not a film or show, a region with no data, or a provider that did not answer: show nothing then.
+    ///
+    /// - Remark: HTTP `GET /v1/titles/{id}/watch`.
+    /// - Remark: Generated from `#/paths//v1/titles/{id}/watch/get(getTitleWatch)`.
+    public func getTitleWatch(_ input: Operations.GetTitleWatch.Input) async throws -> Operations.GetTitleWatch.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.GetTitleWatch.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/v1/titles/{}/watch",
+                    parameters: [
+                        input.path.id
+                    ]
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .get
+                )
+                suppressMutabilityWarning(&request)
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "region",
+                    value: input.query.region
+                )
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.GetTitleWatch.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.TitleWatch.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                default:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Components.Responses._Error.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.ErrorResponse.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .`default`(
+                        statusCode: response.status.code,
+                        .init(body: body)
+                    )
+                }
+            }
+        )
+    }
     /// Posts about this title by you and your friends, newest first.
     ///
     /// - Remark: HTTP `GET /v1/titles/{id}/posts`.

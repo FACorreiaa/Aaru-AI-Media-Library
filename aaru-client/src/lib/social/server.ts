@@ -90,18 +90,18 @@ export const uploadAvatar = createServerFn({ method: 'POST' })
         .max(MAX_AVATAR_BASE64, 'That photo is larger than 1 MB.'),
     }),
   )
-  .handler(async ({ data }): Promise<Me> =>
-    check(
+  .handler(async ({ data }): Promise<Me> => {
+    const bytes = Uint8Array.from(atob(data.image), (c) => c.charCodeAt(0))
+    return check(
       await api(sessionToken()).PUT('/v1/me/avatar', {
-        body: Uint8Array.from(atob(data.image), (c) =>
-          c.charCodeAt(0),
-        ) as never,
-        bodySerializer: (body: unknown) => body as Uint8Array,
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the generated types call a binary body a string; this is the body itself
+        body: bytes as never,
+        bodySerializer: () => bytes,
         headers: { 'Content-Type': 'image/jpeg' },
       }),
       'Your photo was not saved.',
-    ),
-  )
+    )
+  })
 
 export const removeAvatar = createServerFn({ method: 'POST' }).handler(
   async (): Promise<Me> =>

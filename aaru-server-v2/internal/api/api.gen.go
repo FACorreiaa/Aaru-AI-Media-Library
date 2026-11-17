@@ -5124,6 +5124,21 @@ type TitleTree struct {
 	Root    TreeNode `json:"root"`
 }
 
+// TitleWatch defines model for TitleWatch.
+type TitleWatch struct {
+	Buy []WatchProvider `json:"buy"`
+
+	// Link TMDB's page of every way to watch the title in `region`.
+	Link *string `json:"link,omitempty"`
+
+	// Region The region asked for, in upper case.
+	Region string          `json:"region"`
+	Rent   []WatchProvider `json:"rent"`
+
+	// Streaming Services that include it in a subscription.
+	Streaming []WatchProvider `json:"streaming"`
+}
+
 // Tonight defines model for Tonight.
 type Tonight struct {
 	// Day The local day the strip is for.
@@ -5792,6 +5807,12 @@ type PlanRelationChainParams struct {
 type GetTitleTreeParams struct {
 	// Cast True to add the `lead_actor` and `second_actor` branches of a film or show. Without it the tree never holds those kinds, so a client that does not know them is safe.
 	Cast *bool `form:"cast,omitempty" json:"cast,omitempty"`
+}
+
+// GetTitleWatchParams defines parameters for GetTitleWatch.
+type GetTitleWatchParams struct {
+	// Region ISO 3166-1 alpha-2, e.g. `US`, `PT`, from the device's language settings. Used for this request only and never stored. Anything but two letters is 422 `validation_failed`.
+	Region string `form:"region" json:"region"`
 }
 
 // GetTonightParams defines parameters for GetTonight.
@@ -10331,6 +10352,7 @@ func RegisterHandlersWithOptions(router EchoRouter, si ServerInterface, options 
 	router.GET(options.BaseURL+"/v1/titles/:id/world", wrapper.GetTitleWorld, options.OperationMiddlewares["getTitleWorld"]...)
 	router.POST(options.BaseURL+"/v1/titles/:id/world/plan", wrapper.PlanWorldRest, options.OperationMiddlewares["planWorldRest"]...)
 	router.GET(options.BaseURL+"/v1/titles/:id/tree", wrapper.GetTitleTree, options.OperationMiddlewares["getTitleTree"]...)
+	router.GET(options.BaseURL+"/v1/titles/:id/watch", wrapper.GetTitleWatch, options.OperationMiddlewares["getTitleWatch"]...)
 	router.GET(options.BaseURL+"/v1/titles/:id/posts", wrapper.ListTitlePosts, options.OperationMiddlewares["listTitlePosts"]...)
 	router.GET(options.BaseURL+"/v1/library/watching", wrapper.ListWatching, options.OperationMiddlewares["listWatching"]...)
 	router.GET(options.BaseURL+"/v1/library/items", wrapper.ListLibraryItems, options.OperationMiddlewares["listLibraryItems"]...)

@@ -2,6 +2,8 @@ import { onCleanup, onMount } from 'solid-js'
 import { PENDING_RETRY_MS, refreshDelay } from './model'
 import type { LiveState } from './model'
 
+const visible = () => document.visibilityState === 'visible'
+
 /**
  * SPT-003's near-live loop for one Sports view. After each answer the view calls `plan` with
  * what it shows: a live event asks again in 90 s, a `pending` answer in 4 s (a few times in a
@@ -13,7 +15,6 @@ export function createNearLive(refresh: () => Promise<LiveState | null>) {
   let timer: ReturnType<typeof setTimeout> | undefined
   let tries = 0
   let last: LiveState | null = null
-  const visible = () => document.visibilityState === 'visible'
 
   function stop() {
     clearTimeout(timer)
@@ -43,14 +44,16 @@ export function createNearLive(refresh: () => Promise<LiveState | null>) {
     tries = 0
   }
 
-  onMount(() => {
-    const changed = () => {
-      if (!visible()) return stop()
-      if (last && (last.live || last.pending) && timer === undefined) {
-        tries = 0
-        void run()
-      }
+  /** The tab was hidden or shown. */
+  function changed() {
+    if (!visible()) return stop()
+    if (last && (last.live || last.pending) && timer === undefined) {
+      tries = 0
+      void run()
     }
+  }
+
+  onMount(() => {
     document.addEventListener('visibilitychange', changed)
     onCleanup(() => {
       stop()

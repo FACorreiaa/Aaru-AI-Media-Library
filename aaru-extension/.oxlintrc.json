@@ -1,0 +1,93 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  // Profile: bug finding. Every rule in the correctness, suspicious and perf
+  // categories, plus the type-aware rules from pedantic that catch real
+  // defects. Run as `oxlint --type-aware` (npm run lint). pedantic, style and
+  // restriction stay off as whole categories: they are mostly taste.
+  // oxlint is this package's only linter; formatting is Prettier's (npm run
+  // check).
+  "plugins": ["typescript", "unicorn", "oxc", "import", "promise", "vitest"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "perf": "error"
+  },
+  "env": { "browser": true, "webextensions": true, "es2024": true },
+  "ignorePatterns": [".output/**", ".wxt/**"],
+  "overrides": [
+    // `export {}` is what makes an ambient declaration file a module.
+    {
+      "files": ["**/*.d.ts"],
+      "rules": { "unicorn/require-module-specifiers": "off" }
+    },
+    // A test says what a value is on purpose (a stand-in for the browser's
+    // answer), and keeps a helper inside the describe block that uses it.
+    {
+      "files": ["src/**/*.test.ts"],
+      "rules": {
+        "typescript/no-unsafe-type-assertion": "off",
+        "unicorn/consistent-function-scoping": "off"
+      }
+    }
+  ],
+  "rules": {
+    // Type-aware bug rules that oxlint files under pedantic.
+    "typescript/only-throw-error": "error",
+    "typescript/prefer-promise-reject-errors": "error",
+    "typescript/return-await": "error",
+    "typescript/no-mixed-enums": "error",
+    // Non-type-aware pedantic rules that catch defects rather than style.
+    "eqeqeq": ["error", "always", { "null": "ignore" }],
+    "array-callback-return": "error",
+    "no-self-compare": "error",
+    "no-constructor-return": "error",
+
+    "no-unused-vars": [
+      "error",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_"
+      }
+    ],
+
+    // House rules carried over from @tanstack/eslint-config, which ESLint ran
+    // before oxlint took over. They sit outside the three categories above.
+    "no-case-declarations": "error",
+    "no-fallthrough": "error",
+    "no-regex-spaces": "error",
+    "no-var": "error",
+    "prefer-const": "error",
+    "typescript/ban-ts-comment": [
+      "error",
+      { "ts-expect-error": false, "ts-ignore": "allow-with-description" }
+    ],
+    "typescript/consistent-type-imports": [
+      "error",
+      { "prefer": "type-imports" }
+    ],
+    "typescript/method-signature-style": ["error", "property"],
+    "typescript/no-inferrable-types": ["error", { "ignoreParameters": true }],
+    "typescript/no-namespace": "error",
+    "typescript/no-unnecessary-condition": "error",
+    "typescript/no-unsafe-function-type": "error",
+    "typescript/prefer-for-of": "error",
+    "import/consistent-type-specifier-style": ["error", "prefer-top-level"],
+    "import/first": "error",
+    "import/newline-after-import": "error",
+    "import/no-commonjs": "error",
+    "import/no-duplicates": "error",
+    "unicorn/prefer-node-protocol": "error",
+
+    // More rules of this profile. They were the backlog of 2026-11-17, cleared
+    // the same day. A rule the code breaks is fixed in the code, not turned
+    // down to a warning here.
+    "typescript/no-unsafe-type-assertion": "error",
+    "vitest/require-mock-type-parameters": "error",
+    "unicorn/consistent-function-scoping": "error",
+    "promise/always-return": "error",
+    "promise/no-promise-in-callback": "error",
+    "no-await-in-loop": "error",
+    "typescript/consistent-return": "error"
+  }
+}

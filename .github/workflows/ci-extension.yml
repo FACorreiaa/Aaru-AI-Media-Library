@@ -7,35 +7,66 @@ on:
     paths:
       - "aaru-extension/**"
       - ".github/workflows/ci-extension.yml"
+      - ".github/actions/npm-setup/**"
   pull_request:
     paths:
       - "aaru-extension/**"
       - ".github/workflows/ci-extension.yml"
+      - ".github/actions/npm-setup/**"
   workflow_dispatch:
 
 concurrency:
   group: ci-extension-${{ github.ref }}
   cancel-in-progress: true
 
+defaults:
+  run:
+    working-directory: aaru-extension
+
+# Four independent jobs, no `needs:` between them, so they run side by side and each
+# reports on its own.
 jobs:
-  extension:
-    name: check, lint, test, build
+  lint:
+    name: extension lint
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: aaru-extension
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: ./.github/actions/npm-setup
         with:
-          node-version: 24
-          cache: npm
-          cache-dependency-path: aaru-extension/package-lock.json
-      - run: npm ci
-      - run: npm run check
-      - run: npm run lint
+          package: aaru-extension
+      - name: Formatting (Prettier)
+        run: npm run check
+      - name: Lint (oxlint with type information)
+        run: npm run lint
+
+  typecheck:
+    name: extension typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/npm-setup
+        with:
+          package: aaru-extension
       - run: npm run typecheck
+
+  test:
+    name: extension test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/npm-setup
+        with:
+          package: aaru-extension
       - run: npm test
+
+  build:
+    name: extension build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/npm-setup
+        with:
+          package: aaru-extension
       - run: npm run build
       - name: Firefox add-on lint (what AMO checks)
         run: npx web-ext lint -s .output/firefox-mv3 --self-hosted=false

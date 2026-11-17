@@ -267,6 +267,8 @@ describe('groups labels', () => {
     expect(groupMonogram('Film club')).toBe('FC')
     expect(groupMonogram('séries')).toBe('S')
     expect(groupMonogram('  ')).toBe('?')
+    // By code point, so an emoji outside the BMP is not cut in half.
+    expect(groupMonogram('🎬 club')).toBe('🎬C')
   })
 
   it('counts down only near the limit', () => {

@@ -35,7 +35,7 @@ This file is the working contract for anyone — human or agent — changing the
 | Catalog — people | Who made a title and what else they made, for the title tree only (GRAPH-005): a film's director and a show's creator (TMDB), an anime's main studio and a manga's story author (AniList), a book's author (Open Library), an album's artist (MusicBrainz). Read by the provider's id, never by name; cached 30 days in `catalog_credits`. A film or show also names its first two billed actors (TMDB, GRAPH-006), and what else each had a part in |
 | Catalog — air times | TVmaze (no key, CC BY-SA): exact air times and network for TMDB shows, and the next episode's time on Discover's On air (DISC-003); TMDB stays the episode source |
 | Catalog — scores | TMDB vote average and the start of a few user reviews (films, shows), AniList average score (anime, manga), for the assistant's `title_scores` only: audience scores, credited, cached six hours in memory, never stored and never called critics' reviews (ASK-011) |
-| Where to watch | TMDB `watch/providers` (JustWatch data, credited): flat-rate services per country on Discover's On air (DISC-003, CAT-014 in part). The country comes from the device language, per request, never stored |
+| Where to watch | TMDB `watch/providers` (JustWatch data, credited): flat-rate services per country on Discover's On air (DISC-003), and a film's or show's stream, rent and buy services on its title page (CAT-014, `GET /v1/titles/{id}/watch`, six hours in memory). The country comes from the device language, per request, never stored. Aaru links out to TMDB's page and plays nothing (owner, 2026-11-17) |
 | Catalog — manga | AniList GraphQL, type MANGA (any format: manga, manhwa, manhua, one-shot, light novel), with MAL ids; no fallback while AniList is down (MNG-001, pulled forward 2026-10-23) |
 | Catalog — books | Open Library (Google Books only if Open Library is insufficient); weekly trending for Discover; Classics, Science fiction, Science and Business rows from its subjects on the Books page (BOOK-002) |
 | Catalog — music | MusicBrainz release groups (albums, EPs) and tracklists, Cover Art Archive covers; no key, 1 req/s with a contact User-Agent (MUS-001). ListenBrainz fresh releases + sitewide stats for Discover's New albums / Coming soon (MUS-002) |
@@ -172,7 +172,8 @@ apps share one API. See `BACKLOG.md` REL-001…REL-006.
   `aaru-client/src/components/ui`, always imported through the barrel `~/components/ui`. A
   missing component is added from shadcn-solid's manual install into that folder (and the
   barrel), never hand-rolled and never a raw `button`/`input`/`select`/`textarea`/`dialog`.
-  Aaru looks are variants on those components. ESLint enforces it.
+  Aaru looks are variants on those components. `npm run lint` enforces it (oxlint the barrel
+  import, ESLint the raw elements).
 
 ## Domain language
 

@@ -85,11 +85,11 @@ function Insights() {
     const ticket = ++latest
     setState({ kind: 'loading' })
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
-    queryClient.query(myStatsQuery(statsQuery(next, tz))).then(
-      (stats) => {
-        if (ticket === latest) setState({ kind: 'ready', stats })
-      },
-      (err: unknown) => {
+    const load = async () => {
+      let stats
+      try {
+        stats = await queryClient.query(myStatsQuery(statsQuery(next, tz)))
+      } catch (err) {
         if (ticket === latest)
           setState({
             kind: 'failed',
@@ -98,8 +98,11 @@ function Insights() {
                 ? err.message
                 : 'Your stats could not be loaded.',
           })
-      },
-    )
+        return
+      }
+      if (ticket === latest) setState({ kind: 'ready', stats })
+    }
+    void load()
   })
 
   function go(next: InsightsPeriod | null) {

@@ -46,6 +46,10 @@ func catalogHarness(t *testing.T) (*harness, *catalogStubs) {
 			 "genres":[{"id":28,"name":"Action"}],"external_ids":{"imdb_id":"tt0133093"}}`))
 		case "/movie/603/external_ids":
 			_, _ = w.Write([]byte(`{"imdb_id":"tt0133093"}`))
+		case "/movie/603/watch/providers":
+			_, _ = w.Write([]byte(`{"results":{"PT":{"link":"https://www.themoviedb.org/movie/603/watch?locale=PT",
+			 "flatrate":[{"provider_name":"Max","logo_path":"/max.jpg","display_priority":2},{"provider_name":"Netflix","display_priority":1}],
+			 "rent":[{"provider_name":"Apple TV"}]}}}`))
 		default:
 			w.WriteHeader(http.StatusNotFound)
 		}
@@ -149,6 +153,49 @@ func TestResolveAndGetTitleRoutes(t *testing.T) {
 	require.Equal(t, http.StatusOK, got.Code, got.Body.String())
 	assert.Equal(t, http.StatusNotFound, h.do(http.MethodGet, "/v1/titles/not-a-uuid", bearer, nil).Code)
 	assert.Equal(t, http.StatusNotFound, h.do(http.MethodGet, "/v1/titles/"+uuid.NewString(), bearer, nil).Code)
+}
+
+// CAT-014 over HTTP: a film's services for the caller's region in the provider's order with TMDB's
+// link, empty lists (never an error) for a region with no data and for a kind that is not a film
+// or show, and the route's refusals.
+func TestTitleWatchRoute(t *testing.T) {
+	h, _ := catalogHarness(t)
+	_, bearer := h.signIn()
+	resolve := func(body map[string]any) string {
+		rec := h.do(http.MethodPost, "/v1/titles/resolve", bearer, body)
+		require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
+		return decode[map[string]any](t, rec)["title"].(map[string]any)["id"].(string)
+	}
+	film := resolve(map[string]any{"type": "movie", "ids": map[string]string{"tmdb": "603"}})
+
+	rec := h.do(http.MethodGet, "/v1/titles/"+film+"/watch?region=pt", bearer, nil)
+	require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
+	watch := decode[map[string]any](t, rec)
+	assert.Equal(t, "PT", watch["region"])
+	streaming := watch["streaming"].([]any)
+	require.Len(t, streaming, 2)
+	assert.Equal(t, "Netflix", streaming[0].(map[string]any)["name"])
+	assert.Equal(t, "Max", streaming[1].(map[string]any)["name"])
+	assert.Contains(t, streaming[1].(map[string]any)["logoUrl"], "/max.jpg")
+	assert.Len(t, watch["rent"], 1)
+	assert.Empty(t, watch["buy"])
+	assert.Equal(t, "https://www.themoviedb.org/movie/603/watch?locale=PT", watch["link"])
+
+	elsewhere := h.do(http.MethodGet, "/v1/titles/"+film+"/watch?region=JP", bearer, nil)
+	require.Equal(t, http.StatusOK, elsewhere.Code, elsewhere.Body.String())
+	assert.JSONEq(t, `{"region":"JP","streaming":[],"rent":[],"buy":[]}`, elsewhere.Body.String())
+
+	album := resolve(map[string]any{"type": "album", "ids": map[string]string{"musicbrainz": "mb-1"}})
+	notVideo := h.do(http.MethodGet, "/v1/titles/"+album+"/watch?region=PT", bearer, nil)
+	require.Equal(t, http.StatusOK, notVideo.Code, notVideo.Body.String())
+	assert.JSONEq(t, `{"region":"PT","streaming":[],"rent":[],"buy":[]}`, notVideo.Body.String())
+
+	bad := h.do(http.MethodGet, "/v1/titles/"+film+"/watch?region=prt", bearer, nil)
+	assert.Equal(t, http.StatusUnprocessableEntity, bad.Code)
+	assert.Contains(t, bad.Body.String(), "Two letters, as ISO 3166-1.")
+	assert.Equal(t, http.StatusNotFound, h.do(http.MethodGet, "/v1/titles/"+uuid.NewString()+"/watch?region=PT", bearer, nil).Code)
+	assert.Equal(t, http.StatusNotFound, h.do(http.MethodGet, "/v1/titles/not-a-uuid/watch?region=PT", bearer, nil).Code)
+	assert.Equal(t, http.StatusUnauthorized, h.do(http.MethodGet, "/v1/titles/"+film+"/watch?region=PT", "nope", nil).Code)
 }
 
 func TestAlbumDetailRoute(t *testing.T) {

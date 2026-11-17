@@ -88,6 +88,10 @@ function Recap() {
     const current = state()
     return current.kind === 'ready' ? current : null
   }
+  const failed = () => {
+    const current = state()
+    return current.kind === 'failed' ? current : null
+  }
 
   return (
     <div class="flex-1">
@@ -99,12 +103,10 @@ function Recap() {
           <Match when={state().kind === 'loading'}>
             <p class="mt-4 text-muted">Gathering your {label()}…</p>
           </Match>
-          <Match when={state().kind === 'failed' && state()}>
-            {(failed) => (
+          <Match when={failed()}>
+            {(problem) => (
               <Alert variant="destructive" class="mt-4">
-                <AlertDescription>
-                  {(failed() as { message: string }).message}
-                </AlertDescription>
+                <AlertDescription>{problem().message}</AlertDescription>
               </Alert>
             )}
           </Match>

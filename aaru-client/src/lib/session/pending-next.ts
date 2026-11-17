@@ -22,7 +22,7 @@ export function takeNext(now = Date.now()): string {
     const raw = localStorage.getItem(KEY)
     localStorage.removeItem(KEY)
     if (!raw) return '/app'
-    const saved = JSON.parse(raw) as { next?: unknown; at?: unknown }
+    const saved: { next?: unknown; at?: unknown } = JSON.parse(raw)
     if (typeof saved.at !== 'number' || now - saved.at > LIFETIME_MS)
       return '/app'
     return safeNext(saved.next)

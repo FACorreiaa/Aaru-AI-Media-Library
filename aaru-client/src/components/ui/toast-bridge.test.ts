@@ -19,7 +19,7 @@ describe('toast bridge', () => {
     await Promise.resolve()
     expect(shown).toEqual([])
 
-    const somoto = vi.fn() as unknown as SomotoToast
+    const somoto = vi.fn<SomotoToast>() as unknown as SomotoToast
     toasterReady(somoto)
     await Promise.resolve()
     expect(shown).toEqual(['first', 'second'])

@@ -9,7 +9,7 @@ function stream(text: string) {
 
 function thread(responses: Array<() => Response>, now = { t: 0 }) {
   const chats: string[] = []
-  const fetchImpl = vi.fn(async () => {
+  const fetchImpl = vi.fn<typeof fetch>(async () => {
     const next = responses.shift()
     if (!next) throw new Error('no more responses')
     return next()

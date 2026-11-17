@@ -8,7 +8,7 @@ import { EpisodeRow } from './EpisodeRow'
 export default function DaySheet(props: {
   day: string
   entries: CalendarEntry[]
-  pending: Set<string>
+  pending: ReadonlySet<string>
   keyOf: (entry: CalendarEntry) => string
   onOpen: (entry: CalendarEntry) => void
   onToggle: (entry: CalendarEntry) => void

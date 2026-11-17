@@ -83,8 +83,8 @@ export const uploadImport = createServerFn({ method: 'POST' })
     check(
       await api(sessionToken()).POST('/v1/imports/csv', {
         params: { query: { source: data.source, filename: data.filename } },
-        body: data.text as never,
-        bodySerializer: (body: unknown) => body as string,
+        body: data.text,
+        bodySerializer: (body) => body,
         headers: {
           // `auto` is sniffed by the server; the type only says which body this is.
           'Content-Type':
@@ -111,8 +111,8 @@ export const uploadCatImport = createServerFn({ method: 'POST' })
   .handler(async ({ data }): Promise<ImportJob> =>
     check(
       await api(sessionToken()).POST('/v1/imports/cat', {
-        body: data.text as never,
-        bodySerializer: (body: unknown) => body as string,
+        body: data.text,
+        bodySerializer: (body) => body,
         headers: {
           'Content-Type': /^\uFEFF?\s*BEGIN:VCALENDAR/i.test(data.text)
             ? 'text/calendar'

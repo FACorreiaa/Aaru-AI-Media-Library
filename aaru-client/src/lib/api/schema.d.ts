@@ -2263,6 +2263,26 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/v1/titles/{id}/watch': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Where to watch a film or show in one country (CAT-014).
+     * @description The services that stream, rent or sell the title in `region`, in the provider's order (JustWatch data through TMDB; credit JustWatch where shown), and TMDB's page listing every way to watch it there. Aaru links out and plays nothing: there is one link per title, not one per service. Catalog data, the same for every user, cached by the server and never stored. The three lists are empty for a kind that is not a film or show, a region with no data, or a provider that did not answer: show nothing then.
+     */
+    get: operations['getTitleWatch']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/v1/titles/{id}/posts': {
     parameters: {
       query?: never
@@ -4661,6 +4681,16 @@ export interface components {
       airsAt: string
       /** @description False while only the day is known; `airsAt` is then midnight UTC of that day. */
       airTimeKnown: boolean
+    }
+    TitleWatch: {
+      /** @description The region asked for, in upper case. */
+      region: string
+      /** @description Services that include it in a subscription. */
+      streaming: components['schemas']['WatchProvider'][]
+      rent: components['schemas']['WatchProvider'][]
+      buy: components['schemas']['WatchProvider'][]
+      /** @description TMDB's page of every way to watch the title in `region`. */
+      link?: string
     }
     WatchProvider: {
       name: string
@@ -9640,6 +9670,32 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['TitleTree']
+        }
+      }
+      default: components['responses']['Error']
+    }
+  }
+  getTitleWatch: {
+    parameters: {
+      query: {
+        /** @description ISO 3166-1 alpha-2, e.g. `US`, `PT`, from the device's language settings. Used for this request only and never stored. Anything but two letters is 422 `validation_failed`. */
+        region: string
+      }
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Where to watch. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['TitleWatch']
         }
       }
       default: components['responses']['Error']

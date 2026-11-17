@@ -318,7 +318,7 @@ describe('countries', () => {
     expect(list.length).toBeGreaterThan(200)
     expect(new Set(list.map((c) => c.code)).size).toBe(list.length)
     expect(list.map((c) => c.name)).toEqual(
-      [...list.map((c) => c.name)].sort((a, b) => a.localeCompare(b)),
+      list.map((c) => c.name).sort((a, b) => a.localeCompare(b)),
     )
   })
 })

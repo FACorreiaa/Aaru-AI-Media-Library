@@ -50,7 +50,10 @@ export function TitleCard(props: { channel: Channel }) {
 
   onMount(() => void load())
   useRealtime((event) => {
-    if (event.type === 'ready') return void load()
+    if (event.type === 'ready') {
+      void load()
+      return
+    }
     if (event.groupId !== ref().groupId) return
     // Someone switched sharing, or progress changed with a read on another device.
     if (event.type === 'group.updated' || event.type === 'read') void load()
