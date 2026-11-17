@@ -78,8 +78,8 @@
     "vitest/require-mock-type-parameters": "error",
     "unicorn/consistent-function-scoping": "warn", // 3
     "promise/always-return": "warn", // 1
-    "promise/no-promise-in-callback": "warn", // 1
-    "no-await-in-loop": "warn", // 1
+    "promise/no-promise-in-callback": "error",
+    "no-await-in-loop": "error",
     "typescript/consistent-return": "error"
   }
 }

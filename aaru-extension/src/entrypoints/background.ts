@@ -147,7 +147,10 @@ async function retryPending(): Promise<void> {
   if (pending.length === 0) return
   await pendingItem.setValue([])
   const fresh = pending.filter((p) => Date.now() - p.at < PENDING_MAX_AGE_MS)
-  for (const { call } of fresh) await deliver(call)
+  for (const { call } of fresh) {
+    // oxlint-disable-next-line no-await-in-loop -- plays go out one at a time, in the order they happened
+    await deliver(call)
+  }
 }
 
 type Badge = '' | '✓' | '?' | '!'
