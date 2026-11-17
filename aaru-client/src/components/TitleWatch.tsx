@@ -13,19 +13,22 @@ import type { TitleWatch as Places } from '../lib/title/watch'
 
 export function TitleWatch(props: { titleId: string; kind: MediaKind }) {
   const [places, setPlaces] = createSignal<Places | null>(null)
+  const load = async (titleId: string, region: string): Promise<void> => {
+    try {
+      const found = await loadWatch({ data: { titleId, region } })
+      // A page that moved on to another title ignores a late answer for the last one.
+      if (titleId === props.titleId) setPlaces(found)
+    } catch {
+      // A failed read leaves the section out, as nothing to show does.
+    }
+  }
   createEffect(
     on(
       () => [props.titleId, props.kind] as const,
       ([titleId, kind]) => {
         setPlaces(null)
         const region = viewerRegion(navigator.language)
-        if (!asksWhereToWatch(kind, region)) return
-        loadWatch({ data: { titleId, region } })
-          .then((found) => {
-            // A page that moved on to another title ignores a late answer for the last one.
-            if (titleId === props.titleId) setPlaces(found)
-          })
-          .catch(() => undefined)
+        if (asksWhereToWatch(kind, region)) void load(titleId, region)
       },
     ),
   )
