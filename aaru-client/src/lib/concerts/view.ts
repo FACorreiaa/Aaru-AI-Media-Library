@@ -8,9 +8,7 @@ export type DiscoverView = (typeof DISCOVER_VIEWS)[number]
 
 /** `?view=` as Discover reads it: one of its views, else absent (Today). */
 export function parseView(value: unknown): DiscoverView | undefined {
-  return DISCOVER_VIEWS.includes(value as DiscoverView)
-    ? (value as DiscoverView)
-    : undefined
+  return DISCOVER_VIEWS.find((view) => view === value)
 }
 
 /** Whether a Discover `?view=` is the retired Concerts view, which now lives on Music. */

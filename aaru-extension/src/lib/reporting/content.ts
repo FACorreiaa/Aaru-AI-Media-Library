@@ -14,6 +14,7 @@ export function contentReporter(
 ): Reporter {
   if (!config.dsn) return OFF
   return reporterFrom((error) => {
+    // oxlint-disable-next-line promise/no-promise-in-callback -- not a Node callback: `error` is the thing to report
     browser.runtime
       .sendMessage({ type: REPORT, error: toContentError(error) })
       .catch(() => {

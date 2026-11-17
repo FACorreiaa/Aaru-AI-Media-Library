@@ -25,8 +25,8 @@ export const uploadListenHistory = createServerFn({ method: 'POST' })
     check(
       await api(sessionToken()).POST('/v1/imports/csv', {
         params: { query: { source: data.source, filename: data.filename } },
-        body: data.text as never,
-        bodySerializer: (body: unknown) => body as string,
+        body: data.text,
+        bodySerializer: (body) => body,
         headers: { 'Content-Type': 'application/octet-stream' },
       }),
       'That file could not be imported.',

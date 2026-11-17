@@ -283,12 +283,18 @@ export function badgeText(count: number): string {
   return count > 99 ? '99+' : String(count)
 }
 
+/** A word's first code point: a whole letter or emoji, never half of a surrogate pair. A flag
+ *  or a keycap is several code points and shows only its first; whole characters would need
+ *  Intl.Segmenter here, in a module every page loads. */
+// oxlint-disable-next-line typescript/no-misused-spread -- by code point on purpose, see above
+const firstLetter = (word: string) => [...word][0]
+
 /** One or two letters for a group's monogram. */
 export function groupMonogram(name: string): string {
   const words = name.split(/\s+/).filter(Boolean)
   if (words.length === 0) return '?'
-  if (words.length === 1) return [...words[0]][0].toUpperCase()
-  return ([...words[0]][0] + [...words[1]][0]).toUpperCase()
+  if (words.length === 1) return firstLetter(words[0]).toUpperCase()
+  return (firstLetter(words[0]) + firstLetter(words[1])).toUpperCase()
 }
 
 /** How many characters are left, shown only near the limit. */
@@ -297,14 +303,15 @@ export function remainingLabel(body: string): string | null {
   return left <= 200 ? String(left) : null
 }
 
+const byHandle = (a: GroupMember, b: GroupMember) =>
+  a.user.handle.localeCompare(b.user.handle)
+
 /** Members by role, the way the member list shows them. */
 export function membersByRole(members: GroupMember[]): {
   owner: GroupMember[]
   admins: GroupMember[]
   members: GroupMember[]
 } {
-  const byHandle = (a: GroupMember, b: GroupMember) =>
-    a.user.handle.localeCompare(b.user.handle)
   return {
     owner: members.filter((m) => m.role === 'owner'),
     admins: members.filter((m) => m.role === 'admin').sort(byHandle),

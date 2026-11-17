@@ -141,8 +141,8 @@ function ListPage() {
   }
 
   const focusReturn = createFocusReturn()
-  function openSearch(event: MouseEvent) {
-    focusReturn.remember(event.currentTarget as Element)
+  function openSearch(event: MouseEvent & { currentTarget: Element }) {
+    focusReturn.remember(event.currentTarget)
     setSearchOpened(true)
     setSearchOpen(true)
   }

@@ -32,19 +32,22 @@ export function createBrowserReporter(
   let pending: unknown[] = []
   let loading: Promise<void> | null = null
 
+  const boot = async () => {
+    try {
+      const sdk = await load()
+      const send = sdk.startSentry(config)
+      capture = send
+      for (const error of pending) send(error)
+      pending = []
+    } catch {
+      // The chunk did not load (offline, blocked): the app carries on without reporting.
+      pending = []
+    }
+  }
+
   const start = (): Promise<void> => {
     if (!config.dsn) return Promise.resolve()
-    loading ??= load()
-      .then((sdk) => {
-        const send = sdk.startSentry(config)
-        capture = send
-        for (const error of pending) send(error)
-        pending = []
-      })
-      .catch(() => {
-        // The chunk did not load (offline, blocked): the app carries on without reporting.
-        pending = []
-      })
+    loading ??= boot()
     return loading
   }
 

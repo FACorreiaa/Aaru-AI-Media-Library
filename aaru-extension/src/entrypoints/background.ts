@@ -63,19 +63,20 @@ export default defineBackground(() => {
       message: { type?: string; secret?: unknown; error?: unknown },
       sender: Browser.runtime.MessageSender,
     ) => {
-      if (sender.id !== browser.runtime.id) return
+      // Only the token is answered: returning a promise is what keeps the sender waiting.
+      if (sender.id !== browser.runtime.id) return undefined
       if (message.type === REPORT) {
         const error = parseContentError(message.error)
         // The page's address comes from the browser, and only its origin is kept.
         if (error) reporter.captureContent(error, sender.url ?? sender.tab?.url)
-        return
+        return undefined
       }
-      if (message.type !== TOKEN) return
+      if (message.type !== TOKEN) return undefined
       if (
         typeof message.secret !== 'string' ||
         !message.secret.startsWith('aaru_scr_')
       )
-        return
+        return undefined
       return tokenItem.setValue(message.secret).then(() => {
         void badge('')
         return true
@@ -146,7 +147,10 @@ async function retryPending(): Promise<void> {
   if (pending.length === 0) return
   await pendingItem.setValue([])
   const fresh = pending.filter((p) => Date.now() - p.at < PENDING_MAX_AGE_MS)
-  for (const { call } of fresh) await deliver(call)
+  for (const { call } of fresh) {
+    // oxlint-disable-next-line no-await-in-loop -- plays go out one at a time, in the order they happened
+    await deliver(call)
+  }
 }
 
 type Badge = '' | '✓' | '?' | '!'

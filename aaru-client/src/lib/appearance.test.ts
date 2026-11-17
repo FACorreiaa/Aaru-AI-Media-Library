@@ -71,6 +71,7 @@ describe('daypart', () => {
           return hour
         }
       }
+      // oxlint-disable-next-line typescript/no-implied-eval -- runs the inline script the page ships, as the browser does
       new Function('Date', 'document', DAYPART_SCRIPT)(fakeDate, {
         documentElement: { dataset },
       })

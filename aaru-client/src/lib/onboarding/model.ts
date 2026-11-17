@@ -103,7 +103,7 @@ export function steps(input: {
 
 /** The kind a picker step is for, or null for any other step. */
 export function stepKind(step: Step): MediaKind | null {
-  return step.startsWith('pick:') ? (step.slice(5) as MediaKind) : null
+  return ONBOARDING_KINDS.find((kind) => step === `pick:${kind}`) ?? null
 }
 
 /** The step after `current`, or null at the end (or when `current` left the list: the flow

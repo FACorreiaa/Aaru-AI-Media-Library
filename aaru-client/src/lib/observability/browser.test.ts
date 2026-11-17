@@ -4,13 +4,16 @@ import { scrubBreadcrumb, scrubEvent } from './scrub'
 import { startSentry } from './sdk'
 import { serverReportingOptions } from './server'
 
+/** What createBrowserReporter takes to load the SDK chunk. */
+type Loader = NonNullable<Parameters<typeof createBrowserReporter>[1]>
+
 const FAKE_DSN = 'https://public@o0.ingest.de.sentry.io/0'
 
 const sentry = vi.hoisted(() => {
   const integration = (name: string) => () => ({ name })
   return {
-    init: vi.fn(),
-    captureException: vi.fn(),
+    init: vi.fn<(options: { integrations: { name: string }[] }) => void>(),
+    captureException: vi.fn<(error: unknown) => void>(),
     eventFiltersIntegration: integration('EventFilters'),
     functionToStringIntegration: integration('FunctionToString'),
     browserApiErrorsIntegration: integration('BrowserApiErrors'),
@@ -29,7 +32,7 @@ describe('browser error reporting', () => {
   })
 
   it('loads nothing when the DSN is empty', async () => {
-    const load = vi.fn()
+    const load = vi.fn<Loader>()
     const reporter = createBrowserReporter(
       { dsn: '', environment: 'production', release: undefined },
       load,
@@ -40,8 +43,10 @@ describe('browser error reporting', () => {
   })
 
   it('loads the SDK once and sends what was caught before it arrived', async () => {
-    const send = vi.fn()
-    const load = vi.fn(() => Promise.resolve({ startSentry: () => send }))
+    const send = vi.fn<(error: unknown) => void>()
+    const load = vi.fn<Loader>(() =>
+      Promise.resolve({ startSentry: () => send }),
+    )
     const reporter = createBrowserReporter(
       { dsn: FAKE_DSN, environment: 'beta', release: 'abc123' },
       load,
@@ -85,9 +90,7 @@ describe('the Sentry chunk', () => {
       beforeSend: scrubEvent,
       beforeBreadcrumb: scrubBreadcrumb,
     })
-    const names = (options.integrations as { name: string }[]).map(
-      (i) => i.name,
-    )
+    const names = options.integrations.map((i) => i.name)
     for (const unwanted of [
       'Replay',
       'BrowserTracing',

@@ -12,8 +12,8 @@
  */
 export function focusFieldOnOpen(event: Event) {
   event.preventDefault()
-  const dialog = event.currentTarget as HTMLElement | null
-  if (!dialog) return
+  const dialog = event.currentTarget
+  if (!(dialog instanceof HTMLElement)) return
   setTimeout(() => {
     if (dialog.contains(document.activeElement)) return
     const field = dialog.querySelector<HTMLElement>('[autofocus]')
@@ -26,14 +26,14 @@ export function createFocusReturn() {
   return {
     /** Call as the dialog opens. `from` is the clicked control: Safari does not focus a button
      * on click, so `document.activeElement` alone would be the body. */
-    remember(from?: Element | null) {
+    remember: (from?: Element | null) => {
       const active = document.activeElement
       const candidate =
         from ?? (active && active !== document.body ? active : null)
       opener = candidate instanceof HTMLElement ? candidate : null
     },
     /** The dialog's `onCloseAutoFocus`. */
-    restore(event: Event) {
+    restore: (event: Event) => {
       const target = opener
       opener = null
       if (!target?.isConnected) return

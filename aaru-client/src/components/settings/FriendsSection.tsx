@@ -60,7 +60,10 @@ export function FriendsSection(props: { handle?: string; state: SocialState }) {
   function ask(event: SubmitEvent) {
     event.preventDefault()
     const invalid = handleProblem(friendHandle())
-    if (invalid) return setProblem(invalid)
+    if (invalid) {
+      setProblem(invalid)
+      return
+    }
     void run(async () => {
       const view = await sendFriendRequest({
         data: { handle: normalizeHandle(friendHandle()) },

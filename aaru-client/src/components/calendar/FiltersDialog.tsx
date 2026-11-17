@@ -1,9 +1,5 @@
 import { activeCount } from '../../lib/calendar/filters'
-import type {
-  CalendarFilter,
-  KindFilter,
-  OnlyFilter,
-} from '../../lib/calendar/filters'
+import type { CalendarFilter } from '../../lib/calendar/filters'
 import {
   Button,
   Dialog,
@@ -80,7 +76,7 @@ export default function FiltersDialog(props: {
               ]}
               onChange={(value) =>
                 set({
-                  only: value === 'all' ? undefined : (value as OnlyFilter),
+                  only: value === 'all' ? undefined : value,
                 })
               }
             />
@@ -94,7 +90,7 @@ export default function FiltersDialog(props: {
               ]}
               onChange={(value) =>
                 set({
-                  kind: value === 'all' ? undefined : (value as KindFilter),
+                  kind: value === 'all' ? undefined : value,
                 })
               }
             />
@@ -119,11 +115,11 @@ export default function FiltersDialog(props: {
   )
 }
 
-function Choice(props: {
+function Choice<T extends string>(props: {
   label: string
-  value: string
-  options: [string, string][]
-  onChange: (value: string) => void
+  value: T
+  options: [T, string][]
+  onChange: (value: T) => void
 }) {
   return (
     <div>

@@ -63,8 +63,8 @@ struct Owl3DView: View {
 }
 
 extension View {
-    /// Reports where the pointer or a finger is over this view, in global coordinates, for an
-    /// `Owl3DView` inside it to look at. Scrolling and taps go on as before.
+    /// Reports where the pointer is over this view, in global coordinates, for an `Owl3DView`
+    /// inside it to look at. Hover claims no touch, so it may cover a whole screen.
     func owlFollows(_ pointer: Binding<CGPoint?>) -> some View {
         onContinuousHover(coordinateSpace: .global) { phase in
             switch phase {
@@ -72,11 +72,18 @@ extension View {
             case .ended: pointer.wrappedValue = nil
             }
         }
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0, coordinateSpace: .global)
-                .onChanged { pointer.wrappedValue = $0.location }
-                .onEnded { _ in pointer.wrappedValue = nil }
-        )
+    }
+
+    /// Reports where a finger is on this view, in global coordinates, for an `Owl3DView` to
+    /// look at. The gesture begins on touch-down, so it must never cover a control: over
+    /// `SignInWithAppleButton`, which UIKit backs, it took the touch and the tap did nothing.
+    func owlFollowsTouch(_ pointer: Binding<CGPoint?>) -> some View {
+        contentShape(Rectangle())
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 0, coordinateSpace: .global)
+                    .onChanged { pointer.wrappedValue = $0.location }
+                    .onEnded { _ in pointer.wrappedValue = nil }
+            )
     }
 }
 

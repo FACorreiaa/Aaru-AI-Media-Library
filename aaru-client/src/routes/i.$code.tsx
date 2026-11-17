@@ -84,7 +84,10 @@ function Invite() {
     if (working()) return
     if (needsHandle()) {
       const invalid = handleProblem(handle())
-      if (invalid) return setProblem(invalid)
+      if (invalid) {
+        setProblem(invalid)
+        return
+      }
     }
     setWorking(true)
     setProblem(null)

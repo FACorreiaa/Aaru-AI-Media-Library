@@ -48,6 +48,7 @@ export async function readImportFile(file: Blob): Promise<string> {
       if (error instanceof Error && error.message === TOO_LARGE) throw error
       throw new Error(
         'That .gz file could not be opened. Try the .xml inside it.',
+        { cause: error },
       )
     }
   }

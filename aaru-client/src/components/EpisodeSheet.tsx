@@ -13,7 +13,7 @@ export function EpisodeSheet(props: {
   previous?: Episode
   next?: Episode
   watched: Set<string>
-  pending: Set<string>
+  pending: ReadonlySet<string>
   onToggle: (season: number, number: number) => void
   onSelect: (episode: Episode) => void
   onClose: () => void

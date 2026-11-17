@@ -4,11 +4,17 @@ import { OwlStill } from './Brand'
 import type { OwlState } from '~/lib/owl-motion'
 import type { OwlScene } from '~/lib/owl3d/scene'
 
+declare global {
+  // The Network Information API, where a browser has it (not Safari, not Firefox); lib.dom
+  // leaves it out.
+  interface Navigator {
+    connection?: { saveData?: boolean }
+  }
+}
+
 /** The viewer asked their browser to spend less data. */
 function savesData(): boolean {
-  const connection = (navigator as { connection?: { saveData?: boolean } })
-    .connection
-  return connection?.saveData === true
+  return navigator.connection?.saveData === true
 }
 
 /** The still, placed where the owl stands in the wider frame that holds the books

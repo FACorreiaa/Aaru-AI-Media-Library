@@ -172,7 +172,8 @@ apps share one API. See `BACKLOG.md` REL-001…REL-006.
   `aaru-client/src/components/ui`, always imported through the barrel `~/components/ui`. A
   missing component is added from shadcn-solid's manual install into that folder (and the
   barrel), never hand-rolled and never a raw `button`/`input`/`select`/`textarea`/`dialog`.
-  Aaru looks are variants on those components. ESLint enforces it.
+  Aaru looks are variants on those components. `npm run lint` enforces it (oxlint the barrel
+  import, ESLint the raw elements).
 
 ## Domain language
 

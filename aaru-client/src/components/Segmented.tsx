@@ -49,7 +49,10 @@ export function Segmented<T extends string>(props: {
       aria-label={props.label}
       // Kobalte keeps a controlled radio group: '' means nothing chosen yet.
       value={props.value ?? ''}
-      onChange={(next: string) => props.onChange(next as T)}
+      onChange={(next: string) => {
+        const picked = props.options.find((option) => option.value === next)
+        if (picked) props.onChange(picked.value)
+      }}
       class={cn('block', props.class)}
     >
       <SegmentedControlItems

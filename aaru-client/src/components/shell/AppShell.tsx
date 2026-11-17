@@ -248,19 +248,22 @@ export function AppShell(props: {
     }
     setAiBusy(true)
     setAiProblem(null)
-    saveAiSharing(true)
-      .then(() => {
+    const save = async () => {
+      try {
+        await saveAiSharing(true)
         setAiAsk(null)
         ask.settle(true)
-      })
-      .catch((error: unknown) =>
+      } catch (error) {
         setAiProblem(
           error instanceof Error && error.message
             ? error.message
             : 'Your answer was not saved.',
-        ),
-      )
-      .finally(() => setAiBusy(false))
+        )
+      } finally {
+        setAiBusy(false)
+      }
+    }
+    void save()
   }
 
   const entries = () => host()?.entries() ?? ownEntries()
@@ -583,8 +586,8 @@ function AppSidebar(props: {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
-              onClick={(event: MouseEvent) =>
-                props.onSearch(event.currentTarget as Element)
+              onClick={(event: MouseEvent & { currentTarget: Element }) =>
+                props.onSearch(event.currentTarget)
               }
               tooltip="Search (⌘K)"
               aria-keyshortcuts="Meta+K Control+K"
