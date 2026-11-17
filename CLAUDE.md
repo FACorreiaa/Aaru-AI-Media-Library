@@ -28,10 +28,10 @@ This file is the working contract for anyone — human or agent — changing the
 | Web | `aaru-client/` — SolidJS + TanStack Start on Cloudflare Workers, a pure client of `/v1` with the same functionality as the Apple apps. Landing page + sign-in + the signed-in app in one Worker. API types generated from `openapi.yaml` (`npm run api:generate`). UI from shadcn-solid on Kobalte, every component as source in `src/components/ui` behind the `~/components/ui` barrel, themed on Aaru's tokens; animation through `motion/mini` via `src/lib/motion.ts` (DESIGN.md §17). No DB access, no business logic |
 | Browser extension | `aaru-extension/` — WXT, one Manifest V3 source for Chrome and Firefox (SCR-007). Reads the player on Netflix, Disney+ and Prime Video, and YouTube videos for Now playing (SCR-009), and calls `/v1/scrobble/*` with a scrobble-only token. A client like the others: no rules of its own |
 | Database | PostgreSQL through pgx and sqlc (queries in `internal/db/queries`), goose migrations after a baseline of the Swift server's 60 Fluent migrations; a StatefulSet on the `maat` cluster |
-| Jobs | Workers inside the API process (`internal/httpapi/workers.go`), leasing rows with `FOR UPDATE SKIP LOCKED`: imports, hydration, sweeps |
+| Jobs | Workers inside the API process (`internal/httpapi/workers.go`), leasing rows with `FOR UPDATE SKIP LOCKED`: imports, hydration, sweeps, World builds |
 | Catalog — video | TMDB (also trending, on the air, new shows, in theaters for Discover) |
 | Catalog — anime | AniList GraphQL (with MAL ids); first-class from P1; this season + trending for Discover. While AniList is down, TMDB's Japanese animation stands in for search and Discover (CAT-021). AniDB's daily title dump adds alternate titles for matching only (CAT-022) |
-| Catalog — relations | AniList `relations`, TMDB collections and Wikidata (Action API, CC0, no key, ids only) for a title's relation graph: sequels, prequels, side stories and adaptations across kinds, story order from numbered series; cached 30 days in `catalog_relations` (GRAPH-001) |
+| Catalog — relations | AniList `relations`, TMDB collections and Wikidata (Action API, CC0, no key, ids only) for a title's relation graph: sequels, prequels, side stories and adaptations across kinds, story order from numbered series; cached 30 days in `catalog_relations` (GRAPH-001). A World (GRAPH-007) is the same sources walked further, built by a worker and stored in `worlds`, `world_titles` and `world_keys` |
 | Catalog — people | Who made a title and what else they made, for the title tree only (GRAPH-005): a film's director and a show's creator (TMDB), an anime's main studio and a manga's story author (AniList), a book's author (Open Library), an album's artist (MusicBrainz). Read by the provider's id, never by name; cached 30 days in `catalog_credits`. A film or show also names its first two billed actors (TMDB, GRAPH-006), and what else each had a part in |
 | Catalog — air times | TVmaze (no key, CC BY-SA): exact air times and network for TMDB shows, and the next episode's time on Discover's On air (DISC-003); TMDB stays the episode source |
 | Catalog — scores | TMDB vote average and the start of a few user reviews (films, shows), AniList average score (anime, manga), for the assistant's `title_scores` only: audience scores, credited, cached six hours in memory, never stored and never called critics' reviews (ASK-011) |
@@ -244,6 +244,15 @@ Use these words in code, APIs, and UI:
   `other`. Catalog data from AniList, TMDB collections and Wikidata, joined by id, never by name;
   never a library write and never a recommendation. The *main chain* is prequels and sequels in one
   medium; "Start here" is its first title the user has not finished or dropped
+- **World** — one story universe across every kind (GRAPH-007, owner 2026-11-17): the titles the
+  relation graph joins through sequels, side stories, spin-offs and adaptations, never another
+  version, a recap or "other". Up to 60 titles within 4 hops of its first-released title, which
+  names it; a larger universe is cut nearest that title and says so. Drawn with a *lane* per kind
+  (book, manga, film, show, anime, album), the user's own marks on it, and a count that includes
+  side titles. Built in the background and stored; a title related to nothing has no World. This
+  one surface supersedes "never the whole franchise" (2026-11-06), which still bounds the title
+  page's graph. Catalog data like a Relation, joined by id and never by name: never a library
+  write, never a recommendation, never "for you"
 - **Title tree** — where one title leads (GRAPH-005, owner 2026-11-11): the title as the root and
   up to three *branches* of up to five titles: the person who made it (director, creator, studio,
   author, artist), the series, and its adaptations. A film or show has two more person branches,
@@ -365,7 +374,7 @@ imports (MNG-001…002) and profile favorites (FAV-001), 2026-10-23; the Sports 
 Friends tab, and group reactions, replies, images and presence (SOC-008…011, NAV-004,
 GRP-013…017), 2026-10-27; the Aaru assistant, a one-to-one chat with voice (ASK-009), 2026-11-04; relation graphs and
 roadmap lists (GRAPH-001…004), 2026-11-06; the title tree, with a provider's "best known" count
-(GRAPH-005), and its cast branches (GRAPH-006), 2026-11-11).
+(GRAPH-005), and its cast branches (GRAPH-006), 2026-11-11; Worlds (GRAPH-007), 2026-11-17).
 
 ## Out of scope (do not add unless asked)
 

@@ -179,35 +179,48 @@ func malKind(t core.MediaType) string {
 // BuildRelationGraph walks the sources out from centre, merges what they say by id, and places the
 // result. A source that fails leaves the graph partial; it never fails the graph.
 func BuildRelationGraph(ctx context.Context, centre RelatedNode, sources []RelationSource, order RelationOrder) RelationGraph {
-	b := &graphBuilder{byKey: map[string]int{}, seen: map[[2]int]bool{}, asked: map[[2]int]bool{}}
+	b := newGraphBuilder(RelationMaxNodes)
 	if _, ok := b.add(centre); !ok {
 		return RelationGraph{Order: OrderRelease}
 	}
-	partial := false
+	partial, _ := b.expand(ctx, sources, RelationReach, RelationMaxExpansions)
+	return b.place(order, partial)
+}
+
+func newGraphBuilder(maxNodes int) *graphBuilder {
+	return &graphBuilder{byKey: map[string]int{}, seen: map[[2]int]bool{}, asked: map[[2]int]bool{}, maxNodes: maxNodes}
+}
+
+// expand walks the sources out from the first node, nearest first, asking about every node under
+// reach hops until nothing is left to ask or maxExpansions nodes were asked about. partial is true
+// when a source failed or ctx ran out; cut is true when the walk stopped at maxExpansions with
+// nodes still to ask about.
+func (b *graphBuilder) expand(ctx context.Context, sources []RelationSource, reach, maxExpansions int) (partial, cut bool) {
 	expansions := 0
-	for expansions < RelationMaxExpansions {
+	for {
 		if ctx.Err() != nil {
-			partial = true
-			break
+			return true, cut
 		}
 		cost, _, _ := b.walk()
 		var round []int
 		for i := range b.nodes {
-			if cost[i] < RelationReach && b.pending(i, cost[i], sources) {
+			if cost[i] < reach && b.pending(i, cost[i], sources) {
 				round = append(round, i)
 			}
 		}
 		if len(round) == 0 {
-			break
+			return partial, cut
+		}
+		if expansions >= maxExpansions {
+			return partial, true
 		}
 		slices.SortStableFunc(round, func(x, y int) int { return cmp.Compare(cost[x], cost[y]) })
-		round = round[:min(len(round), RelationMaxExpansions-expansions)]
+		round = round[:min(len(round), maxExpansions-expansions)]
 		results, failed := b.ask(ctx, round, cost, sources)
 		partial = partial || failed
 		expansions += len(round)
 		b.absorb(round, results)
 	}
-	return b.place(order, partial)
 }
 
 type graphEdge struct {
@@ -223,6 +236,12 @@ type graphBuilder struct {
 	// asked holds the (node, source) pairs already asked. A node is asked again by a source that
 	// could not answer for it before: Wikidata naming a TMDB show's AniList id opens AniList's chain.
 	asked map[[2]int]bool
+	// maxNodes is how many titles the graph holds; full is set once one was refused for it.
+	maxNodes int
+	full     bool
+	// follow, when set, says which relations (written forward) are walked at all: an edge of any
+	// other relation is dropped with the title it leads to. Nil walks every relation.
+	follow func(core.Relation) bool
 }
 
 // askable is true when the source can answer for the node and has not been asked yet.
@@ -253,7 +272,11 @@ func (b *graphBuilder) add(n RelatedNode) (int, bool) {
 			return i, true
 		}
 	}
-	if len(keys) == 0 || len(b.nodes) >= RelationMaxNodes {
+	if len(keys) == 0 {
+		return -1, false
+	}
+	if len(b.nodes) >= b.maxNodes {
+		b.full = true
 		return -1, false
 	}
 	i := len(b.nodes)
@@ -419,6 +442,9 @@ func (b *graphBuilder) absorb(round []int, results [][]*Relations) {
 					if e.Relation.MainChain() != chain {
 						continue
 					}
+					if forward, _ := e.Relation.Canonical(); b.follow != nil && !b.follow(forward) {
+						continue
+					}
 					from := i
 					if e.From != nil {
 						var ok bool
@@ -487,26 +513,8 @@ func (b *graphBuilder) place(order RelationOrder, partial bool) RelationGraph {
 			chain = append(chain, i)
 		}
 	}
-	byRelease := func(x, y int) int {
-		return cmp.Or(cmp.Compare(releaseKey(b.nodes[x].RelatedNode), releaseKey(b.nodes[y].RelatedNode)), cmp.Compare(x, y))
-	}
-	// Links give the order a source tells the story in; dates give release order, used whenever every
-	// chain title has one (an undated title keeps its linked place). Story order is a numbered series where there is one, else the links.
-	linked := b.chainOrder(chain, byRelease)
-	release := slices.Clone(linked)
-	var slots, dated []int
-	for pos, i := range linked {
-		if releaseKey(b.nodes[i].RelatedNode) != "9999" {
-			slots, dated = append(slots, pos), append(dated, i)
-		}
-	}
-	// Dated titles are sorted among their own places; an undated one keeps its place in the links.
-	slices.SortStableFunc(dated, func(x, y int) int {
-		return cmp.Compare(releaseKey(b.nodes[x].RelatedNode), releaseKey(b.nodes[y].RelatedNode))
-	})
-	for k, pos := range slots {
-		release[pos] = dated[k]
-	}
+	// Story order is a numbered series where there is one, else the links.
+	linked, release := b.releaseOrder(chain)
 	story := slices.Clone(linked)
 	if series := storySeries(b.nodes, linked); series != "" {
 		slices.SortStableFunc(story, func(x, y int) int {
@@ -583,6 +591,30 @@ func (b *graphBuilder) place(order RelationOrder, partial bool) RelationGraph {
 		}
 	}
 	return graph
+}
+
+// releaseOrder orders one chain twice. linked follows its sequel links, the order a source tells
+// the story in. release is by date, used whenever a chain title has one: dated titles are sorted
+// among their own places, and an undated one keeps its place in the links.
+func (b *graphBuilder) releaseOrder(chain []int) (linked, release []int) {
+	byRelease := func(x, y int) int {
+		return cmp.Or(cmp.Compare(releaseKey(b.nodes[x].RelatedNode), releaseKey(b.nodes[y].RelatedNode)), cmp.Compare(x, y))
+	}
+	linked = b.chainOrder(chain, byRelease)
+	release = slices.Clone(linked)
+	var slots, dated []int
+	for pos, i := range linked {
+		if releaseKey(b.nodes[i].RelatedNode) != "9999" {
+			slots, dated = append(slots, pos), append(dated, i)
+		}
+	}
+	slices.SortStableFunc(dated, func(x, y int) int {
+		return cmp.Compare(releaseKey(b.nodes[x].RelatedNode), releaseKey(b.nodes[y].RelatedNode))
+	})
+	for k, pos := range slots {
+		release[pos] = dated[k]
+	}
+	return linked, release
 }
 
 // chained is true when p and v are a prequel/sequel pair.

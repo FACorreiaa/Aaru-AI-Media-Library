@@ -4,6 +4,7 @@ import (
 	"aaru-go-api/internal/api"
 	"aaru-go-api/internal/apiid"
 	"aaru-go-api/internal/apperr"
+	"aaru-go-api/internal/catalog"
 	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/library"
 	"context"
@@ -83,6 +84,8 @@ func (s *Server) AddLibraryItem(ctx context.Context, req api.AddLibraryItemReque
 	}
 	// Its relation graph is built now, in the background, so its page finds it ready (GRAPH-001).
 	s.Catalog.Relations.Warm(ctx, entry.Title.ID)
+	// And its World is queued, ahead of any import's backlog (GRAPH-007).
+	s.Catalog.Worlds.Enqueue(ctx, entry.Title.ID, catalog.WorldPriorityOpened)
 	return api.AddLibraryItem200JSONResponse(LibraryEntryDTO(entry)), nil
 }
 
