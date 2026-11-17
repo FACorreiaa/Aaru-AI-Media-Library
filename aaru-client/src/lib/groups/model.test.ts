@@ -267,6 +267,8 @@ describe('groups labels', () => {
     expect(groupMonogram('Film club')).toBe('FC')
     expect(groupMonogram('séries')).toBe('S')
     expect(groupMonogram('  ')).toBe('?')
+    // A flag is two code points and one character.
+    expect(groupMonogram('🇵🇹 lisboa')).toBe('🇵🇹L')
   })
 
   it('counts down only near the limit', () => {

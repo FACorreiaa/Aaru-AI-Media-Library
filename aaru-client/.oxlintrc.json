@@ -160,7 +160,7 @@
     "no-shadow": "warn", // 2
     "promise/always-return": "warn", // 7
     "oxc/no-map-spread": "warn", // 6
-    "typescript/no-misused-spread": "warn", // 3
+    "typescript/no-misused-spread": "error",
     "unicorn/prefer-set-has": "error",
     "typescript/unbound-method": "error",
     "typescript/no-base-to-string": "error",

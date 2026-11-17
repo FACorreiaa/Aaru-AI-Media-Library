@@ -283,12 +283,20 @@ export function badgeText(count: number): string {
   return count > 99 ? '99+' : String(count)
 }
 
+/** A word's first character as a reader sees it. A flag, a keycap or a family emoji is several
+ *  code points, and an accent may be its own; taking one code point showed half of them. Where
+ *  the browser has no Intl.Segmenter (Firefox before 125) it is the first code point, as before. */
+function firstLetter(word: string): string {
+  if (typeof Intl.Segmenter !== 'function') return Array.from(word)[0]
+  return new Intl.Segmenter().segment(word).containing(0)?.segment ?? ''
+}
+
 /** One or two letters for a group's monogram. */
 export function groupMonogram(name: string): string {
   const words = name.split(/\s+/).filter(Boolean)
   if (words.length === 0) return '?'
-  if (words.length === 1) return [...words[0]][0].toUpperCase()
-  return ([...words[0]][0] + [...words[1]][0]).toUpperCase()
+  if (words.length === 1) return firstLetter(words[0]).toUpperCase()
+  return (firstLetter(words[0]) + firstLetter(words[1])).toUpperCase()
 }
 
 /** How many characters are left, shown only near the limit. */
