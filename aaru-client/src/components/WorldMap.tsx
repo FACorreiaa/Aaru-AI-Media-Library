@@ -174,7 +174,7 @@ function WorldTile(props: {
               <Badge
                 variant="ink"
                 size="xs"
-                class="absolute left-1 top-1 whitespace-nowrap"
+                class="absolute left-0.5 top-0.5 px-1.5 text-[10px] whitespace-nowrap"
               >
                 {props.startHere ? 'Start here' : 'Next'}
               </Badge>
@@ -196,7 +196,7 @@ function WorldTile(props: {
           </Poster>
         </div>
       </div>
-      <p class="mt-1 line-clamp-2 text-xs leading-snug group-hover:underline">
+      <p class="mt-1 line-clamp-2 text-xs leading-snug break-words group-hover:underline">
         {props.title.ref.title}
       </p>
       <Show when={titleYear(props.title)}>
