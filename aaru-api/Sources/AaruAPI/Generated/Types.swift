@@ -772,6 +772,13 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /v1/titles/{id}/tree`.
     /// - Remark: Generated from `#/paths//v1/titles/{id}/tree/get(getTitleTree)`.
     func getTitleTree(_ input: Operations.GetTitleTree.Input) async throws -> Operations.GetTitleTree.Output
+    /// Where to watch a film or show in one country (CAT-014).
+    ///
+    /// The services that stream, rent or sell the title in `region`, in the provider's order (JustWatch data through TMDB; credit JustWatch where shown), and TMDB's page listing every way to watch it there. Aaru links out and plays nothing: there is one link per title, not one per service. Catalog data, the same for every user, cached by the server and never stored. The three lists are empty for a kind that is not a film or show, a region with no data, or a provider that did not answer: show nothing then.
+    ///
+    /// - Remark: HTTP `GET /v1/titles/{id}/watch`.
+    /// - Remark: Generated from `#/paths//v1/titles/{id}/watch/get(getTitleWatch)`.
+    func getTitleWatch(_ input: Operations.GetTitleWatch.Input) async throws -> Operations.GetTitleWatch.Output
     /// Posts about this title by you and your friends, newest first.
     ///
     /// - Remark: HTTP `GET /v1/titles/{id}/posts`.
@@ -2916,6 +2923,23 @@ extension APIProtocol {
         headers: Operations.GetTitleTree.Input.Headers = .init()
     ) async throws -> Operations.GetTitleTree.Output {
         try await getTitleTree(Operations.GetTitleTree.Input(
+            path: path,
+            query: query,
+            headers: headers
+        ))
+    }
+    /// Where to watch a film or show in one country (CAT-014).
+    ///
+    /// The services that stream, rent or sell the title in `region`, in the provider's order (JustWatch data through TMDB; credit JustWatch where shown), and TMDB's page listing every way to watch it there. Aaru links out and plays nothing: there is one link per title, not one per service. Catalog data, the same for every user, cached by the server and never stored. The three lists are empty for a kind that is not a film or show, a region with no data, or a provider that did not answer: show nothing then.
+    ///
+    /// - Remark: HTTP `GET /v1/titles/{id}/watch`.
+    /// - Remark: Generated from `#/paths//v1/titles/{id}/watch/get(getTitleWatch)`.
+    public func getTitleWatch(
+        path: Operations.GetTitleWatch.Input.Path,
+        query: Operations.GetTitleWatch.Input.Query,
+        headers: Operations.GetTitleWatch.Input.Headers = .init()
+    ) async throws -> Operations.GetTitleWatch.Output {
+        try await getTitleWatch(Operations.GetTitleWatch.Input(
             path: path,
             query: query,
             headers: headers
@@ -9974,6 +9998,53 @@ public enum Components {
                 case name
                 case airsAt
                 case airTimeKnown
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/TitleWatch`.
+        public struct TitleWatch: Codable, Hashable, Sendable {
+            /// The region asked for, in upper case.
+            ///
+            /// - Remark: Generated from `#/components/schemas/TitleWatch/region`.
+            public var region: Swift.String
+            /// Services that include it in a subscription.
+            ///
+            /// - Remark: Generated from `#/components/schemas/TitleWatch/streaming`.
+            public var streaming: [Components.Schemas.WatchProvider]
+            /// - Remark: Generated from `#/components/schemas/TitleWatch/rent`.
+            public var rent: [Components.Schemas.WatchProvider]
+            /// - Remark: Generated from `#/components/schemas/TitleWatch/buy`.
+            public var buy: [Components.Schemas.WatchProvider]
+            /// TMDB's page of every way to watch the title in `region`.
+            ///
+            /// - Remark: Generated from `#/components/schemas/TitleWatch/link`.
+            public var link: Swift.String?
+            /// Creates a new `TitleWatch`.
+            ///
+            /// - Parameters:
+            ///   - region: The region asked for, in upper case.
+            ///   - streaming: Services that include it in a subscription.
+            ///   - rent:
+            ///   - buy:
+            ///   - link: TMDB's page of every way to watch the title in `region`.
+            public init(
+                region: Swift.String,
+                streaming: [Components.Schemas.WatchProvider],
+                rent: [Components.Schemas.WatchProvider],
+                buy: [Components.Schemas.WatchProvider],
+                link: Swift.String? = nil
+            ) {
+                self.region = region
+                self.streaming = streaming
+                self.rent = rent
+                self.buy = buy
+                self.link = link
+            }
+            public enum CodingKeys: String, CodingKey {
+                case region
+                case streaming
+                case rent
+                case buy
+                case link
             }
         }
         /// - Remark: Generated from `#/components/schemas/WatchProvider`.
@@ -37164,6 +37235,173 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/titles/{id}/tree/get(getTitleTree)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Where to watch a film or show in one country (CAT-014).
+    ///
+    /// The services that stream, rent or sell the title in `region`, in the provider's order (JustWatch data through TMDB; credit JustWatch where shown), and TMDB's page listing every way to watch it there. Aaru links out and plays nothing: there is one link per title, not one per service. Catalog data, the same for every user, cached by the server and never stored. The three lists are empty for a kind that is not a film or show, a region with no data, or a provider that did not answer: show nothing then.
+    ///
+    /// - Remark: HTTP `GET /v1/titles/{id}/watch`.
+    /// - Remark: Generated from `#/paths//v1/titles/{id}/watch/get(getTitleWatch)`.
+    public enum GetTitleWatch {
+        public static let id: Swift.String = "getTitleWatch"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/titles/{id}/watch/GET/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/titles/{id}/watch/GET/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.GetTitleWatch.Input.Path
+            /// - Remark: Generated from `#/paths/v1/titles/{id}/watch/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// ISO 3166-1 alpha-2, e.g. `US`, `PT`, from the device's language settings. Used for this request only and never stored. Anything but two letters is 422 `validation_failed`.
+                ///
+                /// - Remark: Generated from `#/paths/v1/titles/{id}/watch/GET/query/region`.
+                public var region: Swift.String
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - region: ISO 3166-1 alpha-2, e.g. `US`, `PT`, from the device's language settings. Used for this request only and never stored. Anything but two letters is 422 `validation_failed`.
+                public init(region: Swift.String) {
+                    self.region = region
+                }
+            }
+            public var query: Operations.GetTitleWatch.Input.Query
+            /// - Remark: Generated from `#/paths/v1/titles/{id}/watch/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetTitleWatch.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetTitleWatch.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetTitleWatch.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - query:
+            ///   - headers:
+            public init(
+                path: Operations.GetTitleWatch.Input.Path,
+                query: Operations.GetTitleWatch.Input.Query,
+                headers: Operations.GetTitleWatch.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/titles/{id}/watch/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/titles/{id}/watch/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.TitleWatch)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.TitleWatch {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetTitleWatch.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetTitleWatch.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Where to watch.
+            ///
+            /// - Remark: Generated from `#/paths//v1/titles/{id}/watch/get(getTitleWatch)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetTitleWatch.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetTitleWatch.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/titles/{id}/watch/get(getTitleWatch)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

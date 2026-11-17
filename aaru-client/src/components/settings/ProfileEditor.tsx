@@ -79,7 +79,10 @@ export function ProfileEditor(props: {
     const handle = draftHandle().trim()
     const invalid =
       handle || props.account.handle ? handleProblem(handle) : null
-    if (invalid) return setProblem(invalid)
+    if (invalid) {
+      setProblem(invalid)
+      return
+    }
     const saved = await run(
       () =>
         saveProfile({

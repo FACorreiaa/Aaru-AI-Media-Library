@@ -36,20 +36,20 @@ export function RelatedTitles(props: { titleId: string }) {
     )
   }
   let retry: ReturnType<typeof setTimeout> | undefined
-  const load = (titleId: string, again: boolean) =>
-    loadRelations({ data: { titleId } })
-      .then((g) => {
-        // A page that moved on to another title ignores a late answer for the last one.
-        if (titleId !== props.titleId) return
-        setGraph(g)
-        setFailed(false)
-        if (g.partial && again)
-          retry = setTimeout(() => void load(titleId, false), RETRY_PARTIAL_MS)
-      })
-      .catch(() => {
-        // A late failure for a title the page left, or behind a graph already shown, says nothing.
-        if (titleId === props.titleId && !graph()) setFailed(true)
-      })
+  const load = async (titleId: string, again: boolean): Promise<void> => {
+    try {
+      const g = await loadRelations({ data: { titleId } })
+      // A page that moved on to another title ignores a late answer for the last one.
+      if (titleId !== props.titleId) return
+      setGraph(g)
+      setFailed(false)
+      if (g.partial && again)
+        retry = setTimeout(() => void load(titleId, false), RETRY_PARTIAL_MS)
+    } catch {
+      // A late failure for a title the page left, or behind a graph already shown, says nothing.
+      if (titleId === props.titleId && !graph()) setFailed(true)
+    }
+  }
   // Read in the browser only, and again whenever the page moves to another title.
   createEffect(
     on(

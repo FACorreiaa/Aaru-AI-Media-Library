@@ -30,7 +30,7 @@ describe('avatarSrc', () => {
 
 describe('avatar proxy', () => {
   it('forwards the session and the version, and passes the image and its caching through', async () => {
-    const fetchImpl = vi.fn(
+    const fetchImpl = vi.fn<typeof fetch>(
       async () =>
         new Response(new Uint8Array([0xff, 0xd8, 0xff]), {
           status: 200,
@@ -61,7 +61,9 @@ describe('avatar proxy', () => {
   })
 
   it('answers empty without a session, for a bad id, and for any refusal', async () => {
-    const fetchImpl = vi.fn(async () => new Response(null, { status: 404 }))
+    const fetchImpl = vi.fn<typeof fetch>(
+      async () => new Response(null, { status: 404 }),
+    )
     expect(
       (await proxyAvatar(request(`/app/avatars/${ID}`), ID, API, fetchImpl))
         .status,

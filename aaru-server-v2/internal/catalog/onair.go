@@ -190,7 +190,6 @@ func GroupOnAir(entries []channelEntry) []OnAirGroup {
 // ("Netflix" on Netflix) or the resellers JustWatch lists beside the service
 // ("… Amazon Channel", "… with Ads").
 func StreamsOn(providers []WatchProvider, channel *OnAirChannel) []WatchProvider {
-	resellers := []string{"amazon channel", "apple tv channel", "roku premium channel", "with ads"}
 	own := ""
 	if channel != nil {
 		own = strings.ToLower(channel.Name)
@@ -202,7 +201,7 @@ func StreamsOn(providers []WatchProvider, channel *OnAirChannel) []WatchProvider
 		if channel != nil && (strings.HasPrefix(name, own) || strings.HasPrefix(own, name)) {
 			continue
 		}
-		if slices.ContainsFunc(resellers, func(r string) bool { return strings.Contains(name, r) }) {
+		if isWatchReseller(name) {
 			continue
 		}
 		if seen[name] {

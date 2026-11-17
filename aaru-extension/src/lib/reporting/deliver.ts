@@ -15,10 +15,13 @@ export async function reportingAllowed(
 ): Promise<boolean> {
   if (!isFirefox) return true
   try {
-    const granted = (await browser.permissions.getAll()) as {
-      data_collection?: string[]
-    }
-    return granted.data_collection?.includes('technicalAndInteraction') ?? false
+    // Firefox's own field; the shared types do not have it.
+    const granted = await browser.permissions.getAll()
+    return (
+      'data_collection' in granted &&
+      Array.isArray(granted.data_collection) &&
+      granted.data_collection.includes('technicalAndInteraction')
+    )
   } catch {
     return false
   }

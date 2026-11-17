@@ -1,4 +1,5 @@
 import type { components } from '../api/schema'
+import { isRecord } from '../record'
 
 // ASK-009 on the web: one Chat turn's answer arrives as server-sent events. This reads them
 // out of the stream's text, in whatever pieces it arrives.
@@ -53,12 +54,14 @@ export class FrameParser {
 }
 
 function toFrame(event: string, data: string): ChatFrame | null {
-  let json: Record<string, unknown>
+  let json: unknown
   try {
-    json = JSON.parse(data) as Record<string, unknown>
+    json = JSON.parse(data)
   } catch {
     return null
   }
+  // A frame's data is an object. Anything else (`null`, a bare number) is not a frame.
+  if (!isRecord(json)) return null
   const text = typeof json.text === 'string' ? json.text : ''
   switch (event) {
     case 'status':

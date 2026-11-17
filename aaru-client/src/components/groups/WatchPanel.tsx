@@ -173,7 +173,10 @@ export function WatchPanel(props: { channel: Channel }) {
   }
 
   useRealtime((event) => {
-    if (event.type === 'ready') return void load()
+    if (event.type === 'ready') {
+      void load()
+      return
+    }
     if (event.channelId !== props.channel.id) return
     if (event.type === 'watch.updated') void load()
     if (event.type === 'watch.reaction' && event.emoji) float(event.emoji)

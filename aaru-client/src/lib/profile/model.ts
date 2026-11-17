@@ -53,10 +53,11 @@ export interface CountTile {
   status: LibraryStatus
 }
 
+const watching = (n: number) =>
+  n > 0 ? `${n.toLocaleString('en')} watching` : undefined
+
 /** Shows, Anime, Films and Books, in that order: what is done, and for series what is going. */
 export function countTiles(stats: ProfileStats): CountTile[] {
-  const watching = (n: number) =>
-    n > 0 ? `${n.toLocaleString('en')} watching` : undefined
   return [
     {
       label: 'Shows watched',

@@ -16,7 +16,7 @@ export function AiringChannels(props: {
   /** Still loading: placeholders, not the fallback. */
   waiting?: boolean
   fallback?: JSX.Element
-  pending: Set<string>
+  pending: ReadonlySet<string>
   keyOf: (entry: CalendarEntry) => string
   onOpen: (entry: CalendarEntry) => void
   onToggle: (entry: CalendarEntry) => void

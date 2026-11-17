@@ -299,6 +299,7 @@ extension TitleDetailView {
             }
             .panel()
         }
+        TitleWatch(api: model.api, titleID: entry.title.id, kind: kind)
         // Above the episodes: under a long season list nobody finds what to watch first (GRAPH-002).
         TitleRelated(api: model.api, titleID: entry.title.id, library: library, lists: lists)
         TitleFromHere(model: fromHere)

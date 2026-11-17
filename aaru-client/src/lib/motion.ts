@@ -59,9 +59,11 @@ export function pop(el: Element): Promise<void> {
  * few pixels, `gap` seconds behind the one before. They are hidden until their turn, and shown
  * again whatever happens, so a failed load never leaves anything invisible.
  */
-export async function arrive(els: Element[], gap = 0.04): Promise<void> {
-  if (still() || els.length === 0) return
-  const parts = els as Array<HTMLElement | SVGElement>
+export async function arrive(
+  parts: Array<HTMLElement | SVGElement>,
+  gap = 0.04,
+): Promise<void> {
+  if (still() || parts.length === 0) return
   for (const el of parts) el.style.opacity = '0'
   try {
     const animate = await load()

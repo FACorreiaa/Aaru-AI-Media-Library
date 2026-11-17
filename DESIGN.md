@@ -224,6 +224,12 @@ show of one universe; the owl's answer is its own suggestion, reviewed before an
 and never joins the graph. Credit: "Relations from AniList,
 TMDB and Wikidata."
 
+**Where to watch (CAT-014, 2026-11-17, web, iPhone, iPad, Mac).** Above Related, for a film, show
+or anime: the services that stream, rent or sell it in the device's country, as quiet outlined
+chips with the service's logo, grouped Stream, Rent, Buy. "All options" opens TMDB's page; Aaru
+plays nothing and has no link per service. The JustWatch credit sits under the chips. Nothing to
+show is no section at all.
+
 **From here (GRAPH-005, 2026-11-11, web, iPhone, iPad, Mac).** Under Related, a small tree in the
 manner of a game's skill tree: this title on the left, ringed in the accent, a trunk down from it,
 and a labelled row branching off for the person who made it (the director, the creator, the

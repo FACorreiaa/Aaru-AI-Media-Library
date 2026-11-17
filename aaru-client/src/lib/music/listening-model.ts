@@ -27,11 +27,12 @@ export function listenSubtitle(listen: Listen): string {
     .join(' · ')
 }
 
+const startOfDay = (d: Date) =>
+  new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+
 /** Today / Yesterday / "Mon, Oct 19" / "Oct 19, 2025", in the viewer's time zone. */
 export function dayHeading(day: Date, now: Date): string {
-  const start = (d: Date) =>
-    new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
-  const days = Math.round((start(now) - start(day)) / 86_400_000)
+  const days = Math.round((startOfDay(now) - startOfDay(day)) / 86_400_000)
   if (days === 0) return 'Today'
   if (days === 1) return 'Yesterday'
   return day.toLocaleDateString('en', {

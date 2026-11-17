@@ -23,6 +23,8 @@ export interface RoadmapSection {
 
 export const ADDED_BY_HAND = 'Added by hand'
 
+const key = (id: string) => id.toLowerCase()
+
 export function roadmapSections(
   roadmap: ListRoadmap,
   rows: ListRow[],
@@ -30,7 +32,6 @@ export function roadmapSections(
   const position = new Map(rows.map((r, i) => [r.titleId, i]))
   const byId = new Map(rows.map((r) => [r.titleId, r]))
   const placed = new Set<string>()
-  const key = (id: string) => id.toLowerCase()
   const sections: RoadmapSection[] = roadmap.steps.map((step) => {
     const entries: RoadmapEntry[] = []
     for (const item of step.items) {

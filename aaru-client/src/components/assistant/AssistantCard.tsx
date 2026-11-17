@@ -213,7 +213,7 @@ export function AssistantCard(props: {
     input.type = 'file'
     input.multiple = true
     input.accept = ACCEPT
-    input.onchange = () => void choose(input.files)
+    input.addEventListener('change', () => void choose(input.files))
     input.click()
   }
 
@@ -279,7 +279,10 @@ export function AssistantCard(props: {
     setMic('listening')
     const recording = await recorder.done
     recorder = null
-    if (!isOpen()) return setMic('idle')
+    if (!isOpen()) {
+      setMic('idle')
+      return
+    }
     if (recording.kind === 'noSpeech') {
       setMic('idle')
       setProblem("I didn't catch that.")

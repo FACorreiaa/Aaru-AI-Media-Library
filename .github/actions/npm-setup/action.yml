@@ -1,0 +1,21 @@
+# Shared setup for the web and extension CI jobs: Node with the npm cache, then
+# `npm ci` in one package. The job checks the repository out first.
+name: npm setup
+description: Set up Node with the npm cache and install one package's dependencies.
+
+inputs:
+  package:
+    description: Directory of the package (holds package-lock.json).
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 24
+        cache: npm
+        cache-dependency-path: ${{ inputs.package }}/package-lock.json
+    - run: npm ci
+      shell: bash
+      working-directory: ${{ inputs.package }}

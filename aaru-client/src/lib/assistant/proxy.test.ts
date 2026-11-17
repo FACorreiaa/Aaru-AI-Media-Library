@@ -26,7 +26,7 @@ function post(
 
 describe('assistant proxy', () => {
   it('streams a turn through with the session and the time zone', async () => {
-    const fetchImpl = vi.fn(
+    const fetchImpl = vi.fn<typeof fetch>(
       async () =>
         new Response('event: done\ndata: {"turnId":"t"}\n\n', {
           headers: { 'Content-Type': 'text/event-stream' },
@@ -58,7 +58,7 @@ describe('assistant proxy', () => {
   })
 
   it('passes a refusal on with its status', async () => {
-    const fetchImpl = vi.fn(async () =>
+    const fetchImpl = vi.fn<typeof fetch>(async () =>
       Response.json({ code: 'chat_busy', message: 'Busy' }, { status: 409 }),
     )
     const response = await proxyChatTurn(
@@ -75,7 +75,7 @@ describe('assistant proxy', () => {
   })
 
   it('refuses without a session, from another site, or without a chat', async () => {
-    const fetchImpl = vi.fn()
+    const fetchImpl = vi.fn<typeof fetch>()
     const f = fetchImpl as unknown as typeof fetch
     const json = { type: 'application/json', body: '{}' }
     expect(
@@ -116,7 +116,7 @@ describe('assistant proxy', () => {
   })
 
   it('sends audio on with its length, and refuses anything else', async () => {
-    const fetchImpl = vi.fn(async () =>
+    const fetchImpl = vi.fn<typeof fetch>(async () =>
       Response.json({ text: 'hello', language: 'en' }),
     )
     const ok = await proxyTranscribe(
