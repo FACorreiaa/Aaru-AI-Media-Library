@@ -167,7 +167,7 @@
     "no-new": "error",
     // The one hit copies a Set that listeners may change while it is walked.
     "unicorn/no-useless-spread": "error",
-    "promise/no-callback-in-promise": "warn", // 1
+    "promise/no-callback-in-promise": "error",
     "no-underscore-dangle": "warn", // 1
     "typescript/no-implied-eval": "error"
   }
