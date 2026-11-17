@@ -24,6 +24,9 @@ export function actionBy(action: Action): string {
 export const canUndo = (action: Action) =>
   action.kind !== 'undo' && action.undoneAt === undefined
 
+const startOfDay = (d: Date) =>
+  new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+
 /** "Today, 14:05", "Yesterday, 09:12", else "3 Oct, 18:40" (with the year when not this one). */
 export function whenLabel(
   at: string,
@@ -35,9 +38,7 @@ export function whenLabel(
     hour: '2-digit',
     minute: '2-digit',
   })
-  const startOf = (d: Date) =>
-    new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
-  const days = Math.round((startOf(now) - startOf(date)) / 86_400_000)
+  const days = Math.round((startOfDay(now) - startOfDay(date)) / 86_400_000)
   if (days === 0) return `Today, ${time}`
   if (days === 1) return `Yesterday, ${time}`
   const day = date.toLocaleDateString(locale, {

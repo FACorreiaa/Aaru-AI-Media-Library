@@ -56,6 +56,14 @@
       "files": ["src/components/ui/**"],
       "rules": { "no-restricted-imports": "off" }
     },
+    // Solid runs a component once, so a helper declared in one is made once,
+    // not on every render, and it sits beside its one use by choice. A test's
+    // helpers belong to their describe block for the same reason. In plain
+    // modules the rule stays an error.
+    {
+      "files": ["src/**/*.tsx", "src/**/*.test.ts"],
+      "rules": { "unicorn/consistent-function-scoping": "off" }
+    },
     // shadcn-solid's source as its registry ships it, kept identical to upstream
     // so a later copy diffs cleanly against it. These rules are off here
     // because only the vendored code breaks them and fixing it would fork it
@@ -148,7 +156,7 @@
     // CI stays green while every clean rule above is already enforced. To
     // retire one: fix its hits, then delete the line. Never add a rule here.
     "typescript/no-unsafe-type-assertion": "warn", // 90
-    "unicorn/consistent-function-scoping": "warn", // 65
+    "unicorn/consistent-function-scoping": "error",
     // Off, not backlog: Solid's compiler assigns `let el` from `ref={el}`, which
     // the rule cannot see. All 38 hits were refs.
     "no-unassigned-vars": "off",

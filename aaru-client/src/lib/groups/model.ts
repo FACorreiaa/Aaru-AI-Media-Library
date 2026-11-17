@@ -305,14 +305,15 @@ export function remainingLabel(body: string): string | null {
   return left <= 200 ? String(left) : null
 }
 
+const byHandle = (a: GroupMember, b: GroupMember) =>
+  a.user.handle.localeCompare(b.user.handle)
+
 /** Members by role, the way the member list shows them. */
 export function membersByRole(members: GroupMember[]): {
   owner: GroupMember[]
   admins: GroupMember[]
   members: GroupMember[]
 } {
-  const byHandle = (a: GroupMember, b: GroupMember) =>
-    a.user.handle.localeCompare(b.user.handle)
   return {
     owner: members.filter((m) => m.role === 'owner'),
     admins: members.filter((m) => m.role === 'admin').sort(byHandle),

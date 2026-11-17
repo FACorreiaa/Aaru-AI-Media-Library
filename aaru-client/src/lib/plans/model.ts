@@ -31,11 +31,11 @@ export function decidedLabel(plan: AgentPlan): string | null {
   return null
 }
 
+const plural = (n: number, noun: string) => `${n} ${noun}${n === 1 ? '' : 's'}`
+
 /** "3 episodes · 2 titles added", from the plan's counts. */
 export function countsLine(plan: AgentPlan): string {
   const { adds, updates, removes, episodes } = plan.counts
-  const plural = (n: number, noun: string) =>
-    `${n} ${noun}${n === 1 ? '' : 's'}`
   return [
     episodes > 0 ? plural(episodes, 'episode') : null,
     adds > 0 ? `${plural(adds, 'title')} added` : null,
