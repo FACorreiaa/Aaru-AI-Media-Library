@@ -158,41 +158,41 @@
     "import/no-duplicates": "error",
     "unicorn/prefer-node-protocol": "error",
 
-    // BACKLOG. Rules of this profile that the existing code still breaks
-    // (count as of 2026-11-17, with --type-aware). They report as warnings so
-    // CI stays green while every clean rule above is already enforced. To
-    // retire one: fix its hits, then delete the line. Never add a rule here.
+    // More rules of this profile. They were the backlog of 2026-11-17, cleared
+    // the same day. A rule the code breaks is fixed in the code, not turned
+    // down to a warning here.
     "typescript/no-unsafe-type-assertion": "error",
     "unicorn/consistent-function-scoping": "error",
-    // Off, not backlog: Solid's compiler assigns `let el` from `ref={el}`, which
-    // the rule cannot see. All 38 hits were refs.
-    "no-unassigned-vars": "off",
-    // Off, not backlog: the fix it asks for, toSorted(), is ES2023 and the
-    // project's lib is ES2022. All 29 hits sorted an array made on the spot.
-    "unicorn/no-array-sort": "off",
     "vitest/require-mock-type-parameters": "error",
-    // Off, not backlog: all 15 hits wait because the next step needs the last
-    // one's answer (stream reads, paging, retries, writes in order).
-    "no-await-in-loop": "off",
     "typescript/consistent-return": "error",
     "unicorn/prefer-add-event-listener": "error",
     "no-shadow": "error",
     "promise/always-return": "error",
-    // Off, not backlog: state here is immutable. A signal's rows are updated by
-    // mapping to a copy of the one that changed; the in-place write this rule
-    // asks for would change an object the old value still holds and tell
-    // Solid nothing.
-    "oxc/no-map-spread": "off",
     "typescript/no-misused-spread": "error",
     "unicorn/prefer-set-has": "error",
     "typescript/unbound-method": "error",
     "typescript/no-base-to-string": "error",
     "no-new": "error",
-    // The one hit copies a Set that listeners may change while it is walked.
     "unicorn/no-useless-spread": "error",
     "promise/no-callback-in-promise": "error",
     // `__root__` is TanStack Router's own key for the root route.
     "no-underscore-dangle": ["error", { "allow": ["__root__"] }],
-    "typescript/no-implied-eval": "error"
+    "typescript/no-implied-eval": "error",
+
+    // Rules of the three categories that are wrong for this codebase, each
+    // with its reason. Every hit was read before one was turned off.
+    // Solid's compiler assigns `let el` from `ref={el}`, which the rule cannot
+    // see. All 38 hits were refs.
+    "no-unassigned-vars": "off",
+    // The fix it asks for, toSorted(), is ES2023 and the project's lib is
+    // ES2022. All 29 hits sorted an array made on the spot.
+    "unicorn/no-array-sort": "off",
+    // All 15 hits wait because the next step needs the last one's answer
+    // (stream reads, paging, retries, writes in order).
+    "no-await-in-loop": "off",
+    // State here is immutable. A signal's rows are updated by mapping to a
+    // copy of the one that changed; the in-place write this rule asks for
+    // would change an object the old value still holds and tell Solid nothing.
+    "oxc/no-map-spread": "off"
   }
 }
