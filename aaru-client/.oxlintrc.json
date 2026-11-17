@@ -159,7 +159,11 @@
     "unicorn/prefer-add-event-listener": "warn", // 9
     "no-shadow": "error",
     "promise/always-return": "error",
-    "oxc/no-map-spread": "warn", // 6
+    // Off, not backlog: state here is immutable. A signal's rows are updated by
+    // mapping to a copy of the one that changed; the in-place write this rule
+    // asks for would change an object the old value still holds and tell
+    // Solid nothing.
+    "oxc/no-map-spread": "off",
     "typescript/no-misused-spread": "error",
     "unicorn/prefer-set-has": "error",
     "typescript/unbound-method": "error",
