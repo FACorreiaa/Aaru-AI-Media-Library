@@ -58,10 +58,12 @@ export const startCapture = createServerFn({ method: 'POST' })
       result = await client.POST('/v1/imports/capture', { params, body })
     } else if (data.images.length === 1) {
       const [only] = data.images
+      const bytes = bytesOf(only.image)
       result = await client.POST('/v1/imports/capture', {
         params,
-        body: bytesOf(only.image) as never,
-        bodySerializer: (body: unknown) => body as Uint8Array,
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the generated types call a binary body a string; this is the body itself
+        body: bytes as never,
+        bodySerializer: () => bytes,
         headers: { 'Content-Type': only.mediaType },
       })
     } else {
@@ -74,8 +76,9 @@ export const startCapture = createServerFn({ method: 'POST' })
         )
       result = await client.POST('/v1/imports/capture', {
         params,
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the generated types call a binary body a string; this is the body itself
         body: form as never,
-        bodySerializer: (body: unknown) => body as FormData,
+        bodySerializer: () => form,
       })
     }
     if (result.response.status === 401) sessionRejected()

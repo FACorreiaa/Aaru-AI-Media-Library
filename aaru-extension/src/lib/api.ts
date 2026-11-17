@@ -75,7 +75,8 @@ export async function send(
       retry: response.status >= 500 || response.status === 429,
     }
   try {
-    return { kind: 'ok', answer: (await response.json()) as ScrobbleAnswer }
+    const answer: ScrobbleAnswer = await response.json()
+    return { kind: 'ok', answer }
   } catch {
     return { kind: 'failed', retry: false }
   }

@@ -17,7 +17,7 @@ function request(path: string, init: RequestInit & { cookie?: string } = {}) {
 
 describe('attach proxy', () => {
   it('passes the file through as it is, with its name and type', async () => {
-    const fetchImpl = vi.fn(
+    const fetchImpl = vi.fn<typeof fetch>(
       async () =>
         new Response('{"id":"x"}', {
           status: 201,
@@ -50,7 +50,9 @@ describe('attach proxy', () => {
   })
 
   it('removes a file', async () => {
-    const fetchImpl = vi.fn(async () => new Response(null, { status: 204 }))
+    const fetchImpl = vi.fn<typeof fetch>(
+      async () => new Response(null, { status: 204 }),
+    )
     const response = await proxyChatAttachment(
       request(`/app/assistant/attach?chat=${CHAT}&id=${FILE}`, {
         method: 'DELETE',
@@ -68,7 +70,7 @@ describe('attach proxy', () => {
   })
 
   it('refuses without a session, a chat, or past 24 MB, before the API', async () => {
-    const fetchImpl = vi.fn()
+    const fetchImpl = vi.fn<typeof fetch>()
     const noSession = await proxyChatAttachment(
       request(`/app/assistant/attach?chat=${CHAT}`, {
         method: 'POST',
@@ -99,7 +101,7 @@ describe('attach proxy', () => {
 })
 
 function thread(responses: Array<() => Response>) {
-  const fetchImpl = vi.fn(async () => {
+  const fetchImpl = vi.fn<typeof fetch>(async () => {
     const next = responses.shift()
     if (!next) throw new Error('no more responses')
     return next()

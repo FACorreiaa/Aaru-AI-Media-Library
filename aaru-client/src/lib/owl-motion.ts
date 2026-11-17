@@ -57,12 +57,51 @@ export interface Look {
 /** What the owl is doing: at rest, or curious (its head tilted, an ear flicking, wide eyes). */
 export type OwlState = 'standing' | 'curious'
 
+const PROPERTIES = [
+  'translateY',
+  'rotateXDegrees',
+  'rotateYDegrees',
+  'rotateZDegrees',
+  'emissiveScale',
+  'scale',
+] as const satisfies ReadonlyArray<Track['property']>
+
+/** A track as the file types it: `property` and `easing` as any string. */
+type LooseTrack = Omit<Track, 'property' | 'easing'> & {
+  property: string
+  easing: string
+}
+
+function isTrack(track: LooseTrack): track is Track {
+  return (
+    PROPERTIES.some((property) => property === track.property) &&
+    (track.easing === 'sine' || track.easing === 'linear')
+  )
+}
+
+/** The file's tracks, held to the properties and easings a track may have. */
+function tracks(loose: Array<LooseTrack>): Array<Track> {
+  const checked: Array<Track> = []
+  for (const track of loose) {
+    if (!isTrack(track))
+      throw new Error(
+        'owl-motion.json: a track has an unknown property or easing',
+      )
+    checked.push(track)
+  }
+  return checked
+}
+
 export const STATES: Record<OwlState, Array<Track>> = {
-  standing: data.states.standing.tracks as Array<Track>,
-  curious: data.states.curious.tracks as Array<Track>,
+  standing: tracks(data.states.standing.tracks),
+  curious: tracks(data.states.curious.tracks),
 }
 export const STANDING = STATES.standing
-export const BLINK = data.blink as Blink
+const [blinkSoonest, blinkLatest] = data.blink.intervalSeconds
+export const BLINK: Blink = {
+  ...data.blink,
+  intervalSeconds: [blinkSoonest, blinkLatest],
+}
 export const LOOK_AT: LookAt = data.lookAt
 /** The poster's stance: degrees added to a joint's rest, by joint name. */
 export const POSTER_POSE: Record<

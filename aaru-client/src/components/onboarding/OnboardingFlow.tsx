@@ -112,15 +112,17 @@ export function OnboardingFlow(props: {
     const titleIds = relatedTitleIds(picks())
     if (titleIds.length === 0) return
     const ticket = ++relatedTicket
-    const load = getOnboardingRelated({ data: { titleIds } })
-      .then((answer) => {
+    const look = async () => {
+      try {
+        const answer = await getOnboardingRelated({ data: { titleIds } })
         if (ticket === relatedTicket) setRelated(answer.items)
-      })
-      // Nothing related, as far as the flow knows: the screen is left out.
-      .catch(() => undefined)
-      .finally(() => {
-        if (relatedLoad === load) relatedLoad = null
-      })
+      } catch {
+        // Nothing related, as far as the flow knows: the screen is left out.
+      }
+    }
+    const load = look().finally(() => {
+      if (relatedLoad === load) relatedLoad = null
+    })
     relatedLoad = load
   }
 

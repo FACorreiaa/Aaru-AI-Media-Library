@@ -2,6 +2,7 @@ import type { components } from '../api/schema'
 import type { PendingMessage } from '../groups/model'
 import { mergeMessages } from '../groups/model'
 import type { GroupMessage } from '../groups/server'
+import { isRecord } from '../record'
 
 // GRP-006 on the web: the pure half of the realtime socket. The socket only announces; REST
 // stays the source of truth, so everything here folds an event into what is already on screen.
@@ -21,7 +22,7 @@ export const HIDDEN_GRACE_MS = 60_000
 /** "Reconnecting…" shows only after the socket has been down this long. */
 export const STALE_AFTER_MS = 5000
 
-const EVENT_TYPES = new Set<RealtimeEvent['type']>([
+const EVENT_TYPES: ReadonlySet<string> = new Set<RealtimeEvent['type']>([
   'ready',
   'message.created',
   'message.updated',
@@ -57,14 +58,20 @@ export function typingDue(lastSent: number | undefined, now: number): boolean {
   return lastSent === undefined || now - lastSent >= TYPING_INTERVAL_MS
 }
 
+/** By its type alone: the rest of an event is the server's to get right. */
+function isEvent(value: unknown): value is RealtimeEvent {
+  return (
+    isRecord(value) &&
+    typeof value.type === 'string' &&
+    EVENT_TYPES.has(value.type)
+  )
+}
+
 /** One frame off the socket, or null for anything this client does not understand. */
 export function parseEvent(text: string): RealtimeEvent | null {
   try {
-    const value = JSON.parse(text) as unknown
-    if (!value || typeof value !== 'object') return null
-    const type = (value as { type?: unknown }).type
-    if (typeof type !== 'string' || !EVENT_TYPES.has(type as never)) return null
-    return value as RealtimeEvent
+    const value: unknown = JSON.parse(text)
+    return isEvent(value) ? value : null
   } catch {
     return null
   }

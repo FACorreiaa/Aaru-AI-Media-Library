@@ -71,10 +71,10 @@ export function RecapStory(props: {
     setHeld(true)
   }
 
-  function onPointerUp(event: PointerEvent) {
+  function onPointerUp(event: PointerEvent & { currentTarget: Element }) {
     setHeld(false)
     if (Date.now() - pressedAt > TAP_MS) return
-    const box = (event.currentTarget as HTMLElement).getBoundingClientRect()
+    const box = event.currentTarget.getBoundingClientRect()
     go(event.clientX - box.left < box.width / 3 ? index() - 1 : index() + 1)
   }
 

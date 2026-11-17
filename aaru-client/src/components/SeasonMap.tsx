@@ -24,7 +24,7 @@ const STATE_LABEL: Record<CellState, string> = {
 export function SeasonMap(props: {
   seasons: Season[]
   watched: Set<string>
-  pending: Set<string>
+  pending: ReadonlySet<string>
   next: Episode | undefined
   onToggle: (season: number, number: number) => void
 }) {

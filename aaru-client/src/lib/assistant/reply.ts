@@ -63,6 +63,9 @@ export function applyFrame(reply: Reply, frame: ChatFrame): Reply {
         state: 'stopped',
       }
   }
+  // Not reachable by the types. A frame from a newer server changes nothing.
+  frame satisfies never
+  return reply
 }
 
 function merge(reply: Reply, parts: ChatComponents): Reply {

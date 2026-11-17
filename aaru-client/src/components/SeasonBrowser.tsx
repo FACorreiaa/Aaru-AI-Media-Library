@@ -274,8 +274,8 @@ export function SeasonBrowser(props: {
             variant="quiet"
             disabled={loading()}
             onClick={() => {
-              const next = shown() + 1
-              void fetchPage(next).then(() => setShown(next))
+              const page = shown() + 1
+              void fetchPage(page).then(() => setShown(page))
             }}
           >
             {loading() ? 'Loading…' : 'Show more'}

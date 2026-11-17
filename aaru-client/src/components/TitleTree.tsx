@@ -223,7 +223,9 @@ export function TitleTreeCanvas(props: {
   let canvas: HTMLDivElement | undefined
   onMount(() => {
     if (!props.entrance || !canvas) return
-    void arrive([...canvas.querySelectorAll('[data-tree-part]')])
+    void arrive([
+      ...canvas.querySelectorAll<HTMLElement | SVGElement>('[data-tree-part]'),
+    ])
   })
   return (
     <div class={cn('overflow-x-auto', props.class)}>

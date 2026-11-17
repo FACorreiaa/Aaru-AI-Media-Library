@@ -260,7 +260,10 @@ export function ChannelDialog(props: {
             aria-label="Kind"
             class="mt-4 block"
             value={kind()}
-            onChange={(next) => setKind(next as ChannelKind)}
+            onChange={(next) => {
+              const picked = KIND_OPTIONS.find((option) => option.kind === next)
+              if (picked) setKind(picked.kind)
+            }}
           >
             <p class="text-sm font-medium" aria-hidden="true">
               Kind

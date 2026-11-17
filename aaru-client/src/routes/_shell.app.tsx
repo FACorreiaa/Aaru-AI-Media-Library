@@ -204,6 +204,10 @@ function Home() {
   const [lists, setLists] = createSignal<ListSummary[] | null>(null)
   const [airings, setAirings] = createSignal<CalendarEntry[]>([])
   const [now, setNow] = createSignal<Date | null>(null)
+  const todayKey = () => {
+    const current = now()
+    return current ? localDayKey(current) : null
+  }
   const [airingsReady, setAiringsReady] = createSignal(false)
   const [busy, setBusy] = createSignal<ReadonlySet<string>>(new Set())
   const [problem, setProblem] = createSignal<string | null>(null)
@@ -238,16 +242,17 @@ function Home() {
   function loadLibrary() {
     if (libraryRequested) return
     libraryRequested = true
-    queryClient
-      .query(libraryQuery)
-      .then((library) => {
+    const load = async () => {
+      try {
+        const library = await queryClient.query(libraryQuery)
         // Anything added while it loaded is already on the server's answer, or kept here.
         setEntries((recent) => recent.reduce(upsert, library))
-      })
-      .catch(() => {
+      } catch {
         // Adding still works; titles just lack their "In your library" mark. Try again later.
         libraryRequested = false
-      })
+      }
+    }
+    void load()
   }
 
   function showUpNext(fresh: UpNext) {
@@ -486,8 +491,11 @@ function Home() {
         event.type === 'updated' &&
         event.action.type === 'success' &&
         event.query.queryKey[0] === PROGRESS_KEY[0]
-      )
-        setProgress(event.query.state.data as Progress)
+      ) {
+        // Read back through the typed query: the cache's own event carries no type.
+        const fresh = queryClient.getQueryData(progressQuery.queryKey)
+        if (fresh) setProgress(fresh)
+      }
     })
     onCleanup(unsubscribe)
     loadLibrary()
@@ -676,12 +684,12 @@ function Home() {
       return
     }
     offerTickUndo(ticked.actionId, entry.title.title, season)
-    const now = Date.now()
+    const tickedAt = Date.now()
     setAirings((rows) =>
       rows.map((a) =>
         a.libraryItemId === id &&
         a.season === season &&
-        Date.parse(a.airsAt) <= now
+        Date.parse(a.airsAt) <= tickedAt
           ? { ...a, watched: true }
           : a,
       ),
@@ -1044,7 +1052,7 @@ function Home() {
                       ),
                     )
                   }
-                  today={now() ? localDayKey(now() as Date) : null}
+                  today={todayKey()}
                   onAdded={(entry) => void added(entry)}
                   onProblem={setProblem}
                 />

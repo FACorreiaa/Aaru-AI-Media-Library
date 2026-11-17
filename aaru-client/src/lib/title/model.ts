@@ -46,11 +46,12 @@ export function airedKeys(
     .map((e) => episodeKey(e.season, e.number))
 }
 
+const seasonRank = (n: number) => (n === 0 ? Number.MAX_SAFE_INTEGER : n)
+
 /** Seasons in viewing order, specials (season 0) last. */
 export function orderedSeasons(title: TitleDetail | undefined): Season[] {
-  const rank = (n: number) => (n === 0 ? Number.MAX_SAFE_INTEGER : n)
   return [...(title?.seasons ?? [])].sort(
-    (a, b) => rank(a.number) - rank(b.number),
+    (a, b) => seasonRank(a.number) - seasonRank(b.number),
   )
 }
 

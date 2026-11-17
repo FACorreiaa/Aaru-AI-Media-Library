@@ -72,18 +72,20 @@ export function MusicSection(props: {
     setHeard(null)
     setWaiting(true)
     const until = Date.now() + FIRST_LISTEN_WAIT_MS
+    const check = async () => {
+      try {
+        const listen = await latestListen()
+        if (!poll || !isNewListen(seen, listen)) return
+        setLatest(listen)
+        setHeard(listen)
+        stopWaiting()
+      } catch {
+        // A missed check is retried on the next tick.
+      }
+    }
     poll = setInterval(() => {
       if (Date.now() > until) return stopWaiting()
-      latestListen()
-        .then((listen) => {
-          if (!poll || !isNewListen(seen, listen)) return
-          setLatest(listen)
-          setHeard(listen)
-          stopWaiting()
-        })
-        .catch(() => {
-          // A missed check is retried on the next tick.
-        })
+      void check()
     }, FIRST_LISTEN_POLL_MS)
   }
 
@@ -157,7 +159,10 @@ export function MusicSection(props: {
               aria-label="Scrobbler"
               class="flex flex-wrap gap-2"
               value={choice()}
-              onChange={(next) => setChoice(next as Scrobbler)}
+              onChange={(next) => {
+                const picked = SCROBBLERS.find((option) => option === next)
+                if (picked) setChoice(picked)
+              }}
             >
               <For each={SCROBBLERS}>
                 {(option) => (

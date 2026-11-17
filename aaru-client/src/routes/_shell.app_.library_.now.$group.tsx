@@ -85,7 +85,11 @@ function NowGroupPage() {
   const navigate = Route.useNavigate()
   const loaded = Route.useLoaderData()
   const { queryClient } = Route.useRouteContext()()
-  const group = () => params().group as NowGroup
+  // The loader answered 404 for anything else, so the fallback is never used.
+  const group = (): NowGroup => {
+    const name = params().group
+    return isNowGroup(name) ? name : 'watching'
+  }
   const isWatching = () => group() === 'watching'
 
   const [entries, setEntries] = createSignal<LibraryEntry[]>(loaded().entries)
