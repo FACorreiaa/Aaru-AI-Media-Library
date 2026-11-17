@@ -17,6 +17,7 @@ const release = import.meta.env.VITE_SENTRY_RELEASE || undefined
 export default env.SENTRY_DSN && !import.meta.env.DEV
   ? withSentry(
       (workerEnv: Env) => serverReportingOptions(workerEnv, release),
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- Start's entry is the Worker's handler; its type declares only fetch(request)
       entry as ExportedHandler<Env>,
     )
   : entry

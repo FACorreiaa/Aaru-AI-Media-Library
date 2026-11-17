@@ -18,7 +18,7 @@ export function takeAdd(code: string, now = Date.now()): boolean {
   try {
     const raw = localStorage.getItem(KEY)
     if (!raw) return false
-    const saved = JSON.parse(raw) as { code?: unknown; at?: unknown }
+    const saved: { code?: unknown; at?: unknown } = JSON.parse(raw)
     if (saved.code !== code) return false
     localStorage.removeItem(KEY)
     return typeof saved.at === 'number' && now - saved.at <= LIFETIME_MS

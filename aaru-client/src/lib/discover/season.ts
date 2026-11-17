@@ -106,5 +106,6 @@ export function pageKey(kind: SeasonKind, key: SeasonKey, page = 1): string {
 /** -1 when `to` is earlier than `from`, 1 when later, 0 when the same season. */
 export function direction(from: SeasonKey, to: SeasonKey): -1 | 0 | 1 {
   const order = (k: SeasonKey) => k.year * 4 + SEASONS.indexOf(k.season)
-  return Math.sign(order(to) - order(from)) as -1 | 0 | 1
+  const apart = order(to) - order(from)
+  return apart < 0 ? -1 : apart > 0 ? 1 : 0
 }

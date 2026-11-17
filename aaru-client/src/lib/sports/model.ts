@@ -217,6 +217,9 @@ export function statusLabel(
     case 'scheduled':
       return (event.startsAt && localTime(event.startsAt, timeZone)) ?? 'TBA'
   }
+  // Not reachable by the types. A status from a newer server has no label.
+  event.status satisfies never
+  return ''
 }
 
 /** A UFC or WWE card: no sides, only its name and poster. */

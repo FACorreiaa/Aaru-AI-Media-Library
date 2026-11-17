@@ -250,8 +250,8 @@ describe('rankedTonight', () => {
   })
 
   it("marks a ranked show's season through its Continue watching card", () => {
-    const show = rankedTonight(answer([ranked(1)]), [continuing(1)], new Set())
-    expect(show && pickSeasonMarkable(show.primary)).toEqual(continuing(1))
+    const seen = rankedTonight(answer([ranked(1)]), [continuing(1)], new Set())
+    expect(seen && pickSeasonMarkable(seen.primary)).toEqual(continuing(1))
     const unseen = rankedTonight(answer([ranked(1)]), [], new Set())
     expect(unseen && pickSeasonMarkable(unseen.primary)).toBeNull()
   })

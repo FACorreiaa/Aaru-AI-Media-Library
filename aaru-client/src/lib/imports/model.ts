@@ -72,15 +72,15 @@ const SOURCE_LABELS: Record<ImportJob['source'], string> = {
 
 export const sourceLabel = (job: ImportJob) => SOURCE_LABELS[job.source]
 
-const LISTEN_SOURCES: ReadonlyArray<ImportJob['source']> = [
+const LISTEN_SOURCES: ReadonlySet<ImportJob['source']> = new Set([
   'lastfm',
   'listenbrainz',
   'spotify_json',
   'youtube_takeout',
-]
+])
 
 /** MUS-004: an import of past listening, applied to the listening log and undone by itself. */
-export const isListens = (job: ImportJob) => LISTEN_SOURCES.includes(job.source)
+export const isListens = (job: ImportJob) => LISTEN_SOURCES.has(job.source)
 
 export function stateLabel(job: ImportJob): string {
   switch (job.state) {
@@ -102,6 +102,9 @@ export function stateLabel(job: ImportJob): string {
     case 'failed':
       return 'Failed'
   }
+  // Not reachable by the types. A state from a newer server has no label.
+  job.state satisfies never
+  return ''
 }
 
 /** 0…1 of the rows matched while running; null before the rows are known. */
@@ -122,12 +125,12 @@ export interface ImportStep {
 const count = (n: number) => n.toLocaleString('en')
 
 /** Sources whose rows the worker reads from an account, not from an upload. */
-const READ_BY_WORKER: ReadonlyArray<ImportJob['source']> = [
+const READ_BY_WORKER: ReadonlySet<ImportJob['source']> = new Set([
   'trakt',
   'anilist',
   'lastfm',
   'listenbrainz',
-]
+])
 
 /** The steps of a queued or running import, in order; empty once it has a plan or an end. */
 export function importSteps(job: ImportJob): ImportStep[] {
@@ -137,7 +140,7 @@ export function importSteps(job: ImportJob): ImportStep[] {
   const running = job.state === 'running'
   const known = job.rowsTotal > 0
   const entries = `${count(job.rowsTotal)} ${job.rowsTotal === 1 ? 'entry' : 'entries'}`
-  const fromAccount = READ_BY_WORKER.includes(job.source)
+  const fromAccount = READ_BY_WORKER.has(job.source)
   const matching = running && known && job.rowsMatched < job.rowsTotal
   const checking = running && known && job.rowsMatched >= job.rowsTotal
   return [
@@ -185,7 +188,7 @@ export function importSteps(job: ImportJob): ImportStep[] {
 /** A listening import's steps: the plays are read, then checked against the log (MUS-004). */
 function listenSteps(job: ImportJob): ImportStep[] {
   const running = job.state === 'running'
-  const fromAccount = READ_BY_WORKER.includes(job.source)
+  const fromAccount = READ_BY_WORKER.has(job.source)
   // An account is read page by page while running; the count grows as it goes.
   const reading = fromAccount && running
   const read = job.rowsTotal

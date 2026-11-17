@@ -14,7 +14,7 @@ export function optionalEnum<T extends string>(
   value: unknown,
   options: readonly T[],
 ): T | undefined {
-  return options.includes(value as T) ? (value as T) : undefined
+  return options.find((option) => option === value)
 }
 
 /** An integer in `min...max`, from a number or a numeric string (the router parses `?year=2026`

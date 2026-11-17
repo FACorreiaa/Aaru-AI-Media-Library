@@ -16,10 +16,10 @@ declare const process: { env: Record<string, string | undefined> }
 // wrangler.jsonc vars the Worker reads at runtime (`SENTRY_DSN`, `CHANNEL`), for the
 // environment being built (`CLOUDFLARE_ENV`), and only into a build: `npm run dev` reports
 // nothing. The release is the commit CI builds.
-const workerVars = unstable_readConfig({
+const workerVars: Record<string, unknown> = unstable_readConfig({
   config: 'wrangler.jsonc',
   env: process.env.CLOUDFLARE_ENV || undefined,
-}).vars as Record<string, unknown>
+}).vars
 const text = (value: unknown) => (typeof value === 'string' ? value : '')
 const release = process.env.SENTRY_RELEASE || process.env.GITHUB_SHA || ''
 

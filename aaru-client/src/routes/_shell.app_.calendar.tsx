@@ -204,7 +204,7 @@ function Calendar() {
       if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey)
         return
       if (event.defaultPrevented || openKey() || dayOpen()) return
-      const target = event.target as HTMLElement | null
+      const target = event.target instanceof Element ? event.target : null
       // Fields keep their keys, the view switch's radios included; the day tabs move their
       // own selection with the arrows.
       if (
@@ -213,7 +213,7 @@ function Calendar() {
         )
       )
         return
-      if (target?.isContentEditable) return
+      if (target instanceof HTMLElement && target.isContentEditable) return
       const key = event.key
       if (view() === 'week') {
         if (key === 'ArrowLeft') step(-1)
@@ -460,8 +460,6 @@ function Calendar() {
     }
   }
 
-  const pendingSet = () => pending() as Set<string>
-
   return (
     <div class="flex-1">
       <div class="w-full min-w-0 px-4 pt-6 pb-16 md:px-8 lg:pt-8 2xl:px-12">
@@ -554,7 +552,7 @@ function Calendar() {
                   >
                     <CatchUpList
                       shows={missed()}
-                      pending={pendingSet()}
+                      pending={pending()}
                       keyOf={entryKey}
                       onOpen={openEpisode}
                       onToggle={(entry) => void toggle(entry)}
@@ -572,7 +570,7 @@ function Calendar() {
                       byDay={byDay()}
                       channels={channels()}
                       waiting={waiting()}
-                      pending={pendingSet()}
+                      pending={pending()}
                       keyOf={entryKey}
                       onSelect={setSelected}
                       onOpen={openEpisode}
@@ -588,7 +586,7 @@ function Calendar() {
                     byDay={byDay()}
                     channels={channels()}
                     waiting={waiting()}
-                    pending={pendingSet()}
+                    pending={pending()}
                     keyOf={entryKey}
                     onSelect={tapDay}
                     onMonth={changeMonth}
@@ -608,7 +606,7 @@ function Calendar() {
             open={dayOpen() !== null}
             day={day()}
             entries={byDay().get(day()) ?? []}
-            pending={pendingSet()}
+            pending={pending()}
             keyOf={entryKey}
             onOpen={(entry) => {
               setDayOpen(null)

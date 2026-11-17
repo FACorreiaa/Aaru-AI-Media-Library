@@ -81,10 +81,14 @@ export function toContentError(error: unknown): ContentError {
   return { name: 'Error', message: String(error).slice(0, MESSAGE_MAX) }
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
 /** Reads a ContentError back from a runtime message; null when it is not one. */
 export function parseContentError(value: unknown): ContentError | null {
-  if (typeof value !== 'object' || value === null) return null
-  const { name, message, stack } = value as Record<string, unknown>
+  if (!isRecord(value)) return null
+  const { name, message, stack } = value
   if (typeof name !== 'string' || typeof message !== 'string') return null
   return {
     name: name.slice(0, 100),

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const animate = vi.fn(() => Promise.resolve())
+const animate = vi.fn<() => Promise<void>>(() => Promise.resolve())
 vi.mock('motion/mini', () => ({ animate }))
 
 const { flip, leave, play, pop } = await import('./motion')
@@ -86,7 +86,7 @@ describe('flip', () => {
 
   it('only mutates with reduced motion', async () => {
     reduceMotion(true)
-    const mutate = vi.fn()
+    const mutate = vi.fn<() => void>()
     await flip({ children: [box(0, 0)] } as unknown as Element, mutate)
     expect(mutate).toHaveBeenCalledOnce()
     expect(animate).not.toHaveBeenCalled()

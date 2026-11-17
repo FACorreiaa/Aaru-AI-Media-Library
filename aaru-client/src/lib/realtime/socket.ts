@@ -67,15 +67,16 @@ async function connect() {
   if (mine !== generation || listeners.size === 0) return
   const ws = new WebSocket(url)
   socket = ws
-  ws.onopen = () => {
+  ws.addEventListener('open', () => {
     if (socket !== ws) return
     attempt = 0
     setConnection('open')
-  }
-  ws.onmessage = (frame) => {
+  })
+  ws.addEventListener('message', (frame) => {
     if (socket !== ws || typeof frame.data !== 'string') return
     const event = parseEvent(frame.data)
     if (!event) return
+    // oxlint-disable-next-line unicorn/no-useless-spread -- a copy: a listener may add or remove one while they run
     for (const listener of [...listeners]) {
       try {
         listener(event)
@@ -83,13 +84,13 @@ async function connect() {
         // One pane's failure must not starve the others.
       }
     }
-  }
-  ws.onclose = () => {
+  })
+  ws.addEventListener('close', () => {
     if (socket !== ws) return
     socket = null
     setConnection('closed')
     scheduleRetry(mine)
-  }
+  })
 }
 
 function scheduleRetry(mine: number) {

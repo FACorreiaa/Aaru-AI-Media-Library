@@ -44,7 +44,9 @@ function requestAddress(): string | null {
 
 /** `WEB_CLIENT_SECRET`, a Worker secret (`wrangler secret put`), so it is not in the generated types. */
 function webClientSecret(): string | undefined {
-  return (env as { WEB_CLIENT_SECRET?: string }).WEB_CLIENT_SECRET
+  return 'WEB_CLIENT_SECRET' in env && typeof env.WEB_CLIENT_SECRET === 'string'
+    ? env.WEB_CLIENT_SECRET
+    : undefined
 }
 
 /** The zone the shell left in its cookie; none outside a request or when it is not a zone. */

@@ -1,3 +1,4 @@
+import { isRecord } from '../record'
 import { SilenceDetector, levelOf } from './silence'
 
 // ASK-009 on the web: a spoken question. The microphone records until a second and a half of
@@ -79,6 +80,9 @@ export async function startRecording(
   return { done, stop: () => end(true), cancel: () => end(false) }
 }
 
+const stringOf = (value: unknown) =>
+  typeof value === 'string' ? value : undefined
+
 /** What was said, read by the cluster's Whisper; its text and language. */
 export async function transcribe(
   recording: Extract<Recording, { kind: 'audio' }>,
@@ -97,17 +101,14 @@ export async function transcribe(
   } catch {
     throw new Error('Aaru could not reach the server. Try again in a moment.')
   }
-  const json = (await response.json().catch(() => ({}))) as {
-    text?: string
-    language?: string
-    code?: string
-    message?: string
-  }
-  if (response.ok && json.text)
-    return { text: json.text, language: json.language ?? '' }
+  const body: unknown = await response.json().catch(() => ({}))
+  const json = isRecord(body) ? body : {}
+  const said = stringOf(json.text)
+  if (response.ok && said)
+    return { text: said, language: stringOf(json.language) ?? '' }
   if (json.code === 'transcription_empty')
     throw new Error("I didn't catch that.")
-  throw new Error(json.message ?? 'Aaru could not read that.')
+  throw new Error(stringOf(json.message) ?? 'Aaru could not read that.')
 }
 
 const MUTE_KEY = 'aaru.assistant.muted'

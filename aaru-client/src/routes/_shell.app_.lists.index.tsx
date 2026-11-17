@@ -20,7 +20,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog'
 import { createList, deleteList, renameList } from '../lib/lists/server'
 import type { ListSummary } from '../lib/lists/server'
 import { flip, leave } from '../lib/motion'
-import { optionalEnum, optionalInt, optionalString } from '../lib/search-params'
+import { optionalInt, optionalString } from '../lib/search-params'
 import { FilterField, PageControls } from '../components/Paged'
 import { clampPage, matches, pageOf } from '../lib/paging'
 import { prefersReducedMotion } from '../lib/reduced-motion'
@@ -32,7 +32,8 @@ export const Route = createFileRoute('/_shell/app_/lists/')({
   head: () => ({ meta: [{ title: 'Lists · Aaru' }] }),
   // UX-080: Home's "New list" lands here with `?new=1`, on the name field.
   validateSearch: (search): { new?: '1'; q?: string; page?: number } => ({
-    new: optionalEnum(String(search.new ?? ''), ['1']),
+    // The router parses `?new=1` to a number; a hand-typed URL may leave it a string.
+    new: search.new === 1 || search.new === '1' ? '1' : undefined,
     q: optionalString(search.q),
     page: optionalInt(search.page, 1, 100_000),
   }),
@@ -232,10 +233,8 @@ function Lists() {
                       class="flex flex-1 gap-2"
                       onSubmit={(e) => {
                         e.preventDefault()
-                        const value =
-                          new FormData(e.currentTarget)
-                            .get('name')
-                            ?.toString() ?? ''
+                        const entry = new FormData(e.currentTarget).get('name')
+                        const value = typeof entry === 'string' ? entry : ''
                         void run(async () => {
                           const renamed = await renameList({
                             data: { id: list.id, name: value },
