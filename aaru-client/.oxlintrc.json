@@ -166,7 +166,7 @@
     "typescript/no-base-to-string": "warn", // 2
     "no-new": "error",
     // The one hit copies a Set that listeners may change while it is walked.
-    "unicorn/no-useless-spread": "warn", // 1
+    "unicorn/no-useless-spread": "error",
     "promise/no-callback-in-promise": "warn", // 1
     "no-underscore-dangle": "warn", // 1
     "typescript/no-implied-eval": "warn" // 1

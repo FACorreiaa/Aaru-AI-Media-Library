@@ -76,6 +76,7 @@ async function connect() {
     if (socket !== ws || typeof frame.data !== 'string') return
     const event = parseEvent(frame.data)
     if (!event) return
+    // oxlint-disable-next-line unicorn/no-useless-spread -- a copy: a listener may add or remove one while they run
     for (const listener of [...listeners]) {
       try {
         listener(event)
