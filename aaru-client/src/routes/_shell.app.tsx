@@ -238,16 +238,17 @@ function Home() {
   function loadLibrary() {
     if (libraryRequested) return
     libraryRequested = true
-    queryClient
-      .query(libraryQuery)
-      .then((library) => {
+    const load = async () => {
+      try {
+        const library = await queryClient.query(libraryQuery)
         // Anything added while it loaded is already on the server's answer, or kept here.
         setEntries((recent) => recent.reduce(upsert, library))
-      })
-      .catch(() => {
+      } catch {
         // Adding still works; titles just lack their "In your library" mark. Try again later.
         libraryRequested = false
-      })
+      }
+    }
+    void load()
   }
 
   function showUpNext(fresh: UpNext) {
