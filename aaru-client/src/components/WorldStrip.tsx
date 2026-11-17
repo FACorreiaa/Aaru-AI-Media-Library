@@ -16,16 +16,18 @@ const TRIES = 6
 export function WorldStrip(props: { titleId: string }) {
   const [world, setWorld] = createSignal<World | null>(null)
   let retry: ReturnType<typeof setTimeout> | undefined
-  const load = (titleId: string, triesLeft: number) =>
-    loadWorld({ data: { titleId } })
-      .then((found) => {
-        // A page that moved on to another title ignores a late answer for the last one.
-        if (titleId !== props.titleId) return
-        setWorld(found)
-        if (found.state === 'building' && triesLeft > 1)
-          retry = setTimeout(() => void load(titleId, triesLeft - 1), RETRY_MS)
-      })
-      .catch(() => undefined)
+  const load = async (titleId: string, triesLeft: number): Promise<void> => {
+    try {
+      const found = await loadWorld({ data: { titleId } })
+      // A page that moved on to another title ignores a late answer for the last one.
+      if (titleId !== props.titleId) return
+      setWorld(found)
+      if (found.state === 'building' && triesLeft > 1)
+        retry = setTimeout(() => void load(titleId, triesLeft - 1), RETRY_MS)
+    } catch {
+      // A failed read leaves the strip out: it is an extra, and its absence takes nothing away.
+    }
+  }
   createEffect(
     on(
       () => props.titleId,
