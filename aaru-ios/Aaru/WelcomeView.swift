@@ -35,8 +35,10 @@ struct WelcomeView: View {
                     HStack(alignment: .center, spacing: AaruSpace.page) {
                         owl
                             .frame(maxWidth: 380)
+                            .owlFollowsTouch($owlPointer)
                         VStack(alignment: .leading, spacing: 32) {
                             copy
+                                .owlFollowsTouch($owlPointer)
                             actions
                         }
                         .frame(maxWidth: 420)
@@ -52,6 +54,7 @@ struct WelcomeView: View {
                     .padding(.horizontal, 24)
                     .padding(.top, 8)
                     .padding(.bottom, 24)
+                    .owlFollowsTouch($owlPointer)
                 }
             }
             .frame(maxWidth: .infinity)
@@ -68,6 +71,8 @@ struct WelcomeView: View {
         }
         .background(Color(.paper).ignoresSafeArea())
         .foregroundStyle(Color(.ink))
+        // Hover only. A finger is followed over the owl and the copy, never over `actions`:
+        // a touch-down gesture there kept the Apple button from getting its tap.
         .owlFollows($owlPointer)
     }
 
