@@ -161,7 +161,7 @@
     "promise/always-return": "warn", // 7
     "oxc/no-map-spread": "warn", // 6
     "typescript/no-misused-spread": "warn", // 3
-    "unicorn/prefer-set-has": "warn", // 2
+    "unicorn/prefer-set-has": "error",
     "typescript/unbound-method": "warn", // 2
     "typescript/no-base-to-string": "warn", // 2
     "no-new": "error",
