@@ -224,7 +224,7 @@ show of one universe; the owl's answer is its own suggestion, reviewed before an
 and never joins the graph. Credit: "Relations from AniList,
 TMDB and Wikidata."
 
-**Worlds (GRAPH-007, 2026-11-17; iPhone, iPad, Mac; the web follows).** A title that is part of a
+**Worlds (GRAPH-007, 2026-11-17; web, iPhone, iPad, Mac).** A title that is part of a
 larger story says so in one panel above Related, the one lit edge in that part of the page: the
 World's name, "5 of 11", its kinds, a thin bar. It opens the map. The map is a row per kind, the
 way the story spread: books first if the book came first. Posters sit on a rail; the rail is

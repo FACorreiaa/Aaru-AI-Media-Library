@@ -11,6 +11,7 @@ import {
   createEffect,
   createMemo,
   createSignal,
+  lazy,
   on,
   onCleanup,
   onMount,
@@ -95,6 +96,11 @@ import { hasBranches } from '../lib/title/tree'
 // APP-005 on the web: the Title room, at parity with the Apple apps' `TitleDetailView`. An album
 // (MUS-001) is a big square cover, its artist and genres, then the usual controls and its
 // tracklist: no progress, no episodes.
+// The World this title is part of (GRAPH-007) loads after the room shows.
+const WorldStrip = lazy(() =>
+  import('../components/WorldStrip').then((m) => ({ default: m.WorldStrip })),
+)
+
 export const Route = createFileRoute('/_shell/app_/title/$id')({
   loader: ({ params, context: { queryClient } }) =>
     queryClient.query(titlePageQuery(params.id)),
@@ -218,6 +224,9 @@ function TitleRoom() {
 
   // GRAPH-005: "From here", under Related, and opened once when a tap here finishes the title.
   const fromHere = createTitleTree(() => entry().title.id)
+  // The World strip is read in the browser: nothing of it is rendered on the server.
+  const [inBrowser, setInBrowser] = createSignal(false)
+  onMount(() => setInBrowser(true))
   const [treeOpen, setTreeOpen] = createSignal(false)
   // Mounted on first open, then kept, so closing plays the exit (WEB-011).
   const [treeOpenedOnce, setTreeOpenedOnce] = createSignal(false)
@@ -609,6 +618,10 @@ function TitleRoom() {
 
             <Show when={isAlbum()}>
               <Tracklist tracks={title()?.tracks} />
+            </Show>
+
+            <Show when={inBrowser()}>
+              <WorldStrip titleId={entry().title.id} />
             </Show>
 
             <RelatedTitles titleId={entry().title.id} />

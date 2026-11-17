@@ -3470,7 +3470,10 @@ the next step marked, a count, a share card and "Add the rest".
   sheet; `WorldMap` (a row per lane, a rail lit between finished titles, rungs between lanes);
   the Worlds page from Library's More menu; `WorldShareCard`; "Add the rest" opening the import
   review. A World still building is asked for again every 4 seconds, six times.
-- **Web (next).** The same surfaces on their own routes.
+- **Web (built 2026-11-17).** `WorldStrip` on the title page (lazy), `/app/world/$titleId` with
+  `WorldMap`, the share image and "Add the rest", and `/app/worlds`, linked from Library. Never
+  opened in a browser. Size budgets: `/` and the title route re-seeded just above measured (two
+  more routes in the shared route table), the two new routes added.
 - Known limits: a World is only what provider ids join; AniList is asked about main-chain titles
   only, so a side story's own sequels are not reached; lanes read in release order, since story
   order exists only inside one chain; an import's backlog builds at the providers' pace.
