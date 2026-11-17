@@ -56,9 +56,11 @@
       "files": ["src/components/ui/**"],
       "rules": { "no-restricted-imports": "off" }
     },
-    // shadcn-solid's source as its registry ships it, so a later copy diffs
-    // cleanly against upstream. BACKLOG (vendored): rules only these files
-    // break (count as of 2026-11-17). They stay errors everywhere else.
+    // shadcn-solid's source as its registry ships it, kept identical to upstream
+    // so a later copy diffs cleanly against it. These rules are off here
+    // because only the vendored code breaks them and fixing it would fork it
+    // (vendored shadcn-solid; kept identical to upstream). They stay errors
+    // everywhere else. This override is last, so it wins over "rules" below.
     {
       "files": [
         "src/components/ui/**",
@@ -68,13 +70,15 @@
         "src/hooks/use-mobile.ts"
       ],
       "rules": {
-        "import/consistent-type-specifier-style": ["warn", "prefer-top-level"], // 37
-        "import/no-duplicates": "warn", // 9
-        "typescript/no-unnecessary-type-assertion": "warn", // 8
-        "import/no-named-as-default-member": "warn", // 3
-        "typescript/no-redundant-type-constituents": "warn", // 1
-        "typescript/no-unsafe-function-type": "warn", // 1
-        "eqeqeq": ["warn", "always", { "null": "ignore" }] // 1
+        "typescript/no-unsafe-type-assertion": "off",
+        "import/consistent-type-specifier-style": "off",
+        "import/no-duplicates": "off",
+        "typescript/no-unnecessary-type-assertion": "off",
+        "no-shadow": "off",
+        "import/no-named-as-default-member": "off",
+        "typescript/no-redundant-type-constituents": "off",
+        "typescript/no-unsafe-function-type": "off",
+        "eqeqeq": "off"
       }
     }
   ],
@@ -143,7 +147,7 @@
     // (count as of 2026-11-17, with --type-aware). They report as warnings so
     // CI stays green while every clean rule above is already enforced. To
     // retire one: fix its hits, then delete the line. Never add a rule here.
-    "typescript/no-unsafe-type-assertion": "warn", // 280 (189 in components/ui)
+    "typescript/no-unsafe-type-assertion": "warn", // 90
     "unicorn/consistent-function-scoping": "warn", // 65
     // Mostly Solid refs: `let el!: HTMLElement` is assigned by `ref={el}`,
     // which the rule does not see.
@@ -153,7 +157,7 @@
     "no-await-in-loop": "warn", // 15
     "typescript/consistent-return": "warn", // 13
     "unicorn/prefer-add-event-listener": "warn", // 9
-    "no-shadow": "warn", // 8 (6 in components/ui)
+    "no-shadow": "warn", // 2
     "promise/always-return": "warn", // 7
     "oxc/no-map-spread": "warn", // 6
     "typescript/no-misused-spread": "warn", // 3
