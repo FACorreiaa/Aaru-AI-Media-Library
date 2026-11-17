@@ -283,13 +283,11 @@ export function badgeText(count: number): string {
   return count > 99 ? '99+' : String(count)
 }
 
-/** A word's first character as a reader sees it. A flag, a keycap or a family emoji is several
- *  code points, and an accent may be its own; taking one code point showed half of them. Where
- *  the browser has no Intl.Segmenter (Firefox before 125) it is the first code point, as before. */
-function firstLetter(word: string): string {
-  if (typeof Intl.Segmenter !== 'function') return Array.from(word)[0]
-  return new Intl.Segmenter().segment(word).containing(0)?.segment ?? ''
-}
+/** A word's first code point: a whole letter or emoji, never half of a surrogate pair. A flag
+ *  or a keycap is several code points and shows only its first; whole characters would need
+ *  Intl.Segmenter here, in a module every page loads. */
+// oxlint-disable-next-line typescript/no-misused-spread -- by code point on purpose, see above
+const firstLetter = (word: string) => [...word][0]
 
 /** One or two letters for a group's monogram. */
 export function groupMonogram(name: string): string {

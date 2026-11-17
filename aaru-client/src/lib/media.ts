@@ -14,6 +14,5 @@ const ALL: Record<MediaType, true> = {
 }
 
 /** Every media type, in stored order: the one list validators enumerate (`z.enum`). */
-export const MEDIA_TYPES = Object.keys(ALL).filter(
-  (key): key is MediaType => key in ALL,
-)
+// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the keys of a Record<MediaType, true> written out above
+export const MEDIA_TYPES = Object.keys(ALL) as [MediaType, ...MediaType[]]
