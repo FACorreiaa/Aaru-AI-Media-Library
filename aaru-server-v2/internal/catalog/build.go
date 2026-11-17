@@ -24,6 +24,8 @@ type Kit struct {
 	Tree *TreeService
 	// Scores reads audience scores for the assistant (ASK-011): TMDB and AniList.
 	Scores *ScoreService
+	// Watch reads where a film or show streams, rents and sells (CAT-014): TMDB.
+	Watch *WatchService
 	// MusicBrainz is the album adapter, also the recording matcher and the album
 	// artist lister (MUS-003): one client, one pacer.
 	MusicBrainz *MusicBrainz
@@ -107,6 +109,7 @@ func NewKit(pool *pgxpool.Pool, providers Providers, log *slog.Logger) *Kit {
 	}
 	kit.Tree = NewTreeService(kit.Relations, creditSources, log)
 	kit.Scores = NewScoreService(providers.TMDB, providers.AniList, log)
+	kit.Watch = NewWatchService(providers.TMDB, log)
 	if mb, ok := providers.Music.(*MusicBrainz); ok {
 		kit.MusicBrainz = mb
 	}
