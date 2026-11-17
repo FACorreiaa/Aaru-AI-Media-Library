@@ -4,6 +4,31 @@ import SwiftUI
 typealias TitleWatchPlaces = Components.Schemas.TitleWatch
 typealias WatchService = Components.Schemas.WatchProvider
 
+/// One group of services under its heading.
+struct WatchGroup: Identifiable, Equatable {
+    enum Kind: String { case stream, rent, buy }
+
+    let kind: Kind
+    let services: [WatchService]
+
+    var id: Kind {
+        kind
+    }
+
+    /// "Stream: Netflix and Max", for VoiceOver.
+    var spoken: String {
+        "\(String(localized: label)): \(services.map(\.name).formatted(.list(type: .and)))"
+    }
+
+    var label: LocalizedStringResource {
+        switch kind {
+        case .stream: "Stream"
+        case .rent: "Rent"
+        case .buy: "Buy"
+        }
+    }
+}
+
 /// CAT-014: where a film or show can be watched in the device's region, as the server lists it
 /// (JustWatch data through TMDB). The region is sent per request and never stored. A failed read,
 /// a region with no data and a kind that is not watched all leave nothing: the section is absent.
@@ -20,37 +45,17 @@ final class TitleWatchModel {
         self.places = places
     }
 
-    /// One group of services under its heading.
-    struct Group: Identifiable, Equatable {
-        enum Kind: String { case stream, rent, buy }
-
-        let kind: Kind
-        let services: [WatchService]
-
-        var id: Kind {
-            kind
-        }
-
-        var label: LocalizedStringResource {
-            switch kind {
-            case .stream: "Stream"
-            case .rent: "Rent"
-            case .buy: "Buy"
-            }
-        }
-    }
-
     /// The groups that have a service, streaming first. Empty: the section is not shown.
-    var groups: [Group] {
+    var groups: [WatchGroup] {
         Self.groups(places)
     }
 
-    static func groups(_ places: TitleWatchPlaces?) -> [Group] {
+    static func groups(_ places: TitleWatchPlaces?) -> [WatchGroup] {
         guard let places else { return [] }
         return [
-            Group(kind: .stream, services: places.streaming),
-            Group(kind: .rent, services: places.rent),
-            Group(kind: .buy, services: places.buy),
+            WatchGroup(kind: .stream, services: places.streaming),
+            WatchGroup(kind: .rent, services: places.rent),
+            WatchGroup(kind: .buy, services: places.buy),
         ].filter { !$0.services.isEmpty }
     }
 
@@ -117,11 +122,7 @@ struct TitleWatch: View {
                             }
                         }
                         .accessibilityElement(children: .ignore)
-                        .accessibilityLabel(
-                            Text(
-                                "\(String(localized: group.label)): \(group.services.map(\.name).formatted(.list(type: .and)))"
-                            )
-                        )
+                        .accessibilityLabel(Text(group.spoken))
                     }
                     Text("Streaming data from JustWatch")
                         .font(.caption)
