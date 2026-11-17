@@ -6,6 +6,7 @@ import { REPORT } from '../protocol'
 import { BUILD_REPORTING, parseContentError, toContentError } from './config'
 import { contentReporter } from './content'
 import { createReporter, envelopeEndpoint } from './reporter'
+import type { SendEnvelope } from './reporter'
 import { scrubEvent, scrubText, scrubUrl } from './scrub'
 
 const FAKE_DSN = 'https://publickey@o0.ingest.de.sentry.io/42'
@@ -81,7 +82,7 @@ describe('createReporter (background)', () => {
   })
 
   it('does nothing without a DSN', () => {
-    const send = vi.fn()
+    const send = vi.fn<SendEnvelope>()
     const reporter = createReporter({
       send,
       version: '0.1.0',
@@ -94,21 +95,21 @@ describe('createReporter (background)', () => {
   })
 
   it('reports its own errors, tagged as the background', async () => {
-    const send = vi.fn(() => Promise.resolve({ statusCode: 200 }))
+    const send = vi.fn<SendEnvelope>(() => Promise.resolve({ statusCode: 200 }))
     const reporter = createReporter({ send, version: '0.1.0', config })
     const failing = reporter.guard(() => {
       throw new Error('stop failed')
     })
     expect(failing()).toBeUndefined()
     await vi.waitFor(() => expect(send).toHaveBeenCalledTimes(1))
-    const body = (send.mock.calls[0] as unknown as [string])[0]
+    const body = send.mock.calls[0]?.[0]
     expect(body).toContain('"context":"background"')
     expect(body).toContain('"release":"abc123"')
     expect(body).toContain('stop failed')
   })
 
   it("sends a content script's error with the site origin only", async () => {
-    const send = vi.fn(() => Promise.resolve({ statusCode: 200 }))
+    const send = vi.fn<SendEnvelope>(() => Promise.resolve({ statusCode: 200 }))
     const reporter = createReporter({ send, version: '0.1.0', config })
     reporter.captureContent(
       toContentError(
@@ -117,7 +118,7 @@ describe('createReporter (background)', () => {
       'https://www.netflix.com/watch/12345?trackId=9',
     )
     await vi.waitFor(() => expect(send).toHaveBeenCalledTimes(1))
-    const body = (send.mock.calls[0] as unknown as [string])[0]
+    const body = send.mock.calls[0]?.[0]
     expect(body).toContain('"site":"https://www.netflix.com"')
     expect(body).toContain('"context":"content"')
     expect(body).not.toContain('12345')
@@ -180,7 +181,7 @@ describe('makeDeliver', () => {
   const ok = () => Promise.resolve(new Response(null, { status: 200 }))
 
   it('posts nothing without a DSN', async () => {
-    const post = vi.fn(ok)
+    const post = vi.fn<typeof fetch>(ok)
     const send = makeDeliver(
       { ...config, dsn: '' },
       () => Promise.resolve(true),
@@ -191,14 +192,14 @@ describe('makeDeliver', () => {
   })
 
   it('posts nothing when the user did not allow it', async () => {
-    const post = vi.fn(ok)
+    const post = vi.fn<typeof fetch>(ok)
     const send = makeDeliver(config, () => Promise.resolve(false), post)
     expect(await send('{}')).toBeUndefined()
     expect(post).not.toHaveBeenCalled()
   })
 
   it('posts without cookies or a referrer', async () => {
-    const post = vi.fn(ok)
+    const post = vi.fn<typeof fetch>(ok)
     const send = makeDeliver(config, () => Promise.resolve(true), post)
     expect(await send('{}')).toEqual({ statusCode: 200 })
     expect(post).toHaveBeenCalledWith(
