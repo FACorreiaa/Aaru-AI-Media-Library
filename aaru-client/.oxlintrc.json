@@ -152,9 +152,13 @@
     // Mostly Solid refs: `let el!: HTMLElement` is assigned by `ref={el}`,
     // which the rule does not see.
     "no-unassigned-vars": "warn", // 38
-    "unicorn/no-array-sort": "warn", // 29
+    // Off, not backlog: the fix it asks for, toSorted(), is ES2023 and the
+    // project's lib is ES2022. All 29 hits sorted an array made on the spot.
+    "unicorn/no-array-sort": "off",
     "vitest/require-mock-type-parameters": "error",
-    "no-await-in-loop": "warn", // 15
+    // Off, not backlog: all 15 hits wait because the next step needs the last
+    // one's answer (stream reads, paging, retries, writes in order).
+    "no-await-in-loop": "off",
     "typescript/consistent-return": "error",
     "unicorn/prefer-add-event-listener": "error",
     "no-shadow": "error",
