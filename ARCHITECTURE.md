@@ -1313,8 +1313,8 @@ SvelteKit scaffold). Same screens as the Apple apps, in the same order they ship
   imported only through its barrel `~/components/ui`. Its CSS variables point at Aaru's design
   tokens (`src/styles.css`), so the look is Aaru's. Routes and feature components compose those
   primitives; compositions such as `ConfirmDialog` and `Segmented` live in `src/components`, not
-  in `ui`. ESLint enforces the barrel and fails on raw form controls and modals. Motion stays in
-  `src/lib/motion.ts` (DESIGN.md §17).
+  in `ui`. The lint enforces the barrel (oxlint) and fails on raw form controls and modals
+  (ESLint). Motion stays in `src/lib/motion.ts` (DESIGN.md §17).
 - App shell (DESIGN.md §18): one pathless layout route, `routes/_shell.tsx`, wraps every `/app`
   page (files `_shell.app.tsx` and `_shell.app_.*.tsx`; URLs unchanged). Its `beforeLoad` is the
   one sign-in check (`requireSession`, through the query cache, with `next`), and its component

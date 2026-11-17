@@ -1,4 +1,5 @@
-# Web CI for aaru-client (REL-001). Deploys run from web-deploy.yml after this passes.
+# Web CI for aaru-client (REL-001). Deploys run from web-deploy.yml after this passes:
+# it keys on this workflow's name and needs every job below green.
 name: Web CI
 
 on:
@@ -13,6 +14,7 @@ on:
       - "design/tokens.json"
       - "scripts/generate-tokens.mjs"
       - ".github/workflows/ci-web.yml"
+      - ".github/actions/npm-setup/**"
   pull_request:
     paths:
       - "aaru-client/**"
@@ -23,38 +25,81 @@ on:
       - "design/tokens.json"
       - "scripts/generate-tokens.mjs"
       - ".github/workflows/ci-web.yml"
+      - ".github/actions/npm-setup/**"
   workflow_dispatch:
 
 concurrency:
   group: ci-web-${{ github.ref }}
   cancel-in-progress: true
 
+defaults:
+  run:
+    working-directory: aaru-client
+
+# Four independent jobs, no `needs:` between them, so they run side by side and each
+# reports on its own.
 jobs:
-  web:
-    name: check, lint, test, build
+  lint:
+    name: web lint
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: aaru-client
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: ./.github/actions/npm-setup
         with:
-          node-version: 24
-          cache: npm
-          cache-dependency-path: aaru-client/package-lock.json
-      - run: npm ci
-      - run: npm run check
-      - run: npm run lint
+          package: aaru-client
+      - name: Formatting (Prettier)
+        run: npm run check
+      - name: Lint (oxlint with type information, then ESLint for the JSX selectors)
+        run: npm run lint
+      - name: Colour tokens match design/tokens.json (and pass contrast)
+        run: npm run tokens:check
+
+  typecheck:
+    name: web typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/npm-setup
+        with:
+          package: aaru-client
       - run: npm run typecheck
       - name: API types match the spec
         run: |
           npm run api:generate
           git diff --exit-code -- src/lib/api/schema.d.ts \
             || { echo "::error::API types are stale. Run npm run api:generate in aaru-client and commit."; exit 1; }
-      - name: Colour tokens match design/tokens.json (and pass contrast)
-        run: npm run tokens:check
-      - run: npm test
+
+  test:
+    name: web test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # --changed compares against the base branch, so it needs the history.
+          fetch-depth: 0
+      - uses: ./.github/actions/npm-setup
+        with:
+          package: aaru-client
+      # A pull request runs the tests that import a file it changed; a change to the
+      # lockfile, package.json, tsconfig.json, the vitest config or CI itself reruns all
+      # of them (forceRerunTriggers in vitest.config.ts). main always runs the full suite.
+      - name: Tests affected by this pull request
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: npx vitest run --changed "origin/$BASE_REF" --passWithNoTests
+      - name: All tests
+        if: github.event_name != 'pull_request'
+        run: npm test
+
+  build:
+    name: web build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/npm-setup
+        with:
+          package: aaru-client
       - run: npm run build
       - name: Size budget (size-budget.json)
         run: npm run size

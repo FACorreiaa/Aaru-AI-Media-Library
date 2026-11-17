@@ -1,0 +1,170 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  // Profile: bug finding. Every rule in the correctness, suspicious and perf
+  // categories, plus the type-aware rules from pedantic that catch real
+  // defects. Run as `oxlint --type-aware` (npm run lint). pedantic, style and
+  // restriction stay off as whole categories: they are mostly taste.
+  // The JSX selectors oxlint cannot express still run in ESLint
+  // (eslint.config.js); formatting is Prettier's (npm run check).
+  // No react plugin: this is SolidJS, and its rules misread Solid's JSX.
+  "plugins": ["typescript", "unicorn", "oxc", "import", "promise", "vitest"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "perf": "error"
+  },
+  "env": { "browser": true, "node": true, "es2024": true },
+  "ignorePatterns": [
+    "worker-configuration.d.ts",
+    "src/routeTree.gen.ts",
+    "src/lib/api/schema.d.ts",
+    // Plain browser JavaScript served as-is, outside the TypeScript project.
+    "public/sw.js",
+    ".output/**",
+    "dist/**"
+  ],
+  "overrides": [
+    // `export {}` is what makes an ambient declaration file a module.
+    {
+      "files": ["**/*.d.ts"],
+      "rules": { "unicorn/require-module-specifiers": "off" }
+    },
+    // The web UI rule (CLAUDE.md): every control comes from shadcn-solid in
+    // components/ui, imported through its barrel. Inside components/ui the
+    // components import each other freely (the override after this one).
+    {
+      "files": ["src/**/*.{ts,tsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "regex": "^~/components/ui/.+",
+                "message": "Import UI from the barrel, '~/components/ui', not from its files."
+              },
+              {
+                "regex": "^\\.{1,2}/(.*/)?(components/)?ui(/.*)?$",
+                "message": "Import UI as '~/components/ui', not by a relative path."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/components/ui/**"],
+      "rules": { "no-restricted-imports": "off" }
+    },
+    // shadcn-solid's source as its registry ships it, so a later copy diffs
+    // cleanly against upstream. BACKLOG (vendored): rules only these files
+    // break (count as of 2026-11-17). They stay errors everywhere else.
+    {
+      "files": [
+        "src/components/ui/**",
+        "src/lib/cva.ts",
+        "src/lib/call-handler.ts",
+        "src/lib/combine-style.ts",
+        "src/hooks/use-mobile.ts"
+      ],
+      "rules": {
+        "import/consistent-type-specifier-style": ["warn", "prefer-top-level"], // 37
+        "import/no-duplicates": "warn", // 9
+        "typescript/no-unnecessary-type-assertion": "warn", // 8
+        "import/no-named-as-default-member": "warn", // 3
+        "typescript/no-redundant-type-constituents": "warn", // 1
+        "typescript/no-unsafe-function-type": "warn", // 1
+        "eqeqeq": ["warn", "always", { "null": "ignore" }] // 1
+      }
+    }
+  ],
+  "rules": {
+    // Type-aware bug rules that oxlint files under pedantic.
+    // `throw redirect()` is TanStack Router's control flow, not an error.
+    "typescript/only-throw-error": [
+      "error",
+      {
+        "allow": [
+          {
+            "from": "package",
+            "name": "Redirect",
+            "package": "@tanstack/router-core"
+          }
+        ]
+      }
+    ],
+    "typescript/prefer-promise-reject-errors": "error",
+    "typescript/return-await": "error",
+    "typescript/no-mixed-enums": "error",
+    // Non-type-aware pedantic rules that catch defects rather than style.
+    "eqeqeq": ["error", "always", { "null": "ignore" }],
+    "array-callback-return": "error",
+    "no-self-compare": "error",
+    "no-constructor-return": "error",
+
+    "no-unused-vars": [
+      "error",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_"
+      }
+    ],
+
+    // House rules carried over from @tanstack/eslint-config, which ESLint ran
+    // before oxlint took over. They sit outside the three categories above.
+    "no-case-declarations": "error",
+    "no-fallthrough": "error",
+    "no-regex-spaces": "error",
+    "no-var": "error",
+    "prefer-const": "error",
+    "typescript/ban-ts-comment": [
+      "error",
+      { "ts-expect-error": false, "ts-ignore": "allow-with-description" }
+    ],
+    "typescript/consistent-type-imports": [
+      "error",
+      { "prefer": "type-imports" }
+    ],
+    "typescript/method-signature-style": ["error", "property"],
+    "typescript/no-inferrable-types": ["error", { "ignoreParameters": true }],
+    "typescript/no-namespace": "error",
+    "typescript/no-unnecessary-condition": "error",
+    "typescript/no-unsafe-function-type": "error",
+    "typescript/prefer-for-of": "error",
+    "import/consistent-type-specifier-style": ["error", "prefer-top-level"],
+    "import/first": "error",
+    "import/newline-after-import": "error",
+    "import/no-commonjs": "error",
+    "import/no-duplicates": "error",
+    "unicorn/prefer-node-protocol": "error",
+
+    // BACKLOG. Rules of this profile that the existing code still breaks
+    // (count as of 2026-11-17, with --type-aware). They report as warnings so
+    // CI stays green while every clean rule above is already enforced. To
+    // retire one: fix its hits, then delete the line. Never add a rule here.
+    "typescript/no-unsafe-type-assertion": "warn", // 280 (189 in components/ui)
+    "unicorn/consistent-function-scoping": "warn", // 65
+    // Mostly Solid refs: `let el!: HTMLElement` is assigned by `ref={el}`,
+    // which the rule does not see.
+    "no-unassigned-vars": "warn", // 38
+    "unicorn/no-array-sort": "warn", // 29
+    "vitest/require-mock-type-parameters": "warn", // 21
+    "no-await-in-loop": "warn", // 15
+    "typescript/consistent-return": "warn", // 13
+    "unicorn/prefer-add-event-listener": "warn", // 9
+    "no-shadow": "warn", // 8 (6 in components/ui)
+    "promise/always-return": "warn", // 7
+    "oxc/no-map-spread": "warn", // 6
+    "typescript/no-misused-spread": "warn", // 3
+    "unicorn/prefer-set-has": "warn", // 2
+    "typescript/unbound-method": "warn", // 2
+    "typescript/no-base-to-string": "warn", // 2
+    "no-new": "warn", // 1
+    // The one hit copies a Set that listeners may change while it is walked.
+    "unicorn/no-useless-spread": "warn", // 1
+    "promise/no-callback-in-promise": "warn", // 1
+    "no-underscore-dangle": "warn", // 1
+    "typescript/no-implied-eval": "warn" // 1
+  }
+}

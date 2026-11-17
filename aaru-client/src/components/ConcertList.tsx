@@ -162,13 +162,13 @@ export function ConcertList(props: {
               q: searched.name,
               performerId: searched.performerId,
               scope: where,
-              ...(at ?? {}),
+              ...at,
               radiusKm: radius(),
               page,
             },
           })
         : await getConcertsNear({
-            data: { ...(at ?? {}), radiusKm: radius(), page },
+            data: { ...at, radiusKm: radius(), page },
           })
       if (request !== latest) return
       if (result.noPlace) {
