@@ -11,6 +11,11 @@ interface AppleSignInResult {
 }
 
 declare global {
+  // The two events Apple's script sends to the document.
+  interface DocumentEventMap {
+    AppleIDSignInOnSuccess: CustomEvent<AppleSignInResult>
+    AppleIDSignInOnFailure: CustomEvent<{ error?: string }>
+  }
   interface Window {
     AppleID?: {
       auth: {
@@ -63,8 +68,8 @@ export function AppleSignInButton(props: {
   const redirectUri = () => `${window.location.origin}/sign-in`
   const dark = resolvedScheme() === 'dark'
 
-  const onSuccess = (event: Event) => {
-    const result = (event as CustomEvent<AppleSignInResult>).detail
+  const onSuccess = (event: CustomEvent<AppleSignInResult>) => {
+    const result = event.detail
     const name = [result.user?.name?.firstName, result.user?.name?.lastName]
       .filter(Boolean)
       .join(' ')
@@ -76,9 +81,9 @@ export function AppleSignInButton(props: {
       redirectUri: redirectUri(),
     })
   }
-  const onFailure = (event: Event) => {
+  const onFailure = (event: CustomEvent<{ error?: string }>) => {
     // Closing Apple's popup is not an error worth showing.
-    const code = (event as CustomEvent<{ error?: string }>).detail.error
+    const code = event.detail.error
     if (
       code !== 'popup_closed_by_user' &&
       code !== 'user_cancelled_authorize'

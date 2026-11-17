@@ -12,8 +12,8 @@
  */
 export function focusFieldOnOpen(event: Event) {
   event.preventDefault()
-  const dialog = event.currentTarget as HTMLElement | null
-  if (!dialog) return
+  const dialog = event.currentTarget
+  if (!(dialog instanceof HTMLElement)) return
   setTimeout(() => {
     if (dialog.contains(document.activeElement)) return
     const field = dialog.querySelector<HTMLElement>('[autofocus]')

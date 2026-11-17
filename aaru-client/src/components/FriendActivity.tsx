@@ -178,7 +178,10 @@ function Reactions(props: {
                 ? 'bg-accent/15 text-ink ring-1 ring-accent'
                 : 'bg-surface'
             }`}
-            onClick={() => props.onReact(reaction.emoji as Reaction)}
+            onClick={() => {
+              const known = REACTIONS.find((r) => r === reaction.emoji)
+              if (known) props.onReact(known)
+            }}
           >
             <span aria-hidden="true">{reaction.emoji}</span>
             {reaction.count}

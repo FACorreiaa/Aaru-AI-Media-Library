@@ -3,6 +3,8 @@
 // origin, so no other site can hand the extension a token or read one. Mirrored in
 // `aaru-extension/src/protocol.ts`; change both together.
 
+import { isRecord } from '../record'
+
 /** Page → extension: are you there? Extension → page: `ready`. */
 export const PING = 'aaru-extension:ping'
 export const READY = 'aaru-extension:ready'
@@ -25,11 +27,12 @@ export function extensionMessage(
 ): ExtensionMessage | null {
   if (event.source !== self.window || event.origin !== self.origin) return null
   const data: unknown = event.data
-  if (typeof data !== 'object' || data === null) return null
-  const type = (data as { type?: unknown }).type
-  return typeof type === 'string' && TYPES.has(type)
-    ? (data as ExtensionMessage)
-    : null
+  return isExtensionMessage(data) ? data : null
+}
+
+/** By its type alone, as the handshake always has: the page trusts its own origin's extension. */
+function isExtensionMessage(data: unknown): data is ExtensionMessage {
+  return isRecord(data) && typeof data.type === 'string' && TYPES.has(data.type)
 }
 
 /** Where to get the extension. Empty until each store has listed it (owner submits). */

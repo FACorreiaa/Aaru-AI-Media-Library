@@ -10,6 +10,12 @@ import { useGroup } from '../components/groups/shell'
 import { PAGE_SIZE } from '../lib/groups/model'
 import { openChannel } from '../lib/groups/server'
 import type { GroupDetail } from '../lib/groups/server'
+import { isRecord } from '../lib/record'
+
+/** The group route's loader data, by the two parts the title reads. */
+function isGroupDetail(data: unknown): data is GroupDetail {
+  return isRecord(data) && isRecord(data.group) && Array.isArray(data.channels)
+}
 
 // GRP-005 on the web: one channel, with the member list folding away on the right. A `shelf`
 // channel (a List in the UI) is a list rather than a conversation; title and watch channels put
@@ -28,10 +34,11 @@ export const Route = createFileRoute('/_shell/app_/groups/$groupId/$channelId')(
     }),
     // UX-013: "#general · Book club · Aaru".
     head: ({ matches, params }) => {
-      const group = (
+      // The router types `matches` as this route's alone; the group's is among them.
+      const loaded = (
         matches as ReadonlyArray<{ routeId: string; loaderData?: unknown }>
-      ).find((m) => m.routeId === '/_shell/app_/groups/$groupId')
-        ?.loaderData as GroupDetail | undefined
+      ).find((m) => m.routeId === '/_shell/app_/groups/$groupId')?.loaderData
+      const group = isGroupDetail(loaded) ? loaded : undefined
       const channel = group?.channels.find((c) => c.id === params.channelId)
       return {
         meta: [

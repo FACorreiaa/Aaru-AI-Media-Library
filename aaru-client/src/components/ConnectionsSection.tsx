@@ -116,7 +116,10 @@ export function ConnectionsSection(props: { connections: AgentToken[] }) {
               aria-label="Agent"
               class="flex flex-wrap gap-2"
               value={choice()}
-              onChange={(next) => setChoice(next as Choice)}
+              onChange={(next) => {
+                const picked = CHOICES.find((option) => option === next)
+                if (picked) setChoice(picked)
+              }}
             >
               <For each={CHOICES}>
                 {(option) => (

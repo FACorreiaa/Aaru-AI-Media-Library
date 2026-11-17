@@ -586,8 +586,8 @@ function AppSidebar(props: {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
-              onClick={(event: MouseEvent) =>
-                props.onSearch(event.currentTarget as Element)
+              onClick={(event: MouseEvent & { currentTarget: Element }) =>
+                props.onSearch(event.currentTarget)
               }
               tooltip="Search (⌘K)"
               aria-keyshortcuts="Meta+K Control+K"

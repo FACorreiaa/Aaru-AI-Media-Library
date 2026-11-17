@@ -54,8 +54,9 @@ export function parseMarkdown(source: string): Block[] {
     const first = lines[0]
     const heading = /^(#{1,3})\s+(.*)$/.exec(first)
     if (heading && lines.length === 1) {
-      const level = heading[1].length as 1 | 2 | 3
-      blocks.push({ kind: `h${level}`, text: parseInline(heading[2]) })
+      // One to three hashes, by the pattern above.
+      const kind = (['h1', 'h2', 'h3'] as const)[heading[1].length - 1]
+      blocks.push({ kind, text: parseInline(heading[2]) })
     } else if (/^[-*]\s+/.test(first)) {
       const items: string[] = []
       for (const line of lines) {

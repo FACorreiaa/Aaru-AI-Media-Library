@@ -12,7 +12,7 @@ import { EpisodeRow } from './EpisodeRow'
  * oldest miss first, so catching up starts where it should. */
 export default function CatchUpList(props: {
   shows: MissedShow[]
-  pending: Set<string>
+  pending: ReadonlySet<string>
   keyOf: (entry: CalendarEntry) => string
   onOpen: (entry: CalendarEntry) => void
   onToggle: (entry: CalendarEntry) => void

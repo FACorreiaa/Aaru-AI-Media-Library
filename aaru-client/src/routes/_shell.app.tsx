@@ -204,6 +204,10 @@ function Home() {
   const [lists, setLists] = createSignal<ListSummary[] | null>(null)
   const [airings, setAirings] = createSignal<CalendarEntry[]>([])
   const [now, setNow] = createSignal<Date | null>(null)
+  const todayKey = () => {
+    const current = now()
+    return current ? localDayKey(current) : null
+  }
   const [airingsReady, setAiringsReady] = createSignal(false)
   const [busy, setBusy] = createSignal<ReadonlySet<string>>(new Set())
   const [problem, setProblem] = createSignal<string | null>(null)
@@ -487,8 +491,11 @@ function Home() {
         event.type === 'updated' &&
         event.action.type === 'success' &&
         event.query.queryKey[0] === PROGRESS_KEY[0]
-      )
-        setProgress(event.query.state.data as Progress)
+      ) {
+        // Read back through the typed query: the cache's own event carries no type.
+        const fresh = queryClient.getQueryData(progressQuery.queryKey)
+        if (fresh) setProgress(fresh)
+      }
     })
     onCleanup(unsubscribe)
     loadLibrary()
@@ -1045,7 +1052,7 @@ function Home() {
                       ),
                     )
                   }
-                  today={now() ? localDayKey(now() as Date) : null}
+                  today={todayKey()}
                   onAdded={(entry) => void added(entry)}
                   onProblem={setProblem}
                 />

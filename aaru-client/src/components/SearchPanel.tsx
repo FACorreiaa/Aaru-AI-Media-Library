@@ -185,7 +185,10 @@ export function SearchPanel(props: {
   return (
     <Tabs
       value={kind()}
-      onChange={(next) => setKind(next as Scope)}
+      onChange={(next) => {
+        const picked = SCOPES.find((scope) => scope.kind === next)
+        if (picked) setKind(picked.kind)
+      }}
       class="flex max-h-[85dvh] w-full flex-col gap-0"
     >
       <div class="flex items-center justify-between gap-4 border-b border-line px-5 py-4">

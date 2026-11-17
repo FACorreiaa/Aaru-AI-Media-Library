@@ -31,7 +31,7 @@ export interface MonthCalendarProps {
   channels?: AiringChannel[]
   /** The month is still loading: the agenda shows placeholders, not "nothing airs". */
   waiting: boolean
-  pending: Set<string>
+  pending: ReadonlySet<string>
   keyOf: (entry: CalendarEntry) => string
   onSelect: (day: string) => void
   onMonth: (delta: number) => void
@@ -261,7 +261,7 @@ function Agenda(props: {
   byDay: Map<string, CalendarEntry[]>
   channels?: AiringChannel[]
   waiting: boolean
-  pending: Set<string>
+  pending: ReadonlySet<string>
   keyOf: (entry: CalendarEntry) => string
   onOpen: (entry: CalendarEntry) => void
   onToggle: (entry: CalendarEntry) => void

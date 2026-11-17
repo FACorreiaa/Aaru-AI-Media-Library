@@ -486,7 +486,10 @@ export function ConcertList(props: {
               label: `${km} km`,
             }))}
             value={String(radius())}
-            onChange={(next) => setRadius(Number(next) as Radius)}
+            onChange={(next) => {
+              const km = RADII.find((option) => String(option) === next)
+              if (km) setRadius(km)
+            }}
           />
         </Show>
 

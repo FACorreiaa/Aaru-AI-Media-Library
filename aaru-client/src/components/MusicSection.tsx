@@ -159,7 +159,10 @@ export function MusicSection(props: {
               aria-label="Scrobbler"
               class="flex flex-wrap gap-2"
               value={choice()}
-              onChange={(next) => setChoice(next as Scrobbler)}
+              onChange={(next) => {
+                const picked = SCROBBLERS.find((option) => option === next)
+                if (picked) setChoice(picked)
+              }}
             >
               <For each={SCROBBLERS}>
                 {(option) => (
