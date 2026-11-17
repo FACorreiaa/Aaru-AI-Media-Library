@@ -80,6 +80,6 @@
     "promise/always-return": "warn", // 1
     "promise/no-promise-in-callback": "warn", // 1
     "no-await-in-loop": "warn", // 1
-    "typescript/consistent-return": "warn" // 1
+    "typescript/consistent-return": "error"
   }
 }
