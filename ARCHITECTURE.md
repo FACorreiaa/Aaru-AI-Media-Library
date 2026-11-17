@@ -501,6 +501,7 @@ A build replaces its World in one transaction. Two stored Worlds that turn out t
 into the older, so a World keeps its id. A source that failed makes the build partial: it is
 stored only when no complete World is there, and the title is tried again after 5 minutes,
 doubling to 6 hours, five times. A look is believed for 30 days, as the relation cache is.
+Libraries that existed before Worlds are queued once by migration 00018, at the import priority.
 
 Reads never walk a provider. `GET /v1/titles/{id}/world` finds the World by the title's ids
 (`WorldService.For`): `ready` with its lanes, `building` when the read queued it or it is in the

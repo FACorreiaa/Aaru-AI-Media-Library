@@ -3474,6 +3474,9 @@ the next step marked, a count, a share card and "Add the rest".
   `WorldMap`, the share image and "Add the rest", and `/app/worlds`, linked from Library. Never
   opened in a browser. Size budgets: `/` and the title route re-seeded just above measured (two
   more routes in the shared route table), the two new routes added.
+- **Backfill (built 2026-11-17).** Migration 00018 queues every library title never looked at,
+  once, at the import priority, so accounts that existed before Worlds get theirs without adding
+  anything. The worker builds one at a time, so a large backlog takes hours.
 - Known limits: a World is only what provider ids join; AniList is asked about main-chain titles
   only, so a side story's own sequels are not reached; lanes read in release order, since story
   order exists only inside one chain; an import's backlog builds at the providers' pace.
