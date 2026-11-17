@@ -5,6 +5,7 @@
 package sqlc
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -101,4 +102,16 @@ type Title struct {
 	PageCountAttemptedAt *time.Time
 	ChapterCount         *int32
 	VolumeCount          *int32
+}
+
+type World struct {
+	ID         uuid.UUID
+	RootKey    string
+	Name       string
+	Links      json.RawMessage
+	Truncated  bool
+	Partial    bool
+	TitleCount int32
+	BuiltAt    time.Time
+	CreatedAt  time.Time
 }

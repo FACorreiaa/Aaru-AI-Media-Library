@@ -36,11 +36,17 @@ library layer stay separate, external IDs stored whenever known, no second backe
 
 ## Decisions recorded 2026-11-17
 
-- **Aaru never plays or sources a stream.** No Stremio-style addons, no player, no stream
-  resource: App Store guideline 5.2.3, and the existing "no Stremio `stream`" rule. It may send
-  the user to the legal service. CAT-014 is built on that: the title page lists who streams,
-  rents and sells a film or show in the device's country and links to TMDB's page of them. TMDB
-  gives one link per title and country, not one per service; no per-service link is guessed.
+- **Worlds (GRAPH-007): one story universe across every kind.** The one big feature picked after
+  an audit of what sets Aaru apart: a cross-media map only a tracker of six kinds can draw.
+- **It supersedes "never the whole franchise" (2026-11-06) for this surface only.** A World
+  reaches 4 hops and 60 titles from its first-released title; a larger universe is cut nearest
+  that title and marked as cut. The title page's graph keeps its bound (2 hops, 40 titles).
+- **The count includes every title on the map**, side stories and spin-offs too.
+- **A World is named after its earliest-released title.** No franchise label from Wikidata.
+- **Worlds get their own page**, and a strip on each title's page that opens the map.
+- **Never a recommendation.** Catalog data plus the user's own marks, joined by id. "Add the
+  rest" is an import the user reviews, as the relation chain's is. The share card is an image the
+  device renders; no public link carries anyone's progress.
 
 ## Decisions recorded 2026-11-14
 
@@ -1072,6 +1078,7 @@ account or a stranger that has not happened yet.
 | GRAPH-003 | Built, unverified | `list_roadmaps`, `capture.Place`, `RoadmapSteps.tsx`, `RoadmapSteps.swift`, `POST /v1/titles/{id}/relations/chain` | Stub model only; not looked at on a screen |
 | GRAPH-004 | Built, unverified | `GET /v1/lists/{id}/graph`, `title_relations`, `RelationGraphCanvas` (web, Apple) | Stub model only; not looked at on a screen |
 | GRAPH-005 | Built, unverified | `GET /v1/titles/{id}/tree`, `catalog/tree.go`, `catalog/credits*.go`, `core/tree.go`, migration 00012 `catalog_credits` | Server built 2026-11-11; stub providers only. The new AniList, Open Library and MusicBrainz queries were run by hand against the live APIs; TMDB's were not (no key on the dev machine), so a show's creator branch (`tv_credits`, job Creator) is unproven. Web built 2026-11-11 (`TitleTree.tsx`, `lib/title/tree.ts`): looked at in headless Chrome against a local API for a book, a manga and an album, desktop and phone width, with the finish dialog; films and shows not seen (no TMDB key). Apple built 2026-11-11 (`TitleTree.swift`, `TitleTreeModel.swift`): iOS simulator and Mac builds pass; not looked at on a screen. Needs the API promoted |
+| GRAPH-007 | In progress | Server storage and builder: `internal/db/migrations/00017_worlds.sql`, `catalog/world.go`, `catalog/world_service.go`, `catalog.WorldWorker`; tests `catalog/world_test.go`, `catalog/world_service_test.go` | Stub sources only: never built from real providers. No endpoint and no client yet |
 | GRAPH-006 | Built, unverified | `GET /v1/titles/{id}/tree?cast=true`, `catalog/credits_sources.go` (`tmdbCast`, `billedPart`), `catalog/tree.go` (`people`), `core/tree.go` | Server built 2026-11-11; stub TMDB only (no key on the dev machine), so `aggregate_credits` inside `append_to_response` and the cameo and talk-show filters are unproven on real data: run `credits_live_test.go` with `AARU_LIVE=1` and a key. Web built 2026-11-11 (`TitleTree.tsx` `TitleTreeView`, `lib/title/tree.ts` `treeFilters`/`filterTree`): unit tests only, not looked at in a browser. Apple built 2026-11-11 (`TitleTreeFiltered`, `TitleTree.filters`/`showing`): iOS simulator and Mac builds pass; not looked at on a screen. Needs the API promoted |
 | IMP-021 | Built, unverified | `POST /v1/imports/{id}/match-all`, `catalog/guess.go`, `imports/matchall.go`, `aaru-ios/Aaru/Capture/MatchAllButton.swift` | Web run locally: real Open Library, stub model, 8 of 10 rows filled in about 12 seconds. iOS builds and has not been tapped. Needs the API promoted |
 | PRV-001 | Done | #27 8d5ddc3; docs/providers.md, AboutView.swift | privacy@ routing not set up |
@@ -3445,6 +3452,29 @@ only: not yet asked of the real model.
   the first. The series and adaptation rows always stay. A chip filters what is already loaded.
 - Anime, manga, books and albums are unchanged.
 - Out: more than two actors, co-directors, an actor's works across media, a person's page.
+
+### GRAPH-007 · Worlds · L · owner 2026-11-17
+**Needs:** GRAPH-001, GRAPH-002.
+One story universe across every kind, as a map: a lane per kind, the user's finished titles lit,
+the next step marked, a count, a share card and "Add the rest".
+
+- **Storage and builder (built 2026-11-17).** `catalog.BuildWorld` walks the relation sources
+  from a title with the graph's own builder and wider bounds (4 hops, 60 titles, 80 lookups),
+  following only sequel, side story, spin-off and adaptation links. It starts over from the
+  earliest-released title it finds, so the same World comes back from any of its titles. Stored
+  in `worlds`, `world_titles` and `world_keys` (migration 00017); a title finds its World by any
+  of its ids. `catalog.WorldWorker` leases `world_builds` one at a time: a title added by hand
+  goes first, an import's titles behind it. A source that fails leaves a partial World, which
+  never replaces a complete one and is tried again (5 minutes, doubling, five attempts).
+- **API (next).** `GET /v1/titles/{id}/world`, `GET /v1/me/worlds`,
+  `POST /v1/titles/{id}/world/plan`. Reads are from the database only.
+- **Clients (after).** `WorldStrip` on the title page, `WorldMap`, a Worlds page,
+  `WorldShareCard`; iPhone, iPad and Mac, then the web.
+- Known limits: a World is only what provider ids join; AniList is asked about main-chain titles
+  only, so a side story's own sequels are not reached; lanes read in release order, since story
+  order exists only inside one chain; an import's backlog builds at the providers' pace.
+- Out: a public link with progress, the owl emitting a World, cross-lane story order, a
+  franchise name from Wikidata.
 
 ## P2 · Web (`aaru-client`)
 

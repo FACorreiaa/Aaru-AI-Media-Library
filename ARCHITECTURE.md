@@ -473,6 +473,32 @@ themselves; a title an earlier person's branch shows is not repeated. The flag e
 client generated before the kinds existed cannot decode them. The clients filter the person rows
 themselves: there is no per-person request.
 
+### Worlds (GRAPH-007)
+
+A World is the relation graph walked further: one story universe across every kind. The walk is
+the graph's own (`graphBuilder` in `catalog/relations.go`, its bounds now parameters), with a
+World's bounds (`WorldReach` 4, `WorldMaxTitles` 60, `WorldMaxLookups` 80) and only the links
+that are one story going on: sequel, side story, spin-off, adaptation. `catalog.BuildWorld`
+(`catalog/world.go`) starts over from the earliest-released title it finds, up to three times,
+so every title of a World builds the same set; a World already stored around the same ids keeps
+its first title unless an earlier one turns up. The layout is a lane per kind (`LaneOf`): each
+chain in release order, chains by their first release, a side story after the title it hangs
+from, lanes by the release of their first title.
+
+No request builds a World. The relation cache is one jsonb answer per provider node and cannot be
+walked in SQL, and listing a user's Worlds cannot pay for a walk per library title, so membership
+is stored: `worlds` (the root's key, the name, the links), `world_titles` (lane and place) and
+`world_keys` (every id of every title, and the TMDB show an AniList season is kept in). None has
+a user column. `world_builds` is the queue and the record that a title was looked at: adding a
+title by hand queues it first (`WorldPriorityOpened`), an applied import queues the user's
+never-seen titles behind (`EnqueueLibrary`). `catalog.WorldWorker` leases one row at a time with
+`FOR UPDATE SKIP LOCKED`, so the providers' pacers stay shared with every page.
+
+A build replaces its World in one transaction. Two stored Worlds that turn out to be one merge
+into the older, so a World keeps its id. A source that failed makes the build partial: it is
+stored only when no complete World is there, and the title is tried again after 5 minutes,
+doubling to 6 hours, five times. A look is believed for 30 days, as the relation cache is.
+
 ### Discover (DISC-001)
 
 `GET /v1/discover` is the one catalog read that is not a search: provider-curated public lists

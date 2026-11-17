@@ -322,6 +322,13 @@ func (s *Service) Apply(ctx context.Context, id, user uuid.UUID) (core.ImportJob
 	actionID := job.ActionID
 	if len(ops) > 0 {
 		s.Library.Committed(ctx, batch, "import", library.UserCaller.Actor, user)
+		// The new titles' Worlds are built behind the titles people open (GRAPH-007). An import
+		// that could not queue them still succeeded: opening a title queues its World.
+		if s.Catalog != nil {
+			if _, err := s.Catalog.Worlds.EnqueueLibrary(ctx, user); err != nil {
+				s.log().Warn("Worlds could not be queued after an import", "error", err.Error())
+			}
+		}
 	}
 	if job.Source == core.SourceCapture {
 		telemetry.Capture(telemetry.CapturePlanDecided, user, map[string]string{"decision": "approved"})

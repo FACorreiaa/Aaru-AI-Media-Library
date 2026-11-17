@@ -39,6 +39,10 @@ func (s *Server) Workers() []Worker {
 	if s.Catalog != nil {
 		// Keeps tracked shows' episodes, genres and book page counts current.
 		workers = append(workers, catalog.NewRefreshWorker(s.Catalog.Refresher, s.Log))
+		if s.Catalog.Worlds != nil && len(s.Catalog.Relations.Sources) > 0 {
+			// Builds queued Worlds one at a time, at the providers' pace (GRAPH-007).
+			workers = append(workers, &catalog.WorldWorker{Worlds: s.Catalog.Worlds, Log: s.Log})
+		}
 		if s.Catalog.Onboarding != nil {
 			// Loads the first-run rows at start and as they expire (ONB-001).
 			workers = append(workers, &catalog.OnboardingWarmer{Service: s.Catalog.Onboarding, Log: s.Log})
