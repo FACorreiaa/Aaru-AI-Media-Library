@@ -77,8 +77,10 @@ export function GoogleSignInButton(props: {
     const script = document.createElement('script')
     script.src = SDK
     script.async = true
-    script.onload = render
-    script.onerror = () => props.onError('Sign in with Google could not load.')
+    script.addEventListener('load', () => render())
+    script.addEventListener('error', () =>
+      props.onError('Sign in with Google could not load.'),
+    )
     document.head.appendChild(script)
   })
 

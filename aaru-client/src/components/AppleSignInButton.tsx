@@ -104,8 +104,10 @@ export function AppleSignInButton(props: {
     const script = document.createElement('script')
     script.src = SDK
     script.async = true
-    script.onload = () => void init()
-    script.onerror = () => props.onError('Sign in with Apple could not load.')
+    script.addEventListener('load', () => void init())
+    script.addEventListener('error', () =>
+      props.onError('Sign in with Apple could not load.'),
+    )
     document.head.appendChild(script)
   })
 

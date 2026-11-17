@@ -213,7 +213,7 @@ export function AssistantCard(props: {
     input.type = 'file'
     input.multiple = true
     input.accept = ACCEPT
-    input.onchange = () => void choose(input.files)
+    input.addEventListener('change', () => void choose(input.files))
     input.click()
   }
 

@@ -69,7 +69,7 @@ export function CaptureComposer(props: { kind?: 'book'; class?: string }) {
     input.type = 'file'
     input.multiple = true
     input.accept = 'image/jpeg,image/png,image/gif,image/webp,image/heic'
-    input.onchange = () => choose(input.files)
+    input.addEventListener('change', () => choose(input.files))
     input.click()
   }
   onCleanup(clearPictures)
