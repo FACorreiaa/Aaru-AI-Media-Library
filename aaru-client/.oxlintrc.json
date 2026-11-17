@@ -162,7 +162,7 @@
     "oxc/no-map-spread": "warn", // 6
     "typescript/no-misused-spread": "warn", // 3
     "unicorn/prefer-set-has": "error",
-    "typescript/unbound-method": "warn", // 2
+    "typescript/unbound-method": "error",
     "typescript/no-base-to-string": "warn", // 2
     "no-new": "error",
     // The one hit copies a Set that listeners may change while it is walked.
