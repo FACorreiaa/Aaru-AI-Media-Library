@@ -149,9 +149,9 @@
     // retire one: fix its hits, then delete the line. Never add a rule here.
     "typescript/no-unsafe-type-assertion": "warn", // 90
     "unicorn/consistent-function-scoping": "warn", // 65
-    // Mostly Solid refs: `let el!: HTMLElement` is assigned by `ref={el}`,
-    // which the rule does not see.
-    "no-unassigned-vars": "warn", // 38
+    // Off, not backlog: Solid's compiler assigns `let el` from `ref={el}`, which
+    // the rule cannot see. All 38 hits were refs.
+    "no-unassigned-vars": "off",
     // Off, not backlog: the fix it asks for, toSorted(), is ES2023 and the
     // project's lib is ES2022. All 29 hits sorted an array made on the spot.
     "unicorn/no-array-sort": "off",
