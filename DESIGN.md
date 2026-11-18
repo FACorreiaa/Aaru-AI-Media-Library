@@ -230,6 +230,19 @@ chips with the service's logo, grouped Stream, Rent, Buy. "All options" opens TM
 plays nothing and has no link per service. The JustWatch credit sits under the chips. Nothing to
 show is no section at all.
 
+**Worlds (GRAPH-007, 2026-11-17; web, iPhone, iPad, Mac).** A title that is part of a
+larger story says so in one panel above Related, the one lit edge in that part of the page: the
+World's name, "5 of 11", its kinds, a thin bar. It opens the map. The map is a row per kind, the
+way the story spread: books first if the book came first. Posters sit on a rail; the rail is
+accent between two finished titles, so the path walked is one lit line, and hairline ahead. A
+dashed rung drops to the lane a story crossed into and stops above its label. One title is
+ringed and says "Start here"; each lane's next says "Next"; what is not in the library is
+quieter, never hidden; a side story is smaller. The map fades in once and then holds still. It
+shows what exists and where the user stands, and suggests nothing. "Share my path" makes an
+image of dots, not posters: the user's own count, safe to post. "Add the rest" opens the import
+review, where everything is unticked or approved before a thing is added. A universe past the
+map's size says it is shown from its first title.
+
 **From here (GRAPH-005, 2026-11-11, web, iPhone, iPad, Mac).** Under Related, a small tree in the
 manner of a game's skill tree: this title on the left, ringed in the accent, a trunk down from it,
 and a labelled row branching off for the person who made it (the director, the creator, the

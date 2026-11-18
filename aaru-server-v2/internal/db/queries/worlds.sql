@@ -102,3 +102,38 @@ UPDATE world_builds SET
     state = CASE WHEN attempts >= @max_attempts THEN 'failed' ELSE 'queued' END,
     leased_until = NULL, run_after = @run_after, checked_at = @now
 WHERE title_id = @title_id;
+
+-- name: WorldKeyPosition :one
+-- Where in the World the title carrying any of these keys sits; the earliest when several do.
+SELECT "position" FROM world_keys
+WHERE world_id = @world_id AND node_key = ANY(sqlc.arg(node_keys)::text[])
+ORDER BY "position"
+LIMIT 1;
+
+-- name: UserWorlds :many
+-- The Worlds the user has at least one library item in (GRAPH-007), with one of their titles in
+-- each to open it from. The key expressions are catalog.NodeKeys written in SQL, for the ids a
+-- `titles` row holds; world_parity_test.go keeps the two the same.
+SELECT w.id, w.root_key, w.name, w.links, w.truncated, w.partial, w.title_count, w.built_at, w.created_at,
+    (array_agg(li.title_id ORDER BY k."position", li.title_id))[1]::uuid AS title_id
+FROM library_items li
+JOIN titles t ON t.id = li.title_id
+CROSS JOIN LATERAL (VALUES
+    ('anilist:' || t.anilist),
+    ('mal:' || CASE WHEN t.type = 'manga' THEN 'manga' ELSE 'anime' END || ':' || t.mal),
+    (CASE WHEN t.type IN ('movie', 'show') THEN 'tmdb:' || t.type || ':' || t.tmdb END),
+    ('imdb:' || t.imdb),
+    ('openlibrary:' || t.open_library),
+    ('musicbrainz:' || t.musicbrainz)
+) AS own(node_key)
+JOIN world_keys k ON k.node_key = own.node_key
+JOIN worlds w ON w.id = k.world_id
+WHERE li.user_id = @user_id
+GROUP BY w.id
+ORDER BY w.built_at DESC, w.id
+LIMIT sqlc.arg(max_worlds)::integer;
+
+-- name: WorldTitlesOfWorlds :many
+SELECT world_id, "position", node_key, lane, lane_position, side, node FROM world_titles
+WHERE world_id = ANY(sqlc.arg(world_ids)::uuid[])
+ORDER BY world_id, "position";

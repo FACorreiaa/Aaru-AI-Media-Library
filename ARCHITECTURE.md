@@ -260,6 +260,9 @@ POST   /v1/titles/resolve                 # LIB-006: a MediaRef's page; catalog 
 GET    /v1/titles/{id}/relations          # GRAPH-001: the relation graph, marked with the caller's library
 POST   /v1/titles/{id}/relations/chain    # GRAPH-003: the main chain as a capture to review
 GET    /v1/titles/{id}/tree               # GRAPH-005: the title tree, marked with the caller's library
+GET    /v1/titles/{id}/world              # GRAPH-007: the title's World, marked with the caller's library
+POST   /v1/titles/{id}/world/plan         # GRAPH-007: "Add the rest" as a capture to review
+GET    /v1/me/worlds                      # GRAPH-007: the Worlds the caller has a title in
 GET    /v1/lists/{id}/graph               # GRAPH-004: a list (a roadmap) in the relation graph's shape
 
 GET    /v1/calendar?from=&to=             # CAL-001
@@ -498,6 +501,19 @@ A build replaces its World in one transaction. Two stored Worlds that turn out t
 into the older, so a World keeps its id. A source that failed makes the build partial: it is
 stored only when no complete World is there, and the title is tried again after 5 minutes,
 doubling to 6 hours, five times. A look is believed for 30 days, as the relation cache is.
+Libraries that existed before Worlds are queued once by migration 00018, at the import priority.
+
+Reads never walk a provider. `GET /v1/titles/{id}/world` finds the World by the title's ids
+(`WorldService.For`): `ready` with its lanes, `building` when the read queued it or it is in the
+queue, `none` once a look found nothing. The caller's marks are the relation graph's
+(`RelationService.marksFor`), so an anime kept as one TMDB show lights every season of it.
+`World.Progress` reads the count (side titles included), each lane's `next` (its first title not
+finished or dropped, side titles aside) and `startHere`: a title in progress, else the next of
+the lane the caller finished most of. `GET /v1/me/worlds` is one query that writes `NodeKeys` in
+SQL against `world_keys` (`world_parity_test.go` keeps the two the same), then the same marks and
+progress, at most 100. `POST /v1/titles/{id}/world/plan` sends the titles with no mark, in the
+World's order, to `Imports.CreateCapture` by exact ids, as "Add the chain" does: the user reviews
+an import, and each title lands as `wishlist`.
 
 ### Discover (DISC-001)
 

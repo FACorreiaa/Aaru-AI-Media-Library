@@ -26,6 +26,7 @@ struct LibraryView: View {
     #endif
     @AppStorage("library.layout") private var layout = LibraryLayout.grid
     @State private var showsInsights = false
+    @State private var showsWorlds = false
     @State private var recap: RecapPeriod?
     /// The row whose "Add to list…" was chosen.
     @State private var listTarget: LibraryRow?
@@ -85,6 +86,7 @@ struct LibraryView: View {
                         .assistantButton()
                 }
                 .navigationDestination(isPresented: $showsInsights) { InsightsView(api: api, library: library) }
+                .navigationDestination(isPresented: $showsWorlds) { WorldsView(api: api) }
                 .sheet(item: $listTarget) { row in
                     if let entry = library.entry(row.id) {
                         ListPickerSheet(
@@ -232,6 +234,7 @@ struct LibraryView: View {
                     Label("Rows", systemImage: "list.bullet").tag(LibraryLayout.list)
                 }
                 Divider()
+                Button("Worlds", systemImage: "point.3.filled.connected.trianglepath.dotted") { showsWorlds = true }
                 Button("Insights", systemImage: "chart.bar") { showsInsights = true }
                 // Listens is a view of the Music page (NAV-002).
                 Button("Listens", systemImage: "music.note.list") { router.showListens() }

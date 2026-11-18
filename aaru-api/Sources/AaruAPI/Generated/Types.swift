@@ -576,6 +576,11 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /v1/me/profile/stats`.
     /// - Remark: Generated from `#/paths//v1/me/profile/stats/get(getProfileStats)`.
     func getProfileStats(_ input: Operations.GetProfileStats.Input) async throws -> Operations.GetProfileStats.Output
+    /// The Worlds the caller has at least one library item in (GRAPH-007), each with how far they are: those with something left first, the furthest along leading, then the finished ones. At most 100. Only Worlds already built are listed; an import's titles appear as their Worlds are built.
+    ///
+    /// - Remark: HTTP `GET /v1/me/worlds`.
+    /// - Remark: Generated from `#/paths//v1/me/worlds/get(listMyWorlds)`.
+    func listMyWorlds(_ input: Operations.ListMyWorlds.Input) async throws -> Operations.ListMyWorlds.Output
     /// What the user watched and read in one calendar year or month of their time zone (GAM-006a), in all time (GAM-006c), or in the last 7 or 30 days (GAM-006d). Derived only from their own library. Imported history counts only where it carries a real date.
     ///
     /// - Remark: HTTP `GET /v1/me/stats`.
@@ -767,6 +772,16 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/titles/{id}/relations/chain`.
     /// - Remark: Generated from `#/paths//v1/titles/{id}/relations/chain/post(planRelationChain)`.
     func planRelationChain(_ input: Operations.PlanRelationChain.Input) async throws -> Operations.PlanRelationChain.Output
+    /// The World a title belongs to (GRAPH-007): one story universe across every kind, the titles the relation graph joins through sequels, side stories, spin-offs and adaptations, with a lane per kind, marked with the caller's library. Catalog data, the same for every user: nothing in it is a recommendation, and reading it writes nothing to the library. Read from the server's store only. `state` is `building` while the World is queued (ask again in a few seconds) and `none` when the title relates to nothing or sits outside a cut universe; both come without lanes.
+    ///
+    /// - Remark: HTTP `GET /v1/titles/{id}/world`.
+    /// - Remark: Generated from `#/paths//v1/titles/{id}/world/get(getTitleWorld)`.
+    func getTitleWorld(_ input: Operations.GetTitleWorld.Input) async throws -> Operations.GetTitleWorld.Output
+    /// "Add the rest" (GRAPH-007): the titles of the title's World that are not in the caller's library, in the World's order, as a capture to review, with exact ids. Approving adds them to Plan to watch or read. Spends one capture, as any capture does; writes nothing to the library by itself. 422 when there is no World yet or nothing is left to add.
+    ///
+    /// - Remark: HTTP `POST /v1/titles/{id}/world/plan`.
+    /// - Remark: Generated from `#/paths//v1/titles/{id}/world/plan/post(planWorldRest)`.
+    func planWorldRest(_ input: Operations.PlanWorldRest.Input) async throws -> Operations.PlanWorldRest.Output
     /// The title tree (GRAPH-005), "From here": the title as the root and branches of up to five titles, the person who made it (a film's director, a show's creator, an anime's main studio, a manga's or book's author, an album's artist), its series and its adaptations, each marked with the caller's library. With `cast=true` a film or show also has a branch for each of its first two billed actors (GRAPH-006). Catalog data, the same for every user: reading it writes nothing, and nothing in it is personal. A tree that is missing titles because a source failed or ran out of time says `partial`.
     ///
     /// - Remark: HTTP `GET /v1/titles/{id}/tree`.
@@ -2508,6 +2523,13 @@ extension APIProtocol {
     public func getProfileStats(headers: Operations.GetProfileStats.Input.Headers = .init()) async throws -> Operations.GetProfileStats.Output {
         try await getProfileStats(Operations.GetProfileStats.Input(headers: headers))
     }
+    /// The Worlds the caller has at least one library item in (GRAPH-007), each with how far they are: those with something left first, the furthest along leading, then the finished ones. At most 100. Only Worlds already built are listed; an import's titles appear as their Worlds are built.
+    ///
+    /// - Remark: HTTP `GET /v1/me/worlds`.
+    /// - Remark: Generated from `#/paths//v1/me/worlds/get(listMyWorlds)`.
+    public func listMyWorlds(headers: Operations.ListMyWorlds.Input.Headers = .init()) async throws -> Operations.ListMyWorlds.Output {
+        try await listMyWorlds(Operations.ListMyWorlds.Input(headers: headers))
+    }
     /// What the user watched and read in one calendar year or month of their time zone (GAM-006a), in all time (GAM-006c), or in the last 7 or 30 days (GAM-006d). Derived only from their own library. Imported history counts only where it carries a real date.
     ///
     /// - Remark: HTTP `GET /v1/me/stats`.
@@ -2910,6 +2932,32 @@ extension APIProtocol {
         try await planRelationChain(Operations.PlanRelationChain.Input(
             path: path,
             query: query,
+            headers: headers
+        ))
+    }
+    /// The World a title belongs to (GRAPH-007): one story universe across every kind, the titles the relation graph joins through sequels, side stories, spin-offs and adaptations, with a lane per kind, marked with the caller's library. Catalog data, the same for every user: nothing in it is a recommendation, and reading it writes nothing to the library. Read from the server's store only. `state` is `building` while the World is queued (ask again in a few seconds) and `none` when the title relates to nothing or sits outside a cut universe; both come without lanes.
+    ///
+    /// - Remark: HTTP `GET /v1/titles/{id}/world`.
+    /// - Remark: Generated from `#/paths//v1/titles/{id}/world/get(getTitleWorld)`.
+    public func getTitleWorld(
+        path: Operations.GetTitleWorld.Input.Path,
+        headers: Operations.GetTitleWorld.Input.Headers = .init()
+    ) async throws -> Operations.GetTitleWorld.Output {
+        try await getTitleWorld(Operations.GetTitleWorld.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// "Add the rest" (GRAPH-007): the titles of the title's World that are not in the caller's library, in the World's order, as a capture to review, with exact ids. Approving adds them to Plan to watch or read. Spends one capture, as any capture does; writes nothing to the library by itself. 422 when there is no World yet or nothing is left to add.
+    ///
+    /// - Remark: HTTP `POST /v1/titles/{id}/world/plan`.
+    /// - Remark: Generated from `#/paths//v1/titles/{id}/world/plan/post(planWorldRest)`.
+    public func planWorldRest(
+        path: Operations.PlanWorldRest.Input.Path,
+        headers: Operations.PlanWorldRest.Input.Headers = .init()
+    ) async throws -> Operations.PlanWorldRest.Output {
+        try await planWorldRest(Operations.PlanWorldRest.Input(
+            path: path,
             headers: headers
         ))
     }
@@ -11697,6 +11745,318 @@ public enum Components {
                 case from
                 case to
                 case relation
+            }
+        }
+        /// `ready`: the World is here. `building`: it is queued or being built; ask again in a few seconds. `none`: the title relates to nothing, or sits outside a universe that was cut.
+        ///
+        /// - Remark: Generated from `#/components/schemas/WorldState`.
+        @frozen public enum WorldState: String, Codable, Hashable, Sendable, CaseIterable {
+            case ready = "ready"
+            case building = "building"
+            case none = "none"
+        }
+        /// The kind a World's lane holds. Anime is its own lane, series and films alike.
+        ///
+        /// - Remark: Generated from `#/components/schemas/WorldLaneKind`.
+        @frozen public enum WorldLaneKind: String, Codable, Hashable, Sendable, CaseIterable {
+            case book = "book"
+            case manga = "manga"
+            case film = "film"
+            case show = "show"
+            case anime = "anime"
+            case album = "album"
+        }
+        /// - Remark: Generated from `#/components/schemas/World`.
+        public struct World: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/World/state`.
+            public var state: Components.Schemas.WorldState
+            /// Stable while the World's ids hold. Absent unless `ready`.
+            ///
+            /// - Remark: Generated from `#/components/schemas/World/id`.
+            public var id: Swift.String?
+            /// The name of its first-released title. Absent unless `ready`.
+            ///
+            /// - Remark: Generated from `#/components/schemas/World/name`.
+            public var name: Swift.String?
+            /// Every title on the map, side titles included.
+            ///
+            /// - Remark: Generated from `#/components/schemas/World/total`.
+            public var total: Swift.Int
+            /// How many of them the caller has finished.
+            ///
+            /// - Remark: Generated from `#/components/schemas/World/finished`.
+            public var finished: Swift.Int
+            /// The lanes' kinds, in the order the lanes are drawn.
+            ///
+            /// - Remark: Generated from `#/components/schemas/World/kinds`.
+            public var kinds: [Components.Schemas.WorldLaneKind]
+            /// One per kind, ordered by the release of its first title.
+            ///
+            /// - Remark: Generated from `#/components/schemas/World/lanes`.
+            public var lanes: [Components.Schemas.WorldLane]
+            /// How the titles stand to each other, by key, written forward: `sequel`, `side_story`, `spin_off` and `adaptation` only.
+            ///
+            /// - Remark: Generated from `#/components/schemas/World/links`.
+            public var links: [Components.Schemas.RelationEdge]
+            /// Key of the one title to go to: one in progress, else the next of the lane the caller is furthest into. Absent when nothing is left.
+            ///
+            /// - Remark: Generated from `#/components/schemas/World/startHere`.
+            public var startHere: Swift.String?
+            /// Key of the title the World was asked for.
+            ///
+            /// - Remark: Generated from `#/components/schemas/World/anchor`.
+            public var anchor: Swift.String?
+            /// True when the universe is larger than a World holds and was cut nearest its first title.
+            ///
+            /// - Remark: Generated from `#/components/schemas/World/truncated`.
+            public var truncated: Swift.Bool
+            /// True when a source failed or ran out of time; the World may miss titles.
+            ///
+            /// - Remark: Generated from `#/components/schemas/World/partial`.
+            public var partial: Swift.Bool
+            /// Creates a new `World`.
+            ///
+            /// - Parameters:
+            ///   - state:
+            ///   - id: Stable while the World's ids hold. Absent unless `ready`.
+            ///   - name: The name of its first-released title. Absent unless `ready`.
+            ///   - total: Every title on the map, side titles included.
+            ///   - finished: How many of them the caller has finished.
+            ///   - kinds: The lanes' kinds, in the order the lanes are drawn.
+            ///   - lanes: One per kind, ordered by the release of its first title.
+            ///   - links: How the titles stand to each other, by key, written forward: `sequel`, `side_story`, `spin_off` and `adaptation` only.
+            ///   - startHere: Key of the one title to go to: one in progress, else the next of the lane the caller is furthest into. Absent when nothing is left.
+            ///   - anchor: Key of the title the World was asked for.
+            ///   - truncated: True when the universe is larger than a World holds and was cut nearest its first title.
+            ///   - partial: True when a source failed or ran out of time; the World may miss titles.
+            public init(
+                state: Components.Schemas.WorldState,
+                id: Swift.String? = nil,
+                name: Swift.String? = nil,
+                total: Swift.Int,
+                finished: Swift.Int,
+                kinds: [Components.Schemas.WorldLaneKind],
+                lanes: [Components.Schemas.WorldLane],
+                links: [Components.Schemas.RelationEdge],
+                startHere: Swift.String? = nil,
+                anchor: Swift.String? = nil,
+                truncated: Swift.Bool,
+                partial: Swift.Bool
+            ) {
+                self.state = state
+                self.id = id
+                self.name = name
+                self.total = total
+                self.finished = finished
+                self.kinds = kinds
+                self.lanes = lanes
+                self.links = links
+                self.startHere = startHere
+                self.anchor = anchor
+                self.truncated = truncated
+                self.partial = partial
+            }
+            public enum CodingKeys: String, CodingKey {
+                case state
+                case id
+                case name
+                case total
+                case finished
+                case kinds
+                case lanes
+                case links
+                case startHere
+                case anchor
+                case truncated
+                case partial
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/WorldLane`.
+        public struct WorldLane: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/WorldLane/kind`.
+            public var kind: Components.Schemas.WorldLaneKind
+            /// In order: each chain of prequels and sequels by release, a side title after the title it hangs from.
+            ///
+            /// - Remark: Generated from `#/components/schemas/WorldLane/titles`.
+            public var titles: [Components.Schemas.WorldTitle]
+            /// Creates a new `WorldLane`.
+            ///
+            /// - Parameters:
+            ///   - kind:
+            ///   - titles: In order: each chain of prequels and sequels by release, a side title after the title it hangs from.
+            public init(
+                kind: Components.Schemas.WorldLaneKind,
+                titles: [Components.Schemas.WorldTitle]
+            ) {
+                self.kind = kind
+                self.titles = titles
+            }
+            public enum CodingKeys: String, CodingKey {
+                case kind
+                case titles
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/WorldTitle`.
+        public struct WorldTitle: Codable, Hashable, Sendable {
+            /// Stable within one World; what `links` name a title by.
+            ///
+            /// - Remark: Generated from `#/components/schemas/WorldTitle/key`.
+            public var key: Swift.String
+            /// Opens the title (POST /v1/titles/resolve) or adds it, as a search hit does.
+            ///
+            /// - Remark: Generated from `#/components/schemas/WorldTitle/ref`.
+            public var ref: Components.Schemas.MediaRef
+            /// - Remark: Generated from `#/components/schemas/WorldTitle/posterUrl`.
+            public var posterUrl: Swift.String?
+            /// `YYYY-MM-DD` when the source knows the day.
+            ///
+            /// - Remark: Generated from `#/components/schemas/WorldTitle/releaseDate`.
+            public var releaseDate: Swift.String?
+            /// The source's own word for it (`tv`, `movie`, `ova`, `novel`…), for a label.
+            ///
+            /// - Remark: Generated from `#/components/schemas/WorldTitle/format`.
+            public var format: Swift.String?
+            /// A side story or spin-off that leads nowhere further. Drawn quieter; still counted.
+            ///
+            /// - Remark: Generated from `#/components/schemas/WorldTitle/side`.
+            public var side: Swift.Bool
+            /// The first title of its lane the caller has not finished or dropped, side titles aside.
+            ///
+            /// - Remark: Generated from `#/components/schemas/WorldTitle/next`.
+            public var next: Swift.Bool
+            /// - Remark: Generated from `#/components/schemas/WorldTitle/libraryItemId`.
+            public var libraryItemId: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/WorldTitle/status`.
+            public var status: Components.Schemas.LibraryStatus?
+            /// Creates a new `WorldTitle`.
+            ///
+            /// - Parameters:
+            ///   - key: Stable within one World; what `links` name a title by.
+            ///   - ref: Opens the title (POST /v1/titles/resolve) or adds it, as a search hit does.
+            ///   - posterUrl:
+            ///   - releaseDate: `YYYY-MM-DD` when the source knows the day.
+            ///   - format: The source's own word for it (`tv`, `movie`, `ova`, `novel`…), for a label.
+            ///   - side: A side story or spin-off that leads nowhere further. Drawn quieter; still counted.
+            ///   - next: The first title of its lane the caller has not finished or dropped, side titles aside.
+            ///   - libraryItemId:
+            ///   - status:
+            public init(
+                key: Swift.String,
+                ref: Components.Schemas.MediaRef,
+                posterUrl: Swift.String? = nil,
+                releaseDate: Swift.String? = nil,
+                format: Swift.String? = nil,
+                side: Swift.Bool,
+                next: Swift.Bool,
+                libraryItemId: Swift.String? = nil,
+                status: Components.Schemas.LibraryStatus? = nil
+            ) {
+                self.key = key
+                self.ref = ref
+                self.posterUrl = posterUrl
+                self.releaseDate = releaseDate
+                self.format = format
+                self.side = side
+                self.next = next
+                self.libraryItemId = libraryItemId
+                self.status = status
+            }
+            public enum CodingKeys: String, CodingKey {
+                case key
+                case ref
+                case posterUrl
+                case releaseDate
+                case format
+                case side
+                case next
+                case libraryItemId
+                case status
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/MyWorlds`.
+        public struct MyWorlds: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/MyWorlds/worlds`.
+            public var worlds: [Components.Schemas.WorldSummary]
+            /// Creates a new `MyWorlds`.
+            ///
+            /// - Parameters:
+            ///   - worlds:
+            public init(worlds: [Components.Schemas.WorldSummary]) {
+                self.worlds = worlds
+            }
+            public enum CodingKeys: String, CodingKey {
+                case worlds
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/WorldSummary`.
+        public struct WorldSummary: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/WorldSummary/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/WorldSummary/name`.
+            public var name: Swift.String
+            /// - Remark: Generated from `#/components/schemas/WorldSummary/total`.
+            public var total: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/WorldSummary/finished`.
+            public var finished: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/WorldSummary/kinds`.
+            public var kinds: [Components.Schemas.WorldLaneKind]
+            /// One of the caller's own titles in it. Open the World with GET /v1/titles/{id}/world.
+            ///
+            /// - Remark: Generated from `#/components/schemas/WorldSummary/titleId`.
+            public var titleId: Swift.String
+            /// The one title to go to next. Absent when nothing is left.
+            ///
+            /// - Remark: Generated from `#/components/schemas/WorldSummary/startHere`.
+            public var startHere: Components.Schemas.MediaRef?
+            /// The poster of `startHere`, else of the World's first title.
+            ///
+            /// - Remark: Generated from `#/components/schemas/WorldSummary/posterUrl`.
+            public var posterUrl: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/WorldSummary/truncated`.
+            public var truncated: Swift.Bool?
+            /// Creates a new `WorldSummary`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - name:
+            ///   - total:
+            ///   - finished:
+            ///   - kinds:
+            ///   - titleId: One of the caller's own titles in it. Open the World with GET /v1/titles/{id}/world.
+            ///   - startHere: The one title to go to next. Absent when nothing is left.
+            ///   - posterUrl: The poster of `startHere`, else of the World's first title.
+            ///   - truncated:
+            public init(
+                id: Swift.String,
+                name: Swift.String,
+                total: Swift.Int,
+                finished: Swift.Int,
+                kinds: [Components.Schemas.WorldLaneKind],
+                titleId: Swift.String,
+                startHere: Components.Schemas.MediaRef? = nil,
+                posterUrl: Swift.String? = nil,
+                truncated: Swift.Bool? = nil
+            ) {
+                self.id = id
+                self.name = name
+                self.total = total
+                self.finished = finished
+                self.kinds = kinds
+                self.titleId = titleId
+                self.startHere = startHere
+                self.posterUrl = posterUrl
+                self.truncated = truncated
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case name
+                case total
+                case finished
+                case kinds
+                case titleId
+                case startHere
+                case posterUrl
+                case truncated
             }
         }
         /// - Remark: Generated from `#/components/schemas/TitleTree`.
@@ -32266,6 +32626,135 @@ public enum Operations {
             }
         }
     }
+    /// The Worlds the caller has at least one library item in (GRAPH-007), each with how far they are: those with something left first, the furthest along leading, then the finished ones. At most 100. Only Worlds already built are listed; an import's titles appear as their Worlds are built.
+    ///
+    /// - Remark: HTTP `GET /v1/me/worlds`.
+    /// - Remark: Generated from `#/paths//v1/me/worlds/get(listMyWorlds)`.
+    public enum ListMyWorlds {
+        public static let id: Swift.String = "listMyWorlds"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/me/worlds/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListMyWorlds.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ListMyWorlds.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ListMyWorlds.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.ListMyWorlds.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/me/worlds/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/me/worlds/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.MyWorlds)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.MyWorlds {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ListMyWorlds.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ListMyWorlds.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The caller's Worlds.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/worlds/get(listMyWorlds)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ListMyWorlds.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ListMyWorlds.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/me/worlds/get(listMyWorlds)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
     /// What the user watched and read in one calendar year or month of their time zone (GAM-006a), in all time (GAM-006c), or in the last 7 or 30 days (GAM-006d). Derived only from their own library. Imported history counts only where it carries a real date.
     ///
     /// - Remark: HTTP `GET /v1/me/stats`.
@@ -37070,6 +37559,300 @@ public enum Operations {
             /// Any error, in the shared shape.
             ///
             /// - Remark: Generated from `#/paths//v1/titles/{id}/relations/chain/post(planRelationChain)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// The World a title belongs to (GRAPH-007): one story universe across every kind, the titles the relation graph joins through sequels, side stories, spin-offs and adaptations, with a lane per kind, marked with the caller's library. Catalog data, the same for every user: nothing in it is a recommendation, and reading it writes nothing to the library. Read from the server's store only. `state` is `building` while the World is queued (ask again in a few seconds) and `none` when the title relates to nothing or sits outside a cut universe; both come without lanes.
+    ///
+    /// - Remark: HTTP `GET /v1/titles/{id}/world`.
+    /// - Remark: Generated from `#/paths//v1/titles/{id}/world/get(getTitleWorld)`.
+    public enum GetTitleWorld {
+        public static let id: Swift.String = "getTitleWorld"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/titles/{id}/world/GET/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/titles/{id}/world/GET/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.GetTitleWorld.Input.Path
+            /// - Remark: Generated from `#/paths/v1/titles/{id}/world/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetTitleWorld.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetTitleWorld.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetTitleWorld.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.GetTitleWorld.Input.Path,
+                headers: Operations.GetTitleWorld.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/titles/{id}/world/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/titles/{id}/world/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.World)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.World {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetTitleWorld.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetTitleWorld.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// The World, or why there is none yet.
+            ///
+            /// - Remark: Generated from `#/paths//v1/titles/{id}/world/get(getTitleWorld)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetTitleWorld.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetTitleWorld.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/titles/{id}/world/get(getTitleWorld)/responses/default`.
+            ///
+            /// HTTP response code: `default`.
+            case `default`(statusCode: Swift.Int, Components.Responses._Error)
+            /// The associated value of the enum case if `self` is `.`default``.
+            ///
+            /// - Throws: An error if `self` is not `.`default``.
+            /// - SeeAlso: `.`default``.
+            public var `default`: Components.Responses._Error {
+                get throws {
+                    switch self {
+                    case let .`default`(_, response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "default",
+                            response: self
+                        )
+                    }
+                }
+            }
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// "Add the rest" (GRAPH-007): the titles of the title's World that are not in the caller's library, in the World's order, as a capture to review, with exact ids. Approving adds them to Plan to watch or read. Spends one capture, as any capture does; writes nothing to the library by itself. 422 when there is no World yet or nothing is left to add.
+    ///
+    /// - Remark: HTTP `POST /v1/titles/{id}/world/plan`.
+    /// - Remark: Generated from `#/paths//v1/titles/{id}/world/plan/post(planWorldRest)`.
+    public enum PlanWorldRest {
+        public static let id: Swift.String = "planWorldRest"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/titles/{id}/world/plan/POST/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/titles/{id}/world/plan/POST/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.PlanWorldRest.Input.Path
+            /// - Remark: Generated from `#/paths/v1/titles/{id}/world/plan/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.PlanWorldRest.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.PlanWorldRest.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.PlanWorldRest.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.PlanWorldRest.Input.Path,
+                headers: Operations.PlanWorldRest.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Accepted: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/titles/{id}/world/plan/POST/responses/202/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/titles/{id}/world/plan/POST/responses/202/content/application\/json`.
+                    case json(Components.Schemas.ImportJob)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.ImportJob {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.PlanWorldRest.Output.Accepted.Body
+                /// Creates a new `Accepted`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.PlanWorldRest.Output.Accepted.Body) {
+                    self.body = body
+                }
+            }
+            /// Queued for review.
+            ///
+            /// - Remark: Generated from `#/paths//v1/titles/{id}/world/plan/post(planWorldRest)/responses/202`.
+            ///
+            /// HTTP response code: `202 accepted`.
+            case accepted(Operations.PlanWorldRest.Output.Accepted)
+            /// The associated value of the enum case if `self` is `.accepted`.
+            ///
+            /// - Throws: An error if `self` is not `.accepted`.
+            /// - SeeAlso: `.accepted`.
+            public var accepted: Operations.PlanWorldRest.Output.Accepted {
+                get throws {
+                    switch self {
+                    case let .accepted(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "accepted",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Any error, in the shared shape.
+            ///
+            /// - Remark: Generated from `#/paths//v1/titles/{id}/world/plan/post(planWorldRest)/responses/default`.
             ///
             /// HTTP response code: `default`.
             case `default`(statusCode: Swift.Int, Components.Responses._Error)

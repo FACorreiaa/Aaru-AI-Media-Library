@@ -300,6 +300,8 @@ extension TitleDetailView {
             .panel()
         }
         TitleWatch(api: model.api, titleID: entry.title.id, kind: kind)
+        // The World this title is part of (GRAPH-007): absent until built, and when it has none.
+        WorldStrip(api: model.api, titleID: entry.title.id, library: library, lists: lists)
         // Above the episodes: under a long season list nobody finds what to watch first (GRAPH-002).
         TitleRelated(api: model.api, titleID: entry.title.id, library: library, lists: lists)
         TitleFromHere(model: fromHere)

@@ -190,6 +190,79 @@ func (q *Queries) PutWorldTitles(ctx context.Context, arg PutWorldTitlesParams) 
 	return err
 }
 
+const userWorlds = `-- name: UserWorlds :many
+SELECT w.id, w.root_key, w.name, w.links, w.truncated, w.partial, w.title_count, w.built_at, w.created_at,
+    (array_agg(li.title_id ORDER BY k."position", li.title_id))[1]::uuid AS title_id
+FROM library_items li
+JOIN titles t ON t.id = li.title_id
+CROSS JOIN LATERAL (VALUES
+    ('anilist:' || t.anilist),
+    ('mal:' || CASE WHEN t.type = 'manga' THEN 'manga' ELSE 'anime' END || ':' || t.mal),
+    (CASE WHEN t.type IN ('movie', 'show') THEN 'tmdb:' || t.type || ':' || t.tmdb END),
+    ('imdb:' || t.imdb),
+    ('openlibrary:' || t.open_library),
+    ('musicbrainz:' || t.musicbrainz)
+) AS own(node_key)
+JOIN world_keys k ON k.node_key = own.node_key
+JOIN worlds w ON w.id = k.world_id
+WHERE li.user_id = $1
+GROUP BY w.id
+ORDER BY w.built_at DESC, w.id
+LIMIT $2::integer
+`
+
+type UserWorldsParams struct {
+	UserID    uuid.UUID
+	MaxWorlds int32
+}
+
+type UserWorldsRow struct {
+	ID         uuid.UUID
+	RootKey    string
+	Name       string
+	Links      json.RawMessage
+	Truncated  bool
+	Partial    bool
+	TitleCount int32
+	BuiltAt    time.Time
+	CreatedAt  time.Time
+	TitleID    uuid.UUID
+}
+
+// The Worlds the user has at least one library item in (GRAPH-007), with one of their titles in
+// each to open it from. The key expressions are catalog.NodeKeys written in SQL, for the ids a
+// `titles` row holds; world_parity_test.go keeps the two the same.
+func (q *Queries) UserWorlds(ctx context.Context, arg UserWorldsParams) ([]UserWorldsRow, error) {
+	rows, err := q.db.Query(ctx, userWorlds, arg.UserID, arg.MaxWorlds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []UserWorldsRow{}
+	for rows.Next() {
+		var i UserWorldsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.RootKey,
+			&i.Name,
+			&i.Links,
+			&i.Truncated,
+			&i.Partial,
+			&i.TitleCount,
+			&i.BuiltAt,
+			&i.CreatedAt,
+			&i.TitleID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const worldBuild = `-- name: WorldBuild :one
 SELECT title_id, priority, state, attempts, run_after, leased_until, checked_at FROM world_builds WHERE title_id = $1
 `
@@ -354,6 +427,26 @@ func (q *Queries) WorldByKeys(ctx context.Context, nodeKeys []string) ([]World, 
 	return items, nil
 }
 
+const worldKeyPosition = `-- name: WorldKeyPosition :one
+SELECT "position" FROM world_keys
+WHERE world_id = $1 AND node_key = ANY($2::text[])
+ORDER BY "position"
+LIMIT 1
+`
+
+type WorldKeyPositionParams struct {
+	WorldID  uuid.UUID
+	NodeKeys []string
+}
+
+// Where in the World the title carrying any of these keys sits; the earliest when several do.
+func (q *Queries) WorldKeyPosition(ctx context.Context, arg WorldKeyPositionParams) (int32, error) {
+	row := q.db.QueryRow(ctx, worldKeyPosition, arg.WorldID, arg.NodeKeys)
+	var position int32
+	err := row.Scan(&position)
+	return position, err
+}
+
 const worldTitleByKey = `-- name: WorldTitleByKey :one
 SELECT node FROM world_titles WHERE world_id = $1 AND node_key = $2
 `
@@ -396,6 +489,40 @@ func (q *Queries) WorldTitles(ctx context.Context, worldID uuid.UUID) ([]WorldTi
 	for rows.Next() {
 		var i WorldTitlesRow
 		if err := rows.Scan(
+			&i.Position,
+			&i.NodeKey,
+			&i.Lane,
+			&i.LanePosition,
+			&i.Side,
+			&i.Node,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const worldTitlesOfWorlds = `-- name: WorldTitlesOfWorlds :many
+SELECT world_id, "position", node_key, lane, lane_position, side, node FROM world_titles
+WHERE world_id = ANY($1::uuid[])
+ORDER BY world_id, "position"
+`
+
+func (q *Queries) WorldTitlesOfWorlds(ctx context.Context, worldIds []uuid.UUID) ([]WorldTitle, error) {
+	rows, err := q.db.Query(ctx, worldTitlesOfWorlds, worldIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []WorldTitle{}
+	for rows.Next() {
+		var i WorldTitle
+		if err := rows.Scan(
+			&i.WorldID,
 			&i.Position,
 			&i.NodeKey,
 			&i.Lane,

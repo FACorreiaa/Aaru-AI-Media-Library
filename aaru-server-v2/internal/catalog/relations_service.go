@@ -241,9 +241,14 @@ type RelationMark struct {
 // Marks are the user's items among the graph's nodes, by node key. An anime season AniList lists
 // on its own is marked with the TMDB show Aaru keeps it in.
 func (s *RelationService) Marks(ctx context.Context, userID uuid.UUID, graph RelationGraph) (map[string]RelationMark, error) {
+	return s.marksFor(ctx, userID, graph.Nodes)
+}
+
+// marksFor are the user's items among these nodes, by node key: a graph's, or a World's titles.
+func (s *RelationService) marksFor(ctx context.Context, userID uuid.UUID, nodes []GraphNode) (map[string]RelationMark, error) {
 	marks := map[string]RelationMark{}
 	var anilist []string
-	for _, n := range graph.Nodes {
+	for _, n := range nodes {
 		if n.IDs.AniList != "" {
 			anilist = append(anilist, n.IDs.AniList)
 		}
@@ -261,7 +266,7 @@ func (s *RelationService) Marks(ctx context.Context, userID uuid.UUID, graph Rel
 	params := sqlc.LibraryEntriesMatchingCatalogParams{
 		UserID: userID, Tmdb: []string{}, Anilist: []string{}, OpenLibrary: []string{}, Musicbrainz: []string{},
 	}
-	for _, n := range graph.Nodes {
+	for _, n := range nodes {
 		if n.IDs.TMDB != "" {
 			params.Tmdb = append(params.Tmdb, n.IDs.TMDB)
 		}
@@ -285,7 +290,7 @@ func (s *RelationService) Marks(ctx context.Context, userID uuid.UUID, graph Rel
 	if err != nil {
 		return nil, fmt.Errorf("library entries matching catalog: %w", err)
 	}
-	for _, n := range graph.Nodes {
+	for _, n := range nodes {
 		for _, r := range rows {
 			if relationRowMatches(n, r, showOf[n.IDs.AniList]) {
 				marks[n.Key] = RelationMark{LibraryItemID: r.ID, Status: core.LibraryStatus(r.Status)}

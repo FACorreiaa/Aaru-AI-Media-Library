@@ -101,6 +101,11 @@ const TitleWatch = lazy(() =>
   import('../components/TitleWatch').then((m) => ({ default: m.TitleWatch })),
 )
 
+// The World this title is part of (GRAPH-007) loads after the room shows.
+const WorldStrip = lazy(() =>
+  import('../components/WorldStrip').then((m) => ({ default: m.WorldStrip })),
+)
+
 export const Route = createFileRoute('/_shell/app_/title/$id')({
   loader: ({ params, context: { queryClient } }) =>
     queryClient.query(titlePageQuery(params.id)),
@@ -224,7 +229,7 @@ function TitleRoom() {
 
   // GRAPH-005: "From here", under Related, and opened once when a tap here finishes the title.
   const fromHere = createTitleTree(() => entry().title.id)
-  // Where to watch is read in the browser, for its region: nothing of it is rendered on the server.
+  // Where to watch and the World strip are read in the browser: neither is rendered on the server.
   const [inBrowser, setInBrowser] = createSignal(false)
   onMount(() => setInBrowser(true))
   const [treeOpen, setTreeOpen] = createSignal(false)
@@ -629,6 +634,10 @@ function TitleRoom() {
               }
             >
               <TitleWatch titleId={entry().title.id} kind={kind()} />
+            </Show>
+
+            <Show when={inBrowser()}>
+              <WorldStrip titleId={entry().title.id} />
             </Show>
 
             <RelatedTitles titleId={entry().title.id} />

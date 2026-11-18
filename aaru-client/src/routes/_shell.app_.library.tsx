@@ -215,9 +215,17 @@ function Library() {
   return (
     <div class="flex-1">
       <div class="w-full min-w-0 px-4 pt-6 pb-16 md:px-8 lg:pt-8 2xl:px-12">
-        <h1 class="font-display text-4xl font-medium tracking-tight">
-          Library
-        </h1>
+        <div class="flex flex-wrap items-baseline justify-between gap-3">
+          <h1 class="font-display text-4xl font-medium tracking-tight">
+            Library
+          </h1>
+          <Link
+            to="/app/worlds"
+            class={buttonVariants({ variant: 'outline', size: 'sm' })}
+          >
+            Worlds
+          </Link>
+        </div>
 
         <div class="mt-6 flex flex-wrap items-center gap-2">
           <Segmented
