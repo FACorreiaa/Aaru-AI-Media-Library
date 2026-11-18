@@ -14,7 +14,7 @@ concurrency:
 jobs:
   seed:
     name: match appstore (readwrite)
-    runs-on: macos-15
+    runs-on: xcode-27
     timeout-minutes: 20
     defaults:
       run:
