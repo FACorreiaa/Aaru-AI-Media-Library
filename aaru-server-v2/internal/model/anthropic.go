@@ -169,9 +169,13 @@ func AnthropicBody(req Request, model, effort string) map[string]any {
 		tools = append(tools, map[string]any{"name": t.Name, "description": t.Description, "input_schema": t.InputSchema})
 	}
 	if req.WebSearch != nil {
-		tools = append(tools, map[string]any{
+		search := map[string]any{
 			"type": AnthropicWebSearchTool, "name": "web_search", "max_uses": max(req.WebSearch.MaxUses, 1),
-		})
+		}
+		if len(req.WebSearch.BlockedDomains) > 0 {
+			search["blocked_domains"] = req.WebSearch.BlockedDomains
+		}
+		tools = append(tools, search)
 	}
 	if len(tools) > 0 {
 		body["tools"] = tools

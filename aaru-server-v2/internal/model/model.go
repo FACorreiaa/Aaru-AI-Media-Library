@@ -130,6 +130,8 @@ type Request struct {
 type WebSearch struct {
 	// MaxUses is how many searches the call may make; at least 1.
 	MaxUses int
+	// BlockedDomains are sites the search never reads, each with its subdomains.
+	BlockedDomains []string
 }
 
 // WebSearcher is a Provider that can search the web for the model (ASK-004).

@@ -58,3 +58,19 @@ func (d tmdbDetail) offered(mediaType core.MediaType) (Hit, bool) {
 	}
 	return d.hit(mediaType)
 }
+
+// AdultSites are the sites the assistant's web search never reads (CAT-023 for the web, ASK-004,
+// owner 2026-11-19): the search tool's `blocked_domains`, each covering its subdomains. A list
+// can only name sites, so it keeps out the large ones; the rest is the prompt's "never search
+// for adult works". Anthropic answers a list it cannot take with a `request_too_large` result,
+// so it stays short.
+var AdultSites = []string{
+	"pornhub.com", "xvideos.com", "xnxx.com", "xhamster.com", "redtube.com", "youporn.com",
+	"tube8.com", "spankbang.com", "eporner.com", "beeg.com", "txxx.com", "hqporner.com",
+	"youjizz.com", "tnaflix.com", "motherless.com", "porn.com", "brazzers.com", "onlyfans.com",
+	"fansly.com", "manyvids.com", "clips4sale.com", "chaturbate.com", "stripchat.com",
+	"livejasmin.com", "bongacams.com", "cam4.com", "myfreecams.com", "camsoda.com",
+	"adultfriendfinder.com", "literotica.com", "nhentai.net", "e-hentai.org", "exhentai.org",
+	"hanime.tv", "hentaihaven.xxx", "rule34.xxx", "rule34.paheal.net", "gelbooru.com",
+	"f95zone.to", "iafd.com", "data18.com", "javlibrary.com", "missav.com",
+}

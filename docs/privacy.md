@@ -218,8 +218,10 @@ with @aaru, Aaru keeps a daily count of how much text its answers used, to keep 
 It also keeps a daily count of the questions you send it, with no text, to enforce the daily
 limit. Both counts stay when you delete your chats and are removed with your account.
 
-**Web search in a chat.** To answer a question about films, shows, anime, manga, books, music or
-sport that its own data cannot (news, release dates, casts), Aaru may search the web, about
+**Web search in a chat.** To answer a question about films, shows, anime, manga, books, music,
+concerts, sport or art that its own data cannot (news, release dates, casts), Aaru may search the
+web; a question about anything else, or about your own data, never searches. Adult sites are left
+out of every search. It searches about
 3 times for one question and 10 times a day. The search is run by Anthropic (below) for Aaru, and
 no website learns who asked. The AI writes the search words itself from your question: Aaru tells
 it to name only the topic, never you or your library, but a search about a title you asked about

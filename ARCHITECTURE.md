@@ -1087,7 +1087,11 @@ change). A `pause_turn` stop (`model.StopPaused`) sends those blocks back with n
 the answer carries on. Earlier turns are stored as text, so no search block outlives its turn.
 
 Limits: `WebSearchesPerTurn` (3) and `WebSearchesPerDay` (10, `agent_usage.web_searches`, read at
-the start of a turn). Once a turn has searched, the tool stays in every later round, since a
+the start of a turn). Only a turn the scope gate finds about media or art itself (`Verdict.AboutMedia`:
+films, shows, anime, manga, books, music, concerts, sport, art) is offered the tool; a turn about
+the user's own data, the app, a greeting, or a file sent with no words is not. Every search carries
+`blocked_domains: catalog.AdultSites` (CAT-023 for the web, next to the catalog's adult rule); the
+model can still name other sites, so the prompt's "never search for adult works" stays. Once a turn has searched, the tool stays in every later round, since a
 transcript with searches needs it, so a turn can pass the limit by a search a round. Each search
 is metered at `AnthropicWebSearchMicros` on top of its tokens. The scope gate turns off-topic
 questions away before any search. Pages are strangers' words, so a turn that searched is tainted

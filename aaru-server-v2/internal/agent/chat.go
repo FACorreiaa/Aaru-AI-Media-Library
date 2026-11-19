@@ -3,6 +3,7 @@ package agent
 import (
 	"aaru-go-api/internal/aisharing"
 	"aaru-go-api/internal/capture"
+	"aaru-go-api/internal/catalog"
 	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/db/sqlc"
 	"aaru-go-api/internal/groups"
@@ -287,6 +288,9 @@ func (r *chatRun) sayApart(text string) {
 // with no words skip the gate: handing Aaru a file is asking about it.
 func (s *ChatService) answer(ctx context.Context, run *chatRun, recent []ChatTurn, ask Ask, files []Attachment) error {
 	rounds, maxTokens, effort := MaxRounds, MaxTokens, ""
+	// Only a turn the gate says is about media or art may search the web (ASK-004); a file sent
+	// with no words skips the gate, so it never searches.
+	aboutMedia := false
 	if ask.Body != "" || len(files) == 0 {
 		gated := meteredProvider{Provider: s.Model, q: s.Store.Q, user: run.user, now: s.now}
 		verdict, err := Gate(ctx, gated, recent, storedBody(ask.Body, files))
@@ -300,10 +304,15 @@ func (s *ChatService) answer(ctx context.Context, run *chatRun, recent []ChatTur
 		if verdict.AsksForList {
 			rounds, maxTokens, effort = ListRounds, ListMaxTokens, ListEffort
 		}
+		aboutMedia = verdict.AboutMedia
 	}
-	searches, err := s.searchesLeft(ctx, run.user)
-	if err != nil {
-		return err
+	searches := 0
+	if aboutMedia {
+		left, err := s.searchesLeft(ctx, run.user)
+		if err != nil {
+			return err
+		}
+		searches = left
 	}
 	earlier := chatTranscript(recent)
 	system, err := s.system(ctx, run.user, ask.Hint, run.tools, len(earlier) > 0, searches > 0)
@@ -325,7 +334,7 @@ func (s *ChatService) answer(ctx context.Context, run *chatRun, recent []ChatTur
 		if search {
 			// Kept for the whole turn once offered: a transcript with searches needs the tool. Spent,
 			// it still allows one, the least the API takes.
-			web = &model.WebSearch{MaxUses: max(searches, 1)}
+			web = &model.WebSearch{MaxUses: max(searches, 1), BlockedDomains: catalog.AdultSites}
 		}
 		response, err := model.StreamOrComplete(ctx, s.Model, model.Request{
 			System: system,
