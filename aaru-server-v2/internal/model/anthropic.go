@@ -15,6 +15,14 @@ import (
 // AnthropicVersion is the `anthropic-version` header.
 const AnthropicVersion = "2023-06-01"
 
+// AnthropicWebSearchTool is the web search tool's type: the basic one, which Claude Haiku 5.5
+// takes and which runs no code (ASK-004). The `_20260209` variant filters results with code
+// execution, at more tokens.
+const AnthropicWebSearchTool = "web_search_20250305"
+
+// AnthropicWebSearchMicros is one web search on the Claude API: $10 per 1,000.
+const AnthropicWebSearchMicros = 10_000
+
 // AnthropicMessages is Provider over Anthropic's Messages API (`POST /v1/messages`).
 // Named for the wire format, so pointing ANTHROPIC_BASE_URL at a compatible
 // endpoint is configuration, not code.
@@ -34,7 +42,12 @@ type AnthropicMessages struct {
 	// WorkspaceID is `anthropic-workspace-id`, which a key not scoped to one workspace must send.
 	WorkspaceID string
 	Timeout     time.Duration
+	// WebSearch says the key's organization allows web search, so a Request's WebSearch is sent.
+	WebSearch bool
 }
+
+// SearchesWeb is the WebSearch setting.
+func (a *AnthropicMessages) SearchesWeb() bool { return a.WebSearch }
 
 // Model is the configured model id.
 func (a *AnthropicMessages) Model() string { return a.ModelName }
@@ -50,7 +63,7 @@ func (a *AnthropicMessages) Complete(ctx context.Context, req Request) (Response
 }
 
 func (a *AnthropicMessages) call(ctx context.Context, req Request) (Response, error) {
-	body, err := json.Marshal(AnthropicBody(req, a.ModelName, a.Effort))
+	body, err := json.Marshal(a.body(req))
 	if err != nil {
 		return Response{}, fmt.Errorf("encode messages request: %w", err)
 	}
@@ -128,6 +141,8 @@ func mapStop(reason *string) Stop {
 		return StopMaxTokens
 	case "refusal":
 		return StopRefusal
+	case "pause_turn":
+		return StopPaused
 	default:
 		return Stop(*reason)
 	}
@@ -149,11 +164,16 @@ func AnthropicBody(req Request, model, effort string) map[string]any {
 		"system":     req.System,
 		"messages":   messages,
 	}
-	if len(req.Tools) > 0 {
-		tools := make([]map[string]any, len(req.Tools))
-		for i, t := range req.Tools {
-			tools[i] = map[string]any{"name": t.Name, "description": t.Description, "input_schema": t.InputSchema}
-		}
+	tools := make([]map[string]any, 0, len(req.Tools)+1)
+	for _, t := range req.Tools {
+		tools = append(tools, map[string]any{"name": t.Name, "description": t.Description, "input_schema": t.InputSchema})
+	}
+	if req.WebSearch != nil {
+		tools = append(tools, map[string]any{
+			"type": AnthropicWebSearchTool, "name": "web_search", "max_uses": max(req.WebSearch.MaxUses, 1),
+		})
+	}
+	if len(tools) > 0 {
 		body["tools"] = tools
 	}
 	if req.ToolChoice != "" {
@@ -168,22 +188,40 @@ func AnthropicBody(req Request, model, effort string) map[string]any {
 	return body
 }
 
+// body is AnthropicBody, without the web search when the provider is not set to send it.
+func (a *AnthropicMessages) body(req Request) map[string]any {
+	if !a.WebSearch {
+		req.WebSearch = nil
+	}
+	return AnthropicBody(req, a.ModelName, a.Effort)
+}
+
+// anthropicUsage is a Messages API answer's `usage`.
+type anthropicUsage struct {
+	InputTokens   *int `json:"input_tokens"`
+	OutputTokens  int  `json:"output_tokens"`
+	ServerToolUse struct {
+		WebSearchRequests int `json:"web_search_requests"`
+	} `json:"server_tool_use"`
+}
+
 // ParseAnthropic reads a Messages API answer.
 func ParseAnthropic(data []byte) (Response, error) {
 	var raw struct {
 		Content    []Block `json:"content"`
 		StopReason *string `json:"stop_reason"`
-		Usage      struct {
-			InputTokens  float64 `json:"input_tokens"`
-			OutputTokens float64 `json:"output_tokens"`
-		} `json:"usage"`
+		Usage      anthropicUsage `json:"usage"`
 	}
 	if err := json.Unmarshal(data, &raw); err != nil || raw.Content == nil {
 		return Response{}, &ProviderError{Status: 200}
 	}
 	stop := mapStop(raw.StopReason)
-	return Response{
-		Content: raw.Content, Stop: stop,
-		InputTokens: int(raw.Usage.InputTokens), OutputTokens: int(raw.Usage.OutputTokens),
-	}, nil
+	out := Response{
+		Content: raw.Content, Stop: stop, OutputTokens: raw.Usage.OutputTokens,
+		WebSearches: raw.Usage.ServerToolUse.WebSearchRequests,
+	}
+	if raw.Usage.InputTokens != nil {
+		out.InputTokens = *raw.Usage.InputTokens
+	}
+	return out, nil
 }

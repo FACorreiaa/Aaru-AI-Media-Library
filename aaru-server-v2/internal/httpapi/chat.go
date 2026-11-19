@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"aaru-go-api/internal/agent"
+	"aaru-go-api/internal/model"
 	"aaru-go-api/internal/aisharing"
 	"aaru-go-api/internal/api"
 	"aaru-go-api/internal/apiid"
@@ -186,6 +187,7 @@ func (s *Server) storedChatComponents(ctx context.Context, user uuid.UUID, raw j
 	}
 	event := agent.ChatEvent{
 		Type: agent.ChatEventComponents, Roadmap: stored.Roadmap, ActionID: stored.ActionID, ActionSummary: stored.ActionSummary,
+		Sources: stored.Sources,
 	}
 	if len(stored.TitleIDs) > 0 {
 		titles, err := s.Catalog.Store.Titles(ctx, stored.TitleIDs)
@@ -416,12 +418,13 @@ type componentsFrameJSON struct {
 	Roadmap       *agent.Roadmap     `json:"roadmap,omitempty"`
 	ActionID      *apiid.UUID        `json:"actionId,omitempty"`
 	ActionSummary string             `json:"actionSummary,omitempty"`
+	Sources       []model.Source     `json:"sources,omitempty"`
 }
 
 func chatComponentsFrame(e agent.ChatEvent) componentsFrameJSON {
 	frame := componentsFrameJSON{
 		ImportID: apiid.PtrOrNil(e.ImportID), Roadmap: e.Roadmap, ActionID: apiid.PtrOrNil(e.ActionID),
-		ActionSummary: e.ActionSummary,
+		ActionSummary: e.ActionSummary, Sources: e.Sources,
 	}
 	for _, t := range e.Titles {
 		frame.Titles = append(frame.Titles, TitleSummaryDTO(t))

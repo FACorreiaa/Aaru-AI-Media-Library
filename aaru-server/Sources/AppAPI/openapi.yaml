@@ -6687,6 +6687,19 @@ components:
           format: uuid
           description: A single change Aaru applied, undone at `/v1/actions/{id}/undo`.
         actionSummary: {type: string}
+        sources:
+          type: array
+          description: >-
+            The web pages the answer cites (ASK-004), at most five, in the order first cited. Shown with the
+            reply, each linking out; never read aloud.
+          items: {$ref: '#/components/schemas/ChatSource'}
+    ChatSource:
+      type: object
+      description: One web page an answer cites, as the search named it.
+      required: [url, title]
+      properties:
+        url: {type: string}
+        title: {type: string}
     ChatDoneFrame:
       type: object
       description: The data of a `done` frame, the last of a turn that answered.
