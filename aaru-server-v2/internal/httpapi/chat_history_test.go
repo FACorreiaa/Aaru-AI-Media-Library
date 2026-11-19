@@ -235,3 +235,20 @@ func TestAFilmNamedWithNoYearIsNotGuessedBetweenTwo(t *testing.T) {
 	assert.Equal(t, "unmatched", rows[0]["outcome"])
 	assert.Contains(t, rows[0]["reason"], "Pick the right one by hand")
 }
+
+// ASK-004: a cited answer with no cards still reads back its sources.
+func TestChatSourcesReadBackWithNothingElse(t *testing.T) {
+	m := &chatModel{script: []chatMainCall{says("December ", "2026.")}}
+	e := newChatEnv(t, m)
+	chat := e.newChat(e.bearer)
+	e.ask(chat, "when does dune 3 come out?")
+	_, err := e.pool.Exec(context.Background(), `UPDATE chat_turns SET components = $2
+		WHERE chat_id = $1 AND role = 'agent'`, chat,
+		`{"sources":[{"url":"https://a.test/dune","title":"Dune news"}]}`)
+	require.NoError(t, err)
+
+	agent := e.json(http.MethodGet, "/v1/chats/"+chat, nil)["turns"].([]any)[1].(map[string]any)
+	require.Contains(t, agent, "components")
+	assert.Equal(t, []any{map[string]any{"url": "https://a.test/dune", "title": "Dune news"}},
+		agent["components"].(map[string]any)["sources"])
+}

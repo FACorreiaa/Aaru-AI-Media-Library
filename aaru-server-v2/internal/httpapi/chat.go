@@ -176,7 +176,7 @@ func (s *Server) GetChat(ctx context.Context, req api.GetChatRequestObject) (api
 }
 
 // storedChatComponents reads a stored turn's components again: its titles and plan as they are
-// now, and the roadmap as Aaru wrote it. What has since gone is left out; nil when nothing is left.
+// now, and the roadmap and cited pages as Aaru wrote them. What has since gone is left out; nil when nothing is left.
 func (s *Server) storedChatComponents(ctx context.Context, user uuid.UUID, raw json.RawMessage) (*componentsFrameJSON, error) {
 	if len(raw) == 0 {
 		return nil, nil //nolint:nilnil // a turn with no components has none
@@ -225,7 +225,8 @@ func (s *Server) storedChatComponents(ctx context.Context, user uuid.UUID, raw j
 		}
 	}
 	frame := chatComponentsFrame(event)
-	if len(frame.Titles) == 0 && frame.Plan == nil && frame.ImportID == nil && frame.Roadmap == nil && frame.ActionID == nil {
+	if len(frame.Titles) == 0 && frame.Plan == nil && frame.ImportID == nil && frame.Roadmap == nil && frame.ActionID == nil &&
+		len(frame.Sources) == 0 {
 		return nil, nil //nolint:nilnil // everything it held has gone
 	}
 	return &frame, nil

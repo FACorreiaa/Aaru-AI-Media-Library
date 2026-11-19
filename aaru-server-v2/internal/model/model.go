@@ -198,6 +198,17 @@ func (r Response) Text() string {
 	return b.String()
 }
 
+// ReadWeb says the answer holds web search results: words from pages strangers wrote (ASK-004).
+func (r Response) ReadWeb() bool {
+	for _, b := range r.Content {
+		var h blockHead
+		if json.Unmarshal(b, &h) == nil && h.Type == "web_search_tool_result" {
+			return true
+		}
+	}
+	return false
+}
+
 // Source is one web page an answer cites (ASK-004).
 type Source struct {
 	URL   string `json:"url"`

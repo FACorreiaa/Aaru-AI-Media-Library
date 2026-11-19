@@ -219,10 +219,11 @@ It also keeps a daily count of the questions you send it, with no text, to enfor
 limit. Both counts stay when you delete your chats and are removed with your account.
 
 **Web search in a chat.** To answer a question about films, shows, anime, manga, books, music or
-sport that its own data cannot (news, release dates, casts), Aaru may search the web, at most
-3 times for one question and 10 times a day. The search is run by Anthropic (below) for Aaru:
-the search words name the topic only, never you, your library or anything else of yours, and
-no website learns who asked. The pages the answer draws on are shown under it as links, and kept
+sport that its own data cannot (news, release dates, casts), Aaru may search the web, about
+3 times for one question and 10 times a day. The search is run by Anthropic (below) for Aaru, and
+no website learns who asked. The AI writes the search words itself from your question: Aaru tells
+it to name only the topic, never you or your library, but a search about a title you asked about
+names that title. The pages the answer draws on are shown under it as links, and kept
 with the chat. Aaru keeps a daily count of how many searches you used, with no search words, to
 enforce the limit; it stays when you delete your chats and is removed with your account.
 
