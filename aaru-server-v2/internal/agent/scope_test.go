@@ -21,6 +21,26 @@ func TestScopeVerdict(t *testing.T) {
 	}
 }
 
+// ASK-004: only a turn the gate finds in scope and about media or art may search.
+func TestScopeAboutMedia(t *testing.T) {
+	m := &scriptedModel{script: []step{mediaGate()}}
+	verdict, err := agent.Gate(t.Context(), m, nil, "when does dune 3 come out?")
+	require.NoError(t, err)
+	assert.True(t, verdict.AboutMedia)
+	assert.Contains(t, m.calls()[0].System, "about media or art")
+
+	out := toolCalls(call{"record_scope", map[string]any{"in_scope": false, "about_media": true}, "gate"})
+	m = &scriptedModel{script: []step{{response: out}}}
+	verdict, err = agent.Gate(t.Context(), m, nil, "what's the weather?")
+	require.NoError(t, err)
+	assert.False(t, verdict.AboutMedia, "out of scope never searches")
+
+	m = &scriptedModel{script: []step{gate(true)}}
+	verdict, err = agent.Gate(t.Context(), m, nil, "my stats")
+	require.NoError(t, err)
+	assert.False(t, verdict.AboutMedia, "absent reads as no")
+}
+
 func TestScopeForcesItsToolAndSendsNoSampling(t *testing.T) {
 	m := &scriptedModel{script: []step{gate(true)}}
 	_, err := agent.InScope(t.Context(), m, nil, "hello")

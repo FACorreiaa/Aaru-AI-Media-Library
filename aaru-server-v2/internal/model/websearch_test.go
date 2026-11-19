@@ -121,3 +121,13 @@ func TestTextJoinsCitedFragmentsAsOnePassage(t *testing.T) {
 	}}
 	assert.Equal(t, "Let me look.\nIt opens in December 2026.", resp.Text())
 }
+
+func TestBodyBlocksDomains(t *testing.T) {
+	body := AnthropicBody(Request{
+		Turns: []Turn{UserText("hi")}, WebSearch: &WebSearch{MaxUses: 2, BlockedDomains: []string{"a.test", "b.test"}},
+	}, "m", "")
+	data, err := json.Marshal(body["tools"])
+	require.NoError(t, err)
+	assert.JSONEq(t, `[{"type":"web_search_20250305","name":"web_search","max_uses":2,
+		"blocked_domains":["a.test","b.test"]}]`, string(data))
+}

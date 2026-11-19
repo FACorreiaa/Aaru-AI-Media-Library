@@ -2,6 +2,7 @@ package agent_test
 
 import (
 	"aaru-go-api/internal/agent"
+	"aaru-go-api/internal/catalog"
 	"aaru-go-api/internal/model"
 	"encoding/json"
 	"strings"
@@ -17,6 +18,13 @@ type searchingModel struct{ *scriptedModel }
 func (searchingModel) SearchesWeb() bool { return true }
 
 func (f *turnFixture) searching() { f.svc.Model = searchingModel{f.model} }
+
+// mediaGate is a gate that finds the turn in scope and about media or art (ASK-004).
+func mediaGate() step {
+	r := toolCalls(call{"record_scope", map[string]any{"in_scope": true, "about_media": true}, "gate"})
+	r.InputTokens, r.OutputTokens = 11, 3
+	return step{response: r}
+}
 
 func rawBlock(t *testing.T, v any) model.Block {
 	t.Helper()
@@ -66,7 +74,7 @@ func TestNoWebSearchWhenTheModelCannotSearch(t *testing.T) {
 }
 
 func TestWebSearchPausedTurnCarriesOnAndCitesSources(t *testing.T) {
-	f := newTurnFixture(t, gate(true), pausedSearch(t), citedAnswer(t))
+	f := newTurnFixture(t, mediaGate(), pausedSearch(t), citedAnswer(t))
 	f.searching()
 	f.ask("when does dune 3 come out?")
 
@@ -103,7 +111,7 @@ func TestWebSearchPausedTurnCarriesOnAndCitesSources(t *testing.T) {
 }
 
 func TestWebSearchStopsAtTheDailyCap(t *testing.T) {
-	f := newTurnFixture(t, gate(true), says("I can't see that yet."))
+	f := newTurnFixture(t, mediaGate(), says("I can't see that yet."))
 	f.searching()
 	require.NoError(t, agent.RecordResponse(f.ctx, f.store.Q, f.user, f.now, f.model,
 		model.Response{WebSearches: agent.WebSearchesPerDay - 1}))
@@ -112,7 +120,7 @@ func TestWebSearchStopsAtTheDailyCap(t *testing.T) {
 	require.NotNil(t, f.model.calls()[1].WebSearch)
 	assert.Equal(t, 1, f.model.calls()[1].WebSearch.MaxUses, "what is left of the day")
 
-	f.model.script = []step{gate(true), says("Still nothing.")}
+	f.model.script = []step{mediaGate(), says("Still nothing.")}
 	require.NoError(t, agent.RecordResponse(f.ctx, f.store.Q, f.user, f.now, f.model, model.Response{WebSearches: 1}))
 	f.ask("and dune 4?")
 	calls := f.model.calls()
@@ -132,7 +140,7 @@ func TestAWebSearchMakesTheTurnsWritesPlans(t *testing.T) {
 		rawBlock(t, map[string]any{"type": "web_search_tool_result", "tool_use_id": "srvtoolu_1", "content": []any{}}),
 	}, searched.Content...)
 	searched.WebSearches = 1
-	f := newTurnFixture(t, gate(true), step{response: searched}, says("It waits for you."))
+	f := newTurnFixture(t, mediaGate(), step{response: searched}, says("It waits for you."))
 	f.searching()
 	f.withHits("950")
 
@@ -140,4 +148,25 @@ func TestAWebSearchMakesTheTurnsWritesPlans(t *testing.T) {
 
 	assert.Equal(t, 0, f.count(`SELECT count(*)::int FROM library_items WHERE user_id = $1`, f.user), "nothing applied")
 	assert.NotNil(t, f.event("components").Plan, "a plan to approve instead")
+}
+
+func TestATurnNotAboutMediaNeverSearches(t *testing.T) {
+	// In scope (the user's own stats), but not about media or art itself.
+	f := newTurnFixture(t, gate(true), says("You watched 12 films."))
+	f.searching()
+	f.ask("how many films did I watch this month?")
+	calls := f.model.calls()
+	require.Len(t, calls, 2)
+	assert.Nil(t, calls[1].WebSearch)
+	assert.NotContains(t, calls[1].System, "web_search")
+}
+
+func TestWebSearchBlocksAdultSites(t *testing.T) {
+	f := newTurnFixture(t, mediaGate(), says("Not announced."))
+	f.searching()
+	f.ask("is there a new berserk anime?")
+	calls := f.model.calls()
+	require.Len(t, calls, 2)
+	require.NotNil(t, calls[1].WebSearch)
+	assert.Equal(t, catalog.AdultSites, calls[1].WebSearch.BlockedDomains)
 }

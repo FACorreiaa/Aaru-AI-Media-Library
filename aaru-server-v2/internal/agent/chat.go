@@ -3,6 +3,7 @@ package agent
 import (
 	"aaru-go-api/internal/aisharing"
 	"aaru-go-api/internal/capture"
+	"aaru-go-api/internal/catalog"
 	"aaru-go-api/internal/core"
 	"aaru-go-api/internal/db/sqlc"
 	"aaru-go-api/internal/groups"
@@ -31,7 +32,7 @@ const (
 	// is never failed as stale by a concurrent send.
 	TurnCeiling = 4 * time.Minute
 	// OutOfScopeReply answers what the scope gate turns away.
-	OutOfScopeReply = "I can only help with films, shows, anime, books, music, sport and your Aaru library."
+	OutOfScopeReply = "I can only help with films, shows, anime, books, music, concerts, sport, art and your Aaru library."
 	// RestingReply is over the daily cap or out of credit.
 	RestingReply = "Aaru is resting. Try again later."
 	// UnknownDataReply is an in-scope question with no data behind it.
@@ -287,6 +288,9 @@ func (r *chatRun) sayApart(text string) {
 // with no words skip the gate: handing Aaru a file is asking about it.
 func (s *ChatService) answer(ctx context.Context, run *chatRun, recent []ChatTurn, ask Ask, files []Attachment) error {
 	rounds, maxTokens, effort := MaxRounds, MaxTokens, ""
+	// Only a turn the gate says is about media or art may search the web (ASK-004); a file sent
+	// with no words skips the gate, so it never searches.
+	aboutMedia := false
 	if ask.Body != "" || len(files) == 0 {
 		gated := meteredProvider{Provider: s.Model, q: s.Store.Q, user: run.user, now: s.now}
 		verdict, err := Gate(ctx, gated, recent, storedBody(ask.Body, files))
@@ -300,10 +304,15 @@ func (s *ChatService) answer(ctx context.Context, run *chatRun, recent []ChatTur
 		if verdict.AsksForList {
 			rounds, maxTokens, effort = ListRounds, ListMaxTokens, ListEffort
 		}
+		aboutMedia = verdict.AboutMedia
 	}
-	searches, err := s.searchesLeft(ctx, run.user)
-	if err != nil {
-		return err
+	searches := 0
+	if aboutMedia {
+		left, err := s.searchesLeft(ctx, run.user)
+		if err != nil {
+			return err
+		}
+		searches = left
 	}
 	earlier := chatTranscript(recent)
 	system, err := s.system(ctx, run.user, ask.Hint, run.tools, len(earlier) > 0, searches > 0)
@@ -325,7 +334,7 @@ func (s *ChatService) answer(ctx context.Context, run *chatRun, recent []ChatTur
 		if search {
 			// Kept for the whole turn once offered: a transcript with searches needs the tool. Spent,
 			// it still allows one, the least the API takes.
-			web = &model.WebSearch{MaxUses: max(searches, 1)}
+			web = &model.WebSearch{MaxUses: max(searches, 1), BlockedDomains: catalog.AdultSites}
 		}
 		response, err := model.StreamOrComplete(ctx, s.Model, model.Request{
 			System: system,
@@ -639,7 +648,7 @@ func chatSystem(now time.Time, zone, screen, lookingAt, files string, earlier, s
 		"It is " + now.Format("Monday 2006-01-02 15:04") + ", time zone " + zone + ".",
 		"- Answer in the language of the question. Keep replies short enough to read aloud: a few sentences of " +
 			"plain text, no headings, tables or links.",
-		"- Scope: films, shows, anime, manga, books, music, sport, this user's own Aaru data, and how Aaru works. " +
+		"- Scope: films, shows, anime, manga, books, music, concerts, sport, art, this user's own Aaru data, and how Aaru works. " +
 			"For anything else, reply with: " + OutOfScopeReply,
 		"- Use the tools for facts about titles, episodes, air dates and the user's data. Don't guess dates or counts.",
 		"- Never invent an answer. If no tool or fact here backs an in-scope question about the user's data, a date, " +

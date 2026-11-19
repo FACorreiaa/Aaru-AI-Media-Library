@@ -257,3 +257,14 @@ func TestResolverMakesNoTitleOfAnAdultWorkAndKeepsOneAlreadyHeld(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, detail)
 }
+
+// ASK-004: the search tool's blocked_domains takes plain hostnames, each once.
+func TestAdultSitesArePlainHostnames(t *testing.T) {
+	seen := map[string]bool{}
+	for _, site := range AdultSites {
+		assert.Regexp(t, `^[a-z0-9-]+(\.[a-z0-9-]+)+$`, site, "no scheme, path or wildcard")
+		assert.False(t, seen[site], site)
+		seen[site] = true
+	}
+	assert.LessOrEqual(t, len(AdultSites), 64)
+}
