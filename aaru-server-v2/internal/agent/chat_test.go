@@ -292,7 +292,7 @@ func TestOffTopicNoMainCall(t *testing.T) {
 
 	assert.Len(t, f.model.calls(), 1)
 	assert.Equal(t, []string{"status", "delta", "done"}, f.kinds())
-	const refused = "I can only help with films, shows, anime, books, music, sport and your Aaru library."
+	const refused = "I can only help with films, shows, anime, books, music, concerts, sport, art and your Aaru library."
 	assert.Equal(t, refused, f.sent[1].Text)
 	stored := f.lastTurn()
 	assert.Equal(t, agent.TurnDone, stored.state)
@@ -836,7 +836,7 @@ func TestSystemPrompt(t *testing.T) {
 	assert.Contains(t, system, "Europe/Lisbon")
 	assert.Contains(t, system, "Title 900")
 	assert.Contains(t, system, "not started it", "the spoiler guard reads the user's own progress")
-	assert.Contains(t, system, "films, shows, anime, books, music, sport and your Aaru library")
+	assert.Contains(t, system, "films, shows, anime, books, music, concerts, sport, art and your Aaru library")
 	assert.Contains(t, system, "I can't see that yet")
 	assert.Contains(t, system, "call title_details", "the guard off the title page")
 	assert.Contains(t, system, "A private library and tracker", "what Aaru is, the only source for questions about the app")
