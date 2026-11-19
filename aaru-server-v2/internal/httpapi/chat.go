@@ -2,7 +2,6 @@ package httpapi
 
 import (
 	"aaru-go-api/internal/agent"
-	"aaru-go-api/internal/model"
 	"aaru-go-api/internal/aisharing"
 	"aaru-go-api/internal/api"
 	"aaru-go-api/internal/apiid"
@@ -11,6 +10,7 @@ import (
 	"aaru-go-api/internal/db/sqlc"
 	"aaru-go-api/internal/library"
 	"aaru-go-api/internal/middleware"
+	"aaru-go-api/internal/model"
 	"aaru-go-api/internal/safe"
 	"aaru-go-api/internal/telemetry"
 	"aaru-go-api/internal/transcription"

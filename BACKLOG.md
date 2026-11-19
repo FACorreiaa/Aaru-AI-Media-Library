@@ -4347,6 +4347,11 @@ search columns, `POST /v1/chats/{id}/turns` as `text/event-stream`.
 
 ### ASK-004 · Web search and citations · M
 **Needs:** ASK-001. Media topics only, `max_uses` 3 per turn.
+**Status (2026-11-19):** server built behind `ANTHROPIC_WEB_SEARCH` (off): Anthropic's
+`web_search_20250305` server tool in the chat turn, `pause_turn`, 3 searches a turn and 10 a day
+(`agent_usage.web_searches`), each metered at $0.01, a turn that searched writes only plans, cited
+pages in the components frame's `sources`. Clients show the sources under the reply; turn it on
+in the infra repo once they ship. Not yet asked of the real model.
 
 ### ASK-005 · Library writes from chat · M
 **Needs:** ASK-001. One item applies like a tap; more becomes a `PlanCard` (X-009).

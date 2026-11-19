@@ -49,10 +49,11 @@ const (
 	// ListEffort is such a turn's `output_config.effort`, over the configured one.
 	ListEffort = "medium"
 
-	// WebSearchesPerTurn and WebSearchesPerDay bound the web searches of one Chat turn and of one
-	// user's UTC day (ASK-004). Each costs a cent on top of its tokens.
+	// WebSearchesPerTurn bounds the web searches of one Chat turn (ASK-004). Each costs a cent on top
+	// of its tokens.
 	WebSearchesPerTurn = 3
-	WebSearchesPerDay  = 10
+	// WebSearchesPerDay bounds one user's web searches in a UTC day.
+	WebSearchesPerDay = 10
 	// MaxSources is how many cited pages a turn shows.
 	MaxSources = 5
 
@@ -344,6 +345,11 @@ func (s *ChatService) answer(ctx context.Context, run *chatRun, recent []ChatTur
 		}
 		searches -= response.WebSearches
 		run.cite(response.Sources())
+		if response.WebSearches > 0 {
+			// Pages strangers wrote are now in the turn: like a file or a review, they must not steer
+			// a write, so every write from here is a plan (ASK-004).
+			run.tools.tainted = true
+		}
 		if response.Stop == model.StopRefusal {
 			run.sayApart(RefusalReply)
 			return nil

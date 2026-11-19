@@ -120,3 +120,24 @@ func TestWebSearchStopsAtTheDailyCap(t *testing.T) {
 	assert.Nil(t, calls[3].WebSearch, "a spent day offers no search")
 	assert.False(t, strings.Contains(calls[3].System, "web_search"))
 }
+
+func TestAWebSearchMakesTheTurnsWritesPlans(t *testing.T) {
+	search := call{"search_titles", map[string]any{"query": "hit", "kind": "movie"}, "a"}
+	add := call{"apply_library_patch", map[string]any{"changes": []any{
+		map[string]any{"op": "add", "ref": "r1", "status": "finished"},
+	}}, "b"}
+	searched := toolCalls(search, add)
+	searched.Content = append([]model.Block{
+		rawBlock(t, map[string]any{"type": "server_tool_use", "id": "srvtoolu_1", "name": "web_search", "input": map[string]any{"query": "hit 950"}}),
+		rawBlock(t, map[string]any{"type": "web_search_tool_result", "tool_use_id": "srvtoolu_1", "content": []any{}}),
+	}, searched.Content...)
+	searched.WebSearches = 1
+	f := newTurnFixture(t, gate(true), step{response: searched}, says("It waits for you."))
+	f.searching()
+	f.withHits("950")
+
+	f.ask("mark Hit 950 as watched")
+
+	assert.Equal(t, 0, f.count(`SELECT count(*)::int FROM library_items WHERE user_id = $1`, f.user), "nothing applied")
+	assert.NotNil(t, f.event("components").Plan, "a plan to approve instead")
+}

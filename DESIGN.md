@@ -1389,6 +1389,12 @@ where the titles are matched and nothing is added until the user approves; after
 review links to the saved list. The card never adds from a roadmap itself. Aaru's words above it
 are a sentence or two: the list is not written out twice.
 
+**Sources (ASK-004).** A reply that searched the web lists the pages it cites under its words,
+as `ChatSources`: a small "Sources" label, then one line a page, its title as a link in the accent
+colour and its site muted beside it, at most five, each opening in the browser. A page whose
+address is not http or https is not shown. Sources are never read aloud, and the reply's words
+carry no links of their own. History shows them the same way.
+
 **Chats (ASK-011).** A chat continues for 15 minutes across openings of the card, on any screen.
 The card's header has New chat, which empties the card and starts another, and History, which
 lists the user's chats by the start of their first question and when they were last used. A tap

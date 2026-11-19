@@ -208,8 +208,8 @@ type anthropicUsage struct {
 // ParseAnthropic reads a Messages API answer.
 func ParseAnthropic(data []byte) (Response, error) {
 	var raw struct {
-		Content    []Block `json:"content"`
-		StopReason *string `json:"stop_reason"`
+		Content    []Block        `json:"content"`
+		StopReason *string        `json:"stop_reason"`
 		Usage      anthropicUsage `json:"usage"`
 	}
 	if err := json.Unmarshal(data, &raw); err != nil || raw.Content == nil {

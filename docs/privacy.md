@@ -218,6 +218,14 @@ with @aaru, Aaru keeps a daily count of how much text its answers used, to keep 
 It also keeps a daily count of the questions you send it, with no text, to enforce the daily
 limit. Both counts stay when you delete your chats and are removed with your account.
 
+**Web search in a chat.** To answer a question about films, shows, anime, manga, books, music or
+sport that its own data cannot (news, release dates, casts), Aaru may search the web, at most
+3 times for one question and 10 times a day. The search is run by Anthropic (below) for Aaru:
+the search words name the topic only, never you, your library or anything else of yours, and
+no website learns who asked. The pages the answer draws on are shown under it as links, and kept
+with the chat. Aaru keeps a daily count of how many searches you used, with no search words, to
+enforce the limit; it stays when you delete your chats and is removed with your account.
+
 **Files in a chat.** You can attach a file to a question, or paste a long text. Aaru's server
 checks every file before anything reads it, by its contents rather than its name, and refuses
 anything that is not one of the kinds it reads (pictures, PDFs, plain text, the import exports
@@ -321,8 +329,9 @@ Aaru only uses these services, and only for the purpose listed:
   on, your time zone, the title you are looking at or asking about with how far you are in it,
   and the parts of your own library, lists, stats, favorites, listens and followed sports that
   Aaru reads to answer. When you ask how a title is rated, it also receives that title's public
-  score and the start of a few public user reviews from TMDB or AniList. It never receives your
-  friends' or groups' data. It gets all of this
+  score and the start of a few public user reviews from TMDB or AniList. When Aaru searches the
+  web for an answer, Anthropic runs the search and returns the pages it found (above). It never
+  receives your friends' or groups' data. It gets all of this
   through its API and does not train on it.
 - **Stremio**, only if you connect it. Your Stremio app asks Aaru for your rows and reports
   what you play. If you import your Stremio history, Aaru's server reads your Stremio library

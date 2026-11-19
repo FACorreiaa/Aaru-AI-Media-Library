@@ -130,10 +130,10 @@ type sseEvent struct {
 	ContentBlock json.RawMessage `json:"content_block"`
 	// content_block_delta and message_delta
 	Delta struct {
-		Type        string  `json:"type"`
-		Text        string  `json:"text"`
-		PartialJSON string  `json:"partial_json"`
-		Thinking    string  `json:"thinking"`
+		Type        string          `json:"type"`
+		Text        string          `json:"text"`
+		PartialJSON string          `json:"partial_json"`
+		Thinking    string          `json:"thinking"`
 		Signature   string          `json:"signature"`
 		Citation    json.RawMessage `json:"citation"`
 		StopReason  *string         `json:"stop_reason"`
