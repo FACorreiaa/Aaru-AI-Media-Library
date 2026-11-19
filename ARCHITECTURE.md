@@ -1076,6 +1076,28 @@ and the start of a few user reviews, AniList's average score. In memory for six 
 a `Title`, never stored. Review text is a stranger's words: it is fenced, and a turn that read it
 is tainted like a turn with a file, so its writes are plans.
 
+### Web search in a chat (ASK-004)
+
+A Chat turn may search the web when the provider can (`model.WebSearcher`; the Anthropic adapter
+with `ANTHROPIC_WEB_SEARCH=true`). The adapter sends Anthropic's server tool
+`web_search_20250305` beside the turn's own tools: Anthropic runs the search, so Aaru's server
+fetches no page, and the `server_tool_use` and `web_search_tool_result` blocks come back among the
+assistant's and are replayed unchanged within the turn (their `encrypted_content` must not
+change). A `pause_turn` stop (`model.StopPaused`) sends those blocks back with no user turn, and
+the answer carries on. Earlier turns are stored as text, so no search block outlives its turn.
+
+Limits: `WebSearchesPerTurn` (3) and `WebSearchesPerDay` (10, `agent_usage.web_searches`, read at
+the start of a turn). Once a turn has searched, the tool stays in every later round, since a
+transcript with searches needs it, so a turn can pass the limit by a search a round. Each search
+is metered at `AnthropicWebSearchMicros` on top of its tokens. The scope gate turns off-topic
+questions away before any search. Pages are strangers' words, so a turn that searched is tainted
+like one with a file or a review: every write becomes a plan.
+
+The pages the answer cites (`model.Response.Sources`, from the text blocks' citations) go to the
+client in the components frame's `sources`, at most `MaxSources`, and are stored in
+`chat_turns.components` as the provider named them. They never go into the body, which the clients
+read aloud.
+
 ### Files in a chat (ASK-010)
 
 A file goes up on its own, before the turn: `POST /v1/chats/{id}/attachments` reads it whole

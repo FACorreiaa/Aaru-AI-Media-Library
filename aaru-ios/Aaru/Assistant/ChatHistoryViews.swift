@@ -234,6 +234,9 @@ struct StoredChatView: View {
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
+            if !exchange.reply.sources.isEmpty {
+                ChatSourcesView(sources: exchange.reply.sources)
+            }
             if !exchange.reply.titles.isEmpty {
                 Text(exchange.reply.titles.map(\.title).joined(separator: " · "))
                     .font(.footnote)

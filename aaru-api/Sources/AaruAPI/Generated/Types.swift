@@ -13284,6 +13284,10 @@ public enum Components {
             public var actionId: Swift.String?
             /// - Remark: Generated from `#/components/schemas/ChatComponentsFrame/actionSummary`.
             public var actionSummary: Swift.String?
+            /// The web pages the answer cites (ASK-004), at most five, in the order first cited. Shown with the reply, each linking out; never read aloud.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ChatComponentsFrame/sources`.
+            public var sources: [Components.Schemas.ChatSource]?
             /// Creates a new `ChatComponentsFrame`.
             ///
             /// - Parameters:
@@ -13293,13 +13297,15 @@ public enum Components {
             ///   - roadmap:
             ///   - actionId: A single change Aaru applied, undone at `/v1/actions/{id}/undo`.
             ///   - actionSummary:
+            ///   - sources: The web pages the answer cites (ASK-004), at most five, in the order first cited. Shown with the reply, each linking out; never read aloud.
             public init(
                 titles: [Components.Schemas.TitleSummary]? = nil,
                 plan: Components.Schemas.AgentPlan? = nil,
                 importId: Swift.String? = nil,
                 roadmap: Components.Schemas.ChatRoadmap? = nil,
                 actionId: Swift.String? = nil,
-                actionSummary: Swift.String? = nil
+                actionSummary: Swift.String? = nil,
+                sources: [Components.Schemas.ChatSource]? = nil
             ) {
                 self.titles = titles
                 self.plan = plan
@@ -13307,6 +13313,7 @@ public enum Components {
                 self.roadmap = roadmap
                 self.actionId = actionId
                 self.actionSummary = actionSummary
+                self.sources = sources
             }
             public enum CodingKeys: String, CodingKey {
                 case titles
@@ -13315,6 +13322,32 @@ public enum Components {
                 case roadmap
                 case actionId
                 case actionSummary
+                case sources
+            }
+        }
+        /// One web page an answer cites, as the search named it.
+        ///
+        /// - Remark: Generated from `#/components/schemas/ChatSource`.
+        public struct ChatSource: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ChatSource/url`.
+            public var url: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ChatSource/title`.
+            public var title: Swift.String
+            /// Creates a new `ChatSource`.
+            ///
+            /// - Parameters:
+            ///   - url:
+            ///   - title:
+            public init(
+                url: Swift.String,
+                title: Swift.String
+            ) {
+                self.url = url
+                self.title = title
+            }
+            public enum CodingKeys: String, CodingKey {
+                case url
+                case title
             }
         }
         /// The data of a `done` frame, the last of a turn that answered.

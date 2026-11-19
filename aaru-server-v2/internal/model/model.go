@@ -120,6 +120,27 @@ type Request struct {
 	ToolChoice string
 	// Effort overrides the provider's configured `output_config.effort` for this call; "" keeps it.
 	Effort string
+	// WebSearch lets the model search the web during this call (ASK-004); nil does not. Only a
+	// provider that SearchesWeb takes it.
+	WebSearch *WebSearch
+}
+
+// WebSearch is a call's web search: the provider runs the searches itself and returns the
+// results, with their sources, among the assistant's blocks.
+type WebSearch struct {
+	// MaxUses is how many searches the call may make; at least 1.
+	MaxUses int
+}
+
+// WebSearcher is a Provider that can search the web for the model (ASK-004).
+type WebSearcher interface {
+	SearchesWeb() bool
+}
+
+// SearchesWeb says p takes Request.WebSearch.
+func SearchesWeb(p Provider) bool {
+	s, ok := p.(WebSearcher)
+	return ok && s.SearchesWeb()
 }
 
 // Stop is why the model stopped.
@@ -131,6 +152,9 @@ const (
 	StopToolUse   Stop = "tool_use"
 	StopMaxTokens Stop = "max_tokens"
 	StopRefusal   Stop = "refusal"
+	// StopPaused is a long server-side turn (a web search) the provider paused: send the
+	// assistant's blocks back as they are, with no new user turn, and it carries on.
+	StopPaused Stop = "paused"
 )
 
 // Response is one answer.
@@ -140,6 +164,8 @@ type Response struct {
 	Stop         Stop
 	InputTokens  int
 	OutputTokens int
+	// WebSearches is how many web searches the provider ran for this answer, billed apart from tokens.
+	WebSearches int
 }
 
 type blockHead struct {
@@ -150,16 +176,68 @@ type blockHead struct {
 	Input json.RawMessage `json:"input"`
 }
 
-// Text is the text blocks, joined by newlines.
+// Text is the text blocks. Adjacent ones are one passage the provider split (citations split it
+// at every cited span) and join as they are; text either side of another block joins by a newline.
 func (r Response) Text() string {
-	var parts []string
+	var (
+		b       strings.Builder
+		between bool
+	)
+	for _, raw := range r.Content {
+		var h blockHead
+		if json.Unmarshal(raw, &h) != nil || h.Type != "text" {
+			between = b.Len() > 0
+			continue
+		}
+		if between {
+			b.WriteString("\n")
+			between = false
+		}
+		b.WriteString(h.Text)
+	}
+	return b.String()
+}
+
+// ReadWeb says the answer holds web search results: words from pages strangers wrote (ASK-004).
+func (r Response) ReadWeb() bool {
 	for _, b := range r.Content {
 		var h blockHead
-		if json.Unmarshal(b, &h) == nil && h.Type == "text" {
-			parts = append(parts, h.Text)
+		if json.Unmarshal(b, &h) == nil && h.Type == "web_search_tool_result" {
+			return true
 		}
 	}
-	return strings.Join(parts, "\n")
+	return false
+}
+
+// Source is one web page an answer cites (ASK-004).
+type Source struct {
+	URL   string `json:"url"`
+	Title string `json:"title"`
+}
+
+// Sources are the pages the text blocks cite, each once, in the order first cited.
+func (r Response) Sources() []Source {
+	var (
+		out  []Source
+		seen = map[string]bool{}
+	)
+	for _, b := range r.Content {
+		var h struct {
+			Type      string   `json:"type"`
+			Citations []Source `json:"citations"`
+		}
+		if json.Unmarshal(b, &h) != nil || h.Type != "text" {
+			continue
+		}
+		for _, c := range h.Citations {
+			if c.URL == "" || seen[c.URL] {
+				continue
+			}
+			seen[c.URL] = true
+			out = append(out, c)
+		}
+	}
+	return out
 }
 
 // ToolCall is one `tool_use` block.
@@ -222,11 +300,14 @@ func StreamOrComplete(ctx context.Context, p Provider, req Request, onText func(
 type Pricing struct {
 	InputPerMTok  float64
 	OutputPerMTok float64
+	// WebSearchMicros is one web search, in millionths of a dollar.
+	WebSearchMicros float64
 }
 
 // Micros is one response's cost in millionths of a dollar, rounded up.
 func (p Pricing) Micros(r Response) int {
-	return int(math.Ceil(float64(r.InputTokens)*p.InputPerMTok + float64(r.OutputTokens)*p.OutputPerMTok))
+	return int(math.Ceil(float64(r.InputTokens)*p.InputPerMTok + float64(r.OutputTokens)*p.OutputPerMTok +
+		float64(r.WebSearches)*p.WebSearchMicros))
 }
 
 // ProviderError is an error status, or nothing usable, from the provider.

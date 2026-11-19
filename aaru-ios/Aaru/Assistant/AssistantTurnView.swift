@@ -29,6 +29,9 @@ struct AssistantTurnView: View {
                     .font(.footnote)
                     .foregroundStyle(Color(.muted))
             }
+            if !reply.sources.isEmpty {
+                ChatSourcesView(sources: reply.sources)
+            }
             if !reply.titles.isEmpty {
                 titles
             }

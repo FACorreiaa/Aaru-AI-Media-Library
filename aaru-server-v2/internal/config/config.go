@@ -286,6 +286,8 @@ type Anthropic struct {
 	WorkspaceID        *string
 	PriceInputPerMTok  float64
 	PriceOutputPerMTok float64
+	// WebSearch lets the assistant search the web (ASK-004): ANTHROPIC_WEB_SEARCH=true.
+	WebSearch bool
 }
 
 // Transcription is the speech-to-text service, in the OpenAI wire format; nil leaves
@@ -651,6 +653,7 @@ func loadAnthropic(r *Reader) (*Anthropic, error) {
 		BaseURL:            base,
 		PriceInputPerMTok:  price("anthropic.price.input", 0.10),
 		PriceOutputPerMTok: price("anthropic.price.output", 0.50),
+		WebSearch:          r.Bool("anthropic.web.search"),
 	}
 	if effort := r.String("anthropic.effort", "low"); effort != "" {
 		a.Effort = &effort

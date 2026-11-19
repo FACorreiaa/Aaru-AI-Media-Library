@@ -94,7 +94,7 @@ func (q *Queries) AgentReplyPosted(ctx context.Context, messageID uuid.UUID) (bo
 }
 
 const agentUsageOn = `-- name: AgentUsageOn :one
-SELECT requests, input_tokens, output_tokens, cost_micros FROM agent_usage
+SELECT requests, input_tokens, output_tokens, cost_micros, web_searches FROM agent_usage
 WHERE user_id = $1 AND day = ($2::pg_catalog.timestamptz AT TIME ZONE 'UTC')::date
 `
 
@@ -108,6 +108,7 @@ type AgentUsageOnRow struct {
 	InputTokens  int64
 	OutputTokens int64
 	CostMicros   int64
+	WebSearches  int32
 }
 
 func (q *Queries) AgentUsageOn(ctx context.Context, arg AgentUsageOnParams) (AgentUsageOnRow, error) {
@@ -118,6 +119,7 @@ func (q *Queries) AgentUsageOn(ctx context.Context, arg AgentUsageOnParams) (Age
 		&i.InputTokens,
 		&i.OutputTokens,
 		&i.CostMicros,
+		&i.WebSearches,
 	)
 	return i, err
 }
@@ -1563,13 +1565,14 @@ func (q *Queries) MarkGroupReadOnJoin(ctx context.Context, arg MarkGroupReadOnJo
 }
 
 const recordAgentUsage = `-- name: RecordAgentUsage :exec
-INSERT INTO agent_usage (user_id, day, requests, input_tokens, output_tokens, cost_micros)
+INSERT INTO agent_usage (user_id, day, requests, input_tokens, output_tokens, cost_micros, web_searches)
 VALUES ($1, ($2::pg_catalog.timestamptz AT TIME ZONE 'UTC')::date, 1, $3,
-        $4, $5)
+        $4, $5, $6)
 ON CONFLICT (user_id, day) DO UPDATE SET requests = agent_usage.requests + 1,
     input_tokens = agent_usage.input_tokens + EXCLUDED.input_tokens,
     output_tokens = agent_usage.output_tokens + EXCLUDED.output_tokens,
-    cost_micros = agent_usage.cost_micros + EXCLUDED.cost_micros
+    cost_micros = agent_usage.cost_micros + EXCLUDED.cost_micros,
+    web_searches = agent_usage.web_searches + EXCLUDED.web_searches
 `
 
 type RecordAgentUsageParams struct {
@@ -1578,6 +1581,7 @@ type RecordAgentUsageParams struct {
 	InputTokens  int64
 	OutputTokens int64
 	CostMicros   int64
+	WebSearches  int32
 }
 
 func (q *Queries) RecordAgentUsage(ctx context.Context, arg RecordAgentUsageParams) error {
@@ -1587,6 +1591,7 @@ func (q *Queries) RecordAgentUsage(ctx context.Context, arg RecordAgentUsagePara
 		arg.InputTokens,
 		arg.OutputTokens,
 		arg.CostMicros,
+		arg.WebSearches,
 	)
 	return err
 }

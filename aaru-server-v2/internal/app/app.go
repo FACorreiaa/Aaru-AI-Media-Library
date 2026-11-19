@@ -366,8 +366,12 @@ func makeModel(settings *config.Anthropic, log *slog.Logger) model.Provider {
 	}
 	m := &model.AnthropicMessages{
 		Transport: provider.NewHTTPTransport(), APIKey: settings.APIKey, ModelName: settings.Model,
-		Price:   model.Pricing{InputPerMTok: settings.PriceInputPerMTok, OutputPerMTok: settings.PriceOutputPerMTok},
-		BaseURL: settings.BaseURL,
+		Price: model.Pricing{
+			InputPerMTok: settings.PriceInputPerMTok, OutputPerMTok: settings.PriceOutputPerMTok,
+			WebSearchMicros: model.AnthropicWebSearchMicros,
+		},
+		BaseURL:   settings.BaseURL,
+		WebSearch: settings.WebSearch,
 	}
 	if settings.Effort != nil {
 		m.Effort = *settings.Effort

@@ -10,6 +10,7 @@ import (
 	"aaru-go-api/internal/db/sqlc"
 	"aaru-go-api/internal/library"
 	"aaru-go-api/internal/middleware"
+	"aaru-go-api/internal/model"
 	"aaru-go-api/internal/safe"
 	"aaru-go-api/internal/telemetry"
 	"aaru-go-api/internal/transcription"
@@ -175,7 +176,7 @@ func (s *Server) GetChat(ctx context.Context, req api.GetChatRequestObject) (api
 }
 
 // storedChatComponents reads a stored turn's components again: its titles and plan as they are
-// now, and the roadmap as Aaru wrote it. What has since gone is left out; nil when nothing is left.
+// now, and the roadmap and cited pages as Aaru wrote them. What has since gone is left out; nil when nothing is left.
 func (s *Server) storedChatComponents(ctx context.Context, user uuid.UUID, raw json.RawMessage) (*componentsFrameJSON, error) {
 	if len(raw) == 0 {
 		return nil, nil //nolint:nilnil // a turn with no components has none
@@ -186,6 +187,7 @@ func (s *Server) storedChatComponents(ctx context.Context, user uuid.UUID, raw j
 	}
 	event := agent.ChatEvent{
 		Type: agent.ChatEventComponents, Roadmap: stored.Roadmap, ActionID: stored.ActionID, ActionSummary: stored.ActionSummary,
+		Sources: stored.Sources,
 	}
 	if len(stored.TitleIDs) > 0 {
 		titles, err := s.Catalog.Store.Titles(ctx, stored.TitleIDs)
@@ -223,7 +225,8 @@ func (s *Server) storedChatComponents(ctx context.Context, user uuid.UUID, raw j
 		}
 	}
 	frame := chatComponentsFrame(event)
-	if len(frame.Titles) == 0 && frame.Plan == nil && frame.ImportID == nil && frame.Roadmap == nil && frame.ActionID == nil {
+	if len(frame.Titles) == 0 && frame.Plan == nil && frame.ImportID == nil && frame.Roadmap == nil && frame.ActionID == nil &&
+		len(frame.Sources) == 0 {
 		return nil, nil //nolint:nilnil // everything it held has gone
 	}
 	return &frame, nil
@@ -416,12 +419,13 @@ type componentsFrameJSON struct {
 	Roadmap       *agent.Roadmap     `json:"roadmap,omitempty"`
 	ActionID      *apiid.UUID        `json:"actionId,omitempty"`
 	ActionSummary string             `json:"actionSummary,omitempty"`
+	Sources       []model.Source     `json:"sources,omitempty"`
 }
 
 func chatComponentsFrame(e agent.ChatEvent) componentsFrameJSON {
 	frame := componentsFrameJSON{
 		ImportID: apiid.PtrOrNil(e.ImportID), Roadmap: e.Roadmap, ActionID: apiid.PtrOrNil(e.ActionID),
-		ActionSummary: e.ActionSummary,
+		ActionSummary: e.ActionSummary, Sources: e.Sources,
 	}
 	for _, t := range e.Titles {
 		frame.Titles = append(frame.Titles, TitleSummaryDTO(t))

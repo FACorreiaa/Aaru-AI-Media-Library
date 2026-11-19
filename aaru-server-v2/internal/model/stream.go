@@ -41,7 +41,7 @@ func (a *AnthropicMessages) stream(ctx context.Context, req Request, onText func
 	if !ok {
 		return Response{}, errors.New("messages stream: transport cannot stream")
 	}
-	payload := AnthropicBody(req, a.ModelName, a.Effort)
+	payload := a.body(req)
 	payload["stream"] = true
 	body, err := json.Marshal(payload)
 	if err != nil {
@@ -80,13 +80,18 @@ type streamBlock struct {
 	think  strings.Builder
 	sig    strings.Builder
 	kind   string
+	// citations are a text block's, in order (ASK-004).
+	citations []json.RawMessage
 }
 
 func (b *streamBlock) raw() (Block, error) {
 	switch b.kind {
 	case "text":
 		b.fields["text"] = mustJSON(b.text.String())
-	case "tool_use":
+		if len(b.citations) > 0 {
+			b.fields["citations"] = mustJSON(b.citations)
+		}
+	case "tool_use", "server_tool_use":
 		if in := strings.TrimSpace(b.input.String()); in != "" {
 			if !json.Valid([]byte(in)) {
 				return nil, fmt.Errorf("messages stream: tool input is not JSON")
@@ -125,17 +130,15 @@ type sseEvent struct {
 	ContentBlock json.RawMessage `json:"content_block"`
 	// content_block_delta and message_delta
 	Delta struct {
-		Type        string  `json:"type"`
-		Text        string  `json:"text"`
-		PartialJSON string  `json:"partial_json"`
-		Thinking    string  `json:"thinking"`
-		Signature   string  `json:"signature"`
-		StopReason  *string `json:"stop_reason"`
+		Type        string          `json:"type"`
+		Text        string          `json:"text"`
+		PartialJSON string          `json:"partial_json"`
+		Thinking    string          `json:"thinking"`
+		Signature   string          `json:"signature"`
+		Citation    json.RawMessage `json:"citation"`
+		StopReason  *string         `json:"stop_reason"`
 	} `json:"delta"`
-	Usage struct {
-		InputTokens  *int `json:"input_tokens"`
-		OutputTokens int  `json:"output_tokens"`
-	} `json:"usage"`
+	Usage anthropicUsage `json:"usage"`
 	Error struct {
 		Type    string `json:"type"`
 		Message string `json:"message"`
@@ -194,10 +197,15 @@ func readStream(r io.Reader, onText func(string)) (Response, error) {
 				b.think.WriteString(ev.Delta.Thinking)
 			case "signature_delta":
 				b.sig.WriteString(ev.Delta.Signature)
+			case "citations_delta":
+				if len(ev.Delta.Citation) > 0 {
+					b.citations = append(b.citations, ev.Delta.Citation)
+				}
 			}
 		case "message_delta":
 			stop = ev.Delta.StopReason
 			out.OutputTokens = ev.Usage.OutputTokens
+			out.WebSearches = ev.Usage.ServerToolUse.WebSearchRequests
 			if ev.Usage.InputTokens != nil {
 				out.InputTokens = *ev.Usage.InputTokens
 			}

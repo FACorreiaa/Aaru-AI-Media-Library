@@ -86,6 +86,21 @@ struct ChatReplyTests {
         #expect(reply.actionID == "act1")
     }
 
+    @Test func sourcesStayApartFromTheText() {
+        var reply = ChatReply()
+        reply.apply(.delta("December 2026."))
+        reply.apply(.components(.init(sources: [.init(url: "https://www.a.test/dune", title: "Dune news")])))
+        #expect(reply.text == "December 2026.")
+        #expect(reply.sources.map(\.url) == ["https://www.a.test/dune"])
+        #expect(reply.sources.first?.site == "a.test")
+    }
+
+    @Test func onlyWebPagesAreLinked() {
+        #expect(Components.Schemas.ChatSource(url: "https://a.test/x", title: "t").link != nil)
+        #expect(Components.Schemas.ChatSource(url: "javascript:alert(1)", title: "t").link == nil)
+        #expect(Components.Schemas.ChatSource(url: "not a url", title: "t").link == nil)
+    }
+
     @Test func importIsKept() {
         var reply = ChatReply()
         reply.apply(.components(.init(importId: "imp1")))

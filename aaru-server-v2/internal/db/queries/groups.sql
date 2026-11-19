@@ -392,14 +392,15 @@ SELECT EXISTS (
 )::boolean AS posted;
 
 -- name: RecordAgentUsage :exec
-INSERT INTO agent_usage (user_id, day, requests, input_tokens, output_tokens, cost_micros)
+INSERT INTO agent_usage (user_id, day, requests, input_tokens, output_tokens, cost_micros, web_searches)
 VALUES (sqlc.arg(user_id), (sqlc.arg(at)::pg_catalog.timestamptz AT TIME ZONE 'UTC')::date, 1, sqlc.arg(input_tokens),
-        sqlc.arg(output_tokens), sqlc.arg(cost_micros))
+        sqlc.arg(output_tokens), sqlc.arg(cost_micros), sqlc.arg(web_searches))
 ON CONFLICT (user_id, day) DO UPDATE SET requests = agent_usage.requests + 1,
     input_tokens = agent_usage.input_tokens + EXCLUDED.input_tokens,
     output_tokens = agent_usage.output_tokens + EXCLUDED.output_tokens,
-    cost_micros = agent_usage.cost_micros + EXCLUDED.cost_micros;
+    cost_micros = agent_usage.cost_micros + EXCLUDED.cost_micros,
+    web_searches = agent_usage.web_searches + EXCLUDED.web_searches;
 
 -- name: AgentUsageOn :one
-SELECT requests, input_tokens, output_tokens, cost_micros FROM agent_usage
+SELECT requests, input_tokens, output_tokens, cost_micros, web_searches FROM agent_usage
 WHERE user_id = sqlc.arg(user_id) AND day = (sqlc.arg(at)::pg_catalog.timestamptz AT TIME ZONE 'UTC')::date;

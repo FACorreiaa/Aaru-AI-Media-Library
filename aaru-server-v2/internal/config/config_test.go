@@ -140,3 +140,21 @@ func TestAppleSignInKeyComesWholeOrNotAtAll(t *testing.T) {
 	assert.Equal(t, []string{"com.fernandocorreia.aaru", "com.aaruapp.web"}, cfg.AppleSignIn.ClientIDs)
 	assert.Equal(t, "TEAM123456", cfg.AppleSignIn.TeamID)
 }
+
+// ASK-004: web search is off unless ANTHROPIC_WEB_SEARCH says true.
+func TestAnthropicWebSearchConfig(t *testing.T) {
+	base := map[string]string{
+		"postgres.user": "u", "postgres.password": "p", "postgres.database": "d", "tmdb.api.key": "k",
+		"anthropic.api.key": "a",
+	}
+	cfg, err := Load(NewReaderFrom(base))
+	require.NoError(t, err)
+	require.NotNil(t, cfg.Anthropic)
+	assert.False(t, cfg.Anthropic.WebSearch)
+
+	assert.Equal(t, "ANTHROPIC_WEB_SEARCH", envName("anthropic.web.search"))
+	base["anthropic.web.search"] = "true"
+	cfg, err = Load(NewReaderFrom(base))
+	require.NoError(t, err)
+	assert.True(t, cfg.Anthropic.WebSearch)
+}
