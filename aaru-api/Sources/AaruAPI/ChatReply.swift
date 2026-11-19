@@ -19,6 +19,8 @@ public struct ChatReply: Sendable {
     public private(set) var roadmap: Components.Schemas.ChatRoadmap?
     public private(set) var actionID: String?
     public private(set) var actionSummary: String?
+    /// The web pages the answer cites (ASK-004): shown under it, never read aloud.
+    public private(set) var sources: [Components.Schemas.ChatSource] = []
     public private(set) var state: State = .working
     public private(set) var problem: String?
 
@@ -104,5 +106,22 @@ public struct ChatReply: Sendable {
         roadmap = components.roadmap ?? roadmap
         actionID = components.actionId ?? actionID
         actionSummary = components.actionSummary ?? actionSummary
+        sources = components.sources ?? sources
+    }
+}
+
+public extension Components.Schemas.ChatSource {
+    /// The page to open, or nil for anything but http(s), which is never linked.
+    var link: URL? {
+        guard let url = URL(string: url), let scheme = url.scheme?.lowercased(),
+              scheme == "https" || scheme == "http", url.host() != nil
+        else { return nil }
+        return url
+    }
+
+    /// The site the page is on, without a leading www.
+    var site: String {
+        let host = link?.host() ?? ""
+        return host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
     }
 }

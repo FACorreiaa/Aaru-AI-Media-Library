@@ -7,6 +7,7 @@ import type { ChatComponents, ChatFrame } from './frames'
 export type TitleSummary = components['schemas']['TitleSummary']
 export type AgentPlan = components['schemas']['AgentPlan']
 export type ChatRoadmap = components['schemas']['ChatRoadmap']
+export type ChatSource = components['schemas']['ChatSource']
 export type StoredTurn = components['schemas']['ChatTurn']
 
 export type ReplyState =
@@ -23,6 +24,8 @@ export type Reply = {
   roadmap: ChatRoadmap | null
   actionId: string | null
   actionSummary: string | null
+  /** The web pages the answer cites (ASK-004): shown under it, never read aloud. */
+  sources: ChatSource[]
   state: ReplyState
   problem: string | null
 }
@@ -39,6 +42,7 @@ export function newReply(): Reply {
     roadmap: null,
     actionId: null,
     actionSummary: null,
+    sources: [],
     state: 'working',
     problem: null,
   }
@@ -81,6 +85,20 @@ function merge(reply: Reply, parts: ChatComponents): Reply {
     roadmap: parts.roadmap ?? reply.roadmap,
     actionId: parts.actionId ?? reply.actionId,
     actionSummary: parts.actionSummary ?? reply.actionSummary,
+    sources: parts.sources ?? reply.sources,
+  }
+}
+
+/** A cited page's link and the site it is on; null for anything but http(s), which is never linked. */
+export function sourceLink(
+  source: ChatSource,
+): { href: string; site: string } | null {
+  try {
+    const url = new URL(source.url)
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return null
+    return { href: url.href, site: url.hostname.replace(/^www\./, '') }
+  } catch {
+    return null
   }
 }
 

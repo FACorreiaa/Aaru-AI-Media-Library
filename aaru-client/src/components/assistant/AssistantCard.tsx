@@ -14,6 +14,7 @@ import {
   cancelReply,
   exchangesOf,
   newReply,
+  sourceLink,
   wrote,
 } from '../../lib/assistant/reply'
 import type { Reply } from '../../lib/assistant/reply'
@@ -743,6 +744,32 @@ function TurnView(props: {
       </Show>
       <Show when={status()}>
         {(line) => <p class="text-sm text-muted">{line()}</p>}
+      </Show>
+      <Show when={reply().sources.length > 0}>
+        <div class="flex flex-col gap-1">
+          <p class="text-xs font-semibold text-muted">Sources</p>
+          <ul class="flex flex-col gap-1">
+            <For each={reply().sources}>
+              {(source) => (
+                <Show when={sourceLink(source)}>
+                  {(link) => (
+                    <li class="text-xs">
+                      <a
+                        href={link().href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="text-accent underline"
+                      >
+                        {source.title || link().site}
+                      </a>
+                      <span class="text-muted"> · {link().site}</span>
+                    </li>
+                  )}
+                </Show>
+              )}
+            </For>
+          </ul>
+        </div>
       </Show>
       <Show when={reply().titles.length > 0}>
         <div onClick={(event) => event.target.closest('a') && props.onClose()}>

@@ -5437,6 +5437,13 @@ export interface components {
        */
       actionId?: string
       actionSummary?: string
+      /** @description The web pages the answer cites (ASK-004), at most five, in the order first cited. Shown with the reply, each linking out; never read aloud. */
+      sources?: components['schemas']['ChatSource'][]
+    }
+    /** @description One web page an answer cites, as the search named it. */
+    ChatSource: {
+      url: string
+      title: string
     }
     /** @description The data of a `done` frame, the last of a turn that answered. */
     ChatDoneFrame: {

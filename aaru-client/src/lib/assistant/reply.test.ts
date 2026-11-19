@@ -8,6 +8,7 @@ import {
   exchangesOf,
   newReply,
   replyFromStored,
+  sourceLink,
   streamEnded,
   wrote,
 } from './reply'
@@ -149,5 +150,33 @@ describe('a chat read back from history', () => {
       ['first', 'cancelled'],
       ['second', 'cancelled'],
     ])
+  })
+})
+
+describe('cited sources (ASK-004)', () => {
+  it('keeps the sources apart from the words read aloud', () => {
+    let reply = applyFrame(newReply(), {
+      type: 'delta',
+      text: 'December 2026.',
+    })
+    reply = applyFrame(reply, {
+      type: 'components',
+      components: {
+        sources: [{ url: 'https://www.a.test/dune', title: 'Dune news' }],
+      },
+    })
+    expect(reply.text).toBe('December 2026.')
+    expect(reply.sources).toEqual([
+      { url: 'https://www.a.test/dune', title: 'Dune news' },
+    ])
+  })
+
+  it('links only http and https pages', () => {
+    expect(sourceLink({ url: 'https://www.a.test/x', title: 't' })).toEqual({
+      href: 'https://www.a.test/x',
+      site: 'a.test',
+    })
+    expect(sourceLink({ url: 'javascript:alert(1)', title: 't' })).toBeNull()
+    expect(sourceLink({ url: 'not a url', title: 't' })).toBeNull()
   })
 })
