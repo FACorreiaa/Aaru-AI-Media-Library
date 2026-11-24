@@ -1,7 +1,8 @@
 # Postgres for local runs and tests (the same defaults the Swift server used).
 services:
   postgres:
-    image: postgres:17
+    # Same major as production (platform/infra apps/aaru/data/postgres.yaml).
+    image: postgres:18
     ports:
       - 5432:5432
     environment:
