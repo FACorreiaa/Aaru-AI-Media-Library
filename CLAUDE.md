@@ -25,6 +25,7 @@ This file is the working contract for anyone — human or agent — changing the
 | Shared code | `AaruCore` Swift package in `aaru-core/` (models, IDs, validation) for the Apple apps; the Go server holds the same rules in `aaru-server-v2/internal/core`. No HTTP client in either |
 | API client (Apple) | `AaruAPI` Swift package in `aaru-api/`: the `/v1` client generated from the server's `openapi.yaml` and committed, plus session middleware. Regenerate with `scripts/generate-api-client.sh`; CI fails if stale |
 | iOS + Mac | SwiftUI, one multiplatform target in `aaru-ios/`, plus one widget extension (iOS + macOS widgets, Live Activity, App Intents) |
+| Android | `aaru-android/` (owner, 2026-11-24): Kotlin, Jetpack Compose on Material 3 themed on Aaru's tokens (no dynamic colour), MVVM with one-way data flow, Navigation 3, Hilt, Retrofit + OkHttp with a `/v1` client generated from `openapi.yaml` and committed (`./gradlew :core:api:generateApi`; CI fails if stale), Room as a cache only. The same features and behaviour as the Apple app, built in milestones to a closed Play beta and then parity, then minimal Wear OS and Android TV apps. Scaffold only so far; the plan and every `AND-` item are in `aaru-android/PLAN.md` |
 | Web | `aaru-client/` — SolidJS + TanStack Start on Cloudflare Workers, a pure client of `/v1` with the same functionality as the Apple apps. Landing page + sign-in + the signed-in app in one Worker. API types generated from `openapi.yaml` (`npm run api:generate`). UI from shadcn-solid on Kobalte, every component as source in `src/components/ui` behind the `~/components/ui` barrel, themed on Aaru's tokens; animation through `motion/mini` via `src/lib/motion.ts` (DESIGN.md §17). No DB access, no business logic |
 | Browser extension | `aaru-extension/` — WXT, one Manifest V3 source for Chrome and Firefox (SCR-007). Reads the player on Netflix, Disney+ and Prime Video, and YouTube videos for Now playing (SCR-009), and calls `/v1/scrobble/*` with a scrobble-only token. A client like the others: no rules of its own |
 | Database | PostgreSQL through pgx and sqlc (queries in `internal/db/queries`), goose migrations after a baseline of the Swift server's 60 Fluent migrations; a StatefulSet on the `maat` cluster |
@@ -52,14 +53,14 @@ This file is the working contract for anyone — human or agent — changing the
 | Groups | Friends-only spaces with channels (`text`, `title`, `watch`, `shelf`) and `#general`. Server-visible messages in Postgres; `@aaru` replies through `ModelProviding` (pulled forward 2026-10-20), all in one `#ai-reply` text channel per group that the first mention makes (found by `is_agent_replies`, never by name; owner 2026-11-14) |
 | Messaging (P6) | libsignal; server is a key directory + ciphertext mailbox only |
 | Push | APNSwift, per-device environment; web push (VAPID, `swift-webpush`) to browsers. Airing alerts pulled into P2 (2026-10-15, web 2026-10-20); group mention and invite alerts with groups (GRP-012); the "Now watching" Live Activity pushed from scrobbles (push-to-start, update, end; SCR-008) |
-| Deploy | API: GHCR image → promote PR in `~/Work/production/platform/infra` → ArgoCD on `maat` (`horus` namespace). Web: Wrangler to Workers |
+| Deploy | API: GHCR image → promote PR in `~/Work/production/platform/infra` → ArgoCD on `maat` (`horus` namespace). Web: Wrangler to Workers. Android: Google Play (planned, AND-006) |
 | Observability | Grafana Cloud through the cluster's Alloy: Prometheus `/metrics` on an internal port, logs, probes, an "Apps / Aaru" board. Sentry for errors only (server, web, Apple apps, extension; no tracing, no replay, no PII). PostHog for a few server-side product events only; no client analytics SDK. Every claim lives in `docs/privacy.md`, which changes first (owner, 2026-10-21) |
 | User import — capture | Pasted text, an image, or a catalog link (TMDB, AniList, Open Library) as an import job (`source=capture`, AG-006, pulled forward 2026-10-22). Text (up to 100,000 characters, so a whole chat) and up to 5 images are read by one `ModelProviding` call and deleted once read; links are parsed by id and never fetched. `?kind=book` reads books only (BOOK-001). Text that asks for titles ("X-Men books in reading order") is answered with titles to review, and an order becomes a list on approve; the owl's `plan_title_list` makes the same job without a second model call (BOOK-003). 30 a day for every account, no monthly limit while Plus is off sale (BIL-005) |
 | Agent model | Pluggable `model.Provider` in `aaru-server-v2` (`internal/model`, `internal/agent`). Anthropic default, user key supported, spend metered daily. Nothing of a user's goes to it until they allowed AI sharing (`internal/aisharing`, PRV-002): every caller asks `aisharing.Require` first |
 | Transcription | The cluster's own Whisper (`http://whisper.horus.svc.cluster.local:8000/v1`, `Systran/faster-whisper-small`, auto-detected language) behind an OpenAI-compatible provider, as Norviq does; audio held in memory, never stored, no paid speech API (ASK-009) |
 | Assistant | A card opened from the owl in the top bar, talk or type, on iPhone, Mac and web. A streaming chat turn in `aaru-server-v2` (`internal/agent/chat.go`) over `model.Provider`, reading only the signed-in user's own data and the catalog (and, with web search on, pages Anthropic's search returns), for films, shows, anime, manga, books, music, concerts, sport, art and the user's Aaru data (art and concerts added 2026-11-19); one item changes like a tap, a larger plan is a `PlanCard`. Free for every account; chats stored until deleted, one at a time or all, and read again from the card's History or Settings (`GET /v1/chats`, `GET`/`DELETE /v1/chats/{id}`); a chat continues for 15 minutes and New chat starts another (ASK-009, owner 2026-11-04; ASK-011, owner 2026-11-10). A roadmap, an order or a list of editions comes from what the model knows through `plan_title_list` and shows in the reply as a `RoadmapCard` (the components frame's `roadmap`), reviewed as an import before anything is added; a turn the scope gate marks as asking for a list gets more room (ASK-011). Web search through Anthropic's server tool, offered only on a turn the scope gate finds about media or art (films, shows, anime, manga, books, music, concerts, sport, art), with adult sites blocked (`catalog.AdultSites`, owner 2026-11-19), 3 a turn and 10 a day, its cited pages shown under the reply and never read aloud, and a turn that searched writes only plans (ASK-004, `ANTHROPIC_WEB_SEARCH`). Files and long pastes in the card (ASK-010, owner 2026-11-06): `POST /v1/chats/{id}/attachments`, kept an hour; pictures, PDFs and text go to the model, an export only as its format and first rows; `import_attachment` makes an import the user reviews; while a file is in the chat every write is a `PlanCard` |
 | File check | `internal/upload`: every upload door (chat files, capture pictures, exports, listening histories) reads a file's bytes before anything else does. Magic numbers decide the kind; a name or Content-Type that disagrees is refused, as are programs, archives, Office containers, pictures past 40 MP, XML with a DOCTYPE, and PDFs with encryption or active content. No virus scanner (owner, 2026-11-06); `upload.Check` is where one would go (ASK-010) |
-| Billing | Aaru Plus on StoreKit 2, bought in the Apple apps only (BIL-001…004, pulled forward 2026-10-22). The server verifies Apple's signed transactions and notifications itself (`internal/billing`, against Apple's root) and keeps the entitlement; the web shows it and sells nothing. No Stripe, no web checkout |
+| Billing | Aaru Plus on StoreKit 2, bought in the Apple apps only (BIL-001…004, pulled forward 2026-10-22). The server verifies Apple's signed transactions and notifications itself (`internal/billing`, against Apple's root) and keeps the entitlement; the web shows it and sells nothing. No Stripe, no web checkout. Google Play Billing on Android is planned (owner, 2026-11-24; AND-094 with server work S6 in `aaru-android/PLAN.md`), built last; not started |
 | Outbound agent access | App Intents in `aaru-ios`; MCP at `POST /v1/mcp` in `aaru-server-v2/internal/mcp`, with an OAuth front door (`internal/oauth`) so Claude can add Aaru as a custom connector. Not a second backend |
 
 ## Repo layout
@@ -71,6 +72,7 @@ aaru/
   aaru-server-v2/        # The API (Go: echo, pgx, sqlc, goose)
   aaru-server/           # Archived Swift API: keeps openapi.yaml and the client generator only
   aaru-ios/              # SwiftUI iPhone + Mac + widget extension
+  aaru-android/          # Kotlin + Jetpack Compose: phone and tablet, later Wear OS and TV (PLAN.md)
   aaru-client/           # SolidJS + TanStack Start on Workers: landing + the web app on /v1
   aaru-extension/        # Browser extension (Chrome + Firefox): scrobbles streaming sites
   README.md
@@ -124,6 +126,12 @@ cd aaru-client && npm run build && npm run size   # JS/CSS budget per route (siz
 cd aaru-extension && npm run check && npm run lint && npm run typecheck && npm test
 cd aaru-extension && npm run build   # .output/chrome-mv3, .output/firefox-mv3; store submission by hand
 
+# Android (JDK 21 and the Android SDK; sdk.dir in aaru-android/local.properties)
+cd aaru-android && ./gradlew spotlessCheck detekt :app:lintBetaDebug test   # format, analysis, Lint, unit tests
+cd aaru-android && ./gradlew :app:assembleDevDebug   # dev flavor: a local server at 10.0.2.2:8080
+cd aaru-android && ./gradlew :core:api:generateApi   # after any openapi.yaml change
+cd aaru-android && ./gradlew spotlessApply           # rewrites files
+
 # Apple
 xcodebuild build -project aaru-ios/Aaru.xcodeproj -scheme Aaru -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO
 xcodebuild test -project aaru-ios/Aaru.xcodeproj -scheme Aaru -destination 'platform=iOS Simulator,name=iPhone 17' CODE_SIGNING_ALLOWED=NO   # AaruTests: unit tests, no UI tests
@@ -140,10 +148,10 @@ Never run destructive DB commands against a non-local database.
 
 One backend. **Beta is client-side only**, as in the other apps:
 
-| Channel | Apple | Web | API |
-| --- | --- | --- | --- |
-| Beta | TestFlight, bundle id + `.beta`, scheme "Aaru Beta", fastlane `beta` on every merge to `main` | `env.staging` Worker in `wrangler.jsonc`, deployed on every merge to `main` | production |
-| Prod | App Store, fastlane `release` on manual dispatch | `wrangler.jsonc` Worker, manual dispatch | production |
+| Channel | Apple | Web | Android | API |
+| --- | --- | --- | --- | --- |
+| Beta | TestFlight, bundle id + `.beta`, scheme "Aaru Beta", fastlane `beta` on every merge to `main` | `env.staging` Worker in `wrangler.jsonc`, deployed on every merge to `main` | Play internal track, application id + `.beta`, on every merge to `main` (planned, AND-006) | production |
+| Prod | App Store, fastlane `release` on manual dispatch | `wrangler.jsonc` Worker, manual dispatch | Google Play, manual dispatch (planned, AND-006) | production |
 
 The API ships only through a merged promote PR in `~/Work/production/platform/infra`. Never
 edit an app-local `*-infra/` copy. Push tokens carry their APNs environment so Beta and Prod

@@ -34,6 +34,27 @@ library layer stay separate, external IDs stored whenever known, no second backe
 - **Anime is first-class from P1** (AniList catalog, `anilist`/`mal`/`anidb` external IDs).
 - DMs are **Signal-grade (libsignal)**. Licence and web support are OPEN — see DM-003, DM-004.
 
+## Decisions recorded 2026-11-24
+
+- **An Android app, in this repo (owner, 2026-11-24).** `aaru-android/`, a flat sibling of
+  `aaru-ios/`, replacing "later, its own project" (2026-10-21). Kotlin and Jetpack Compose on
+  Material 3 themed on Aaru's tokens, MVVM with one-way data flow, Navigation 3, Hilt, Retrofit
+  and OkHttp on a `/v1` client generated from `openapi.yaml`, Room as a cache only, Coil, Vico,
+  WorkManager, Glance widgets; tested with JUnit, MockK, Compose UI tests and Maestro.
+- **The same features and behaviour as the Apple app.** What iOS has built is the scope; what
+  it has not (Composer, DMs, FriendStories) is not.
+- **Sign-in: Google, Apple and the emailed code.** Apple through its web flow, because accounts
+  are keyed on the provider and never merged on email.
+- **Google Play Billing is planned**, so Plus can be bought on Android. This changes "bought in
+  the Apple apps only" (BIL-001…004). Built last; Plus is off sale.
+- **Phone and tablet first, then minimal Wear OS and Android TV apps.** Neither has an Apple
+  counterpart; their scope is in the plan.
+- **In phases:** a closed Play beta once sign-in, library, progress, calendar, lists and imports
+  work; production at parity.
+- The items are `AND-001`… and the server items `S1`…`S7`. Their definitions, sizes and
+  "Done when" conditions live in `aaru-android/PLAN.md` §7–§8, the record for that work; the
+  Status table below tracks them here.
+
 ## Decisions recorded 2026-11-17
 
 - **Worlds (GRAPH-007): one story universe across every kind.** The one big feature picked after
@@ -1203,6 +1224,7 @@ account or a stranger that has not happened yet.
 | SEC-001 | Documented, not scheduled | docs/audit/security.md | Low: `?token=` on validate-token reaches request logs; ingress access log keeps queries |
 | SEC-002 | Minimum done (fix/release-blockers) | docs/audit/security.md | Re-auth before delete, sign out of other devices, Sandbox behind `BILLING_ACCEPT_SANDBOX` done 2026-11-11; the rest of the hardening list stays documented |
 | SEC-003 | Documented, not scheduled | ~/security-audit-skill/aaru/run-1 | 42 of 79 coverage units deferred; no independent verification ran |
+| AND-001 | Built, unverified | `aaru-android/` scaffold, `ci-android.yml`, Android outputs in `generate-tokens.mjs` and rules in `brand-guard.sh` | Gates green locally; first CI run is this PR. App built, never launched on a device or emulator |
 
 ### P0 progress log (from 2026-10-09; merged in #1, deployed 2026-10-15)
 
