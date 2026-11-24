@@ -43,6 +43,24 @@ hue=$(git grep -InE '^[^/]*(Color|[(:?,=\[]) *\.(white|black|blue|red|green|oran
   grep -v '// brand-guard: allow$' || true)
 [ -z "$hue" ] || fail "System colour in Swift. Use a token colour set (Color(.ink), Color(.onScrim), …)." "$hue"
 
+# Android: Compose colours come from Tokens.gen.kt (AaruTheme.colors) and resource colours from
+# colors.gen.xml, both written by the same generator. No literal, no named system colour, and no
+# Material dynamic colour, which would repaint Aaru in the wallpaper's hues. The same
+# `// brand-guard: allow` ends a line that must stay literal.
+kthex=$(git grep -InE 'Color\( *0x|Color\( *(red|green|blue|alpha) *=|Color\.(hsv|hsl|parseColor)|toColorInt\(' -- 'aaru-android/*.kt' ':!*Tokens.gen.kt' |
+  grep -v '// brand-guard: allow$' || true)
+[ -z "$kthex" ] || fail "Colour literal in Kotlin. Use AaruTheme.colors, generated from design/tokens.json." "$kthex"
+kthue=$(git grep -InE '^[^/]*Color\.(White|Black|Red|Green|Blue|Yellow|Cyan|Magenta|Gray|DarkGray|LightGray)([^a-zA-Z0-9_]|$)' -- 'aaru-android/*.kt' |
+  grep -v '// brand-guard: allow$' || true)
+[ -z "$kthue" ] || fail "System colour in Kotlin. Use a token (AaruTheme.colors.ink, .onScrim, …)." "$kthue"
+ktdynamic=$(git grep -InE 'dynamic(Light|Dark)ColorScheme' -- 'aaru-android/*.kt' || true)
+[ -z "$ktdynamic" ] || fail "Material dynamic colour in Kotlin. Aaru's colours are its own tokens." "$ktdynamic"
+xmlhex=$(git grep -InE '#[0-9a-fA-F]{3,8}([^0-9a-zA-Z_-]|$)' -- 'aaru-android/*.xml' ':!*colors.gen.xml' || true)
+[ -z "$xmlhex" ] || fail "Colour literal in an Android resource. Use @color/aaru_* from colors.gen.xml." "$xmlhex"
+ktserif=$(git grep -InE 'FontFamily\.(Serif|Cursive|Monospace)|R\.font\.|Font\(' -- 'aaru-android/*.kt' || true)
+[ -z "$ktserif" ] || fail "Serif or bundled font in Kotlin. Use the theme's typography (the system sans)." "$ktserif"
+[ -z "$(git ls-files 'aaru-android/*/res/font/*')" ] || fail "Bundled font under aaru-android." "$(git ls-files 'aaru-android/*/res/font/*')"
+
 # Display face: the system sans everywhere. No serif design, no bundled or named faces.
 serif=$(git grep -InE '\.serif([^a-zA-Z]|$)|\.custom\("' -- 'aaru-ios/*.swift' || true)
 [ -z "$serif" ] || fail "Serif or custom font in Swift. Use Font.aaruDisplay (the system sans)." "$serif"
@@ -50,13 +68,14 @@ webserif=$(git grep -IniE 'ui-serif|Newsreader|Georgia|@font-face' -- 'aaru-clie
 [ -z "$webserif" ] || fail "Serif or bundled font on the web. Use var(--font-display) (the system sans)." "$webserif"
 
 # Retired marks (DESIGN.md "Brand", 2026-10-22): the owl replaced the heron and the reed mark.
-retired=$(git grep -IniE 'heron|reed[ -]?mark' -- 'aaru-client/src' 'aaru-ios' 'aaru-extension/src' || true)
+retired=$(git grep -IniE 'heron|reed[ -]?mark' -- 'aaru-client/src' 'aaru-ios' 'aaru-extension/src' 'aaru-android' || true)
 [ -z "$retired" ] || fail "Retired mark. The owl (OwlMark / Image(.owlMark)) is Aaru's mark now." "$retired"
 
 # The 3D owl's rig and motion (BRD-011) are written once, in design/. Each client carries a copy
 # so it can bundle it; a copy that differs would make the web and the Apple owl move apart.
 for name in owl-motion.json owl-rig.json; do
-  for copy in "aaru-client/src/lib/owl3d/$name" "aaru-ios/Aaru/Resources/$name"; do
+  for copy in "aaru-client/src/lib/owl3d/$name" "aaru-ios/Aaru/Resources/$name" \
+    "aaru-android/core/design/src/main/assets/$name"; do
     [ ! -f "$copy" ] || cmp -s "design/$name" "$copy" ||
       fail "$copy differs from design/$name." "cp design/$name $copy"
   done

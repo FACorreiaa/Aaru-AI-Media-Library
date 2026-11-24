@@ -1363,6 +1363,25 @@ The widget extension lives in the same `aaru-ios` project and serves iOS and mac
 App Group id: `group.$(PRODUCT_BUNDLE_IDENTIFIER)`, so beta and prod builds never share a
 snapshot.
 
+### Android (`aaru-android`)
+
+Kotlin and Jetpack Compose (owner, 2026-11-24), a pure `/v1` client with the same features and
+behaviour as the Apple app. The plan, the server work it needs and every `AND-` item are in
+`aaru-android/PLAN.md`; so far it is a scaffold.
+
+- Modules: `app` (shell, navigation, Hilt), `core/api` (the `/v1` client generated from
+  `openapi.yaml` and committed, plus hand-written session, time zone and assistant-stream code,
+  as `aaru-api` is for Apple), `core/design` (tokens from `design/tokens.json`, the theme),
+  later `core/data`, `core/rules` and one module per feature area. Convention plugins in
+  `build-logic`.
+- Session: the same opaque bearer token, stored encrypted with a Keystore key; a 401 signs out
+  once. No refresh.
+- Local cache: Room holds the last library sync and cached pages, cleared on sign-out. No
+  offline write queue, as on Apple.
+- Server work Android needs (each a separate PR, promoted before the milestone that uses it):
+  the Android Google client id, Sign in with Apple's web flow, `assetlinks.json`, FCM push, Now
+  playing over FCM, Google Play Billing, and a device link for TV.
+
 ### Web (`aaru-client`)
 
 SolidJS + TanStack Start on Cloudflare Workers, Tailwind 4. Decided 2026-10-14 (replaces the
@@ -1553,7 +1572,7 @@ Rules:
   public social route besides a share link's preview (below), and shows only the inviter's name, handle and chosen title; every dead
   end is one 404. The web Worker serves `/.well-known/apple-app-site-association` claiming
   `/i/*` for the App Store and Beta app ids, so the apps open the same URL. Android will claim
-  it through `assetlinks.json` when there is an Android app.
+  it through `assetlinks.json` (S3 and AND-070 in `aaru-android/PLAN.md`).
 - **Share links (SHR-002, 2026-10-28).** `https://aaruapp.com/s/{code}`, reusable, no expiry.
   A `shares` row points at exactly one title (resolved when the link is made), TheSportsDB event
   or Ticketmaster event; nothing about an event is stored. `GET /v1/shares/{code}` is public with
