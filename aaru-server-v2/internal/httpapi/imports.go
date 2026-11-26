@@ -105,10 +105,11 @@ func (s *Server) ResolveImportRow(ctx context.Context, req api.ResolveImportRowR
 	if err != nil {
 		return nil, err
 	}
-	if err := s.Imports.PreviewLists(ctx, job, []imports.PlannedRow{row}, user); err != nil {
+	previewed := []imports.PlannedRow{row}
+	if err := s.Imports.PreviewLists(ctx, job, previewed, user); err != nil {
 		return nil, err
 	}
-	return importResolvedJSON{Job: importJobOut(job), Row: ImportRowDTO(row)}, nil
+	return importResolvedJSON{Job: importJobOut(job), Row: ImportRowDTO(previewed[0])}, nil
 }
 
 // LeaveOutImportRow is BOOK-001: untick a row of a plan, or tick it again.
@@ -124,10 +125,11 @@ func (s *Server) LeaveOutImportRow(ctx context.Context, req api.LeaveOutImportRo
 	if err != nil {
 		return nil, err
 	}
-	if err := s.Imports.PreviewLists(ctx, job, []imports.PlannedRow{row}, user); err != nil {
+	previewed := []imports.PlannedRow{row}
+	if err := s.Imports.PreviewLists(ctx, job, previewed, user); err != nil {
 		return nil, err
 	}
-	return importResolvedJSON{Job: importJobOut(job), Row: ImportRowDTO(row)}, nil
+	return importResolvedJSON{Job: importJobOut(job), Row: ImportRowDTO(previewed[0])}, nil
 }
 
 // MatchAllImportRows is the review's Match all (IMP-021).

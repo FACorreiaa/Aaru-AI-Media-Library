@@ -326,3 +326,37 @@ func TestATitleMatchedByHandJoinsItsOwnImportsList(t *testing.T) {
 	assert.Equal(t, []string{found}, env.listOrder(t, own))
 	assert.Equal(t, own["id"], env.json(http.MethodGet, "/v1/imports/"+firstID, nil)["listId"])
 }
+
+func TestAHandMatchOnALaterRowRenamesTheListOnEveryRow(t *testing.T) {
+	lostA, lostB, found, later := "Lost "+uuid.NewString(), "Lost "+uuid.NewString(), "Found "+uuid.NewString(), "Later "+uuid.NewString()
+	list := "Road to Caladan " + uuid.NewString()[:8]
+	steps := []map[string]any{{"heading": "The books"}}
+	m := &captureModel{responses: []model.Response{
+		roadmapReport(list, steps,
+			map[string]any{"title": lostA, "type": "book", "author": "A", "step": 1},
+			map[string]any{"title": lostB, "type": "book", "author": "A", "step": 1}),
+		roadmapReport(list, steps, map[string]any{"title": later, "type": "book", "author": "A", "step": 1}),
+	}}
+	env := newCaptureEnv(t, m, nil)
+	env.captureBook(later, "A")
+	firstID, _ := env.approvedCapture("the roadmap to Caladan")
+	env.approvedCapture("the roadmap to Caladan")
+
+	env.captureBook(found, "A")
+	pick := env.send(http.MethodPost, "/v1/imports/"+firstID+"/rows/1/resolve", map[string]any{"mediaRef": map[string]any{
+		"type": string(core.MediaBook), "ids": map[string]any{"openLibrary": env.search.hits[found][0].IDs.OpenLibrary},
+	}})
+	require.Equal(t, http.StatusOK, pick.Code, pick.Body.String())
+	assert.Equal(t, list+" (2)", env.reviewList(firstID), "the first row names the list the match made")
+}
+
+func TestLeavingOutARowKeepsTheNameApprovalWillGive(t *testing.T) {
+	env, list, _, _ := repeatedRoadmap(t)
+	env.approvedCapture("the roadmap to read Dune")
+	id := env.plannedCapture("the roadmap to read Dune")
+
+	left := env.send(http.MethodPost, "/v1/imports/"+id+"/rows/0/left-out", map[string]any{"leftOut": true})
+	require.Equal(t, http.StatusOK, left.Code, left.Body.String())
+	row := decode[map[string]any](t, left)["row"].(map[string]any)
+	assert.Equal(t, []any{list + " (2)"}, row["lists"], "the row the client patches in keeps the new name")
+}
