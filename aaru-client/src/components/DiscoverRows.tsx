@@ -13,6 +13,8 @@ import { AddToListDialog } from './AddToListDialog'
 import { DiscoverCard, Row } from './HomeRows'
 import { PageControls } from './Paged'
 import { clampPage, matches, pageOf } from '../lib/paging'
+import { useAppShell } from './shell/context'
+import { Button } from '~/components/ui'
 
 /**
  * DISC-001: the public rows, as Home shows them under the user's own and as the Discover page
@@ -122,6 +124,7 @@ export function DiscoverRows(props: {
     )
   })
   const page = () => clampPage(props.page, found().length)
+  const shell = useAppShell()
   const adder = createDiscoverAdder({
     onAdded: (key, entry) => {
       props.onRowsChange(markAdded(props.rows, key, entry.id))
@@ -137,10 +140,23 @@ export function DiscoverRows(props: {
           <Show
             when={found().length > 0}
             fallback={
-              <p class="mt-12 text-muted">
-                Nothing on Discover matches “{query()}”. Search finds every
-                title.
-              </p>
+              <div class="mt-12 flex flex-col items-start gap-3">
+                <p class="text-muted">
+                  Nothing on Discover matches “{query()}”. Search finds every
+                  title.
+                </p>
+                {/* ASK-012: the filter's words go to the owl as they are. */}
+                <Show when={shell.assistantAvailable()}>
+                  <Button
+                    variant="soft"
+                    size="bare"
+                    onClick={() => shell.askAssistant(query().trim())}
+                    class="rounded-panel px-3 py-2 text-left text-sm text-accent"
+                  >
+                    Ask Aaru: “{query()}”
+                  </Button>
+                </Show>
+              </div>
             }
           >
             <div class="mt-8 grid grid-cols-[repeat(auto-fill,minmax(8.5rem,1fr))] gap-4">
