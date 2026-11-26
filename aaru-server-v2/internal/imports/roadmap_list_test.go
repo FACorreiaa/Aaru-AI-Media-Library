@@ -18,6 +18,8 @@ func TestFreeListName(t *testing.T) {
 		return out
 	}
 	long := strings.Repeat("a", capture.MaxListName)
+	// Eighty runes but fewer graphemes: an accent combined onto each letter.
+	combined := strings.Repeat("e\u0301", capture.MaxListName/2)
 	for _, tc := range []struct {
 		name, want string
 		existing   []core.AaruList
@@ -27,6 +29,7 @@ func TestFreeListName(t *testing.T) {
 		{name: "Road to Dune", want: "Road to Dune (2)", existing: lists("road to dune")},
 		{name: "Road to Dune", want: "Road to Dune (3)", existing: lists("Road to Dune", "ROAD TO DUNE (2)")},
 		{name: long, want: strings.Repeat("a", capture.MaxListName-4) + " (2)", existing: lists(long)},
+		{name: combined, want: strings.Repeat("e\u0301", capture.MaxListName/2-2) + " (2)", existing: lists(combined)},
 	} {
 		got := freeListName(tc.existing, tc.name)
 		assert.Equal(t, tc.want, got, tc.name)

@@ -15,8 +15,10 @@ import (
 // one of the user's lists already has is renamed "Name (2)", "Name (3)" and so on, on every row
 // that names it, so asking for the same roadmap twice makes a second list instead of doubling the
 // first one's steps. Lists without a roadmap (shelves, plain orders) still join a list of their
-// name. It runs at approval, so two plans of one name waiting side by side each get their own list,
-// and the renamed rows are saved with the plan, so the import's list is found by its new name.
+// name. It runs at approval, so two plans of one name approved one after the other each get their own
+// list, and the renamed rows are saved with the plan, so the import's list is found by its new name.
+// It reads the lists before the approval's transaction, as listOps does: two approvals of one name
+// at the same instant can still both take the name.
 func (s *Service) ownRoadmapLists(ctx context.Context, rows []PlannedRow, user uuid.UUID) error {
 	var names []string
 	for _, r := range rows {
@@ -62,7 +64,8 @@ func (s *Service) ownRoadmapLists(ctx context.Context, rows []PlannedRow, user u
 }
 
 // freeListName is name when none of the lists has it (case aside), else the first of "name (2)",
-// "name (3)"… that none has, with name cut so the whole fits a list name (capture.MaxListName).
+// "name (3)"… that none has, with name cut so the whole fits a list name (capture.MaxListName, in
+// runes, as capture.ListName counts them).
 func freeListName(existing []core.AaruList, name string) string {
 	taken := func(candidate string) bool {
 		return slices.ContainsFunc(existing, func(l core.AaruList) bool { return strings.EqualFold(l.Name, candidate) })
@@ -72,7 +75,9 @@ func freeListName(existing []core.AaruList, name string) string {
 	}
 	for n := 2; ; n++ {
 		suffix := fmt.Sprintf(" (%d)", n)
-		candidate := strings.TrimSpace(core.Prefix(name, capture.MaxListName-len(suffix))) + suffix
+		base := []rune(name)
+		base = base[:min(len(base), capture.MaxListName-len(suffix))]
+		candidate := strings.TrimSpace(string(base)) + suffix
 		if !taken(candidate) {
 			return candidate
 		}
