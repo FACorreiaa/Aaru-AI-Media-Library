@@ -127,8 +127,9 @@ struct SearchView: View {
                     SearchElsewhereRow(query: model.trimmedQuery, isFirst: model.hits.isEmpty) { model.scope = $0 }
                         .listRowBackground(Color.clear)
                 }
-                // An empty scope shows the owl's empty view instead, with the same button.
-                if canAsk, model.scope == .all || !model.hits.isEmpty {
+                // An empty scope shows the owl's empty view instead, with the same button; a failed
+                // search shows neither, so the row stays here.
+                if canAsk, model.scope == .all || !model.hits.isEmpty || model.problem != nil {
                     SearchAskRow(query: model.trimmedQuery, onAsk: ask)
                         .listRowBackground(Color.clear)
                 }
