@@ -77,6 +77,9 @@ struct SearchView: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) private var dynamicType
+    @Environment(AppRouter.self) private var router: AppRouter?
+    @Environment(AssistantModel.self) private var assistant: AssistantModel?
+    @Environment(\.assistantHostID) private var hostID
     @State private var model: SearchModel
     @State private var listTarget: CatalogHit?
 
@@ -124,6 +127,11 @@ struct SearchView: View {
                     SearchElsewhereRow(query: model.trimmedQuery, isFirst: model.hits.isEmpty) { model.scope = $0 }
                         .listRowBackground(Color.clear)
                 }
+                // An empty scope shows the owl's empty view instead, with the same button.
+                if canAsk, model.scope == .all || !model.hits.isEmpty {
+                    SearchAskRow(query: model.trimmedQuery, onAsk: ask)
+                        .listRowBackground(Color.clear)
+                }
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
@@ -136,7 +144,11 @@ struct SearchView: View {
                         title: String(localized: "No Results for “\(model.trimmedQuery)”"),
                         message: String(localized: "Check the spelling or try a new search."),
                         pose: .curious
-                    )
+                    ) {
+                        if canAsk {
+                            SearchAskRow(query: model.trimmedQuery, onAsk: ask)
+                        }
+                    }
                 } else if model.isSearching, model.hits.isEmpty {
                     ProgressView()
                 }
@@ -180,6 +192,19 @@ struct SearchView: View {
                 }
             }
         }
+    }
+
+    /// ASK-012: only while the Assistant is on, and never while this sheet picks a title for a list
+    /// or an import row (opening the card would leave that half done).
+    private var canAsk: Bool {
+        pick == nil && intoList == nil && router != nil && assistant?.isAvailable == true
+            && model.trimmedQuery.count >= 2 && !model.isSearching
+    }
+
+    private func ask() {
+        router?.openAssistant(
+            listening: false, titleID: nil, onTitlePage: false, hostID: hostID, question: model.trimmedQuery
+        )
     }
 
     /// Six segments do not fit at the accessibility sizes; a menu does.

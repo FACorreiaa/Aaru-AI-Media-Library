@@ -40,6 +40,8 @@ struct DiscoverScreen: View {
     @State private var query = ""
     @State private var shown = Paging.pageSize
     @Environment(AppRouter.self) private var router
+    @Environment(AssistantModel.self) private var assistant: AssistantModel?
+    @Environment(\.assistantHostID) private var hostID
     @Environment(\.dynamicTypeSize) private var dynamicType
 
     #if os(iOS)
@@ -219,6 +221,15 @@ extension DiscoverScreen {
             } actions: {
                 Button("Search") { router.showsSearch = true }
                     .buttonStyle(.bordered)
+                // ASK-012: the filter's words go to the owl as they are.
+                let asked = query.trimmingCharacters(in: .whitespacesAndNewlines)
+                if assistant?.isAvailable == true, asked.count >= 2 {
+                    SearchAskRow(query: asked) {
+                        router.openAssistant(
+                            listening: false, titleID: nil, onTitlePage: false, hostID: hostID, question: asked
+                        )
+                    }
+                }
             }
         } else {
             ScrollView {
