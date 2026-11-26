@@ -1,1 +1,14 @@
-The first release of Aaru.
+NEW: ASK FOR A ROADMAP FROM SEARCH
+Type "the roadmap to watch Dune" or "the order to read Secret Wars" in Search, or in Discover's filter, and tap Ask Aaru. The owl lays out the steps, you check the titles it found, and Aaru saves the whole roadmap as a list of its own: every step, every title in order, and the ones it could not find written down so nothing is lost. Ask for the same roadmap again and you get a second list; the first stays as it was.
+
+ALSO NEW
+- The import review opens the list it saved.
+- When Aaru searches the web to answer you, the pages it read are listed under its reply.
+
+SINCE THE FIRST RELEASE
+- Worlds: a title's whole story universe in one view, across films, shows, anime, manga, books and albums, with what you have already seen or read marked on it.
+- Where to watch: the services that stream, rent or sell a film or show in your country, on its title page.
+- In a group, everything you ask @aaru is answered in one #ai-reply channel.
+
+AARU IN SHORT
+One private library for films, shows, anime, manga, books and albums. Keep what you plan to start, what you are in the middle of, and what you finished; tick episodes and chapters as you go, and see what airs this week. Bring your history from Trakt, Letterboxd, Goodreads, MyAnimeList, AniList, IMDb, Netflix, TV Time and more. Ask Aaru in your own words, typed or spoken. Nothing you keep is shown to anyone unless you choose to share it.
