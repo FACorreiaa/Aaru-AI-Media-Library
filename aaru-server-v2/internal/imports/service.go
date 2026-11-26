@@ -187,7 +187,21 @@ func (s *Service) Detail(ctx context.Context, id, user uuid.UUID) (core.ImportJo
 	if err != nil {
 		return core.ImportJob{}, nil, err
 	}
+	if err := s.PreviewLists(ctx, *job, rows, user); err != nil {
+		return core.ImportJob{}, nil, err
+	}
 	return *job, rows, nil
+}
+
+// PreviewLists renames, in place and unsaved, the rows of a plan waiting for approval to the list
+// name approval will give: "Name (2)" for a roadmap when one of the user's lists has its name
+// (ASK-012). Every response that carries rows of a plan uses it, as the clients patch the review
+// with them. Approval names the lists again, under the lock, from the lists then.
+func (s *Service) PreviewLists(ctx context.Context, job core.ImportJob, rows []PlannedRow, user uuid.UUID) error {
+	if job.State != core.JobPlanned {
+		return nil
+	}
+	return s.ownRoadmapLists(ctx, rows, user)
 }
 
 // Delete removes a job that is not being matched right now. A capture's input goes with it.
@@ -379,14 +393,16 @@ func (s *Service) fail(ctx context.Context, job *core.ImportJob, summary string)
 }
 
 // listOps are Goodreads custom shelves as lists: one per shelf name, reusing a list of that name.
-func (s *Service) listOps(ctx context.Context, members map[string][]uuid.UUID, user uuid.UUID) ([]library.Op, error) {
+// ids are the list each name went to, reused or new.
+func (s *Service) listOps(ctx context.Context, members map[string][]uuid.UUID, user uuid.UUID) ([]library.Op, map[string]uuid.UUID, error) {
 	if len(members) == 0 {
-		return nil, nil
+		return nil, nil, nil
 	}
 	existing, err := s.Library.Lists(ctx, user)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
+	ids := make(map[string]uuid.UUID, len(members))
 	names := make([]string, 0, len(members))
 	for name := range members {
 		names = append(names, name)
@@ -410,6 +426,7 @@ func (s *Service) listOps(ctx context.Context, members map[string][]uuid.UUID, u
 				}
 			}
 			ops = append(ops, library.SetListMembers(found.ID, merged))
+			ids[name] = found.ID
 			continue
 		}
 		var unique []uuid.UUID
@@ -421,9 +438,11 @@ func (s *Service) listOps(ctx context.Context, members map[string][]uuid.UUID, u
 		if unique == nil {
 			unique = []uuid.UUID{}
 		}
-		ops = append(ops, library.InsertList(library.ListSnapshot{ID: uuid.New(), Name: name, CreatedAt: s.now(), Members: unique}))
+		listID := uuid.New()
+		ops = append(ops, library.InsertList(library.ListSnapshot{ID: listID, Name: name, CreatedAt: s.now(), Members: unique}))
+		ids[name] = listID
 	}
-	return ops, nil
+	return ops, ids, nil
 }
 
 func containsID(ids []uuid.UUID, id uuid.UUID) bool {

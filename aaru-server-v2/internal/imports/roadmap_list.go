@@ -15,14 +15,13 @@ import (
 // one of the user's lists already has is renamed "Name (2)", "Name (3)" and so on, on every row
 // that names it, so asking for the same roadmap twice makes a second list instead of doubling the
 // first one's steps. Lists without a roadmap (shelves, plain orders) still join a list of their
-// name. It runs at approval, so two plans of one name approved one after the other each get their own
-// list, and the renamed rows are saved with the plan, so the import's list is found by its new name.
-// It reads the lists before the approval's transaction, as listOps does: two approvals of one name
-// at the same instant can still both take the name.
+// name. Approval runs it under the user's import-lists lock and saves the renamed rows with the plan,
+// so two plans of one name each get their own list even when approved at the same instant; the review
+// runs it too, without saving, so it shows the name approval will give.
 func (s *Service) ownRoadmapLists(ctx context.Context, rows []PlannedRow, user uuid.UUID) error {
 	var names []string
 	for _, r := range rows {
-		if r.Row.Roadmap == nil || isTrue(r.Row.LeftOut) {
+		if r.Row.Roadmap == nil {
 			continue
 		}
 		for _, list := range r.Row.Lists {
@@ -58,7 +57,7 @@ func (s *Service) ownRoadmapLists(ctx context.Context, rows []PlannedRow, user u
 				lists[j] = free
 			}
 		}
-		rows[i].Row.Lists = lists
+		rows[i].Row.Lists = lists //nolint:gosec // i ranges over rows
 	}
 	return nil
 }

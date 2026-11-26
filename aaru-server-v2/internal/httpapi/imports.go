@@ -6,13 +6,10 @@ import (
 	"aaru-go-api/internal/apitime"
 	"aaru-go-api/internal/apperr"
 	"aaru-go-api/internal/core"
-	"aaru-go-api/internal/db"
-	"aaru-go-api/internal/db/sqlc"
 	"aaru-go-api/internal/imports"
 	"aaru-go-api/internal/upload"
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"mime"
 	"net/http"
@@ -53,33 +50,24 @@ func (s *Server) GetImport(ctx context.Context, req api.GetImportRequestObject) 
 	for i, r := range rows {
 		out[i] = ImportRowDTO(r)
 	}
-	listID, err := s.importList(ctx, user, job, rows)
+	listID, err := s.importList(ctx, user, job)
 	if err != nil {
 		return nil, err
 	}
 	return importDetailJSON{Job: importJobOut(job), ListID: listID, Rows: out}, nil
 }
 
-// importList is the list an approved import's titles joined, when its rows named one (ASK-011): the
-// user's list of that name. Nil before approval, and when the list was never made or has gone.
-func (s *Server) importList(ctx context.Context, user uuid.UUID, job core.ImportJob, rows []imports.PlannedRow) (*apiid.UUID, error) {
+// importList is the list an approved import's titles joined (ASK-011), by the id approval kept
+// (ASK-012). Nil before approval, and when the import made no list or the list has gone.
+func (s *Server) importList(ctx context.Context, user uuid.UUID, job core.ImportJob) (*apiid.UUID, error) {
 	if job.State != core.JobSucceeded && job.State != core.JobPartial {
 		return nil, nil //nolint:nilnil // not approved yet
 	}
-	for _, r := range rows {
-		if len(r.Row.Lists) == 0 {
-			continue
-		}
-		id, err := s.q.ListIDByName(ctx, sqlc.ListIDByNameParams{UserID: user, Name: r.Row.Lists[0]})
-		if db.IsNoRows(err) {
-			return nil, nil //nolint:nilnil // no such list
-		}
-		if err != nil {
-			return nil, fmt.Errorf("import list: %w", err)
-		}
-		return apiid.Ptr(id), nil
+	id, err := s.Imports.Store.List(ctx, job.ID, user)
+	if err != nil || id == nil {
+		return nil, err
 	}
-	return nil, nil //nolint:nilnil // the import named no list
+	return apiid.Ptr(*id), nil
 }
 
 func (s *Server) DeleteImport(ctx context.Context, req api.DeleteImportRequestObject) (api.DeleteImportResponseObject, error) {
@@ -117,6 +105,9 @@ func (s *Server) ResolveImportRow(ctx context.Context, req api.ResolveImportRowR
 	if err != nil {
 		return nil, err
 	}
+	if err := s.Imports.PreviewLists(ctx, job, []imports.PlannedRow{row}, user); err != nil {
+		return nil, err
+	}
 	return importResolvedJSON{Job: importJobOut(job), Row: ImportRowDTO(row)}, nil
 }
 
@@ -133,6 +124,9 @@ func (s *Server) LeaveOutImportRow(ctx context.Context, req api.LeaveOutImportRo
 	if err != nil {
 		return nil, err
 	}
+	if err := s.Imports.PreviewLists(ctx, job, []imports.PlannedRow{row}, user); err != nil {
+		return nil, err
+	}
 	return importResolvedJSON{Job: importJobOut(job), Row: ImportRowDTO(row)}, nil
 }
 
@@ -144,6 +138,9 @@ func (s *Server) MatchAllImportRows(ctx context.Context, req api.MatchAllImportR
 	}
 	result, err := s.Imports.MatchAll(ctx, req.Id.ID(), user)
 	if err != nil {
+		return nil, err
+	}
+	if err := s.Imports.PreviewLists(ctx, result.Job, result.Rows, user); err != nil {
 		return nil, err
 	}
 	rows := make([]api.ImportRow, len(result.Rows))
