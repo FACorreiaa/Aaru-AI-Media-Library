@@ -85,6 +85,22 @@ struct SearchHitRow: View {
     }
 }
 
+/// ASK-012: what was typed goes to the owl as it is. The server decides what it asks for, so
+/// "the roadmap to watch Dune" plans a list for review.
+struct SearchAskRow: View {
+    let query: String
+    let onAsk: () -> Void
+
+    var body: some View {
+        Button(action: onAsk) {
+            Label("Ask Aaru: \u{201C}\(query)\u{201D}", systemImage: "bubble.left.and.text.bubble.right")
+                .font(.subheadline.weight(.medium))
+        }
+        .buttonStyle(.borderless)
+        .padding(.vertical, 6)
+    }
+}
+
 /// The last row of an All search: books and music are searched on their own.
 struct SearchElsewhereRow: View {
     let query: String

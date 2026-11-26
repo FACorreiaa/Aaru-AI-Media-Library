@@ -318,9 +318,7 @@ private extension ImportDetailView {
                     .font(.subheadline)
                     .foregroundStyle(Color(.muted))
             } else if job.state == .succeeded || job.state == .partial {
-                Text("Saved in order as the list \u{201C}\(list)\u{201D}. Find it under Lists.")
-                    .font(.subheadline)
-                    .foregroundStyle(Color(.muted))
+                ImportSavedList(name: list, listID: detail?.listId, api: api, library: library, lists: lists)
             }
         }
         rows(.unmatched, title: String(localized: "Not matched"))
