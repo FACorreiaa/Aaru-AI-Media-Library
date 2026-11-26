@@ -40,6 +40,7 @@ import {
   TextFieldLabel,
 } from '~/components/ui'
 import { lastShown } from '../lib/presence'
+import { useAppShell } from './shell/context'
 
 /** All searches films, shows and anime together; books and albums are never in it, and the last
  * rows of an All search offer them instead. */
@@ -82,6 +83,15 @@ export function SearchPanel(props: {
   const [adding, setAdding] = createSignal<Set<string>>(new Set())
   const [listTarget, setListTarget] = createSignal<CatalogHit | null>(null)
   const shownListTarget = lastShown(listTarget)
+  const shell = useAppShell()
+  // ASK-012: what was typed goes to the owl as it is, on any tab. The server's scope gate decides
+  // what it asks for ("the roadmap to watch Dune" plans a list). Never while picking for a list:
+  // opening the card closes Search.
+  const canAsk = () =>
+    !props.list &&
+    !searching() &&
+    query().trim().length >= 2 &&
+    shell.assistantAvailable()
   let latest = 0
 
   createEffect(() => {
@@ -389,6 +399,18 @@ export function SearchPanel(props: {
                 class="w-full justify-start rounded-panel px-3 py-2 text-left text-sm text-accent"
               >
                 Search Music for “{query().trim()}”
+              </Button>
+            </li>
+          </Show>
+          <Show when={canAsk()}>
+            <li class={kind() === 'all' ? 'pb-3' : 'py-3'}>
+              <Button
+                variant="soft"
+                size="bare"
+                onClick={() => shell.askAssistant(query().trim())}
+                class="w-full justify-start rounded-panel px-3 py-2 text-left text-sm text-accent"
+              >
+                Ask Aaru: “{query().trim()}”
               </Button>
             </li>
           </Show>
