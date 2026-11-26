@@ -227,6 +227,24 @@ func (q *Queries) ImportJobInsert(ctx context.Context, arg ImportJobInsertParams
 	return err
 }
 
+const importJobList = `-- name: ImportJobList :one
+SELECT l.id FROM import_jobs j JOIN lists l ON l.id = j.list_id AND l.user_id = j.user_id
+WHERE j.id = $1 AND j.user_id = $2
+`
+
+type ImportJobListParams struct {
+	ID     uuid.UUID
+	UserID uuid.UUID
+}
+
+// The list the job's titles joined, while the user still has it (ASK-012).
+func (q *Queries) ImportJobList(ctx context.Context, arg ImportJobListParams) (uuid.UUID, error) {
+	row := q.db.QueryRow(ctx, importJobList, arg.ID, arg.UserID)
+	var id uuid.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
 const importJobLock = `-- name: ImportJobLock :one
 SELECT state FROM import_jobs WHERE id = $1 AND user_id = $2 FOR UPDATE
 `
@@ -324,6 +342,20 @@ func (q *Queries) ImportJobSavePlan(ctx context.Context, arg ImportJobSavePlanPa
 		arg.ActionID,
 		arg.ID,
 	)
+	return err
+}
+
+const importJobSetList = `-- name: ImportJobSetList :exec
+UPDATE import_jobs SET list_id = $1 WHERE id = $2
+`
+
+type ImportJobSetListParams struct {
+	ListID *uuid.UUID
+	ID     uuid.UUID
+}
+
+func (q *Queries) ImportJobSetList(ctx context.Context, arg ImportJobSetListParams) error {
+	_, err := q.db.Exec(ctx, importJobSetList, arg.ListID, arg.ID)
 	return err
 }
 
@@ -494,6 +526,17 @@ SELECT pg_advisory_xact_lock(hashtextextended('captures:' || $1::text, 0))
 // any is inserted (DB-004). Held until the transaction ends.
 func (q *Queries) LockUserCaptures(ctx context.Context, userKey string) error {
 	_, err := q.db.Exec(ctx, lockUserCaptures, userKey)
+	return err
+}
+
+const lockUserImportLists = `-- name: LockUserImportLists :exec
+SELECT pg_advisory_xact_lock(hashtextextended('import-lists:' || $1::text, 0))
+`
+
+// One approval or match by hand per user at a time, so two cannot both pick the same free list name
+// or both make a list of one name (ASK-012). Held until the transaction ends.
+func (q *Queries) LockUserImportLists(ctx context.Context, userKey string) error {
+	_, err := q.db.Exec(ctx, lockUserImportLists, userKey)
 	return err
 }
 

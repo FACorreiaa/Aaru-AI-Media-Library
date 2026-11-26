@@ -80,6 +80,19 @@ UPDATE import_jobs SET state = @state, stats = @stats, error_summary = @error_su
     locked_until = NULL, action_id = coalesce(sqlc.narg(action_id)::uuid, action_id)
 WHERE id = @id;
 
+-- name: LockUserImportLists :exec
+-- One approval or match by hand per user at a time, so two cannot both pick the same free list name
+-- or both make a list of one name (ASK-012). Held until the transaction ends.
+SELECT pg_advisory_xact_lock(hashtextextended('import-lists:' || sqlc.arg(user_key)::text, 0));
+
+-- name: ImportJobList :one
+-- The list the job's titles joined, while the user still has it (ASK-012).
+SELECT l.id FROM import_jobs j JOIN lists l ON l.id = j.list_id AND l.user_id = j.user_id
+WHERE j.id = @id AND j.user_id = @user_id;
+
+-- name: ImportJobSetList :exec
+UPDATE import_jobs SET list_id = @list_id WHERE id = @id;
+
 -- name: ImportJobDelete :one
 DELETE FROM import_jobs WHERE id = @id AND user_id = @user_id RETURNING id;
 

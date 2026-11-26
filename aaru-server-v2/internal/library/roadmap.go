@@ -70,21 +70,15 @@ func (s *Store) ListRoadmap(ctx context.Context, listID uuid.UUID) (*Roadmap, er
 	return &r, nil
 }
 
-// AppendRoadmapTx adds steps to the roadmap of the user's list of this name, inside an import's
-// transaction: a new list gets them, a list that already had a roadmap gains them at its end. A list
-// the import did not make (nothing matched) gets nothing.
-func AppendRoadmapTx(ctx context.Context, tx pgx.Tx, user uuid.UUID, listName string, steps []RoadmapStep) error {
+// AppendRoadmapTx adds steps to the roadmap of the list the import wrote (by id), inside the import's
+// transaction: a new list gets them, a list that already had a roadmap gains them at its end. An
+// import's roadmap is given a list of its own first (ASK-012, imports.ownRoadmapLists), so asking for
+// one twice never doubles a list's steps.
+func AppendRoadmapTx(ctx context.Context, tx pgx.Tx, listID uuid.UUID, steps []RoadmapStep) error {
 	if len(steps) == 0 {
 		return nil
 	}
 	q := sqlc.New(tx)
-	listID, err := q.ListIDByName(ctx, sqlc.ListIDByNameParams{UserID: user, Name: listName})
-	if db.IsNoRows(err) {
-		return nil
-	}
-	if err != nil {
-		return fmt.Errorf("roadmap list: %w", err)
-	}
 	roadmap := Roadmap{Steps: []RoadmapStep{}}
 	raw, err := q.ListRoadmap(ctx, listID)
 	switch {

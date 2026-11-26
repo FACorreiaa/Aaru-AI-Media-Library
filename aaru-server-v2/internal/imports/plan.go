@@ -277,22 +277,34 @@ func (s *Service) Apply(ctx context.Context, id, user uuid.UUID) (core.ImportJob
 	if err != nil {
 		return core.ImportJob{}, err
 	}
-	ops, err := s.writes(ctx, rows, user)
-	if err != nil {
-		return core.ImportJob{}, err
-	}
-	if len(ops) == 0 && slices.ContainsFunc(rows, func(r PlannedRow) bool { return isTrue(r.Row.LeftOut) }) {
-		return core.ImportJob{}, apperr.New(http.StatusUnprocessableEntity, "import_nothing_chosen",
-			"Every title is unticked. Tick one to add it, or discard this plan.")
-	}
-	job.Stats = Stats(rows)
-	batch := library.Batch(ops...)
+	var ops []library.Op
+	var batch library.Op
 	// One transaction: the job is locked and its state checked again, the library written and the
-	// plan saved, so a second approval waits and then finds it applied (DB-003).
+	// plan saved, so a second approval waits and then finds it applied (DB-003). The user's lists are
+	// read and named under the user's import-lists lock, so another approval waits for this one's lists
+	// before it names its own (ASK-012).
 	err = pgx.BeginFunc(ctx, s.Store.Pool, func(tx pgx.Tx) error {
+		if err := s.Store.LockUserLists(ctx, tx, user); err != nil {
+			return err
+		}
 		if err := s.lockPlanned(ctx, tx, id, user); err != nil {
 			return err
 		}
+		if err := s.ownRoadmapLists(ctx, rows, user); err != nil {
+			return err
+		}
+		var lists map[string]uuid.UUID
+		var err error
+		ops, lists, err = s.writes(ctx, rows, user)
+		if err != nil {
+			return err
+		}
+		if len(ops) == 0 && slices.ContainsFunc(rows, func(r PlannedRow) bool { return isTrue(r.Row.LeftOut) }) {
+			return apperr.New(http.StatusUnprocessableEntity, "import_nothing_chosen",
+				"Every title is unticked. Tick one to add it, or discard this plan.")
+		}
+		job.Stats = Stats(rows)
+		batch = library.Batch(ops...)
 		var actionID *uuid.UUID
 		if len(ops) > 0 {
 			action, err := s.Library.ApplyTx(ctx, tx, batch, user, library.UserCaller, "import", summary(job.Source, job.Stats))
@@ -300,10 +312,18 @@ func (s *Service) Apply(ctx context.Context, id, user uuid.UUID) (core.ImportJob
 				return err
 			}
 			actionID = &action.ID
-			// A roadmap's steps go with the list they belong to; undoing the import deletes it.
+			// A roadmap's steps go with the list they belong to, by its id; undoing the import deletes it.
 			roadmaps := roadmapSteps(rows)
-			for _, list := range slices.Sorted(maps.Keys(roadmaps)) {
-				if err := library.AppendRoadmapTx(ctx, tx, user, list, roadmaps[list]); err != nil {
+			for _, name := range slices.Sorted(maps.Keys(roadmaps)) {
+				if listID, ok := lists[name]; ok {
+					if err := library.AppendRoadmapTx(ctx, tx, listID, roadmaps[name]); err != nil {
+						return err
+					}
+				}
+			}
+			// The review links to this list by id from now on, whatever the user's other lists are called.
+			if listID, ok := jobList(rows, lists); ok {
+				if err := s.Store.SetListTx(ctx, tx, id, listID); err != nil {
 					return err
 				}
 			}
@@ -365,7 +385,7 @@ func (s *Service) lockPlanned(ctx context.Context, tx pgx.Tx, id, user uuid.UUID
 
 // writes are every write a matched plan makes, decided again against the library as it is now (the
 // plan may be stale). Each row's outcome is updated (in place) to what it does.
-func (s *Service) writes(ctx context.Context, rows []PlannedRow, user uuid.UUID) ([]library.Op, error) {
+func (s *Service) writes(ctx context.Context, rows []PlannedRow, user uuid.UUID) ([]library.Op, map[string]uuid.UUID, error) {
 	var ops []library.Op
 	listMembers := map[string][]uuid.UUID{}
 	for _, r := range rows {
@@ -378,7 +398,7 @@ func (s *Service) writes(ctx context.Context, rows []PlannedRow, user uuid.UUID)
 	}
 	mc, err := s.mergeContext(ctx, rows, user)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	for _, g := range groups(rows) {
 		// Left out by hand, with whatever merged into it.
@@ -398,11 +418,23 @@ func (s *Service) writes(ctx context.Context, rows []PlannedRow, user uuid.UUID)
 		}
 		ops = append(ops, s.rowWrites(&rows[g.indices[0]], merged, g.titleID, stateFor(mc, g.titleID))...)
 	}
-	lists, err := s.listOps(ctx, listMembers, user)
+	lists, ids, err := s.listOps(ctx, listMembers, user)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return append(ops, lists...), nil
+	return append(ops, lists...), ids, nil
+}
+
+// jobList is the list an import's titles joined: the one the first row naming a list names, as the
+// review shows it, when the approval wrote it.
+func jobList(rows []PlannedRow, lists map[string]uuid.UUID) (uuid.UUID, bool) {
+	for _, r := range rows {
+		if len(r.Row.Lists) > 0 {
+			listID, ok := lists[r.Row.Lists[0]]
+			return listID, ok
+		}
+	}
+	return uuid.Nil, false
 }
 
 // rowWrites decides one title again (the library may have changed since the plan) and returns its

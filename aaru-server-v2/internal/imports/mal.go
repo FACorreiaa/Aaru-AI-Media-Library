@@ -24,7 +24,7 @@ func (s *Service) ApplyFromMAL(ctx context.Context, rows []Row, user uuid.UUID) 
 	if err != nil {
 		return nil, err
 	}
-	ops, err := s.writes(ctx, planned, user)
+	ops, _, err := s.writes(ctx, planned, user)
 	if err != nil {
 		return nil, err
 	}

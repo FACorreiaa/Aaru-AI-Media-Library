@@ -34,6 +34,16 @@ library layer stay separate, external IDs stored whenever known, no second backe
 - **Anime is first-class from P1** (AniList catalog, `anilist`/`mal`/`anidb` external IDs).
 - DMs are **Signal-grade (libsignal)**. Licence and web support are OPEN — see DM-003, DM-004.
 
+## Decisions recorded 2026-11-26
+
+- **A roadmap from Search, saved as its own list (owner, 2026-11-26; ASK-012).** "The roadmap
+  to watch Dune" typed in Search or Discover's filter goes to the owl as a question: an "Ask
+  Aaru" row, no phrasing detection in the clients (the scope gate decides). An approved roadmap
+  always gets a list of its own: asking for the same one again saves "Name (2)" beside the first
+  instead of doubling its steps. Plain lists without steps (Goodreads shelves, a plain order)
+  still join a list of their name. Comics matching (Secret Wars as Open Library editions) is
+  measured on the real model first, then fixed if needed.
+
 ## Decisions recorded 2026-11-24
 
 - **An Android app, in this repo (owner, 2026-11-24).** `aaru-android/`, a flat sibling of
@@ -1103,6 +1113,7 @@ account or a stranger that has not happened yet.
 | GRAPH-002 | Built, unverified | `RelatedTitles.tsx`, `_shell.app_.graph.$titleId.tsx`, `TitleRelated.swift` | Builds and tests pass; not looked at on a screen; "Add the chain" moved to GRAPH-003. 2026-11-10: a failed read says so with Try again (it was silent), Related sits above the episodes on Apple, edges are labelled there, related titles open from every stack |
 | GRAPH-003 | Built, unverified | `list_roadmaps`, `capture.Place`, `RoadmapSteps.tsx`, `RoadmapSteps.swift`, `POST /v1/titles/{id}/relations/chain` | Stub model only; not looked at on a screen |
 | GRAPH-004 | Built, unverified | `GET /v1/lists/{id}/graph`, `title_relations`, `RelationGraphCanvas` (web, Apple) | Stub model only; not looked at on a screen |
+| ASK-012 | In progress | Server: `imports/roadmap_list.go` (`ownRoadmapLists`, `freeListName`), `import_jobs.list_id` (00020) and the import-lists lock, roadmap lines in `agent/chat.go`; tests `httpapi/roadmap_test.go`, `imports/roadmap_list_test.go`, `agent/chat_roadmap_test.go` | Stub model only. Web and Apple "Ask Aaru" rows and Apple's "Open the list" next |
 | GRAPH-005 | Built, unverified | `GET /v1/titles/{id}/tree`, `catalog/tree.go`, `catalog/credits*.go`, `core/tree.go`, migration 00012 `catalog_credits` | Server built 2026-11-11; stub providers only. The new AniList, Open Library and MusicBrainz queries were run by hand against the live APIs; TMDB's were not (no key on the dev machine), so a show's creator branch (`tv_credits`, job Creator) is unproven. Web built 2026-11-11 (`TitleTree.tsx`, `lib/title/tree.ts`): looked at in headless Chrome against a local API for a book, a manga and an album, desktop and phone width, with the finish dialog; films and shows not seen (no TMDB key). Apple built 2026-11-11 (`TitleTree.swift`, `TitleTreeModel.swift`): iOS simulator and Mac builds pass; not looked at on a screen. Needs the API promoted |
 | GRAPH-007 | In progress | Server: `internal/db/migrations/00017_worlds.sql`, `catalog/world.go`, `catalog/world_service.go`, `catalog/world_read.go`, `catalog.WorldWorker`, `httpapi/world.go` (`GET /v1/titles/{id}/world`, `GET /v1/me/worlds`, `POST /v1/titles/{id}/world/plan`); tests `catalog/world*_test.go`, `httpapi/world_test.go` | Stub sources only: never built from real providers. Apple clients built (`aaru-ios/Aaru/Worlds`, `AaruTests/WorldMapTests.swift`): the map, row and share card seen only as offscreen renders with placeholder posters, never in a running app. No web client yet |
 | GRAPH-006 | Built, unverified | `GET /v1/titles/{id}/tree?cast=true`, `catalog/credits_sources.go` (`tmdbCast`, `billedPart`), `catalog/tree.go` (`people`), `core/tree.go` | Server built 2026-11-11; stub TMDB only (no key on the dev machine), so `aggregate_credits` inside `append_to_response` and the cameo and talk-show filters are unproven on real data: run `credits_live_test.go` with `AARU_LIVE=1` and a key. Web built 2026-11-11 (`TitleTree.tsx` `TitleTreeView`, `lib/title/tree.ts` `treeFilters`/`filterTree`): unit tests only, not looked at in a browser. Apple built 2026-11-11 (`TitleTreeFiltered`, `TitleTree.filters`/`showing`): iOS simulator and Mac builds pass; not looked at on a screen. Needs the API promoted |
@@ -3404,7 +3415,8 @@ iOS and macOS builds pass. Not yet looked at on a screen.
   their step.
 - Built as `list_roadmaps` beside the membership (not columns on `list_items`): list writes, the
   journal, Undo, MCP and group lists are untouched. A member removed by hand drops out of its step;
-  Undo of the import deletes the list and its steps.
+  Undo of the import deletes the list and its steps. An approved roadmap always gets a list of its
+  own (ASK-012, 2026-11-26), so asking twice never appends steps to the first list.
 - "Add the chain" (from GRAPH-002): `POST /v1/titles/{id}/relations/chain` makes a capture of the
   graph's main chain by exact ids, list "<title> in release order", for the same review.
 
@@ -4399,6 +4411,33 @@ ASK-006; the Ask Aaru page (ASK-002, ASK-003) reuses the engine later.
 Web (2026-11-05): the card is `components/assistant/AssistantCard.tsx`, opened from the top-bar
 owl, the sidebar's "Ask Aaru" row or ⌘J; the turn and voice go through two Worker proxy routes
 (ARCHITECTURE.md). Run locally against a stub model only.
+
+### ASK-012 · Ask the owl from Search, a roadmap is its own list · S · owner, 2026-11-26
+**Needs:** ASK-011, GRAPH-003.
+- **From Search.** Search (web ⌘K panel, Apple search sheet) and Discover's filter, when it
+  matches nothing, offer "Ask Aaru: “…”", which opens the assistant card with the typed text as
+  the question (`askAssistant` on web, `AppRouter.openAssistant(question:)` on Apple). Shown only
+  while the assistant is available, and not while Search picks a title for a list. No phrasing
+  detection in the clients: the scope gate decides whether the turn asks for a list.
+- **Its own list.** At approval an import's roadmap whose name one of the user's lists already
+  has is renamed "Name (2)", "Name (3)"… on every row (`imports.ownRoadmapLists`,
+  `freeListName`), so the same roadmap asked for twice makes a second list, the first keeps its
+  steps, and Undo takes back only the second. Lists without steps keep joining by name. Approval
+  and a match by hand name lists under a per-user advisory lock (`LockUserImportLists`), so two
+  approvals at once still get two lists. The review shows the name approval will give.
+- **The import's list by id.** Approval keeps the list's id on the job (`import_jobs.list_id`,
+  migration 00020, backfilled by name for older jobs). The review's "Open the list", a roadmap's
+  steps and a capture title matched by hand afterwards all go to that list, never to a later list
+  of the same name; a capture that made no list makes its own when a title is first matched.
+- **Grounding.** The chat prompt asks a roadmap that leads to one title to find it with
+  `search_titles` and read `title_relations` first, to name the list after where it leads, and
+  to say what it is unsure of for a title newer than it knows; with web search on, it may check
+  a recent or upcoming title. A list turn gets 8 rounds (was 6): two reads, three paused searches,
+  the plan and the reply.
+- **Apple parity.** The import review links to the saved list ("Open the list"), as the web does.
+**Done when:** "the roadmap to watch Dune", "the roadmap to watch Avengers: Doomsday" and "the
+roadmap to read Secret Wars", typed in Search on web and iPhone, end in a saved list with steps
+on the real model, and the match rates are written here.
 
 ### ASK-011 · Roadmaps in the card, one question at a time, chat history, scores · L · owner, 2026-11-10
 **Needs:** ASK-009, BOOK-003, GRAPH-003.

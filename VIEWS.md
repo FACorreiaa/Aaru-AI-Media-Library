@@ -250,7 +250,7 @@ Board post is written by a person, and `@aaru` on the Board waits for BOARD-004.
 
 ## Assistant card (app chrome)
 
-The assistant card (ASK-009) and its owl entry, mic, composer, file chips (ASK-010), undo ribbon, New chat button and history list (ASK-011) are app chrome,
+The assistant card (ASK-009) and its owl entry, mic, composer, file chips (ASK-010), undo ribbon, New chat button and history list (ASK-011), and the "Ask Aaru" row in Search and Discover's filter (ASK-012) are app chrome,
 like the Board components above. They are not in the catalog and the agent never emits them:
 the chrome is the host's, and an answer fills the card only with components from the catalog
 (`TitleCard`, `Shelf`, `PlanCard` and the rest).

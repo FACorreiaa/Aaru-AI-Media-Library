@@ -109,6 +109,36 @@ func (s *Store) LockUserCaptures(ctx context.Context, tx pgx.Tx, user uuid.UUID)
 	return nil
 }
 
+// LockUserLists holds the user's import-lists lock until tx ends (ASK-012): one approval or match by
+// hand at a time, so two never pick the same free list name or both make a list of one name.
+func (s *Store) LockUserLists(ctx context.Context, tx pgx.Tx, user uuid.UUID) error {
+	if err := s.Q.WithTx(tx).LockUserImportLists(ctx, strings.ToUpper(user.String())); err != nil {
+		return fmt.Errorf("lock import lists: %w", err)
+	}
+	return nil
+}
+
+// List is the list the job's titles joined, while the user still has it; nil before approval, when
+// the import made no list, and when the list has gone (ASK-012).
+func (s *Store) List(ctx context.Context, id, user uuid.UUID) (*uuid.UUID, error) {
+	listID, err := s.Q.ImportJobList(ctx, sqlc.ImportJobListParams{ID: id, UserID: user})
+	if db.IsNoRows(err) {
+		return nil, nil //nolint:nilnil // no list
+	}
+	if err != nil {
+		return nil, fmt.Errorf("import list: %w", err)
+	}
+	return &listID, nil
+}
+
+// SetListTx records the list the job's titles joined, inside the caller's transaction.
+func (s *Store) SetListTx(ctx context.Context, tx pgx.Tx, id, listID uuid.UUID) error {
+	if err := s.Q.WithTx(tx).ImportJobSetList(ctx, sqlc.ImportJobSetListParams{ListID: &listID, ID: id}); err != nil {
+		return fmt.Errorf("set import list: %w", err)
+	}
+	return nil
+}
+
 // AppendRows adds the rows a source gave (Trakt, AniList, a capture) to a job that had none.
 func (s *Store) AppendRows(ctx context.Context, rows []Row, jobID uuid.UUID) error {
 	return pgx.BeginFunc(ctx, s.Pool, func(tx pgx.Tx) error {
