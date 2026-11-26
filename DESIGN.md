@@ -278,7 +278,9 @@ collected editions, with the issues as the note. From any graph, **Add the chain
 chain, in the chosen order, to the same review. A roadmap list's **Graph** draws it the way a title's
 graph is drawn (GRAPH-004): a column per title in step order, titles read side by side stacked in
 one column, optional ones hanging under the title before them. A list without steps has **Graph**
-too and draws in its order (2026-11-10): the list "Add the chain" makes is one.
+too and draws in its order (2026-11-10): the list "Add the chain" makes is one. A roadmap is always
+its own list (ASK-012, 2026-11-26): approving the same roadmap again saves "Name (2)" beside the
+first, which keeps its steps.
 
 ## 5. Tonight
 
@@ -1388,6 +1390,13 @@ plain list is one step with no heading. One button, "Review and save", opens the
 where the titles are matched and nothing is added until the user approves; after approval the
 review links to the saved list. The card never adds from a roadmap itself. Aaru's words above it
 are a sentence or two: the list is not written out twice.
+
+**Ask from Search (ASK-012, 2026-11-26, web, iPhone, iPad, Mac).** Search (web ⌘K, the Apple
+search sheet) ends its results with one more row, "Ask Aaru: “the roadmap to watch Dune”", on
+every scope and under "No results"; Discover's filter offers the same row when nothing on Discover
+matches. It opens the card with the typed text as the question, exactly as typed: the row never
+guesses what the text is, and a one-word query simply asks the owl about it. It shows only while
+the assistant is available, and never while Search is picking a title for a list.
 
 **Sources (ASK-004).** A reply that searched the web lists the pages it cites under its words,
 as `ChatSources`: a small "Sources" label, then one line a page, its title as a link in the accent

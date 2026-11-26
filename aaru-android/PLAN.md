@@ -361,6 +361,7 @@ attachments.
 | AND-063 | Voice: `MediaRecorder` m4a AAC 16 kHz mono, 60 s cap, end of speech by `SilenceDetector`, upload to transcribe (422, 413, 429, 503 handled); read-aloud with `TextToSpeech` in the language Whisper found, sources never read; mute | M | Microphone permission asked at first use only |
 | AND-064 | Files and long pastes: picker, photos, drag in on large screens; `import_attachment`; while a file is in the chat every write is a plan | M | Refusals from the server's file check show its message |
 | AND-065 | History in the card and in Settings: list, reopen, delete one, delete all | S | |
+| AND-098 | "Ask Aaru: “…”" in Search and Discover's empty filter (ASK-012): opens the card with the typed text as the question; the import review links to its saved list | S | Hidden while the assistant is off and while Search picks for a list |
 
 ### M7 Social
 

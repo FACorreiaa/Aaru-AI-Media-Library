@@ -277,6 +277,9 @@ func (s *Service) Apply(ctx context.Context, id, user uuid.UUID) (core.ImportJob
 	if err != nil {
 		return core.ImportJob{}, err
 	}
+	if err := s.ownRoadmapLists(ctx, rows, user); err != nil {
+		return core.ImportJob{}, err
+	}
 	ops, err := s.writes(ctx, rows, user)
 	if err != nil {
 		return core.ImportJob{}, err

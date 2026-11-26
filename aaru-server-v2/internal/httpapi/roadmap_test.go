@@ -141,3 +141,102 @@ func TestPlainOrderHasNoRoadmap(t *testing.T) {
 	require.NotNil(t, saved)
 	assert.NotContains(t, env.json(http.MethodGet, "/v1/lists/"+saved["id"].(string), nil), "roadmap")
 }
+
+// ASK-012: a roadmap is always its own list. The same roadmap asked for twice makes a second list
+// and leaves the first one's steps as they were; a plain order still joins its list.
+
+func (e *captureEnv) approvedCapture(text string) (id string, applied map[string]any) {
+	e.t.Helper()
+	rec := e.send(http.MethodPost, "/v1/imports/capture?kind=book", map[string]any{"text": text})
+	require.Equal(e.t, 202, rec.Code, rec.Body.String())
+	id = decode[map[string]any](e.t, rec)["id"].(string)
+	e.runImports()
+	return id, e.json(http.MethodPost, "/v1/imports/"+id+"/apply", nil)
+}
+
+func (e *captureEnv) roadmapSteps(list map[string]any) []any {
+	e.t.Helper()
+	detail := e.json(http.MethodGet, "/v1/lists/"+list["id"].(string), nil)
+	return detail["roadmap"].(map[string]any)["steps"].([]any)
+}
+
+// storedSteps counts the steps a list keeps in list_roadmaps, hidden or not.
+func (e *captureEnv) storedSteps(list map[string]any) int {
+	e.t.Helper()
+	var steps int
+	require.NoError(e.t, e.pool.QueryRow(context.Background(),
+		`SELECT coalesce(jsonb_array_length(roadmap->'steps'), 0) FROM list_roadmaps WHERE list_id = $1`,
+		uuid.MustParse(list["id"].(string))).Scan(&steps))
+	return steps
+}
+
+func repeatedRoadmap(t *testing.T) (env *captureEnv, list, first, second string) {
+	t.Helper()
+	first, second = "Dune "+uuid.NewString(), "Children of Dune "+uuid.NewString()
+	list = "Road to Dune " + uuid.NewString()[:8]
+	steps := []map[string]any{{"heading": "The books"}}
+	m := &captureModel{responses: []model.Response{
+		roadmapReport(list, steps, map[string]any{"title": first, "type": "book", "author": "A", "step": 1}),
+		// Aaru cannot find the second title here, so its step keeps text even with no title in it.
+		roadmapReport(list, steps, map[string]any{"title": second, "type": "book", "author": "A", "step": 1},
+			map[string]any{"title": "Nowhere " + uuid.NewString(), "type": "book", "author": "A", "step": 1}),
+	}}
+	env = newCaptureEnv(t, m, nil)
+	env.captureBook(first, "A")
+	env.captureBook(second, "A")
+	return env, list, first, second
+}
+
+func TestSameRoadmapTwiceMakesASecondList(t *testing.T) {
+	env, list, first, second := repeatedRoadmap(t)
+	env.approvedCapture("the roadmap to read Dune")
+	id, _ := env.approvedCapture("the roadmap to read Dune")
+
+	original := env.listNamed(list)
+	require.NotNil(t, original)
+	assert.Equal(t, []string{first}, env.listOrder(t, original))
+	assert.Len(t, env.roadmapSteps(original), 1, "the first list's steps are not doubled")
+	assert.Equal(t, 1, env.storedSteps(original))
+
+	again := env.listNamed(list + " (2)")
+	require.NotNil(t, again, "the second roadmap has a list of its own")
+	assert.Equal(t, []string{second}, env.listOrder(t, again))
+	assert.Len(t, env.roadmapSteps(again), 1)
+
+	detail := env.json(http.MethodGet, "/v1/imports/"+id, nil)
+	assert.Equal(t, again["id"], detail["listId"], "the review opens the new list")
+}
+
+func TestUndoOfARepeatedRoadmapLeavesTheFirstListAsItWas(t *testing.T) {
+	env, list, first, _ := repeatedRoadmap(t)
+	env.approvedCapture("the roadmap to read Dune")
+	_, applied := env.approvedCapture("the roadmap to read Dune")
+
+	undo := env.send(http.MethodPost, "/v1/actions/"+applied["actionId"].(string)+"/undo", nil)
+	require.Equal(t, http.StatusOK, undo.Code, undo.Body.String())
+	assert.Nil(t, env.listNamed(list+" (2)"), "Undo takes the second list back")
+	original := env.listNamed(list)
+	require.NotNil(t, original)
+	assert.Equal(t, []string{first}, env.listOrder(t, original))
+	assert.Len(t, env.roadmapSteps(original), 1)
+	assert.Equal(t, 1, env.storedSteps(original), "no step of the undone roadmap is left on the first list")
+}
+
+func TestPlainOrderOfTheSameNameStillJoinsItsList(t *testing.T) {
+	first, second := "Plain one "+uuid.NewString(), "Plain two "+uuid.NewString()
+	list := "Plain order " + uuid.NewString()[:8]
+	m := &captureModel{responses: []model.Response{
+		captureOrderReport(list, map[string]any{"title": first, "type": "book", "author": "A"}),
+		captureOrderReport(list, map[string]any{"title": second, "type": "book", "author": "A"}),
+	}}
+	env := newCaptureEnv(t, m, nil)
+	env.captureBook(first, "A")
+	env.captureBook(second, "A")
+	env.approvedCapture("in order")
+	env.approvedCapture("in order")
+
+	saved := env.listNamed(list)
+	require.NotNil(t, saved)
+	assert.Equal(t, []string{first, second}, env.listOrder(t, saved), "a list without steps still gathers")
+	assert.Nil(t, env.listNamed(list+" (2)"))
+}

@@ -71,8 +71,9 @@ func (s *Store) ListRoadmap(ctx context.Context, listID uuid.UUID) (*Roadmap, er
 }
 
 // AppendRoadmapTx adds steps to the roadmap of the user's list of this name, inside an import's
-// transaction: a new list gets them, a list that already had a roadmap gains them at its end. A list
-// the import did not make (nothing matched) gets nothing.
+// transaction: a new list gets them, a list that already had a roadmap gains them at its end. An
+// import's roadmap is given a list of its own first (ASK-012, imports.ownRoadmapLists), so asking for
+// one twice never doubles a list's steps. A list the import did not make (nothing matched) gets nothing.
 func AppendRoadmapTx(ctx context.Context, tx pgx.Tx, user uuid.UUID, listName string, steps []RoadmapStep) error {
 	if len(steps) == 0 {
 		return nil

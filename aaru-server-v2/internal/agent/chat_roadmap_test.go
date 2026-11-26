@@ -213,6 +213,74 @@ func TestThePromptLetsARoadmapComeFromWhatTheModelKnows(t *testing.T) {
 	assert.Contains(t, system, "When it has nothing, that is no reason to refuse")
 	assert.NotContains(t, system, "keep the roadmap consistent with it", "an empty relation graph must not veto a roadmap")
 	assert.Contains(t, system, "call title_scores")
+	assert.Contains(t, system, "find that title with search_titles first and call title_relations on its ref",
+		"a roadmap to one title starts from that title (ASK-012)")
+	assert.Contains(t, system, "Name the list after where it leads")
+	assert.Contains(t, system, "say which part you are unsure of instead of guessing")
+}
+
+// ASK-012: a roadmap typed in Search reaches the owl as a question; the turn finds where it leads,
+// reads its relations and sends the roadmap, all within a list turn's rounds.
+
+var roadToDune = map[string]any{
+	"list_name": "Road to Dune: Part Three",
+	"steps":     []any{map[string]any{"heading": "The films so far"}},
+	"titles": []any{
+		map[string]any{"title": "Dune", "type": "movie", "year": 2021, "step": 1},
+		map[string]any{"title": "Dune: Part Two", "type": "movie", "year": 2024, "step": 1},
+	},
+}
+
+func TestARoadmapTurnGroundsOnTheAnchorTitleFirst(t *testing.T) {
+	f := newTurnFixture(t, listGate(),
+		tool("search_titles", map[string]any{"query": "dune part three", "kind": "movie"}),
+		tool("title_relations", map[string]any{"ref": "r1"}),
+		tool("plan_title_list", roadToDune),
+		says("Two films lead to Part Three, waiting for your review."))
+	f.withHits("952")
+	planner := f.planning()
+	f.ask("the roadmap to watch Dune: Part Three")
+
+	require.Equal(t, 1, planner.calls, "the roadmap is sent after the two reads")
+	assert.Equal(t, "Road to Dune: Part Three", planner.list)
+	require.NotNil(t, f.event("components").Roadmap)
+	assert.Len(t, f.model.calls(), 5, "the gate and four rounds")
+}
+
+func TestARoadmapThatSearchesTheWebFitsItsRounds(t *testing.T) {
+	both := toolCalls(call{"record_scope", map[string]any{"in_scope": true, "asks_for_list": true, "about_media": true}, "gate"})
+	f := newTurnFixture(t, step{response: both},
+		tool("search_titles", map[string]any{"query": "dune part three", "kind": "movie"}),
+		tool("title_relations", map[string]any{"ref": "r1"}),
+		pausedSearch(t), pausedSearch(t), pausedSearch(t),
+		tool("plan_title_list", roadToDune),
+		says("Two films lead to Part Three, waiting for your review."))
+	f.searching()
+	f.withHits("953")
+	planner := f.planning()
+	f.ask("the roadmap to watch Dune: Part Three")
+
+	require.Equal(t, 1, planner.calls, "the two reads and every search still leave room for the plan")
+	assert.Equal(t, "Two films lead to Part Three, waiting for your review.", f.lastTurn().body)
+}
+
+func TestARoadmapAfterAWebSearchIsStillSent(t *testing.T) {
+	searched := toolCalls(call{"plan_title_list", roadToDune, "p"})
+	searched.Content = append([]model.Block{
+		rawBlock(t, map[string]any{"type": "server_tool_use", "id": "srvtoolu_1", "name": "web_search", "input": map[string]any{"query": "dune part three"}}),
+		rawBlock(t, map[string]any{"type": "web_search_tool_result", "tool_use_id": "srvtoolu_1", "content": []any{}}),
+	}, searched.Content...)
+	searched.WebSearches = 1
+	both := toolCalls(call{"record_scope", map[string]any{"in_scope": true, "asks_for_list": true, "about_media": true}, "gate"})
+	f := newTurnFixture(t, step{response: both}, step{response: searched}, says("It waits for your review."))
+	f.searching()
+	planner := f.planning()
+	f.ask("the roadmap to watch Dune: Part Three")
+
+	require.Equal(t, 1, planner.calls, "a roadmap is always a review, so a search does not stop it")
+	components := f.event("components")
+	require.NotNil(t, components.Roadmap)
+	require.NotNil(t, components.ImportID)
 }
 
 // MARK: title_scores
