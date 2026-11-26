@@ -146,14 +146,18 @@ export function DiscoverRows(props: {
                   title.
                 </p>
                 {/* ASK-012: the filter's words go to the owl as they are. */}
-                <Show when={shell.assistantAvailable()}>
+                <Show
+                  when={
+                    shell.assistantAvailable() && query().trim().length >= 2
+                  }
+                >
                   <Button
                     variant="soft"
                     size="bare"
                     onClick={() => shell.askAssistant(query().trim())}
                     class="rounded-panel px-3 py-2 text-left text-sm text-accent"
                   >
-                    Ask Aaru: “{query()}”
+                    Ask Aaru: “{query().trim()}”
                   </Button>
                 </Show>
               </div>
