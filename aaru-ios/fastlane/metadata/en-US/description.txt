@@ -9,10 +9,20 @@ SEE WHAT IS NEXT
 - Up Next and a week view of the episodes you follow, with alerts when one airs
 - Widgets and a Live Activity for what you are watching now
 - Discover: what is trending, on the air and new this season, the same for everyone
-- From here: where a title leads, by the people who made it and its series
+- Where to watch: the services that stream, rent or sell a film or show in your country
+
+FOLLOW A STORY
+- Worlds: a title's whole story universe across films, shows, anime, manga, books and albums, with what you have seen or read marked on it
+- From here: where a title leads, by the people who made it, its series and its adaptations
+- Roadmaps: ask for "the roadmap to watch Dune" and save every step and title as a list
 
 ASK AARU
-Ask in your own words, typed or spoken: what to watch tonight from your own list, where you left off, the order to read a series in. A single change happens like a tap; anything larger is a plan you approve first.
+Ask in your own words, typed or spoken, from the owl or straight from Search: what to watch tonight from your own list, where you left off, the order to read a series in. A single change happens like a tap; anything larger is a plan you approve first. Nothing of yours goes to the AI until you say yes.
+
+MORE THAN THE SCREEN
+- Music: your albums, and the listening history your scrobbler sends, with concerts near you or by the artists you keep
+- Sports: follow leagues, teams and players, with fixtures, live scores and where a match is on
+- Your month and year as a Recap, streaks and badges for the days you keep going
 
 PRIVATE BY DEFAULT
 A new account shows nothing to anyone. There is no public profile, no feed, no ads and no tracking. Friends are people you add yourself, and what they see is up to you.
